@@ -29,6 +29,8 @@
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 bool ShenandoahHeapRegionSet::is_in(size_t region_idx) const {
   assert(region_idx < _heap->num_regions(), "Sanity");

@@ -27,6 +27,11 @@
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 
+#include "gc/shared/ageTable.hpp"
+#include "oops/markWord.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 CENSUS_NOISE(void ShenandoahAgeCensus::add(uint obj_age, uint region_age, uint region_youth, size_t size, uint worker_id) {)
 NO_CENSUS_NOISE(void ShenandoahAgeCensus::add(uint obj_age, uint region_age, size_t size, uint worker_id) {)
   if (obj_age <= markWord::max_age) {

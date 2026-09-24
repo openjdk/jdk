@@ -30,6 +30,7 @@
 
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
@@ -40,7 +41,19 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/iterator.inline.hpp"
+#include "oops/access.hpp"
+#include "oops/accessBackend.hpp"
+#include "oops/accessDecorators.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/compressedOops.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/valueKlass.hpp"
+#include "oops/valuePayload.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 template <typename T>
 inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators, oop obj, T* load_addr) {

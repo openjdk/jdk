@@ -28,8 +28,12 @@
 
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 bool ShenandoahCollectionSet::is_in(size_t region_idx) const {
   assert(region_idx < _heap->num_regions(), "Sanity");

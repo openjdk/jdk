@@ -27,7 +27,6 @@
 
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "memory/iterator.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 

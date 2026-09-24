@@ -52,8 +52,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-enum class narrowOop : uint32_t;
-
 void ShenandoahMark::start_mark() {
   if (!CodeCache::is_gc_marking_cycle_active()) {
     CodeCache::on_gc_marking_cycle_start();

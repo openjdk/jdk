@@ -27,20 +27,32 @@
 
 #include "gc/shenandoah/shenandoahClosures.hpp"
 
+#include "code/nmethod.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/iterator.inline.hpp"
+#include "oops/access.hpp"
+#include "oops/accessBackend.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 
 //
 // ========= Super

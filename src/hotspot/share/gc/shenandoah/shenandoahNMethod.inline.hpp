@@ -27,9 +27,15 @@
 
 #include "gc/shenandoah/shenandoahNMethod.hpp"
 
+#include "code/nmethod.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "memory/iterator.hpp"
+#include "memory/universe.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/icache.hpp"
+#include "utilities/debug.hpp"
 
 nmethod* ShenandoahNMethod::nm() const {
   return _nm;

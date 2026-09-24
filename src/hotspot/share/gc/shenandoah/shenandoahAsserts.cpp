@@ -50,8 +50,6 @@
 #include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 
-class BoolObjectClosure;
-
 void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   // Be extra safe. Only access data that is guaranteed to be safe:
   // should be in heap, in known committed region, within that region.

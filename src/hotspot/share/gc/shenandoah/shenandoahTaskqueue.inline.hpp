@@ -29,7 +29,11 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 #include "gc/shared/taskqueue.inline.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
+
+enum class MemTag : uint8_t;
 
 template <class E, MemTag MT, unsigned int N>
 bool BufferedOverflowTaskQueue<E, MT, N>::pop(E &t) {

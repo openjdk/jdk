@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,9 +28,13 @@
 
 #include "gc/shenandoah/shenandoahMarkBitMap.hpp"
 
+#include "memory/memRegion.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "utilities/align.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline size_t ShenandoahMarkBitMap::address_to_index(const HeapWord* addr) const {
   return (pointer_delta(addr, _covered.start()) << 1) >> _shift;

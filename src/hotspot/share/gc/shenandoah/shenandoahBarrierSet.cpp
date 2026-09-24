@@ -67,8 +67,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-class BarrierSetAssembler;
-class StackWatermark;
 #ifdef COMPILER1
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif

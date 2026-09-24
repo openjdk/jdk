@@ -29,10 +29,18 @@
 
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/safepoint.hpp"
+#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate_fill(size_t size) {
   shenandoah_assert_heaplocked_or_safepoint();

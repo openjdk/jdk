@@ -91,7 +91,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
-class Method;
 class nmethod;
 
 ShenandoahFullGC::ShenandoahFullGC() :

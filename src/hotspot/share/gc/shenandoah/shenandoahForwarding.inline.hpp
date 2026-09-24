@@ -28,9 +28,16 @@
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "oops/markWord.hpp"
+#include "oops/markWord.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class Klass;
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
   shenandoah_assert_in_heap_bounds(nullptr, obj);
