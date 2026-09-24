@@ -1648,7 +1648,7 @@ public class JavacParser implements Parser {
                         List<JCAnnotation> tyannos = null;
                         boolean memberRef = false;
                         if (token.kind == MONKEYS_AT &&
-                            isMode(TYPE) || (memberRef = isParameterizedTypePrefix())) {
+                            (isMode(TYPE) || (memberRef = isParameterizedTypePrefix()))) {
                             tyannos = typeAnnotationsOpt();
                         }
                         // typeArgs saved for next loop iteration.
