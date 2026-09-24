@@ -368,4 +368,8 @@ void VM_Version::xuantie_features() {
 
   unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   unaligned_vector.enable_feature(MISALIGNED_VECTOR_FAST);
+
+  if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
+    FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+  }
 }
