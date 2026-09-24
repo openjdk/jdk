@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,9 @@
 #define JVM_ERROR1      "Error: Could not create the Java Virtual Machine.\n" GEN_ERROR
 #define JVM_ERROR2      "Error: Could not detach main thread.\n" JNI_ERROR
 
-#define JAR_ERROR2      "Error: Unable to access jarfile %s"
-#define JAR_ERROR3      "Error: Invalid or corrupt jarfile %s"
+#define JAR_ERROR_CANNOT_OPEN       "Error: Unable to open JAR file %s"
+#define JAR_ERROR_MANIFEST_MISSING  "Error: No manifest in JAR file %s"
+#define JAR_ERROR_MANIFEST_PARSE    "Error: Unable to parse the manifest of JAR file %s"
 
 #define CFG_WARN1       "Warning: %s VM not supported; %s VM will be used"
 #define CFG_WARN2       "Warning: No leading - on line %d of `%s'"
