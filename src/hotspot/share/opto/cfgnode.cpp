@@ -3246,7 +3246,6 @@ private:
       return new EncodePNode(_phase->transform(vt), _root_phi->bottom_type());
     }
     return vt;
-
   }
 
   PhiNode* _root_phi;
