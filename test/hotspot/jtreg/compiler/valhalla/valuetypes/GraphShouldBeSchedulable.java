@@ -33,7 +33,6 @@ import jdk.test.lib.Asserts;
  *          a load of the initial value of the array may find an object with an imprecise type (initVal1 in this case, that is
  *          an Object), potentially leading to wrong alias indices.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
