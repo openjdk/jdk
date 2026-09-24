@@ -67,5 +67,5 @@ public class TestViewVisualPostion {
                 new Rectangle(0, 0, 10, 10),
                 SwingConstants.NORTH,
                 new Position.Bias[1]);
-    } 
+    }
 }
