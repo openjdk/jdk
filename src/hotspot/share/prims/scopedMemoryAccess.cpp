@@ -246,7 +246,7 @@ public:
           // another memory access. If the scope has been closed at that point,
           // the target thread will see it and throw an exception.
           bool f_has_scoped_access = code->has_scoped_access();
-          bool f_is_session_live = is_session_live(last_frame, &register_map);
+          bool f_is_session_live = is_session_live(last_frame, register_map);
 #ifndef PRODUCT
           {
             LogMessage(foreign, deoptimization) msg;
@@ -268,7 +268,7 @@ public:
     }
   }
 
-  bool is_session_live(frame the_frame, const RegisterMap* register_map) {
+  bool is_session_live(frame the_frame, const RegisterMap& register_map) {
     struct OopFinder : public OopClosure {
       bool _found;
       oop _the_oop;
@@ -286,7 +286,7 @@ public:
 
     OopFinder finder(JNIHandles::resolve(_session));
     NMethodOopFinder nmof(&finder);
-    the_frame.oops_do(&finder, &nmof, register_map);
+    the_frame.oops_do(&finder, &nmof, &register_map);
     return finder._found;
   }
 };
