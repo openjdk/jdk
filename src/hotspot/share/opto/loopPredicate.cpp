@@ -514,6 +514,13 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
     return false;
   }
   const CmpNode *cmp = bol->in(1)->as_Cmp();
+  if (cmp->Opcode() == Op_Cmp(bt)) {
+    const TypeInteger* index = phase->_igvn.type(cmp->in(1))->isa_integer(bt);
+    // Accept a signed check when the index is non-negative
+    if (index == nullptr || index->empty() || index->lo_as_long() < 0) {
+      return false;
+    }
+  } else
   if (cmp->Opcode() != Op_Cmp_unsigned(bt)) {
     return false;
   }
