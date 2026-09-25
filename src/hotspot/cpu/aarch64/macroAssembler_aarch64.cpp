@@ -1698,11 +1698,11 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
     // If the left shift is so great that all bytes below the most
     // significant are zero, don't add across all byte lanes, just use
     // the top byte.
-    if (BitsPerWord - shift < BitsPerByte) {
-      umov(r_array_index, vtemp, B, msb);
+    if (BitsPerLong - shift <= BitsPerByte) {
+      umov(r_array_index, vtemp, B, BytesPerLong - 1);
     } else {
       addv(vtemp, T8B, vtemp);
-      fmovd(r_array_index, vtemp);
+      umov(r_array_index, vtemp, B, 0);
     }
   } else {
     mov(r_array_index, (u1)1);
