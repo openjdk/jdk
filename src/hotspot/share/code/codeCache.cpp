@@ -674,8 +674,12 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       if (handle_alloc_failure) {
         MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
         CompileBroker::handle_full_code_cache(orig_code_blob_type);
-      } else if (orig_code_blob_type == CodeBlobType::MethodHot) {
+      } else if (orig_code_blob_type == CodeBlobType::MethodHot && heap->full_count() == 0) {
         report_code_heap_full_event(orig_code_blob_type);
+        log_warning(codecache)("Allocation failed in MethodHot heap (%zu bytes free). "
+                               "Hot methods cannot be relocated while the heap is full.",
+                               heap->unallocated_capacity());
+        log_warning(codecache)("Try increasing the code heap size using -XX:HotCodeHeapSize=");
       }
       return nullptr;
     } else {
