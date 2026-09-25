@@ -4966,10 +4966,6 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 // counter updates are not atomic.
 //
 
-void blah(Metadata* md) {
-  asm("nop");
-}
-
 void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset,
                                            Register temp, addptr_32_insn_t increment) {
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
