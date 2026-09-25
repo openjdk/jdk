@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import jdk.internal.vm.annotation.AOTRuntimeSetup;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
 
 /**
  * Container class for immutable collections. Not part of the public API.
@@ -357,15 +358,13 @@ class ImmutableCollections {
         }
     }
 
+    @TrustFinalFields
     static final class ListItr<E> implements ListIterator<E> {
 
-        @Stable
         private final List<E> list;
 
-        @Stable
         private final int size;
 
-        @Stable
         private final boolean isListIterator;
 
         private int cursor;
@@ -447,16 +446,14 @@ class ImmutableCollections {
         }
     }
 
+    @TrustFinalFields
     static final class SubList<E> extends AbstractImmutableList<E>
             implements RandomAccess {
 
-        @Stable
         final AbstractImmutableList<E> root;
 
-        @Stable
         final int offset;
 
-        @Stable
         final int size;
 
         SubList(AbstractImmutableList<E> root, int offset, int size) {
@@ -569,13 +566,12 @@ class ImmutableCollections {
     }
 
     @jdk.internal.ValueBased
+    @TrustFinalFields
     static final class List12<E> extends AbstractImmutableList<E>
             implements Serializable {
 
-        @Stable
         private final E e0;
 
-        @Stable
         private final Object e1;
 
         List12(E e0) {
@@ -705,13 +701,13 @@ class ImmutableCollections {
     }
 
     @jdk.internal.ValueBased
+    @TrustFinalFields
     static final class ListN<E> extends AbstractImmutableList<E>
             implements Serializable {
 
         @Stable
         private final E[] elements;
 
-        @Stable
         private final boolean allowNulls;
 
         // caller must ensure that elements has no nulls if allowNulls is false
@@ -825,13 +821,12 @@ class ImmutableCollections {
     }
 
     @jdk.internal.ValueBased
+    @TrustFinalFields
     static final class Set12<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
-        @Stable
         private final E e0;
 
-        @Stable
         private final Object e1;
 
         Set12(E e0) {
@@ -971,13 +966,13 @@ class ImmutableCollections {
      * @param <E> the element type
      */
     @jdk.internal.ValueBased
+    @TrustFinalFields
     static final class SetN<E> extends AbstractImmutableSet<E>
             implements Serializable {
 
         @Stable
         final E[] elements;
 
-        @Stable
         final int size;
 
         @SafeVarargs
@@ -1169,10 +1164,11 @@ class ImmutableCollections {
     }
 
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
+    @TrustFinalFields
     static final class Map1<K,V> extends AbstractImmutableMap<K,V> implements Serializable {
-        @Stable
+
         private final K k0;
-        @Stable
+
         private final V v0;
 
         Map1(K k0, V v0) {
@@ -1241,12 +1237,12 @@ class ImmutableCollections {
      * @param <V> the value type
      */
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
+    @TrustFinalFields
     static final class MapN<K,V> extends AbstractImmutableMap<K,V> implements Serializable {
 
         @Stable
         final Object[] table; // pairs of key, value
 
-        @Stable
         final int size; // number of pairs
 
         MapN(Object... input) {
