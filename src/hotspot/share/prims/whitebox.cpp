@@ -1627,7 +1627,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, nullptr);
-  result = env->NewObjectArray(5, clazz, nullptr);
+  result = env->NewObjectArray(6, clazz, nullptr);
   if (result == nullptr) {
     return result;
   }
@@ -1653,6 +1653,10 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jobject entry_point = longBox(thread, env, (jlong) code->entry_point());
   CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 4, entry_point);
+
+  jobject has_scoped_access = booleanBox(thread, env, (jboolean) code->has_scoped_access());
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  env->SetObjectArrayElement(result, 5, has_scoped_access);
 
   return result;
 WB_END
