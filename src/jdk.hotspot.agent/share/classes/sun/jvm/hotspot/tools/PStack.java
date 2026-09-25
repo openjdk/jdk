@@ -31,6 +31,7 @@ import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.remote.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
@@ -194,12 +195,11 @@ public class PStack extends Tool {
                   }
                   f = f.sender(th, senderSP, senderFP, senderPC);
                }
-            } catch (DebuggerException dex) {
-               // DebuggerException would be shown if LIBSAPROC_DEBUG is set.
-               // The process should be continued for other threads.
-               if (System.getenv("LIBSAPROC_DEBUG") != null) {
-                  dex.printStackTrace();
-               }
+            } catch (DwarfException dex) {
+               // Linux: DwarfException would be shown if DWARF processing is failed.
+               // Stack unwinding should be aborted, however we can continue for other threads.
+               // See JDK-8392132 and the review thread on GitHub for details.
+               IO.println(dex.toString());
             } catch (Exception exp) {
                exp.printStackTrace();
                // continue, may be we can do a better job for other threads
