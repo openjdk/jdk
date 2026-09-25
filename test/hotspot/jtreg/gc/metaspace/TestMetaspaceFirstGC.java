@@ -184,20 +184,15 @@ public class TestMetaspaceFirstGC {
             events = new ArrayList<>(RecordingFile.readAllEvents(dump));
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
 
-            // The first failed metadata allocation inside loadOneClass is the candidate. A threshold
-            // change or a metadata GC with a start time before the next sample shows the collector
-            // was asked in that window, the window can hold more than one failed allocation and the
-            // collection itself may finish later. Shenandoah without class unloading expands without
-            // asking and is excluded. The sample
-            // written right before that class load gives committed and the threshold just before
-            // it, committed has to be at the threshold within the tolerance, below it the request
-            // would be premature. A
-            // threshold change at or after the request is not guaranteed, the GC may have freed
-            // enough for the retry, but when there is one it has to start at or above the sampled
-            // threshold, another thread failing an allocation in between could have moved it up.
-            // A failed allocation somewhere else or a threshold change before the request makes the
-            // initial threshold unmeasurable, that run is skipped like startup displacement. A sampled
+            // The candidate is the first failed metadata allocation inside loadOneClass. A threshold
+            // change or a metadata GC starting before the next sample shows the collector was asked,
+            // the window may hold more failures and the collection may finish later. The sample before
+            // the failing load gives committed and the threshold, committed has to be at the threshold
+            // within the tolerance, below it the request was premature. A later threshold change is not
+            // guaranteed, when there is one it starts at or above the sampled threshold. A failed
+            // allocation elsewhere or a threshold change before the candidate skips the run, a sampled
             // threshold that differs from the initial one with no change recorded is a failure.
+            // Shenandoah without class unloading expands without asking and is excluded.
             RecordedEvent request = null;
             int startupFailures = 0;
             int earlierFailures = 0;
