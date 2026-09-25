@@ -25,18 +25,19 @@
  * @test
  * @bug 8391985
  * @summary View.getNextVisualPositionFrom can throw NullPointerException
- *  @run main TestViewVisualPostion
+ * @run main TestViewVisualPosition
  */
 
+import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import javax.swing.SwingConstants;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 import javax.swing.text.Position;
-import javax.swing.text.Shape;
 import javax.swing.text.View;
 
-public class TestViewVisualPostion {
+public class TestViewVisualPosition {
     public static void main(String[] args) throws Exception {
         PlainDocument document = new PlainDocument();
         document.insertString(0, "x", null);
