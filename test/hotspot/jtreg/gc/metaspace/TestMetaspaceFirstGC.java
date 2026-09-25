@@ -23,8 +23,8 @@
 
 /*
  * @test TestMetaspaceFirstGC
- * @bug 8208250 8391711
- * @summary Verify that the first metaspace GC is triggered when metaspace reaches the MetaspaceSize threshold
+ * @bug 8208250 8391711 8392597
+ * @summary Verify that the first metadata GC since VM start is requested when metaspace reaches the MetaspaceSize threshold
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -143,7 +143,7 @@ public class TestMetaspaceFirstGC {
                 Asserts.assertLessThan(metaspaceSize, 22_500_000L, "default MetaspaceSize (" + metaspaceSize + ") too large");
             }
             if (initialThreshold != metaspaceSize) {
-                // startup already moved the threshold, the first metadata GC can't be observed
+                // startup already moved the threshold, the first metadata GC request can't be measured
                 throw new SkippedException("threshold already at " + initialThreshold
                     + ", not MetaspaceSize " + metaspaceSize);
             }
@@ -188,10 +188,14 @@ public class TestMetaspaceFirstGC {
             // threshold that differs from the initial one with no change recorded is a failure.
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
             RecordedEvent request = null;
+            int startupFailures = 0;
             int earlierFailures = 0;
             for (RecordedEvent event : events) {
-                if (!event.getEventType().getName().equals(EventNames.MetaspaceAllocationFailure)
-                        || !event.getStartTime().isAfter(loadingStart)) {
+                if (!event.getEventType().getName().equals(EventNames.MetaspaceAllocationFailure)) {
+                    continue;
+                }
+                if (!event.getStartTime().isAfter(loadingStart)) {
+                    startupFailures++;
                     continue;
                 }
                 if (fromLoadOneClass(event)) {
@@ -225,9 +229,10 @@ public class TestMetaspaceFirstGC {
                         + " gcThreshold=" + event.getLong("gcThreshold"));
                 }
             }
-            if (earlierFailures > 0 || changesBefore > 0) {
-                throw new SkippedException(earlierFailures + " other allocation failures and " + changesBefore
-                    + " threshold changes before the request, the first metadata GC can't be observed");
+            if (startupFailures > 0 || earlierFailures > 0 || changesBefore > 0) {
+                throw new SkippedException(startupFailures + " allocation failures before loading started, "
+                    + earlierFailures + " other allocation failures and " + changesBefore
+                    + " threshold changes before the request, the first metadata GC request can't be measured");
             }
             RecordedEvent atRequest = null;
             for (RecordedEvent event : events) {
@@ -266,13 +271,13 @@ public class TestMetaspaceFirstGC {
             sample.commit();
             loadOneClass();
             if (metadataGC.getCount() == 0) {
-                System.out.println("Metadata GC requested after " + (i + 1) + " class loads, metaspace used=" + getMetaspaceUsed());
+                System.out.println("Metadata GC request seen after " + (i + 1) + " load attempts, metaspace used=" + getMetaspaceUsed());
                 return;
             }
         }
         // the event may still be on its way from the stream
         if (metadataGC.await(60, TimeUnit.SECONDS)) {
-            System.out.println("Metadata GC requested after " + maxIterations + " class loads, metaspace used=" + getMetaspaceUsed());
+            System.out.println("Metadata GC request seen after " + maxIterations + " load attempts, metaspace used=" + getMetaspaceUsed());
             return;
         }
         throw new RuntimeException("No metadata GC request after " + maxIterations + " class loads");
