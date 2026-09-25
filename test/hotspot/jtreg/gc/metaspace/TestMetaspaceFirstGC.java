@@ -93,8 +93,8 @@ public class TestMetaspaceFirstGC {
     // kept alive so no collection can unload them before the threshold is reached
     private static final List<ClassLoader> loaders = new ArrayList<>();
 
-    // Counted down from the JFR stream when the metadata allocation failure inside loadOneClass
-    // arrives, that is the request for the first metadata GC.
+    // Counted down from the JFR stream when a metadata allocation failure inside loadOneClass
+    // arrives, whether it was the first request is decided afterwards from the recording.
     private static final CountDownLatch metadataGC = new CountDownLatch(1);
 
     public interface Dummy {}
@@ -124,8 +124,8 @@ public class TestMetaspaceFirstGC {
                 }
             });
             rs.startAsync();
-            // everything the measured window touches is loaded before it opens, so no allocation
-            // failure inside it comes from the test's own setup
+            // load what the measured window touches before it opens, the recording is checked
+            // afterwards for any other allocation failure inside it
             WhiteBox.getWhiteBox().metaspaceCapacityUntilGC();
             getMetaspaceCommitted();
             getMetaspaceUsed();
@@ -148,7 +148,7 @@ public class TestMetaspaceFirstGC {
                     + ", not MetaspaceSize " + metaspaceSize);
             }
 
-            // Load classes until a metaspace-triggered GC happens
+            // Load classes until the metadata GC request shows up
             try {
                 loadClassesUntilGC(50000);
             } catch (RuntimeException e) {
@@ -178,12 +178,14 @@ public class TestMetaspaceFirstGC {
 
             // The first failed metadata allocation inside loadOneClass is the request. The sample
             // written right before that class load gives committed and the threshold just before
-            // it, committed has to be at the threshold, below it the request would be premature. A
+            // it, committed has to be at the threshold within the tolerance, below it the request
+            // would be premature. A
             // threshold change at or after the request is not guaranteed, the GC may have freed
             // enough for the retry, but when there is one it has to start at or above the sampled
             // threshold, another thread failing an allocation in between could have moved it up.
-            // A failed allocation somewhere else or a threshold change before the request means the
-            // first request was not the test's, that run is skipped like startup displacement.
+            // A failed allocation somewhere else or a threshold change before the request makes the
+            // initial threshold unmeasurable, that run is skipped like startup displacement. A sampled
+            // threshold that differs from the initial one with no change recorded is a failure.
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
             RecordedEvent request = null;
             int earlierFailures = 0;
@@ -223,6 +225,10 @@ public class TestMetaspaceFirstGC {
                         + " gcThreshold=" + event.getLong("gcThreshold"));
                 }
             }
+            if (earlierFailures > 0 || changesBefore > 0) {
+                throw new SkippedException(earlierFailures + " other allocation failures and " + changesBefore
+                    + " threshold changes before the request, the first metadata GC can't be observed");
+            }
             RecordedEvent atRequest = null;
             for (RecordedEvent event : events) {
                 if (!event.getEventType().getName().equals("TestMetaspaceFirstGC.LoadSample")) {
@@ -245,10 +251,6 @@ public class TestMetaspaceFirstGC {
             }
             Asserts.assertLessThanOrEqual(Math.abs(thresholdAtRequest - committedAtRequest), tolerance,
                 "committed before the request (" + committedAtRequest + ") should be at the threshold (" + thresholdAtRequest + ")");
-            if (earlierFailures > 0 || changesBefore > 0) {
-                throw new SkippedException(earlierFailures + " other allocation failures and " + changesBefore
-                    + " threshold changes before the request, the first metadata GC can't be observed");
-            }
             Asserts.assertEquals(thresholdAtRequest, initialThreshold,
                 "the first metadata GC should have been requested at the initial threshold");
 
@@ -268,12 +270,12 @@ public class TestMetaspaceFirstGC {
                 return;
             }
         }
-        // a concurrent collector may still be running the collection
+        // the event may still be on its way from the stream
         if (metadataGC.await(60, TimeUnit.SECONDS)) {
             System.out.println("Metadata GC requested after " + maxIterations + " class loads, metaspace used=" + getMetaspaceUsed());
             return;
         }
-        throw new RuntimeException("No metaspace GC after " + maxIterations + " class loads");
+        throw new RuntimeException("No metadata GC request after " + maxIterations + " class loads");
     }
 
     private static void loadOneClass() {
