@@ -24,7 +24,7 @@
 /*
  * @test TestMetaspaceFirstGC
  * @bug 8208250 8391711 8392597
- * @summary Verify that the first metadata GC since VM start is requested when metaspace reaches the MetaspaceSize threshold
+ * @summary Verify that the first metadata GC seen after startup is requested when metaspace reaches the MetaspaceSize threshold
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -115,8 +115,8 @@ public class TestMetaspaceFirstGC {
         List<RecordedEvent> events;
         try (RecordingStream rs = new RecordingStream()) {
             // a concurrent collector may fold the requested GC into a cycle that is already
-            // running and never emit the cause, the failed allocation inside loadOneClass is
-            // the request itself
+            // running and never emit the cause, the failed allocation inside loadOneClass is where
+            // the request is made, whether a GC was really asked for is checked afterwards
             rs.enable(EventNames.MetaspaceAllocationFailure).withStackTrace();
             rs.onEvent(EventNames.MetaspaceAllocationFailure, event -> {
                 if (fromLoadOneClass(event)) {
@@ -131,14 +131,16 @@ public class TestMetaspaceFirstGC {
             getMetaspaceUsed();
             new LoadSample().commit();
             Instant loadingStart = Instant.now();
-            long tolerance = 5 * 1024 * 1024;
+            // metaspace commits in 64K granules and one class load allocates a few KB, the sample
+            // is taken right before the load that failed
+            long tolerance = 1024 * 1024;
             long initialThreshold = WhiteBox.getWhiteBox().metaspaceCapacityUntilGC();
             System.out.println("Initial metaspace GC threshold: " + initialThreshold);
             long metaspaceSize = WhiteBox.getWhiteBox().getSizeTVMFlag("MetaspaceSize");
             if (expectedSize > 0) {
                 Asserts.assertEquals(metaspaceSize, expectedSize, "MetaspaceSize as set on the command line");
             } else {
-                // the ergonomic default, about 12MB to 20MB depending on the platform
+                // the platform dependent ergonomic default
                 Asserts.assertGreaterThan(metaspaceSize, 11_500_000L, "default MetaspaceSize (" + metaspaceSize + ") too small");
                 Asserts.assertLessThan(metaspaceSize, 22_500_000L, "default MetaspaceSize (" + metaspaceSize + ") too large");
             }
@@ -164,8 +166,8 @@ public class TestMetaspaceFirstGC {
             loaders.clear();
             rs.stop();
 
-            // The startup recording has run since VM start, so it holds everything from before
-            // this stream existed as well, including any threshold change during initialization.
+            // The startup recording begins during VM initialization, before this stream existed,
+            // so it holds the earlier events too, anything before JFR started is out of reach.
             Recording startup = FlightRecorder.getFlightRecorder().getRecordings().stream()
                 .filter(r -> "startup".equals(r.getName()))
                 .findFirst()
@@ -176,7 +178,8 @@ public class TestMetaspaceFirstGC {
             events = new ArrayList<>(RecordingFile.readAllEvents(dump));
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
 
-            // The first failed metadata allocation inside loadOneClass is the request. The sample
+            // The first failed metadata allocation inside loadOneClass is where the request is made,
+            // a threshold change or a metadata GC after it shows the collector was asked. The sample
             // written right before that class load gives committed and the threshold just before
             // it, committed has to be at the threshold within the tolerance, below it the request
             // would be premature. A
@@ -206,6 +209,7 @@ public class TestMetaspaceFirstGC {
             }
             Asserts.assertNotNull(request, "no metaspace allocation failure inside loadOneClass");
             long thresholdAfterRequest = -1;
+            boolean metadataGcSeen = false;
             boolean summaryLogged = false;
             int changesBefore = 0;
             for (RecordedEvent event : events) {
@@ -222,6 +226,9 @@ public class TestMetaspaceFirstGC {
                     } else if (thresholdAfterRequest < 0) {
                         thresholdAfterRequest = event.getLong("oldValue");
                     }
+                } else if (type.equals(EventNames.GarbageCollection) && !beforeRequest
+                        && "Metadata GC Threshold".equals(event.getString("cause"))) {
+                    metadataGcSeen = true;
                 } else if (type.equals(EventNames.MetaspaceSummary) && !beforeRequest && !summaryLogged) {
                     summaryLogged = true;
                     System.out.println("Summary after the request: " + event.getString("when") + " gcId="
@@ -233,6 +240,10 @@ public class TestMetaspaceFirstGC {
                 throw new SkippedException(startupFailures + " allocation failures before loading started, "
                     + earlierFailures + " other allocation failures and " + changesBefore
                     + " threshold changes before the request, the first metadata GC request can't be measured");
+            }
+            if (thresholdAfterRequest < 0 && !metadataGcSeen) {
+                // the retry after the failed allocation went through without a GC
+                throw new SkippedException("no threshold change and no metadata GC after the failed allocation");
             }
             RecordedEvent atRequest = null;
             for (RecordedEvent event : events) {
@@ -280,7 +291,7 @@ public class TestMetaspaceFirstGC {
             System.out.println("Metadata GC request seen after " + maxIterations + " load attempts, metaspace used=" + getMetaspaceUsed());
             return;
         }
-        throw new RuntimeException("No metadata GC request after " + maxIterations + " class loads");
+        throw new RuntimeException("No metadata allocation failure inside loadOneClass after " + maxIterations + " load attempts");
     }
 
     private static void loadOneClass() {
