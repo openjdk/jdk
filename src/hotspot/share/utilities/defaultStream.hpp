@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_DEFAULTSTREAM_HPP
 #define SHARE_UTILITIES_DEFAULTSTREAM_HPP
 
+#include "runtime/thread.hpp"
 #include "utilities/xmlstream.hpp"
 
 class defaultStream : public xmlTextStream {
@@ -57,6 +58,11 @@ class defaultStream : public xmlTextStream {
 
   ~defaultStream() {
     if (has_log_file())  finish_log();
+  }
+
+  static void revive(FILE *out, FILE* err) {
+    _output_stream = out;
+    _error_stream = err;
   }
 
   static inline FILE* output_stream() {

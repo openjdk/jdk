@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,22 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private volatile long hProcess;     // handle to the process
     private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
 
-    VirtualMachineImpl(AttachProvider provider, String id)
+    VirtualMachineImpl(AttachProvider provider, String vmid)
         throws AttachNotSupportedException, IOException
     {
-        super(provider, id);
+        super(provider, vmid);
 
-        int pid = Integer.parseInt(id);
+        // This provider only understands pids
+        int pid = -1;
+        try {
+            pid = Integer.parseInt(vmid);
+        } catch (NumberFormatException nfe) {
+            throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
+        }
+        if (pid < 1) {
+            throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
+        }
+
         hProcess = openProcess(pid);
 
         try {

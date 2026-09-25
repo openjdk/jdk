@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
@@ -124,7 +125,7 @@ public abstract class AttachProvider {
      *
      * @throws  AttachNotSupportedException
      *          If the identifier cannot be parsed, or it corresponds to
-     *          to a Java virtual machine that does not exist, or it
+     *          a Java virtual machine that does not exist, or it
      *          corresponds to a Java virtual machine which this
      *          provider cannot attach.
      *
@@ -136,6 +137,55 @@ public abstract class AttachProvider {
      */
     public abstract VirtualMachine attachVirtualMachine(String id)
         throws AttachNotSupportedException, IOException;
+
+    /**
+     * Attaches to a Java virtual machine.
+     *
+     * <p> A Java virtual machine is identified by an abstract identifier. The
+     * nature of this identifier is platform dependent but in many cases it will be the
+     * string representation of the process identifier (or pid).
+     *
+     * <p> This method parses the identifier and maps the identifier to a Java
+     * virtual machine (in an implementation dependent manner). If the identifier
+     * cannot be parsed by the provider then an
+     * {@link com.sun.tools.attach.AttachNotSupportedException AttachNotSupportedException}
+     * is thrown. Once parsed this method attempts to attach to the Java virtual machine.
+     * If the provider detects that the identifier corresponds to a Java virtual machine
+     * that does not exist, or it corresponds to a Java virtual machine that does not support
+     * the attach mechanism implemented by this provider, or it detects that the
+     * Java virtual machine is a version to which this provider cannot attach, then
+     * an {@code AttachNotSupportedException} is thrown.
+     *
+     * @implNote The default implementation of this method always throws {@link AttachNotSupportedException}.
+     *
+     * @param  id
+     *         The abstract identifier that identifies the Java virtual machine.
+     *
+     * @param  env
+     *         A Map of settings that a specific AttachProvider may reference.  May be empty.
+     *
+     * @return  VirtualMachine representing the target virtual machine.
+     *
+     * @throws  AttachNotSupportedException
+     *          If the identifier cannot be parsed, or it corresponds to
+     *          a Java virtual machine that does not exist, or it
+     *          corresponds to a Java virtual machine which this
+     *          provider cannot attach.
+     *          Also thrown if this method is not overridden by an AttachProvider implementation.
+     *
+     * @throws  IllegalArgumentException
+     *          If the implementation encounters an error relating to arguments in {@code env}.
+     *
+     * @throws  IOException
+     *          If some other I/O error occurs
+     *
+     * @since 28
+     */
+    public VirtualMachine attachVirtualMachine(String id, Map<String, ?> env)
+        throws AttachNotSupportedException, IllegalArgumentException, IOException {
+
+        throw new AttachNotSupportedException("Not implemented in base AttachProvider class");
+    }
 
     /**
      * Attaches to a Java virtual machine.

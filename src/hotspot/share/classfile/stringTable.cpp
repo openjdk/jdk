@@ -728,7 +728,7 @@ struct SizeFunc : StackObj {
 };
 
 TableStatistics StringTable::get_table_statistics() {
-  static TableStatistics ts;
+  TableStatistics ts;
   SizeFunc sz;
 
   Thread* jt = Thread::current();
