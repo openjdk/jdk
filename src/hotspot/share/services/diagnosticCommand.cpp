@@ -481,8 +481,8 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
   char flag_buf[64];
   jio_snprintf(flag_buf, sizeof(flag_buf), "-XshowSettings:%s", sec);
 
-  // resolve jdk.internal.util.ShowSettings
-  Symbol* klass_sym = vmSymbols::jdk_internal_util_ShowSettings();
+  // resolve jdk.internal.launcher.ShowSettings
+  Symbol* klass_sym = vmSymbols::jdk_internal_launcher_ShowSettings();
   Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CHECK);
 
   // call ShowSettings.showSettingsBytes(String, long, long, long)
