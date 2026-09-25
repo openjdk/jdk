@@ -4797,7 +4797,7 @@ instruct loadN2P_unscaled(iRegPNoSp dst, memory mem)
               n->in(1)->as_Load()->barrier_data() == 0);
     match(Set dst (DecodeN (LoadN mem)));
 
-    ins_cost(LOAD_COST);
+    ins_cost(LOAD_COST - 1);
     format %{ "lwu $dst, $mem\t# compressed ptr decode (zero-based unscaled)" %}
 
     ins_encode %{

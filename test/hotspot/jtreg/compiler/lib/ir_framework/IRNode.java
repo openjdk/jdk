@@ -2482,6 +2482,11 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX, "vand_notL_vx");
     }
 
+    public static final String RISCV_LOAD_N2P_UNSCALED = PREFIX + "RISCV_LOAD_N2P_UNSCALED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_LOAD_N2P_UNSCALED, "loadN2P_unscaled");
+    }
+
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
