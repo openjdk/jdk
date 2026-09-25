@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.DateFormatSymbols;
+import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -52,11 +53,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /*
  * @test
  * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434 8346948
- *      8174269 8371842 8388214
+ *      8174269 8371842 8388214 8392994
  * @key randomness
  */
 
@@ -299,5 +301,14 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         dtf = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(pattern).toFormatter(Locale.US);
         assertEquals(input, dtf.format(ZonedDateTime.parse(input, dtf)));
         assertEquals(input, dtf.format(ZonedDateTime.parse(lc, dtf)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-07:00", "-08:00", "+09:00"})
+    public void test_offsetTimeUsesGenericZoneName(String offset) {
+        DateTimeFormatter format =
+            DateTimeFormatter.ofPattern("zzzz", Locale.US)
+                .withZone(ZoneId.of("America/Vancouver"));
+        assertEquals("Pacific Time", format.format(OffsetTime.parse("12:00" + offset)));
     }
 }
