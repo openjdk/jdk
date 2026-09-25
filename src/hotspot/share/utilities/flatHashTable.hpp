@@ -38,7 +38,7 @@
 // of the cases. In contrast to ResizeableHashTable, this table may grow automatically upon
 // insertion instead of users having to manually grow it.
 template <class Key, class T, auto HASH, auto KEY_EQUAL, class Allocator>
-class FlatHashTableBase {
+class FlatHashTable {
 private:
   class Entry {
   public:
@@ -56,7 +56,7 @@ private:
   using ImplType = SwissTableImpl<Entry, Allocator>;
   ImplType _impl;
 
-  NONCOPYABLE(FlatHashTableBase);
+  NONCOPYABLE(FlatHashTable);
 
   static bool key_hash_match(const Key& key, uint64_t h, const Entry& entry) {
     if constexpr (std::is_integral_v<Key>) {
@@ -79,7 +79,7 @@ private:
 
 public:
   template <class... AllocatorParms>
-  FlatHashTableBase(AllocatorParms... parms) : _impl(Allocator(parms...)) {}
+  FlatHashTable(AllocatorParms... parms) : _impl(Allocator(parms...)) {}
 
   size_t size() const {
     return _impl.size();
@@ -161,9 +161,9 @@ public:
 };
 
 template <class Key, class T, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
-using FlatHashTableArena = FlatHashTableBase<Key, T, HASH, KEY_EQUAL, FlatHashTableArenaAllocator>;
+using FlatHashTableArena = FlatHashTable<Key, T, HASH, KEY_EQUAL, FlatHashTableArenaAllocator>;
 
 template <class Key, class T, MemTag mem_tag, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
-using FlatHashTableCHeap = FlatHashTableBase<Key, T, HASH, KEY_EQUAL, FlatHashTableCHeapAllocator<mem_tag>>;
+using FlatHashTableCHeap = FlatHashTable<Key, T, HASH, KEY_EQUAL, FlatHashTableCHeapAllocator<mem_tag>>;
 
 #endif // SHARE_UTILITIES_UNORDEREDMAP_HPP
