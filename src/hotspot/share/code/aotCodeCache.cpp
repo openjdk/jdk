@@ -3922,6 +3922,7 @@ oop AOTCodeReader::read_oop(JavaThread* thread) {
 }
 
 bool AOTCodeReader::read_oop_metadata_list(JavaThread* current, GrowableArray<Handle> &oop_list, GrowableArray<Metadata*> &metadata_list, OopRecorder* oop_recorder) {
+  assert(oop_recorder == nullptr || oop_recorder->is_unused(), "only use fresh new OopRecorder");
   int count;
   if (!read_int(&count)) {
     return false;
@@ -3935,11 +3936,8 @@ bool AOTCodeReader::read_oop_metadata_list(JavaThread* current, GrowableArray<Ha
     oop_list.append(h);
     if (oop_recorder != nullptr) {
       jobject jo = JNIHandles::make_local(current, obj);
-      if (oop_recorder->is_real(jo)) {
-        oop_recorder->find_index(jo);
-      } else {
-        oop_recorder->allocate_oop_index(jo);
-      }
+      // Use allocate_oop_index() to preserve indexes recorded in Dependencies
+      oop_recorder->allocate_oop_index(jo);
     }
     LogStreamHandle(Trace, aot, codecache, oops) log;
     if (log.is_enabled()) {
@@ -3967,11 +3965,8 @@ bool AOTCodeReader::read_oop_metadata_list(JavaThread* current, GrowableArray<Ha
     }
     metadata_list.append(m);
     if (oop_recorder != nullptr) {
-      if (oop_recorder->is_real(m)) {
-        oop_recorder->find_index(m);
-      } else {
-        oop_recorder->allocate_metadata_index(m);
-      }
+      // Use allocate_metadata_index() to preserve indexes recorded in Dependencies
+      oop_recorder->allocate_metadata_index(m);
     }
     LogStreamHandle(Trace, aot, codecache, metadata) log;
     if (log.is_enabled()) {
