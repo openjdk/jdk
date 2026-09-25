@@ -25,8 +25,7 @@
 
 /*
  * This file primarily consists of all the error and warning messages, that
- * are used in JLI_ReportErrorMessage. All message must be defined here, in
- * order to help with localizing the messages.
+ * are used in JLI_ReportErrorMessage.
  */
 
 #ifndef _EMESSAGES_H
