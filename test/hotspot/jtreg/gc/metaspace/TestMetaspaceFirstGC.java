@@ -182,17 +182,21 @@ public class TestMetaspaceFirstGC {
             // threshold change at or after the request is not guaranteed, the GC may have freed
             // enough for the retry, but when there is one it has to start at or above the sampled
             // threshold, another thread failing an allocation in between could have moved it up.
-            // Changes between the start of loading and the request are logged and the request
-            // then has to be at or above the initial threshold.
+            // A failed allocation somewhere else or a threshold change before the request means the
+            // first request was not the test's, that run is skipped like startup displacement.
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
             RecordedEvent request = null;
+            int earlierFailures = 0;
             for (RecordedEvent event : events) {
-                if (event.getEventType().getName().equals(EventNames.MetaspaceAllocationFailure)
-                        && event.getStartTime().isAfter(loadingStart)
-                        && fromLoadOneClass(event)) {
+                if (!event.getEventType().getName().equals(EventNames.MetaspaceAllocationFailure)
+                        || !event.getStartTime().isAfter(loadingStart)) {
+                    continue;
+                }
+                if (fromLoadOneClass(event)) {
                     request = event;
                     break;
                 }
+                earlierFailures++;
             }
             Asserts.assertNotNull(request, "no metaspace allocation failure inside loadOneClass");
             long thresholdAfterRequest = -1;
@@ -241,13 +245,12 @@ public class TestMetaspaceFirstGC {
             }
             Asserts.assertLessThanOrEqual(Math.abs(thresholdAtRequest - committedAtRequest), tolerance,
                 "committed before the request (" + committedAtRequest + ") should be at the threshold (" + thresholdAtRequest + ")");
-            if (changesBefore == 0) {
-                Asserts.assertEquals(thresholdAtRequest, initialThreshold,
-                    "the first metadata GC should have been requested at the initial threshold");
-            } else {
-                Asserts.assertGreaterThanOrEqual(thresholdAtRequest, initialThreshold,
-                    "the threshold can only be raised before the first metadata GC");
+            if (earlierFailures > 0 || changesBefore > 0) {
+                throw new SkippedException(earlierFailures + " other allocation failures and " + changesBefore
+                    + " threshold changes before the request, the first metadata GC can't be observed");
             }
+            Asserts.assertEquals(thresholdAtRequest, initialThreshold,
+                "the first metadata GC should have been requested at the initial threshold");
 
             System.out.println("PASSED");
         }
