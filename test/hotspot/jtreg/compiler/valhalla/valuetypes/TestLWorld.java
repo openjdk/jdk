@@ -67,7 +67,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @summary Test value types in LWorld.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -81,7 +80,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @summary Test value types in LWorld.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -94,7 +92,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @summary Test value types in LWorld.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -107,7 +104,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @summary Test value types in LWorld.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -120,7 +116,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @summary Test value types in LWorld.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -133,7 +128,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @summary Test value types in LWorld.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -147,7 +141,6 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @summary Test value types in LWorld.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value

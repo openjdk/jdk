@@ -26,7 +26,6 @@
  * @bug 8381563
  * @summary [lworld] SharedRuntime::allocate_value_types hits "buffer not of expected class" assert
  * @enablePreview
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
  * @run main/othervm -XX:-BackgroundCompilation
  *                   -XX:CompileOnly=compiler.valhalla.valuetypes.TestScalarizedCCReceiverOnlyEntryAllocBuffer::test1
  *                   ${test.main.class}

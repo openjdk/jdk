@@ -25,7 +25,6 @@
  * @test id=0-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -36,7 +35,6 @@
  * @test id=1-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -47,7 +45,6 @@
  * @test id=2-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -58,7 +55,6 @@
  * @test id=3-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -69,7 +65,6 @@
  * @test id=4-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -80,7 +75,6 @@
  * @test id=5-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -91,7 +85,6 @@
  * @test id=6-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -102,7 +95,6 @@
  * @test id=0-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -113,7 +105,6 @@
  * @test id=1-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -124,7 +115,6 @@
  * @test id=2-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -135,7 +125,6 @@
  * @test id=3-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -146,7 +135,6 @@
  * @test id=4-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -157,7 +145,6 @@
  * @test id=5-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -168,7 +155,6 @@
  * @test id=6-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -179,7 +165,6 @@
  * @test id=0-fast-nointrinsics
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -190,7 +175,6 @@
  * @test id=0-nofast-nointrinsics
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -201,7 +185,6 @@
  * @test id=1-fast-nointrinsics
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -212,7 +195,6 @@
  * @test id=1-nofast-nointrinsics
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
