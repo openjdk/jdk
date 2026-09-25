@@ -148,7 +148,7 @@ PDSwissTableImpl<Entry, Allocator>::lookup_avx512(const uint8_t* metadata, const
       idx = 0;
     }
 
-    __m512i cur_vec = _mm512_loadu_epi8(&metadata[idx]);
+    __m512i cur_vec = _mm512_loadu_si512(&metadata[idx]);
 
     __m512i empty_marker_vec = _mm512_set1_epi8(uint8_t(Marker::_empty_marker));
     uint64_t empty_mask = _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, empty_marker_vec));
