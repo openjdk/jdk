@@ -34,6 +34,8 @@ package jdk.internal.org.commonmark.parser;
 
 import jdk.internal.org.commonmark.node.SourceSpan;
 
+import java.util.Objects;
+
 /**
  * A line or part of a line from the input source.
  *
@@ -49,10 +51,7 @@ public class SourceLine {
     }
 
     private SourceLine(CharSequence content, SourceSpan sourceSpan) {
-        if (content == null) {
-            throw new NullPointerException("content must not be null");
-        }
-        this.content = content;
+        this.content = Objects.requireNonNull(content, "content must not be null");
         this.sourceSpan = sourceSpan;
     }
 
@@ -68,10 +67,11 @@ public class SourceLine {
         CharSequence newContent = content.subSequence(beginIndex, endIndex);
         SourceSpan newSourceSpan = null;
         if (sourceSpan != null) {
-            int columnIndex = sourceSpan.getColumnIndex() + beginIndex;
             int length = endIndex - beginIndex;
             if (length != 0) {
-                newSourceSpan = SourceSpan.of(sourceSpan.getLineIndex(), columnIndex, length);
+                int columnIndex = sourceSpan.getColumnIndex() + beginIndex;
+                int inputIndex = sourceSpan.getInputIndex() + beginIndex;
+                newSourceSpan = SourceSpan.of(sourceSpan.getLineIndex(), columnIndex, inputIndex, length);
             }
         }
         return SourceLine.of(newContent, newSourceSpan);
