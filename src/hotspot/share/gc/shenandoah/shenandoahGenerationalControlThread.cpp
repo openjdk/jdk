@@ -94,6 +94,9 @@ void ShenandoahGenerationalControlThread::run_service() {
   notify_gc_waiters();
   notify_alloc_failure_waiters();
   set_gc_mode(stopped);
+
+  // We're done writing GC stats, so print them here.
+  _heap->print_gc_stats_at_exit();
 }
 
 void ShenandoahGenerationalControlThread::stop_service() {
@@ -167,9 +170,8 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 
   heuristics->log_trigger("Handle Allocation Failure");
 
-  // Do not bother with degenerated cycle if old generation evacuation failed or if humongous allocation failed
-  if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() &&
-      !old_gen_evacuation_failed && request.cause != GCCause::_shenandoah_humongous_allocation_failure) {
+  // Do not bother with degenerated cycle if old generation evacuation failed
+  if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() && !old_gen_evacuation_failed) {
     heuristics->record_allocation_failure_gc();
     _heap->shenandoah_policy()->record_alloc_failure_to_degenerated(_degen_point);
     return stw_degenerated;

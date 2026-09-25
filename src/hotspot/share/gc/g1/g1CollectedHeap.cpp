@@ -31,6 +31,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
@@ -2245,15 +2246,15 @@ void G1CollectedHeap::collection_set_iterate_increment_from(G1HeapRegionClosure 
 void G1CollectedHeap::par_iterate_regions_array(G1HeapRegionClosure* cl,
                                                 G1HeapRegionClaimer* hr_claimer,
                                                 const uint regions[],
-                                                size_t length,
+                                                size_t num_regions,
                                                 uint worker_id) const {
   assert_at_safepoint();
-  if (length == 0) {
+  if (num_regions == 0) {
     return;
   }
   uint total_workers = workers()->active_workers();
 
-  size_t start_pos = (worker_id * length) / total_workers;
+  size_t start_pos = (worker_id * num_regions) / total_workers;
   size_t cur_pos = start_pos;
 
   do {
@@ -2265,7 +2266,7 @@ void G1CollectedHeap::par_iterate_regions_array(G1HeapRegionClosure* cl,
     }
 
     cur_pos++;
-    if (cur_pos == length) {
+    if (cur_pos == num_regions) {
       cur_pos = 0;
     }
   } while (cur_pos != start_pos);

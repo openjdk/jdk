@@ -1235,6 +1235,9 @@ bool Node::has_special_unique_user() const {
   } else if (this->is_Load() && n->is_Move()) {
     // Condition for MoveX2Y (LoadX mem) => LoadY mem
     return true;
+  } else if (op == Op_LoadUS && n->Opcode() == Op_LShiftI) {
+    // Condition for RShiftI(LShiftI(LoadUS(...), 16), 16) => LoadS(...), see RShiftINode::Ideal
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -1253,7 +1256,7 @@ bool Node::has_special_unique_user() const {
   } else {
     return false;
   }
-};
+}
 
 bool Node::should_process_when_disconnect_output(Node* output) const {
   return (is_Phi() && as_Phi()->is_dead_phi()) ||
@@ -1483,9 +1486,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           if (n->outcnt() == 0) {   // Input also goes dead?
             if (!n->is_Con())
               nstack.push(n);       // Clear it out as well
-          } else if (n->outcnt() == 1 &&
-                     n->has_special_unique_user()) {
-            igvn->add_users_to_worklist( n );
+          } else if (n->outcnt() == 1 && n->has_special_unique_user()) {
+            igvn->add_users_to_worklist(n);
           } else if (n->outcnt() <= 2 && n->is_Store()) {
             // Push store's uses on worklist to enable folding optimization for
             // store/store and store/load to the same address.
@@ -3123,7 +3125,7 @@ void Unique_Node_List::remove(Node* n) {
 
 //-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from worklist
-void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
+void Unique_Node_List::remove_useless_nodes(const VectorSet& useful) {
   for (uint i = 0; i < size(); ++i) {
     Node *n = at(i);
     assert( n != nullptr, "Did not expect null entries in worklist");

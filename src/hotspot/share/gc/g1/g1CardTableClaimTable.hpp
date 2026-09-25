@@ -42,7 +42,7 @@ class G1HeapRegionClosure;
 // Claiming works on full region (all cards in region) or a range of contiguous cards
 // (chunk). Chunk size is given at construction time.
 class G1CardTableClaimTable : public CHeapObj<mtGC> {
-  uint _max_reserved_regions;
+  uint _max_num_regions;
 
   // Card table iteration claim values for every heap region, from 0 (completely unclaimed)
   // to (>=) G1HeapRegion::CardsPerRegion (completely claimed).
@@ -58,7 +58,7 @@ public:
   ~G1CardTableClaimTable();
 
   // Allocates the data structure and initializes the claims to unclaimed.
-  void initialize(uint max_reserved_regions);
+  void initialize(uint max_num_regions);
 
   void reset_all_to_unclaimed();
   void reset_all_to_claimed();
@@ -73,7 +73,7 @@ public:
   inline uint claim_chunk(uint region);
   inline uint cards_per_chunk() const;
 
-  size_t max_reserved_regions() { return _max_reserved_regions; }
+  size_t max_num_regions() { return _max_num_regions; }
 
   void heap_region_iterate_from_worker_offset(G1HeapRegionClosure* cl, uint worker_id, uint max_workers);
 };

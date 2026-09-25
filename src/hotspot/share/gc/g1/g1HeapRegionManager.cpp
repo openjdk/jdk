@@ -502,9 +502,7 @@ G1HeapRegion* G1HeapRegionManager::next_region_in_heap(const G1HeapRegion* r) co
 }
 
 void G1HeapRegionManager::iterate(G1HeapRegionClosure* blk) const {
-  uint len = max_num_regions();
-
-  for (uint i = 0; i < len; i++) {
+  for (uint i = 0; i < max_num_regions(); i++) {
     if (!is_available(i)) {
       continue;
     }
@@ -517,9 +515,7 @@ void G1HeapRegionManager::iterate(G1HeapRegionClosure* blk) const {
 }
 
 void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
-  uint len = max_num_regions();
-
-  for (uint i = 0; i < len; i++) {
+  for (uint i = 0; i < max_num_regions(); i++) {
     if (!is_available(i)) {
       continue;
     }
@@ -685,7 +681,6 @@ void G1HeapRegionManager::verify() {
               i, HR_FORMAT_PARAMS(hr), p2i(prev_end));
     guarantee(hr->hrm_index() == i,
               "invariant: i: %u hrm_index(): %u", i, hr->hrm_index());
-    // Asserts will fire if i is >= _length
     HeapWord* addr = hr->bottom();
     guarantee(addr_to_region(addr) == hr, "sanity");
     // We cannot check whether the region is part of a particular set: at the time
@@ -724,7 +719,7 @@ G1HeapRegionClaimer::~G1HeapRegionClaimer() {
 uint G1HeapRegionClaimer::offset_for_worker(uint worker_id) const {
   assert(_num_workers > 0, "must be set");
   assert(worker_id < _num_workers, "Invalid worker_id.");
-  return _num_regions * worker_id / _num_workers;
+  return (uint)((uint64_t)_num_regions * worker_id / _num_workers);
 }
 
 bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {

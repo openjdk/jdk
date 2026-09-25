@@ -26,9 +26,9 @@
 #define SHARE_GC_G1_G1HEAPREGIONREMSET_HPP
 
 #include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
 
 class G1FromCardCache;
 class outputStream;

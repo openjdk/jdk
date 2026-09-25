@@ -24,7 +24,9 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
@@ -36,12 +38,14 @@
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -301,10 +305,6 @@ void ShenandoahDegenGC::op_degenerated() {
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
 
-      // Disarm nmethods that armed in concurrent cycle.
-      // In above case, update roots should disarm them
-      ShenandoahCodeRoots::disarm_nmethods();
-
       op_cleanup_complete();
 
       if (heap->mode()->is_generational()) {
@@ -317,6 +317,9 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 
   DEBUG_ONLY(heap->assert_no_self_forwards());
+
+  // Leaving degenerated GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_degenerated(_generation);
@@ -452,7 +455,22 @@ void ShenandoahDegenGC::op_update_roots() {
 
 void ShenandoahDegenGC::op_cleanup_complete() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_cleanup_complete);
-  ShenandoahHeap::heap()->recycle_trash();
+
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  // If we are degenerating for old mark only, we need to check that there are no accidental
+  // young pointers in SATB queues. If so, we need to filter them before we perform cleanups,
+  // otherwise they would dangle.
+  ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
+  if (heap->is_concurrent_old_mark_in_progress() && !heap->is_concurrent_young_mark_in_progress()) {
+    assert(satb_qs.get_filter_out_young(), "Must be");
+    ShenandoahFlushSATB flush_satb(satb_qs);
+    Threads::threads_do(&flush_satb);
+  } else {
+    assert(!satb_qs.get_filter_out_young(), "Must not be");
+  }
+
+  heap->recycle_trash();
 }
 
 void ShenandoahDegenGC::op_degenerated_fail() {
