@@ -279,7 +279,7 @@ public class TestMetaspaceFirstGC {
             long thresholdAtRequest = atRequest.getLong("threshold");
             System.out.println("Before the failing load: committed=" + committedAtRequest
                 + " threshold=" + thresholdAtRequest
-                + ", next change in the window from " + thresholdAfterRequest);
+                + (thresholdAfterRequest < 0 ? ", no threshold change in the window" : ", next change in the window from " + thresholdAfterRequest));
             if (thresholdAfterRequest >= 0) {
                 Asserts.assertGreaterThanOrEqual(thresholdAfterRequest, thresholdAtRequest,
                     "the threshold change after the request should start at or above the sampled threshold");
