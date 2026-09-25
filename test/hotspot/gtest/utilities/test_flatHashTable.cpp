@@ -198,7 +198,8 @@ public:
   void* allocate(size_t size) {
     size_t allocated_size = align_up(size, page_size) + page_size * 2;
     char* previous_page = static_cast<char*>(mmap(nullptr, allocated_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
-    assert(previous_page != nullptr, "failed to allocate");
+    assert(previous_page != MAP_FAILED, "failed to allocate");
+    assert(previous_page != nullptr, "allocate nullptr?");
     char* next_page = previous_page + allocated_size - page_size;
 
     int protect_previous_page = mprotect(previous_page, page_size, PROT_NONE);
@@ -348,33 +349,60 @@ void test_random() {
 // across the array values.
 class CustomKey {
 private:
-  static constexpr size_t key_size = 128;
+  static constexpr size_t _key_size = 128;
 
-  alignas(key_size) uint8_t value[key_size];
+  alignas(_key_size) uint8_t _value[_key_size];
 
 public:
   explicit CustomKey(int key) {
     static_assert(TableOp::key_limit == 16);
     assert(key >= 0 && key < int(TableOp::key_limit), "unexpected key %d", key);
-    for (size_t i = 0; i < key_size; i++) {
-      value[i] = 0;
+    for (size_t i = 0; i < _key_size; i++) {
+      _value[i] = 0;
     }
-    value[0] = key & 1;
-    value[key_size / 4] = (key >> 1) & 1;
-    value[key_size / 2] = (key >> 2) & 1;
-    value[key_size * 3 / 4] = (key >> 3) & 1;
+    _value[0] = key & 1;
+    _value[_key_size / 4] = (key >> 1) & 1;
+    _value[_key_size / 2] = (key >> 2) & 1;
+    _value[_key_size * 3 / 4] = (key >> 3) & 1;
   }
 
   static uint64_t hash(const CustomKey& k) {
-    return uint64_t(k.value[0]) |
-           (uint64_t(k.value[key_size / 4]) << 16) |
-           (uint64_t(k.value[key_size / 2]) << 32) |
-           (uint64_t(k.value[key_size * 3 / 4]) << 48);
+    return uint64_t(k._value[0]) |
+           (uint64_t(k._value[_key_size / 4]) << 16) |
+           (uint64_t(k._value[_key_size / 2]) << 32) |
+           (uint64_t(k._value[_key_size * 3 / 4]) << 48);
   }
 
   static bool equal(const CustomKey& k1, const CustomKey& k2) {
-    for (size_t i = 0; i < key_size; i++) {
-      if (k1.value[i] != k2.value[i]) {
+    for (size_t i = 0; i < _key_size; i++) {
+      if (k1._value[i] != k2._value[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+};
+
+// A custom value with large alignment which allows verifying that the map emplaces the entries
+// correctly aligned
+class CustomValue {
+private:
+  static constexpr size_t _value_size = 128;
+  static constexpr size_t _value_num = _value_size / 4;
+
+  alignas(_value_size) uint32_t _value[_value_num];
+
+public:
+  CustomValue(int value) {
+    for (size_t i = 0; i < _value_num; i++) {
+      _value[i] = value;
+    }
+  }
+
+  static bool equal(const CustomValue& v1, const CustomValue& v2) {
+    for (size_t i = 0; i < _value_num; i++) {
+      if (v1._value[i] != v2._value[i]) {
         return false;
       }
     }
@@ -386,7 +414,7 @@ public:
 template <auto HASH, auto KEY_EQUAL>
 void test_custom_key() {
   constexpr int iterations = 1000;
-  FlatHashTableBase<CustomKey, int, HASH, KEY_EQUAL, CustomAllocator> map;
+  FlatHashTableBase<CustomKey, CustomValue, HASH, KEY_EQUAL, CustomAllocator> map;
   ASSERT_EQ(0U, map.size());
   bool expected_exists[TableOp::key_limit];
   int expected_values[TableOp::key_limit];
@@ -401,22 +429,27 @@ void test_custom_key() {
     TableOp op = TableOp::generate_random();
     int key = op.key;
     int value = op.value;
-    CustomKey custom_key = CustomKey(key);
+    CustomKey custom_key(key);
+    CustomValue custom_value(value);
     switch (op.type) {
       case TableOp::TableOpType::GET: {
-        int* v = map.get(custom_key);
-        ASSERT_EQ(expected_exists[key], v != nullptr);
+        CustomValue* v = map.get(custom_key);
         if (expected_exists[key]) {
-          ASSERT_EQ(expected_values[key], *v);
+          ASSERT_NE(nullptr, v);
+          ASSERT_TRUE(is_aligned(v, alignof(CustomValue)));
+          ASSERT_TRUE(CustomValue::equal(CustomValue(expected_values[key]), *v));
+        } else {
+          ASSERT_EQ(nullptr, v);
         }
         break;
       }
       case TableOp::TableOpType::PUT: {
         bool exist = expected_exists[key];
-        ASSERT_NE(exist, map.put(custom_key, value));
-        int* v = map.get(custom_key);
+        ASSERT_NE(exist, map.put(custom_key, custom_value));
+        CustomValue* v = map.get(custom_key);
         ASSERT_NE(nullptr, v);
-        ASSERT_EQ(*v, value);
+        ASSERT_TRUE(is_aligned(v, alignof(CustomValue)));
+        ASSERT_TRUE(CustomValue::equal(custom_value, *v));
         expected_exists[key] = true;
         expected_values[key] = value;
         if (!exist) {
@@ -426,10 +459,11 @@ void test_custom_key() {
       }
       case TableOp::TableOpType::PUT_IF_ABSENT: {
         bool exist = expected_exists[key];
-        ASSERT_NE(exist, map.put_if_absent(custom_key, value));
-        int* v = map.get(custom_key);
+        ASSERT_NE(exist, map.put_if_absent(custom_key, custom_value));
+        CustomValue* v = map.get(custom_key);
         ASSERT_NE(nullptr, v);
-        ASSERT_EQ(exist ? expected_values[key] : value, *v);
+        ASSERT_TRUE(is_aligned(v, alignof(CustomValue)));
+        ASSERT_TRUE(CustomValue::equal(CustomValue(exist ? expected_values[key] : value), *v));
         if (!exist) {
           expected_exists[key] = true;
           expected_values[key] = value;
@@ -440,6 +474,8 @@ void test_custom_key() {
       case TableOp::TableOpType::REMOVE: {
         bool exist = expected_exists[key];
         ASSERT_EQ(exist, map.remove(custom_key));
+        CustomValue* v = map.get(custom_key);
+        ASSERT_EQ(nullptr, v);
         expected_exists[key] = false;
         if (exist) {
           expected_size--;
