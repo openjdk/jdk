@@ -5822,7 +5822,7 @@ public class Attr extends JCTree.Visitor {
         public void scan(JCTree tree, boolean typeContext) {
             boolean prevTypeContext = inTypeContext;
             try {
-                inTypeContext = typeContext; //TODO: check no true -> false transitions?
+                inTypeContext = typeContext;
                 super.scan(tree);
             } finally {
                 inTypeContext = prevTypeContext;
@@ -5832,16 +5832,11 @@ public class Attr extends JCTree.Visitor {
         public void scan(List<? extends JCTree> trees, boolean typeContext) {
             boolean prevTypeContext = inTypeContext;
             try {
-                inTypeContext = typeContext; //TODO: check no true -> false transitions?
+                inTypeContext = typeContext;
                 super.scan(trees);
             } finally {
                 inTypeContext = prevTypeContext;
             }
-        }
-
-        @Override
-        public void scan(JCTree tree) {
-            scan(tree, inTypeContext);
         }
 
         public void visitAnnotation(JCAnnotation tree) {
@@ -5880,7 +5875,7 @@ public class Attr extends JCTree.Visitor {
                 validateAnnotatedType(tree.restype, tree.restype.type);
             }
             if (sigOnly) {
-                scan(tree.mods); //XXX: should also be , true but needs test(!)
+                scan(tree.mods);
                 scan(tree.restype, true);
                 scan(tree.typarams);
                 scan(tree.recvparam);
@@ -5895,7 +5890,7 @@ public class Attr extends JCTree.Visitor {
             //System.err.println("validateTypeAnnotations.visitVarDef " + tree);
             if (tree.sym != null && tree.sym.type != null && !tree.isImplicitlyTyped())
                 validateAnnotatedType(tree.vartype, tree.sym.type);
-            scan(tree.mods); //, true declaration annotations are reclassified to type annotations as needed
+            scan(tree.mods);
             scan(tree.vartype, true);
             if (!sigOnly) {
                 scan(tree.init);
@@ -5969,8 +5964,7 @@ public class Attr extends JCTree.Visitor {
         }
         @Override
         public void visitReference(JCMemberReference tree) {
-            if (tree.kind != null &&
-                tree.kind != JCMemberReference.ReferenceKind.BOUND &&
+            if (tree.kind != JCMemberReference.ReferenceKind.BOUND &&
                 tree.kind != JCMemberReference.ReferenceKind.SUPER) {
                 scan(tree.expr, true);
             } else {
