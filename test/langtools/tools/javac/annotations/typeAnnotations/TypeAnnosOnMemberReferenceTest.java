@@ -133,7 +133,7 @@ public class TypeAnnosOnMemberReferenceTest {
     }
 
     @Test //JDK-8391567
-    public void testTreeInfoIsTypeSelectorDelegatesToSelectValid() throws Exception {
+    public void testAnnotationOnNestedValid() throws Exception {
         //annotating "@Ann1 Test.I", where I is an innerclass is valid:
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
@@ -243,7 +243,7 @@ public class TypeAnnosOnMemberReferenceTest {
     }
 
     @Test //JDK-8391567
-    public void testTreeInfoIsTypeSelectorDelegatesToSelectInvalid() throws Exception {
+    public void testAnnotationOnNestedInvalid() throws Exception {
         //annotating "@Ann1 T.N" where N is a static nested class
         //or "@Ann p.T.N" or "@Ann p.T.I", where I is an inner class
         //and p is a package is not valid:
@@ -257,6 +257,7 @@ public class TypeAnnosOnMemberReferenceTest {
                 package p;
 
                 import java.lang.annotation.*;
+                import java.util.function.IntFunction;
                 import java.util.function.Supplier;
 
                 class Test {
@@ -267,14 +268,69 @@ public class TypeAnnosOnMemberReferenceTest {
                     Supplier<N> f1 = @Ann1 Test.N::new;
                     Supplier<N> f2 = @Ann1 p.Test.N::new;
                     Supplier<I> f3 = @Ann1 p.Test.I::new;
+                    IntFunction<N[]> a1 = @Ann1 Test.N[]::new;
+                    IntFunction<N[]> a2 = @Ann1 p.Test.N[]::new;
+                    IntFunction<I[]> a3 = @Ann1 p.Test.I[]::new;
                 }
                 """);
 
         List<String> expected = List.of(
-            "Test.java:11:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
             "Test.java:12:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
-            "Test.java:13:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, p.Test.@p.Test.Ann1 I",
-            "3 errors"
+            "Test.java:13:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
+            "Test.java:14:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, p.Test.@p.Test.Ann1 I",
+            "Test.java:15:33: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
+            "Test.java:16:33: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
+            "Test.java:17:33: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, p.Test.@p.Test.Ann1 I",
+            "6 errors"
+        );
+
+        List<String> log =
+            new JavacTask(tb)
+                .outdir(classes)
+                .options("-XDrawDiagnostics")
+                .files(tb.findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.checkEqual(expected, log);
+    }
+
+    @Test //JDK-8391567
+    public void testDeclarationAnnotation() throws Exception {
+        //annotating "@Ann1 T.N" where N is a static nested class
+        //or "@Ann p.T.N" or "@Ann p.T.I", where I is an inner class
+        //and p is a package is not valid:
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        tb.writeJavaFiles(src,
+                """
+                package p;
+
+                import java.lang.annotation.*;
+                import java.util.function.IntFunction;
+                import java.util.function.Supplier;
+
+                class Test {
+                    @interface Ann1 {}
+                    static class N {}
+                    Supplier<N> f1 = @Ann1 N::new;
+                    Supplier<N> f2 = p.Test.@Ann1 N::new;
+                    IntFunction<N[]> a1 = @Ann1 N[]::new;
+                    IntFunction<N[]> a2 = p.Test.@Ann1 N[]::new;
+                }
+                """);
+
+        List<String> expected = List.of(
+            "Test.java:10:22: compiler.err.annotation.type.not.applicable.to.type: p.Test.Ann1",
+            "Test.java:11:29: compiler.err.annotation.type.not.applicable.to.type: p.Test.Ann1",
+            "Test.java:12:27: compiler.err.annotation.type.not.applicable.to.type: p.Test.Ann1",
+            "Test.java:13:34: compiler.err.annotation.type.not.applicable.to.type: p.Test.Ann1",
+            "4 errors"
         );
 
         List<String> log =
