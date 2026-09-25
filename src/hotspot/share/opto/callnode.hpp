@@ -54,7 +54,6 @@ class       AllocateArrayNode;
 class     AbstractLockNode;
 class       LockNode;
 class       UnlockNode;
-class FastLockNode;
 
 //------------------------------StartNode--------------------------------------
 // The method start node
@@ -402,11 +401,11 @@ public:
     verify_input(jvms, arg_idx);
     return in(jvms->argoff() + idx);
   }
-  Node* monitor_box(const JVMState* jvms, uint idx) const {
+  BoxLockNode* monitor_box(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     uint mon_box_idx = jvms->monitor_box_offset(idx);
     assert(jvms->is_monitor_box(mon_box_idx), "not a monitor box offset");
-    return in(mon_box_idx);
+    return in(mon_box_idx)->as_BoxLock();
   }
   Node* monitor_obj(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
@@ -432,10 +431,10 @@ public:
   }
   void grow_stack(JVMState* jvms, uint grow_by);
   // Handle monitor stack
-  void push_monitor( const FastLockNode *lock );
-  void pop_monitor ();
-  Node *peek_monitor_box() const;
-  Node *peek_monitor_obj() const;
+  void push_monitor(BoxLockNode* box, Node* obj);
+  void pop_monitor();
+  BoxLockNode* peek_monitor_box() const;
+  Node*        peek_monitor_obj() const;
   // Peek Operand Stacks, JVMS 2.6.2
   Node* peek_operand(uint off = 0) const;
 
@@ -822,7 +821,7 @@ public:
   // Does this node returns pointer?
   bool returns_pointer() const {
     const TypeTuple* r = tf()->range_sig();
-    return (!tf()->returns_inline_type_as_fields() &&
+    return (!tf()->returns_value_type_as_fields() &&
             r->cnt() > TypeFunc::Parms &&
             r->field_at(TypeFunc::Parms)->isa_ptr());
   }
@@ -916,12 +915,12 @@ public:
       C->add_macro_node(this);
     }
     const TypeTuple *r = tf->range_sig();
-    if (InlineTypeReturnedAsFields &&
+    if (ValueTypeReturnedAsFields &&
         method != nullptr &&
         method->is_method_handle_intrinsic() &&
         r->cnt() > TypeFunc::Parms &&
         r->field_at(TypeFunc::Parms)->isa_oopptr() &&
-        r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_inline_type()) {
+        r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_value_type()) {
       // Make sure this call is processed by PhaseMacroExpand::expand_mh_intrinsic_return
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
@@ -1120,8 +1119,8 @@ public:
     InitialTest,                      // slow-path test (may be constant)
     ALength,                          // array length (or TOP if none)
     ValidLengthTest,
-    InlineType,                       // InlineTypeNode if this is an inline type allocation
-    InitValue,                        // Init value for null-free inline type arrays
+    ValueType,                        // ValueTypeNode if this is a value type allocation
+    InitValue,                        // Init value for null-free value type arrays
     RawInitValue,                     // Same as above but as raw machine word
     ParmLimit
   };
@@ -1133,7 +1132,7 @@ public:
     fields[InitialTest] = TypeInt::BOOL;
     fields[ALength]     = t;  // length (can be a bad length)
     fields[ValidLengthTest] = TypeInt::BOOL;
-    fields[InlineType] = Type::BOTTOM;
+    fields[ValueType] = Type::BOTTOM;
     fields[InitValue] = TypeInstPtr::NOTNULL;
     fields[RawInitValue] = TypeX_X;
 
@@ -1157,7 +1156,7 @@ public:
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                Node *size, Node *klass_node, Node *initial_test,
-               InlineTypeNode* inline_type_node = nullptr);
+               ValueTypeNode* value_type_node = nullptr);
   // Expansion modifies the JVMState, so we need to deep clone it
   virtual bool needs_deep_clone_jvms(Compile* C) { return true; }
   virtual int Opcode() const;
@@ -1224,7 +1223,10 @@ public:
 
   Node* make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem);
 
-  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
+#ifndef PRODUCT
+  ciKlass* allocation_klass() const;
+  virtual void dump_spec(outputStream *st) const;
+#endif // !PRODUCT
 };
 
 //------------------------------AllocateArray---------------------------------
@@ -1307,10 +1309,9 @@ public:
 #endif
   }
   virtual int Opcode() const = 0;
-  Node *   obj_node() const       {return in(TypeFunc::Parms + 0); }
-  Node *   box_node() const       {return in(TypeFunc::Parms + 1); }
-  Node *   fastlock_node() const  {return in(TypeFunc::Parms + 2); }
-  void     set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
+  Node*   obj_node() const       { return in(TypeFunc::Parms + 0); }
+  Node*   box_node() const       { return in(TypeFunc::Parms + 1); }
+  void    set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
 
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
@@ -1347,10 +1348,9 @@ public:
 // High-level lock operation
 //
 // This is a subclass of CallNode because it is a macro node which gets expanded
-// into a code sequence containing a call.  This node takes 3 "parameters":
-//    0  -  object to lock
-//    1 -   a BoxLockNode
-//    2 -   a FastLockNode
+// into a code sequence containing a call.  This node takes two "parameters":
+//    0 - object to lock
+//    1 - a BoxLockNode
 //
 class LockNode : public AbstractLockNode {
   static const TypeFunc* _lock_type_Type;
@@ -1363,12 +1363,12 @@ public:
 
   static void initialize_lock_Type() {
     assert(_lock_type_Type == nullptr, "should be called once");
-    // create input type (domain)
-    const Type **fields = TypeTuple::fields(3);
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
     fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock
-    fields[TypeFunc::Parms+2] = TypeInt::BOOL;         // FastLock
-    const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3,fields);
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
 
     // create result type (range)
     fields = TypeTuple::fields(0);

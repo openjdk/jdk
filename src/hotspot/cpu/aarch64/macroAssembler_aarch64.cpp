@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +28,7 @@
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "ci/ciEnv.hpp"
-#include "ci/ciInlineKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
@@ -2045,7 +2046,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
 
   mov(r0, reg);
-  lea(rscratch1, ExternalAddress((address)b));
+  lea(rscratch1, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // call indirectly to solve generation ordering problem
   lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -2096,7 +2097,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   } else {
     ldr(r0, addr);
   }
-  lea(rscratch1, ExternalAddress((address)b));
+  lea(rscratch1, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // call indirectly to solve generation ordering problem
   lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -2374,36 +2375,36 @@ void MacroAssembler::null_check(Register reg, int offset) {
   }
 }
 
-void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
   assert_different_registers(markword, rscratch2);
-  mov(rscratch2, markWord::inline_type_pattern_mask);
+  mov(rscratch2, markWord::value_type_pattern_mask);
   andr(markword, markword, rscratch2);
-  mov(rscratch2, markWord::inline_type_pattern);
+  mov(rscratch2, markWord::value_type_pattern);
   cmp(markword, rscratch2);
-  br(Assembler::EQ, is_inline_type);
+  br(Assembler::EQ, is_value_type);
 }
 
-void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
   assert_different_registers(tmp, rscratch1);
   if (can_be_null) {
-    cbz(object, not_inline_type);
+    cbz(object, not_value_type);
   }
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   ldr(tmp, Address(object, oopDesc::mark_offset_in_bytes()));
-  mov(rscratch1, is_inline_type_mask);
+  mov(rscratch1, is_value_type_mask);
   andr(tmp, tmp, rscratch1);
   cmp(tmp, rscratch1);
-  br(Assembler::NE, not_inline_type);
+  br(Assembler::NE, not_value_type);
 }
 
-void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free_inline_type) {
+void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
-  tbnz(flags, ResolvedFieldEntry::is_null_free_inline_type_shift, is_null_free_inline_type);
+  tbnz(flags, ResolvedFieldEntry::is_null_free_value_type_shift, is_null_free_value_type);
 }
 
-void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type) {
+void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
-  tbz(flags, ResolvedFieldEntry::is_null_free_inline_type_shift, not_null_free_inline_type);
+  tbz(flags, ResolvedFieldEntry::is_null_free_value_type_shift, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
@@ -3440,7 +3441,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   b(done);
 
   bind(tagged);
-  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
+  static_assert(JNIHandles::TypeTag::weak_global == 0b1);
   tbnz(value, 0, weak_tagged);    // Test for weak tag.
 
   // Resolve global handle
@@ -3465,7 +3466,7 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 
 #ifdef ASSERT
   {
-    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
+    static_assert(JNIHandles::TypeTag::global == 0b10);
     Label valid_global_tag;
     tbnz(value, 1, valid_global_tag); // Test for global tag
     stop("non global jobject using resolve_global_jobject");
@@ -3487,7 +3488,7 @@ void MacroAssembler::stop(const char* msg) {
   // load msg into r0 so we can access it from the signal handler
   // ExternalAddress enables saving and restoring via the code cache
   lea(c_rarg0, ExternalAddress((address) str));
-  dcps1(0xdeae);
+  udf(NativeInstruction::udf_stop);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
@@ -5318,12 +5319,6 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
   cmpw(tmp1, tmp2);
 }
 
-void MacroAssembler::load_prototype_header(Register dst, Register src) {
-  Register tmp = (dst == rscratch1) ? rscratch2 : rscratch1;
-  load_klass(dst, src, tmp);
-  ldr(dst, Address(dst, Klass::prototype_header_offset()));
-}
-
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   // FIXME: Should this be a store release?  concurrent gcs assumes
   // klass length is valid if klass field is not null.
@@ -5494,12 +5489,6 @@ MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base,
     }
   }
 
-  const uint64_t shifted_base =
-    (uint64_t)base >> shift;
-  if ((shifted_base & 0xffff0000ffffffff) == 0) {
-    return KlassDecodeMovk;
-  }
-
   return KlassDecodeFallback;
 }
 
@@ -5543,14 +5532,6 @@ void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Regi
   case KlassDecodeXor:
     eor(dst, src, (uint64_t)base);
     lsr(dst, dst, shift);
-    break;
-
-  case KlassDecodeMovk:
-    if (shift != 0) {
-      ubfx(dst, src, shift, 32);
-    } else {
-      movw(dst, src);
-    }
     break;
 
   case KlassDecodeFallback: {
@@ -5608,16 +5589,6 @@ void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Regi
     lsl(dst, src, shift);
     eor(dst, dst, (uint64_t)base);
     break;
-
-  case KlassDecodeMovk: { // 1-3 instructions
-    const uint64_t shifted_base =
-      (uint64_t)base >> shift;
-
-    if (dst != src) movw(dst, src);
-    movk(dst, shifted_base >> 32, 32);
-    lsl(dst, dst, shift);
-    break;
-  }
 
   case KlassDecodeFallback: { // 3-4 instructions
     mov(tmp, base);
@@ -5696,20 +5667,20 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
 }
 
 void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register inline_layout_info) {
+                                     Register value_field_layout_info) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
-void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
-  ldr(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
-  ldrw(offset, Address(offset, InlineKlass::payload_offset_offset()));
+void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  ldr(offset, Address(value_klass, ValueKlass::adr_members_offset()));
+  ldrw(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
-void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass) {
+void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? rscratch1 : data;
-  payload_offset(inline_klass, offset);
+  payload_offset(value_klass, offset);
   if (data == oop) {
     add(data, data, offset);
   } else {
@@ -5831,9 +5802,9 @@ void MacroAssembler::verify_tlab() {
 #endif
 }
 
-void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
   assert_different_registers(holder_klass, index, layout_info);
-  InlineLayoutInfo array[2];
+  ValueFieldLayoutInfo array[2];
   int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
   if (is_power_of_2(size)) {
     lsl(index, index, log2i_exact(size)); // Scale index by power of 2
@@ -5841,8 +5812,8 @@ void MacroAssembler::inline_layout_info(Register holder_klass, Register index, R
     mov(layout_info, size);
     mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
   }
-  ldr(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
-  add(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  ldr(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
+  add(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
   lea(layout_info, Address(layout_info, index));
 }
 
@@ -6071,6 +6042,7 @@ void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair
     ldr(rscratch1, Address(sp, sp_inc_offset));
     add(sp, sp, rscratch1);
     ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
+    authenticate_return_address();
   } else {
     remove_frame(initial_framesize);
   }
@@ -6377,22 +6349,43 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 }
 
 // Compare Strings
-
-// For Strings we're passed the address of the first characters in a1
-// and a2 and the length in cnt1.
-// There are two implementations.  For arrays >= 8 bytes, all
-// comparisons (including the final one, which may overlap) are
-// performed 8 bytes at a time.  For strings < 8 bytes, we compare a
-// halfword, then a short, and then a byte.
+//
+// Inputs:
+//   a1, a2  - byte addresses of the first elements
+//   cnt1    - byte length
+//
+// Invariants and memory contract:
+//   - cnt1 is the number of bytes to compare.
+//   - The 8 bytes immediately preceding a1/a2 are readable
+//     (Java object header guarantee). This allows a pre-read at
+//     (base + len - 8) even when len < 8.
+//   - No read is performed beyond (base + len - 1).
+//
+// Strategy:
+//   1) Preload the final 8-byte window at (base + len - 8).
+//      This covers the last up to 8 bytes and serves as a fast-fail check.
+//   2) For len <= 8, handle entirely in SMALL using shift/mask logic.
+//   3) For medium sizes (9..23) and post-loop remainders,
+//      TAIL15 compares head and tail windows with overlap as needed.
+//   4) For larger inputs (>= 24), MAINLOOP processes 16-byte blocks
+//      using LDP + CMP/CCMP to allow a single branch on inequality.
+//      Any remaining <16 bytes fall back to TAIL15.
+//
+// SMALL path:
+//   For lengths <= 8, the preloaded 8-byte window is shifted
+//   so that only the valid low-order bytes participate in comparison.
 
 void MacroAssembler::string_equals(Register a1, Register a2,
-                                   Register result, Register cnt1)
+                                   Register result, Register cnt1,
+                                   Register a1_hi, Register a2_hi)
 {
-  Label SAME, DONE, SHORT, NEXT_WORD;
-  Register tmp1 = rscratch1;
-  Register tmp2 = rscratch2;
+  Label MAINLOOP, TAIL15, SMALL, END, SMALL2;
+  Register a1_low = rscratch1;
+  Register a2_low = rscratch2;
 
-  assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
+  assert_different_registers(a1, a2, cnt1, a1_hi, a2_hi, a1_low, a2_low);
+  assert(result != a1, "result must not alias a1");
+  assert(result != a2, "result must not alias a2");
 
 #ifndef PRODUCT
   {
@@ -6402,62 +6395,71 @@ void MacroAssembler::string_equals(Register a1, Register a2,
   }
 #endif
 
-  mov(result, false);
+  subs(cnt1, cnt1, 8);
+  ldr(a1_low, Address(a1, cnt1));       // Load last 8 bytes from a1
+  ldr(a2_low, Address(a2, cnt1));       // Load last 8 bytes from a2
+  br(Assembler::LE, SMALL);
+  subs(cnt1, cnt1, 16);
+  br(Assembler::LT, TAIL15);
+  cmp(a1_low, a2_low);
+  br(Assembler::NE, END);
+  // ---- MAINLOOP: process two 8B via ldp/ccmp ----
+  bind(MAINLOOP);
+    ldp(a1_low, a1_hi, Address(post(a1,16)));       // A1: low/high 8B
+    ldp(a2_low, a2_hi, Address(post(a2,16)));       // A2: low/high 8B
+    cmp(a1_low, a2_low);
+    ccmp(a1_hi, a2_hi, /*nzcv=*/0, Assembler::EQ);
+    br(Assembler::NE, END);
+    subs(cnt1, cnt1, 16);
+    br(Assembler::HS, MAINLOOP);           // while remaining >= 16
 
-  // Check for short strings, i.e. smaller than wordSize.
-  subs(cnt1, cnt1, wordSize);
-  br(Assembler::LT, SHORT);
-  // Main 8 byte comparison loop.
-  bind(NEXT_WORD); {
-    ldr(tmp1, Address(post(a1, wordSize)));
-    ldr(tmp2, Address(post(a2, wordSize)));
-    subs(cnt1, cnt1, wordSize);
-    eor(tmp1, tmp1, tmp2);
-    cbnz(tmp1, DONE);
-  } br(GT, NEXT_WORD);
-  // Last longword.  In the case where length == 4 we compare the
-  // same longword twice, but that's still faster than another
-  // conditional branch.
-  // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
-  // length == 4.
-  ldr(tmp1, Address(a1, cnt1));
-  ldr(tmp2, Address(a2, cnt1));
-  eor(tmp2, tmp1, tmp2);
-  cbnz(tmp2, DONE);
-  b(SAME);
+  adds(zr, cnt1, 16);           // If cnt1 == -16, skip tail handling.
+  br(Assembler::EQ, END);
 
-  bind(SHORT);
-  Label TAIL03, TAIL01;
+  // ---- TAIL15: medium sizes and post-loop tail.
+  // Entered when (initial len < 24) or when MAINLOOP leaves a <16B tail.
+  // At entry, cnt1 is in [-15 .. -1] ----
+  bind(TAIL15);
+    // cnt1 := remaining length - 8 ; if remaining lengths <= 8 goto SMALL2
+    adds(cnt1, cnt1, 8);
+    br(Assembler::LE, SMALL2);
+    cmp(a1_low, a2_low);
 
-  tbz(cnt1, 2, TAIL03); // 0-7 bytes left.
-  {
-    ldrw(tmp1, Address(post(a1, 4)));
-    ldrw(tmp2, Address(post(a2, 4)));
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  bind(TAIL03);
-  tbz(cnt1, 1, TAIL01); // 0-3 bytes left.
-  {
-    ldrh(tmp1, Address(post(a1, 2)));
-    ldrh(tmp2, Address(post(a2, 2)));
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  bind(TAIL01);
-  tbz(cnt1, 0, SAME); // 0-1 bytes left.
-    {
-    ldrb(tmp1, a1);
-    ldrb(tmp2, a2);
-    eorw(tmp1, tmp1, tmp2);
-    cbnzw(tmp1, DONE);
-  }
-  // Arrays are equal.
-  bind(SAME);
-  mov(result, true);
+    // We have more than 8 bytes unchecked and 8 bytes from end previously read
+    // One ldp can cover all remained bytes
+    ldp(a1_low, a1_hi, Address(a1));         // A1 high 8B
+    ldp(a2_low, a2_hi, Address(a2));         // A2 high 8B
+    ccmp(a1_hi, a2_hi, 0, Assembler::EQ);
+    ccmp(a1_low, a2_low, /*nzcv=*/0, Assembler::EQ);
+    b(END);
+  // Tail <= 16B case: compare head 8 bytes and tail 8 bytes (tail 8 bytes was preloaded).
+  bind(SMALL2);
+    ldr(a1_hi, Address(a1));
+    ldr(a2_hi, Address(a2));
+    cmp(a1_low, a2_low);
+    ccmp(a1_hi, a2_hi, /*nzcv=*/0, Assembler::EQ);
+    b(END);
+  // For lengths <= 8 we avoid 4/2/1-byte tail branches and extra loads.
+  // Compute shift = (8 - len) * 8 and right-shift the preloaded 8B window
+  // so that only the valid low-order len bytes remain for comparison.
+  //
+  // The load at (base + len - 8) produces an 8B window ending at the last
+  // string byte. When len < 8, the leading bytes in this window are
+  // outside the logical string. On little-endian AArch64, lower-address
+  // bytes occupy the least significant bits of the 64-bit word, so a
+  // logical right shift cleanly discards those unused prefix bytes.
+  //
+  // a2_hi is reused as a temporary register holding the shift amount.
+  bind(SMALL);
+    neg(a2_hi, cnt1, LSL, 3);
+    lsrv(a1_low, a1_low, a2_hi);
+    lsrv(a2_low, a2_low, a2_hi);
+    adds(zr, cnt1, 8);         // Prepare flags for length==0 handling
+    ccmp(a1_low, a2_low, /*nzcv=*/4, Assembler::NE);
 
-  // That's it.
-  bind(DONE);
+  bind(END);
+    cset(result, Assembler::EQ);
+
   BLOCK_COMMENT("} string_equals");
 }
 
@@ -7015,7 +7017,7 @@ void MacroAssembler::get_thread(Register dst) {
 #ifdef COMPILER2
 // C2 compiled method's prolog code
 // Moved here from aarch64.ad to support Valhalla code below
-void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+void MacroAssembler::verified_entry(Compile* C, int sp_inc, bool do_stack_bang) {
   if (C->clinit_barrier_on_entry()) {
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
 
@@ -7032,8 +7034,9 @@ void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   }
 
   int bangsize = C->output()->bang_size_in_bytes();
-  if (C->output()->need_stack_bang(bangsize))
+  if (do_stack_bang && C->output()->need_stack_bang(bangsize)) {
     generate_stack_overflow_check(bangsize);
+  }
 
   // n.b. frame size includes space for return pc and rfp
   const long framesize = C->output()->frame_size_in_bytes();
@@ -7042,20 +7045,16 @@ void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   if (C->needs_stack_repair()) {
     save_stack_increment(sp_inc, framesize);
   }
-
-  if (VerifyStackAtCalls) {
-    Unimplemented();
-  }
 }
 #endif // COMPILER2
 
-int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
-  assert(InlineTypeReturnedAsFields, "Inline types should never be returned as fields");
-  // An inline type might be returned. If fields are in registers we
-  // need to allocate an inline type instance and initialize it with
+int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
+  assert(ValueTypeReturnedAsFields, "Value types should never be returned as fields");
+  // A value type might be returned. If fields are in registers we
+  // need to allocate a value type instance and initialize it with
   // the value of the fields.
   Label skip;
-  // We only need a new buffered inline type if a new one is not returned
+  // We only need a new buffered value type if a new one is not returned
   tbz(r0, 0, skip);
   int call_offset = -1;
 
@@ -7068,21 +7067,21 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
   // e.g. object size is always not zero, sometimes it's constant; storing klass ptr after
   // allocating is not necessary if vk != nullptr, etc.
   Label slow_case;
-  // 1. Try to allocate a new buffered inline instance either from TLAB or eden space
+  // 1. Try to allocate a new buffered value instance either from TLAB or eden space
   mov(r0_preserved, r0); // save r0 for slow_case since *_allocate may corrupt it when allocation failed
 
   if (vk != nullptr) {
     // Called from C1, where the return type is statically known.
-    movptr(klass, (intptr_t)vk->get_InlineKlass());
+    movptr(klass, (intptr_t)vk->get_ValueKlass());
     jint lh = vk->layout_helper();
-    assert(lh != Klass::_lh_neutral_value, "inline class in return type must have been resolved");
+    assert(lh != Klass::_lh_neutral_value, "value class in return type must have been resolved");
     if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
       tlab_allocate(r0, noreg, lh, tmp1, tmp2, slow_case);
     } else {
       b(slow_case);
     }
   } else {
-    // Call from interpreter. R0 contains ((the InlineKlass* of the return type) | 0x01)
+    // Call from interpreter. R0 contains ((the ValueKlass* of the return type) | 0x01)
     andr(klass, r0, -2);
     if (UseTLAB) {
       ldrw(tmp2, Address(klass, Klass::layout_helper_offset()));
@@ -7094,13 +7093,13 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
     }
   }
   if (UseTLAB) {
-    // 2. Initialize buffered inline instance header
+    // 2. Initialize buffered value instance header
     Register buffer_obj = r0;
     if (UseCompactObjectHeaders) {
       ldr(rscratch1, Address(klass, Klass::prototype_header_offset()));
       str(rscratch1, Address(buffer_obj, oopDesc::mark_offset_in_bytes()));
     } else {
-      mov(rscratch1, (intptr_t)markWord::inline_type_prototype().value());
+      mov(rscratch1, (intptr_t)markWord::value_type_prototype().value());
       str(rscratch1, Address(buffer_obj, oopDesc::mark_offset_in_bytes()));
       store_klass_gap(buffer_obj, zr);
       if (vk == nullptr) {
@@ -7110,12 +7109,12 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
       store_klass(buffer_obj, klass, rscratch1);
       klass = tmp1;
     }
-    // 3. Initialize its fields with an inline class specific handler
+    // 3. Initialize its fields with a value class specific handler
     if (vk != nullptr) {
       far_call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
     } else {
-      ldr(tmp1, Address(klass, InlineKlass::adr_members_offset()));
-      ldr(tmp1, Address(tmp1, InlineKlass::pack_handler_offset()));
+      ldr(tmp1, Address(klass, ValueKlass::adr_members_offset()));
+      ldr(tmp1, Address(tmp1, ValueKlass::pack_handler_offset()));
       blr(tmp1);
     }
 
@@ -7126,16 +7125,16 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
     DEBUG_ONLY(should_not_reach_here());
   }
   bind(slow_case);
-  // We failed to allocate a new inline type, fall back to a runtime
+  // We failed to allocate a new value type, fall back to a runtime
   // call. Some oop field may be live in some registers but we can't
   // tell. That runtime call will take care of preserving them
   // across a GC if there's one.
   mov(r0, r0_preserved);
 
   if (from_interpreter) {
-    super_call_VM_leaf(SharedRuntime::store_inline_type_fields_to_buf_entry());
+    super_call_VM_leaf(SharedRuntime::store_value_type_fields_to_buf_entry());
   } else {
-    far_call(RuntimeAddress(SharedRuntime::store_inline_type_fields_to_buf_entry()));
+    far_call(RuntimeAddress(SharedRuntime::store_value_type_fields_to_buf_entry()));
     call_offset = offset();
   }
   membar(Assembler::StoreStore);
@@ -7205,15 +7204,24 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
   return true;
 }
 
-// Calculate the extra stack space required for packing or unpacking inline
+// Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer
-int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
   int sp_inc = args_on_stack * VMRegImpl::stack_slot_size;
   sp_inc = align_up(sp_inc, StackAlignmentInBytes);
   assert(sp_inc > 0, "sanity");
 
-  // Save a copy of the FP and LR here for deoptimization patching and frame walking
+  // Save a copy of the FP and LR here for deoptimization patching and frame
+  // walking. See remove_frame(). Sign LR #1 before spilling. Strip afterwards
+  // so build_frame() can use its normal path (it expects a raw LR and signs
+  // before spilling LR #2). Signing LR #2 is not strictly necessary. Reusing
+  // the signed LR #1 (PACIAZ, modifier zero) or storing a raw LR #2 (layout
+  // placeholder) would both work, but would need a special build_frame() path
+  // for stack repair, which adds code complexity. Current approach (strip +
+  // re-sign) keeps one generic build_frame().
+  protect_return_address();
   stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
+  strip_return_address();
 
   // Adjust the stack pointer. This will be repaired on return by MacroAssembler::remove_frame
   if (sp_inc < (1 << 9)) {
@@ -7226,10 +7234,10 @@ int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
   return sp_inc + 2 * wordSize;  // Account for the FP/LR space
 }
 
-// Read all fields from an inline type oop and store the values in registers/stack slots
-bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
-                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
-                                          RegState reg_state[]) {
+// Read all fields from a value type oop and store the values in registers/stack slots
+bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                                         VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                                         RegState reg_state[]) {
   assert(sig->at(sig_index)._bt == T_VOID, "should be at end delimiter");
   assert(from->is_valid(), "source must be valid");
   bool progress = false;
@@ -7250,7 +7258,7 @@ bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, in
 #endif
 
   Register fromReg = noreg;
-  ScalarizedInlineArgsStream stream(sig, sig_index, to, to_count, to_index, true);
+  ScalarizedValueArgsStream stream(sig, sig_index, to, to_count, to_index, true);
   bool done = true;
   bool mark_done = true;
   VMReg toReg;
@@ -7290,7 +7298,7 @@ bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, in
         fromReg = tmp1;
       }
       if (null_check) {
-        // Nullable inline type argument, emit null check
+        // Nullable value type argument, emit null check
         cbz(fromReg, L_null);
       }
     }
@@ -7372,10 +7380,10 @@ bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, in
   return done;
 }
 
-// Pack fields back into an inline type oop
-bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
-                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
-                                        RegState reg_state[], Register val_array) {
+// Pack fields back into a value type oop
+bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                                       VMRegPair* from, int from_count, int& from_index, VMReg to,
+                                       RegState reg_state[], Register val_array) {
   assert(sig->at(sig_index)._bt == T_METADATA, "should be at delimiter");
   assert(to->is_valid(), "destination must be valid");
 
@@ -7406,7 +7414,7 @@ bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int&
     val_obj = val_obj_tmp;
   }
 
-  ScalarizedInlineArgsStream stream(sig, sig_index, from, from_count, from_index);
+  ScalarizedValueArgsStream stream(sig, sig_index, from, from_count, from_index);
   VMReg fromReg;
   BasicType bt;
   Label L_null;
@@ -7416,7 +7424,7 @@ bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int&
 
     int off = sig->at(stream.sig_index())._offset;
     if (off == -1) {
-      // Nullable inline type argument, emit null check
+      // Nullable value type argument, emit null check
       Label L_notNull;
       if (fromReg->is_stack()) {
         int ld_off = fromReg->reg2stack() * VMRegImpl::stack_slot_size;
@@ -7920,13 +7928,13 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
 
   // Try to lock. Transition lock bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-  orr(mark, mark, markWord::unlocked_value);
+  orr(mark, mark, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
-    // Mask inline_type bit such that we go to the slow path if object is an inline type
-    andr(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+    // Mask value_type bit such that we go to the slow path if object is a value type
+    andr(mark, mark, ~((int) markWord::value_type_bit_in_place));
   }
 
-  eor(t, mark, markWord::unlocked_value);
+  eor(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword, memory_order_acquire);
   br(Assembler::NE, slow);
 
@@ -7985,16 +7993,16 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   tbnz(mark, log2i_exact(markWord::monitor_value), push_and_slow);
 
 #ifdef ASSERT
-  // Check header not unlocked (0b01).
+  // Check header not unlocked / lock-neutral (0b01).
   Label not_unlocked;
-  tbz(mark, log2i_exact(markWord::unlocked_value), not_unlocked);
+  tbz(mark, log2i_exact(markWord::lock_neutral_value), not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif
 
   // Try to unlock. Transition lock bits 0b00 => 0b01
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-  orr(t, mark, markWord::unlocked_value);
+  orr(t, mark, markWord::lock_neutral_value);
   cmpxchg(obj, mark, t, Assembler::xword, memory_order_release);
   br(Assembler::EQ, unlocked);
 

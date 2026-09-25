@@ -210,7 +210,7 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
 }
 
 bool oopDesc::is_instance()         const { return klass()->is_instance_klass();             }
-bool oopDesc::is_inline()           const { return klass()->is_inline_klass();               }
+bool oopDesc::is_value()            const { return klass()->is_value_klass();                }
 bool oopDesc::is_instanceRef()      const { return klass()->is_reference_instance_klass();   }
 bool oopDesc::is_stackChunk()       const { return klass()->is_stack_chunk_instance_klass(); }
 bool oopDesc::is_array()            const { return klass()->is_array_klass();                }
@@ -229,7 +229,7 @@ bool oopDesc::is_array_with_oops() const {
   return is_refArray() || FlatArrayKlass::cast(klass())->contains_oops();
 }
 
-bool oopDesc::is_inline_type() const { return mark().is_inline_type(); }
+bool oopDesc::is_value_type() const { return mark().is_value_type(); }
 
 template<typename T>
 T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
@@ -271,14 +271,6 @@ inline void   oopDesc::float_field_put(int offset, jfloat value)    { *field_add
 
 inline jdouble oopDesc::double_field(int offset) const              { return *field_addr<jdouble>(offset);  }
 inline void    oopDesc::double_field_put(int offset, jdouble value) { *field_addr<jdouble>(offset) = value; }
-
-bool oopDesc::is_locked() const {
-  return mark().is_locked();
-}
-
-bool oopDesc::is_unlocked() const {
-  return mark().is_unlocked();
-}
 
 bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
@@ -404,25 +396,21 @@ bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
   return obj == nullptr || obj->klass()->is_subtype_of(klass);
 }
 
-intptr_t oopDesc::identity_hash() {
-  // Fast case; if the object is unlocked and the hash value is set, no locking is needed
+intptr_t oopDesc::identity_hash(Thread* current) {
   // Note: The mark must be read into local variable to avoid concurrent updates.
   markWord mrk = mark();
-  if (mrk.is_unlocked() && !mrk.has_no_hash()) {
+  assert(!mrk.is_marked(), "should never be marked");
+
+  if (mrk.has_hash()) {
     return mrk.hash();
-  } else if (mrk.is_marked()) {
-    return mrk.hash();
-  } else {
-    return slow_identity_hash();
   }
+
+  return slow_identity_hash(mrk, current == nullptr ? Thread::current() : current);
 }
 
-// This checks fast simple case of whether the oop has_no_hash,
-// to optimize JVMTI table lookup.
-bool oopDesc::fast_no_hash_check() {
+bool oopDesc::has_identity_hash() {
   markWord mrk = mark_acquire();
-  assert(!mrk.is_marked(), "should never be marked");
-  return mrk.is_unlocked() && mrk.has_no_hash();
+  return mrk.has_hash();
 }
 
 bool oopDesc::mark_must_be_preserved() const {

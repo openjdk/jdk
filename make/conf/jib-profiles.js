@@ -416,6 +416,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
+                "--enable-deprecated-ports",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
                 "SETFILE=/usr/bin/SetFile"

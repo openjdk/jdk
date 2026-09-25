@@ -94,6 +94,9 @@ void ShenandoahGenerationalControlThread::run_service() {
   notify_gc_waiters();
   notify_alloc_failure_waiters();
   set_gc_mode(stopped);
+
+  // We're done writing GC stats, so print them here.
+  _heap->print_gc_stats_at_exit();
 }
 
 void ShenandoahGenerationalControlThread::stop_service() {
@@ -167,9 +170,8 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 
   heuristics->log_trigger("Handle Allocation Failure");
 
-  // Do not bother with degenerated cycle if old generation evacuation failed or if humongous allocation failed
-  if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() &&
-      !old_gen_evacuation_failed && request.cause != GCCause::_shenandoah_humongous_allocation_failure) {
+  // Do not bother with degenerated cycle if old generation evacuation failed
+  if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() && !old_gen_evacuation_failed) {
     heuristics->record_allocation_failure_gc();
     _heap->shenandoah_policy()->record_alloc_failure_to_degenerated(_degen_point);
     return stw_degenerated;
@@ -184,7 +186,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
   ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
   request.generation = _heap->global_generation();
-  global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
+  global_heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
   global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
@@ -218,10 +220,12 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
     LogStream ls(lt);
     AgeTable young_region_ages(false);
     for (uint i = 0; i < _heap->num_regions(); ++i) {
-      const ShenandoahHeapRegion* r = _heap->get_region(i);
-      if (r->is_young()) {
-        young_region_ages.add(r->age(), r->get_live_data_words());
+      if (!_heap->is_region_young(i)) {
+        continue;
       }
+
+      const ShenandoahHeapRegion* r = _heap->get_region(i);
+      young_region_ages.add(r->age(), r->get_live_data_words());
     }
 
     ls.print("Young regions: ");

@@ -34,7 +34,7 @@
 //
 // REFERENCE : This layout uses a pointer to a heap allocated instance (no flattening).
 //             When used, field_flags().is_flat() is false . The field can be nullable or
-//             null-restricted, in the later case, field_flags().is_null_free_inline_type() is true.
+//             null-restricted, in the later case, field_flags().is_null_free_value_type() is true.
 //             In case of a null-restricted field, putfield  and putstatic  must perform a null-check
 //             before writing a new value. Still for null-restricted fields, if getfield reads a null pointer
 //             from the receiver, it means that the field was not initialized yet, and getfield must substitute

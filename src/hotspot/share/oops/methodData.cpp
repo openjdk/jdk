@@ -1703,6 +1703,14 @@ bool MethodData::profile_parameters_jsr292_only() {
   return profile_parameters_flag() == type_profile_jsr292;
 }
 
+bool MethodData::profile_array_accesses() {
+  return COMPILER2_PRESENT(UseArrayLoadStoreProfile ||) TypeProfileLevel > 0;
+}
+
+bool MethodData::profile_acmp() {
+  return COMPILER2_PRESENT(UseACmpProfile ||) TypeProfileLevel > 0;
+}
+
 bool MethodData::profile_all_parameters() {
   return profile_parameters_flag() == type_profile_all;
 }

@@ -13,7 +13,6 @@ Link	America/Noronha		Brazil/DeNoronha
 Link	America/Sao_Paulo	Brazil/East
 Link	America/Manaus		Brazil/West
 Link	Europe/Brussels		CET
-Link	America/Chicago		CST6CDT
 Link	America/Halifax		Canada/Atlantic
 Link	America/Winnipeg	Canada/Central
 Link	America/Toronto		Canada/Eastern
@@ -27,7 +26,6 @@ Link	Pacific/Easter		Chile/EasterIsland
 Link	America/Havana		Cuba
 Link	Europe/Athens		EET
 Link	America/Panama		EST
-Link	America/New_York	EST5EDT
 Link	Africa/Cairo		Egypt
 Link	Europe/Dublin		Eire
 Link	Etc/GMT			Etc/GMT+0
@@ -53,7 +51,6 @@ Link	Pacific/Kwajalein	Kwajalein
 Link	Africa/Tripoli		Libya
 Link	Europe/Brussels		MET
 Link	America/Phoenix		MST
-Link	America/Denver		MST7MDT
 Link	America/Tijuana		Mexico/BajaNorte
 Link	America/Mazatlan	Mexico/BajaSur
 Link	America/Mexico_City	Mexico/General
@@ -251,6 +248,5 @@ Link	Atlantic/Faroe		Atlantic/Faeroe
 Link	Europe/Kyiv		Europe/Kiev
 Link	Asia/Nicosia		Europe/Nicosia
 Link	Pacific/Honolulu	HST
-Link	America/Los_Angeles	PST8PDT
 Link	Pacific/Guadalcanal	Pacific/Ponape	#= Pacific/Pohnpei
 Link	Pacific/Port_Moresby	Pacific/Truk	#= Pacific/Chuuk

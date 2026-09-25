@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,9 +505,9 @@ class StubGenerator: public StubCodeGenerator {
     // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
     // n.b. this assumes Java returns an integral result in r0
     // and a floating result in j_farg0
-    // All of j_rargN may be used to return inline type fields so be careful
+    // All of j_rargN may be used to return value type fields so be careful
     // not to clobber those.
-    // SharedRuntime::generate_buffered_inline_type_adapter() knows the register
+    // SharedRuntime::generate_buffered_value_type_adapter() knows the register
     // assignment of Rresult below.
     Register Rresult = r14, Rresult_type = r15;
     __ ldr(Rresult, result);
@@ -575,13 +576,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // handle return types different from T_INT
     __ BIND(check_prim);
-    if (InlineTypeReturnedAsFields) {
+    if (ValueTypeReturnedAsFields) {
       // Check for scalarized return value
       __ tbz(r0, 0, is_long);
       // Load pack handler address
       __ andr(rscratch1, r0, -2);
-      __ ldr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
-      __ ldr(rscratch1, Address(rscratch1, InlineKlass::pack_handler_jobject_offset()));
+      __ ldr(rscratch1, Address(rscratch1, ValueKlass::adr_members_offset()));
+      __ ldr(rscratch1, Address(rscratch1, ValueKlass::pack_handler_jobject_offset()));
       __ blr(rscratch1);
       __ b(exit);
     }
@@ -2621,10 +2622,10 @@ class StubGenerator: public StubCodeGenerator {
     __ cbnz(rscratch2, L_failed);
 
     if (Arguments::is_valhalla_enabled()) {
-      // Check for flat inline type array -> return -1
+      // Check for flat value type array -> return -1
       __ test_flat_array_oop(src, rscratch2, L_failed);
 
-      // Check for null-free (non-flat) inline type array -> handle as object array
+      // Check for null-free (non-flat) value type array -> handle as object array
       __ test_null_free_array_oop(src, rscratch2, L_objArray);
     }
 
@@ -5075,6 +5076,119 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
 
     __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
+    __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  void store_keccak_state(const Register a[], Register state) {
+    int i;
+
+    for (i = 0; i < 24; i += 2) {
+      __ stp(a[i], a[i + 1], Address(state, i * wordSize));
+    }
+    __ str(a[i], Address(state, i * wordSize));
+  }
+
+  void load_keccak_state(const Register a[], Register state) {
+    int i;
+
+    for (i = 0; i < 24; i += 2) {
+      __ ldp(a[i], a[i + 1], Address(state, i * wordSize));
+    }
+    __ ldr(a[i], Address(state, i * wordSize));
+  }
+
+  // Inputs:
+  //   c_rarg0   - long[]  state0
+  //   c_rarg1   - long[]  state1
+  address generate_double_keccak_gpr() {
+    StubId stub_id = StubId::stubgen_double_keccak_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    // Implements the double_keccak() method of the
+    // sun.secyrity.provider.SHA3Parallel class
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+
+    Register state0 = c_rarg0;
+    Register state1 = c_rarg1;
+
+    // use r3.r17,r19..r28 to keep a0..a24.
+    // a0..a24 are respective locals from SHA3.java
+    const Register a[25] = {
+        r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
+        r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
+    Register tmp0 = r0, tmp1 = r1, tmp2 = r2;
+
+    Label rounds24_loop_0, rounds24_loop_1;
+
+    const bool can_use_r18 = R18_RESERVED_ONLY(false) NOT_R18_RESERVED(true);
+
+    bool can_use_fp = !PreserveFramePointer;
+
+    __ enter();
+
+    // save the state addresses and callee-saved registers
+    auto saved_regs = RegSet::range(r19, r28) + state0 + state1;
+
+    if (can_use_r18 && can_use_fp) {
+      saved_regs += r18_tls;
+    }
+    __ push(saved_regs, sp);
+
+    // load state0
+    load_keccak_state(a, state0);
+
+    // 24 keccak rounds for state0
+    __ fmovs(v0, 24.0); // float loop counter,
+    __ fmovs(v1, 1.0);  // exact representation
+
+    // load round_constants base
+    __ lea(lr, ExternalAddress((address) _double_keccak_round_consts));
+
+    __ BIND(rounds24_loop_0);
+    keccak_round_gpr(can_use_fp, can_use_r18, lr, a, tmp0, tmp1, tmp2);
+    __ fsubs(v0, v0, v1);
+    __ fcmps(v0, 0.0);
+    __ br(__ NE, rounds24_loop_0);
+
+   // store state0 and load state1
+    __ ldp(state0, state1, Address(sp));
+    store_keccak_state(a, state0);
+    load_keccak_state(a, state1);
+
+    // 24 keccak rounds for state1
+    __ fmovs(v0, 24.0); // reset float loop counter,
+
+    // load round_constants base
+    __ lea(lr, ExternalAddress((address) _double_keccak_round_consts));
+
+    __ BIND(rounds24_loop_1);
+    keccak_round_gpr(can_use_fp, can_use_r18, lr, a, tmp0, tmp1, tmp2);
+    __ fsubs(v0, v0, v1);
+    __ fcmps(v0, 0.0);
+    __ br(__ NE, rounds24_loop_1);
+
+    __ ldr(state1, Address(sp, 8));
+
+    // store state1
+    store_keccak_state(a, state1);
+
+    // restore callee-saved registers
+    __ pop(saved_regs, sp);
+    __ mov(rfp, sp);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 
     // record the stub entry and end
@@ -8811,105 +8925,133 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(a4, a4, tmp2);
   }
 
+  // The Keccak algorithm needs to read and update 25 state registers
+  // (`a[0]` ... `a[24]`) and maintain a round-constant cursor, `rc`.
+  // It also computes up to 5 intermediate values that are all live at the
+  // same time across some part of the computation, `tmp0` ... `tmp4`.
+  // This means that up to 31 independent values are live at once,
+  // preferably stored in registers to avoid having to push and pop
+  // intermediate results. Since `sp` cannot be overwritten this means
+  // that for the best performance every other gpr register needs to be
+  // used to store this data.
+
+  // When `r18` is not reserved and frame pointers need not be preserved then
+  // `rfp` and `r18` are aliased to temporaries `tmp3` and `tmp4`, respectively.
+  // All other register mappings are determined by the emitter.
+
+  // If `r18` or `rfp` cannot be used then 2 of the 31 live register values are
+  // pushed to the stack after their values are consumed and then popped when
+  // needed, reducing the count of values that need to be held live in registers
+  // to 29. This frees the registers associated with the pushed data for reuse
+  // as temporaries.  Luckily, the algorithm consumes two state-lanes,
+  // `a[4]` and `a[9]`, well before all 5 temporary values are live and only
+  // needs to reuse those specific `a[]` lanes after two of these temporary
+  // values, `tmp3` and `tmp4` are no longer live. In this case, the values in
+  // `a[4]` and `a[9]` can be pushed once early during the computation to free
+  // two registers for use as temporaries and popped once later in the
+  // computation when those two temporaries are no longer needed.  In
+  // this case `a[4]` and `a[9]` are aliased to temporaries `tmp3`
+  // and `tmp4`, respectively, for the segment of the computation that lies
+  // between the push and pop.
+
+  // When `r18` and `rfp` are available then `saved_regs` will be empty.  In
+  // this case push/pop will not emit any instructions, introducing no spills.
   void keccak_round_gpr(bool can_use_fp, bool can_use_r18, Register rc,
-                        Register a0, Register a1, Register a2, Register a3, Register a4,
-                        Register a5, Register a6, Register a7, Register a8, Register a9,
-                        Register a10, Register a11, Register a12, Register a13, Register a14,
-                        Register a15, Register a16, Register a17, Register a18, Register a19,
-                        Register a20, Register a21, Register a22, Register a23, Register a24,
-                        Register tmp0, Register tmp1, Register tmp2) {
-    __ eor3(tmp1, a4, a9, a14);
-    __ eor3(tmp0, tmp1, a19, a24); // tmp0 = a4^a9^a14^a19^a24 = c4
-    __ eor3(tmp2, a1, a6, a11);
-    __ eor3(tmp1, tmp2, a16, a21); // tmp1 = a1^a6^a11^a16^a21 = c1
+                        const Register a[], Register tmp0, Register tmp1,
+                        Register tmp2) {
+    __ eor3(tmp1, a[4], a[9], a[14]);
+    __ eor3(tmp0, tmp1, a[19], a[24]); // tmp0 = a4^a9^a14^a19^a24 = c4
+    __ eor3(tmp2, a[1], a[6], a[11]);
+    __ eor3(tmp1, tmp2, a[16], a[21]); // tmp1 = a1^a6^a11^a16^a21 = c1
     __ rax1(tmp2, tmp0, tmp1); // d0
     {
 
       Register tmp3, tmp4;
+      RegSet saved_regs;
+
       if (can_use_fp && can_use_r18) {
         tmp3 = rfp;
         tmp4 = r18_tls;
       } else {
-        tmp3 = a4;
-        tmp4 = a9;
-        __ stp(tmp3, tmp4, __ pre(sp, -16));
+        tmp3 = a[4];
+        tmp4 = a[9];
+        saved_regs = RegSet::of(tmp3, tmp4);
       }
+      __ push(saved_regs, sp);
 
-      __ eor3(tmp3, a0, a5, a10);
-      __ eor3(tmp4, tmp3, a15, a20); // tmp4 = a0^a5^a10^a15^a20 = c0
-      __ eor(a0, a0, tmp2);
-      __ eor(a5, a5, tmp2);
-      __ eor(a10, a10, tmp2);
-      __ eor(a15, a15, tmp2);
-      __ eor(a20, a20, tmp2); // d0(tmp2)
-      __ eor3(tmp3, a2, a7, a12);
-      __ eor3(tmp2, tmp3, a17, a22); // tmp2 = a2^a7^a12^a17^a22 = c2
+      __ eor3(tmp3, a[0], a[5], a[10]);
+      __ eor3(tmp4, tmp3, a[15], a[20]); // tmp4 = a0^a5^a10^a15^a20 = c0
+      __ eor(a[0], a[0], tmp2);
+      __ eor(a[5], a[5], tmp2);
+      __ eor(a[10], a[10], tmp2);
+      __ eor(a[15], a[15], tmp2);
+      __ eor(a[20], a[20], tmp2); // d0(tmp2)
+      __ eor3(tmp3, a[2], a[7], a[12]);
+      __ eor3(tmp2, tmp3, a[17], a[22]); // tmp2 = a2^a7^a12^a17^a22 = c2
       __ rax1(tmp3, tmp4, tmp2); // d1
-      __ eor(a1, a1, tmp3);
-      __ eor(a6, a6, tmp3);
-      __ eor(a11, a11, tmp3);
-      __ eor(a16, a16, tmp3);
-      __ eor(a21, a21, tmp3); // d1(tmp3)
+      __ eor(a[1], a[1], tmp3);
+      __ eor(a[6], a[6], tmp3);
+      __ eor(a[11], a[11], tmp3);
+      __ eor(a[16], a[16], tmp3);
+      __ eor(a[21], a[21], tmp3); // d1(tmp3)
       __ rax1(tmp3, tmp2, tmp0); // d3
-      __ eor3(tmp2, a3, a8, a13);
-      __ eor3(tmp0, tmp2, a18, a23);  // tmp0 = a3^a8^a13^a18^a23 = c3
-      __ eor(a3, a3, tmp3);
-      __ eor(a8, a8, tmp3);
-      __ eor(a13, a13, tmp3);
-      __ eor(a18, a18, tmp3);
-      __ eor(a23, a23, tmp3);
+      __ eor3(tmp2, a[3], a[8], a[13]);
+      __ eor3(tmp0, tmp2, a[18], a[23]);  // tmp0 = a3^a8^a13^a18^a23 = c3
+      __ eor(a[3], a[3], tmp3);
+      __ eor(a[8], a[8], tmp3);
+      __ eor(a[13], a[13], tmp3);
+      __ eor(a[18], a[18], tmp3);
+      __ eor(a[23], a[23], tmp3);
       __ rax1(tmp2, tmp1, tmp0); // d2
-      __ eor(a2, a2, tmp2);
-      __ eor(a7, a7, tmp2);
-      __ eor(a12, a12, tmp2);
+      __ eor(a[2], a[2], tmp2);
+      __ eor(a[7], a[7], tmp2);
+      __ eor(a[12], a[12], tmp2);
       __ rax1(tmp0, tmp0, tmp4); // d4
-      if (!can_use_fp || !can_use_r18) {
-        __ ldp(tmp3, tmp4, __ post(sp, 16));
-      }
-      __ eor(a17, a17, tmp2);
-      __ eor(a22, a22, tmp2);
-      __ eor(a4, a4, tmp0);
-      __ eor(a9, a9, tmp0);
-      __ eor(a14, a14, tmp0);
-      __ eor(a19, a19, tmp0);
-      __ eor(a24, a24, tmp0);
+      __ pop(saved_regs, sp);
+
+      __ eor(a[17], a[17], tmp2);
+      __ eor(a[22], a[22], tmp2);
+      __ eor(a[4], a[4], tmp0);
+      __ eor(a[9], a[9], tmp0);
+      __ eor(a[14], a[14], tmp0);
+      __ eor(a[19], a[19], tmp0);
+      __ eor(a[24], a[24], tmp0);
     }
 
-    __ rol(tmp0, a10, 3);
-    __ rol(a10, a1, 1);
-    __ rol(a1, a6, 44);
-    __ rol(a6, a9, 20);
-    __ rol(a9, a22, 61);
-    __ rol(a22, a14, 39);
-    __ rol(a14, a20, 18);
-    __ rol(a20, a2, 62);
-    __ rol(a2, a12, 43);
-    __ rol(a12, a13, 25);
-    __ rol(a13, a19, 8) ;
-    __ rol(a19, a23, 56);
-    __ rol(a23, a15, 41);
-    __ rol(a15, a4, 27);
-    __ rol(a4, a24, 14);
-    __ rol(a24, a21, 2);
-    __ rol(a21, a8, 55);
-    __ rol(a8, a16, 45);
-    __ rol(a16, a5, 36);
-    __ rol(a5, a3, 28);
-    __ rol(a3, a18, 21);
-    __ rol(a18, a17, 15);
-    __ rol(a17, a11, 10);
-    __ rol(a11, a7, 6);
-    __ mov(a7, tmp0);
+    __ rol(tmp0, a[10], 3);
+    __ rol(a[10], a[1], 1);
+    __ rol(a[1], a[6], 44);
+    __ rol(a[6], a[9], 20);
+    __ rol(a[9], a[22], 61);
+    __ rol(a[22], a[14], 39);
+    __ rol(a[14], a[20], 18);
+    __ rol(a[20], a[2], 62);
+    __ rol(a[2], a[12], 43);
+    __ rol(a[12], a[13], 25);
+    __ rol(a[13], a[19], 8) ;
+    __ rol(a[19], a[23], 56);
+    __ rol(a[23], a[15], 41);
+    __ rol(a[15], a[4], 27);
+    __ rol(a[4], a[24], 14);
+    __ rol(a[24], a[21], 2);
+    __ rol(a[21], a[8], 55);
+    __ rol(a[8], a[16], 45);
+    __ rol(a[16], a[5], 36);
+    __ rol(a[5], a[3], 28);
+    __ rol(a[3], a[18], 21);
+    __ rol(a[18], a[17], 15);
+    __ rol(a[17], a[11], 10);
+    __ rol(a[11], a[7], 6);
+    __ mov(a[7], tmp0);
 
-    bcax5(a0, a1, a2, a3, a4, tmp0, tmp1, tmp2);
-    bcax5(a5, a6, a7, a8, a9, tmp0, tmp1, tmp2);
-    bcax5(a10, a11, a12, a13, a14, tmp0, tmp1, tmp2);
-    bcax5(a15, a16, a17, a18, a19, tmp0, tmp1, tmp2);
-    bcax5(a20, a21, a22, a23, a24, tmp0, tmp1, tmp2);
+    bcax5(a[0], a[1], a[2], a[3], a[4], tmp0, tmp1, tmp2);
+    bcax5(a[5], a[6], a[7], a[8], a[9], tmp0, tmp1, tmp2);
+    bcax5(a[10], a[11], a[12], a[13], a[14], tmp0, tmp1, tmp2);
+    bcax5(a[15], a[16], a[17], a[18], a[19], tmp0, tmp1, tmp2);
+    bcax5(a[20], a[21], a[22], a[23], a[24], tmp0, tmp1, tmp2);
 
     __ ldr(tmp1, __ post(rc, 8));
-    __ eor(a0, a0, tmp1);
-
+    __ eor(a[0], a[0], tmp1);
   }
 
   // Arguments:
@@ -8951,110 +9093,71 @@ class StubGenerator: public StubCodeGenerator {
 
     // use r3.r17,r19..r28 to keep a0..a24.
     // a0..a24 are respective locals from SHA3.java
-    Register a0 = r25,
-             a1 = r26,
-             a2 = r27,
-             a3 = r3,
-             a4 = r4,
-             a5 = r5,
-             a6 = r6,
-             a7 = r7,
-             a8 = rscratch1, // r8
-             a9 = rscratch2, // r9
-             a10 = r10,
-             a11 = r11,
-             a12 = r12,
-             a13 = r13,
-             a14 = r14,
-             a15 = r15,
-             a16 = r16,
-             a17 = r17,
-             a18 = r28,
-             a19 = r19,
-             a20 = r20,
-             a21 = r21,
-             a22 = r22,
-             a23 = r23,
-             a24 = r24;
-
-    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = r30;
+    const Register a[25] = {
+        r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
+        r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
+    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = lr;
 
     Label sha3_loop, rounds24_preloop, loop_body;
     Label sha3_512_or_sha3_384, shake128;
 
-    bool can_use_r18 = false;
-#ifndef R18_RESERVED
-    can_use_r18 = true;
-#endif
+    const bool can_use_r18 = R18_RESERVED_ONLY(false) NOT_R18_RESERVED(true);
+
     bool can_use_fp = !PreserveFramePointer;
 
     __ enter();
 
     // save almost all yet unsaved gpr registers on stack
-    __ str(block_size, __ pre(sp, -128));
+    auto saved_regs = RegSet::range(r19, r28);
+    __ push(saved_regs, sp);
+    __ sub(sp, sp, 48);
+
+    __ str(block_size, sp);
     if (multi_block) {
       __ stpw(ofs, limit, Address(sp, 8));
     }
-    // 8 bytes at sp+16 will be used to keep buf
-    __ stp(r19, r20, Address(sp, 32));
-    __ stp(r21, r22, Address(sp, 48));
-    __ stp(r23, r24, Address(sp, 64));
-    __ stp(r25, r26, Address(sp, 80));
-    __ stp(r27, r28, Address(sp, 96));
     if (can_use_r18 && can_use_fp) {
-      __ stp(r18_tls, state, Address(sp, 112));
+      __ stp(r18_tls, state, Address(sp, 24));
     } else {
-      __ str(state, Address(sp, 112));
+      __ str(state, Address(sp, 24));
     }
 
     // begin sha3 calculations: loading a0..a24 from state arrary
-    __ ldp(a0, a1, state);
-    __ ldp(a2, a3, Address(state, 16));
-    __ ldp(a4, a5, Address(state, 32));
-    __ ldp(a6, a7, Address(state, 48));
-    __ ldp(a8, a9, Address(state, 64));
-    __ ldp(a10, a11, Address(state, 80));
-    __ ldp(a12, a13, Address(state, 96));
-    __ ldp(a14, a15, Address(state, 112));
-    __ ldp(a16, a17, Address(state, 128));
-    __ ldp(a18, a19, Address(state, 144));
-    __ ldp(a20, a21, Address(state, 160));
-    __ ldp(a22, a23, Address(state, 176));
-    __ ldr(a24, Address(state, 192));
+    load_keccak_state(a, state);
 
     __ BIND(sha3_loop);
 
     // load input
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a0, a0, tmp3);
-    __ eor(a1, a1, tmp2);
+    __ eor(a[0], a[0], tmp3);
+    __ eor(a[1], a[1], tmp2);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a2, a2, tmp3);
-    __ eor(a3, a3, tmp2);
+    __ eor(a[2], a[2], tmp3);
+    __ eor(a[3], a[3], tmp2);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a4, a4, tmp3);
-    __ eor(a5, a5, tmp2);
+    __ eor(a[4], a[4], tmp3);
+    __ eor(a[5], a[5], tmp2);
     __ ldr(tmp3, __ post(buf, 8));
-    __ eor(a6, a6, tmp3);
+    __ eor(a[6], a[6], tmp3);
 
     // block_size == 72, SHA3-512; block_size == 104, SHA3-384
     __ tbz(block_size, 7, sha3_512_or_sha3_384);
 
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a7, a7, tmp3);
-    __ eor(a8, a8, tmp2);
+    __ eor(a[7], a[7], tmp3);
+    __ eor(a[8], a[8], tmp2);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a9, a9, tmp3);
-    __ eor(a10, a10, tmp2);
+    __ eor(a[9], a[9], tmp3);
+    __ eor(a[10], a[10], tmp2);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a11, a11, tmp3);
-    __ eor(a12, a12, tmp2);
+    __ eor(a[11], a[11], tmp3);
+    __ eor(a[12], a[12], tmp2);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a13, a13, tmp3);
-    __ eor(a14, a14, tmp2);
+    __ eor(a[13], a[13], tmp3);
+    __ eor(a[14], a[14], tmp2);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a15, a15, tmp3);
-    __ eor(a16, a16, tmp2);
+    __ eor(a[15], a[15], tmp3);
+    __ eor(a[16], a[16], tmp2);
 
     // block_size == 136, bit4 == 0 and bit5 == 0, SHA3-256 or SHAKE256
     __ andw(tmp2, block_size, 48);
@@ -9062,31 +9165,31 @@ class StubGenerator: public StubCodeGenerator {
     __ tbnz(block_size, 5, shake128);
     // block_size == 144, bit5 == 0, SHA3-244
     __ ldr(tmp3, __ post(buf, 8));
-    __ eor(a17, a17, tmp3);
+    __ eor(a[17], a[17], tmp3);
     __ b(rounds24_preloop);
 
     __ BIND(shake128);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a17, a17, tmp3);
-    __ eor(a18, a18, tmp2);
+    __ eor(a[17], a[17], tmp3);
+    __ eor(a[18], a[18], tmp2);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a19, a19, tmp3);
-    __ eor(a20, a20, tmp2);
+    __ eor(a[19], a[19], tmp3);
+    __ eor(a[20], a[20], tmp2);
     __ b(rounds24_preloop); // block_size == 168, SHAKE128
 
     __ BIND(sha3_512_or_sha3_384);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a7, a7, tmp3);
-    __ eor(a8, a8, tmp2);
+    __ eor(a[7], a[7], tmp3);
+    __ eor(a[8], a[8], tmp2);
     __ tbz(block_size, 5, rounds24_preloop); // SHA3-512
 
     // SHA3-384
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a9, a9, tmp3);
-    __ eor(a10, a10, tmp2);
+    __ eor(a[9], a[9], tmp3);
+    __ eor(a[10], a[10], tmp2);
     __ ldp(tmp3, tmp2, __ post(buf, 16));
-    __ eor(a11, a11, tmp3);
-    __ eor(a12, a12, tmp2);
+    __ eor(a[11], a[11], tmp3);
+    __ eor(a[12], a[12], tmp2);
 
     __ BIND(rounds24_preloop);
     __ fmovs(v0, 24.0); // float loop counter,
@@ -9096,10 +9199,7 @@ class StubGenerator: public StubCodeGenerator {
     __ lea(tmp3, ExternalAddress((address) _sha3_round_consts));
 
     __ BIND(loop_body);
-    keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
-                     a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
-                     a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24,
-                     tmp0, tmp1, tmp2);
+    keccak_round_gpr(can_use_fp, can_use_r18, tmp3, a, tmp0, tmp1, tmp2);
     __ fsubs(v0, v0, v1);
     __ fcmps(v0, 0.0);
     __ br(__ NE, loop_body);
@@ -9115,33 +9215,19 @@ class StubGenerator: public StubCodeGenerator {
       __ movw(c_rarg0, tmp2); // return offset
     }
     if (can_use_fp && can_use_r18) {
-      __ ldp(r18_tls, state, Address(sp, 112));
+      __ ldp(r18_tls, state, Address(sp, 24));
     } else {
-      __ ldr(state, Address(sp, 112));
+      __ ldr(state, Address(sp, 24));
     }
+
     // save calculated sha3 state
-    __ stp(a0, a1, Address(state));
-    __ stp(a2, a3, Address(state, 16));
-    __ stp(a4, a5, Address(state, 32));
-    __ stp(a6, a7, Address(state, 48));
-    __ stp(a8, a9, Address(state, 64));
-    __ stp(a10, a11, Address(state, 80));
-    __ stp(a12, a13, Address(state, 96));
-    __ stp(a14, a15, Address(state, 112));
-    __ stp(a16, a17, Address(state, 128));
-    __ stp(a18, a19, Address(state, 144));
-    __ stp(a20, a21, Address(state, 160));
-    __ stp(a22, a23, Address(state, 176));
-    __ str(a24, Address(state, 192));
+    store_keccak_state(a, state);
 
     // restore required registers from stack
-    __ ldp(r19, r20, Address(sp, 32));
-    __ ldp(r21, r22, Address(sp, 48));
-    __ ldp(r23, r24, Address(sp, 64));
-    __ ldp(r25, r26, Address(sp, 80));
-    __ ldp(r27, r28, Address(sp, 96));
+    __ add(sp, sp, 48);
+    __ pop(saved_regs, sp);
     if (can_use_fp && can_use_r18) {
-      __ add(rfp, sp, 128); // leave() will copy rfp to sp below
+      __ mov(rfp, sp); // leave() will copy rfp to sp below
     } // else no need to recalculate rfp, since it wasn't changed
 
     __ leave();
@@ -10240,8 +10326,29 @@ class StubGenerator: public StubCodeGenerator {
   // result = r0 - return value. Contains initial hashcode value on entry.
   // ary = r1 - array address
   // cnt = r2 - elements count
-  // Clobbers: v0-v13, rscratch1, rscratch2
-  address generate_large_arrays_hashcode(BasicType eltype) {
+  // Clobbers (must match ad rule):
+  // r3 (blocks) : number of 16-element blocks = cnt / 16
+  // r4 (tail)   : remaining elements   = cnt % 16
+  // r5 (sum) : scalar temporary for horizontal-reduce results and
+  //            Horner multipliers used by P16/P8/P7 accumulation.
+  // rscratch1    : temporary scratch
+  // rscratch2    : 31^16 mod 2^32; loaded only when blocks != 0
+  // SIMD regs    : v0-v7, v12-v13
+  //
+  // Notes:
+  //  - All counts are element counts (not byte counts).
+  //  - v12/v13 are input halves; v0..v3 hold block accumulators used in the vector multiply/reduction.
+  //  - The AD rule must list the same temps; the ARRAYS_HASHCODE_REGISTERS assert enforces that.
+  //  - Algorithm uses Horner method:
+  //      * P16: vector polynomial for each 16-element block
+  //      * P8 : single 8-element block in tail (if present)
+  //      * P7 : scalar unrolled loop for remaining <= 7 elements
+  // Performance:
+  // Reduce each block immediately instead of carrying vector accumulators across the entire loop.
+  // Delaying the reduction increases loop-carried vector
+  // dependencies and register pressure, and was measured to perform worse on AArch64.
+  // See: https://github.com/openjdk/jdk/pull/31674#discussion_r3497411227
+  address generate_large_arrays_hashcode(BasicType eltype, Label& L_pow_table) {
     StubId stub_id;
     switch (eltype) {
     case T_BOOLEAN:
@@ -10269,46 +10376,62 @@ class StubGenerator: public StubCodeGenerator {
     if (start != nullptr) {
       return start;
     }
-    const Register result = r0, ary = r1, cnt = r2;
-    const FloatRegister vdata0 = v3, vdata1 = v2, vdata2 = v1, vdata3 = v0;
-    const FloatRegister vmul0 = v4, vmul1 = v5, vmul2 = v6, vmul3 = v7;
-    const FloatRegister vpow = v12;  // powers of 31: <31^3, ..., 31^0>
-    const FloatRegister vpowm = v13;
+
+    const Register result = r0;
+    const Register ary    = r1;
+    const Register cnt    = r2;
+
+    const Register blocks = r3;
+    const Register tail   = r4;
+    const Register sum    = r5;
+
+    const FloatRegister v_input1  = v12;
+    const FloatRegister v_input2  = v13;
+
+    const FloatRegister v_block0 = v0;
+    const FloatRegister v_block1 = v1;
+    const FloatRegister v_block2 = v2;
+    const FloatRegister v_block3 = v3;
+
+    const FloatRegister v_p0 = v4;
+    const FloatRegister v_p1 = v5;
+    const FloatRegister v_p2 = v6;
+    const FloatRegister v_p3 = v7;
 
     ARRAYS_HASHCODE_REGISTERS;
 
-    Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, BR_BASE;
+    Label L_loop, L_tail_setup, L_tail_lt8, L_done;
 
-    unsigned int vf; // vectorization factor
-    bool multiply_by_halves;
-    Assembler::SIMD_Arrangement load_arrangement;
-    switch (eltype) {
-    case T_BOOLEAN:
-    case T_BYTE:
-      load_arrangement = Assembler::T8B;
-      multiply_by_halves = true;
-      vf = 8;
-      break;
-    case T_CHAR:
-    case T_SHORT:
-      load_arrangement = Assembler::T8H;
-      multiply_by_halves = true;
-      vf = 8;
-      break;
-    case T_INT:
-      load_arrangement = Assembler::T4S;
-      multiply_by_halves = false;
-      vf = 4;
-      break;
-    default:
-      ShouldNotReachHere();
-    }
+    const int elem_bytes = type2aelembytes(eltype);
+    const bool widen_signed = is_signed_subword_type(eltype);
 
-    // Unroll factor
-    const unsigned uf = 4;
+    auto widen = [this](FloatRegister dst1,
+                        FloatRegister dst2,
+                        FloatRegister src,
+                        Assembler::SIMD_Arrangement dst_arr,
+                        Assembler::SIMD_Arrangement src_arr1,
+                        Assembler::SIMD_Arrangement src_arr2,
+                        bool is_signed) {
+      if (is_signed) {
+        __ sxtl(dst1, dst_arr, src, src_arr1);
+        __ sshll2(dst2, dst_arr, src, src_arr2, 0);
+      } else {
+        __ uxtl(dst1, dst_arr, src, src_arr1);
+        __ ushll2(dst2, dst_arr, src, src_arr2, 0);
+      }
+    };
 
-    // Effective vectorization factor
-    const unsigned evf = vf * uf;
+    auto widen_low = [this](FloatRegister dst,
+                            FloatRegister src,
+                            Assembler::SIMD_Arrangement dst_arr,
+                            Assembler::SIMD_Arrangement src_arr,
+                            bool is_signed) {
+      if (is_signed) {
+        __ sxtl(dst, dst_arr, src, src_arr);
+      } else {
+        __ uxtl(dst, dst_arr, src, src_arr);
+      }
+    };
 
     __ align(CodeEntryAlignment);
 
@@ -10317,231 +10440,171 @@ class StubGenerator: public StubCodeGenerator {
     address entry = __ pc();
     __ enter();
 
-    // Put 0-3'th powers of 31 into a single SIMD register together. The register will be used in
-    // the SMALL and LARGE LOOPS' epilogues. The initialization is hoisted here and the register's
-    // value shouldn't change throughout both loops.
-    __ movw(rscratch1, intpow(31U, 3));
-    __ mov(vpow, Assembler::S, 0, rscratch1);
-    __ movw(rscratch1, intpow(31U, 2));
-    __ mov(vpow, Assembler::S, 1, rscratch1);
-    __ movw(rscratch1, intpow(31U, 1));
-    __ mov(vpow, Assembler::S, 2, rscratch1);
-    __ movw(rscratch1, intpow(31U, 0));
-    __ mov(vpow, Assembler::S, 3, rscratch1);
+    // blocks = cnt >> 4 ; tail = cnt & 15
+    __ lsr(blocks, cnt, 4);
+    __ andr(tail, cnt, 15);
 
-    __ mov(vmul0, Assembler::T16B, 0);
-    __ mov(vmul0, Assembler::S, 3, result);
+    // -----------------------------
+    // Load pow table; if blocks != 0 load rscratch2 with 31^16.
+    // -----------------------------
+    __ adr(rscratch1, L_pow_table);
+    __ ld1(v_p0, v_p1, v_p2, v_p3, Assembler::T4S, Address(rscratch1));
 
-    __ andr(rscratch2, cnt, (uf - 1) * vf);
-    __ cbz(rscratch2, LARGE_LOOP_PREHEADER);
+    __ cbz(blocks, L_tail_setup);
+    // rscratch2 = 31^16 mod 2^32 = 0x50A9DE01
+    __ movw(rscratch2, intpow(31U, 16));
 
-    __ movw(rscratch1, intpow(31U, multiply_by_halves ? vf / 2 : vf));
-    __ mov(vpowm, Assembler::S, 0, rscratch1);
+    // -----------------------------
+    // Main loop over 16 elements to calculate P16
+    // -----------------------------
 
-    // SMALL LOOP
-    __ bind(SMALL_LOOP);
+    __ bind(L_loop);
 
-    __ ld1(vdata0, load_arrangement, Address(__ post(ary, vf * type2aelembytes(eltype))));
-    __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
-    __ subsw(rscratch2, rscratch2, vf);
+    if (elem_bytes == 1) {
+      __ ld1(v_input1, Assembler::T16B, Address(__ post(ary, 16)));
 
-    if (load_arrangement == Assembler::T8B) {
-      // Extend 8B to 8H to be able to use vector multiply
-      // instructions
-      assert(load_arrangement == Assembler::T8B, "expected to extend 8B to 8H");
-      if (is_signed_subword_type(eltype)) {
-        __ sxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
-      } else {
-        __ uxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
-      }
+      // byte -> half
+      widen(v_input2, v_input1, v_input1, Assembler::T8H, Assembler::T8B, Assembler::T16B, widen_signed);
+      // first half -> int
+      widen(v_block3, v_block0, v_input2, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+      __ mulv(v_block3, Assembler::T4S, v_block3, v_p0);
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p1);
+      __ addv(v_block3, Assembler::T4S, v_block3, v_block0);
+
+      // second half -> int
+      widen(v_block0, v_block1, v_input1, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block3, Assembler::T4S, v_block3, v_block0);
+
+      __ addv(v_block3, Assembler::T4S, v_block3);
+      __ umov(sum, v_block3, Assembler::S, 0);
+      __ maddw(result, result, rscratch2, sum);
+
+    } else if (elem_bytes == 2) {
+      __ ld1(v_input2, Assembler::T8H, Address(__ post(ary, 16)));
+      __ ld1(v_input1, Assembler::T8H, Address(__ post(ary, 16)));
+
+      widen(v_block3, v_block0, v_input2, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+      __ mulv(v_block3, Assembler::T4S, v_block3, v_p0);
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p1);
+      __ addv(v_block3, Assembler::T4S, v_block3, v_block0);
+
+      widen(v_block0, v_block1, v_input1, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block3, Assembler::T4S, v_block3, v_block0);
+
+      __ addv(v_block3, Assembler::T4S, v_block3);
+      __ umov(sum, v_block3, Assembler::S, 0);
+      __ maddw(result, result, rscratch2, sum);
+
+    } else {
+      __ ld1(v_block0, v_block1, v_block2, v_block3, Assembler::T4S, Address(__ post(ary, 64)));
+
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p0);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p1);
+      __ mulv(v_block2, Assembler::T4S, v_block2, v_p2);
+      __ mulv(v_block3, Assembler::T4S, v_block3, v_p3);
+
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+      __ addv(v_block2, Assembler::T4S, v_block2, v_block3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block2);
+
+      __ addv(v_block0, Assembler::T4S, v_block0);
+      __ umov(sum, v_block0, Assembler::S, 0);
+      __ maddw(result, result, rscratch2, sum);
     }
 
-    switch (load_arrangement) {
-    case Assembler::T4S:
-      __ addv(vmul0, load_arrangement, vmul0, vdata0);
-      break;
-    case Assembler::T8B:
-    case Assembler::T8H:
-      assert(is_subword_type(eltype), "subword type expected");
-      if (is_signed_subword_type(eltype)) {
-        __ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
-      } else {
-        __ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
-      }
-      break;
-    default:
-      __ should_not_reach_here();
+    __ subs(blocks, blocks, 1);
+    __ br(Assembler::HI, L_loop);
+
+    __ bind(L_tail_setup);
+    __ cbz(tail, L_done);
+
+    // If (tail & 8) do P8, then do <8 computed-branch.
+    __ tbz(tail, 3, L_tail_lt8);
+
+    // P8: result = result * 31^8 + Horner hash of next 8 elements
+    __ umov(sum, v_p1, Assembler::S, 3);   // sum = 31^8
+
+    if (elem_bytes == 1) {
+      __ ld1(v_input1, Assembler::T8B, Address(__ post(ary, 8)));
+      // 8B -> 8H (low half only)
+      widen_low(v_input2, v_input1, Assembler::T8H, Assembler::T8B, widen_signed);
+      // 8H -> two 4S
+      widen(v_block0, v_block1, v_input2, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block0, Assembler::T4S, v_block0);
+      __ umov(rscratch1, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, rscratch1);
+
+    } else if (elem_bytes == 2) {
+      __ ld1(v_input2, Assembler::T8H, Address(__ post(ary, 16)));
+
+      // 8H -> two 4S
+      widen(v_block0, v_block1, v_input2, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block0, Assembler::T4S, v_block0);
+      __ umov(rscratch1, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, rscratch1);
+
+    } else {
+      __ ld1(v_block0, Assembler::T4S, Address(__ post(ary, 16)));
+      __ ld1(v_block1, Assembler::T4S, Address(__ post(ary, 16)));
+
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block0, Assembler::T4S, v_block0);
+      __ umov(rscratch1, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, rscratch1);
     }
 
-    // Process the upper half of a vector
-    if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
-      __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
-      if (is_signed_subword_type(eltype)) {
-        __ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
-      } else {
-        __ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
-      }
-    }
+    // tail -= 8 after P8
+    __ subw(tail, tail, 8);
+    __ cbz(tail, L_done);
 
-    __ br(Assembler::HI, SMALL_LOOP);
+    // -----------------------------
+    // Tail < 8: HotSpot-style P7 scalar tail
+    // -----------------------------
+    __ bind(L_tail_lt8);
+    // tail in [1..7] here
 
-    // SMALL LOOP'S EPILOQUE
-    __ lsr(rscratch2, cnt, exact_log2(evf));
-    __ cbnz(rscratch2, LARGE_LOOP_PREHEADER);
-
-    __ mulv(vmul0, Assembler::T4S, vmul0, vpow);
-    __ addv(vmul0, Assembler::T4S, vmul0);
-    __ umov(result, vmul0, Assembler::S, 0);
-
-    // TAIL
-    __ bind(TAIL);
-
-    // The andr performs cnt % vf. The subtract shifted by 3 offsets past vf - 1 - (cnt % vf) pairs
-    // of load + madd insns i.e. it only executes cnt % vf load + madd pairs.
-    assert(is_power_of_2(vf), "can't use this value to calculate the jump target PC");
-    __ andr(rscratch2, cnt, vf - 1);
-    __ bind(TAIL_SHORTCUT);
-    __ adr(rscratch1, BR_BASE);
+    __ adr(rscratch1, L_done);
     // For Cortex-A53 offset is 4 because 2 nops are generated.
-    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, VM_Version::supports_a53mac() ? 4 : 3);
-    __ movw(rscratch2, 0x1f);
+    __ sub(rscratch1, rscratch1, tail, ext::uxtw,
+           VM_Version::supports_a53mac() ? 4 : 3);
+    __ movw(sum, 0x1f);  // 31
     __ br(rscratch1);
 
-    for (size_t i = 0; i < vf - 1; ++i) {
-      __ load(rscratch1, Address(__ post(ary, type2aelembytes(eltype))),
-                                   eltype);
-      __ maddw(result, result, rscratch2, rscratch1);
-      // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+    __ align(8);
+
+    // Unrolled scalar Horner for up to 7 elements
+    for (int i = 0; i < 7; i++) {
+      __ load(rscratch1, Address(__ post(ary, elem_bytes)), eltype);
+      __ maddw(result, result, sum, rscratch1);
+      // maddw generates an extra nop for Cortex-A53 (see maddw definition).
       // Generate 2nd nop to have 4 instructions per iteration.
       if (VM_Version::supports_a53mac()) {
         __ nop();
       }
     }
-    __ bind(BR_BASE);
 
-    __ leave();
-    __ ret(lr);
-
-    // LARGE LOOP
-    __ bind(LARGE_LOOP_PREHEADER);
-
-    __ lsr(rscratch2, cnt, exact_log2(evf));
-
-    if (multiply_by_halves) {
-      // 31^4 - multiplier between lower and upper parts of a register
-      __ movw(rscratch1, intpow(31U, vf / 2));
-      __ mov(vpowm, Assembler::S, 1, rscratch1);
-      // 31^28 - remainder of the iteraion multiplier, 28 = 32 - 4
-      __ movw(rscratch1, intpow(31U, evf - vf / 2));
-      __ mov(vpowm, Assembler::S, 0, rscratch1);
-    } else {
-      // 31^16
-      __ movw(rscratch1, intpow(31U, evf));
-      __ mov(vpowm, Assembler::S, 0, rscratch1);
-    }
-
-    __ mov(vmul3, Assembler::T16B, 0);
-    __ mov(vmul2, Assembler::T16B, 0);
-    __ mov(vmul1, Assembler::T16B, 0);
-
-    __ bind(LARGE_LOOP);
-
-    __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 0);
-    __ mulvs(vmul2, Assembler::T4S, vmul2, vpowm, 0);
-    __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 0);
-    __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
-
-    __ ld1(vdata3, vdata2, vdata1, vdata0, load_arrangement,
-           Address(__ post(ary, evf * type2aelembytes(eltype))));
-
-    if (load_arrangement == Assembler::T8B) {
-      // Extend 8B to 8H to be able to use vector multiply
-      // instructions
-      assert(load_arrangement == Assembler::T8B, "expected to extend 8B to 8H");
-      if (is_signed_subword_type(eltype)) {
-        __ sxtl(vdata3, Assembler::T8H, vdata3, load_arrangement);
-        __ sxtl(vdata2, Assembler::T8H, vdata2, load_arrangement);
-        __ sxtl(vdata1, Assembler::T8H, vdata1, load_arrangement);
-        __ sxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
-      } else {
-        __ uxtl(vdata3, Assembler::T8H, vdata3, load_arrangement);
-        __ uxtl(vdata2, Assembler::T8H, vdata2, load_arrangement);
-        __ uxtl(vdata1, Assembler::T8H, vdata1, load_arrangement);
-        __ uxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
-      }
-    }
-
-    switch (load_arrangement) {
-    case Assembler::T4S:
-      __ addv(vmul3, load_arrangement, vmul3, vdata3);
-      __ addv(vmul2, load_arrangement, vmul2, vdata2);
-      __ addv(vmul1, load_arrangement, vmul1, vdata1);
-      __ addv(vmul0, load_arrangement, vmul0, vdata0);
-      break;
-    case Assembler::T8B:
-    case Assembler::T8H:
-      assert(is_subword_type(eltype), "subword type expected");
-      if (is_signed_subword_type(eltype)) {
-        __ saddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
-        __ saddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
-        __ saddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
-        __ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
-      } else {
-        __ uaddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
-        __ uaddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
-        __ uaddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
-        __ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
-      }
-      break;
-    default:
-      __ should_not_reach_here();
-    }
-
-    // Process the upper half of a vector
-    if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
-      __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 1);
-      __ mulvs(vmul2, Assembler::T4S, vmul2, vpowm, 1);
-      __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 1);
-      __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 1);
-      if (is_signed_subword_type(eltype)) {
-        __ saddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
-        __ saddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
-        __ saddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
-        __ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
-      } else {
-        __ uaddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
-        __ uaddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
-        __ uaddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
-        __ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
-      }
-    }
-
-    __ subsw(rscratch2, rscratch2, 1);
-    __ br(Assembler::HI, LARGE_LOOP);
-
-    __ mulv(vmul3, Assembler::T4S, vmul3, vpow);
-    __ addv(vmul3, Assembler::T4S, vmul3);
-    __ umov(result, vmul3, Assembler::S, 0);
-
-    __ mov(rscratch2, intpow(31U, vf));
-
-    __ mulv(vmul2, Assembler::T4S, vmul2, vpow);
-    __ addv(vmul2, Assembler::T4S, vmul2);
-    __ umov(rscratch1, vmul2, Assembler::S, 0);
-    __ maddw(result, result, rscratch2, rscratch1);
-
-    __ mulv(vmul1, Assembler::T4S, vmul1, vpow);
-    __ addv(vmul1, Assembler::T4S, vmul1);
-    __ umov(rscratch1, vmul1, Assembler::S, 0);
-    __ maddw(result, result, rscratch2, rscratch1);
-
-    __ mulv(vmul0, Assembler::T4S, vmul0, vpow);
-    __ addv(vmul0, Assembler::T4S, vmul0);
-    __ umov(rscratch1, vmul0, Assembler::S, 0);
-    __ maddw(result, result, rscratch2, rscratch1);
-
-    __ andr(rscratch2, cnt, vf - 1);
-    __ cbnz(rscratch2, TAIL_SHORTCUT);
+    __ bind(L_done);
 
     __ leave();
     __ ret(lr);
@@ -12420,7 +12483,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif // LINUX || _BSDONLY_SOURCE
 
   static void save_return_registers(MacroAssembler* masm) {
-    if (InlineTypeReturnedAsFields) {
+    if (ValueTypeReturnedAsFields) {
       masm->push(RegSet::range(r0, r7), sp);
       masm->sub(sp, sp, 4 * wordSize);
       masm->st1(v0, v1, v2, v3, masm->T1D, Address(sp));
@@ -12433,7 +12496,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   static void restore_return_registers(MacroAssembler* masm) {
-    if (InlineTypeReturnedAsFields) {
+    if (ValueTypeReturnedAsFields) {
       masm->ld1(v4, v5, v6, v7, masm->T1D, Address(masm->post(sp, 4 * wordSize)));
       masm->ld1(v0, v1, v2, v3, masm->T1D, Address(masm->post(sp, 4 * wordSize)));
       masm->pop(RegSet::range(r0, r7), sp);
@@ -12502,7 +12565,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // we're now on the yield frame (which is in an address above us b/c rsp has been pushed down)
-    __ sub(sp, rscratch2, 2*wordSize); // now pointing to rfp spill
+    __ sub(sp, rscratch2, 2 * wordSize); // now pointing to rfp spill
     __ mov(rfp, sp);
 
     if (return_barrier_exception) {
@@ -13794,6 +13857,23 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
 
+  // Generate the shared table of powers of 31 used by the large
+  // Arrays.hashCode stubs. The table is emitted once and referenced by
+  // each element-type-specific stub.
+  void generate_large_arrays_hashcode_pow_table(Label& L_pow_table) {
+    _masm->align(16);
+    _masm->bind(L_pow_table);
+
+    uint32_t* pow_table = (uint32_t*)  _masm->pc();
+    _masm->code_section()->set_end(address(pow_table + 16));
+
+    // Fill the table in memory order as 31^15, 31^14, ..., 31^0.
+    uint32_t n = 1;
+    for (int i = 15; i >= 0; i--, n *= 31) {
+      pow_table[i] = n;
+    }
+  }
+
   void generate_compiler_stubs() {
 #ifdef COMPILER2
 
@@ -13806,12 +13886,15 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
     }
 
-    // arrays_hascode stub for large arrays.
-    StubRoutines::aarch64::_large_arrays_hashcode_boolean = generate_large_arrays_hashcode(T_BOOLEAN);
-    StubRoutines::aarch64::_large_arrays_hashcode_byte = generate_large_arrays_hashcode(T_BYTE);
-    StubRoutines::aarch64::_large_arrays_hashcode_char = generate_large_arrays_hashcode(T_CHAR);
-    StubRoutines::aarch64::_large_arrays_hashcode_int = generate_large_arrays_hashcode(T_INT);
-    StubRoutines::aarch64::_large_arrays_hashcode_short = generate_large_arrays_hashcode(T_SHORT);
+    // arrays_hashcode stubs for large arrays. They all use the same 16-word table of powers of 31.
+    Label L_large_arrays_hashcode_pow_table;
+    StubRoutines::aarch64::_large_arrays_hashcode_boolean = generate_large_arrays_hashcode(T_BOOLEAN, L_large_arrays_hashcode_pow_table);
+    StubRoutines::aarch64::_large_arrays_hashcode_byte = generate_large_arrays_hashcode(T_BYTE, L_large_arrays_hashcode_pow_table);
+    StubRoutines::aarch64::_large_arrays_hashcode_char = generate_large_arrays_hashcode(T_CHAR, L_large_arrays_hashcode_pow_table);
+    StubRoutines::aarch64::_large_arrays_hashcode_int = generate_large_arrays_hashcode(T_INT, L_large_arrays_hashcode_pow_table);
+    StubRoutines::aarch64::_large_arrays_hashcode_short = generate_large_arrays_hashcode(T_SHORT, L_large_arrays_hashcode_pow_table);
+
+    generate_large_arrays_hashcode_pow_table(L_large_arrays_hashcode_pow_table);
 
     // byte_array_inflate stub for large arrays.
     StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
@@ -13943,6 +14026,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubId::stubgen_sha3_implCompress_id);
       StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubId::stubgen_sha3_implCompressMB_id);
     } else if (UseSHA3Intrinsics) {
+      StubRoutines::_double_keccak         = generate_double_keccak_gpr();
       StubRoutines::_sha3_implCompress     = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompress_id);
       StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompressMB_id);
     }

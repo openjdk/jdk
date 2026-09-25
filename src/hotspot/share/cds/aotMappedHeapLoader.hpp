@@ -170,12 +170,12 @@ private:
   static bool map_heap_region_impl(FileMapInfo* info);
   static narrowOop encoded_heap_region_dumptime_address(FileMapInfo* info);
   static void patch_heap_embedded_pointers(FileMapInfo* info);
-  static void fixup_mapped_heap_region(FileMapInfo* info);
+  static void fixup_mapped_heap_region(FileMapInfo* info) NOT_G1GC_RETURN;
   static void dealloc_heap_region(FileMapInfo* info);
 
 public:
 
-  static bool map_heap_region(FileMapInfo* info);
+  static bool map_heap_region(FileMapInfo* info) NOT_G1GC_RETURN_(false);
   static bool load_heap_region(FileMapInfo* mapinfo);
   static void assert_in_loaded_heap(uintptr_t o) {
     assert(is_in_loaded_heap(o), "must be");

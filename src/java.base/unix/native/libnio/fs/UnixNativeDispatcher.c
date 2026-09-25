@@ -428,7 +428,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_strerror(JNIEnv* env, jclass this, jint err
     jsize len;
     jbyteArray bytes;
 
-    getErrorString((int)errno, tmpbuf, sizeof(tmpbuf));
+    getErrorString((int)error, tmpbuf, sizeof(tmpbuf));
     len = strlen(tmpbuf);
     bytes = (*env)->NewByteArray(env, len);
     if (bytes != NULL) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ final class Disassemble extends Command {
         } catch (IOException e) {
             throw new UserDataException("unexpected i/o error. " + e.getMessage());
         }
-        if (maxsize == Integer.MAX_VALUE == sizes.size() <= maxChunks) {
+        if (maxsize == Integer.MAX_VALUE && sizes.size() <= maxChunks) {
             throw new UserDataException("number of chunks in recording (" + sizes.size() + ") doesn't exceed max chunks (" + maxChunks + ")");
         }
         println();
