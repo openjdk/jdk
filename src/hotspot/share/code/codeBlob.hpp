@@ -156,6 +156,7 @@ protected:
     virtual void post_restore(CodeBlob* instance) const {
       instance->post_restore_impl();
     };
+    virtual void cleanup(CodeBlob* instance) const { (void) instance; }
   };
 
   static const Vptr* vptr(CodeBlobKind kind);
@@ -176,9 +177,7 @@ protected:
 
 public:
 
-  ~CodeBlob() {
-    assert(_oop_maps == nullptr, "Not flushed");
-  }
+  ~CodeBlob();
 
   // Returns the space needed for CodeBlob
   static unsigned int allocation_size(CodeBuffer* cb, int header_size);

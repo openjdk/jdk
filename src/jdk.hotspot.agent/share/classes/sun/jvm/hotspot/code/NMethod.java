@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +39,8 @@ import sun.jvm.hotspot.utilities.Observer;
 public class NMethod extends CodeBlob {
   private static long          pcDescSize;
   private static long          immutableDataRefCountSize;
+  // The pointer to the header in C Heap
+  private static AddressField  headerField;
   private static AddressField  methodField;
   /** != InvocationEntryBci if this nmethod is an on-stack replacement method */
   private static CIntegerField entryBCIField;
@@ -45,29 +48,31 @@ public class NMethod extends CodeBlob {
   private static AddressField  osrLinkField;
   private static AddressField  immutableDataField;
   private static CIntegerField immutableDataSizeField;
+  // Size of nmethod::header
+  private static long          NMethodHeaderSize;
 
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
   private static CIntegerField deoptHandlerEntryOffsetField;
   private static CIntegerField origPCOffsetField;
   private static CIntegerField stubOffsetField;
-  private static CIntField     handlerTableOffsetField;
-  private static CIntField     nulChkTableOffsetField;
+  private static CIntegerField handlerTableOffsetField;
+  private static CIntegerField nulChkTableOffsetField;
   private static CIntegerField scopesPCsOffsetField;
   private static CIntegerField scopesDataOffsetField;
   private static CIntegerField immutableDataRefCountOffsetField;
 
   /** Offsets for entry points */
   /** Entry point with class check */
-  private static CIntField  entryOffsetField;
+  private static CIntegerField entryOffsetField;
   /** Entry point without class check */
-  private static CIntField  verifiedEntryOffsetField;
+  private static CIntegerField verifiedEntryOffsetField;
   /** Entry point for on stack replacement */
   private static AddressField  osrEntryPointField;
 
   // FIXME: add access to flags (how?)
 
-  private static CIntField compLevelField;
+  private static CIntegerField compLevelField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -78,13 +83,15 @@ public class NMethod extends CodeBlob {
   }
 
   private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("nmethod");
+    Type type = db.lookupType("nmethod::header");
 
+    headerField                        = db.lookupType("nmethod").getAddressField("_hdr");
     methodField                        = type.getAddressField("_method");
     entryBCIField                      = type.getCIntegerField("_entry_bci");
     osrLinkField                       = type.getAddressField("_osr_link");
     immutableDataField                 = type.getAddressField("_immutable_data");
     immutableDataSizeField             = type.getCIntegerField("_immutable_data_size");
+    NMethodHeaderSize                  = type.getSize();
     exceptionOffsetField               = type.getCIntegerField("_exception_offset");
     deoptHandlerEntryOffsetField       = type.getCIntegerField("_deopt_handler_entry_offset");
     origPCOffsetField                  = type.getCIntegerField("_orig_pc_offset");
@@ -92,12 +99,12 @@ public class NMethod extends CodeBlob {
     scopesPCsOffsetField               = type.getCIntegerField("_scopes_pcs_offset");
     scopesDataOffsetField              = type.getCIntegerField("_scopes_data_offset");
     immutableDataRefCountOffsetField   = type.getCIntegerField("_immutable_data_ref_count_offset");
-    handlerTableOffsetField            = new CIntField(type.getCIntegerField("_handler_table_offset"), 0);
-    nulChkTableOffsetField             = new CIntField(type.getCIntegerField("_nul_chk_table_offset"), 0);
-    entryOffsetField                   = new CIntField(type.getCIntegerField("_entry_offset"), 0);
-    verifiedEntryOffsetField           = new CIntField(type.getCIntegerField("_verified_entry_offset"), 0);
+    handlerTableOffsetField            = type.getCIntegerField("_handler_table_offset");
+    nulChkTableOffsetField             = type.getCIntegerField("_nul_chk_table_offset");
+    entryOffsetField                   = type.getCIntegerField("_entry_offset");
+    verifiedEntryOffsetField           = type.getCIntegerField("_verified_entry_offset");
     osrEntryPointField                 = type.getAddressField("_osr_entry_point");
-    compLevelField                     = new CIntField(type.getCIntegerField("_comp_level"), 0);
+    compLevelField                     = type.getCIntegerField("_comp_level");
     pcDescSize                         = db.lookupType("PcDesc").getSize();
     immutableDataRefCountSize          = VM.getVM().getIntSize();
   }
@@ -112,7 +119,7 @@ public class NMethod extends CodeBlob {
   }
 
   public Method getMethod() {
-    return (Method)Metadata.instantiateWrapperFor(methodField.getValue(addr));
+    return (Method)Metadata.instantiateWrapperFor(methodField.getValue(NMethodHeaderBegin()));
   }
 
   // Type info
@@ -121,6 +128,20 @@ public class NMethod extends CodeBlob {
   public boolean isOSRMethod()    { return getEntryBCI() != VM.getVM().getInvocationEntryBCI(); }
 
   /** Boundaries for different parts */
+  public Address NMethodHeaderBegin() throws UnmappedAddressException {
+    Address nmethod_addr = getAddress();
+    Address nmethod_hdr_addr = headerField.getValue(nmethod_addr);
+    if (nmethod_hdr_addr == null) {
+      throw new UnmappedAddressException("nmethod header is missing", 0);
+    }
+
+    return nmethod_hdr_addr;
+  }
+
+  public Address NMethodHeaderEnd() throws UnmappedAddressException {
+    return NMethodHeaderBegin().addOffsetTo(NMethodHeaderSize);
+  }
+
   public Address constantsBegin()             { return contentBegin();                                          }
   public Address constantsEnd()               { return codeBegin();                                             }
   public Address instsBegin()                 { return codeBegin();                                             }
@@ -132,24 +153,24 @@ public class NMethod extends CodeBlob {
   public Address oopsBegin()                  { return dataBegin();                                             }
   public Address oopsEnd()                    { return dataEnd();                                               }
 
-  public Address immutableDataBegin()         { return immutableDataField.getValue(addr);                         }
+  public Address immutableDataBegin()         { return immutableDataField.getValue(NMethodHeaderBegin());         }
   public Address immutableDataEnd()           { return immutableDataBegin().addOffsetTo(getImmutableDataSize());  }
   public Address dependenciesBegin()          { return immutableDataBegin();                                      }
-  public Address dependenciesEnd()            { return immutableDataBegin().addOffsetTo(getHandlerTableOffset()); }
-  public Address handlerTableBegin()          { return immutableDataBegin().addOffsetTo(getHandlerTableOffset()); }
-  public Address handlerTableEnd()            { return immutableDataBegin().addOffsetTo(getNulChkTableOffset());  }
+  public Address dependenciesEnd()            { return immutableDataBegin().addOffsetTo(getNulChkTableOffset());  }
   public Address nulChkTableBegin()           { return immutableDataBegin().addOffsetTo(getNulChkTableOffset());  }
-  public Address nulChkTableEnd()             { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
-  public Address scopesDataBegin()            { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
-  public Address scopesDataEnd()              { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
+  public Address nulChkTableEnd()             { return immutableDataBegin().addOffsetTo(getHandlerTableOffset()); }
+  public Address handlerTableBegin()          { return immutableDataBegin().addOffsetTo(getHandlerTableOffset()); }
+  public Address handlerTableEnd()            { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());  }
   public Address scopesPCsBegin()             { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
-  public Address scopesPCsEnd()               { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
+  public Address scopesPCsEnd()               { return immutableDataBegin().addOffsetTo(getScopesDataOffset());                                        }
+  public Address scopesDataBegin()            { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
+  public Address scopesDataEnd()              { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
   public Address immutableDataRefCountBegin() { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
 
   public Address metadataBegin()              { return mutableDataBegin().addOffsetTo(getRelocationSize());   }
   public Address metadataEnd()                { return mutableDataEnd();                                      }
 
-  public int getImmutableDataSize()           { return (int) immutableDataSizeField.getValue(addr);        }
+  public int getImmutableDataSize()           { return (int) immutableDataSizeField.getValue(NMethodHeaderBegin());  }
   public int constantsSize()                  { return (int) constantsEnd()   .minus(constantsBegin());    }
   public int instsSize()                      { return (int) instsEnd()       .minus(instsBegin());        }
   public int stubSize()                       { return (int) stubEnd()        .minus(stubBegin());         }
@@ -160,7 +181,7 @@ public class NMethod extends CodeBlob {
   public int dependenciesSize()               { return (int) dependenciesEnd().minus(dependenciesBegin()); }
   public int handlerTableSize()               { return (int) handlerTableEnd().minus(handlerTableBegin()); }
   public int nulChkTableSize()                { return (int) nulChkTableEnd() .minus(nulChkTableBegin());  }
-  public int origPCOffset()                   { return (int) origPCOffsetField.getValue(addr);             }
+  public int origPCOffset()                   { return (int) origPCOffsetField.getValue(NMethodHeaderBegin());       }
 
   public int totalSize() {
     return
@@ -184,6 +205,18 @@ public class NMethod extends CodeBlob {
     return size;
   }
 
+  @Override
+  public boolean blobContains        (Address addr) {
+    try {
+      if (NMethodHeaderBegin().lessThanOrEqual(addr) && NMethodHeaderEnd().greaterThan(addr)) {
+        return true;
+      }
+    } catch (UnmappedAddressException e) {
+      // nmethod header is missing but check if blob contains the address
+    }
+
+    return super.blobContains(addr);
+  }
   public boolean constantsContains   (Address addr) { return constantsBegin()   .lessThanOrEqual(addr) && constantsEnd()   .greaterThan(addr); }
   public boolean instsContains       (Address addr) { return instsBegin()       .lessThanOrEqual(addr) && instsEnd()       .greaterThan(addr); }
   public boolean stubContains        (Address addr) { return stubBegin()        .lessThanOrEqual(addr) && stubEnd()        .greaterThan(addr); }
@@ -256,7 +289,7 @@ public class NMethod extends CodeBlob {
   }
 
   public NMethod getOSRLink() {
-    return VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(addr));
+    return VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(NMethodHeaderBegin()));
   }
 
   // Deopt
@@ -444,8 +477,8 @@ public class NMethod extends CodeBlob {
   // FIXME: add isPatchableAt()
 
   /** Support for code generation. Only here for proof-of-concept. */
-  public int getEntryPointOffset()            { return (int) entryOffsetField.getValue(addr);        }
-  public int getVerifiedEntryPointOffset()    { return (int) verifiedEntryOffsetField.getValue(addr);}
+  public int getEntryPointOffset()            { return (int) entryOffsetField.getValue(NMethodHeaderBegin());        }
+  public int getVerifiedEntryPointOffset()    { return (int) verifiedEntryOffsetField.getValue(NMethodHeaderBegin());}
   public static int getOSREntryPointOffset()  { return (int) osrEntryPointField.getOffset();         }
   public static int getEntryBCIOffset()       { return (int) entryBCIField.getOffset();              }
   public static int getMethodOffset()         { return (int) methodField.getOffset();                }
@@ -488,14 +521,14 @@ public class NMethod extends CodeBlob {
   // Internals only below this point
   //
 
-  private int getEntryBCI()                     { return (int) entryBCIField                    .getValue(addr); }
-  private int getExceptionOffset()              { return (int) exceptionOffsetField             .getValue(addr); }
-  private int getDeoptHandlerEntryOffset()      { return (int) deoptHandlerEntryOffsetField     .getValue(addr); }
-  private int getStubOffset()                   { return (int) stubOffsetField                  .getValue(addr); }
-  private int getScopesDataOffset()             { return (int) scopesDataOffsetField            .getValue(addr); }
-  private int getScopesPCsOffset()              { return (int) scopesPCsOffsetField             .getValue(addr); }
-  private int getHandlerTableOffset()           { return (int) handlerTableOffsetField          .getValue(addr); }
-  private int getNulChkTableOffset()            { return (int) nulChkTableOffsetField           .getValue(addr); }
-  private int getCompLevel()                    { return (int) compLevelField                   .getValue(addr); }
-  private int getImmutableDataRefCountOffset()  { return (int) immutableDataRefCountOffsetField .getValue(addr); }
+  private int getEntryBCI()                     { return (int) entryBCIField                    .getValue(NMethodHeaderBegin()); }
+  private int getExceptionOffset()              { return (int) exceptionOffsetField             .getValue(NMethodHeaderBegin()); }
+  private int getDeoptHandlerEntryOffset()      { return (int) deoptHandlerEntryOffsetField     .getValue(NMethodHeaderBegin()); }
+  private int getStubOffset()                   { return (int) stubOffsetField                  .getValue(NMethodHeaderBegin()); }
+  private int getScopesDataOffset()             { return (int) scopesDataOffsetField            .getValue(NMethodHeaderBegin()); }
+  private int getScopesPCsOffset()              { return (int) scopesPCsOffsetField             .getValue(NMethodHeaderBegin()); }
+  private int getHandlerTableOffset()           { return (int) handlerTableOffsetField          .getValue(NMethodHeaderBegin()); }
+  private int getNulChkTableOffset()            { return (int) nulChkTableOffsetField           .getValue(NMethodHeaderBegin()); }
+  private int getCompLevel()                    { return (int) compLevelField                   .getValue(NMethodHeaderBegin()); }
+  private int getImmutableDataRefCountOffset()  { return (int) immutableDataRefCountOffsetField .getValue(NMethodHeaderBegin()); }
 }

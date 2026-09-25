@@ -194,6 +194,14 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   assert(_mutable_data == blob_end(), "sanity");
 }
 
+CodeBlob::~CodeBlob() {
+  assert(_oop_maps == nullptr, "Not flushed");
+  assert(_kind != CodeBlobKind::None, "Unspecified CodeBlob kind");
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  vptr(_kind)->cleanup(this);
+}
+
 void CodeBlob::purge() {
   assert(_mutable_data != nullptr, "should never be null");
   if (_mutable_data != blob_end()) {

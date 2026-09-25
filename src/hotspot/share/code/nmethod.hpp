@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
 #include "compiler/compilerDefinitions.hpp"
+#include "memory/allocation.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -136,7 +137,7 @@ public:
 // nmethods (native methods) are the compiled code versions of Java methods.
 //
 // An nmethod contains:
-//  - Header                 (the nmethod structure)
+//  - Pointer to the C Heap header structure (header)
 //  - Constant part          (doubles, longs and floats used in nmethod)
 //  - Code part:
 //    - Code body
@@ -147,6 +148,9 @@ public:
 // As a CodeBlob, an nmethod references [mutable data] allocated on the C heap:
 //  - CodeBlob relocation data
 //  - Metainfo
+//
+// The nmethod header (excluding CodeBlob header) is allocated on C heap as part
+// of the header structure.
 //
 // An nmethod references [immutable data] allocated on C heap:
 //  - Dependency assertions data
@@ -163,95 +167,6 @@ class nmethod : public CodeBlob {
   friend class DeoptimizationScope;
 
   #define ImmutableDataRefCountSize ((int)sizeof(int))
-
- private:
-
-  // Used to track in which deoptimize handshake this method will be deoptimized.
-  uint64_t  _deoptimization_generation;
-
-  uint64_t  _gc_epoch;
-
-  Method*   _method;
-
-  // To reduce header size union fields which usages do not overlap.
-  union {
-    // To support simple linked-list chaining of nmethods:
-    nmethod*  _osr_link; // from InstanceKlass::osr_nmethods_head
-    struct {
-      // These are used for compiled synchronized native methods to
-      // locate the owner and stack slot for the BasicLock. They are
-      // needed because there is no debug information for compiled native
-      // wrappers and the oop maps are insufficient to allow
-      // frame::retrieve_receiver() to work. Currently they are expected
-      // to be byte offsets from the Java stack pointer for maximum code
-      // sharing between platforms. JVMTI's GetLocalInstance() uses these
-      // offsets to find the receiver for non-static native wrapper frames.
-      ByteSize _native_receiver_sp_offset;
-      ByteSize _native_basic_lock_sp_offset;
-    };
-  };
-
-  // nmethod's read-only data
-  address _immutable_data;
-
-  PcDescContainer* _pc_desc_container;
-  ExceptionCache* volatile _exception_cache;
-
-  void* _gc_data;
-
-  struct oops_do_mark_link; // Opaque data type.
-  static nmethod*    volatile _oops_do_mark_nmethods;
-  oops_do_mark_link* volatile _oops_do_mark_link;
-
-  CompiledICData* _compiled_ic_data;
-
-  // offsets for entry points
-  address  _osr_entry_point;       // entry point for on stack replacement
-  uint16_t _entry_offset;          // entry point with class check
-  uint16_t _verified_entry_offset; // entry point without class check
-  uint16_t _value_entry_offset;             // value type entry point (unpack all value type args) with class check
-  uint16_t _verified_value_entry_offset;    // value type entry point (unpack all value type args) without class check
-  uint16_t _verified_value_ro_entry_offset; // value type entry point (unpack receiver only) without class check
-  int      _entry_bci;             // != InvocationEntryBci if this nmethod is an on-stack replacement method
-  int      _immutable_data_size;
-
-  // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
-
-  int _skipped_instructions_size;
-
-  int _stub_offset;
-
-  // Offsets for different stubs section parts
-  int _exception_offset;
-  // All deoptee's will resume execution at this location described by
-  // this offset.
-  int _deopt_handler_entry_offset;
-  // Offset (from insts_end) of the unwind handler if it exists
-  int16_t  _unwind_handler_offset;
-  // Number of arguments passed on the stack
-  uint16_t _num_stack_arg_slots;
-
-  // Offset in immutable data section
-  // _dependencies_offset == 0
-  uint16_t _nul_chk_table_offset;
-  uint16_t _handler_table_offset; // This table could be big in C1 code
-  int      _scopes_pcs_offset;
-  int      _scopes_data_offset;
-  int      _immutable_data_ref_count_offset;
-
-  // location in frame (offset for sp) that deopt can store the original
-  // pc during a deopt.
-  int _orig_pc_offset;
-
-  int          _compile_id;            // which compilation made this nmethod
-  CompLevel    _comp_level;            // compilation level (s1)
-  CompilerType _compiler_type;         // which compiler made this nmethod (u1)
-
-  // Local state used to keep track of whether unloading is happening or not
-  volatile uint8_t _is_unloading_state;
-
-  // Protected by NMethodState_lock
-  volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
 public:
   struct Flags {
@@ -290,18 +205,7 @@ public:
     bool needs_stack_repair() const { return (_bits & NEEDS_STACK_REPAIR) != 0; }
   };
 
-private:
-  // Persistent bits, set once during construction.
-  Flags const _flags;
-
-  // Used for maintenance of dependencies (under CodeCache_lock)
-  bool _has_flushed_dependencies;
-
-  // Mark during class unloading
-  bool _is_unlinked;
-
-  // Used by JVMTI to track if an event has been posted for this nmethod
-  bool _load_reported;
+  static_assert(sizeof(Flags) == sizeof(uint8_t), "Must fit exactly");
 
   enum DeoptimizationStatus : u1 {
     not_marked,
@@ -310,14 +214,150 @@ private:
     deoptimize_done
   };
 
-  volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
+ private:
+  // "header" holds all the header members of the nmethod class
+  struct header : public CHeapObj<mtCode> {
+    header(bool is_native, CodeBlob* cb, CodeBuffer *code_buffer, CodeOffsets* offsets, Method* method)
+      : header(is_native, cb, code_buffer, offsets, method, Flags()) {}
+    header(bool is_native, CodeBlob* cb, CodeBuffer *code_buffer, CodeOffsets* offsets, Method* method, Flags flags);
+    header(bool is_native, CodeBlob* new_cb, const header& hdr, ptrdiff_t nm_addr_diff);
+
+    // immutable data
+    address immutable_data_begin  () const { return           _immutable_data; }
+    address immutable_data_end    () const { return           _immutable_data + _immutable_data_size ; }
+    address dependencies_begin    () const { return           _immutable_data; }
+    address dependencies_end      () const { return           _immutable_data + _nul_chk_table_offset; }
+    address nul_chk_table_begin   () const { return           _immutable_data + _nul_chk_table_offset; }
+    address nul_chk_table_end     () const { return           _immutable_data + _handler_table_offset; }
+    address handler_table_begin   () const { return           _immutable_data + _handler_table_offset; }
+    address handler_table_end     () const { return           _immutable_data + _scopes_pcs_offset   ; }
+    PcDesc* scopes_pcs_begin      () const { return (PcDesc*)(_immutable_data + _scopes_pcs_offset)  ; }
+    PcDesc* scopes_pcs_end        () const { return (PcDesc*)(_immutable_data + _scopes_data_offset) ; }
+    address scopes_data_begin     () const { return           _immutable_data + _scopes_data_offset  ; }
+
+    address scopes_data_end       () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
+    address immutable_data_ref_count_begin () const {
+      return  _immutable_data + _immutable_data_ref_count_offset;
+    }
+
+    // Used to track in which deoptimize handshake this method will be deoptimized.
+    uint64_t  _deoptimization_generation;
+    uint64_t  _gc_epoch;
+
+    // Method pointer
+    Method*   _method;
+
+    // To reduce header size union fields which usages do not overlap.
+    union {
+      // To support simple linked-list chaining of nmethods:
+      nmethod*  _osr_link; // from InstanceKlass::osr_nmethods_head
+      struct {
+        // These are used for compiled synchronized native methods to
+        // locate the owner and stack slot for the BasicLock. They are
+        // needed because there is no debug information for compiled native
+        // wrappers and the oop maps are insufficient to allow
+        // frame::retrieve_receiver() to work. Currently they are expected
+        // to be byte offsets from the Java stack pointer for maximum code
+        // sharing between platforms. JVMTI's GetLocalInstance() uses these
+        // offsets to find the receiver for non-static native wrapper frames.
+        ByteSize _native_receiver_sp_offset;
+        ByteSize _native_basic_lock_sp_offset;
+      };
+    };
+
+    // nmethod's read-only data
+    address _immutable_data;
+
+    PcDescContainer* _pc_desc_container;
+    ExceptionCache* volatile _exception_cache;
+
+    void* _gc_data;
+
+    struct oops_do_mark_link; // Opaque data type.
+    oops_do_mark_link* volatile _oops_do_mark_link;
+
+    CompiledICData* _compiled_ic_data;
+
+    // offsets for entry points
+    address  _osr_entry_point;       // entry point for on stack replacement
+    uint16_t _entry_offset;          // entry point with class check
+    uint16_t _verified_entry_offset; // entry point without class check
+    uint16_t _value_entry_offset;             // value type entry point (unpack all value type args) with class check
+    uint16_t _verified_value_entry_offset;    // value type entry point (unpack all value type args) without class check
+    uint16_t _verified_value_ro_entry_offset; // value type entry point (unpack receiver only) without class check
+    int      _entry_bci;             // != InvocationEntryBci if this nmethod is an on-stack replacement method
+    int      _immutable_data_size;
+
+    // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
+
+    int _skipped_instructions_size;
+
+    int _stub_offset;
+
+    // Offsets for different stubs section parts
+    int _exception_offset;
+    // All deoptee's will resume execution at this location described by
+    // this offset.
+    int _deopt_handler_entry_offset;
+    // Offset (from insts_end) of the unwind handler if it exists
+    int16_t  _unwind_handler_offset;
+    // Number of arguments passed on the stack
+    uint16_t _num_stack_arg_slots;
+
+    // Offset in immutable data section
+    // _dependencies_offset == 0
+    uint16_t _nul_chk_table_offset;
+    uint16_t _handler_table_offset; // This table could be big in C1 code
+    int      _scopes_pcs_offset;
+    int      _scopes_data_offset;
+    int      _immutable_data_ref_count_offset;
+
+    // location in frame (offset for sp) that deopt can store the original
+    // pc during a deopt.
+    int _orig_pc_offset;
+
+    int          _compile_id;            // which compilation made this nmethod
+    CompLevel    _comp_level;            // compilation level (s1)
+    CompilerType _compiler_type;         // which compiler made this nmethod (u1)
+
+    // Local state used to keep track of whether unloading is happening or not
+    volatile uint8_t _is_unloading_state;
+
+    // Protected by NMethodState_lock
+    volatile signed char _state;         // {not_installed, in_use, not_entrant}
+
+    uint8_t _has_flushed_dependencies, // Used for maintenance of dependencies (under CodeCache_lock)
+            _is_unlinked,              // mark during class unloading
+            _load_reported;            // used by jvmti to track if an event has been posted for this nmethod
+
+    // Persistent bits, set once during construction.
+    Flags const _flags;
+
+    volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
+  };
+
+  // Pointer to the C-heap block where the header lives
+  header* _hdr;
+
+  static nmethod*    volatile _oops_do_mark_nmethods;
+
+  header* hdr() { return _hdr; }
 
   DeoptimizationStatus deoptimization_status() const {
-    return AtomicAccess::load(&_deoptimization_status);
+    return AtomicAccess::load(&_hdr->_deoptimization_status);
+  }
+  void set_deoptimization_status(DeoptimizationStatus status) {
+    assert_lock_strong(NMethodState_lock);
+    AtomicAccess::store(&_hdr->_deoptimization_status, status);
   }
 
-  // Initialize fields to their default values
-  void init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets);
+  uint64_t deoptimization_generation() const {
+    return _hdr->_deoptimization_generation;
+  }
+
+  void set_deoptimization_generation(uint64_t deopt_gen) {
+    _hdr->_deoptimization_generation = deopt_gen;
+  }
 
   // Post initialization
   void post_init();
@@ -380,8 +420,8 @@ private:
   void post_compiled_method_unload();
 
   PcDesc* find_pc_desc(address pc, bool approximate) {
-    if (_pc_desc_container == nullptr) return nullptr; // native method
-    return _pc_desc_container->find_pc_desc(pc, approximate, code_begin(), scopes_pcs_begin(), scopes_pcs_end());
+    if (_hdr->_pc_desc_container == nullptr) return nullptr; // native method
+    return _hdr->_pc_desc_container->find_pc_desc(pc, approximate, code_begin(), scopes_pcs_begin(), scopes_pcs_end());
   }
 
   // STW two-phase nmethod root processing helpers.
@@ -450,27 +490,27 @@ private:
   static const uint claim_strong_request_tag = 2;
   static const uint claim_strong_done_tag = 3;
 
-  static oops_do_mark_link* mark_link(nmethod* nm, uint tag) {
+  static header::oops_do_mark_link* mark_link(nmethod* nm, uint tag) {
     assert(tag <= claim_strong_done_tag, "invalid tag %u", tag);
     assert(is_aligned(nm, 4), "nmethod pointer must have zero lower two LSB");
-    return (oops_do_mark_link*)(((uintptr_t)nm & ~0x3) | tag);
+    return (header::oops_do_mark_link*)(((uintptr_t)nm & ~0x3) | tag);
   }
 
-  static uint extract_state(oops_do_mark_link* link) {
+  static uint extract_state(header::oops_do_mark_link* link) {
     return (uint)((uintptr_t)link & 0x3);
   }
 
-  static nmethod* extract_nmethod(oops_do_mark_link* link) {
+  static nmethod* extract_nmethod(header::oops_do_mark_link* link) {
     return (nmethod*)((uintptr_t)link & ~0x3);
   }
 
   void oops_do_log_change(const char* state);
 
-  static bool oops_do_has_weak_request(oops_do_mark_link* next) {
+  static bool oops_do_has_weak_request(header::oops_do_mark_link* next) {
     return extract_state(next) == claim_weak_request_tag;
   }
 
-  static bool oops_do_has_any_strong_state(oops_do_mark_link* next) {
+  static bool oops_do_has_any_strong_state(header::oops_do_mark_link* next) {
     return extract_state(next) >= claim_strong_request_tag;
   }
 
@@ -478,14 +518,14 @@ private:
   bool oops_do_try_claim_weak_request();
 
   // Attempt Unclaimed -> N|SD transition. Returns the current link.
-  oops_do_mark_link* oops_do_try_claim_strong_done();
+  header::oops_do_mark_link* oops_do_try_claim_strong_done();
   // Attempt N|WR -> X|WD transition. Returns nullptr if successful, X otherwise.
   nmethod* oops_do_try_add_to_list_as_weak_done();
 
   // Attempt X|WD -> N|SR transition. Returns the current link.
-  oops_do_mark_link* oops_do_try_add_strong_request(oops_do_mark_link* next);
+  header::oops_do_mark_link* oops_do_try_add_strong_request(header::oops_do_mark_link* next);
   // Attempt X|WD -> X|SD transition. Returns true if successful.
-  bool oops_do_try_claim_weak_done_as_strong_done(oops_do_mark_link* next);
+  bool oops_do_try_claim_weak_done_as_strong_done(header::oops_do_mark_link* next);
 
   // Do the N|SD -> X|SD transition.
   void oops_do_add_to_list_as_strong_done();
@@ -623,10 +663,10 @@ public:
                                      OopMapSet* oop_maps,
                                      int exception_handler = -1);
 
-  Method* method       () const { return _method; }
-  bool is_native_method() const { return _method != nullptr && _method->is_native(); }
-  bool is_java_method  () const { return _method != nullptr && !_method->is_native(); }
-  bool is_osr_method   () const { return _entry_bci != InvocationEntryBci; }
+  Method* method       () const { return _hdr->_method; }
+  bool is_native_method() const { return _hdr->_method != nullptr && _hdr->_method->is_native(); }
+  bool is_java_method  () const { return _hdr->_method != nullptr && !_hdr->_method->is_native(); }
+  bool is_osr_method   () const { return _hdr->_entry_bci != InvocationEntryBci; }
 
   bool is_relocatable();
 
@@ -634,24 +674,24 @@ public:
   // are numbered in an independent sequence if CICountOSR is true,
   // and native method wrappers are also numbered independently if
   // CICountNative is true.
-  int compile_id() const { return _compile_id; }
+  int compile_id() const { return _hdr->_compile_id; }
   const char* compile_kind() const;
 
-  inline bool  is_compiled_by_c1   () const { return _compiler_type == compiler_c1; }
-  inline bool  is_compiled_by_c2   () const { return _compiler_type == compiler_c2; }
-  CompilerType compiler_type       () const { return _compiler_type; }
+  inline bool  is_compiled_by_c1   () const { return _hdr->_compiler_type == compiler_c1; }
+  inline bool  is_compiled_by_c2   () const { return _hdr->_compiler_type == compiler_c2; }
+  CompilerType compiler_type       () const { return _hdr->_compiler_type; }
   const char*  compiler_name       () const;
 
   // boundaries for different parts
   address consts_begin          () const { return           content_begin(); }
   address consts_end            () const { return           code_begin()   ; }
   address insts_begin           () const { return           code_begin()   ; }
-  address insts_end             () const { return           header_begin() + _stub_offset             ; }
-  address stub_begin            () const { return           header_begin() + _stub_offset             ; }
+  address insts_end             () const { return           header_begin() + _hdr->_stub_offset       ; }
+  address stub_begin            () const { return           header_begin() + _hdr->_stub_offset       ; }
   address stub_end              () const { return           code_end()     ; }
-  address exception_begin       () const { return           header_begin() + _exception_offset        ; }
-  address deopt_handler_entry   () const { return           header_begin() + _deopt_handler_entry_offset    ; }
-  address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
+  address exception_begin       () const { return           header_begin() + _hdr->_exception_offset        ; }
+  address deopt_handler_entry   () const { return           header_begin() + _hdr->_deopt_handler_entry_offset    ; }
+  address unwind_handler_begin  () const { return _hdr->_unwind_handler_offset != -1 ? (insts_end() - _hdr->_unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const { return (oop*)    data_begin(); }
   oop*    oops_end              () const { return (oop*)    data_end(); }
 
@@ -660,23 +700,26 @@ public:
   Metadata** metadata_end       () const { return (Metadata**)  mutable_data_end(); }
 
   // immutable data
-  address immutable_data_begin  () const { return           _immutable_data; }
-  address immutable_data_end    () const { return           _immutable_data + _immutable_data_size ; }
-  address dependencies_begin    () const { return           _immutable_data; }
-  address dependencies_end      () const { return           _immutable_data + _nul_chk_table_offset; }
-  address nul_chk_table_begin   () const { return           _immutable_data + _nul_chk_table_offset; }
-  address nul_chk_table_end     () const { return           _immutable_data + _handler_table_offset; }
-  address handler_table_begin   () const { return           _immutable_data + _handler_table_offset; }
-  address handler_table_end     () const { return           _immutable_data + _scopes_pcs_offset   ; }
-  PcDesc* scopes_pcs_begin      () const { return (PcDesc*)(_immutable_data + _scopes_pcs_offset)  ; }
-  PcDesc* scopes_pcs_end        () const { return (PcDesc*)(_immutable_data + _scopes_data_offset) ; }
-  address scopes_data_begin     () const { return           _immutable_data + _scopes_data_offset  ; }
+  address immutable_data_begin  () const { return _hdr->immutable_data_begin(); }
+  address immutable_data_end    () const { return _hdr->immutable_data_end  (); }
+  address dependencies_begin    () const { return _hdr->dependencies_begin  (); }
+  address dependencies_end      () const { return _hdr->dependencies_end    (); }
+  address nul_chk_table_begin   () const { return _hdr->nul_chk_table_begin (); }
+  address nul_chk_table_end     () const { return _hdr->nul_chk_table_end   (); }
+  address handler_table_begin   () const { return _hdr->handler_table_begin (); }
+  address handler_table_end     () const { return _hdr->handler_table_end   (); }
+  PcDesc* scopes_pcs_begin      () const { return _hdr->scopes_pcs_begin    (); }
+  PcDesc* scopes_pcs_end        () const { return _hdr->scopes_pcs_end      (); }
+  address scopes_data_begin     () const { return _hdr->scopes_data_begin   (); }
 
-  address scopes_data_end       () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
-  address immutable_data_ref_count_begin () const { return  _immutable_data + _immutable_data_ref_count_offset ; }
+  address scopes_data_end       () const { return _hdr->scopes_data_end     (); }
+  address immutable_data_ref_count_begin () const {
+    return  _hdr->immutable_data_ref_count_begin();
+  }
 
   // Sizes
-  int immutable_data_size() const { return _immutable_data_size; }
+  int hdr_size           () const { return sizeof(nmethod::header); }
+  int immutable_data_size() const { return _hdr->_immutable_data_size; }
   int consts_size        () const { return int(          consts_end       () -           consts_begin       ()); }
   int insts_size         () const { return int(          insts_end        () -           insts_begin        ()); }
   int stub_size          () const { return int(          stub_end         () -           stub_begin         ()); }
@@ -691,7 +734,7 @@ public:
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
   int metadata_count() const { assert(metadata_size() % wordSize == 0, ""); return (metadata_size() / wordSize) + 1; }
 
-  int skipped_instructions_size () const { return _skipped_instructions_size; }
+  int skipped_instructions_size () const { return _hdr->_skipped_instructions_size; }
   int total_size() const;
 
   // Containment
@@ -709,11 +752,11 @@ public:
   bool nul_chk_table_contains  (address addr) const { return nul_chk_table_begin() <= addr && addr < nul_chk_table_end(); }
 
   // entry points
-  address entry_point() const          { return code_begin() + _entry_offset;          } // normal entry point
-  address verified_entry_point() const { return code_begin() + _verified_entry_offset; } // if klass is correct
-  address value_entry_point() const              { return code_begin() + _value_entry_offset; }             // value type entry point (unpack all value type args)
-  address verified_value_entry_point() const     { return code_begin() + _verified_value_entry_offset; }    // value type entry point (unpack all value type args) without class check
-  address verified_value_ro_entry_point() const  { return code_begin() + _verified_value_ro_entry_offset; } // value type entry point (only unpack receiver) without class check
+  address entry_point() const          { return code_begin() + _hdr->_entry_offset;          } // normal entry point
+  address verified_entry_point() const { return code_begin() + _hdr->_verified_entry_offset; } // if klass is correct
+  address value_entry_point() const              { return code_begin() + _hdr->_value_entry_offset; }             // value type entry point (unpack all value type args)
+  address verified_value_entry_point() const     { return code_begin() + _hdr->_verified_value_entry_offset; }    // value type entry point (unpack all value type args) without class check
+  address verified_value_ro_entry_point() const  { return code_begin() + _hdr->_verified_value_ro_entry_offset; } // value type entry point (only unpack receiver) without class check
 
   enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
                                            // allowed to advance state
@@ -722,10 +765,10 @@ public:
   };
 
   // flag accessing and manipulation
-  bool is_not_installed() const        { return _state == not_installed; }
-  bool is_in_use() const               { return _state <= in_use; }
-  bool is_not_entrant() const          { return _state == not_entrant; }
-  int  get_state() const               { return _state; }
+  bool is_not_installed() const        { return _hdr->_state == not_installed; }
+  bool is_in_use() const               { return _hdr->_state <= in_use; }
+  bool is_not_entrant() const          { return _hdr->_state == not_entrant; }
+  int  get_state() const               { return _hdr->_state; }
 
   void clear_unloading_state();
   // Heuristically deduce an nmethod isn't worth keeping around
@@ -764,29 +807,29 @@ public:
   void flush_dependencies();
 
   template<typename T>
-  T* gc_data() const                              { return reinterpret_cast<T*>(_gc_data); }
+  T* gc_data() const                              { return reinterpret_cast<T*>(_hdr->_gc_data); }
   template<typename T>
-  void set_gc_data(T* gc_data)                    { _gc_data = reinterpret_cast<void*>(gc_data); }
+  void set_gc_data(T* gc_data)                    { _hdr->_gc_data = reinterpret_cast<void*>(gc_data); }
 
-  bool  has_unsafe_access() const                 { return _flags.has_unsafe_access(); }
-  bool  has_monitors() const                      { return _flags.has_monitors(); }
-  bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
-  bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
-  bool  needs_stack_repair() const                { return _flags.needs_stack_repair(); }
+  bool  has_unsafe_access() const                 { return _hdr->_flags.has_unsafe_access(); }
+  bool  has_monitors() const                      { return _hdr->_flags.has_monitors(); }
+  bool  has_scoped_access() const                 { return _hdr->_flags.has_scoped_access(); }
+  bool  has_wide_vectors() const                  { return _hdr->_flags.has_wide_vectors(); }
+  bool  needs_stack_repair() const                { return _hdr->_flags.needs_stack_repair(); }
 
-  bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
+  bool  has_flushed_dependencies() const          { return _hdr->_has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
     assert(!has_flushed_dependencies(), "should only happen once");
-    _has_flushed_dependencies = z;
+    _hdr->_has_flushed_dependencies = z;
   }
 
-  bool  is_unlinked() const                       { return _is_unlinked; }
+  bool  is_unlinked() const                       { return _hdr->_is_unlinked; }
   void  set_is_unlinked()                         {
-     assert(!_is_unlinked, "already unlinked");
-      _is_unlinked = true;
+     assert(!_hdr->_is_unlinked, "already unlinked");
+      _hdr->_is_unlinked = true;
   }
 
-  int   comp_level() const                        { return _comp_level; }
+  int   comp_level() const                        { return _hdr->_comp_level; }
 
   // Support for oops in scopes and relocs:
   // Note: index 0 is reserved for null.
@@ -829,7 +872,7 @@ public:
 protected:
   // Exception cache support
   // Note: _exception_cache may be read and cleaned concurrently.
-  ExceptionCache* exception_cache() const         { return _exception_cache; }
+  ExceptionCache* exception_cache() const         { return _hdr->_exception_cache; }
   ExceptionCache* exception_cache_acquire() const;
 
 public:
@@ -889,14 +932,14 @@ public:
   void unlink_from_method();
 
   // On-stack replacement support
-  int      osr_entry_bci()    const { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
-  address  osr_entry()        const { assert(is_osr_method(), "wrong kind of nmethod"); return _osr_entry_point; }
-  nmethod* osr_link()         const { return _osr_link; }
-  void     set_osr_link(nmethod *n) { _osr_link = n; }
+  int      osr_entry_bci()    const { assert(is_osr_method(), "wrong kind of nmethod"); return _hdr->_entry_bci; }
+  address  osr_entry()        const { assert(is_osr_method(), "wrong kind of nmethod"); return _hdr->_osr_entry_point; }
+  nmethod* osr_link()         const { return _hdr->_osr_link; }
+  void     set_osr_link(nmethod *n) { _hdr->_osr_link = n; }
   void     invalidate_osr_method();
 
   int num_stack_arg_slots(bool rounded = true) const {
-    return rounded ? align_up(_num_stack_arg_slots, 2) : _num_stack_arg_slots;
+    return rounded ? align_up(_hdr->_num_stack_arg_slots, 2) : _hdr->_num_stack_arg_slots;
   }
 
   // Verify calls to dead methods have been cleaned.
@@ -913,7 +956,7 @@ public:
   bool is_maybe_on_stack();
 
   // Evolution support. We make old (discarded) compiled methods point to new Method*s.
-  void set_method(Method* method) { _method = method; }
+  void set_method(Method* method) { _hdr->_method = method; }
 
   void oops_do(OopClosure* f);
 
@@ -951,8 +994,8 @@ public:
   address* orig_pc_addr(const frame* fr);
 
   // used by jvmti to track if the load events has been reported
-  bool  load_reported() const                     { return _load_reported; }
-  void  set_load_reported()                       { _load_reported = true; }
+  bool  load_reported() const                     { return _hdr->_load_reported; }
+  void  set_load_reported()                       { _hdr->_load_reported = true; }
 
   inline void init_immutable_data_ref_count() {
     assert(is_not_installed(), "should be called in nmethod constructor");
@@ -989,7 +1032,7 @@ public:
   void copy_scopes_pcs(PcDesc* pcs, int count);
   void copy_scopes_data(address buffer, int size);
 
-  int orig_pc_offset() { return _orig_pc_offset; }
+  int orig_pc_offset() { return _hdr->_orig_pc_offset; }
 
   // Post successful compilation
   void post_compiled_method(CompileTask* task);
@@ -1072,16 +1115,17 @@ public:
   // JVMTI's GetLocalInstance() support
   ByteSize native_receiver_sp_offset() {
     assert(is_native_method(), "sanity");
-    return _native_receiver_sp_offset;
+    return _hdr->_native_receiver_sp_offset;
   }
   ByteSize native_basic_lock_sp_offset() {
     assert(is_native_method(), "sanity");
-    return _native_basic_lock_sp_offset;
+    return _hdr->_native_basic_lock_sp_offset;
   }
 
   // support for code generation
-  static ByteSize osr_entry_point_offset() { return byte_offset_of(nmethod, _osr_entry_point); }
-  static ByteSize state_offset()           { return byte_offset_of(nmethod, _state); }
+  static ByteSize hdr_offset()             { return byte_offset_of(nmethod, _hdr); }
+  static ByteSize osr_entry_point_offset() { return byte_offset_of(nmethod::header, _osr_entry_point); }
+  static ByteSize state_offset()           { return byte_offset_of(nmethod::header, _state); }
 
   void metadata_do(MetadataClosure* f);
 
@@ -1097,6 +1141,15 @@ public:
     }
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
       instance->as_nmethod()->print_value_on_impl(st);
+    }
+    void cleanup(CodeBlob* instance) const override {
+      nmethod* nm = instance->as_nmethod();
+      nmethod::header* hdr = nm->hdr();
+
+      if (hdr != nullptr) {
+        nm->_hdr = nullptr;
+        delete hdr;
+      }
     }
   };
 
