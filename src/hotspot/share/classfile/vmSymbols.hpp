@@ -736,8 +736,13 @@ class SerializeClosure;
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \
+  template(showSettingsBytes_name,                     "showSettingsBytes")                                       \
+  template(showSettingsBytes_signature,                "(Ljava/lang/String;JJJ)[B")                               \
+  template(sun_launcher_LauncherHelper,                "sun/launcher/LauncherHelper")                             \
+  template(sun_launcher_LauncherHelper,                "sun/launcher/LauncherHelper")                                      \
   template(primaryType_name,                           "primaryType")                                             \
   template(secondaryType_name,                         "secondaryType")                                           \
+  template(jdk_internal_launcher_ShowSettings,         "jdk/internal/launcher/ShowSettings")                      \
                                                                                                                   \
   /* forEachRemaining support */                                                                                  \
   template(java_util_stream_StreamsRangeIntSpliterator,          "java/util/stream/Streams$RangeIntSpliterator")  \

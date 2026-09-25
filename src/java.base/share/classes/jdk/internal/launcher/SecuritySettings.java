@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.launcher;
+package jdk.internal.launcher;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -53,7 +53,7 @@ public final class SecuritySettings {
     private static final String PROV_INFO_STRING = "Provider information: ";
     private static PrintStream ostream = null;
 
-    static void printSecuritySettings(LauncherHelper.Option o, PrintStream stream, boolean verbose) {
+    static void printSecuritySettings(ShowSettings.Option o, PrintStream stream, boolean verbose) {
         ostream = stream;
         if (!verbose) {
             printSecuritySummarySettings();
@@ -85,7 +85,7 @@ public final class SecuritySettings {
 
     private static void printSecurityProperties() {
         ostream.println(INDENT + "Security properties:");
-        Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getInitialProperties();
+        Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getCurrentProperties();
         for (String key : p.stringPropertyNames().stream().sorted().toList()) {
             String val = p.getProperty(key);
             if (val.length() > 60) {
