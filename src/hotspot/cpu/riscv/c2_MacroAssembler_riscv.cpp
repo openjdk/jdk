@@ -216,9 +216,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     if (UseZawrs) {
       Label recursive;
       beq(tmp3_owner, tid, recursive);
-      // Values below the first valid thread id are ObjectMonitor protocol
-      // markers and must be handled by the runtime. In particular, do not
-      // wait on a monitor that may be reclaimed by async deflation.
+      // Defer non-thread owner markers to the runtime rather than waiting on them.
       mv(t0, (uint64_t)ThreadIdentifier::initial());
       bltu(tmp3_owner, t0, slow_path);
 
