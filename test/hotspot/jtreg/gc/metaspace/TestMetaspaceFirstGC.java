@@ -164,6 +164,11 @@ public class TestMetaspaceFirstGC {
                 }
                 throw e;
             }
+            // one more sample closes the window of the last candidate before anything is released
+            LoadSample end = new LoadSample();
+            end.committed = getMetaspaceCommitted();
+            end.threshold = WhiteBox.getWhiteBox().metaspaceCapacityUntilGC();
+            end.commit();
             loaders.clear();
             rs.stop();
 
@@ -179,10 +184,11 @@ public class TestMetaspaceFirstGC {
             events = new ArrayList<>(RecordingFile.readAllEvents(dump));
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
 
-            // The first failed metadata allocation inside loadOneClass is where the request is made,
-            // a threshold change or a metadata GC before the next class load shows the collector was
-            // asked, both happen inside the failing allocation. Shenandoah without class unloading
-            // expands without asking and is excluded. The sample
+            // The first failed metadata allocation inside loadOneClass is the candidate. A threshold
+            // change or a metadata GC with a start time before the next sample shows the collector
+            // was asked in that window, the window can hold more than one failed allocation and the
+            // collection itself may finish later. Shenandoah without class unloading expands without
+            // asking and is excluded. The sample
             // written right before that class load gives committed and the threshold just before
             // it, committed has to be at the threshold within the tolerance, below it the request
             // would be premature. A
@@ -232,7 +238,7 @@ public class TestMetaspaceFirstGC {
                 if (type.equals(EventNames.MetaspaceGCThreshold)) {
                     if (beforeRequest) {
                         changesBefore++;
-                        System.out.println("Threshold changed before the request: " + event.getLong("oldValue")
+                        System.out.println("Threshold changed before the candidate: " + event.getLong("oldValue")
                             + " -> " + event.getLong("newValue") + " by " + event.getString("updater"));
                     } else if (thresholdAfterRequest < 0
                             && (nextLoad == null || !event.getStartTime().isAfter(nextLoad))) {
@@ -244,7 +250,7 @@ public class TestMetaspaceFirstGC {
                     metadataGcSeen = true;
                 } else if (type.equals(EventNames.MetaspaceSummary) && !beforeRequest && !summaryLogged) {
                     summaryLogged = true;
-                    System.out.println("Summary after the request: " + event.getString("when") + " gcId="
+                    System.out.println("Summary after the candidate: " + event.getString("when") + " gcId="
                         + event.getLong("gcId") + " committed=" + event.getLong("metaspace.committed")
                         + " gcThreshold=" + event.getLong("gcThreshold"));
                 }
@@ -256,7 +262,7 @@ public class TestMetaspaceFirstGC {
             }
             if (thresholdAfterRequest < 0 && !metadataGcSeen) {
                 // nothing shows a GC was asked for, the retry may have gone through without one
-                throw new SkippedException("no threshold change and no metadata GC recorded before the next load");
+                throw new SkippedException("no threshold change and no metadata GC starting in the candidate's window");
             }
             RecordedEvent atRequest = null;
             for (RecordedEvent event : events) {
@@ -273,7 +279,7 @@ public class TestMetaspaceFirstGC {
             long thresholdAtRequest = atRequest.getLong("threshold");
             System.out.println("Before the failing load: committed=" + committedAtRequest
                 + " threshold=" + thresholdAtRequest
-                + (thresholdAfterRequest < 0 ? ", no threshold change after the request" : ", next change from " + thresholdAfterRequest));
+                + ", next change in the window from " + thresholdAfterRequest);
             if (thresholdAfterRequest >= 0) {
                 Asserts.assertGreaterThanOrEqual(thresholdAfterRequest, thresholdAtRequest,
                     "the threshold change after the request should start at or above the sampled threshold");
