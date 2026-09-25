@@ -29,16 +29,10 @@
 #include "cppstdlib/limits.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "utilities/align.hpp"
-#include "utilities/checkedCast.hpp"
-#include "utilities/count_trailing_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#ifdef AMD64
-#include "vm_version_x86.hpp"
-#endif // AMD64
-
-// A Swiss table is an open-addressing hash table implementation that uses a small side table for
+// A Swiss table is an open-addressed hash table implementation that uses a small side table for
 // fast lookup. A 64-bit hash value is divided into 2 parts, H1 consists of the last 7 bits, and H2
 // is the remaining 57 bits. Each element in the side table will then contain either the 7-bit H1
 // value of the key corresponding to that bucket, or a marker value which signifies that the bucket
@@ -59,6 +53,9 @@
 template <class Entry, class Allocator>
 class SwissTableImpl {
 private:
+  template <class P1, class P2>
+  friend class PDSwissTableImpl;
+
   class LookupResult {
   private:
     bool _exist;
@@ -120,9 +117,12 @@ public:
   };
 
 private:
-  static constexpr uint8_t _empty_marker = -1;
-  static constexpr uint8_t _removed_marker = -2;
-  static constexpr uint8_t _oob_marker = -3;
+  enum class Marker : uint8_t {
+    _empty_marker   = uint8_t(-1),
+    _tombstone_marker = uint8_t(-2),
+    _oob_marker     = uint8_t(-3),
+  };
+
   static constexpr int _h2_shift = 7;
   static constexpr uint64_t _h1_mask = right_n_bits(_h2_shift);
   static constexpr size_t _no_insert_point = -1;
@@ -157,28 +157,30 @@ private:
   // construct an actual key.
   template <class Token, auto TOKEN_HASH_MATCH>
   static LookupResult lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                             uint64_t hash, const Token& token) {
-    assert(table != nullptr, "must have been initialized");
-    uint64_t h2 = hash >> _h2_shift;
-    size_t start_idx = h2 & table_size_minus_one;
+                             uint64_t hash, const Token& token);
 
-    uint8_t first_metadata = metadata[start_idx];
-    if (first_metadata == _empty_marker) {
-      return LookupResult(false, start_idx);
-    }
+  template <class Token, auto TOKEN_HASH_MATCH>
+  static LookupResult lookup_fallback(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                      uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
+    uint64_t h1 = hash & _h1_mask;
+    for (size_t idx = start_idx;; idx++) {
+      if (idx > table_size_minus_one) {
+        idx = 0;
+      }
 
-    if (uint64_t h1 = hash & _h1_mask; first_metadata == h1) {
-      const Entry& entry = table[start_idx];
-      if (TOKEN_HASH_MATCH(token, hash, entry)) {
-        return LookupResult(true, start_idx);
+      uint8_t cur_metadata = metadata[idx];
+      if (cur_metadata == uint8_t(Marker::_empty_marker)) {
+        return LookupResult(false, insert_point == _no_insert_point ? idx : insert_point);
+      }
+
+      if (insert_point == _no_insert_point && cur_metadata == uint8_t(Marker::_tombstone_marker)) {
+        insert_point = idx;
+      }
+
+      if (cur_metadata == h1 && TOKEN_HASH_MATCH(token, hash, table[idx])) {
+        return LookupResult(true, idx);
       }
     }
-
-    size_t insert_point = _no_insert_point;
-    if (first_metadata == _removed_marker) {
-      insert_point = start_idx;
-    }
-    return pd_lookup<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one, hash, token, start_idx + 1, insert_point);
   }
 
   bool should_grow() {
@@ -201,6 +203,9 @@ private:
     size_t metadata_size_in_bytes = sizeof(uint8_t) * new_table_size;
     size_t table_offset = align_up(metadata_size_in_bytes + metadata_out_of_bounds_size(), alignof(Entry));
     size_t allocated_size = table_offset + sizeof(Entry) * new_table_size;
+
+    // It is less verbose to deal with allocation failure when you only do one, so we allocate both
+    // of the tables in one call
     void* allocated = _alloc.allocate(allocated_size);
     if (allocated == nullptr) {
       return false;
@@ -209,9 +214,9 @@ private:
     uint8_t* new_metadata = static_cast<uint8_t*>(allocated);
     Entry* new_table = reinterpret_cast<Entry*>(new_metadata + table_offset);
     size_t new_table_size_minus_one = new_table_size - 1;
-    ::memset(new_metadata, _empty_marker, metadata_size_in_bytes);
-    ::memset(new_metadata + metadata_size_in_bytes, _oob_marker, metadata_out_of_bounds_size());
-    
+    ::memset(new_metadata, uint8_t(Marker::_empty_marker), metadata_size_in_bytes);
+    ::memset(new_metadata + metadata_size_in_bytes, uint8_t(Marker::_oob_marker), metadata_out_of_bounds_size());
+
     for (size_t idx = 0; idx < table_size; idx++) {
       uint8_t cur_metadata = _metadata[idx];
       if (int8_t(cur_metadata) < 0) {
@@ -226,7 +231,7 @@ private:
       assert(!lookup_res.exist(), "must not exist");
       size_t insert_point = lookup_res.idx();
       assert(insert_point < new_table_size, "unexpected insert point %zu out-of-bound %zu", insert_point, new_table_size);
-      assert(new_metadata[insert_point] == _empty_marker, "must be empty but %u", new_metadata[insert_point]);
+      assert(new_metadata[insert_point] == uint8_t(Marker::_empty_marker), "must be empty but %u", new_metadata[insert_point]);
       uint64_t h1 = hash & _h1_mask;
       new_metadata[insert_point] = h1;
       ::new(&new_table[insert_point]) Entry(entry);
@@ -240,48 +245,6 @@ private:
     return true;
   }
 
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult pd_lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
-
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult pd_lookup_fallback(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                          uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
-    uint64_t h1 = hash & _h1_mask;
-    for (size_t idx = start_idx;; idx++) {
-      if (idx > table_size_minus_one) {
-        idx = 0;
-      }
-
-      uint8_t cur_metadata = metadata[idx];
-      if (cur_metadata == _empty_marker) {
-        return LookupResult(false, insert_point == _no_insert_point ? idx : insert_point);
-      }
-
-      if (insert_point == _no_insert_point && cur_metadata == _removed_marker) {
-        insert_point = idx;
-      }
-
-      if (cur_metadata == h1 && TOKEN_HASH_MATCH(token, hash, table[idx])) {
-        return LookupResult(true, idx);
-      }
-    }
-  }
-
-#ifdef AMD64
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult pd_lookup_avx512(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                       uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
-
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult pd_lookup_avx2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                     uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
-
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult pd_lookup_sse2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                     uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
-#endif // AMD64
-
 public:
   SwissTableImpl(Allocator alloc)
     : _alloc(alloc), _metadata(nullptr), _table(nullptr), _table_size_minus_one(std::numeric_limits<size_t>::max()),
@@ -293,8 +256,8 @@ public:
     _alloc.deallocate(_metadata);
   }
 
-  jlong size() const {
-    return checked_cast<jlong>(_size);
+  size_t size() const {
+    return _size;
   }
 
   template <class Token, auto TOKEN_HASH_MATCH>
@@ -320,7 +283,7 @@ public:
     assert(lookup_res.exist() == (int8_t(old_metadata) >= 0), "inconsistent");
 
     if (int8_t(old_metadata) < 0) {
-      if (old_metadata == _empty_marker) {
+      if (old_metadata == uint8_t(Marker::_empty_marker)) {
         if (must_not_insert_new) {
           return EmplaceResult(EmplaceResult::FAIL_TO_ALLOCATE);
         }
@@ -351,281 +314,78 @@ public:
     size_t idx = lookup_res.idx();
     extract_entry(&_table[idx]);
     assert(int8_t(_metadata[idx]) >= 0, "inconsistent");
-    _metadata[idx] = _removed_marker;
+    _metadata[idx] = uint8_t(Marker::_tombstone_marker);
     _size--;
     return EraseResult(EraseResult::ERASED);
   }
 };
 
-#ifdef AMD64
+#if __has_include(CPU_HEADER(swissTable))
 
-#ifdef __GNUC__
-static bool should_run_avx512() {
-  static bool res = VM_Version::supports_bmi1() && VM_Version::supports_avx512bw();
-  return res;
-}
+#include CPU_HEADER(swissTable)
 
-static bool should_run_avx2() {
-  static bool res = VM_Version::supports_bmi1() && VM_Version::supports_avx2();
-  return res;
-}
-
-#else // __GNUC__
-
-// MSVC does not support function-scope target, so we can only use the lowest configuration
-static bool should_run_avx512() {
-  return false;
-}
-
-static bool should_run_avx2() {
-  return false;
-}
-#endif // __GNUC__
+#else // __has_include(CPU_HEADER(swissTable))
 
 template <class Entry, class Allocator>
-double SwissTableImpl<Entry, Allocator>::default_load_factor() {
-  if (should_run_avx512()) {
-    // If 10% of the buckets are empty, we have a 99.9% chance to encounter one of them in the
-    // first 64 buckets
-    return 0.9;
-  } else if (should_run_avx2()) {
-    // There is a 99.4% chance to encounter an empty bucket in the first 32 buckets
-    return 0.85;
-  } else {
-    // There is a 99% chance to encounter an empty bucket in the first 16 buckets
+class PDSwissTableImpl {
+public:
+  static double default_load_factor() {
+    // Not much guarantee when the entries are processed one by one
     return 0.75;
   }
-}
 
-template <class Entry, class Allocator>
-size_t SwissTableImpl<Entry, Allocator>::metadata_out_of_bounds_size() {
-  if (should_run_avx512()) {
-    return 63;
-  } else if (should_run_avx2()) {
-    return 31;
-  } else {
-    return 15;
+  static size_t metadata_out_of_bounds_size() {
+    return 0;
   }
-}
 
-template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
-typename SwissTableImpl<Entry, Allocator>::LookupResult
-SwissTableImpl<Entry, Allocator>::pd_lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                            uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
-#ifdef __GNUC__
-  if (should_run_avx512()) {
-    return pd_lookup_avx512<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
-  } else if (should_run_avx2()) {
-    return pd_lookup_avx2<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
+  template <class Token, auto TOKEN_HASH_MATCH>
+  static typename SwissTableImpl<Entry, Allocator>::LookupResult
+  lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+         uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
+    return SwissTableImpl<Entry, Allocator>::template lookup_fallback<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one,
+                                                                                               hash, token, start_idx, insert_point);
   }
-#endif // __GNUC__
+};
 
-  return pd_lookup_sse2<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
-}
-
-#ifdef __GNUC__
-// Each function needs to be declared separately, so that the compiler does not use AVX512
-// instructions when only AVX2 is available. The repetition is unfortunate, but using macro would
-// make it really hard to read and trace.
-template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
-__attribute__((target("bmi,avx512bw")))
-typename SwissTableImpl<Entry, Allocator>::LookupResult
-SwissTableImpl<Entry, Allocator>::pd_lookup_avx512(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                                   uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
-  constexpr size_t vector_size = sizeof(__m512i);
-  uint64_t h1 = hash & _h1_mask;
-  __m512i h1_vec = _mm512_set1_epi8(h1);
-  __m512i empty_marker_vec = _mm512_set1_epi8(_empty_marker);
-  __m512i removed_marker_vec = _mm512_set1_epi8(_removed_marker);
-
-  size_t idx = start_idx;
-  while (true) {
-    if (idx > table_size_minus_one) {
-      idx = 0;
-    }
-
-    __m512i cur_vec = _mm512_loadu_epi8(&metadata[idx]);
-    uint64_t empty_mask = _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, empty_marker_vec));
-    size_t empty_off = _tzcnt_u64(empty_mask);
-
-    uint64_t match_mask = _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, h1_vec));
-    while (match_mask != 0) {
-      size_t match_off = _tzcnt_u64(match_mask);
-      if (match_off > empty_off) {
-        break;
-      }
-
-      size_t match_idx = idx + match_off;
-      assert(match_idx <= table_size_minus_one, "match_idx %zu out-of-bounds for table size %zu", match_idx, table_size_minus_one + 1);
-      const Entry& entry = table[match_idx];
-      if (TOKEN_HASH_MATCH(token, hash, entry)) {
-        return LookupResult(true, match_idx);
-      }
-
-      match_mask &= (match_mask - 1);
-    }
-
-    if (insert_point == _no_insert_point) {
-      uint64_t removed_mask = _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, removed_marker_vec));
-      size_t removed_off = _tzcnt_u64(removed_mask);
-      size_t insert_point_off = MIN2(empty_off, removed_off);
-      if (insert_point_off < vector_size) {
-        insert_point = idx + insert_point_off;
-        assert(insert_point <= table_size_minus_one, "insert_point %zu out-of-bounds for table size %zu", insert_point, table_size_minus_one + 1);
-      }
-    }
-
-    if (empty_off < vector_size) {
-      assert(insert_point != _no_insert_point, "must found an insertion point");
-      return LookupResult(false, insert_point);
-    }
-
-    idx += vector_size;
-    assert(idx >= start_idx + vector_size || idx < start_idx, "infinite loop");
-  }
-}
-
-template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
-__attribute__((target("bmi,avx2")))
-typename SwissTableImpl<Entry, Allocator>::LookupResult
-SwissTableImpl<Entry, Allocator>::pd_lookup_avx2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                                 uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
-  constexpr size_t vector_size = sizeof(__m256i);
-  uint64_t h1 = hash & _h1_mask;
-  __m256i h1_vec = _mm256_set1_epi8(h1);
-  __m256i empty_marker_vec = _mm256_set1_epi8(_empty_marker);
-  __m256i removed_marker_vec = _mm256_set1_epi8(_removed_marker);
-
-  size_t idx = start_idx;
-  while (true) {
-    if (idx > table_size_minus_one) {
-      idx = 0;
-    }
-
-    __m256i cur_vec = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&metadata[idx]));
-    uint32_t empty_mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, empty_marker_vec));
-    size_t empty_off = _tzcnt_u32(empty_mask);
-
-    uint32_t match_mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, h1_vec));
-    while (match_mask != 0) {
-      size_t match_off = _tzcnt_u32(match_mask);
-      if (match_off > empty_off) {
-        break;
-      }
-
-      size_t match_idx = idx + match_off;
-      assert(match_idx <= table_size_minus_one, "match_idx %zu out-of-bounds for table size %zu", match_idx, table_size_minus_one + 1);
-      const Entry& entry = table[match_idx];
-      if (TOKEN_HASH_MATCH(token, hash, entry)) {
-        return LookupResult(true, match_idx);
-      }
-
-      match_mask &= (match_mask - 1);
-    }
-
-    if (insert_point == _no_insert_point) {
-      uint32_t removed_mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, removed_marker_vec));
-      size_t removed_off = _tzcnt_u32(removed_mask);
-      size_t insert_point_off = MIN2(empty_off, removed_off);
-      if (insert_point_off < vector_size) {
-        insert_point = idx + insert_point_off;
-        assert(insert_point <= table_size_minus_one, "insert_point %zu out-of-bounds for table size %zu", insert_point, table_size_minus_one + 1);
-      }
-    }
-
-    if (empty_off < vector_size) {
-      assert(insert_point != _no_insert_point, "must found an insertion point");
-      return LookupResult(false, insert_point);
-    }
-
-    idx += vector_size;
-    assert(idx >= start_idx + vector_size || idx < start_idx, "infinite loop");
-  }
-}
-#endif // __GNUC__
-
-template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
-typename SwissTableImpl<Entry, Allocator>::LookupResult
-SwissTableImpl<Entry, Allocator>::pd_lookup_sse2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                                 uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
-  constexpr size_t vector_size = sizeof(__m128i);
-  uint64_t h1 = hash & _h1_mask;
-  __m128i h1_vec = _mm_set1_epi8(h1);
-  __m128i empty_marker_vec = _mm_set1_epi8(_empty_marker);
-  __m128i removed_marker_vec = _mm_set1_epi8(_removed_marker);
-
-  size_t idx = start_idx;
-  while (true) {
-    if (idx > table_size_minus_one) {
-      idx = 0;
-    }
-
-    __m128i cur_vec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&metadata[idx]));
-    uint32_t empty_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(cur_vec, empty_marker_vec));
-    size_t empty_off = count_trailing_zeros(empty_mask | 0x10000);
-
-    uint32_t match_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(cur_vec, h1_vec));
-    while (match_mask != 0) {
-      size_t match_off = count_trailing_zeros(match_mask | 0x10000);
-      if (match_off > empty_off) {
-        break;
-      }
-
-      size_t match_idx = idx + match_off;
-      assert(match_idx <= table_size_minus_one, "match_idx %zu out-of-bounds for table size %zu", match_idx, table_size_minus_one + 1);
-      const Entry& entry = table[match_idx];
-      if (TOKEN_HASH_MATCH(token, hash, entry)) {
-        return LookupResult(true, match_idx);
-      }
-
-      match_mask &= (match_mask - 1);
-    }
-
-    if (insert_point == _no_insert_point) {
-      uint32_t removed_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(cur_vec, removed_marker_vec));
-      size_t removed_off = count_trailing_zeros(removed_mask | 0x10000);
-      size_t insert_point_off = MIN2(empty_off, removed_off);
-      if (insert_point_off < vector_size) {
-        insert_point = idx + insert_point_off;
-        assert(insert_point <= table_size_minus_one, "insert_point %zu out-of-bounds for table size %zu", insert_point, table_size_minus_one + 1);
-      }
-    }
-
-    if (empty_off < vector_size) {
-      assert(insert_point != _no_insert_point, "must found an insertion point");
-      return LookupResult(false, insert_point);
-    }
-
-    idx += vector_size;
-    assert(idx >= start_idx + vector_size || idx < start_idx, "infinite loop");
-  }
-}
-
-#else // AMD64
+#endif // __has_include(CPU_HEADER(swissTable))
 
 template <class Entry, class Allocator>
 double SwissTableImpl<Entry, Allocator>::default_load_factor() {
-  // Not much guarantee when the entries are processed one by one
-  return 0.75;
+  return PDSwissTableImpl<Entry, Allocator>::default_load_factor();
 }
 
 template <class Entry, class Allocator>
 size_t SwissTableImpl<Entry, Allocator>::metadata_out_of_bounds_size() {
-  return 0;
+  return PDSwissTableImpl<Entry, Allocator>::metadata_out_of_bounds_size();
 }
 
 template <class Entry, class Allocator>
 template <class Token, auto TOKEN_HASH_MATCH>
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-SwissTableImpl<Entry, Allocator>::pd_lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                            uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
-  return pd_lookup_fallback<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
-}
+SwissTableImpl<Entry, Allocator>::lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                         uint64_t hash, const Token& token) {
+  assert(table != nullptr, "must have been initialized");
+  uint64_t h2 = hash >> _h2_shift;
+  size_t start_idx = h2 & table_size_minus_one;
 
-#endif // AMD64
+  uint8_t first_metadata = metadata[start_idx];
+  if (first_metadata == uint8_t(Marker::_empty_marker)) {
+    return LookupResult(false, start_idx);
+  }
+
+  if (uint64_t h1 = hash & _h1_mask; first_metadata == h1) {
+    const Entry& entry = table[start_idx];
+    if (TOKEN_HASH_MATCH(token, hash, entry)) {
+      return LookupResult(true, start_idx);
+    }
+  }
+
+  size_t insert_point = _no_insert_point;
+  if (first_metadata == uint8_t(Marker::_tombstone_marker)) {
+    insert_point = start_idx;
+  }
+  return PDSwissTableImpl<Entry, Allocator>::template lookup<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one,
+                                                                                      hash, token, start_idx + 1, insert_point);
+}
 
 #endif // SHARE_UTILITIES_SWISSTABLE_HPP

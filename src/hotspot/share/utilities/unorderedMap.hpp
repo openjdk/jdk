@@ -31,23 +31,28 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/swissTable.hpp"
 
+// A FlatHashTable is an open-addressed hash table that puts all of its entries in a flat array.
+// This means that pointers to entries are not stable and may be invalidated when the table grows
+// or shrinks. This aims to be an easy-to-use hash table implementation that is performant in most
+// of the cases. In contrast to ResizeableHashTable, this table may grow automatically upon
+// insertion instead of users having to manually grow it.
 template <class Key, class T, auto HASH, auto KEY_EQUAL, class Allocator>
-class UnstableUnorderedMap {
+class FlatHashTableBase {
 private:
-  class Node {
+  class Entry {
   public:
     uint64_t _hash;
     Key _key;
     T _value;
 
-    Node(uint64_t h, const Key& key, const T& value) : _hash(h), _key(key), _value(value) {}
+    Entry(uint64_t h, const Key& key, const T& value) : _hash(h), _key(key), _value(value) {}
 
     uint64_t hash() const {
       return _hash;
     }
   };
 
-  static bool key_hash_match(const Key& key, uint64_t h, const Node& entry) {
+  static bool key_hash_match(const Key& key, uint64_t h, const Entry& entry) {
     if constexpr (std::is_integral_v<Key>) {
       return KEY_EQUAL(key, entry._key);
     } else {
@@ -55,7 +60,7 @@ private:
     }
   }
 
-  SwissTableImpl<Node, Allocator> _impl;
+  SwissTableImpl<Entry, Allocator> _impl;
 
   using ImplType = decltype(_impl);
 
@@ -71,9 +76,9 @@ private:
   }
 
 public:
-  UnstableUnorderedMap(Allocator alloc) : _impl(alloc) {}
+  FlatHashTableBase(Allocator alloc) : _impl(alloc) {}
 
-  jlong size() const {
+  size_t size() const {
     return _impl.size();
   }
 
@@ -90,8 +95,8 @@ public:
 
   bool put(const Key& key, const T& value) {
     uint64_t h = internal_hash(key);
-    auto emplace_entry = [&](bool exist, Node* n) {
-      ::new(n) Node(h, key, value);
+    auto emplace_entry = [&](bool exist, Entry* n) {
+      ::new(n) Entry(h, key, value);
     };
     auto emplace_res = _impl.template emplace<Key, key_hash_match>(h, key, emplace_entry);
     if (emplace_res.result() == ImplType::EmplaceResult::FAIL_TO_ALLOCATE) {
@@ -102,9 +107,9 @@ public:
 
   bool put_if_absent(const Key& key, const T& value) {
     uint64_t h = internal_hash(key);
-    auto emplace_entry = [&](bool exist, Node* n) {
+    auto emplace_entry = [&](bool exist, Entry* n) {
       if (!exist) {
-        ::new(n) Node(h, key, value);
+        ::new(n) Entry(h, key, value);
       }
     };
     auto emplace_res = _impl.template emplace<Key, key_hash_match>(h, key, emplace_entry);
@@ -116,14 +121,14 @@ public:
 
   bool remove(const Key& key) {
     uint64_t h = internal_hash(key);
-    auto extract_entry = [](Node* n) {};
+    auto extract_entry = [](Entry* n) {};
     auto erase_res = _impl.template erase<Key, key_hash_match>(h, key, extract_entry);
     return erase_res.result() == ImplType::EraseResult::ERASED;
   }
 };
 
 template <class Key, class T, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
-class ArenaUnstableUnorderedMap : public AnyObj {
+class FlatHashTableArena : public AnyObj {
 private:
   class Allocator {
   private:
@@ -139,12 +144,14 @@ private:
     void deallocate(void* ptr) {}
   };
 
-  UnstableUnorderedMap<Key, T, HASH, KEY_EQUAL, Allocator> _impl;
+  FlatHashTableBase<Key, T, HASH, KEY_EQUAL, Allocator> _impl;
+
+  NONCOPYABLE(FlatHashTableArena);
 
 public:
-  ArenaUnstableUnorderedMap(Arena* arena) : _impl(Allocator(arena)) {}
+  FlatHashTableArena(Arena* arena) : _impl(Allocator(arena)) {}
 
-  jlong size() const {
+  size_t size() const {
     return _impl.size();
   }
 
@@ -170,7 +177,7 @@ public:
 };
 
 template <class Key, class T, MemTag mem_tag, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
-class CHeapUnstableUnorderedMap : public AnyObj {
+class FlatHashTableCHeap {
 private:
   class Allocator {
   public:
@@ -183,12 +190,14 @@ private:
     }
   };
 
-  UnstableUnorderedMap<Key, T, HASH, KEY_EQUAL, Allocator> _impl;
+  FlatHashTableBase<Key, T, HASH, KEY_EQUAL, Allocator> _impl;
+
+  NONCOPYABLE(FlatHashTableCHeap);
 
 public:
-  CHeapUnstableUnorderedMap() : _impl(Allocator()) {}
+  FlatHashTableCHeap() : _impl(Allocator()) {}
 
-  jlong size() const {
+  size_t size() const {
     return _impl.size();
   }
 

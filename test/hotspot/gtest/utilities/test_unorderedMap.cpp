@@ -36,19 +36,19 @@ uint64_t degenerate_hash(const Key& key) {
 template <auto HASH = primitive_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
 void test_basic() {
   Arena arena(mtTest);
-  ArenaUnstableUnorderedMap<int, int, HASH, KEY_EQUAL> map(&arena);
+  FlatHashTableArena<int, int, HASH, KEY_EQUAL> map(&arena);
   ASSERT_EQ(0U, arena.used());
 
   for (int i = 0; i < 10; i++) {
-    ASSERT_EQ(0, map.size());
+    ASSERT_EQ(0U, map.size());
     ASSERT_EQ(nullptr, map.get(0));
     ASSERT_EQ(nullptr, map.get(1));
     ASSERT_FALSE(map.remove(0));
     ASSERT_FALSE(map.remove(1));
-    ASSERT_EQ(0, map.size());
+    ASSERT_EQ(0U, map.size());
 
     ASSERT_TRUE(map.put(1, 2));
-    ASSERT_EQ(1, map.size());
+    ASSERT_EQ(1U, map.size());
     ASSERT_EQ(nullptr, map.get(0));
     int* v = map.get(1);
     ASSERT_NE(nullptr, v);
@@ -62,10 +62,10 @@ void test_basic() {
     v = map.get(1);
     ASSERT_NE(nullptr, v);
     ASSERT_EQ(1, *v);
-    ASSERT_EQ(1, map.size());
+    ASSERT_EQ(1U, map.size());
 
     ASSERT_TRUE(map.put_if_absent(0, 1));
-    ASSERT_EQ(2, map.size());
+    ASSERT_EQ(2U, map.size());
     v = map.get(0);
     ASSERT_NE(nullptr, v);
     ASSERT_EQ(1, *v);
@@ -80,10 +80,10 @@ void test_basic() {
     v = map.get(0);
     ASSERT_NE(nullptr, v);
     ASSERT_EQ(0, *v);
-    ASSERT_EQ(2, map.size());
+    ASSERT_EQ(2U, map.size());
 
     ASSERT_TRUE(map.remove(1));
-    ASSERT_EQ(1, map.size());
+    ASSERT_EQ(1U, map.size());
     v = map.get(0);
     ASSERT_NE(nullptr, v);
     ASSERT_EQ(0, *v);
@@ -93,31 +93,31 @@ void test_basic() {
     v = map.get(0);
     ASSERT_NE(nullptr, v);
     ASSERT_EQ(0, *v);
-    ASSERT_EQ(1, map.size());
+    ASSERT_EQ(1U, map.size());
 
     ASSERT_TRUE(map.remove(0));
-    ASSERT_EQ(0, map.size());
+    ASSERT_EQ(0U, map.size());
     ASSERT_EQ(nullptr, map.get(0));
     ASSERT_EQ(nullptr, map.get(1));
     ASSERT_FALSE(map.remove(0));
     ASSERT_FALSE(map.remove(1));
-    ASSERT_EQ(0, map.size());
+    ASSERT_EQ(0U, map.size());
   }
 }
 
 template <auto HASH = primitive_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
 void test_large_map() {
   constexpr int iterations = 10000;
-  CHeapUnstableUnorderedMap<int, int, mtTest> map;
+  FlatHashTableCHeap<int, int, mtTest, HASH, KEY_EQUAL> map;
   for (int outer_idx = 0; outer_idx < 3; outer_idx++) {
-    ASSERT_EQ(0, map.size());
+    ASSERT_EQ(0U, map.size());
     for (int i = 0; i < iterations; i++) {
       ASSERT_EQ(nullptr, map.get(i));
     }
     for (int i = 0; i < iterations; i++) {
       ASSERT_TRUE(map.put(i, i + 1));
     }
-    ASSERT_EQ(iterations, map.size());
+    ASSERT_EQ(size_t(iterations), map.size());
     for (int i = 0; i < iterations; i++) {
       int* v = map.get(i);
       ASSERT_NE(nullptr, v);
@@ -126,7 +126,7 @@ void test_large_map() {
     for (int i = 0; i < iterations; i++) {
       ASSERT_FALSE(map.put(i, i));
     }
-    ASSERT_EQ(iterations, map.size());
+    ASSERT_EQ(size_t(iterations), map.size());
     for (int i = 0; i < iterations; i++) {
       int* v = map.get(i);
       ASSERT_NE(nullptr, v);
@@ -135,7 +135,7 @@ void test_large_map() {
     for (int i = 0; i < iterations; i++) {
       ASSERT_FALSE(map.put_if_absent(i, i + 1));
     }
-    ASSERT_EQ(iterations, map.size());
+    ASSERT_EQ(size_t(iterations), map.size());
     for (int i = 0; i < iterations; i++) {
       int* v = map.get(i);
       ASSERT_NE(nullptr, v);
