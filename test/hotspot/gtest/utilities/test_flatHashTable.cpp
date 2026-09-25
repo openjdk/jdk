@@ -25,8 +25,8 @@
 #include "memory/arena.hpp"
 #include "nmt/memTag.hpp"
 #include "unittest.hpp"
+#include "utilities/flatHashTable.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/unorderedMap.hpp"
 
 template <class Key>
 uint64_t degenerate_hash(const Key& key) {
