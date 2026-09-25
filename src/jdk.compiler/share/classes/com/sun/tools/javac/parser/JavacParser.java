@@ -1648,7 +1648,7 @@ public class JavacParser implements Parser {
                         List<JCAnnotation> tyannos = null;
                         boolean memberRef = false;
                         if (token.kind == MONKEYS_AT &&
-                            isMode(TYPE) || (memberRef = isParameterizedTypePrefix())) {
+                            (isMode(TYPE) || (memberRef = isParameterizedTypePrefix()))) {
                             tyannos = typeAnnotationsOpt();
                         }
                         // typeArgs saved for next loop iteration.
@@ -1766,7 +1766,14 @@ public class JavacParser implements Parser {
         while (token.kind == DOT) {
             nextToken();
             selectTypeMode();
+            List<JCAnnotation> tyannos = null;
+            if (token.kind == MONKEYS_AT) {
+                tyannos = typeAnnotationsOpt();
+            }
             t = toP(F.at(token.pos).Select(t, ident()));
+            if (tyannos != null && tyannos.nonEmpty()) {
+                t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
+            }
             t = typeApplyOpt(t);
         }
         t = bracketsOpt(t);
