@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_SWISSTABLE_HPP
 #define SHARE_UTILITIES_SWISSTABLE_HPP
 
-#include "cppstdlib/cstdlib.hpp"
 #include "cppstdlib/limits.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "utilities/align.hpp"
