@@ -279,7 +279,7 @@ public:
 template <auto HASH = primitive_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
 void test_random() {
   constexpr int iterations = 10000;
-  FlatHashTableBase<int, int, HASH, primitive_equals<int>, CustomAllocator> map;
+  FlatHashTableBase<int, int, HASH, KEY_EQUAL, CustomAllocator> map;
   ASSERT_EQ(0U, map.size());
   bool expected_exists[TableOp::key_limit];
   int expected_values[TableOp::key_limit];
