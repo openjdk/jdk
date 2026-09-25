@@ -1389,7 +1389,7 @@ bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
 // In total, we have 4 checks:
 //     1) length         >= 0         (non-negative guard)
 //     2) from          u<  length    (range check, RCE-hoistable, encodes from >= 0 && from < length)
-//     3) to - from - 1 u<  length    (range check, RCE-hoistable, encodes from < to)
+//     3) to - from - 1 u<  length    (range check, RCE-hoistable, encodes from < to, note direct `from < to` is not RCE-hoistable)
 //     4) to - 1        u<  length    (range check, RCE-hoistable, encodes to >= 1 && to <= length)
 //
 // All range checks use strict `u<` and avoid `u<=` which RCE doesn't recognize natively.
@@ -1439,13 +1439,9 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
   }
 
   // All validated, but we might as well improve the type on `to`
-  const TypeInteger* to_type = _gvn.type(to)->is_integer(bt);
   jlong hi_length = _gvn.type(casted_length)->is_integer(bt)->hi_as_long();
   Node* casted_to = _gvn.transform(ConstraintCastNode::make_cast_for_basic_type(
-      control(), to, TypeInteger::make(
-        MAX2((jlong)1, to_type->lo_as_long()), // from = to = 0 would've caused deopt, so to must be at least 1
-        MIN2(hi_length, to_type->hi_as_long()),
-        Type::WidenMax, bt),
+      control(), to, TypeInteger::make(1, hi_length, Type::WidenMax, bt),
       ConstraintCastNode::DependencyType::FloatingNarrowing, bt));
 
   replace_in_map(from, casted_from);
