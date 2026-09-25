@@ -96,6 +96,9 @@ public abstract class SoftAbstractResampler implements SoftResampler {
             }
 
             stream = osc.openStream();
+            if (stream == null) {
+                throw new IOException("null stream");
+            }
             streampos = 0;
             stream_eof = false;
             pitchcorrection = osc.getPitchcorrection();
