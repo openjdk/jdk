@@ -369,6 +369,10 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
 
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         switch(type) {
 
         case DataBuffer.TYPE_BYTE:
@@ -599,6 +603,13 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
 
+        if (obj == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         switch(type) {
 
         case DataBuffer.TYPE_BYTE:
@@ -780,6 +791,10 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
 
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         if (iArray != null)
             pixels = iArray;
         else
@@ -829,6 +844,10 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
 
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         if (fArray != null)
             pixels = fArray;
         else
@@ -875,6 +894,10 @@ public abstract class SampleModel
             y < 0 || h < 0 || y >= height || h > height || y1 < 0 || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
         }
 
         if (dArray != null)
@@ -993,6 +1016,10 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
 
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         if (iArray != null)
             pixels = iArray;
         else
@@ -1042,6 +1069,10 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates");
         }
 
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         if (fArray != null)
             pixels = fArray;
         else
@@ -1089,6 +1120,10 @@ public abstract class SampleModel
             y < 0 || h < 0 || y1 < y || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates");
+        }
+
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
         }
 
         if (dArray != null)
@@ -1194,6 +1229,13 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
 
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         for (int i=y; i<y1; i++) {
             for (int j=x; j<x1; j++) {
                 for (int k=0; k<numBands; k++) {
@@ -1233,6 +1275,13 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
 
+        if (fArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         for (int i=y; i<y1; i++) {
             for (int j=x; j<x1; j++) {
                 for(int k=0; k<numBands; k++) {
@@ -1270,6 +1319,13 @@ public abstract class SampleModel
             y < 0 || h < 0 || y >= height || h > height || y1 < 0 || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        if (dArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
         }
 
         for (int i=y; i<y1; i++) {
@@ -1388,6 +1444,13 @@ public abstract class SampleModel
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
 
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         for (int i=y; i<y1; i++) {
             for (int j=x; j<x1; j++) {
                 setSample(j, i, b, iArray[Offset++], data);
@@ -1424,6 +1487,13 @@ public abstract class SampleModel
             y < 0 || h < 0 || y >= height || h > height || y1 < 0 || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        if (fArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
         }
 
         for (int i=y; i<y1; i++) {
@@ -1463,6 +1533,13 @@ public abstract class SampleModel
             y < 0 || h < 0 || y >= height || h > height || y1 < 0 || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        if (dArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
         }
 
         for (int i=y; i<y1; i++) {
