@@ -71,7 +71,7 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_get
     const CHAR        *pUser = 0;
     const CHAR        *pDomain = 0;
     const CHAR        *pPassword = 0;
-    CredHandle      *pCred;
+    CredHandle        *pCred = NULL;
     TimeStamp            ltime;
     jboolean         isCopy;
     SECURITY_STATUS      ss = SEC_E_INTERNAL_ERROR;
@@ -142,6 +142,7 @@ cleanup:
     if (ss == SEC_E_OK) {
         return (jlong) pCred;
     } else {
+        if (pCred != NULL) free(pCred);
         return 0;
     }
 }
