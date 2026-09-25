@@ -41,6 +41,12 @@ BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 
 #include <cstdlib>
 
+// This header includes mm_malloc.h which declares posix_memalign with mismatched noexcept. Clang
+// tolerates this mismatch if the former of the 2 is from a system header. This does not apply if
+// immintrin.h is included after the FORBID_C_FUNCTION at the end of this file. As a result, we
+// must include immintrin.h here.
+#include "immintrin.h"
+
 #include "utilities/vmassert_reinstall.hpp" // don't reorder
 END_ALLOW_FORBIDDEN_FUNCTIONS
 
