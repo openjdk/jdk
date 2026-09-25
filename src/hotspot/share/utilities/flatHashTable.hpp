@@ -53,6 +53,11 @@ private:
     }
   };
 
+  using ImplType = SwissTableImpl<Entry, Allocator>;
+  ImplType _impl;
+
+  NONCOPYABLE(FlatHashTableBase);
+
   static bool key_hash_match(const Key& key, uint64_t h, const Entry& entry) {
     if constexpr (std::is_integral_v<Key>) {
       return KEY_EQUAL(key, entry._key);
@@ -61,15 +66,11 @@ private:
     }
   }
 
-  SwissTableImpl<Entry, Allocator> _impl;
-
-  using ImplType = decltype(_impl);
-
   // User-provided hash functions often have terrible avalanche. For example, most of the time, the
   // provided hash function for Key = int would be the identity function. In addition, the
   // algorithm requires good avalanche. So, we hash the result again. This function is the same as
   // j.u.SplittableRandom::mix64.
-  uint64_t internal_hash(const Key& key) const {
+  static uint64_t internal_hash(const Key& key) {
     uint64_t h = HASH(key);
     h = (h ^ (h >> 30)) * 0xbf58476d1ce4e5b9;
     h = (h ^ (h >> 27)) * 0x94d049bb133111eb;

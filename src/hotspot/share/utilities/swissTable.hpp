@@ -137,6 +137,7 @@ private:
 
   // Implementation limitations
   static_assert(std::is_trivially_destructible_v<Entry>);
+  NONCOPYABLE(SwissTableImpl);
 
   static double default_load_factor();
   static size_t metadata_out_of_bounds_size();
@@ -145,7 +146,10 @@ private:
     static_assert(is_power_of_2(_min_table_size));
     constexpr size_t max_allocatable = std::numeric_limits<size_t>::max() >> 1;
     assert(max_allocatable > metadata_out_of_bounds_size(), "impossible values %zu - %zu", max_allocatable, metadata_out_of_bounds_size());
-    size_t max_allocatable_table_size = (max_allocatable - metadata_out_of_bounds_size() - alignof(Entry)) / (sizeof(Entry) + sizeof(uint8_t));
+
+    // The allocation needs metadata_out_of_bounds_size for out-of-bound markers of the metadata
+    // table, and (alignof(Entry) - 1) to align the main table
+    size_t max_allocatable_table_size = (max_allocatable - metadata_out_of_bounds_size() - (alignof(Entry) - 1)) / (sizeof(Entry) + sizeof(uint8_t));
     assert(max_allocatable_table_size >= _min_table_size, "impossible values %zu - %zu", max_allocatable_table_size, _min_table_size);
     size_t max_table_size = round_down_power_of_2(max_allocatable_table_size);
     return max_table_size;
@@ -183,7 +187,7 @@ private:
   }
 
   bool should_grow() {
-    size_t size_to_grow = size_t(double(_table_size_minus_one + 1) * _load_factor);
+    size_t size_to_grow = MIN2(size_t(double(_table_size_minus_one + 1) * _load_factor), _table_size_minus_one);
     return _size_include_removed >= size_to_grow;
   }
 
@@ -200,8 +204,9 @@ private:
     size_t new_table_size = MAX2(table_size * 2, _min_table_size);
     assert(is_power_of_2(new_table_size), "invalid table size %zu", new_table_size);
     size_t metadata_size_in_bytes = sizeof(uint8_t) * new_table_size;
-    size_t table_offset = align_up(metadata_size_in_bytes + metadata_out_of_bounds_size(), alignof(Entry));
-    size_t allocated_size = table_offset + sizeof(Entry) * new_table_size;
+    size_t metadata_size_include_out_of_bounds = metadata_size_in_bytes + metadata_out_of_bounds_size();
+    // Add (alignof(Entry) - 1) to align the main table
+    size_t allocated_size = metadata_size_include_out_of_bounds + (alignof(Entry) - 1) + sizeof(Entry) * new_table_size;
 
     // It is less verbose to deal with allocation failure when you only do one, so we allocate both
     // of the tables in one call
@@ -211,7 +216,7 @@ private:
     }
 
     uint8_t* new_metadata = static_cast<uint8_t*>(allocated);
-    Entry* new_table = reinterpret_cast<Entry*>(new_metadata + table_offset);
+    Entry* new_table = reinterpret_cast<Entry*>(align_up(new_metadata + metadata_size_include_out_of_bounds, alignof(Entry)));
     size_t new_table_size_minus_one = new_table_size - 1;
     ::memset(new_metadata, uint8_t(Marker::_empty_marker), metadata_size_in_bytes);
     ::memset(new_metadata + metadata_size_in_bytes, uint8_t(Marker::_oob_marker), metadata_out_of_bounds_size());
@@ -276,6 +281,10 @@ public:
   template <class Token, auto TOKEN_HASH_MATCH, class EmplaceEntry>
   EmplaceResult emplace(uint64_t hash, const Token& token, EmplaceEntry emplace_entry) {
     bool must_not_insert_new = should_grow() && !grow();
+    if (_table == nullptr) {
+      return EmplaceResult(EmplaceResult::FAIL_TO_ALLOCATE);
+    }
+
     auto lookup_res = lookup<Token, TOKEN_HASH_MATCH>(_metadata, _table, _table_size_minus_one, hash, token);
     size_t insert_point = lookup_res.idx();
     uint8_t old_metadata = _metadata[insert_point];

@@ -27,7 +27,6 @@
 
 #include "cppstdlib/limits.hpp"
 #include "runtime/vm_version.hpp"
-#include "swissTable_x86.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/swissTable.hpp"
 
@@ -103,7 +102,7 @@ PDSwissTableImpl<Entry, Allocator>::lookup_neon(const uint8_t* metadata, const E
     uint8x16_t empty_index_mask = vbslq_u8(empty_mask, iota_vec, max_uint8_t_vec);
 
     // The offset of the first bucket that is empty, or vector_size if there is none
-    size_t empty_off = vminq_u8(empty_index_mask);
+    size_t empty_off = vminvq_u8(empty_index_mask);
 
     uint64_t h1 = hash & _h1_mask;
     uint8x16_t h1_vec = vdupq_n_u8(h1);
@@ -116,7 +115,7 @@ PDSwissTableImpl<Entry, Allocator>::lookup_neon(const uint8_t* metadata, const E
     uint8x16_t match_index_mask = vbslq_u8(match_mask, iota_vec, max_uint8_t_vec);
     while (true) {
       // This is the offset of the first bucket that we need to inspect
-      size_t match_off = vminq_u8(match_index_mask);
+      size_t match_off = vminvq_u8(match_index_mask);
       // The bucket we want to find cannot appear after an empty bucket, this also takes care of
       // the case where there is no bucket with matching h1 value
       if (match_off >= empty_off) {
@@ -146,9 +145,9 @@ PDSwissTableImpl<Entry, Allocator>::lookup_neon(const uint8_t* metadata, const E
       uint8x16_t tombstone_index_mask = vbslq_u8(tombstone_mask, iota_vec, max_uint8_t_vec);
 
       // The offset of the first bucket that is a tombstone, or vector_size if there is none
-      size_t tombstone_off = vminq_u8(tombstone_index_mask);
+      size_t tombstone_off = vminvq_u8(tombstone_index_mask);
 
-      size_t insert_point_off = MIN2(empty_off, removed_off);
+      size_t insert_point_off = MIN2(empty_off, tombstone_off);
       if (insert_point_off < vector_size) {
         insert_point = idx + insert_point_off;
         assert(insert_point <= table_size_minus_one, "insert_point %zu out-of-bounds for table size %zu", insert_point, table_size_minus_one + 1);

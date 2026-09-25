@@ -79,12 +79,12 @@ bool PDSwissTableImpl<Entry, Allocator>::should_use_avx2() {
 
 // MSVC does not support function-scope target, so we can only use the lowest configuration
 template <class Entry, class Allocator>
-bool PDSwissTableImpl<Entry, Allocator>::should_run_avx512() {
+bool PDSwissTableImpl<Entry, Allocator>::should_use_avx512() {
   return false;
 }
 
 template <class Entry, class Allocator>
-bool PDSwissTableImpl<Entry, Allocator>::should_run_avx2() {
+bool PDSwissTableImpl<Entry, Allocator>::should_use_avx2() {
   return false;
 }
 #endif // __GNUC__
