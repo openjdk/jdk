@@ -24,7 +24,7 @@
 /*
  * @test TestMetaspaceFirstGC
  * @bug 8208250 8391711 8392597
- * @summary Verify that the first metadata GC seen after startup is requested when metaspace reaches the MetaspaceSize threshold
+ * @summary Verify that the first metadata GC request seen after startup is made when metaspace reaches the MetaspaceSize threshold
  * @requires vm.hasJFR
  * @requires vm.gc != "Shenandoah"
  * @library /test/lib
@@ -198,7 +198,6 @@ public class TestMetaspaceFirstGC {
             // A failed allocation somewhere else or a threshold change before the request makes the
             // initial threshold unmeasurable, that run is skipped like startup displacement. A sampled
             // threshold that differs from the initial one with no change recorded is a failure.
-            events.sort(Comparator.comparing(RecordedEvent::getStartTime));
             RecordedEvent request = null;
             int startupFailures = 0;
             int earlierFailures = 0;
@@ -258,7 +257,7 @@ public class TestMetaspaceFirstGC {
             if (startupFailures > 0 || earlierFailures > 0 || changesBefore > 0) {
                 throw new SkippedException(startupFailures + " allocation failures before loading started, "
                     + earlierFailures + " other allocation failures and " + changesBefore
-                    + " threshold changes before the request, the first metadata GC request can't be measured");
+                    + " threshold changes before the candidate, the first metadata GC request can't be measured");
             }
             if (thresholdAfterRequest < 0 && !metadataGcSeen) {
                 // nothing shows a GC was asked for, the retry may have gone through without one
