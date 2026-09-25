@@ -32,6 +32,7 @@
 #include "utilities/flatHashTable.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#ifdef LINUX
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_uninstall.hpp"
 
@@ -40,6 +41,7 @@ BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 
 #include "utilities/vmassert_reinstall.hpp" // don't reorder
 END_ALLOW_FORBIDDEN_FUNCTIONS
+#endif // LINUX
 
 // A degenerate hash means that all keys are probed to the same bucket. As a result, we get to
 // exercise multiple different scenarios:
@@ -277,7 +279,7 @@ public:
 template <auto HASH = primitive_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
 void test_random() {
   constexpr int iterations = 10000;
-  FlatHashTableBase<int, int, primitive_hash<int>, primitive_equals<int>, CustomAllocator> map;
+  FlatHashTableBase<int, int, HASH, primitive_equals<int>, CustomAllocator> map;
   ASSERT_EQ(0U, map.size());
   bool expected_exists[TableOp::key_limit];
   int expected_values[TableOp::key_limit];
