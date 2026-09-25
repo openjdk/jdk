@@ -200,10 +200,6 @@ bool LIR_Assembler::is_literal_address(LIR_Address* addr) {
 
 //-------------------------------------------
 
-static Register as_reg(LIR_Opr op) {
-  return op->is_double_cpu() ? op->as_register_lo() : op->as_register();
-}
-
 Address LIR_Assembler::as_Address(LIR_Address* addr) {
   return as_Address(addr, rscratch1);
 }
@@ -1438,7 +1434,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   if (op->should_profile()) {
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv);
+    type_profile_helper(mdo, md, data, recv, Rtmp1);
   }
 
   if (!k->is_loaded()) {
