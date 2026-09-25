@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_UNORDEREDMAP_HPP
 #define SHARE_UTILITIES_UNORDEREDMAP_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "memory/arena.hpp"
 #include "nmt/memTag.hpp"
@@ -76,7 +77,8 @@ private:
   }
 
 public:
-  FlatHashTableBase(Allocator alloc) : _impl(alloc) {}
+  template <class... AllocatorParms>
+  FlatHashTableBase(AllocatorParms... parms) : _impl(Allocator(parms...)) {}
 
   size_t size() const {
     return _impl.size();
@@ -91,6 +93,10 @@ public:
 
     assert(find_res.entry() != nullptr, "inconsistent");
     return &find_res.entry()->_value;
+  }
+
+  T* get(const Key& key) {
+    return const_cast<T*>(const_cast<const std::remove_pointer_t<decltype(this)>*>(this)->get(key));
   }
 
   bool put(const Key& key, const T& value) {
@@ -127,99 +133,36 @@ public:
   }
 };
 
-template <class Key, class T, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
-class FlatHashTableArena : public AnyObj {
+class FlatHashTableArenaAllocator {
 private:
-  class Allocator {
-  private:
-    Arena* _arena;
-
-  public:
-    Allocator(Arena* arena) : _arena(arena) {}
-
-    void* allocate(size_t size) {
-      return _arena->Amalloc(size);
-    }
-
-    void deallocate(void* ptr) {}
-  };
-
-  FlatHashTableBase<Key, T, HASH, KEY_EQUAL, Allocator> _impl;
-
-  NONCOPYABLE(FlatHashTableArena);
+  Arena* _arena;
 
 public:
-  FlatHashTableArena(Arena* arena) : _impl(Allocator(arena)) {}
+  FlatHashTableArenaAllocator(Arena* arena) : _arena(arena) {}
 
-  size_t size() const {
-    return _impl.size();
+  void* allocate(size_t size) {
+    return _arena->Amalloc(size);
   }
 
-  const T* get(const Key& key) const {
-    return _impl.get(key);
+  void deallocate(void* ptr) {}
+};
+
+template <MemTag mem_tag>
+class FlatHashTableCHeapAllocator {
+public:
+  void* allocate(size_t size) {
+    return AllocateHeap(size, mem_tag, AllocFailStrategy::RETURN_NULL);
   }
 
-  T* get(const Key& key) {
-    return const_cast<T*>(const_cast<const std::remove_pointer_t<decltype(this)>*>(this)->get(key));
-  }
-
-  bool put(const Key& key, const T& value) {
-    return _impl.put(key, value);
-  }
-
-  bool put_if_absent(const Key& key, const T& value) {
-    return _impl.put_if_absent(key, value);
-  }
-
-  bool remove(const Key& key) {
-    return _impl.remove(key);
+  void deallocate(void* ptr) {
+    FreeHeap(ptr);
   }
 };
+
+template <class Key, class T, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
+using FlatHashTableArena = FlatHashTableBase<Key, T, HASH, KEY_EQUAL, FlatHashTableArenaAllocator>;
 
 template <class Key, class T, MemTag mem_tag, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
-class FlatHashTableCHeap {
-private:
-  class Allocator {
-  public:
-    void* allocate(size_t size) {
-      return NEW_C_HEAP_ARRAY(char*, size, mem_tag);
-    }
-
-    void deallocate(void* ptr) {
-      FREE_C_HEAP_ARRAY(ptr);
-    }
-  };
-
-  FlatHashTableBase<Key, T, HASH, KEY_EQUAL, Allocator> _impl;
-
-  NONCOPYABLE(FlatHashTableCHeap);
-
-public:
-  FlatHashTableCHeap() : _impl(Allocator()) {}
-
-  size_t size() const {
-    return _impl.size();
-  }
-
-  const T* get(const Key& key) const {
-    return _impl.get(key);
-  }
-
-  T* get(const Key& key) {
-    return const_cast<T*>(const_cast<const std::remove_pointer_t<decltype(this)>*>(this)->get(key));
-  }
-
-  bool put(const Key& key, const T& value) {
-    return _impl.put(key, value);
-  }
-
-  bool put_if_absent(const Key& key, const T& value) {
-    return _impl.put_if_absent(key, value);
-  }
-
-  bool remove(const Key& key) {
-    return _impl.remove(key);
-  }
-};
+using FlatHashTableCHeap = FlatHashTableBase<Key, T, HASH, KEY_EQUAL, FlatHashTableCHeapAllocator<mem_tag>>;
 
 #endif // SHARE_UTILITIES_UNORDEREDMAP_HPP
