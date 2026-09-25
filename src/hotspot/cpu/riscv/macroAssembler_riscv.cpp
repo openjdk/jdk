@@ -7031,6 +7031,24 @@ void MacroAssembler::sext(Register dst, Register src, int bits) {
   srai(dst, dst, XLEN - bits);
 }
 
+void MacroAssembler::narrow_subword_type(Register reg, BasicType bt) {
+  assert(is_subword_type(bt), "expected subword type");
+  switch (bt) {
+    case T_SHORT:
+      sext(reg, reg, 16);
+      break;
+    case T_CHAR:
+      zext(reg, reg, 16);
+      break;
+    case T_BYTE:
+      sext(reg, reg, 8);
+      break;
+    case T_BOOLEAN:
+      andi(reg, reg, 1);
+      break;
+  }
+}
+
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
                              Register tmp, bool is_signed) {
   if (src1 == src2) {
