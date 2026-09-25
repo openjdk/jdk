@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.util;
+package jdk.internal.launcher;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
