@@ -28,7 +28,7 @@
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 
 inline jlong G1ConcurrentRefineStats::sweep_duration() const {
-  return _sweep_duration.load_relaxed() - yield_during_sweep_duration();
+  return _sweep_duration.load_relaxed();
 }
 
 inline jlong G1ConcurrentRefineStats::yield_during_sweep_duration() const {
