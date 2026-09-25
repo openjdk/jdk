@@ -5814,8 +5814,29 @@ public class Attr extends JCTree.Visitor {
     private final class TypeAnnotationsValidator extends TreeScanner {
 
         private final boolean sigOnly;
+        private       boolean inTypeContext;
         public TypeAnnotationsValidator(boolean sigOnly) {
             this.sigOnly = sigOnly;
+        }
+
+        public void scan(JCTree tree, boolean typeContext) {
+            boolean prevTypeContext = inTypeContext;
+            try {
+                inTypeContext = typeContext;
+                super.scan(tree);
+            } finally {
+                inTypeContext = prevTypeContext;
+            }
+        }
+
+        public void scan(List<? extends JCTree> trees, boolean typeContext) {
+            boolean prevTypeContext = inTypeContext;
+            try {
+                inTypeContext = typeContext;
+                super.scan(trees);
+            } finally {
+                inTypeContext = prevTypeContext;
+            }
         }
 
         public void visitAnnotation(JCAnnotation tree) {
@@ -5824,12 +5845,22 @@ public class Attr extends JCTree.Visitor {
         }
         public void visitAnnotatedType(JCAnnotatedType tree) {
             if (!tree.underlyingType.type.isErroneous()) {
+                if (!inTypeContext) {
+                    boolean hasTypeAnnotations = tree.annotations.stream().anyMatch(a -> chk.isTypeAnnotation(a, false));
+                    if (hasTypeAnnotations) {
+                        log.error(tree.pos(),
+                                  Errors.TypeAnnotationInadmissibleNotTypeContext(tree.annotations.tail.isEmpty()
+                                          ? Fragments.TypeAnnotation1(tree.annotations.head.attribute)
+                                          : Fragments.TypeAnnotation(tree.annotations.map(a -> a.attribute))));
+                    }
+                    //a different error is reported for non-type annotations
+                }
                 super.visitAnnotatedType(tree);
             }
         }
         public void visitTypeParameter(JCTypeParameter tree) {
             chk.validateTypeAnnotations(tree.annotations, tree.type.tsym, true);
-            scan(tree.bounds);
+            scan(tree.bounds, true);
             // Don't call super.
             // This is needed because above we call validateTypeAnnotation with
             // false, which would forbid annotations on type parameters.
@@ -5845,11 +5876,11 @@ public class Attr extends JCTree.Visitor {
             }
             if (sigOnly) {
                 scan(tree.mods);
-                scan(tree.restype);
+                scan(tree.restype, true);
                 scan(tree.typarams);
                 scan(tree.recvparam);
                 scan(tree.params);
-                scan(tree.thrown);
+                scan(tree.thrown, true);
             } else {
                 scan(tree.defaultValue);
                 scan(tree.body);
@@ -5860,7 +5891,7 @@ public class Attr extends JCTree.Visitor {
             if (tree.sym != null && tree.sym.type != null && !tree.isImplicitlyTyped())
                 validateAnnotatedType(tree.vartype, tree.sym.type);
             scan(tree.mods);
-            scan(tree.vartype);
+            scan(tree.vartype, true);
             if (!sigOnly) {
                 scan(tree.init);
             }
@@ -5868,12 +5899,14 @@ public class Attr extends JCTree.Visitor {
         public void visitTypeCast(JCTypeCast tree) {
             if (tree.clazz != null && tree.clazz.type != null)
                 validateAnnotatedType(tree.clazz, tree.clazz.type);
-            super.visitTypeCast(tree);
+            scan(tree.clazz, true);
+            scan(tree.expr);
         }
         public void visitTypeTest(JCInstanceOf tree) {
             if (tree.pattern != null && !(tree.pattern instanceof JCPattern) && tree.pattern.type != null)
                 validateAnnotatedType(tree.pattern, tree.pattern.type);
-            super.visitTypeTest(tree);
+            scan(tree.expr);
+            scan(tree.pattern, !(tree.pattern instanceof JCPattern));
         }
         public void visitNewClass(JCNewClass tree) {
             if (tree.clazz != null && tree.clazz.type != null) {
@@ -5887,7 +5920,11 @@ public class Attr extends JCTree.Visitor {
 
                 validateAnnotatedType(tree.clazz, tree.clazz.type);
             }
-            super.visitNewClass(tree);
+            scan(tree.encl);
+            scan(tree.typeargs, true);
+            scan(tree.clazz, true);
+            scan(tree.args);
+            scan(tree.def);
         }
         public void visitNewArray(JCNewArray tree) {
             if (tree.elemtype != null && tree.elemtype.type != null) {
@@ -5897,22 +5934,33 @@ public class Attr extends JCTree.Visitor {
                 }
                 validateAnnotatedType(tree.elemtype, tree.elemtype.type);
             }
-            super.visitNewArray(tree);
+            scan(tree.annotations);
+            scan(tree.elemtype, true);
+            scan(tree.dims);
+            for (List<JCAnnotation> annos : tree.dimAnnotations)
+                scan(annos);
+            scan(tree.elems);
         }
         @Override
         public void visitReference(JCMemberReference tree) {
-            if (TreeInfo.symbol(tree.expr) instanceof TypeSymbol) {
-                validateAnnotatedType(tree.expr, tree.expr.type);
+            if (tree.kind != JCMemberReference.ReferenceKind.BOUND &&
+                tree.kind != JCMemberReference.ReferenceKind.SUPER) {
+                if (tree.kind != null) { //remains null if a severe problem occured during attribution
+                    validateAnnotatedType(tree.expr, tree.expr.type);
+                }
+                scan(tree.expr, true);
+            } else {
+                scan(tree.expr, false);
             }
-            super.visitReference(tree);
+            scan(tree.typeargs, true);
         }
         public void visitClassDef(JCClassDecl tree) {
             //System.err.println("validateTypeAnnotations.visitClassDef " + tree);
             if (sigOnly) {
                 scan(tree.mods);
                 scan(tree.typarams);
-                scan(tree.extending);
-                scan(tree.implementing);
+                scan(tree.extending, true);
+                scan(tree.implementing, true);
             }
             for (JCTree member : tree.defs) {
                 if (member.hasTag(Tag.CLASSDEF)) {
@@ -5921,6 +5969,13 @@ public class Attr extends JCTree.Visitor {
                 scan(member);
             }
         }
+        @Override
+        public void visitApply(JCMethodInvocation tree) {
+            scan(tree.typeargs, true);
+            scan(tree.meth);
+            scan(tree.args);
+        }
+        @Override
         public void visitBlock(JCBlock tree) {
             if (!sigOnly) {
                 scan(tree.stats);

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8369489 8391567
+ * @bug 8369489 8392772 8391567
  * @summary Verify annotations on member references work reasonably.
  * @library /tools/lib /tools/javac/lib
  * @modules
@@ -275,6 +275,45 @@ public class TypeAnnosOnMemberReferenceTest {
             "Test.java:12:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
             "Test.java:13:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, p.Test.@p.Test.Ann1 I",
             "3 errors"
+        );
+
+        List<String> log =
+            new JavacTask(tb)
+                .outdir(classes)
+                .options("-XDrawDiagnostics")
+                .files(tb.findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.checkEqual(expected, log);
+    }
+
+    @Test //JDK-8392772
+    public void testBrokenMethodReference() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        tb.writeJavaFiles(src,
+                """
+                package p;
+
+                import java.util.function.Supplier;
+
+                class Test {
+                    Supplier<String> f1 = (Supplier<String> & Object) this::get;
+                    Supplier<String> f2 = (Supplier<String> & Object) new Test()::get;
+                    private String get() { return ""; }
+                }
+                """);
+
+        List<String> expected = List.of(
+            "Test.java:6:47: compiler.err.intf.expected.here",
+            "Test.java:7:47: compiler.err.intf.expected.here",
+            "2 errors"
         );
 
         List<String> log =
