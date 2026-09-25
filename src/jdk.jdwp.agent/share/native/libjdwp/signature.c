@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ char* componentTypeSignature(const char *signature) {
 jbyte methodSignature_returnTag(char *signature)
 {
     char *tagPtr = strchr(signature, SIGNATURE_END_ARGS);
+    if (tagPtr == NULL) {
+        EXIT_ERROR(AGENT_ERROR_NULL_POINTER, "Invalid method signature");
+    }
     JDI_ASSERT(tagPtr);
     tagPtr++;    /* 1st character after the end of args */
     JVM_TYPE_ASSERT((jbyte)*tagPtr);
