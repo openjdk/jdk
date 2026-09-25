@@ -93,68 +93,70 @@ bool LoopNode::is_valid_counted_loop(BasicType bt) const {
   return false;
 }
 
+// Keep the deepest of 'early' and the controls of n's inputs, starting at input 'start'.
+Node *PhaseIdealLoop::deepest_ctrl_of_inputs(Node *n, Node *early, uint start) {
+  assert(early != nullptr, "no starting control");
+  uint e_d = dom_depth(early);
+  for (uint i = start; i < n->req(); i++) {
+    Node *cin = get_ctrl(n->in(i));
+    assert(cin != nullptr, "");
+    uint c_d = dom_depth(cin);
+    if (c_d > e_d) {
+      // Keep deepest found
+      early = cin;
+      e_d = c_d;
+    } else if (c_d == e_d && early != cin) {
+      // Same depth but not equal, we want the deeper one.
+      Node *n1 = early;
+      Node *n2 = cin;
+      while (1) {
+        n1 = idom(n1);
+        n2 = idom(n2);
+        if (n1 == cin || dom_depth(n2) < c_d) {
+          break; // we keep early
+        }
+        if (n2 == early || dom_depth(n1) < c_d) {
+          early = cin; // cin is deeper
+          break;
+        }
+      }
+      e_d = dom_depth(early); // reset depth register cache
+    }
+  }
+
+  assert(early == find_non_split_ctrl(early), "unexpected early control");
+  return early;
+}
+
 //------------------------------get_early_ctrl---------------------------------
 // Compute earliest legal control
-Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
-  assert( !n->is_Phi() && !n->is_CFG(), "this code only handles data nodes" );
+Node *PhaseIdealLoop::get_early_ctrl(Node *n) {
+  assert(!n->is_Phi() && !n->is_CFG(), "this code only handles data nodes");
   uint i;
   Node *early;
-  // During verification we also get early control for expensive nodes here,
-  // as get_early_ctrl_for_expensive is skipped because it modifies the graph.
-  if (n->in(0) != nullptr && (!n->is_expensive() || _verify_me != nullptr || _verify_only)) {
+  if (n->in(0) != nullptr) {
     early = n->in(0);
-    if (!early->is_CFG()) // Might be a non-CFG multi-def
-      early = get_ctrl(early);        // So treat input as a straight data input
+    if (!early->is_CFG()) { // Might be a non-CFG multi-def
+      early = get_ctrl(early); // So treat input as a straight data input
+    }
     i = 1;
   } else {
     early = get_ctrl(n->in(1));
     i = 2;
   }
-  uint e_d = dom_depth(early);
-  assert( early, "" );
-  for (; i < n->req(); i++) {
-    Node *cin = get_ctrl(n->in(i));
-    assert( cin, "" );
-    // Keep deepest dominator depth
-    uint c_d = dom_depth(cin);
-    if (c_d > e_d) {           // Deeper guy?
-      early = cin;              // Keep deepest found so far
-      e_d = c_d;
-    } else if (c_d == e_d &&    // Same depth?
-               early != cin) { // If not equal, must use slower algorithm
-      // If same depth but not equal, one _must_ dominate the other
-      // and we want the deeper (i.e., dominated) guy.
-      Node *n1 = early;
-      Node *n2 = cin;
-      while (1) {
-        n1 = idom(n1);          // Walk up until break cycle
-        n2 = idom(n2);
-        if (n1 == cin ||        // Walked early up to cin
-            dom_depth(n2) < c_d)
-          break;                // early is deeper; keep him
-        if (n2 == early ||      // Walked cin up to early
-            dom_depth(n1) < c_d) {
-          early = cin;          // cin is deeper; keep him
-          break;
-        }
-      }
-      e_d = dom_depth(early);   // Reset depth register cache
-    }
-  }
 
-  // Return earliest legal location
-  assert(early == find_non_split_ctrl(early), "unexpected early control");
+  return deepest_ctrl_of_inputs(n, early, i);
+}
 
-  if (n->is_expensive() && !_verify_only && !_verify_me) {
-    assert(n->in(0), "should have control input");
-    early = get_early_ctrl_for_expensive(n, early);
-  }
-
-  return early;
+// Earliest control ignoring the control input of n: the highest an expensive node may go.
+Node *PhaseIdealLoop::get_early_ctrl_of_data_inputs(Node *n) {
+  assert(!n->is_Phi() && !n->is_CFG(), "only handles data nodes");
+  assert(n->in(0) != nullptr, "only for nodes with a control input");
+  return deepest_ctrl_of_inputs(n, get_ctrl(n->in(1)), 2);
 }
 
 //------------------------------get_early_ctrl_for_expensive---------------------------------
-// Move node up the dominator tree as high as legal while still beneficial
+// How far up the dominator tree an expensive node may move.
 Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
   assert(n->in(0) && n->is_expensive(), "expensive node with control input here");
   assert(OptimizeExpensiveOps, "optimization off?");
@@ -169,7 +171,8 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
   }
 #endif
   if (dom_depth(ctl) < min_dom_depth) {
-    return earliest;
+    // cannot move, keep the current control input
+    return ctl;
   }
 
   while (true) {
@@ -237,18 +240,30 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     ctl = next;
   }
 
+  return ctl;
+}
+
+// Move an expensive node up the dominator tree as high as legal while still beneficial.
+// Modifies the graph, so it must run before the early control of n is computed.
+void PhaseIdealLoop::hoist_expensive_node(Node *n) {
+  assert(n->is_expensive(), "only for expensive nodes");
+  assert(!_verify_only && _verify_me == nullptr, "must not modify the graph when verifying");
+  Node *ctl = get_early_ctrl_for_expensive(n, get_early_ctrl_of_data_inputs(n));
   if (ctl != n->in(0)) {
     _igvn.replace_input_of(n, 0, ctl);
     _igvn.hash_insert(n);
   }
-
-  return ctl;
 }
 
 
 //------------------------------set_early_ctrl---------------------------------
 // Set earliest legal control
 void PhaseIdealLoop::set_early_ctrl(Node* n, bool update_body) {
+  if (n->is_expensive() && !_verify_only && _verify_me == nullptr) {
+    // Changes in(0), so it has to run before get_early_ctrl().
+    hoist_expensive_node(n);
+  }
+
   Node *early = get_early_ctrl(n);
 
   // Record earliest legal location
