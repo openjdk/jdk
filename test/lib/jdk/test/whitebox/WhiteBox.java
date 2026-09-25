@@ -854,6 +854,9 @@ public class WhiteBox {
   public native long hostPhysicalSwap();
   public native int hostCPUs();
 
+  // Total physical memory as seen by the VM, respecting container limits.
+  public native long physicalMemory();
+
   // Decoder
   public native void disableElfSectionCache();
 

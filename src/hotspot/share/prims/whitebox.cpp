@@ -2697,6 +2697,11 @@ WB_ENTRY(jlong, WB_HostPhysicalSwap(JNIEnv* env, jobject o))
   return -1; // Not used/implemented on other platforms
 WB_END
 
+// Physical memory of the machine (respecting container limits)
+WB_ENTRY(jlong, WB_PhysicalMemory(JNIEnv* env, jobject o))
+  return static_cast<jlong>(os::physical_memory());
+WB_END
+
 WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
                                     jobject o,
                                     jboolean cgroups_v2_enabled,
@@ -3197,6 +3202,7 @@ static JNINativeMethod methods[] = {
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
   {CC"hostAvailableMemory",       CC"()J",            (void*)&WB_HostAvailableMemory },
   {CC"hostCPUs",                  CC"()I",            (void*)&WB_HostCPUs },
+  {CC"physicalMemory",            CC"()J",            (void*)&WB_PhysicalMemory },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
