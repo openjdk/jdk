@@ -1368,15 +1368,26 @@ public:
     const IdealLoopTree* _loop;
     PhaseIdealLoop* _phase;
 
-    Node* _cmp;
-    Node* _incr;
+    // Tracks the loop exit test shape after canonicalization:
+    //
+    //   back_control -> IfTrue/IfFalse -> If -> Bool(mask) -> _raw_cmp(incr, limit)
+    //
+    // _raw_cmp:  the CmpI/CmpL node comparing the IV increment with the limit (after swap canonicalization)
+    // _raw_incr: first operand of _raw_cmp after canonicalization: the loop-variant IV increment.
+    //            For speculative narrowing, this is ConvI2L(int_incr); after narrowing, cmp() and incr()
+    //            return the narrowed integer-type nodes instead.
+    // _limit:    second operand of _raw_cmp after canonicalization: the loop-invariant limit.
+    // _mask:     the canonicalized BoolTest (accounting for IfFalse negation and operand swaps).
+    // _cl_prob:  the loop-back probability
+    Node* _raw_cmp;
+    Node* _raw_incr;
     Node* _limit;
     BoolTest::mask _mask;
     float _cl_prob;
 
     // True when the exit test is "(long) int_iv < long_limit" (or similar): we may treat it as an int counted loop
-    // by rewriting the comparision to int (see ::speculatively_narrow_limit()). Until then, _cmp/_limit describe the
-    // graph. After narrowing, _narrowed_cmp/_narrowed_limit hold the new CmpI and ConvL2I(limit).
+    // by rewriting the comparision to int (see ::speculatively_narrow_limit()). Until then, _raw_cmp/_limit describe
+    // the graph. After narrowing, _narrowed_cmp/_narrowed_limit hold the new CmpI and ConvL2I(limit).
     bool _should_speculatively_narrow_limit;
     Node* _narrowed_cmp;
     Node* _narrowed_limit;
@@ -1388,8 +1399,8 @@ public:
       _back_control(back_control),
       _loop(loop),
       _phase(phase),
-      _cmp(nullptr),
-      _incr(nullptr),
+      _raw_cmp(nullptr),
+      _raw_incr(nullptr),
       _limit(nullptr),
       _mask(BoolTest::illegal),
       _cl_prob(0.0f),
@@ -1416,15 +1427,15 @@ public:
         assert(_narrowed_cmp != nullptr, "must call speculatively_narrow_limit() first");
         return _narrowed_cmp->as_Cmp();
       }
-      return _cmp->as_Cmp();
+      return _raw_cmp->as_Cmp();
     }
 
     Node* incr() const {
       if (_should_speculatively_narrow_limit) {
-        assert(_incr->Opcode() == Op_ConvI2L, "");
-        return _incr->in(1);
+        assert(_raw_incr->Opcode() == Op_ConvI2L, "");
+        return _raw_incr->in(1);
       }
-      return _incr;
+      return _raw_incr;
     }
 
     // The original long limit from the parsed CmpL (second operand after canonicalization). Use this to get the
@@ -1454,7 +1465,7 @@ public:
       assert(!is_valid_with_bt(T_INT), "must not be a valid int loop");
 
       // pattern must be: (long) i < some_long (with any comparison operator)
-      _should_speculatively_narrow_limit = is_valid_with_bt(T_LONG) && _incr->Opcode() == Op_ConvI2L;
+      _should_speculatively_narrow_limit = is_valid_with_bt(T_LONG) && _raw_incr->Opcode() == Op_ConvI2L;
 
       if (_should_speculatively_narrow_limit) {
         // The limit must overlap with the int range; otherwise narrowing is provably impossible.

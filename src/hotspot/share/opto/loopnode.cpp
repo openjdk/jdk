@@ -1733,28 +1733,28 @@ void PhaseIdealLoop::LoopExitTest::build() {
     _cl_prob = 1.0f - _cl_prob;
   }
   // Get backedge compare
-  _cmp = test->in(1);
-  if (!_cmp->is_Cmp()) {
+  _raw_cmp = test->in(1);
+  if (!_raw_cmp->is_Cmp()) {
     return;
   }
 
   // Find the trip-counter increment & limit. Limit must be loop invariant.
-  _incr  = _cmp->in(1);
-  _limit = _cmp->in(2);
+  _raw_incr = _raw_cmp->in(1);
+  _limit    = _raw_cmp->in(2);
 
   // ---------
   // need 'loop()' test to tell if limit is loop invariant
   // ---------
 
-  if (_loop->is_invariant(_incr)) { // Swapped trip counter and limit?
-    swap(_incr, _limit);   // Then reverse order into the CmpI
+  if (_loop->is_invariant(_raw_incr)) { // Swapped trip counter and limit?
+    swap(_raw_incr, _limit);   // Then reverse order into the CmpI
     _mask = BoolTest(_mask).commute(); // And commute the exit test
   }
 
   if (!_loop->is_invariant(_limit)) { // Limit must be loop-invariant
      return;
   }
-  if (_loop->is_invariant(_incr)) { // Trip counter must be loop-variant
+  if (_loop->is_invariant(_raw_incr)) { // Trip counter must be loop-variant
     return;
   }
 
@@ -1802,18 +1802,18 @@ void PhaseIdealLoop::LoopExitTest::canonicalize_mask(jlong stride_con) {
 Node* PhaseIdealLoop::LoopExitTest::speculatively_narrow_limit(PhaseIterGVN& igvn) {
   assert(_should_speculatively_narrow_limit, "must call can_speculatively_narrow_limit() first");
 
-  assert(_incr->Opcode() == Op_ConvI2L, "");
-  Node* narrowed_incr = _incr->in(1);
+  assert(_raw_incr->Opcode() == Op_ConvI2L, "");
+  Node* narrowed_incr = _raw_incr->in(1);
 
   // Optimistically transform "(long) i < long_limit" to "i < (int) long_limit".
   _narrowed_limit = igvn.register_new_node_with_optimizer(new ConvL2INode(_limit), _limit);
   _phase->set_ctrl(_narrowed_limit, _phase->get_ctrl(_limit));
 
-  _narrowed_cmp = _cmp->in(1) == _incr
+  _narrowed_cmp = _raw_cmp->in(1) == _raw_incr
                          ? new CmpINode(narrowed_incr, _narrowed_limit)
                          : new CmpINode(_narrowed_limit, narrowed_incr);
-  igvn.register_new_node_with_optimizer(_narrowed_cmp, _cmp);
-  _phase->set_ctrl(_narrowed_cmp, _phase->get_ctrl(_cmp));
+  igvn.register_new_node_with_optimizer(_narrowed_cmp, _raw_cmp);
+  _phase->set_ctrl(_narrowed_cmp, _phase->get_ctrl(_raw_cmp));
 
   assert(_loop->is_invariant(_narrowed_limit), "limit must be a loop invariant");
 
