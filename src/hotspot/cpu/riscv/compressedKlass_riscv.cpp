@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corp. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +49,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   // - if can_optimize_for_zero_base, a <4GB mapping start would allow us to run unscaled (base = 0, shift = 0)
   // - if !can_optimize_for_zero_base, a <4GB mapping start is still good, the resulting immediate can be encoded
   //   with one instruction (2)
-  result = reserve_address_space_for_unscaled_encoding(size, aslr);
+  result = reserve_address_space_below_4G(size, aslr);
 
   // Failing that, optimize for case (3) - a base with only bits set between [32-44)
   if (result == nullptr) {
