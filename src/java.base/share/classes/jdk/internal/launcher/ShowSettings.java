@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.util;
+package jdk.internal.launcher;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
