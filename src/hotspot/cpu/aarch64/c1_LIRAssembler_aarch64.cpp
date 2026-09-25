@@ -2802,7 +2802,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
   if (md_offset_opr->is_constant() &&
       __ legitimize_address_requires_lea(Address(noreg, md_offset_opr->as_constant_ptr()->as_jint()),
                                          type2aelembytes(dest_opr->type()))) {
-    asm("nop");
   }
 
 
