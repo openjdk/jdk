@@ -3009,11 +3009,8 @@ bool Node::is_dead_loop_safe() const {
     }
     // MemNode::can_see_stored_value() peeks through boxing calls and
     // ProjNode::Identity() peeks through boxing and unboxing calls.
-    if (in(0)->is_CallStaticJava()) {
-      CallStaticJavaNode* call = in(0)->as_CallStaticJava();
-      if (call->is_boxing_method() || call->is_unboxing_method()) {
-        return false;
-      }
+    if (in(0)->is_boxing_or_unboxing_call()) {
+      return false;
     }
     return true;
   }
@@ -3022,6 +3019,11 @@ bool Node::is_dead_loop_safe() const {
 
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
+
+bool Node::is_boxing_or_unboxing_call() const {
+  return is_CallStaticJava() && (as_CallStaticJava()->is_boxing_method() ||
+                                 as_CallStaticJava()->is_unboxing_method());
+}
 
 // `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
 // but we already have and need maybe_pure_function in all the call sites, so
