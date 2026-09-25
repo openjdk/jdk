@@ -27,6 +27,7 @@ package gc.g1;
  * @test TestPeriodicGCLongInterval.java
  * @bug 8392849
  * @requires vm.gc.G1
+ * @requires vm.flagless
  * @summary Verify that periodic gc interval setting does not overflow the scheduling calculation.
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
