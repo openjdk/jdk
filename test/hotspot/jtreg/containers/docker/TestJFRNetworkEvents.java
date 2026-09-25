@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class TestJFRNetworkEvents {
 
     private static void runTest(String event) throws Exception {
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "JfrNetwork")
-        .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
         .addJavaOpts("-cp", "/test-classes/")
         .addDockerOpts("--hostname", JfrNetwork.HOST_NAME)
         .addClassOptions(event);
