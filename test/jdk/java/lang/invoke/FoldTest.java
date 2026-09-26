@@ -37,6 +37,8 @@ import java.lang.invoke.MethodType;
 import static java.lang.invoke.MethodType.methodType;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -93,21 +95,23 @@ public class FoldTest {
         assertEquals("jum", swr.toString());
     }
 
-    @Test
-    public void testInvalidFoldPositions() {
-        MethodHandle voidCombiner = MethodHandles.empty(methodType(void.class, int.class));
-        int[] invalidPositions = {
-                -1,
-                Integer.MIN_VALUE,
-                Fold.MH_multer.type().parameterCount(),
-                Integer.MAX_VALUE
+    static Object[][] invalidFoldPositions() {
+        return new Object[][] {
+                {-1},
+                {Integer.MIN_VALUE},
+                {Fold.MH_multer.type().parameterCount()},
+                {Integer.MAX_VALUE}
         };
-        for (int pos : invalidPositions) {
-            assertThrows(IllegalArgumentException.class,
-                    () -> MethodHandles.foldArguments(Fold.MH_multer, pos, Fold.MH_adder1));
-            assertThrows(IllegalArgumentException.class,
-                    () -> MethodHandles.foldArguments(Fold.MH_multer, pos, voidCombiner));
-        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidFoldPositions")
+    public void testInvalidFoldPositions(int pos) {
+        MethodHandle voidCombiner = MethodHandles.empty(methodType(void.class, int.class));
+        assertThrows(IllegalArgumentException.class,
+                () -> MethodHandles.foldArguments(Fold.MH_multer, pos, Fold.MH_adder1));
+        assertThrows(IllegalArgumentException.class,
+                () -> MethodHandles.foldArguments(Fold.MH_multer, pos, voidCombiner));
     }
 
     @Test
