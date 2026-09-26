@@ -313,6 +313,8 @@
                                                                             \
   develop_pd(bool, UseCISCSpill,                                            \
           "Use ADLC supplied cisc instructions during allocation")          \
+  product(bool, UsePeep, true,                                              \
+          "Use peephole optimizations during allocation")                   \
                                                                             \
   develop(bool, VerifyGraphEdges , false,                                   \
           "Verify Bi-directional Edges")                                    \

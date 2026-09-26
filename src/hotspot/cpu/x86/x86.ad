@@ -10005,6 +10005,22 @@ instruct addI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Not matched by the matcher; used by the peephole optimization 
+instruct addI_rReg_stack_peep(rRegI dst, stackSlotI src, rFlagsReg cr)
+%{
+  predicate(false);
+  match(Set dst (AddI dst src));
+  effect(KILL cr);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+
+  ins_cost(150);
+  format %{ "addl    $dst, $src\t# int (peep, spill)" %}
+  ins_encode %{
+    __ addl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 instruct addI_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (AddI (LoadI dst) src)));
@@ -10233,6 +10249,22 @@ instruct addL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 
   ins_cost(150); // XXX
   format %{ "addq    $dst, $src\t# long" %}
+  ins_encode %{
+    __ addq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Not matched by the matcher; used by the peephole optimization
+instruct addL_rReg_stack_peep(rRegL dst, memory src, rFlagsReg cr)
+%{
+  predicate(false);
+  match(Set dst (AddL dst src));
+  effect(KILL cr);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+
+  ins_cost(150);
+  format %{ "addq    $dst, $src\t# long (peep, spill)" %}
   ins_encode %{
     __ addq($dst$$Register, $src$$Address);
   %}
@@ -12817,6 +12849,22 @@ instruct andI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Not matched by the matcher; used by the peephole optimization 
+instruct andI_rReg_stack_peep(rRegI dst, stackSlotI src, rFlagsReg cr)
+%{
+  predicate(false);
+  match(Set dst (AndI dst src));
+  effect(KILL cr);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+
+  ins_cost(150);
+  format %{ "andl    $dst, $src\t# int (peep, spill)" %}
+  ins_encode %{
+    __ andl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // And Memory with Register
 instruct andB_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 %{
@@ -13074,6 +13122,22 @@ instruct orI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Not matched by the matcher; used by the peephole optimization 
+instruct orI_rReg_stack_peep(rRegI dst, stackSlotI src, rFlagsReg cr)
+%{
+  predicate(false);
+  match(Set dst (OrI dst src));
+  effect(KILL cr);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+
+  ins_cost(150);
+  format %{ "orl    $dst, $src\t# int (peep, spill)" %}
+  ins_encode %{
+    __ orl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Or Memory with Register
 instruct orB_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 %{
@@ -13215,6 +13279,22 @@ instruct xorI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 
   ins_cost(150);
   format %{ "xorl    $dst, $src\t# int" %}
+  ins_encode %{
+    __ xorl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Not matched by the matcher; used by the peephole optimization 
+instruct xorI_rReg_stack_peep(rRegI dst, stackSlotI src, rFlagsReg cr)
+%{
+  predicate(false);
+  match(Set dst (XorI dst src));
+  effect(KILL cr);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+
+  ins_cost(150);
+  format %{ "xorl    $dst, $src\t# int (peep, spill)" %}
   ins_encode %{
     __ xorl($dst$$Register, $src$$Address);
   %}
@@ -13364,6 +13444,22 @@ instruct andL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 
   ins_cost(150);
   format %{ "andq    $dst, $src\t# long" %}
+  ins_encode %{
+    __ andq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Not matched by the matcher; used by the peephole optimization 
+instruct andL_rReg_stack_peep(rRegL dst, stackSlotL src, rFlagsReg cr)
+%{
+  predicate(false);
+  match(Set dst (AndL dst src));
+  effect(KILL cr);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+
+  ins_cost(150);
+  format %{ "andq    $dst, $src\t# long (peep, spill)" %}
   ins_encode %{
     __ andq($dst$$Register, $src$$Address);
   %}
@@ -13658,6 +13754,22 @@ instruct orL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Not matched by the matcher; used by the peephole optimization 
+instruct orL_rReg_stack_peep(rRegL dst, stackSlotL src, rFlagsReg cr)
+%{
+  predicate(false);
+  match(Set dst (OrL dst src));
+  effect(KILL cr);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+
+  ins_cost(150);
+  format %{ "orq    $dst, $src\t# long (peep, spill)" %}
+  ins_encode %{
+    __ orq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Or Memory with Register
 instruct orL_mem_rReg(memory dst, rRegL src, rFlagsReg cr)
 %{
@@ -13802,6 +13914,22 @@ instruct xorL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 
   ins_cost(150);
   format %{ "xorq    $dst, $src\t# long" %}
+  ins_encode %{
+    __ xorq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Not matched by the matcher; used by the peephole optimization 
+instruct xorL_rReg_stack_peep(rRegL dst, stackSlotL src, rFlagsReg cr)
+%{
+  predicate(false);
+  match(Set dst (XorL dst src));
+  effect(KILL cr);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+
+  ins_cost(150);
+  format %{ "xorq    $dst, $src\t# long (peep, spill)" %}
   ins_encode %{
     __ xorq($dst$$Register, $src$$Address);
   %}
@@ -25750,6 +25878,81 @@ peephole
   peepmatch (leaP32Narrow);
   peepprocedure (lea_remove_redundant);
 %}
+
+// These peephole rules replace a 3-operand APX NDD instruction following a MemToReg spill copy,
+// with a 2-operand instruction after register allocation, provided certain conditions are met.
+// Transforms:
+//    movl src2, [rsp + offset]      ; MachSpillCopy(MemToReg)
+//    eaddl dst, dst, src2           ; addI_rReg_ndd (src1 == dst)
+// into:
+//    addl dst, [rsp + offset]       ; addI_rReg_stack_peep
+
+peephole
+%{
+  peeppredicate(UseAPX && UsePeep);
+  peepmatch (addI_rReg_ndd);
+  peepprocedure (stackload_apxndd_op_coalesce);
+  peepreplace (addI_rReg_stack_peep());
+%}
+
+peephole
+%{
+  peeppredicate(UseAPX && UsePeep);
+  peepmatch (addL_rReg_ndd);
+  peepprocedure (stackload_apxndd_op_coalesce);
+  peepreplace (addL_rReg_stack_peep());
+%}
+
+
+peephole
+%{
+  peeppredicate(UseAPX && UsePeep);
+  peepmatch (andI_rReg_ndd);
+  peepprocedure (stackload_apxndd_op_coalesce);
+  peepreplace (andI_rReg_stack_peep());
+%}
+
+peephole
+%{
+  peeppredicate(UseAPX && UsePeep);
+  peepmatch (andL_rReg_ndd);
+  peepprocedure (stackload_apxndd_op_coalesce);
+  peepreplace (andL_rReg_stack_peep());
+%}
+
+peephole
+%{
+  peeppredicate(UseAPX && UsePeep);
+  peepmatch (orI_rReg_ndd);
+  peepprocedure (stackload_apxndd_op_coalesce);
+  peepreplace (orI_rReg_stack_peep());
+%}
+
+peephole
+%{
+  peeppredicate(UseAPX && UsePeep);
+  peepmatch (orL_rReg_ndd);
+  peepprocedure (stackload_apxndd_op_coalesce);
+  peepreplace (orL_rReg_stack_peep());
+%}
+
+peephole
+%{
+  peeppredicate(UseAPX && UsePeep);
+  peepmatch (xorI_rReg_ndd);
+  peepprocedure (stackload_apxndd_op_coalesce);
+  peepreplace (xorI_rReg_stack_peep());
+%}
+
+peephole
+%{
+  peeppredicate(UseAPX && UsePeep);
+  peepmatch (xorL_rReg_ndd);
+  peepprocedure (stackload_apxndd_op_coalesce);
+  peepreplace (xorL_rReg_stack_peep());
+%}
+
+
 
 // These peephole rules matches instructions which set flags and are followed by a testI/L_reg
 // The test instruction is redudanent in case the downstream instuctions (like JCC or CMOV) only use flags that are already set by the previous instruction
