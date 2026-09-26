@@ -2127,17 +2127,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     return;
   }
 
-  if (n->is_Vector()) {
-    // Found with tier1-3. Not investigated yet.
-    // The observed issue was with AndVNode::Identity and
-    // VectorStoreMaskNode::Identity (see JDK-8370863).
-    //
-    // Found with:
-    //   compiler/vectorapi/VectorStoreMaskIdentityTest.java
-    //   -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
-    return;
-  }
-
   Node* i = apply_identity(n);
   // If we cannot find any other Identity, we are happy.
   if (i == n) {
@@ -2539,7 +2528,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  uint use_op = use->Opcode();
+  int use_op = use->Opcode();
   if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
     for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
@@ -2656,14 +2645,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     auto is_boundary = [](Node* n){ return !n->is_ValueType(); };
     use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
   }
-  // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
+  // If changed Cast input, notify down for nodes that do "uncast".
   // Patterns:
   // ConstraintCast+ -> Sub
   // ConstraintCast+ -> Phi
   // ConstraintCast+ -> Xor
+  // ConstraintCast+ -> VectorUnbox
   if (use->is_ConstraintCast()) {
     auto push_the_uses_to_worklist = [&](Node* n){
-      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
+      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI ||
+          n->Opcode() == Op_XorL || n->Opcode() == Op_VectorUnbox) {
         worklist.push(n);
       }
     };
@@ -2876,6 +2867,52 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // to fold constant masks.
   if (use_op == Op_VectorStoreMask) {
     add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorMaskToLong; });
+  }
+
+  // Walk through a VectorMaskCast chain so a change of the inner mask still
+  // notifies:
+  // (VectorMaskCast+ x) => x
+  // (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => (x)
+  if (use_op == Op_VectorMaskCast) {
+    auto push_the_uses_to_worklist = [&](Node* n) {
+      if (n->Opcode() == Op_VectorStoreMask || n->Opcode() == Op_VectorMaskCast) {
+        worklist.push(n);
+      }
+    };
+    auto is_boundary = [](Node* n) { return n->Opcode() != Op_VectorMaskCast; };
+    use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
+  }
+
+  // Nested-operation optimizations in AndVNode::Identity and OrVNode::Identity,
+  // e.g. (a & b) & a => a & b.
+  if (use_op == Op_AndV || use_op == Op_OrV ||
+      use_op == Op_AndVMask || use_op == Op_OrVMask) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op;
+    });
+  }
+
+  // All-zeros / all-ones optimizations in AndVNode::Identity and
+  // OrVNode::Identity, e.g. src & all-ones => src.
+  if (use_op == Op_Replicate || use_op == Op_MaskAll) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndV || u->Opcode() == Op_OrV ||
+             u->Opcode() == Op_AndVMask || u->Opcode() == Op_OrVMask;
+    });
+  }
+
+  // f(f(x)) => x for f = Reverse / ReverseBytes
+  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op;
+    });
+  }
+
+  // Vector shift by zero, see ShiftVNode::Identity
+  if (use_op == Op_LShiftCntV || use_op == Op_RShiftCntV) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_ShiftV();
+    });
   }
 
   // From CastX2PNode::Ideal
