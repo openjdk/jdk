@@ -28,11 +28,14 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.Chronology;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.HijrahDate;
 import java.util.Locale;
 
 public class HijrahConfigCheck {
     private static final String VALID_CALTYPE = "islamic-valid";
     private static final String INVALID_CALTYPE = "islamic-invalid";
+    private static final String VARIANT_CALTYPE = "islamic-variant";
 
     public static void main(String... args) {
         // Availability test
@@ -71,5 +74,15 @@ public class HijrahConfigCheck {
                 throw new RuntimeException("Unexpected exception for invalid Hijrah configuration", ex);
             }
         }
+
+        // Variant configuration test
+        HijrahChronology variantChronology = (HijrahChronology) Chronology.of("islamic-variant");
+        HijrahDate hijrahDateWithVariant = HijrahDate.of(1300, 1, 30).withVariant(variantChronology);
+        HijrahDate expected = variantChronology.date(1300,1,29);
+        if (!hijrahDateWithVariant.equals(expected)) {
+            throw new RuntimeException("Variant Hijrah configuration did not produce expected date. " +
+                    "Expected: " + expected + ", but got: " + hijrahDateWithVariant);
+        }
+
     }
 }

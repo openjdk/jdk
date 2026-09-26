@@ -45,6 +45,7 @@ public class HijrahConfigTest {
 
     private static final String VALID_TEST_CONFIG = "hijrah-config-Hijrah-valid_islamic-valid.properties";
     private static final String INVALID_TEST_CONFIG = "hijrah-config-Hijrah-invalid_islamic-invalid.properties";
+    private static final String VARIANT_TEST_CONFIG = "hijrah-config-Hijrah-variant_islamic-variant.properties";
 
     public static void main(String[] args) throws Exception {
         Helper helper = Helper.newHelper();
@@ -67,6 +68,8 @@ public class HijrahConfigTest {
                 confPath.resolve(VALID_TEST_CONFIG));
         Files.copy(Path.of(System.getProperty("test.src"), INVALID_TEST_CONFIG),
                 confPath.resolve(INVALID_TEST_CONFIG));
+        Files.copy(Path.of(System.getProperty("test.src"), VARIANT_TEST_CONFIG),
+                confPath.resolve(VARIANT_TEST_CONFIG));
 
         // Run tests
         Path launcher = outputPath.resolve("bin").resolve("java");
