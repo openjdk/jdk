@@ -31,6 +31,92 @@
 #include "opto/subnode.hpp"
 
 //=============================================================================
+static Node* make_conditional_zero_arithmetic(PhaseGVN* phase, CMoveNode* cmove) {
+  if (!Matcher::supports_conditional_zero_arithmetic()) {
+    return nullptr;
+  }
+
+  const BasicType bt = cmove->bottom_type()->basic_type();
+  if (bt != T_INT && bt != T_LONG) {
+    return nullptr;
+  }
+
+  Node* bol = cmove->in(CMoveNode::Condition);
+  if (!bol->is_Bool()) {
+    return nullptr;
+  }
+
+  Node* cmp = bol->in(1);
+  if (cmp->Opcode() != Op_CmpI && cmp->Opcode() != Op_CmpL) {
+    return nullptr;
+  }
+
+  if (bol->as_Bool()->_test._test != BoolTest::eq &&
+      bol->as_Bool()->_test._test != BoolTest::ne) {
+    return nullptr;
+  }
+
+  if (!phase->type(cmp->in(2))->is_zero_type()) {
+    return nullptr;
+  }
+
+  auto is_supported_opcode = [bt](int opc) {
+    const bool is_or = bt == T_INT ? opc == Op_OrI : opc == Op_OrL;
+    return opc == Op_Add(bt) || opc == Op_Sub(bt) || is_or || opc == Op_Xor(bt) || opc == Op_And(bt);
+  };
+  auto find_value = [&is_supported_opcode, bt](Node* operation, Node* base) -> Node* {
+    const int opcode = operation->Opcode();
+    if (!is_supported_opcode(opcode)) {
+      return nullptr;
+    }
+    if (operation->in(1) == base) {
+      return operation->in(2);
+    }
+    if (opcode != Op_Sub(bt) && operation->in(2) == base) {
+      return operation->in(1);
+    }
+    return nullptr;
+  };
+
+  Node* base = cmove->in(CMoveNode::IfFalse);
+  Node* operation = cmove->in(CMoveNode::IfTrue);
+  bool operation_is_true = true;
+  Node* value = find_value(operation, base);
+  if (value == nullptr) {
+    base = cmove->in(CMoveNode::IfTrue);
+    operation = cmove->in(CMoveNode::IfFalse);
+    operation_is_true = false;
+    value = find_value(operation, base);
+  }
+  if (value == nullptr || operation->outcnt() != 1) {
+    return nullptr;
+  }
+  const int opcode = operation->Opcode();
+
+  // Keep the select as a CMove so the target can lower the zero-result arm
+  // directly to czero.eqz/czero.nez. The surrounding operation then maps to
+  // the conditional arithmetic sequences from the Zicond specification.
+  Node* zero = phase->zerocon(bt);
+  const Type* result_zero_type = Type::get_zero_type(bt);
+  const Type* value_type = phase->type(value)->meet_speculative(result_zero_type);
+  if (opcode == Op_And(bt)) {
+    const Type* base_type = phase->type(base)->meet_speculative(result_zero_type);
+    Node* selected_base = operation_is_true
+        ? phase->transform(CMoveNode::make(bol, base, zero, base_type))
+        : phase->transform(CMoveNode::make(bol, zero, base, base_type));
+    return bt == T_INT ? static_cast<Node*>(new OrINode(operation, selected_base))
+                       : static_cast<Node*>(new OrLNode(operation, selected_base));
+  }
+
+  Node* selected_value = operation_is_true
+      ? phase->transform(CMoveNode::make(bol, zero, value, value_type))
+      : phase->transform(CMoveNode::make(bol, value, zero, value_type));
+  Node* conditional_operation = operation->clone();
+  conditional_operation->set_req(operation->in(1) == base ? 2 : 1, selected_value);
+  return conditional_operation;
+}
+
+//=============================================================================
 /*
  The major change is for CMoveP and StrComp.  They have related but slightly
  different problems.  They both take in TWO oops which are both null-checked
@@ -100,6 +186,11 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* minmax = Ideal_minmax(phase, this);
   if (minmax != nullptr) {
     return minmax;
+  }
+
+  Node* conditional_operation = make_conditional_zero_arithmetic(phase, this);
+  if (conditional_operation != nullptr) {
+    return conditional_operation;
   }
 
   // Canonicalize the node by moving constants to the true-case input.
