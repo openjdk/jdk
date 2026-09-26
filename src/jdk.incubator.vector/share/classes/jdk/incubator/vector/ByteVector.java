@@ -904,6 +904,10 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
                     v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.subSaturatingUnsigned(a, b)));
+            case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, n) -> (byte)Integer.compress(a & LSHR_SETUP_MASK, n & LSHR_SETUP_MASK));
+            case VECTOR_OP_EXPAND_BITS: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, n) -> (byte)Integer.expand(a & LSHR_SETUP_MASK, n & LSHR_SETUP_MASK));
             default: return null;
         }
     }
