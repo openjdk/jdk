@@ -5121,12 +5121,14 @@ class StubGenerator: public StubCodeGenerator {
     Register state0 = c_rarg0;
     Register state1 = c_rarg1;
 
-    // use r3.r17,r19..r28 to keep a0..a24.
+    // use r3..r17,r19..r28 to keep a0..a24.
     // a0..a24 are respective locals from SHA3.java
-    const Register a[25] = {
-        r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
-        r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
-    Register tmp0 = r0, tmp1 = r1, tmp2 = r2;
+    RegSetIterator<Register> regs = (RegSet::range(r0, r28) - r18_tls).begin();
+    Register a[25];
+    Register tmp0 = *regs, tmp1 = *++regs, tmp2 = *++regs;
+    for (int i = 0; i < 25; i++) {
+      a[i] = *++regs;
+    }
 
     Label rounds24_loop_0, rounds24_loop_1;
 
@@ -8935,7 +8937,7 @@ class StubGenerator: public StubCodeGenerator {
   // used to store this data.
 
   // When `r18` is not reserved and frame pointers need not be preserved then
-  // `rfp` and `r18` are aliased to temporaries `tmp3` and `tmp4`, respectively.
+  // `r18` and `rfp` are aliased to temporaries `tmp3` and `tmp4`, respectively.
   // All other register mappings are determined by the emitter.
 
   // If `r18` or `rfp` cannot be used then 2 of the 31 live register values are
@@ -8956,7 +8958,7 @@ class StubGenerator: public StubCodeGenerator {
   // When `r18` and `rfp` are available then `saved_regs` will be empty.  In
   // this case push/pop will not emit any instructions, introducing no spills.
   void keccak_round_gpr(bool can_use_fp, bool can_use_r18, Register rc,
-                        const Register a[], Register tmp0, Register tmp1,
+                        Register a[], Register tmp0, Register tmp1,
                         Register tmp2) {
     __ eor3(tmp1, a[4], a[9], a[14]);
     __ eor3(tmp0, tmp1, a[19], a[24]); // tmp0 = a4^a9^a14^a19^a24 = c4
@@ -8964,19 +8966,22 @@ class StubGenerator: public StubCodeGenerator {
     __ eor3(tmp1, tmp2, a[16], a[21]); // tmp1 = a1^a6^a11^a16^a21 = c1
     __ rax1(tmp2, tmp0, tmp1); // d0
     {
-
-      Register tmp3, tmp4;
-      RegSet saved_regs;
+      Register tmp3, tmp4, a4 = a[4], a9 = a[9];
+      RegSet saved_regs, tmp_regs;
 
       if (can_use_fp && can_use_r18) {
-        tmp3 = rfp;
-        tmp4 = r18_tls;
+        tmp_regs = RegSet::of(r18_tls, rfp);
       } else {
-        tmp3 = a[4];
-        tmp4 = a[9];
-        saved_regs = RegSet::of(tmp3, tmp4);
+        tmp_regs = RegSet::of(a4, a9);
+        a[4] = a[9] = noreg;
+        saved_regs = tmp_regs;
       }
       __ push(saved_regs, sp);
+
+      RegSetIterator<Register> regs = tmp_regs.begin();
+
+      tmp3 = *regs;
+      tmp4 = *++regs;
 
       __ eor3(tmp3, a[0], a[5], a[10]);
       __ eor3(tmp4, tmp3, a[15], a[20]); // tmp4 = a0^a5^a10^a15^a20 = c0
@@ -9007,6 +9012,8 @@ class StubGenerator: public StubCodeGenerator {
       __ eor(a[12], a[12], tmp2);
       __ rax1(tmp0, tmp0, tmp4); // d4
       __ pop(saved_regs, sp);
+      a[4] = a4;
+      a[9] = a9;
 
       __ eor(a[17], a[17], tmp2);
       __ eor(a[22], a[22], tmp2);
@@ -9090,12 +9097,14 @@ class StubGenerator: public StubCodeGenerator {
     Register ofs           = c_rarg3;
     Register limit         = c_rarg4;
 
-    // use r3.r17,r19..r28 to keep a0..a24.
+    // use r3..r17,r19..r28 to keep a0..a24.
     // a0..a24 are respective locals from SHA3.java
-    const Register a[25] = {
-        r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
-        r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
-    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = lr;
+    RegSetIterator<Register> regs = (RegSet::range(r0, r28) - r18_tls).begin();
+    Register a[25];
+    Register tmp1 = *regs, tmp2 = *++regs, tmp0 = *++regs, tmp3 = lr;
+    for (int i = 0; i < 25; i++) {
+      a[i] = *++regs;
+    }
 
     Label sha3_loop, rounds24_preloop, loop_body;
     Label sha3_512_or_sha3_384, shake128;
