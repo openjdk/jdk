@@ -50,7 +50,7 @@ class OopStorageSet : public AllStatic {
 
   static const uint weak_start = strong_end;
   static const uint weak_end = weak_start + weak_count;
-  static_assert(all_end == weak_end, "invariant");
+  static_assert(all_end == weak_end);
 
   static OopStorage* _storages[all_count];
 

@@ -270,8 +270,8 @@ public:
   // Returns true if address points into protection zone (for error reporting)
   static bool is_in_protection_zone(address addr);
 
-  // platform-specific initializations
-  static void initialize_pd() NOT_AARCH64({});
+  // platform-specific initializations (needed only on non-zero aarch64 builds)
+  static void initialize_pd() ZERO_ONLY({}) NOT_ZERO(NOT_AARCH64({}));
 };
 
 #endif // SHARE_OOPS_COMPRESSEDKLASS_HPP

@@ -1,6 +1,6 @@
 
 CLASSFILE  MemberModifiers.c
---- SUPER
+---
 METHOD  <init>
 ---
 
@@ -8,7 +8,7 @@ CLASSFILE  MemberModifiers.i
 --- INTERFACE ABSTRACT
 
 CLASSFILE  MemberModifiers
---- PUBLIC FINAL SUPER
+--- PUBLIC FINAL
 FIELD  f
 ---
 METHOD  <init>
@@ -17,12 +17,12 @@ METHOD  m
 ---
 
 CLASSFILE  MemberModifiersAux.Foo.c
---- SUPER
+---
 METHOD  <init>
 ---
 
 CLASSFILE  MemberModifiersAux.Foo
---- FINAL SUPER
+--- FINAL
 FIELD  f
 ---
 METHOD  <init>
@@ -31,6 +31,6 @@ METHOD  m
 ---
 
 CLASSFILE  MemberModifiersAux
---- SUPER
+---
 METHOD  <init>
 ---

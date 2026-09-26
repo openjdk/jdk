@@ -157,7 +157,6 @@ public:
   virtual int         is_ideal_copy() const;    // node matches ideal 'Copy*'
   virtual bool        is_ideal_negD() const;    // node matches ideal 'NegD'
   virtual bool        is_ideal_if()   const;    // node matches ideal 'If'
-  virtual bool        is_ideal_fastlock() const; // node matches 'FastLock'
   virtual bool        is_ideal_membar() const;  // node matches ideal 'MemBarXXX'
   virtual bool        is_ideal_loadPC() const;  // node matches ideal 'LoadPC'
   virtual bool        is_ideal_box() const;     // node matches ideal 'Box'
@@ -1007,7 +1006,7 @@ public:
   // Recursive version of check in MatchRule
   int        cisc_spill_match(FormDict& globals, RegisterForm* registers,
                               MatchNode* mRule2, const char* &operand,
-                              const char* &reg_type);
+                              const char* &reg_type, InstructForm *from_instr, InstructForm *to_instr);
   int        cisc_spill_merge(int left_result, int right_result);
 
   virtual bool equivalent(FormDict& globals, MatchNode* mNode2);
@@ -1051,7 +1050,6 @@ public:
   int        is_ideal_copy() const;
   int        is_expensive() const;     // node matches ideal 'CosD'
   bool       is_ideal_if()   const;    // node matches ideal 'If'
-  bool       is_ideal_fastlock() const; // node matches ideal 'FastLock'
   bool       is_ideal_jump()   const;  // node matches ideal 'Jump'
   bool       is_ideal_membar() const;  // node matches ideal 'MemBarXXX'
   bool       is_ideal_loadPC() const;  // node matches ideal 'LoadPC'
@@ -1068,7 +1066,7 @@ public:
   // Check if 'mRule2' is a cisc-spill variant of this MatchRule
   int        matchrule_cisc_spill_match(FormDict &globals, RegisterForm* registers,
                                         MatchRule* mRule2, const char* &operand,
-                                        const char* &reg_type);
+                                        const char* &reg_type, InstructForm *from_instr, InstructForm *to_instr);
 
   // Check if 'mRule2' is equivalent to this MatchRule
   virtual bool equivalent(FormDict& globals, MatchNode* mRule2);

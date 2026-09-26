@@ -34,9 +34,6 @@ import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,7 +41,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
@@ -111,9 +107,6 @@ public class SSLFlowDelegate {
     private static final ByteBuffer HS_TRIGGER = ByteBuffer.allocate(0);
     // When handshake is in progress trying to wrap may produce no bytes.
     private static final ByteBuffer NOTHING = ByteBuffer.allocate(0);
-    private static final String monProp = Utils.getProperty("jdk.internal.httpclient.monitorFlowDelegate");
-    private static final boolean isMonitored =
-            monProp != null && (monProp.isEmpty() || monProp.equalsIgnoreCase("true"));
 
     final Executor exec;
     final Reader reader;
@@ -121,14 +114,11 @@ public class SSLFlowDelegate {
     final SSLEngine engine;
     final String tubeName; // hack
     final CompletableFuture<String> alpnCF; // completes on initial handshake
-    final Monitorable monitor = isMonitored ? this::monitor : null; // prevent GC until SSLFD is stopped
     volatile boolean close_notify_received;
     final CompletableFuture<Void> readerCF;
     final CompletableFuture<Void> writerCF;
     final CompletableFuture<Void> stopCF;
     final Consumer<ByteBuffer> recycler;
-    static AtomicInteger scount = new AtomicInteger(1);
-    final int id;
 
     /**
      * Creates an SSLFlowDelegate fed from two Flow.Subscribers. Each
@@ -154,7 +144,6 @@ public class SSLFlowDelegate {
             Subscriber<? super List<ByteBuffer>> downReader,
             Subscriber<? super List<ByteBuffer>> downWriter)
         {
-        this.id = scount.getAndIncrement();
         this.tubeName = String.valueOf(downWriter);
         this.recycler = recycler;
         this.reader = new Reader();
@@ -173,8 +162,6 @@ public class SSLFlowDelegate {
         // connect the Reader to the downReader and the
         // Writer to the downWriter.
         connect(downReader, downWriter);
-
-        if (isMonitored) Monitor.add(monitor);
     }
 
     /**
@@ -220,26 +207,6 @@ public class SSLFlowDelegate {
         alpnCF.complete(alpn);
     }
 
-    public String monitor() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SSL: id ").append(id);
-        sb.append(" ").append(dbgString());
-        sb.append(" HS state: " + states(handshakeState));
-        sb.append(" Engine state: " + engine.getHandshakeStatus().toString());
-        if (stateList != null) {
-            sb.append(" LL : ");
-            for (String s : stateList) {
-                sb.append(s).append(" ");
-            }
-        }
-        sb.append("\r\n");
-        sb.append("Reader:: ").append(reader.toString());
-        sb.append("\r\n");
-        sb.append("Writer:: ").append(writer.toString());
-        sb.append("\r\n===================================");
-        return sb.toString();
-    }
-
     protected SchedulingAction enterReadScheduling() {
         return SchedulingAction.CONTINUE;
     }
@@ -277,17 +244,10 @@ public class SSLFlowDelegate {
         final ReentrantLock readBufferLock = new ReentrantLock();
         final Logger debugr = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
-        private final class ReaderDownstreamPusher implements Runnable {
-            @Override
-            public void run() {
-                processData();
-            }
-        }
-
         Reader() {
             super();
             scheduler = SequentialScheduler.lockingScheduler(
-                    new ReaderDownstreamPusher());
+                    this::processData);
             this.readBuf = ByteBuffer.allocate(1024);
             readBuf.limit(0); // keep in read mode
         }
@@ -443,7 +403,6 @@ public class SSLFlowDelegate {
                 int len;
                 boolean complete = false;
                 while (readBuf.remaining() > (len = minBytesRequired)) {
-                    boolean handshaking = false;
                     try {
                         EngineResult result;
                         readBufferLock.lock();
@@ -508,7 +467,6 @@ public class SSLFlowDelegate {
                             return;
                         }
                         if (result.handshaking()) {
-                            handshaking = true;
                             if (debugr.on()) debugr.log("handshaking");
                             if (doHandshake(result.handshakeStatus(), READER)) continue; // need unwrap
                             else break; // doHandshake will have triggered the write scheduler if necessary
@@ -521,10 +479,6 @@ public class SSLFlowDelegate {
                         Throwable cause = checkForHandshake(ex);
                         errorCommon(cause);
                         handleError(cause);
-                        return;
-                    }
-                    if (handshaking && !complete) {
-                        requestMoreDataIfNeeded();
                         return;
                     }
                 }
@@ -607,104 +561,6 @@ public class SSLFlowDelegate {
         }
     }
 
-    public interface Monitorable {
-        public String getInfo();
-    }
-
-    public static class Monitor extends Thread {
-        final List<WeakReference<Monitorable>> list;
-        final List<FinalMonitorable> finalList;
-        final ReferenceQueue<Monitorable> queue = new ReferenceQueue<>();
-        static Monitor themon;
-
-        static {
-            themon = new Monitor();
-            themon.start(); // uncomment to enable Monitor
-        }
-
-        // An instance used to temporarily store the
-        // last observable state of a monitorable object.
-        // When Monitor.remove(o) is called, we replace
-        // 'o' with a FinalMonitorable whose reference
-        // will be enqueued after the last observable state
-        // has been printed.
-        final class FinalMonitorable implements Monitorable {
-            final String finalState;
-            FinalMonitorable(Monitorable o) {
-                finalState = o.getInfo();
-                finalList.add(this);
-            }
-            @Override
-            public String getInfo() {
-                finalList.remove(this);
-                return finalState;
-            }
-        }
-
-        Monitor() {
-            super("Monitor");
-            setDaemon(true);
-            list = Collections.synchronizedList(new LinkedList<>());
-            finalList = new ArrayList<>(); // access is synchronized on list above
-        }
-
-        void addTarget(Monitorable o) {
-            list.add(new WeakReference<>(o, queue));
-        }
-        void removeTarget(Monitorable o) {
-            // It can take a long time for GC to clean up references.
-            // Calling Monitor.remove() early helps removing noise from the
-            // logs/
-            synchronized (list) {
-                Iterator<WeakReference<Monitorable>> it = list.iterator();
-                while (it.hasNext()) {
-                    Monitorable m = it.next().get();
-                    if (m == null) it.remove();
-                    if (o == m) {
-                        it.remove();
-                        break;
-                    }
-                }
-                FinalMonitorable m = new FinalMonitorable(o);
-                addTarget(m);
-                Reference.reachabilityFence(m);
-            }
-        }
-
-        public static void add(Monitorable o) {
-            themon.addTarget(o);
-        }
-        public static void remove(Monitorable o) {
-            themon.removeTarget(o);
-        }
-
-        @Override
-        public void run() {
-            System.out.println("Monitor starting");
-            try {
-                while (true) {
-                    Thread.sleep(20 * 1000);
-                    synchronized (list) {
-                        Reference<? extends Monitorable> expired;
-                        while ((expired = queue.poll()) != null) list.remove(expired);
-                        for (WeakReference<Monitorable> ref : list) {
-                            Monitorable o = ref.get();
-                            if (o == null) continue;
-                            if (o instanceof FinalMonitorable) {
-                                ref.enqueue();
-                            }
-                            System.out.println(o.getInfo());
-                            System.out.println("-------------------------");
-                        }
-                    }
-                    System.out.println("--o-o-o-o-o-o-o-o-o-o-o-o-o-o-");
-                }
-            } catch (InterruptedException e) {
-                System.out.println("Monitor exiting with " + e);
-            }
-        }
-    }
-
     /**
      * Processing function for outgoing data. Pass it thru SSLEngine.wrap()
      * Any encrypted buffers generated are passed downstream to be written.
@@ -725,14 +581,10 @@ public class SSLFlowDelegate {
         volatile boolean completing;
         boolean completed; // only accessed in processData
 
-        class WriterDownstreamPusher extends SequentialScheduler.CompleteRestartableTask {
-            @Override public void run() { processData(); }
-        }
-
         Writer() {
             super();
             writeList = Collections.synchronizedList(new LinkedList<>());
-            scheduler = new SequentialScheduler(new WriterDownstreamPusher());
+            scheduler = SequentialScheduler.lockingScheduler(this::processData);
         }
 
         @Override
@@ -1007,7 +859,6 @@ public class SSLFlowDelegate {
                     "Connection closed before successful ALPN negotiation");
             alpnCF.completeExceptionally(alpn);
         }
-        if (isMonitored) Monitor.remove(monitor);
     }
 
     private Void stopOnError(Throwable error) {
@@ -1077,8 +928,6 @@ public class SSLFlowDelegate {
     }
 
     final AtomicInteger handshakeState;
-    final ConcurrentLinkedQueue<String> stateList =
-            debug.on() ? new ConcurrentLinkedQueue<>() : null;
 
     // Atomically executed to update task bits. Sets either DOING_TASKS or REQUESTING_TASKS
     // depending on previous value
@@ -1101,10 +950,6 @@ public class SSLFlowDelegate {
     private boolean doHandshake(HandshakeStatus handshakeStatus, int caller) {
         // unconditionally sets the HANDSHAKING bit, while preserving task bits
         handshakeState.getAndAccumulate(0, (current, unused) -> HANDSHAKING | (current & TASK_BITS));
-        if (stateList != null && debug.on()) {
-            stateList.add(handshakeStatus.toString());
-            stateList.add(Integer.toString(caller));
-        }
         switch (handshakeStatus) {
             case NEED_TASK:
                 int s = handshakeState.accumulateAndGet(0, REQUEST_OR_DO_TASKS);
@@ -1254,12 +1099,6 @@ public class SSLFlowDelegate {
                    && s != HandshakeStatus.NOT_HANDSHAKING
                    && result.getStatus() != Status.CLOSED;
         }
-
-        boolean needUnwrap() {
-            HandshakeStatus s = result.getHandshakeStatus();
-            return s == HandshakeStatus.NEED_UNWRAP;
-        }
-
 
         int bytesConsumed() {
             return result.bytesConsumed();

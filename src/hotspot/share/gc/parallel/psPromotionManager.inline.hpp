@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,8 +249,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   size_t new_obj_size = o->size_given_klass(klass);
 
   // Find the objects age, MT safe.
-  uint age = (test_mark.has_displaced_mark_helper() /* o->has_displaced_mark() */) ?
-      test_mark.displaced_mark_helper().age() : test_mark.age();
+  uint age = test_mark.age();
 
   if (!promote_immediately) {
     // Try allocating obj in to-space (unless too old)
@@ -297,9 +296,9 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than
     // _min_array_size_for_chunking, and most of them will be arrays.
-    // So, the objArray test would be very infrequent.
+    // So, the is_array_with_oops test would be very infrequent.
     if (new_obj_size > _min_array_size_for_chunking &&
-        klass->is_objArray_klass()) {
+        new_obj->is_array_with_oops()) {
       push_objArray(o, new_obj);
     } else {
       // we'll just push its contents

@@ -231,6 +231,21 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         this.metadata = metadata;
     }
 
+    public boolean isValueClass() {
+        return false;
+    }
+
+    public boolean isIdentityClass() {
+        return false;
+    }
+
+    // Does this type need to be preloaded in the context of the referring class ??
+    public boolean requiresLoadableDescriptors(Symbol referringClass) {
+        if (this.tsym == referringClass)
+            return false; // pointless
+        return this.isValueClass() && this.isFinal();
+    }
+
     /**
      * A subclass of {@link Types.TypeMapping} which applies a mapping recursively to the subterms
      * of a given type expression. This mapping returns the original type is no changes occurred
@@ -1175,6 +1190,16 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         @Override
         public boolean isReference() {
             return true;
+        }
+
+        @Override
+        public boolean isValueClass() {
+            return tsym != null && tsym.isValueClass();
+        }
+
+        @Override
+        public boolean isIdentityClass() {
+            return tsym != null && tsym.isIdentityClass();
         }
 
         @Override
@@ -2335,8 +2360,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
 
         public ErrorType(Type originalType, TypeSymbol tsym) {
-            super(noType, List.nil(), null);
-            this.tsym = tsym;
+            super(noType, List.nil(), tsym, List.nil());
             this.originalType = (originalType == null ? noType : originalType);
         }
 

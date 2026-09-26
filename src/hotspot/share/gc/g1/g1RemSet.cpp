@@ -26,6 +26,7 @@
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
@@ -34,7 +35,6 @@
 #include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
-#include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
@@ -109,16 +109,16 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   class G1DirtyRegions : public CHeapObj<mtGC> {
     uint* _buffer;
     Atomic<uint> _cur_idx;
-    size_t _max_reserved_regions;
+    size_t _max_num_regions;
 
     Atomic<bool>* _contains;
 
   public:
-    G1DirtyRegions(size_t max_reserved_regions) :
-      _buffer(NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC)),
+    G1DirtyRegions(size_t max_num_regions) :
+      _buffer(NEW_C_HEAP_ARRAY(uint, max_num_regions, mtGC)),
       _cur_idx(0),
-      _max_reserved_regions(max_reserved_regions),
-      _contains(NEW_C_HEAP_ARRAY(Atomic<bool>, max_reserved_regions, mtGC)) {
+      _max_num_regions(max_num_regions),
+      _contains(NEW_C_HEAP_ARRAY(Atomic<bool>, max_num_regions, mtGC)) {
 
       reset();
     }
@@ -130,15 +130,15 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
 
     void reset() {
       _cur_idx.store_relaxed(0);
-      for (uint i = 0; i < _max_reserved_regions; i++) {
+      for (uint i = 0; i < _max_num_regions; i++) {
         _contains[i].store_relaxed(false);
       }
     }
 
-    uint size() const { return _cur_idx.load_relaxed(); }
+    uint num_regions() const { return _cur_idx.load_relaxed(); }
 
     uint at(uint idx) const {
-      assert(idx < size(), "Index %u beyond valid regions", idx);
+      assert(idx < num_regions(), "Index %u beyond valid regions", idx);
       return _buffer[idx];
     }
 
@@ -156,7 +156,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
 
     // Creates the union of this and the other G1DirtyRegions.
     void merge(const G1DirtyRegions* other) {
-      for (uint i = 0; i < other->size(); i++) {
+      for (uint i = 0; i < other->num_regions(); i++) {
         uint region = other->at(i);
         if (!_contains[region].load_relaxed()) {
           uint cur = _cur_idx.load_relaxed();
@@ -194,15 +194,15 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
       _scan_state(scan_state) {}
 
     double worker_cost() const override {
-      uint num_regions = _regions->size();
+      uint num_regions = _regions->num_regions();
 
       if (num_regions == 0) {
         // There is no card table clean work, only some cleanup of memory.
         return AlmostNoWork;
       }
 
-      double num_cards = num_regions << G1HeapRegion::LogCardsPerRegion;
-      return ceil(num_cards / num_cards_per_worker);
+      size_t num_cards = (size_t)num_regions << G1HeapRegion::LogCardsPerRegion;
+      return align_up(num_cards, num_cards_per_worker) / num_cards_per_worker;
     }
 
     virtual ~G1ClearCardTableTask() {
@@ -213,12 +213,12 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
     }
 
     void do_work(uint worker_id) override {
-      const uint num_regions_per_worker = num_cards_per_worker / (uint)G1HeapRegion::CardsPerRegion;
+      const uint num_regions_per_worker = MAX2<uint>(num_cards_per_worker / (uint)G1HeapRegion::CardsPerRegion, 1);
 
       uint cur = _cur_dirty_regions.load_relaxed();
-      while (cur < _regions->size()) {
+      while (cur < _regions->num_regions()) {
         uint next = _cur_dirty_regions.fetch_then_add(num_regions_per_worker);
-        uint max = MIN2(next + num_regions_per_worker, _regions->size());
+        uint max = MIN2(next + num_regions_per_worker, _regions->num_regions());
 
         for (uint i = next; i < max; i++) {
           G1HeapRegion* r = _g1h->region_at(_regions->at(i));
@@ -248,9 +248,9 @@ public:
     FREE_C_HEAP_ARRAY(_scan_top);
   }
 
-  void initialize(uint max_reserved_regions) {
-    _card_claim_table.initialize(max_reserved_regions);
-    _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_reserved_regions, mtGC);
+  void initialize(uint max_num_regions) {
+    _card_claim_table.initialize(max_num_regions);
+    _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_num_regions, mtGC);
   }
 
   // Reset the claim and clear scan top for all regions, including
@@ -258,14 +258,14 @@ public:
   // become used during the collection these values must be valid
   // for those regions as well.
   void prepare() {
-    size_t max_reserved_regions = _card_claim_table.max_reserved_regions();
+    size_t max_num_regions = _card_claim_table.max_num_regions();
 
-    for (size_t i = 0; i < max_reserved_regions; i++) {
+    for (size_t i = 0; i < max_num_regions; i++) {
       clear_scan_top((uint)i);
     }
 
-    _all_dirty_regions = new G1DirtyRegions(max_reserved_regions);
-    _next_dirty_regions = new G1DirtyRegions(max_reserved_regions);
+    _all_dirty_regions = new G1DirtyRegions(max_num_regions);
+    _next_dirty_regions = new G1DirtyRegions(max_num_regions);
   }
 
   void prepare_for_merge_heap_roots() {
@@ -295,7 +295,7 @@ public:
   }
 
   size_t num_cards_in_dirty_regions() const {
-    return _next_dirty_regions->size() * G1HeapRegion::CardsPerRegion;
+    return _next_dirty_regions->num_regions() * G1HeapRegion::CardsPerRegion;
   }
 
   G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task() {
@@ -311,7 +311,7 @@ public:
   }
 
   void iterate_dirty_regions_from(G1HeapRegionClosure* cl, uint worker_id) {
-    uint num_regions = _next_dirty_regions->size();
+    uint num_regions = _next_dirty_regions->num_regions();
 
     if (num_regions == 0) {
       return;
@@ -322,14 +322,14 @@ public:
     WorkerThreads* workers = g1h->workers();
     uint const max_workers = workers->active_workers();
 
-    uint const start_pos = num_regions * worker_id / max_workers;
+    uint const start_pos = (uint)((uint64_t)num_regions * worker_id / max_workers);
     uint cur = start_pos;
 
     do {
       bool result = cl->do_heap_region(g1h->region_at(_next_dirty_regions->at(cur)));
       guarantee(!result, "Not allowed to ask for early termination.");
       cur++;
-      if (cur == _next_dirty_regions->size()) {
+      if (cur == _next_dirty_regions->num_regions()) {
         cur = 0;
       }
     } while (cur != start_pos);
@@ -387,8 +387,8 @@ G1RemSet::~G1RemSet() {
   delete _scan_state;
 }
 
-void G1RemSet::initialize(uint max_reserved_regions) {
-  _scan_state->initialize(max_reserved_regions);
+void G1RemSet::initialize(uint max_num_regions) {
+  _scan_state->initialize(max_num_regions);
 }
 
 // Scans a heap region for dirty cards.
@@ -398,13 +398,9 @@ class G1ScanHRForRegionClosure : public G1HeapRegionClosure {
   G1CollectedHeap* _g1h;
   G1CardTable* _ct;
 
-  G1ParScanThreadState* _pss;
-
   G1RemSetScanState* _scan_state;
 
-  G1GCPhaseTimes::GCParPhases _phase;
-
-  uint   _worker_id;
+  G1ParScanThreadState* _pss;
 
   size_t _cards_pending;
   size_t _cards_empty;
@@ -493,15 +489,11 @@ class G1ScanHRForRegionClosure : public G1HeapRegionClosure {
 public:
   G1ScanHRForRegionClosure(G1RemSetScanState* scan_state,
                            G1ParScanThreadState* pss,
-                           uint worker_id,
-                           G1GCPhaseTimes::GCParPhases phase,
                            bool remember_already_scanned_cards) :
     _g1h(G1CollectedHeap::heap()),
     _ct(_g1h->card_table()),
-    _pss(pss),
     _scan_state(scan_state),
-    _phase(phase),
-    _worker_id(worker_id),
+    _pss(pss),
     _cards_pending(0),
     _cards_empty(0),
     _cards_scanned(0),
@@ -540,12 +532,13 @@ public:
 };
 
 void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
-                               uint worker_id,
                                G1GCPhaseTimes::GCParPhases scan_phase,
                                G1GCPhaseTimes::GCParPhases objcopy_phase,
                                bool remember_already_scanned_cards) {
+  uint worker_id = pss->worker_id();
+
   EventGCPhaseParallel event;
-  G1ScanHRForRegionClosure cl(_scan_state, pss, worker_id, scan_phase, remember_already_scanned_cards);
+  G1ScanHRForRegionClosure cl(_scan_state, pss, remember_already_scanned_cards);
   _scan_state->iterate_dirty_regions_from(&cl, worker_id);
 
   event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(scan_phase));
@@ -587,19 +580,12 @@ public:
 // increment to fix up non-card related roots.
 class G1ScanCodeRootsClosure : public G1HeapRegionClosure {
   G1ParScanThreadState* _pss;
-  G1RemSetScanState* _scan_state;
-
-  uint _worker_id;
 
   size_t _code_roots_scanned;
 
 public:
-  G1ScanCodeRootsClosure(G1RemSetScanState* scan_state,
-                         G1ParScanThreadState* pss,
-                         uint worker_id) :
+  G1ScanCodeRootsClosure(G1ParScanThreadState* pss) :
     _pss(pss),
-    _scan_state(scan_state),
-    _worker_id(worker_id),
     _code_roots_scanned(0) { }
 
   bool do_heap_region(G1HeapRegion* r) {
@@ -614,7 +600,6 @@ public:
 };
 
 void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
-                                              uint worker_id,
                                               G1GCPhaseTimes::GCParPhases coderoots_phase,
                                               G1GCPhaseTimes::GCParPhases objcopy_phase) {
   EventGCPhaseParallel event;
@@ -622,15 +607,14 @@ void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
   Tickspan code_root_trim_partially_time;
 
   G1GCPhaseTimes* p = _g1h->phase_times();
+  uint worker_id = pss->worker_id();
   {
     G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
 
-    G1ScanCodeRootsClosure cl(_scan_state, pss, worker_id);
+    G1ScanCodeRootsClosure cl(pss);
     // Code roots work distribution occurs inside the iteration method. So scan all collection
     // set regions for all threads.
     _g1h->collection_set_iterate_increment_from(&cl, worker_id);
-
-    pss->update_nmethod_regions_to_add();
 
     p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
   }
@@ -643,10 +627,6 @@ void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
 
 class G1ScanOptionalRemSetRootsClosure : public G1HeapRegionClosure {
   G1ParScanThreadState* _pss;
-
-  uint _worker_id;
-
-  G1GCPhaseTimes::GCParPhases _scan_phase;
 
   size_t _opt_roots_scanned;
 
@@ -663,12 +643,8 @@ class G1ScanOptionalRemSetRootsClosure : public G1HeapRegionClosure {
   }
 
 public:
-  G1ScanOptionalRemSetRootsClosure(G1ParScanThreadState* pss,
-                                   uint worker_id,
-                                   G1GCPhaseTimes::GCParPhases scan_phase) :
+  G1ScanOptionalRemSetRootsClosure(G1ParScanThreadState* pss) :
     _pss(pss),
-    _worker_id(worker_id),
-    _scan_phase(scan_phase),
     _opt_roots_scanned(0),
     _opt_refs_scanned(0),
     _opt_refs_memory_used(0) { }
@@ -686,7 +662,6 @@ public:
 };
 
 void G1RemSet::scan_collection_set_optional_roots(G1ParScanThreadState* pss,
-                                                  uint worker_id,
                                                   G1GCPhaseTimes::GCParPhases scan_phase,
                                                   G1GCPhaseTimes::GCParPhases objcopy_phase) {
   assert(scan_phase == G1GCPhaseTimes::OptScanHR, "must be");
@@ -699,7 +674,8 @@ void G1RemSet::scan_collection_set_optional_roots(G1ParScanThreadState* pss,
 
   G1GCPhaseTimes* p = _g1h->phase_times();
 
-  G1ScanOptionalRemSetRootsClosure cl(pss, worker_id, scan_phase);
+  G1ScanOptionalRemSetRootsClosure cl(pss);
+  uint worker_id = pss->worker_id();
   // The individual references for the optional remembered set are per-worker, so every worker
   // always need to scan all regions (no claimer).
   _g1h->collection_set_iterate_increment_from(&cl, worker_id);
@@ -1102,7 +1078,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
         // remembered sets for this region.
         // We want to continue collecting remembered set entries for humongous regions
         // that were not reclaimed.
-        r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+        G1CardSetGroup* group = r->rem_set()->card_set_group();
+        assert(group != nullptr, "must have a card set group");
+        assert(group->num_regions() == 1, "Card set groups containing humongous regions must have a single region");
+        group->clear_card_set();
       }
 
       // Postcondition
@@ -1170,7 +1149,7 @@ public:
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
 
-        g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
+        g1h->collection_set()->merge_collection_set_card_set_groups(merge, worker_id, _num_workers);
 
         G1MergeCardSetStats stats = merge.stats();
 
@@ -1233,14 +1212,14 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   {
     WorkerThreads* workers = g1h->workers();
 
-    uint const num_groups_in_increment = g1h->collection_set()->num_groups_in_increment();
+    uint const num_selected_groups_in_increment = g1h->collection_set()->num_selected_groups_in_increment();
 
     uint const num_workers = initial_evacuation ? workers->active_workers() :
-                                                  MIN2(workers->active_workers(), num_groups_in_increment);
+                                                  MIN2(workers->active_workers(), num_selected_groups_in_increment);
 
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for %u groups",
-                        cl.name(), num_workers, num_groups_in_increment);
+    log_debug(gc, ergo)("Running %s using %u workers for %u card set groups",
+                        cl.name(), num_workers, num_selected_groups_in_increment);
     workers->run_task(&cl, num_workers);
   }
 
@@ -1288,8 +1267,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #endif
 }
 
-G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
-                                                          const uint worker_id) {
+G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_ptr) {
   assert(!_g1h->is_stw_gc_active(), "Only call concurrently");
   G1CardTable* ct = _g1h->refinement_table();
   check_card_ptr(card_ptr, ct);
@@ -1319,7 +1297,7 @@ G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_id);
+  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h);
   if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != nullptr) {
     if (conc_refine_cl.has_ref_to_cset()) {
       return HasRefToCSet;

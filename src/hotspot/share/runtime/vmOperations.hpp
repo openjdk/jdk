@@ -274,6 +274,16 @@ class VM_PrintCompileQueue: public VM_Operation {
   void doit();
 };
 
+class VM_ClassPrintLayout: public VM_Operation {
+ private:
+  outputStream* _out;
+  char* _class_name;
+ public:
+  VM_ClassPrintLayout(outputStream* st, char* class_name): _out(st), _class_name(class_name) {}
+  VMOp_Type type() const { return VMOp_ClassPrintLayout; }
+  void doit();
+};
+
 #if INCLUDE_SERVICES
 class VM_PrintClassHierarchy: public VM_Operation {
  private:

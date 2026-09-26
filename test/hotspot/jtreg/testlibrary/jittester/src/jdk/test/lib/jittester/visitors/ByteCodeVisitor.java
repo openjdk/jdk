@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ import jdk.test.lib.jittester.classes.ClassDefinitionBlock;
 import jdk.test.lib.jittester.classes.Interface;
 import jdk.test.lib.jittester.classes.Klass;
 import jdk.test.lib.jittester.classes.MainKlass;
+import jdk.test.lib.jittester.classes.ValueKlass;
 import jdk.test.lib.jittester.functions.ArgumentDeclaration;
 import jdk.test.lib.jittester.functions.ConstructorDefinition;
 import jdk.test.lib.jittester.functions.ConstructorDefinitionBlock;
@@ -1090,6 +1091,11 @@ public class ByteCodeVisitor implements Visitor<byte[]> {
         context.register(name, byteCode);
         currentClass = prevClass;
         return byteCode;
+    }
+
+    @Override
+    public byte[] visit(ValueKlass node) {
+        throw new UnsupportedOperationException("ByteCodeVisitor doesn't support Value classes");
     }
 
     private void visitLiteral(boolean value) {
