@@ -1963,7 +1963,7 @@ public class ForkJoinPool extends AbstractExecutorService
             long phaseSum = 0L;
             boolean swept = false;
             for (long e, prevRunState = 0L; ; prevRunState = e) {
-                DelayScheduler ds;
+                DelayScheduler ds = delayScheduler;
                 long c = ctl;
                 if (((e = runState) & STOP) != 0L)
                     return 1;                             // terminating
@@ -1984,9 +1984,11 @@ public class ForkJoinPool extends AbstractExecutorService
                     }
                     swept = (phaseSum == (phaseSum = sum));
                 }
+                else if (delayScheduler != ds)
+                    swept = false;
                 else if ((e & SHUTDOWN) == 0)
                     return 0;
-                else if ((ds = delayScheduler) != null && !ds.canShutDown())
+                else if (ds != null && !ds.canShutDown())
                     return 0;
                 else if (compareAndSetCtl(c, c) && casRunState(e, e | STOP))
                     return 1;                             // enable termination
@@ -2004,26 +2006,22 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     final void runWorker(WorkQueue w) {
         if (w != null) {
-            int r = w.stackPred, index = r & SMASK, rescans = 0;
+            int r = w.stackPred, index = r & SMASK;
             while ((runState & STOP) == 0L) {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
-                if ((index = scan(w, index, r | 1, rescans)) >= 0)
-                    rescans = 3;
-                else if (rescans > 0)
-                    --rescans;
-                else {
+                if ((index = scan(w, index, r | 1)) < 0) {
                     deactivate(w, r);
-                    if (U.getInt(w, WorkQueue.SOURCE) == DROPPED)
+                    if (w.source == DROPPED)
                         break;
                 }
             }
         }
     }
 
-    private int scan(WorkQueue w, int i, int stride, int rescans) {
+    private int scan(WorkQueue w, int i, int stride) {
         WorkQueue[] qs; int n;
         if ((qs = queues) != null && (n = qs.length) > 0 && w != null) {
-            for (int polls = n;;) {
+            for (int wasEmpty = i & EMPTY_SCAN, polls = n << 1;;) {
                 WorkQueue q; ForkJoinTask<?>[] a; int cap;
                 int qid = i & (n - 1);
                 i += stride;
@@ -2044,7 +2042,7 @@ public class ForkJoinPool extends AbstractExecutorService
                         break;
                     }
                     if (a[m & (b + 1)] != null || a[m & (b + 2)] != null ||
-                        (rescans == 0 && q.top - b > 0))
+                        (wasEmpty != 0 && polls < n && (qid & 1) == 0 && q.top - b > 0))
                         break;   // busy or stalled
                 }
                 if (--polls == 0)
@@ -2067,57 +2065,55 @@ public class ForkJoinPool extends AbstractExecutorService
             w.phase = ip;            // enqueue
             if (!U.compareAndSetLong(this, CTL, pc, qc))
                 w.phase = phase;     // back out on contention
-            else {
-                int prechecks = Math.min((int)(qc >> RC_SHIFT), 8);
-                outer: for (int i = phase;;) {
-                    WorkQueue[] qs; int n; long e;
+            else if ((ac = (int)(qc >> RC_SHIFT)) > 0 ||
+                     (runState & SHUTDOWN) == 0L || quiescent() <= 0) {
+                outer: for (int prechecks = Math.min(ac, 8), i = phase;;) {
+                    WorkQueue[] qs; int n;
                     if ((w.phase & IDLE) == 0)
                         break;
-                    if (((e = runState) & STOP) != 0L)
-                        break;
-                    if ((e & SHUTDOWN) != 0L && (ctl & RC_MASK) <= 0L && quiescent() > 0)
+                    if ((runState & STOP) != 0L ||
+                        (qs = queues) == null || (n = qs.length) <= 0)
                         break;
                     r ^= r << 6; r ^= r >>> 21; r ^= r << 7;
-                    if ((qs = queues) != null && (n = qs.length) > 0) {
-                        for (int polls = n, stride = r | 1;;) {
-                            WorkQueue q; ForkJoinTask<?>[] a; int cap, stat;
-                            if ((q = qs[(i += stride) & (n - 1)]) != null &&
-                                (a = q.array) != null && (cap = a.length) > 0) {
-                                int m = cap - 1, b = q.base, sp; long c; WorkQueue v;
-                                if (a[m & b] != null || a[m & (b + 1)] != null ||
-                                    (prechecks <= 0 && q.top - b > 0)) {
-                                    if (prechecks > 0) {
-                                        --prechecks;
-                                        break;
-                                    }
-                                    if ((sp = (int)(c = ctl)) == 0 ||
-                                        (v = qs[sp & (n - 1)]) == null)
-                                        break;
-                                    long nc = ((v.stackPred & LMASK) |
-                                               ((c + RC_UNIT) & UMASK));
-                                    int k = m & q.base;
-                                    if ((w.phase & IDLE) == 0)
-                                        break outer;
-                                    if (a[k] == null ||
-                                        !U.compareAndSetLong(this, CTL, c, nc))
-                                        break;
-                                    v.phase = sp;
-                                    if (v == w)
-                                        break outer;
+                    for (int polls = n << 1, stride = r | 1;;) {
+                        WorkQueue q; ForkJoinTask<?>[] a; int cap, stat;
+                        if ((q = qs[(i += stride) & (n - 1)]) != null &&
+                            (a = q.array) != null && (cap = a.length) > 0) {
+                            int m = cap - 1, b = q.base, sp; long c; WorkQueue v;
+                            if (a[m & b] != null || a[m & (b + 1)] != null ||
+                                (prechecks <= 0 && q.top - b > 0)) {
+                                if (prechecks > 0) {
+                                    --prechecks;
+                                    break;
+                                }
+                                if ((sp = (int)(c = ctl)) == 0 ||
+                                    (v = qs[sp & (n - 1)]) == null)
+                                    break;
+                                long nc = ((v.stackPred & LMASK) |
+                                           ((c + RC_UNIT) & UMASK));
+                                int k = m & q.base;
+                                if ((w.phase & IDLE) == 0)
+                                    break outer;
+                                if (a[k] == null ||
+                                    !U.compareAndSetLong(this, CTL, c, nc))
+                                    break;
+                                v.phase = sp;
+                                if (v == w)
+                                    break outer;
                                 if (v.parking != 0)
                                     U.unpark(v.owner);
                                 break;
-                                }
-                                else if (q.base != b)
-                                    break;
                             }
-                            if ((--polls & 0x7) == 0 && (w.phase & IDLE) == 0)
-                                break outer;
-                            if (polls == 0) {
-                                awaitWork(w, phase);
-                                break outer;
-                            }
+                            else if (q.base != b)
+                                break;
                         }
+                        if ((--polls & 0x7) == 0 && (w.phase & IDLE) == 0)
+                            break outer;
+                        if (polls == 0) {
+                            awaitWork(w, phase);
+                            break outer;
+                        }
+
                     }
                 }
             }
@@ -2150,17 +2146,21 @@ public class ForkJoinPool extends AbstractExecutorService
                     break;
                 boolean trimmable = false;
                 long d = 0, c;
-                if (((c = ctl) & RC_MASK) <= 0L && (int)c == activePhase) {
-                    long now = System.currentTimeMillis();
-                    if (!parked)
-                        d = deadline = now + keepAlive;
-                    else if ((d = deadline) - now <= TIMEOUT_SLOP)
-                        canTrim = true;
-                    if (canTrim && tryTrim(w, c, activePhase))
+                if (((c = ctl) & RC_MASK) <= 0L) {
+                    if ((runState & SHUTDOWN) != 0L && quiescent() > 0)
                         break;
-                    if ((w.phase & IDLE) == 0)
-                        break;
-                    trimmable = true;
+                    if ((int)c == activePhase) {
+                        long now = System.currentTimeMillis();
+                        if (!parked)
+                            d = deadline = now + keepAlive;
+                        else if ((d = deadline) - now <= TIMEOUT_SLOP)
+                            canTrim = true;
+                        if (canTrim && tryTrim(w, c, activePhase))
+                            break;
+                        if ((w.phase & IDLE) == 0)
+                            break;
+                        trimmable = true;
+                    }
                 }
                 if (!parked) {
                     Thread.yield();
@@ -2670,48 +2670,38 @@ public class ForkJoinPool extends AbstractExecutorService
 
     /**
      * Finds and locks a WorkQueue for an external submitter, or
-     * returns null if shutdown or terminating.
+     * throws RejectedExecutionException if shutdown or terminating.
      * @param r current ThreadLocalRandom.getProbe() value
+     * @param rejectOnShutdown true if RejectedExecutionException
+     *        should be thrown when shutdown (else only if terminating)
      */
     private WorkQueue submissionQueue(int r, boolean rejectOnShutdown) {
-        int reuse;                                   // nonzero if prefer create
-        if ((reuse = r) == 0) {
+        if (r == 0) {
             ThreadLocalRandom.localInit();           // initialize caller's probe
             r = ThreadLocalRandom.getProbe();
         }
-        for (int probes = 0; ; ++probes) {
+        for (int collides = 2; ;) {
             int n, i, id; WorkQueue[] qs; WorkQueue q;
             if ((qs = queues) == null)
                 break;
             if ((n = qs.length) <= 0)
                 break;
-            if ((i = (id = r & EXTERNAL_ID_MASK) & (n - 1)) != 0) {
-                if ((q = qs[i]) == null) {
-                    WorkQueue w = new WorkQueue(null, id, 0, false);
-                    boolean reject = ((lockRunState() & SHUTDOWN) != 0 &&
-                                      rejectOnShutdown);
-                    if (!reject && (qs = queues) != null && i < qs.length && qs[i] == null)
-                        q = qs[i] = w;                   // else lost race to install
-                    unlockRunState();
-                    if (q != null)
-                        return q;
-                    if (reject)
-                        break;
-                    reuse = 0;
-                }
-                if (reuse == 0 || !q.tryLockPhase()) {   // move index
-                    if (reuse == 0) {
-                        if (probes >= n >> 1)
-                            reuse = r;                   // stop prefering free slot
-                    }
-                    else if (q != null)
-                        reuse = 0;                       // probe on collision
-                }
-                else if (q != null)
+            if ((q = qs[i = (id = r & EXTERNAL_ID_MASK) & (n - 1)]) == null) {
+                WorkQueue w = new WorkQueue(null, id, 0, false);
+                boolean reject = ((lockRunState() & SHUTDOWN) != 0 &&
+                                  rejectOnShutdown);
+                if (!reject && (qs = queues) != null && i < qs.length && qs[i] == null)
+                    q = qs[i] = w;                   // else lost race to install
+                unlockRunState();
+                if (q != null)
                     return q;
+                if (reject)
+                    break;
             }
-            if ((runState & STOP) != 0L)
-                break;
+            if (collides > 0)
+                --collides;
+            else if (q != null && q.tryLockPhase())
+                return q;
             r = ThreadLocalRandom.advanceProbe(r);
         }
         return null;
@@ -2724,9 +2714,18 @@ public class ForkJoinPool extends AbstractExecutorService
     final WorkQueue externalSubmissionQueue(boolean rejectOnShutdown) {
         WorkQueue[] qs; WorkQueue q; int n;
         int r = ThreadLocalRandom.getProbe();
-        return (((qs = queues) != null && (n = qs.length) > 0 &&
-                 (q = qs[r & EXTERNAL_ID_MASK & (n - 1)]) != null && r != 0 &&
-                 q.tryLockPhase()) ? q : submissionQueue(r, rejectOnShutdown));
+        if ((qs = queues) == null || (n = qs.length) <= 0 ||
+            (q = qs[r & EXTERNAL_ID_MASK & (n - 1)]) == null || r == 0 ||
+            !q.tryLockPhase())
+            q = submissionQueue(r, rejectOnShutdown);
+        if (q != null && rejectOnShutdown && (runState & SHUTDOWN) != 0L) {
+            q.unlockPhase();
+            q = null;
+        }
+        if (q == null)
+            throw new RejectedExecutionException();
+        else
+            return q;
     }
 
     private void poolSubmit(ForkJoinTask<?> task) {
@@ -2736,18 +2735,11 @@ public class ForkJoinPool extends AbstractExecutorService
             internal = true;
             q = wt.workQueue;
         }
-        else {                    // find and lock queue
+        else {                     // find and lock queue
             internal = false;
-            if ((q = externalSubmissionQueue(true)) != null &&
-                (runState & SHUTDOWN) != 0L) {
-                q.unlockPhase();
-                q = null;
-            }
+            q = externalSubmissionQueue(true);
         }
-        if (q == null)
-            throw new RejectedExecutionException();
-        else
-            q.push(task, this, internal);
+        q.push(task, this, internal);
     }
 
     /**
@@ -2761,44 +2753,6 @@ public class ForkJoinPool extends AbstractExecutorService
         return (p != null && (qs = p.queues) != null &&
                 (n = qs.length) > 0 && r != 0) ?
             qs[r & EXTERNAL_ID_MASK & (n - 1)] : null;
-    }
-
-    private void randomExternalSubmit(ForkJoinTask<?> task) {
-        WorkQueue q = null;
-        for (;;) {
-            int n, i, id; WorkQueue[] qs;
-            int r = ThreadLocalRandom.nextSecondarySeed();
-            if ((runState & SHUTDOWN) != 0L)
-                break;
-            if ((qs = queues) == null)
-                break;
-            if ((n = qs.length) <= 0)
-                break;
-            if ((i = (id = r & EXTERNAL_ID_MASK) & (n - 1)) == 0)
-                ;
-            else if ((q = qs[i]) == null) {
-                WorkQueue w = new WorkQueue(null, id, 0, false);
-                boolean reject = ((lockRunState() & SHUTDOWN) != 0);
-                if (!reject && (qs = queues) != null && i < qs.length && qs[i] == null)
-                    q = qs[i] = w;                   // else lost race to install
-                unlockRunState();
-                if (q != null)
-                    break;
-                if (reject)
-                    break;
-            }
-            else if (q.tryLockPhase()) {
-                if ((runState & SHUTDOWN) != 0L) {
-                    q.unlockPhase();                     // check while q lock held
-                    q = null;
-                }
-                break;
-            }
-        }
-        if (q != null)
-            q.push(task, null, false);
-        else
-            throw new RejectedExecutionException();
     }
 
     /**
@@ -2921,8 +2875,12 @@ public class ForkJoinPool extends AbstractExecutorService
         if (now) {
             DelayScheduler ds;
             releaseWaiters();
-            if ((ds = delayScheduler) != null)
-                ds.signal();
+            if ((ds = delayScheduler) != null) {
+                if (ds == Thread.currentThread())
+                    cleanQueues();
+                else
+                    ds.signal();
+            }
             for (;;) {
                 if (((e = runState) & CLEANED) == 0L) {
                     boolean clean = cleanQueues();
@@ -3007,6 +2965,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * Interrupts all workers
      */
     private void interruptAll() {
+        DelayScheduler ds;
         Thread current = Thread.currentThread();
         WorkQueue[] qs = queues;
         int n = (qs == null) ? 0 : qs.length;
@@ -3019,6 +2978,11 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
             }
         }
+        if ((ds = delayScheduler) != null)
+            try {
+                ds.interrupt();
+            } catch (Throwable ignore) {
+            }
     }
 
     /**
@@ -3430,16 +3394,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * @since 20
      */
     public <T> ForkJoinTask<T> externalSubmit(ForkJoinTask<T> task) {
-        WorkQueue q;
         Objects.requireNonNull(task);
-        if ((q = externalSubmissionQueue(true)) != null) {
-            if ((runState & SHUTDOWN) == 0L) {
-                q.push(task, this, false);
-                return task;
-            }
-            q.unlockPhase();
-        }
-        throw new RejectedExecutionException();
+        externalSubmissionQueue(true).push(task, this, false);
+        return task;
     }
 
     /**
@@ -3460,7 +3417,7 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     public <T> ForkJoinTask<T> lazySubmit(ForkJoinTask<T> task) {
         Objects.requireNonNull(task);
-        randomExternalSubmit(task);
+        externalSubmissionQueue(true).push(task, null, false);
         return task;
     }
 
@@ -3629,28 +3586,14 @@ public class ForkJoinPool extends AbstractExecutorService
             String name = poolName + "-delayScheduler";
             if (workerNamePrefix == null)
                 asyncCommonPool();  // override common parallelism zero
-            WorkQueue[] qs; WorkQueue q = null;
-            if ((qs = queues) != null && qs.length > 0 && (q = qs[0]) == null) {
-                 WorkQueue w = new WorkQueue(null, 0, 0, false);
-                 long e = lockRunState();
-                 if ((e & STOP) == 0L && (qs = queues) != null && qs.length > 0)
-                     q = qs[0] = w;
-                 unlockRunState();
-                 if (q != null)
-                     q.unlockPhase();
-                 else
-                     q = qs[0];
-            }
-            if (q != null) {
-                long isShutdown = lockRunState() & SHUTDOWN;
-                try {
-                    if (isShutdown == 0L && (ds = delayScheduler) == null) {
-                        ds = delayScheduler = new DelayScheduler(this, name);
-                        start = true;
-                    }
-                } finally {
-                    unlockRunState();
+            long isShutdown = lockRunState() & SHUTDOWN;
+            try {
+                if (isShutdown == 0L && (ds = delayScheduler) == null) {
+                    ds = delayScheduler = new DelayScheduler(this, name);
+                    start = true;
                 }
+            } finally {
+                unlockRunState();
             }
             if (start) { // start outside of lock
                 SharedThreadContainer ctr;
@@ -3677,18 +3620,10 @@ public class ForkJoinPool extends AbstractExecutorService
      * elapsed unless pool is stopping
      */
     final void executeEnabledScheduledTask(ScheduledForkJoinTask<?> task) {
-        if (task != null) {
-            WorkQueue[] qs; WorkQueue q;
-            if ((qs = queues) != null && qs.length > 0 &&
-                (q = qs[0]) != null && q.tryLockPhase()) {
-                if ((runState & STOP) == 0L) {
-                    q.push(task, this, false);
-                    return;
-                }
-                q.unlockPhase();
-            }
+        if ((runState & STOP) != 0L)
             task.trySetCancelled();
-        }
+        else
+            externalSubmissionQueue(false).push(task, this, false);
     }
 
     /**
@@ -3808,12 +3743,15 @@ public class ForkJoinPool extends AbstractExecutorService
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
                                                   long initialDelay,
                                                   long period, TimeUnit unit) {
+        long p;
         if (period <= 0L)
             throw new IllegalArgumentException();
+        if ((p = unit.toNanos(period)) <= 0L || p > Long.MAX_VALUE >>> 1)
+            p = Long.MAX_VALUE >>> 1;
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
                 unit.toNanos(initialDelay),  // implicit null check of unit
-                unit.toNanos(period), false,
+                p, false,
                 Objects.requireNonNull(command), null, this));
     }
 
@@ -3857,12 +3795,15 @@ public class ForkJoinPool extends AbstractExecutorService
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
                                                      long initialDelay,
                                                      long delay, TimeUnit unit) {
+        long p;
         if (delay <= 0L)
             throw new IllegalArgumentException();
+        if ((p = unit.toNanos(delay)) <= 0L || p > Long.MAX_VALUE >>> 1)
+            p = Long.MAX_VALUE >>> 1;
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
                 unit.toNanos(initialDelay),  // implicit null check of unit
-                -unit.toNanos(delay), false, // negative for fixed delay
+                -p, false, // negative for fixed delay
                 Objects.requireNonNull(command), null, this));
     }
 
