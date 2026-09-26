@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8255560
+ * @bug 8255560 8381377
  * @summary Class::isRecord should check that the current class is final and not abstract
  * @library /test/lib
  * @run junit/othervm IsRecordTest
@@ -154,6 +154,25 @@ public class IsRecordTest {
         final class B { }
         assertFalse(B.class.isRecord());
         assertNull(B.class.getRecordComponents());
+    }
+
+    /** Tests record component behavior with missing accessors. */
+    @Test
+    public void testMissingAccessor() throws Exception {
+        var missingAccessorBytes = generateClassBytes("MissingAccessor", true, false, "java/lang/Record", List.of(RecordComponentInfo.of("x", CD_int)));
+        var missingAccessor = ByteCodeLoader.load("MissingAccessor", missingAccessorBytes);
+
+        assertTrue(missingAccessor.isRecord());
+        assertEquals(1, missingAccessor.getRecordComponents().length);
+
+        var component = missingAccessor.getRecordComponents()[0];
+        assertEquals("x", component.getName());
+        assertSame(int.class, component.getType());
+        assertSame(int.class, component.getGenericType());
+        assertNull(component.getGenericSignature());
+        var nsme = assertThrows(NoSuchMethodError.class, () -> component.getAccessor());
+        var message = nsme.getMessage();
+        assertTrue(message.contains("MissingAccessor.x"), message);
     }
 
     // --  infra
