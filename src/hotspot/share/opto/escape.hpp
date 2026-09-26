@@ -628,6 +628,9 @@ private:
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
   void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);
+#ifdef ASSERT
+  void verify_ram_after_reduce_phi(const Unique_Node_List &reducible_merges, const Unique_Node_List& reduced_merges);
+#endif
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT
