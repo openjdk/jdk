@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ import java.security.interfaces.*;
 import javax.crypto.SecretKey;
 
 import javax.security.auth.Subject;
+
+import jdk.test.lib.valueclass.AsValueClass;
 
 import com.sun.security.auth.module.*;
 import com.sun.security.auth.callback.*;
@@ -121,8 +123,10 @@ public class Basic extends PKCS11Test {
         }
     }
 
+    @AsValueClass
     private static class FooEntry implements KeyStore.Entry { }
 
+    @AsValueClass
     private static class P11SecretKey implements SecretKey {
         String alg;
         int length;

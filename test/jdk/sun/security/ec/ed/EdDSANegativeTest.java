@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.security.spec.EdDSAParameterSpec;
 import java.util.Arrays;
 import java.util.HexFormat;
 
+import jdk.test.lib.valueclass.AsValueClass;
 /*
  * @test
  * @bug 8209632
@@ -258,6 +259,7 @@ public class EdDSANegativeTest {
         return equals;
     }
 
+    @AsValueClass
     private static class InvalidPrivateKey implements PrivateKey {
 
         @Override
@@ -277,6 +279,7 @@ public class EdDSANegativeTest {
 
     }
 
+    @AsValueClass
     private static class InvalidPublicKey implements PublicKey {
 
         @Override
