@@ -237,11 +237,11 @@ public class TestIRMatching {
         runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array", 1, cmp, "Constant"),
                  BadFailOnConstraint.create(CheckCastArray.class, "array", 2, 1,cmp, "Constant", "MyClass"),
                  BadFailOnConstraint.create(CheckCastArray.class, "array", 2, 2,cmp, "Constant", "ir_framework/tests/MyClass"),
-                 GoodFailOnConstraint.create(CheckCastArray.class, "array", 3),
-                 Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
-                     GoodFailOnConstraint.create(CheckCastArray.class, "arrayCopy", 1)
-                     : BadFailOnConstraint.create(CheckCastArray.class, "arrayCopy", 1, "checkcast_arraycopy")
+                 GoodFailOnConstraint.create(CheckCastArray.class, "array", 3)
         );
+        runCheck(Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
+                     GoodFailOnConstraint.create(CheckCastArrayCopy.class, "arrayCopy", 1)
+                     : BadFailOnConstraint.create(CheckCastArrayCopy.class, "arrayCopy", 1, "checkcast_arraycopy"));
 
         try {
             runWithArgumentsFail(CompilationOutputOfFails.class);
@@ -467,16 +467,16 @@ class MultipleFailOnGood {
 
     @Test
     @IR(failOn = {IRNode.STORE, IRNode.CALL})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "20"}, failOn = {IRNode.ALLOC})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "< 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "!= 20"}, failOn = {IRNode.ALLOC})
+    @IR(applyIf = {"TLABRefillWasteFraction", ">= 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
     public void good2() {
         forceInline();
     }
 
     @Test
     @IR(failOn = {IRNode.STORE_OF_CLASS, "Test", IRNode.CALL})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "20"}, failOn = {IRNode.ALLOC})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "< 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "!= 20"}, failOn = {IRNode.ALLOC})
+    @IR(applyIf = {"TLABRefillWasteFraction", ">= 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
     public void good3() {
         forceInline();
     }
@@ -763,8 +763,17 @@ class GoodCount {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_OF_FIELD, "myClassEmpty", "1", IRNode.STORE_OF_CLASS, "GoodCount", "1",
-                  IRNode.STORE_OF_CLASS, "/GoodCount", "1", IRNode.STORE_OF_CLASS, "MyClassEmpty", "0"},
+    @IR(counts = {
+            IRNode.STORE_OF_FIELD, "myClassEmpty", "1",
+            IRNode.STORE_OF_CLASS, "oodCount", "0",
+            IRNode.STORE_OF_CLASS, "GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "ir_framework/tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/ir_framework/tests/GoodCount", "0",
+            IRNode.STORE_OF_CLASS, "MyClassEmpty", "0"
+        },
         failOn = {IRNode.STORE_OF_CLASS, "MyClassEmpty"})
     public void good6() {
         myClassEmpty = new MyClassEmpty();
@@ -1308,6 +1317,10 @@ class CheckCastArray {
         array(oArr);
         array(mArr);
     }
+}
+
+class CheckCastArrayCopy {
+    MyClass[] mArr = new MyClass[10];
 
     @Test
     @IR(failOn = IRNode.CHECKCAST_ARRAYCOPY) // fails

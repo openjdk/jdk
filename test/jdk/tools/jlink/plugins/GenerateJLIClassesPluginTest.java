@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.testng.ITestResult;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
+import jdk.test.lib.util.FileUtils;
 import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import tests.Helper;
 import tests.JImageGenerator;
@@ -48,7 +51,7 @@ import tests.Result;
 /*
  * @test
  * @bug 8252919 8327499
- * @library ../../lib
+ * @library ../../lib /test/lib
  * @summary Test --generate-jli-classes plugin
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
@@ -56,11 +59,13 @@ import tests.Result;
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.*
+ * @build jdk.test.lib.util.FileUtils
  * @run testng/othervm GenerateJLIClassesPluginTest
  */
 public class GenerateJLIClassesPluginTest {
 
     private static Helper helper;
+    private static Path lastImageDir;
 
     @BeforeTest
     public static void setup() throws Exception {
@@ -80,6 +85,21 @@ public class GenerateJLIClassesPluginTest {
         }
     }
 
+    @AfterMethod
+    public static void cleanup(ITestResult result) {
+        if (result.isSuccess() && lastImageDir != null && Files.exists(lastImageDir)) {
+            // On Windows, the java.exe process spawned by test methods may
+            // hold open handles to files even after completion.
+            // Use a non-throwing cleanup method but tolerate failures. Just log them.
+            List<IOException> failures = FileUtils.deleteFileTreeUnchecked(lastImageDir);
+            if (!failures.isEmpty()) {
+                System.err.println("WARNING: cleanup of " + lastImageDir + " incomplete:");
+                failures.forEach(e -> System.err.println("  " + e));
+            }
+        }
+        lastImageDir = null;
+    }
+
     @Test
     public static void testSpecies()  throws IOException {
         // Check that --generate-jli-classes=@file works as intended
@@ -88,7 +108,7 @@ public class GenerateJLIClassesPluginTest {
         String fileString = "[SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_" + species + " (salvaged)\n";
         Files.write(baseFile, fileString.getBytes(Charset.defaultCharset()));
         Result result = JImageGenerator.getJLinkTask()
-                .output(helper.createNewImageDir("generate-jli-file"))
+                .output(lastImageDir = helper.createNewImageDir("generate-jli-file"))
                 .option("--generate-jli-classes=@" + baseFile.toString())
                 .addMods("java.base")
                 .call();
@@ -113,7 +133,7 @@ public class GenerateJLIClassesPluginTest {
             fileString = "[LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeVirtual L_L (success)\n";
             Files.write(failFile, fileString.getBytes(Charset.defaultCharset()));
             Result result = JImageGenerator.getJLinkTask()
-                    .output(helper.createNewImageDir("invalid-signature"))
+                    .output(lastImageDir = helper.createNewImageDir("invalid-signature"))
                     .option("--generate-jli-classes=@" + failFile.toString())
                     .addMods("java.base")
                     .call();
@@ -125,7 +145,7 @@ public class GenerateJLIClassesPluginTest {
     @Test
     public static void nonExistentTraceFile() throws IOException {
         Result result = JImageGenerator.getJLinkTask()
-                .output(helper.createNewImageDir("non-existent-tracefile"))
+                .output(lastImageDir = helper.createNewImageDir("non-existent-tracefile"))
                 .option("--generate-jli-classes=@NON_EXISTENT_FILE")
                 .addMods("java.base")
                 .call();
@@ -140,7 +160,7 @@ public class GenerateJLIClassesPluginTest {
         Path invokersTrace = Files.createTempFile("invokers", "trace");
         Files.writeString(invokersTrace, fileString, Charset.defaultCharset());
         Result result = JImageGenerator.getJLinkTask()
-                .output(helper.createNewImageDir("jli-invokers"))
+                .output(lastImageDir = helper.createNewImageDir("jli-invokers"))
                 .option("--generate-jli-classes=@" + invokersTrace.toString())
                 .addMods("java.base")
                 .call();

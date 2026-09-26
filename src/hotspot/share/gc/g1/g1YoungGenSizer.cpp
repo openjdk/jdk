@@ -118,37 +118,37 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
   }
 }
 
-uint G1YoungGenSizer::calculate_default_min_num_regions(uint new_number_of_heap_regions) {
-  uint default_value = (new_number_of_heap_regions * G1NewSizePercent) / 100;
+uint G1YoungGenSizer::calculate_default_min_num_regions(uint new_num_regions) {
+  uint default_value = (new_num_regions * G1NewSizePercent) / 100;
   return MAX2(1U, default_value);
 }
 
-uint G1YoungGenSizer::calculate_default_max_num_regions(uint new_number_of_heap_regions) {
-  uint default_value = (new_number_of_heap_regions * G1MaxNewSizePercent) / 100;
+uint G1YoungGenSizer::calculate_default_max_num_regions(uint new_num_regions) {
+  uint default_value = (new_num_regions * G1MaxNewSizePercent) / 100;
   return MAX2(1U, default_value);
 }
 
-void G1YoungGenSizer::recalculate_min_max_num_regions(uint number_of_heap_regions, uint* min_num_young_regions, uint* max_num_young_regions) {
-  assert(number_of_heap_regions > 0, "Heap must be initialized");
+void G1YoungGenSizer::recalculate_min_max_num_regions(uint num_regions, uint* min_num_young_regions, uint* max_num_young_regions) {
+  assert(num_regions > 0, "Heap must be initialized");
 
   switch (_sizer_kind) {
     case SizerDefaults:
-      *min_num_young_regions = calculate_default_min_num_regions(number_of_heap_regions);
-      *max_num_young_regions = calculate_default_max_num_regions(number_of_heap_regions);
+      *min_num_young_regions = calculate_default_min_num_regions(num_regions);
+      *max_num_young_regions = calculate_default_max_num_regions(num_regions);
       break;
     case SizerNewSizeOnly:
-      *max_num_young_regions = calculate_default_max_num_regions(number_of_heap_regions);
+      *max_num_young_regions = calculate_default_max_num_regions(num_regions);
       *max_num_young_regions = MAX2(*min_num_young_regions, *max_num_young_regions);
       break;
     case SizerMaxNewSizeOnly:
-      *min_num_young_regions = calculate_default_min_num_regions(number_of_heap_regions);
+      *min_num_young_regions = calculate_default_min_num_regions(num_regions);
       *min_num_young_regions = MIN2(*min_num_young_regions, *max_num_young_regions);
       break;
     case SizerMaxAndNewSize:
       // Do nothing. Values set on the command line, don't update them at runtime.
       break;
     case SizerNewRatio:
-      *min_num_young_regions = MAX2((uint)(number_of_heap_regions / (NewRatio + 1)), 1u);
+      *min_num_young_regions = MAX2((uint)(num_regions / (NewRatio + 1)), 1u);
       *max_num_young_regions = *min_num_young_regions;
       break;
     default:
@@ -158,12 +158,12 @@ void G1YoungGenSizer::recalculate_min_max_num_regions(uint number_of_heap_region
   assert(*min_num_young_regions <= *max_num_young_regions, "Invalid min/max young gen size values");
 }
 
-void G1YoungGenSizer::adjust_max_new_size(uint number_of_heap_regions) {
+void G1YoungGenSizer::adjust_max_new_size(uint num_regions) {
   // We need to pass the desired values because recalculation may not update these
   // values in some cases.
   uint unused_new_min = min_desired_num_regions();
   uint new_max = max_desired_num_regions();
-  recalculate_min_max_num_regions(number_of_heap_regions, &unused_new_min, &new_max);
+  recalculate_min_max_num_regions(num_regions, &unused_new_min, &new_max);
 
   size_t max_young_size = new_max * G1HeapRegion::GrainBytes;
   if (max_young_size != MaxNewSize) {
@@ -171,10 +171,10 @@ void G1YoungGenSizer::adjust_max_new_size(uint number_of_heap_regions) {
   }
 }
 
-void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
+void G1YoungGenSizer::heap_size_changed(uint new_num_regions) {
   uint min = min_desired_num_regions();
   uint max = max_desired_num_regions();
-  recalculate_min_max_num_regions(new_number_of_heap_regions, &min, &max);
+  recalculate_min_max_num_regions(new_num_regions, &min, &max);
   _min_desired_num_regions.store_relaxed(min);
   _max_desired_num_regions.store_relaxed(max);
 }

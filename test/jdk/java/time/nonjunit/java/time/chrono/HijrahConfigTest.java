@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import tests.JImageGenerator;
 /*
  * @test
  * @summary Tests whether a custom Hijrah configuration properties file works correctly
- * @bug 8187987
+ * @bug 8187987 8392848
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library /tools/lib /test/lib
  * @modules java.base/jdk.internal.jimage
@@ -43,7 +43,8 @@ import tests.JImageGenerator;
  */
 public class HijrahConfigTest {
 
-    private static final String TEST_CONFIG = "hijrah-config-Hijrah-test_islamic-test.properties";
+    private static final String VALID_TEST_CONFIG = "hijrah-config-Hijrah-valid_islamic-valid.properties";
+    private static final String INVALID_TEST_CONFIG = "hijrah-config-Hijrah-invalid_islamic-invalid.properties";
 
     public static void main(String[] args) throws Exception {
         Helper helper = Helper.newHelper();
@@ -62,8 +63,10 @@ public class HijrahConfigTest {
         // Install the test hijrah configuration properties
         Path confPath = outputPath.resolve("conf").resolve("chronology");
         Files.createDirectory(confPath);
-        Files.copy(Path.of(System.getProperty("test.src"), TEST_CONFIG),
-                confPath.resolve(TEST_CONFIG));
+        Files.copy(Path.of(System.getProperty("test.src"), VALID_TEST_CONFIG),
+                confPath.resolve(VALID_TEST_CONFIG));
+        Files.copy(Path.of(System.getProperty("test.src"), INVALID_TEST_CONFIG),
+                confPath.resolve(INVALID_TEST_CONFIG));
 
         // Run tests
         Path launcher = outputPath.resolve("bin").resolve("java");

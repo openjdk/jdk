@@ -27,7 +27,7 @@ package compiler.lib.ir_framework.test;
  * This interface provides arguments (and can set fields) for a test method. Different implementations are chosen
  * based on the @Arguments annotation for the @Test method.
  */
-interface ArgumentsProvider {
+public interface ArgumentsProvider {
     /**
      * Compute arguments (and possibly set fields) for a test method.
      *

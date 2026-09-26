@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@
 #include "c1/c1_Compilation.hpp"
 #include "gc/shared/c1/cardTableBarrierSetC1.hpp"
 
-class G1PreBarrierStub: public CodeStub {
-  friend class G1BarrierSetC1;
+class G1PreBarrierStubC1: public CodeStub {
  private:
   bool _do_load;
   LIR_Opr _addr;
@@ -42,7 +41,7 @@ class G1PreBarrierStub: public CodeStub {
   // Version that _does_ generate a load of the previous value from addr.
   // addr (the address of the field to be read) must be a LIR_Address
   // pre_val (a temporary register) must be a register;
-  G1PreBarrierStub(LIR_Opr addr, LIR_Opr pre_val, LIR_PatchCode patch_code, CodeEmitInfo* info) :
+  G1PreBarrierStubC1(LIR_Opr addr, LIR_Opr pre_val, LIR_PatchCode patch_code, CodeEmitInfo* info) :
     _do_load(true), _addr(addr), _pre_val(pre_val),
     _patch_code(patch_code), _info(info)
   {
@@ -54,7 +53,7 @@ class G1PreBarrierStub: public CodeStub {
 
   // Version that _does not_ generate load of the previous value; the
   // previous value is assumed to have already been loaded into pre_val.
-  G1PreBarrierStub(LIR_Opr pre_val) :
+  G1PreBarrierStubC1(LIR_Opr pre_val) :
     _do_load(false), _addr(LIR_OprFact::illegalOpr), _pre_val(pre_val),
     _patch_code(lir_patch_none), _info(nullptr)
   {
@@ -87,7 +86,7 @@ class G1PreBarrierStub: public CodeStub {
     }
   }
 #ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("G1PreBarrierStub"); }
+  virtual void print_name(outputStream* out) const { out->print("G1PreBarrierStubC1"); }
 #endif // PRODUCT
 };
 

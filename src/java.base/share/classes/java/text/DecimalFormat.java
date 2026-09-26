@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,7 +250,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>{@link DecimalFormatSymbols#getExponentSeparator()}
  *          <td>Number
  *          <td>Separates mantissa and exponent in scientific notation. This value
- *              is case sensistive. <em>Need not be quoted in prefix or suffix.</em>
+ *              is case sensitive. <em>Need not be quoted in prefix or suffix.</em>
  *     <tr>
  *          <th scope="row">{@code ;}
  *          <td>{@link DecimalFormatSymbols#getPatternSeparator()}
@@ -2059,8 +2059,7 @@ public class DecimalFormat extends NumberFormat {
                 // Output grouping separator if necessary.  Don't output a
                 // grouping separator if i==0 though; that's at the end of
                 // the integer part.
-                if (isGroupingUsed() && i>0 && (groupingSize != 0) &&
-                        (i % groupingSize == 0)) {
+                if (isGroupingEnabled() && i > 0 && i % groupingSize == 0) {
                     int gStart = result.length();
                     result.append(grouping);
                     delegate.formatted(Field.GROUPING_SEPARATOR,
@@ -2242,8 +2241,14 @@ public class DecimalFormat extends NumberFormat {
     public Number parse(String text, ParsePosition pos) {
         // special case NaN
         if (text.regionMatches(pos.index, symbols.getNaN(), 0, symbols.getNaN().length())) {
-            pos.index = pos.index + symbols.getNaN().length();
-            return Double.valueOf(Double.NaN);
+            var nanEnd = pos.index + symbols.getNaN().length();
+            // When strict, parsing NaN must be exact
+            if (parseStrict && nanEnd != text.length()) {
+                pos.errorIndex = nanEnd;
+                return null;
+            }
+            pos.index = nanEnd;
+            return Double.NaN;
         }
 
         boolean[] status = new boolean[STATUS_LENGTH];
@@ -2568,7 +2573,8 @@ public class DecimalFormat extends NumberFormat {
                 }
 
                 // Enforce the grouping size on the first group
-                if (parseStrict && isGroupingUsed() && position == startPos + groupingSize
+                if (parseStrict && isGroupingEnabled()
+                        && position == startPos + groupingSize
                         && prevSeparatorIndex == -groupingSize && !sawDecimal
                         && digit >= 0 && digit <= 9) {
                     return new NumericPosition(position, intIndex);
@@ -2612,7 +2618,8 @@ public class DecimalFormat extends NumberFormat {
                         return new NumericPosition(-1, intIndex);
                     }
                     // Check grouping size on decimal separator
-                    if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
+                    if (parseStrict && isGroupingEnabled()
+                            && isGroupingViolation(position, prevSeparatorIndex)) {
                         return new NumericPosition(
                                 groupingViolationIndex(position, prevSeparatorIndex), intIndex);
                     }
@@ -2624,7 +2631,8 @@ public class DecimalFormat extends NumberFormat {
                     intIndex = position;
                     digits.decimalAt = digitCount; // Not digits.count!
                     sawDecimal = true;
-                } else if (!isExponent && ch == grouping && isGroupingUsed()) {
+                } else if (!isExponent && ch == grouping &&
+                        (parseStrict ? isGroupingEnabled() : isGroupingUsed())) {
                     if (parseStrict) {
                         // text should not start with grouping when strict
                         if (position == startPos) {
@@ -2679,10 +2687,11 @@ public class DecimalFormat extends NumberFormat {
             // (When strict), within the loop we enforce grouping when encountering
             // decimal/grouping symbols. Once outside loop, we need to check
             // the final grouping, ex: "1,234". Only check the final grouping
-            // if we have not seen a decimal separator, to prevent a non needed check,
-            // for ex: "1,234.", "1,234.12"
+            // if we have not seen a decimal separator, to prevent a grouping check in the
+            // fraction portion for ex: "1,234.", "1,234.12"
             if (parseStrict) {
-                if (!sawDecimal && isGroupingViolation(position, prevSeparatorIndex)) {
+                if (!sawDecimal && isGroupingEnabled()
+                        && isGroupingViolation(position, prevSeparatorIndex)) {
                     // -1, since position is incremented by one too many when loop is finished
                     // "1,234%" and "1,234" both end with pos = 5, since '%' breaks
                     // the loop before incrementing position. In both cases, check
@@ -2743,12 +2752,23 @@ public class DecimalFormat extends NumberFormat {
         return decimalAt;
     }
 
+    /*
+     * DecimalFormat defines both setGroupingUsed(boolean) and setGroupingSize(int).
+     * These operate independently, and setting a grouping size of 0 does not mean that
+     * isGroupingUsed() returns false. As a result, to effectively check whether grouping is used
+     * for strict parsing, both values need to be verified. Lenient parsing, which preserves the
+     * legacy parsing behavior, does not require this exhaustive check because grouping size positioning
+     * is not checked.
+     */
+    private boolean isGroupingEnabled() {
+        return isGroupingUsed() && groupingSize > 0;
+    }
+
     // Checks to make sure grouping size is not violated. Used when strict.
     private boolean isGroupingViolation(int pos, int prevGroupingPos) {
         assert parseStrict : "Grouping violations should only occur when strict";
-        return isGroupingUsed() && // Only violates if using grouping
-                // Checks if a previous grouping symbol was seen.
-                prevGroupingPos != -groupingSize &&
+        // Checks if a previous grouping symbol was seen.
+        return prevGroupingPos != -groupingSize &&
                 // The check itself, - 1 to account for grouping/decimal symbol
                 pos - 1 != prevGroupingPos + groupingSize;
     }
@@ -3586,7 +3606,7 @@ public class DecimalFormat extends NumberFormat {
             int digitCount = useExponentialNotation ? getMaximumIntegerDigits() :
                     Math.max(groupingSize, getMinimumIntegerDigits()) + 1;
             for (int i = digitCount; i > 0; --i) {
-                if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
+                if (i != digitCount && isGroupingEnabled() &&
                         i % groupingSize == 0) {
                     result.append(groupingSymbol);
                 }

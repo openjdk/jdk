@@ -758,6 +758,11 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int[] pixels;
         if (iArray != null) {
            pixels = iArray;
@@ -850,6 +855,10 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int[] samples;
         if (iArray != null) {
            samples = iArray;
@@ -1014,6 +1023,13 @@ public class ComponentSampleModel extends SampleModel
                 ("Coordinate out of bounds!");
         }
 
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int lineOffset = y*scanlineStride + x*pixelStride;
         int srcOffset = 0;
 
@@ -1099,6 +1115,14 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int lineOffset = y*scanlineStride + x*pixelStride + bandOffsets[b];
         int srcOffset = 0;
 

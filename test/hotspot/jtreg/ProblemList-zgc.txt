@@ -46,3 +46,5 @@ vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-
 
 #############################################################################
 
+# Value Objects failures start here:
+
