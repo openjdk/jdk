@@ -1088,7 +1088,8 @@ Node* ValueTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t 
   };
 
   Node* const thirty_one = kit->intcon(31);
-  Node* result = kit->intcon(checked_cast<jint>(klass_hash));
+  Node* klass_hash_con = kit->intcon(checked_cast<jint>(klass_hash));
+  Node* result = klass_hash_con;
   for (int i = 0; i < number_of_nonoop_entries; i++) {
     AcmpMapSegment segment = vk->get_nonoop_segment_of_acmp_map(i);
     int offset = segment._offset;
@@ -1121,9 +1122,21 @@ Node* ValueTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t 
       offset++;
     }
   }
-  result = kit->AndI(result, kit->intcon(markWord::hash_mask));
+  Node* hash_mask_con = kit->intcon(markWord::hash_mask);
+  result = kit->AndI(result, hash_mask_con);
 
-  region->add_req(kit->control());
+  // Now, we have computed the hash. But we don't want it to be markWord::no_hash.
+  // If it is, let's just take the hash of the Class, and since this Class is an identity object,
+  // it must be different from markWord::no_hash. Let's do a little diamond since it's easy enough
+  // and cmove experimentally failed to be as efficient.
+  Node* no_hash_con = kit->intcon(checked_cast<int>(markWord::no_hash));
+  Node* bol_hash_would_be_no_hash = kit->BoolCmpI(result, BoolTest::eq, no_hash_con);
+  IfNode* iff_hash_would_be_no_hash = kit->create_and_map_if(kit->control(), bol_hash_would_be_no_hash, PROB_FAIR, COUNT_UNKNOWN);
+
+  region->add_req(kit->IfTrue(iff_hash_would_be_no_hash));
+  phi_result->add_req(klass_hash_con);
+
+  region->add_req(kit->IfFalse(iff_hash_would_be_no_hash));
   phi_result->add_req(result);
 
   kit->set_control(region);
