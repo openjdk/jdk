@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,10 +116,10 @@ public class Main {
             new DisabledAlgorithmConstraints(
                     DisabledAlgorithmConstraints.PROPERTY_SECURITY_LEGACY_ALGS);
 
-    private static final Set<CryptoPrimitive> DIGEST_PRIMITIVE_SET = Collections
-            .unmodifiableSet(EnumSet.of(CryptoPrimitive.MESSAGE_DIGEST));
-    private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
-            .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
+    private static final Set<CryptoPrimitive> DIGEST_PRIMITIVE_SET = Set.of(
+            CryptoPrimitive.MESSAGE_DIGEST);
+    private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Set.of(
+            CryptoPrimitive.SIGNATURE);
 
     private static boolean externalFileAttributesDetected;
 

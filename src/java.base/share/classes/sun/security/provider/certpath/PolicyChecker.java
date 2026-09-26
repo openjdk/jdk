@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,12 +153,12 @@ class PolicyChecker extends PKIXCertPathChecker {
     @Override
     public Set<String> getSupportedExtensions() {
         if (supportedExts == null) {
-            supportedExts = HashSet.newHashSet(4);
-            supportedExts.add(CertificatePolicies_Id.toString());
-            supportedExts.add(PolicyMappings_Id.toString());
-            supportedExts.add(PolicyConstraints_Id.toString());
-            supportedExts.add(InhibitAnyPolicy_Id.toString());
-            supportedExts = Collections.unmodifiableSet(supportedExts);
+            supportedExts = Set.of(
+                    CertificatePolicies_Id.toString(),
+                    PolicyMappings_Id.toString(),
+                    PolicyConstraints_Id.toString(),
+                    InhibitAnyPolicy_Id.toString()
+            );
         }
         return supportedExts;
     }
