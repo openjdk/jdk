@@ -125,7 +125,7 @@ TEST_VM(FieldDescriptor, access_flag_printer) {
   ASSERT_TRUE(integer_klass->find_local_field(min_value_symbol, vmSymbols::int_signature(), &fd))
       << "Integer.MIN_VALUE must exist";
   fd.print_on(&st);
-  ASSERT_THAT(st.base(), HasSubstr("public static final 'MIN_VALUE' 'I'")) << "Must print field access flags";
+  ASSERT_THAT(st.base(), HasSubstr("public static final 'MIN_VALUE' (fields 0x00000008) 'I'")) << "Must print field access flags";
 
   st.reset();
   Symbol* thread_state_symbol = SymbolTable::new_symbol("java/lang/Thread$State");
@@ -139,7 +139,7 @@ TEST_VM(FieldDescriptor, access_flag_printer) {
       << "Thread.State.NEW must exist";
 
   enum_fd.print_on(&st);
-  ASSERT_THAT(st.base(), HasSubstr("public static final enum 'NEW' 'Ljava/lang/Thread$State;'"))
+  ASSERT_THAT(st.base(), HasSubstr("public static final enum 'NEW' (fields 0x00000000) 'Ljava/lang/Thread$State;'"))
       << "Must print enum field access flags";
 }
 

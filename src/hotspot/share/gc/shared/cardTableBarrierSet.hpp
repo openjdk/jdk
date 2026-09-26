@@ -83,10 +83,8 @@ public:
   // optimized by some barriers.
 
   // Below length is the # array elements being written
-  virtual void write_ref_array_pre(oop* dst, size_t length,
-                                   bool dest_uninitialized) {}
-  virtual void write_ref_array_pre(narrowOop* dst, size_t length,
-                                   bool dest_uninitialized) {}
+  virtual void write_ref_array_pre(oop* dst, size_t length) {}
+  virtual void write_ref_array_pre(narrowOop* dst, size_t length) {}
   // Below count is the # array elements being written, starting
   // at the address "start", which may not necessarily be HeapWord-aligned
   inline void write_ref_array(HeapWord* start, size_t count);
@@ -123,6 +121,11 @@ public:
     static OopCopyResult oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
                                                arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                                size_t length);
+  private:
+    // Failing checkcast or check null during copy, still needs barrier
+    template <typename T>
+    static inline void oop_arraycopy_partial_barrier(BarrierSetT *bs, T* dst_raw, T* p);
+  public:
 
     static void clone_in_heap(oop src, oop dst, size_t size);
 
@@ -137,6 +140,9 @@ public:
     static oop oop_atomic_cmpxchg_in_heap_at(oop base, ptrdiff_t offset, oop compare_value, oop new_value) {
       return oop_atomic_cmpxchg_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), compare_value, new_value);
     }
+
+    static void value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst);
+    static void value_store_null_in_heap(const ValuePayload& dst);
   };
 };
 

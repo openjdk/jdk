@@ -1658,7 +1658,7 @@ DivModLNode* DivModLNode::make(Node* div_or_mod) {
 
 //------------------------------match------------------------------------------
 // return result(s) along with their RegMask info
-Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
+Node* DivModINode::match(const ProjNode* proj, const Matcher* match) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == first_proj_num) {
@@ -1673,7 +1673,7 @@ Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
 
 //------------------------------match------------------------------------------
 // return result(s) along with their RegMask info
-Node *DivModLNode::match( const ProjNode *proj, const Matcher *match ) {
+Node* DivModLNode::match(const ProjNode* proj, const Matcher* match) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == first_proj_num) {
@@ -1711,7 +1711,7 @@ UDivModLNode* UDivModLNode::make(Node* div_or_mod) {
 
 //------------------------------match------------------------------------------
 // return result(s) along with their RegMask info
-Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
+Node* UDivModINode::match(const ProjNode* proj, const Matcher* match) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == first_proj_num) {
@@ -1726,7 +1726,7 @@ Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
 
 //------------------------------match------------------------------------------
 // return result(s) along with their RegMask info
-Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
+Node* UDivModLNode::match(const ProjNode* proj, const Matcher* match) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == first_proj_num) {

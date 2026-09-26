@@ -82,13 +82,16 @@ import java.nio.file.Paths;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Utils;
 
 import jtreg.SkippedException;
 
 public class TestDefaultArchiveLoading {
 
+    static String archivePreviewSuffix = "";
+
     private static String archiveName(String archiveSuffix) {
-        return "classes" + archiveSuffix + ".jsa";
+        return "classes" + archiveSuffix + archivePreviewSuffix + ".jsa";
     }
 
     private static Path archivePath(String archiveSuffix) {
@@ -110,6 +113,12 @@ public class TestDefaultArchiveLoading {
 
         String archiveSuffix;
         char coh, coops;
+        for (String opt : Utils.getTestJavaOpts()) {
+            if (opt.contains("--enable-preview")) {
+                archivePreviewSuffix = "_preview";
+                break;
+            }
+        }
 
         switch (args[0]) {
             case "nocoops_nocoh":

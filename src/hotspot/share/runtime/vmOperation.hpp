@@ -89,6 +89,7 @@
   template(ShenandoahFullGC)                      \
   template(ShenandoahInitMark)                    \
   template(ShenandoahFinalMarkStartEvac)          \
+  template(ShenandoahFinalRoots)                  \
   template(ShenandoahInitUpdateRefs)              \
   template(ShenandoahFinalUpdateRefs)             \
   template(ShenandoahFinalVerify)                 \
@@ -109,6 +110,7 @@
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
+  template(ClassPrintLayout)                      \
   template(RendezvousGCThreads)                   \
   template(JFRInitializeCPUTimeSampler)           \
   template(JFRTerminateCPUTimeSampler)            \

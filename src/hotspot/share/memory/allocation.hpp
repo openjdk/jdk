@@ -330,6 +330,7 @@ public:
   f(ConstantPoolCache) \
   f(Annotations) \
   f(MethodCounters) \
+  f(ValueFieldLayoutInfo) \
   f(RecordComponent) \
   f(KlassTrainingData) \
   f(MethodTrainingData) \

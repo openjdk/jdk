@@ -183,8 +183,8 @@ class ChunkManagerRandomChunkAllocTest {
   }
 
   // adjust test if we change levels
-  STATIC_ASSERT(HIGHEST_CHUNK_LEVEL == CHUNK_LEVEL_1K);
-  STATIC_ASSERT(LOWEST_CHUNK_LEVEL == CHUNK_LEVEL_16M);
+  static_assert(HIGHEST_CHUNK_LEVEL == CHUNK_LEVEL_1K);
+  static_assert(LOWEST_CHUNK_LEVEL == CHUNK_LEVEL_16M);
 
   void one_test() {
 

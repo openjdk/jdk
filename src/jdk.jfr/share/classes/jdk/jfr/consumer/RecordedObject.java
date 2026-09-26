@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -727,7 +727,7 @@ public sealed class RecordedObject
             case Byte b -> getDuration(b, name);
             case UnsignedValue(Integer i) -> getDuration(Integer.toUnsignedLong(i), name);
             case UnsignedValue(Short s) -> getDuration(Short.toUnsignedLong(s), name);
-            case UnsignedValue(Byte b) -> getDuration(Short.toUnsignedLong(b), name);
+            case UnsignedValue(Byte b) -> getDuration(Byte.toUnsignedLong(b), name);
             case null, default ->  throw newIllegalArgumentException(name, "java.time.Duration");
         };
     }
@@ -789,7 +789,7 @@ public sealed class RecordedObject
             case Byte b -> getInstant(b, name);
             case UnsignedValue(Integer i) -> getInstant(Integer.toUnsignedLong(i), name);
             case UnsignedValue(Short s) -> getInstant(Short.toUnsignedLong(s), name);
-            case UnsignedValue(Byte b) -> getInstant(Short.toUnsignedLong(b), name);
+            case UnsignedValue(Byte b) -> getInstant(Byte.toUnsignedLong(b), name);
             case null, default -> throw newIllegalArgumentException(name, "java.time.Instant");
         };
     }
