@@ -1313,6 +1313,9 @@ public:
   // Replace parallel induction variable (parallel to trip counter)
   void replace_parallel_iv(IdealLoopTree *loop);
 
+  // Remove a check in the loop body that repeats the loop condition
+  void eliminate_redundant_iv_check(IdealLoopTree* loop);
+
   Node *dom_lca( Node *n1, Node *n2 ) const {
     return find_non_split_ctrl(dom_lca_internal(n1, n2));
   }
