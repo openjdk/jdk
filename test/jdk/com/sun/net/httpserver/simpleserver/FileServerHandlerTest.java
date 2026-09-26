@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests for FileServerHandler
+ * @modules jdk.httpserver/sun.net.httpserver.simpleserver
  * @run junit FileServerHandlerTest
  */
 
@@ -44,16 +45,126 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
+import sun.net.httpserver.simpleserver.FileServerHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class FileServerHandlerTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
     static final Class<RuntimeException> RE = RuntimeException.class;
+
+    public static Arguments[] validRanges() {
+        return new Arguments[] {
+                Arguments.of("bytes=2-3", new FileServerHandler.Range[] {
+                        new FileServerHandler.Range(2, 3) }),
+                Arguments.of("bYTes=2-3", new FileServerHandler.Range[] {
+                        new FileServerHandler.Range(2, 3) }),
+                Arguments.of("bytes=2-", new FileServerHandler.Range[] {
+                        new FileServerHandler.Range(2, 14) }),
+                Arguments.of("bytes=-3", new FileServerHandler.Range[] {
+                        new FileServerHandler.Range(12, 14) }),
+                Arguments.of("bytes=0-100", new FileServerHandler.Range[] {
+                        new FileServerHandler.Range(0, 14) }),
+                Arguments.of("bytes=0-1,4-6", new FileServerHandler.Range[] {
+                        new FileServerHandler.Range(0, 1),
+                        new FileServerHandler.Range(4, 6) }),
+                Arguments.of("bytes=12-14,0-0,4-5", new FileServerHandler.Range[] {
+                        new FileServerHandler.Range(0, 0),
+                        new FileServerHandler.Range(4, 5),
+                        new FileServerHandler.Range(12, 14) }),
+                Arguments.of("bytes=0-4,3-6,5-7,9-13,12-15", new FileServerHandler.Range[] {
+                        new FileServerHandler.Range(0, 7),
+                        new FileServerHandler.Range(9, 14) }),
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("validRanges")
+    public void testParseValidRanges(String header, FileServerHandler.Range[] expected) {
+        assertArrayEquals(expected, FileServerHandler.parseRanges(header, 15L));
+    }
+
+    @Test
+    public void testParseDuplicateRanges() {
+        var expected = new FileServerHandler.Range[] {
+                new FileServerHandler.Range(0, 99),
+                new FileServerHandler.Range(200, 499)
+        };
+        var actual = FileServerHandler.parseRanges(
+                "bytes=0-99,200-399,0-99,400-499,200-499", 500L);
+        assertArrayEquals(expected, actual);
+    }
+
+    @Test
+    public void testParseTooManyRanges() {
+        var header = new StringBuilder("bytes=");
+        for (int i = 0; i < 33; i++) {
+            if (i > 0) {
+                header.append(",");
+            }
+            header.append(i).append("-").append(i);
+        }
+
+        assertArrayEquals(new FileServerHandler.Range[0],
+                FileServerHandler.parseRanges(header.toString(), 100L));
+    }
+
+    public static Arguments[] unsatisfiableRangeHeaders() {
+        return new Arguments[] {
+                Arguments.of(15L, "bytes=15-20"),
+                Arguments.of(15L, "bytes=20-"),
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("unsatisfiableRangeHeaders")
+    public void testParseUnsatisfiableRanges(long fileSize, String header) {
+        assertArrayEquals(new FileServerHandler.Range[0],
+                FileServerHandler.parseRanges(header, fileSize));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "bytes=0-",
+            "bytes=-1",
+            "bytes=0-0"
+    })
+    public void testParseRangesIgnoredForNoContent(String header) {
+        assertNull(FileServerHandler.parseRanges(header, 0L));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {
+            "bytes=",
+            "bytes=-",
+            "bytes=meow-5",
+            "bytes=0-meow",
+            "meows=0-3",
+            "bytes=3-1",
+            "bytes=+2-5",
+            "bytes=2-+5",
+            "bytes=400--500",
+            "bytes=500-+600",
+            "bytes=500+-600",
+            "bytes=500-600+",
+            "bytes=--",
+            "bytes=-+1",
+            "bytes=+1-",
+            "bytes=400-500,",
+            "bytes=,400-500",
+            "bytes=400-500, "
+    })
+    public void testParseInvalidRanges(String header) {
+        assertNull(FileServerHandler.parseRanges(header, 15L));
+    }
 
     public static Object[][] notAllowedMethods() {
         var l = List.of("POST", "PUT", "DELETE", "TRACE", "OPTIONS");

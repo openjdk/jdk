@@ -25,24 +25,32 @@
 
 package sun.net.httpserver.simpleserver;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpHandlers;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
@@ -60,6 +68,7 @@ public final class FileServerHandler implements HttpHandler {
     private static final String FAVICON_RESOURCE_PATH =
             "/sun/net/httpserver/simpleserver/resources/favicon.ico";
     private static final String FAVICON_LAST_MODIFIED = "Mon, 23 May 1995 11:11:11 GMT";
+    private static final int MAX_RANGES = 32;
 
     private final Path root;
     private final UnaryOperator<String> mimeTable;
@@ -268,22 +277,131 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
+    private static final String rangePartHeader =
+            """
+            --%s\r
+            Content-Type: %s\r
+            Content-Range: bytes %s-%s/%s\r
+            \r
+            """;
 
     private void serveFile(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException
     {
         var respHdrs = exchange.getResponseHeaders();
-        respHdrs.set("Content-Type", mediaType(path.toString()));
+        String contentType = mediaType(path.toString());
+
+        respHdrs.set("Content-Type", contentType);  // may be overridden by multipart/byteranges
         respHdrs.set("Last-Modified", getLastModified(path));
-        if (writeBody) {
-            exchange.sendResponseHeaders(200, Files.size(path));
-            try (InputStream fis = Files.newInputStream(path);
-                 OutputStream os = exchange.getResponseBody()) {
-                fis.transferTo(os);
-            }
-        } else {
-            respHdrs.set("Content-Length", Long.toString(Files.size(path)));
+        respHdrs.set("Accept-Ranges", "bytes");
+
+        long fileSize = Files.size(path);
+        if (!writeBody) {
+            respHdrs.set("Content-Length", Long.toString(fileSize));
             exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
+            return;
+        }
+
+        if (fileSize == 0) {
+            respHdrs.set("Content-Length", "0");
+            exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
+            return;
+        }
+
+        String hdrRange = exchange.getRequestHeaders().getFirst("Range");
+        String hdrIfRange = exchange.getRequestHeaders().getFirst("If-Range");
+        if (hdrRange == null
+                || hdrIfRange != null) {  // Conditional range requests are not supported.
+            sendFullFile(exchange, path, fileSize);
+            return;
+        }
+
+        Range[] ranges = parseRanges(hdrRange, fileSize);
+        if (ranges == null) {  // No Range header, or invalid/unsupported Range header
+            sendFullFile(exchange, path, fileSize);
+            return;
+        }
+
+        // Valid Range header, but no satisfiable ranges
+        if (ranges.length == 0) {
+            sendRangeNotSatisfiable(exchange, fileSize);
+            return;
+        }
+
+        // Single range.
+        if (ranges.length == 1) {
+            Range range = ranges[0];
+            respHdrs.set("Content-Range",
+                    "bytes %s-%s/%s".formatted(range.first(), range.last(), fileSize));
+            exchange.sendResponseHeaders(206, ranges[0].length());
+            try (SeekableByteChannel ch = Files.newByteChannel(path);
+                 OutputStream os = exchange.getResponseBody()) {
+                sendFileRanged(os, ch, range);
+            }
+            return;
+        }
+
+        // Multiple ranges, send as multipart/byteranges
+        String boundary = "range_" + UUID.randomUUID();
+        respHdrs.set("Content-Type", "multipart/byteranges; boundary=" + boundary);
+
+        exchange.sendResponseHeaders(206, RSPBODY_CHUNKED);
+        try (SeekableByteChannel ch = Files.newByteChannel(path);
+             OutputStream os = exchange.getResponseBody()) {
+            for (Range range : ranges) {
+                os.write(rangePartHeader.formatted(
+                        boundary,
+                        contentType,
+                        range.first(),
+                        range.last(),
+                        fileSize
+                ).getBytes(US_ASCII));
+
+                sendFileRanged(os, ch, range);
+
+                os.write("\r\n".getBytes(US_ASCII));
+            }
+
+            // end of multipart/byteranges
+            os.write(("--%s--\r\n".formatted(boundary)).getBytes(US_ASCII));
+        }
+    }
+
+    private static void sendFullFile(HttpExchange exchange, Path path, long fileSize)
+            throws IOException {
+        exchange.sendResponseHeaders(200, fileSize);
+        try (InputStream is = Files.newInputStream(path);
+             OutputStream os = exchange.getResponseBody()) {
+            is.transferTo(os);
+        }
+    }
+
+    private static void sendRangeNotSatisfiable(HttpExchange exchange, long fileSize)
+            throws IOException {
+        var respHdrs = exchange.getResponseHeaders();
+        respHdrs.remove("Content-Type");  // no body, so no content type
+        respHdrs.set("Content-Range", "bytes */" + fileSize);
+        exchange.sendResponseHeaders(416, RSPBODY_EMPTY);
+    }
+
+    private static void sendFileRanged(OutputStream os, SeekableByteChannel ch, Range range)
+            throws IOException {
+        ch.position(range.first());
+        long remaining = range.length();
+        ByteBuffer buffer = ByteBuffer.allocate(8 * 1024);
+        while (remaining > 0) {
+            buffer.clear();
+            if (remaining < buffer.capacity()) {
+                buffer.limit((int) remaining);
+            }
+
+            int bytesRead = ch.read(buffer);
+            if (bytesRead == -1) {
+                throw new EOFException("Unexpected end of file while reading range");
+            }
+
+            os.write(buffer.array(), 0, bytesRead);
+            remaining -= bytesRead;
         }
     }
 
@@ -413,6 +531,157 @@ public final class FileServerHandler implements HttpHandler {
                 exchange.setAttribute("request-path", "could not resolve request URI path");
                 handleNotFound(exchange);
             }
+        }
+    }
+
+    /**
+     * Parses the Range header value and returns an array of Range objects.
+     *
+     * Examples of valid Range header values:
+     * <ul>
+     *   <li>bytes=0-499: first 500 bytes</li>
+     *   <li>bytes=500-999: second 500 bytes</li>
+     *   <li>bytes=-500: last 500 bytes</li>
+     *   <li>bytes=500-: from byte 500 to end</li>
+     * </ul>
+     * Multiple ranges are sorted, and overlapping or adjacent ranges are merged:
+     * <ul>
+     *   <li>bytes=0-499,500-999: first 1000 bytes</li>
+     *   <li>bytes=500-999,0-499: first 1000 bytes</li>
+     *   <li>bytes=0-499,400-599: first 600 bytes</li>
+     * </ul>
+     * Requests containing an excessive number of range specs are rejected.
+     *
+     * @param header the value of the Range header
+     * @param fileSize the size of the file being requested
+     * @return {@code null} if the Range header is absent, invalid, or unsupported.
+     *         An empty array if the request cannot be satisfied or is rejected.
+     *         Otherwise, returns normalised byte ranges.
+     */
+    public static Range[] parseRanges(String header, long fileSize) {
+        if (header == null) {
+            return null;
+        }
+        if (fileSize == 0) {
+            return null;
+        }
+
+        String unit = "bytes=";  // Only bytes ranges are supported
+        if (!header.regionMatches(true, 0, unit, 0, unit.length())) {
+            return null;
+        }
+
+        String rangeSet = header.substring(unit.length()).trim();
+        if (rangeSet.isEmpty()) {
+            return null;
+        }
+
+        List<Range> ranges = new ArrayList<>();
+        String[] specs = rangeSet.split(",", MAX_RANGES + 1);
+        if (specs.length > MAX_RANGES) {
+            return new Range[0];  // Not satisfiable: too many ranges.
+        }
+        for (String spec : specs) {
+            Range range = parseRange(spec, fileSize);
+            if (range == null) {
+                return null;  // invalid range spec
+            }
+
+            if (range.length() != 0) {
+                ranges.add(range);
+            }
+        }
+
+        return mergeOverlappingRanges(ranges);
+    }
+
+    private static Range[] mergeOverlappingRanges(List<Range> ranges) {
+        List<Range> mergedRanges = new ArrayList<>();
+
+        ranges.sort(Comparator.comparingLong(Range::first));
+        for (Range range : ranges) {
+            if (mergedRanges.isEmpty()) {
+                mergedRanges.add(range);
+            } else {
+                Range last = mergedRanges.getLast();
+                if (range.first() <= last.last() + 1) {
+                    mergedRanges.set(mergedRanges.size() - 1,
+                            new Range(last.first(), Math.max(last.last(), range.last())));
+                } else {
+                    mergedRanges.add(range);
+                }
+            }
+        }
+
+        return mergedRanges.toArray(new Range[0]);
+    }
+
+    private static Range parseRange(String range, long fileSize) {
+        String[] parts = range.trim().split("-", -1);
+        if (parts.length != 2) {
+            return null;  // invalid range spec
+        }
+
+        try {
+            if (parts[0].isEmpty()) {
+                if (parts[1].isEmpty()) {
+                    return null;  // bytes=- (invalid)
+                }
+
+                // bytes=-N
+                if (parts[1].charAt(0) == '+') {
+                    // Long.parseLong accepts a leading '+' sign, but this is not valid in a Range header.
+                    return null;
+                }
+                long suffixLength = Long.parseLong(parts[1]);
+                if (suffixLength == 0) {
+                    return Range.EMPTY;
+                }
+
+                long first = Math.max(0, fileSize - suffixLength);
+                long last = fileSize - 1;
+
+                return new Range(first, last);
+            }
+
+            if (parts[0].charAt(0) == '+') {
+                return null;
+            }
+            long first = Long.parseLong(parts[0]);
+            if (first < 0) {
+                return null;
+            }
+
+            long last;
+            if (parts[1].isEmpty()) {
+                // bytes=n-
+                last = fileSize - 1;
+            } else {
+                // bytes=n-N
+                if (parts[1].charAt(0) == '+') {
+                    return null;
+                }
+                last = Long.parseLong(parts[1]);
+                if (last < first) {
+                    return null;
+                }
+            }
+
+            if (first >= fileSize) {
+                return Range.EMPTY;
+            }
+
+            return new Range(first, Math.min(last, fileSize - 1));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public record Range(long first, long last) {
+        static final Range EMPTY = new Range(0, -1);
+
+        long length() {
+            return last - first + 1;
         }
     }
 }
