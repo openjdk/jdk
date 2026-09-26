@@ -4382,10 +4382,9 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
   visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
-    if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
-        && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+    if (n->is_Call() && n->as_Call()->guaranteed_safepoint() && !n->is_boxing_or_unboxing_call()) {
       // Terminate this path: guaranteed safepoint found.
-      // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+      // Boxing and unboxing calls are excluded as they may lack a safepoint on the fast path. This is
       // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
       // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
       // to avoid this additional check.
@@ -4486,12 +4485,11 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     if (!_irreducible) {
       // Scan the dom-path nodes from tail to head
       for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-        // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+        // Boxing and unboxing calls are excluded as they may lack a safepoint on the fast path. This is
         // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
         // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
         // to avoid this additional check.
-        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
-            && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint() && !n->is_boxing_or_unboxing_call()) {
           has_call = true;
           _has_sfpt = 1;          // Then no need for a safept!
           break;
