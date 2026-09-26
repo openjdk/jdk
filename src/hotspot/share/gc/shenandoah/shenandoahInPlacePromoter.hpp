@@ -26,7 +26,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
 class ShenandoahMarkingContext;
@@ -82,12 +81,7 @@ class ShenandoahInPlacePromotionPlanner {
     size_t garbage;
 
     RegionPromotionStats() : count(0), usage(0), free(0), garbage(0) {}
-    void update(ShenandoahHeapRegion* region) {
-      count++;
-      usage += region->used();
-      free += region->free();
-      garbage += region->garbage();
-    }
+    void update(ShenandoahHeapRegion* region);
   };
 
   const size_t _old_garbage_threshold;
@@ -100,9 +94,6 @@ class ShenandoahInPlacePromotionPlanner {
   // Any region that is to be promoted in place needs to be retired from its Collector or Mutator partition.
   RegionPromotions _mutator_regions;
   RegionPromotions _collector_regions;
-
-  // Tracks the padding of space above top in regions eligible for promotion in place
-  size_t _pip_padding_bytes;
 
   // Tracks stats for in place promotions
   RegionPromotionStats _pip_regular_stats;
@@ -124,6 +115,11 @@ public:
   const RegionPromotionStats& humongous_region_stats() const { return _pip_humongous_stats; }
 
   size_t old_garbage_threshold() const { return _old_garbage_threshold; }
+
+  // Return the total amount of live bytes that will be promoted in place
+  size_t live_bytes() const {
+    return regular_region_stats().usage + humongous_region_stats().usage;
+  }
 };
 
 // For regions that have been selected and prepared for promotion, this class

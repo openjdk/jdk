@@ -121,10 +121,7 @@ public class WindowsMenuUI extends BasicMenuUI {
     @Override
     protected void installDefaults() {
         super.installDefaults();
-        if (!WindowsLookAndFeel.isClassicWindows()) {
-            menuItem.setRolloverEnabled(true);
-        }
-
+        menuItem.setRolloverEnabled(true);
         menuBarHeight = (Integer)UIManager.getInt("MenuBar.height");
 
         Object obj      = UIManager.get("MenuBar.rolloverEnabled");
@@ -167,10 +164,8 @@ public class WindowsMenuUI extends BasicMenuUI {
         JMenu menu = (JMenu)menuItem;
         ButtonModel model = menu.getModel();
 
-        // Use superclass method for the old Windows LAF,
-        // for submenus, and for XP toplevel if selected or pressed
-        if (WindowsLookAndFeel.isClassicWindows() ||
-            !menu.isTopLevelMenu() ||
+        // Use superclass method for submenus, and for XP toplevel if selected or pressed
+        if (!menu.isTopLevelMenu() ||
             (XPStyle.getXP() != null && (model.isArmed() || model.isSelected()))) {
 
             super.paintBackground(g, menu, bgColor);
@@ -260,8 +255,7 @@ public class WindowsMenuUI extends BasicMenuUI {
             }
         }
 
-        if ((model.isSelected() && (WindowsLookAndFeel.isClassicWindows() ||
-                                    !menu.isTopLevelMenu())) ||
+        if ((model.isSelected() && !menu.isTopLevelMenu()) ||
             (XPStyle.getXP() != null && (paintRollover ||
                                          model.isArmed() ||
                                          model.isSelected()))) {

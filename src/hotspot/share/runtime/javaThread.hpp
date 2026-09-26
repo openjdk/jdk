@@ -284,8 +284,8 @@ class JavaThread: public Thread {
  public:
   // These functions check conditions before possibly going to a safepoint.
   // including NoSafepointVerifier.
-  void check_for_valid_safepoint_state() NOT_DEBUG_RETURN;
-  void check_possible_safepoint()        NOT_DEBUG_RETURN;
+  void check_for_valid_safepoint_state()                         NOT_DEBUG_RETURN;
+  void check_possible_safepoint()                                NOT_DEBUG_RETURN;
 
 #ifdef ASSERT
  private:
@@ -666,9 +666,6 @@ public:
   bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
   SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
 
-  // Check for async exception in addition to safepoint.
-  static void check_special_condition_for_native_trans(JavaThread *thread);
-
   // Synchronize with another thread that is deoptimizing objects of the
   // current thread, i.e. reverts optimizations based on escape analysis.
   void wait_for_object_deoptimization();
@@ -997,9 +994,9 @@ public:
   void print_jni_stack();
 
   // Print stack traces in various internal formats
-  void trace_stack()                             PRODUCT_RETURN;
-  void trace_stack_from(vframe* start_vf)        PRODUCT_RETURN;
-  void trace_frames()                            PRODUCT_RETURN;
+  void trace_stack_on(outputStream* st)                            PRODUCT_RETURN;
+  void trace_stack_from(outputStream* st, vframe* start_vf)        PRODUCT_RETURN;
+  void trace_frames_on(outputStream* st)                           PRODUCT_RETURN;
 
   // Print an annotated view of the stack frames
   void print_frame_layout(int depth = 0, bool validate_only = false) NOT_DEBUG_RETURN;
@@ -1238,7 +1235,6 @@ public:
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
   static ByteSize om_cache_offset()        { return byte_offset_of(JavaThread, _om_cache); }
-  static ByteSize om_cache_oops_offset()   { return om_cache_offset() + OMCache::entries_offset(); }
 
   void om_set_monitor_cache(ObjectMonitor* monitor);
   void om_clear_monitor_cache();

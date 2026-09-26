@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,18 @@ public final class ClassTypeImpl extends InvokableTypeImpl
         }
         return false;
     }
+
+    /* No longer needed, but kept for future reference
+    public boolean isValueClass() {
+        if (!vm.supportsValueClasses()) {
+            return false;
+        }
+        if (modifiers == -1) {
+            getModifiers();
+        }
+        return (modifiers & VMModifiers.IDENTITY) == 0;
+    }
+    */
 
     public void setValue(Field field, Value value)
         throws InvalidTypeException, ClassNotLoadedException {
