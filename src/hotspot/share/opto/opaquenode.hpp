@@ -52,7 +52,14 @@ class Opaque1Node : public Node {
     init_class_id(Class_Opaque1);
     C->add_macro_node(this);
   }
-  Node* original_loop_limit() { return req()==3 ? in(2) : nullptr; }
+  Node* original_loop_limit() { return Opcode() == Op_Opaque1 && req() >= 3 ? in(2) : nullptr; }
+  OpaqueRCESideLoopNode* rce_side_loop() {
+    if (Opcode() != Op_Opaque1 || req() != 4) {
+      return nullptr;
+    }
+    assert(in(3)->is_OpaqueRCESideLoop(), "unexpected opaque input");
+    return in(3)->as_OpaqueRCESideLoop();
+  }
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual Node* Identity(PhaseGVN* phase);
@@ -73,6 +80,21 @@ class OpaqueLoopStrideNode : public Opaque1Node {
     init_class_id(Class_OpaqueLoopStride);
   }
   virtual int Opcode() const;
+};
+
+// Shared by the pre-, main-, and post-loop guards to record whether RCE can lengthen the side loops.
+class OpaqueRCESideLoopNode : public Opaque1Node {
+  bool _range_check_eliminated;
+
+ public:
+  OpaqueRCESideLoopNode(Compile* C, Node* n) :
+      Opaque1Node(C, n), _range_check_eliminated(false) {
+    init_class_id(Class_OpaqueRCESideLoop);
+  }
+  virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
+  bool range_check_eliminated() const { return _range_check_eliminated; }
+  void mark_range_check_eliminated() { _range_check_eliminated = true; }
 };
 
 class OpaqueZeroTripGuardNode : public Opaque1Node {

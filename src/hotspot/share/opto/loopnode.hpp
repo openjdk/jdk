@@ -587,7 +587,6 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  void fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop) const;
   void handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn);
 
 public:
@@ -613,6 +612,9 @@ public:
   void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
 
   void transform_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
+  static void fix_sunk_stores_when_back_to_counted_loop(CountedLoopNode* inner_cl, IfFalseNode* cle_out,
+                                                         PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
 
   static Node* register_new_node(Node* node, LoopNode* ctrl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
 
@@ -1510,10 +1512,12 @@ public:
   enum CloneLoopMode {
     IgnoreStripMined = 0,        // Only clone inner strip mined loop
     CloneIncludesStripMined = 1, // clone both inner and outer strip mined loops
-    ControlAroundStripMined = 2  // Only clone inner strip mined loop,
+    ControlAroundStripMined = 2, // Only clone inner strip mined loop,
                                  // result control flow branches
                                  // either to inner clone or outer
                                  // strip mined loop.
+    CloneIncludesSafepoint = 3   // Clone the inner loop and place a clone of
+                                 // the outer safepoint on its backedge.
   };
   void clone_loop( IdealLoopTree *loop, Node_List &old_new, int dom_depth,
                   CloneLoopMode mode, Node* side_by_side_idom = nullptr);
@@ -1539,13 +1543,16 @@ public:
   // during RCE, unrolling and aligning loops.
   void insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only );
 
+  static void remove_unneeded_rce_side_loop_safepoints(PhaseIterGVN& igvn);
+
   // Find the last store in the body of an OuterStripMinedLoop when following memory uses
   Node *find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop);
 
   // Add post loop after the given loop.
   Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node* incr, Node* limit, CountedLoopNode*& post_head);
+                         Node* incr, Node* limit, CountedLoopNode*& post_head,
+                         CloneLoopMode clone_mode, OpaqueRCESideLoopNode* rce_side_loop);
 
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
