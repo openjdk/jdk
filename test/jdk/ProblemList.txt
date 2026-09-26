@@ -211,7 +211,8 @@ sun/java2d/OpenGL/OpaqueDest.java#id1 8367574 macosx-all
 sun/java2d/OpenGL/ScaleParamsOOB.java#id0 8377908 linux-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8297175 linux-all
-sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
+sun/java2d/SunGraphics2D/PolyVertTest.java#default 8392800,8392802 macosx-all,windows-all
+sun/java2d/SunGraphics2D/PolyVertTest.java#opengl 8392801 linux-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java#default 6322554,8392436 windows-all,macosx-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java#nod3d 6322554 windows-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8392471 linux-all
