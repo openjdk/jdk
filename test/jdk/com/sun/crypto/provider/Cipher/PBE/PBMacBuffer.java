@@ -21,12 +21,14 @@
  * questions.
  */
 
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Random;
+import java.util.function.Function;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -119,15 +121,31 @@ public class PBMacBuffer {
         theMac.init(key);
 
         // Do large ByteBuffer test case
-        if (!largeByteBufferTest(theMac)) {
+        if (!largeByteBufferTest(theMac, this::generateRandomByteBuffer)) {
             System.out.println("Large ByteBuffer test case failed.");
             return false;
         }
 
         // Do empty ByteBuffer test case
-        if (!emptyByteBufferTest(theMac)) {
+        if (!emptyByteBufferTest(theMac, this::generateRandomByteBuffer)) {
             System.out.println("Empty ByteBuffer test case failed.");
             return false;
+        }
+
+        try(Arena arena = Arena.ofConfined()) {
+            // Do large ByteBuffer test case
+            if (!largeByteBufferTest(theMac,
+                    (size) -> arena.allocate(size).asByteBuffer())) {
+                System.out.println("Large MemorySegment ByteBuffer test case failed.");
+                return false;
+            }
+
+            // Do empty ByteBuffer test case
+            if (!emptyByteBufferTest(theMac,
+                    (size) -> arena.allocate(size).asByteBuffer())) {
+                System.out.println("Empty MemorySegment ByteBuffer test case failed.");
+                return false;
+            }
         }
 
         // Do null ByteBuffer test case
@@ -148,8 +166,9 @@ public class PBMacBuffer {
      * @param theMac MAC object to test.
      * @return true - test case passed; false - otherwise;
      */
-    protected boolean largeByteBufferTest(Mac theMac) {
-        ByteBuffer buf = generateRandomByteBuffer(LARGE_SIZE);
+    protected boolean largeByteBufferTest(Mac theMac,
+                              Function<Integer, ByteBuffer> createBuffer) {
+        ByteBuffer buf = createBuffer.apply(LARGE_SIZE);
         int limitBefore = buf.limit();
 
         theMac.update(buf);
@@ -179,8 +198,8 @@ public class PBMacBuffer {
      * @param theMac
      * @return true - test case pass; exception otherwise
      */
-    protected boolean emptyByteBufferTest(Mac theMac) {
-        ByteBuffer buf = generateRandomByteBuffer(0);
+    protected boolean emptyByteBufferTest(Mac theMac, Function<Integer, ByteBuffer> createBuffer) {
+        ByteBuffer buf = createBuffer.apply(0);
         theMac.update(buf);
         theMac.doFinal();
         return true;
