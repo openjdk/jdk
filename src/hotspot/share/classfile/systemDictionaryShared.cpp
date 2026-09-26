@@ -1272,8 +1272,8 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
             log.print(" succeeded]");
         }
       }
-      return true; // for all recorded constraints added successfully.
     }
+    return true; // All recorded constraints added successfully.
   }
   if (log.is_enabled()) {
     ResourceMark rm(current);
