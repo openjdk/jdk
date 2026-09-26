@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@
 class OopClosure;
 class MemoryPool;
 
-class ThresholdSupport : public CHeapObj<mtInternal> {
+class ThresholdSupport : public CHeapObj<mtServiceability> {
  private:
   bool            _support_high_threshold;
   bool            _support_low_threshold;
@@ -115,7 +115,7 @@ class ThresholdSupport : public CHeapObj<mtInternal> {
   }
 };
 
-class SensorInfo : public CHeapObj<mtInternal> {
+class SensorInfo : public CHeapObj<mtServiceability> {
 private:
   OopHandle       _sensor_obj;
   bool            _sensor_on;

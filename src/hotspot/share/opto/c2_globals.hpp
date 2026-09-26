@@ -70,6 +70,9 @@
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
+  develop(bool, StressVerifyMeetJoin, false,                                \
+          "Perform cross meet/join sanity checks on all Type instances")    \
+                                                                            \
   product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
           "Optimize reachability fences "                                   \
           "(leave reachability fence nodes intact when turned off)")        \
@@ -440,9 +443,6 @@
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
                                                                             \
-  product_pd(bool, OptoBundling,                                            \
-          "Generate nops to fill i-cache lines")                            \
-                                                                            \
   product_pd(intx, ConditionalMoveLimit,                                    \
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
@@ -740,14 +740,16 @@
           range(1, 100)                                                     \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
-          "  F: verify IGVN method return invariants"                       \
-          "  E: verify node specific invariants"                            \
-          "  D: verify Node::Identity did not miss opportunities"           \
-          "  C: verify Node::Ideal did not miss opportunities"              \
-          "  B: verify that type(n) == n->Value() after IGVN"               \
-          "  A: verify Def-Use modifications during IGVN"                   \
-          "Each can be 0=off or 1=on")                                      \
+          "Verify Iterative Global Value Numbering. Set the corresponding " \
+          "decimal place to 1 to enable a check, or 0 to disable it:\n"     \
+          "100000: verify IGVN method return invariants\n"                  \
+          " 10000: verify node specific invariants\n"                       \
+          "  1000: verify Node::Identity did not miss opportunities\n"      \
+          "   100: verify Node::Ideal did not miss opportunities\n"         \
+          "    10: verify that type(n) == n->Value() after IGVN\n"          \
+          "     1: verify Def-Use modifications during IGVN\n"              \
+          "Example: -XX:VerifyIterativeGVN=101 enables Node::Ideal and "    \
+          "Def-Use checks.")                                                \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   develop(bool, TraceCISCSpill, false,                                      \
@@ -756,10 +758,6 @@
   product(bool, SplitIfBlocks, true,                                        \
           "Clone compares and control flow through merge points to fold "   \
           "some branches")                                                  \
-                                                                            \
-  develop(intx, FreqCountInvocations,  1,                                   \
-          "Scaling factor for branch frequencies (deprecated)")             \
-          range(1, max_intx)                                                \
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
@@ -822,6 +820,9 @@
                                                                             \
   product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
           "do cleanup after every iteration of incremental inlining")       \
+                                                                            \
+  product(bool, IncrementalInlineVector, true, DIAGNOSTIC,                  \
+          "Inline fallback implementation of failed vector intrinsics")     \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \
@@ -987,7 +988,7 @@
                                                                             \
   product(uint, HotCodeMaxSamplingMs, 15, EXPERIMENTAL,                     \
           "Maximum sampling interval in milliseconds")                      \
-          range(0, max_juint)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
           "Number of levels of callees to relocate per candidate")          \

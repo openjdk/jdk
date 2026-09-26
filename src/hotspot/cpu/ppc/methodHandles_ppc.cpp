@@ -144,11 +144,11 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ cmplwi(CR0, R19_method, 0);
   __ beq(CR0, L_no_such_method);
 
-  // The following jump might pass an inline type argument that was erased to Object as oop to a
-  // callee that expects inline type arguments to be passed as fields. We need to call the compiled
-  // value entry (_code->inline_entry_point() or _adapter->c2i_inline_entry()) which will take care
+  // The following jump might pass a value type argument that was erased to Object as oop to a
+  // callee that expects value type arguments to be passed as fields. We need to call the compiled
+  // value entry (_code->value_entry_point() or _adapter->c2i_value_entry()) which will take care
   // of translating between the calling conventions.
-  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_inline_offset() :
+  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_value_offset() :
                                                      Method::from_interpreted_offset();
   __ ld(target, in_bytes(entry_offset), R19_method);
   __ mtctr(target);

@@ -104,7 +104,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   // end within a card, we need to calculate this via the card table indexes of
   // the actual start and last addresses covered by the object.
   // Temporarily use the count register for the last element address.
-  __ shadd(count, count, start, tmp, LogBytesPerHeapOop); // end = start + count << LogBytesPerHeapOop
+  __ shift_left_add(count, count, start, LogBytesPerHeapOop); // end = start + count << LogBytesPerHeapOop
   __ subi(count, count, BytesPerHeapOop);                 // Use last element address for end.
 
   __ srli(start, start, CardTable::card_shift());
@@ -464,7 +464,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 #undef __
 #define __ ce->masm()->
 
-void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub) {
   G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
 
   // At this point we know that marking is in progress.

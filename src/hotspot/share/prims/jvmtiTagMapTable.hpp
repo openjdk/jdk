@@ -34,40 +34,40 @@
 class JvmtiEnv;
 
 // Describes an object which can be tagged during heap walk operation.
-// - generic heap object: _obj: oop, offset == 0, _inline_klass == nullptr;
-// - value heap object: _obj: oop, offset == 0, _inline_klass == _obj.klass();
-// - flat value object: _obj: holder object, offset == offset in the holder, _inline_klass == klass of the flattened object;
+// - generic heap object: _obj: oop, offset == 0, _value_klass == nullptr;
+// - value heap object: _obj: oop, offset == 0, _value_klass == _obj.klass();
+// - flat value object: _obj: holder object, offset == offset in the holder, _value_klass == klass of the flattened object;
 class JvmtiHeapwalkObject {
-  oop _obj;                   // for flattened value object this is holder object
-  int _offset;                // == 0 for heap objects
-  InlineKlass* _inline_klass; // for value object, nullptr otherwise
-  LayoutKind _layout_kind;    // layout kind in holder object, used only for flat->heap conversion
+  oop _obj;                 // for flattened value object this is holder object
+  int _offset;              // == 0 for heap objects
+  ValueKlass* _value_klass; // for value object, nullptr otherwise
+  LayoutKind _layout_kind;  // layout kind in holder object, used only for flat->heap conversion
 
-  static InlineKlass* inline_klass_or_null(oop obj) {
+  static ValueKlass* value_klass_or_null(oop obj) {
     Klass* k = obj->klass();
-    return k->is_inline_klass() ? InlineKlass::cast(k) : nullptr;
+    return k->is_value_klass() ? ValueKlass::cast(k) : nullptr;
   }
 public:
-  JvmtiHeapwalkObject(): _obj(nullptr), _offset(0), _inline_klass(nullptr), _layout_kind(LayoutKind::UNKNOWN) {}
-  JvmtiHeapwalkObject(oop obj): _obj(obj), _offset(0), _inline_klass(inline_klass_or_null(obj)), _layout_kind(LayoutKind::REFERENCE) {}
-  JvmtiHeapwalkObject(oop obj, int offset, InlineKlass* ik, LayoutKind lk): _obj(obj), _offset(offset), _inline_klass(ik), _layout_kind(lk) {}
+  JvmtiHeapwalkObject(): _obj(nullptr), _offset(0), _value_klass(nullptr), _layout_kind(LayoutKind::UNKNOWN) {}
+  JvmtiHeapwalkObject(oop obj): _obj(obj), _offset(0), _value_klass(value_klass_or_null(obj)), _layout_kind(LayoutKind::REFERENCE) {}
+  JvmtiHeapwalkObject(oop obj, int offset, ValueKlass* vk, LayoutKind lk): _obj(obj), _offset(offset), _value_klass(vk), _layout_kind(lk) {}
 
   inline bool is_empty() const { return _obj == nullptr; }
-  inline bool is_value() const { return _inline_klass != nullptr; }
+  inline bool is_value() const { return _value_klass != nullptr; }
   inline bool is_flat() const { return _offset != 0; }
 
   inline oop obj() const { return _obj; }
   inline int offset() const { return _offset; }
-  inline InlineKlass* inline_klass() const { return _inline_klass; }
+  inline ValueKlass* value_klass() const { return _value_klass; }
   inline LayoutKind layout_kind() const { return _layout_kind; }
 
-  inline Klass* klass() const { return is_value() ? _inline_klass : obj()->klass(); }
+  inline Klass* klass() const { return is_value() ? _value_klass : obj()->klass(); }
 
   static bool equals(const JvmtiHeapwalkObject& obj1, const JvmtiHeapwalkObject& obj2);
 
   bool operator==(const JvmtiHeapwalkObject& other) const {
-    // need to compare inline_klass too to handle the case when flat object has flat field at offset 0
-    return _obj == other._obj && _offset == other._offset && _inline_klass == other._inline_klass;
+    // need to compare value_klass too to handle the case when flat object has flat field at offset 0
+    return _obj == other._obj && _offset == other._offset && _value_klass == other._value_klass;
   }
   bool operator!=(const JvmtiHeapwalkObject& other) const {
     return !(*this == other);
@@ -166,7 +166,7 @@ private:
   // temporarily holds holder object while searching
   oop _holder;
   int _offset;
-  InlineKlass* _inline_klass;
+  ValueKlass* _value_klass;
   LayoutKind _layout_kind;
 public:
   JvmtiFlatTagMapKey(const JvmtiHeapwalkObject& obj);
@@ -180,7 +180,7 @@ public:
   oop holder() const;
   oop holder_no_keepalive() const;
   int offset() const { return _offset; }
-  InlineKlass* inline_klass() const { return _inline_klass; }
+  ValueKlass* value_klass() const { return _value_klass; }
   LayoutKind layout_kind() const { return _layout_kind; }
 
   void release_handle();

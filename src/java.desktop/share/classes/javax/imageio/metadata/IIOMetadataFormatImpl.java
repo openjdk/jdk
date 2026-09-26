@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -917,15 +917,18 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
 
     // Root
 
+    @Override
     public String getRootName() {
         return rootName;
     }
 
     // Multiplicity
 
+    @Override
     public abstract boolean canNodeAppear(String elementName,
                                           ImageTypeSpecifier imageType);
 
+    @Override
     public int getElementMinChildren(String elementName) {
         Element element = getElement(elementName);
         if (element.childPolicy != CHILD_POLICY_REPEAT) {
@@ -934,6 +937,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return element.minChildren;
     }
 
+    @Override
     public int getElementMaxChildren(String elementName) {
         Element element = getElement(elementName);
         if (element.childPolicy != CHILD_POLICY_REPEAT) {
@@ -995,6 +999,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
      *
      * @see #setResourceBaseName
      */
+    @Override
     public String getElementDescription(String elementName,
                                         Locale locale) {
         Element element = getElement(elementName);
@@ -1003,11 +1008,13 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
 
     // Children
 
+    @Override
     public int getChildPolicy(String elementName) {
         Element element = getElement(elementName);
         return element.childPolicy;
     }
 
+    @Override
     public String[] getChildNames(String elementName) {
         Element element = getElement(elementName);
         if (element.childPolicy == CHILD_POLICY_EMPTY) {
@@ -1018,6 +1025,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
 
     // Attributes
 
+    @Override
     public String[] getAttributeNames(String elementName) {
         Element element = getElement(elementName);
         List<String> names = element.attrList;
@@ -1026,27 +1034,32 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return names.toArray(result);
     }
 
+    @Override
     public int getAttributeValueType(String elementName, String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
         return attr.valueType;
     }
 
+    @Override
     public int getAttributeDataType(String elementName, String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
         return attr.dataType;
     }
 
+    @Override
     public boolean isAttributeRequired(String elementName, String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
         return attr.required;
     }
 
+    @Override
     public String getAttributeDefaultValue(String elementName,
                                            String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
         return attr.defaultValue;
     }
 
+    @Override
     public String[] getAttributeEnumerations(String elementName,
                                              String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
@@ -1060,6 +1073,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return values.toArray(result);
     }
 
+    @Override
     public String getAttributeMinValue(String elementName, String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
         if (attr.valueType != VALUE_RANGE &&
@@ -1072,6 +1086,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return attr.minValue;
     }
 
+    @Override
     public String getAttributeMaxValue(String elementName, String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
         if (attr.valueType != VALUE_RANGE &&
@@ -1084,6 +1099,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return attr.maxValue;
     }
 
+    @Override
     public int getAttributeListMinLength(String elementName, String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
         if (attr.valueType != VALUE_LIST) {
@@ -1093,6 +1109,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return attr.listMinLength;
     }
 
+    @Override
     public int getAttributeListMaxLength(String elementName, String attrName) {
         Attribute attr = getAttribute(elementName, attrName);
         if (attr.valueType != VALUE_LIST) {
@@ -1138,6 +1155,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
      *
      * @see #setResourceBaseName
      */
+    @Override
     public String getAttributeDescription(String elementName,
                                           String attrName,
                                           Locale locale) {
@@ -1164,6 +1182,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return objv;
     }
 
+    @Override
     public int getObjectValueType(String elementName) {
         Element element = getElement(elementName);
         ObjectValue<?> objv = element.objectValue;
@@ -1173,16 +1192,19 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return objv.valueType;
     }
 
+    @Override
     public Class<?> getObjectClass(String elementName) {
         ObjectValue<?> objv = getObjectValue(elementName);
         return objv.classType;
     }
 
+    @Override
     public Object getObjectDefaultValue(String elementName) {
         ObjectValue<?> objv = getObjectValue(elementName);
         return objv.defaultValue;
     }
 
+    @Override
     public Object[] getObjectEnumerations(String elementName) {
         ObjectValue<?> objv = getObjectValue(elementName);
         if (objv.valueType != VALUE_ENUMERATION) {
@@ -1193,6 +1215,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return vlist.toArray(values);
     }
 
+    @Override
     public Comparable<?> getObjectMinValue(String elementName) {
         ObjectValue<?> objv = getObjectValue(elementName);
         if ((objv.valueType & VALUE_RANGE) != VALUE_RANGE) {
@@ -1201,6 +1224,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return objv.minValue;
     }
 
+    @Override
     public Comparable<?> getObjectMaxValue(String elementName) {
         ObjectValue<?> objv = getObjectValue(elementName);
         if ((objv.valueType & VALUE_RANGE) != VALUE_RANGE) {
@@ -1209,6 +1233,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return objv.maxValue;
     }
 
+    @Override
     public int getObjectArrayMinLength(String elementName) {
         ObjectValue<?> objv = getObjectValue(elementName);
         if (objv.valueType != VALUE_LIST) {
@@ -1217,6 +1242,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return objv.arrayMinLength;
     }
 
+    @Override
     public int getObjectArrayMaxLength(String elementName) {
         ObjectValue<?> objv = getObjectValue(elementName);
         if (objv.valueType != VALUE_LIST) {

@@ -142,25 +142,15 @@ inline JavaThread::NoAsyncExceptionDeliveryMark::~NoAsyncExceptionDeliveryMark()
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {
-#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
-  // Use membars when accessing volatile _thread_state. See
-  // Threads::create_vm() for size checks.
+  // Use membars when accessing volatile _thread_state.
   return AtomicAccess::load_acquire(&_thread_state);
-#else
-  return AtomicAccess::load(&_thread_state);
-#endif
 }
 
 inline void JavaThread::set_thread_state(JavaThreadState s) {
   assert(current_or_null() == nullptr || current_or_null() == this,
          "state change should only be called by the current thread");
-#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
-  // Use membars when accessing volatile _thread_state. See
-  // Threads::create_vm() for size checks.
+  // Use membars when accessing volatile _thread_state.
   AtomicAccess::release_store(&_thread_state, s);
-#else
-  AtomicAccess::store(&_thread_state, s);
-#endif
 }
 
 inline void JavaThread::set_thread_state_fence(JavaThreadState s) {
@@ -185,6 +175,9 @@ bool JavaThread::is_vthread_mounted() const {
 }
 
 const ContinuationEntry* JavaThread::vthread_continuation() const {
+  assert(is_handshake_safe_for(Thread::current()) ||
+         SafepointSynchronize::is_at_safepoint()
+         JVMTI_ONLY(|| JavaThread::current()->is_vthread_transition_disabler()), "");
   for (ContinuationEntry* c = last_continuation(); c != nullptr; c = c->parent()) {
     if (c->is_virtual_thread())
       return c;
