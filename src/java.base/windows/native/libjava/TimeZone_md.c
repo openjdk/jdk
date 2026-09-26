@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,9 @@ static void *keyNames[] = {
 #define STD_NAME                2
 
 /*
- * Calls RegQueryValueEx() to get the value for the specified key. If
- * the platform is NT, 2000 or XP, it calls the Unicode
- * version. Otherwise, it calls the ANSI version and converts the
- * value to Unicode. In this case, it assumes that the current ANSI
- * Code Page is the same as the native platform code page (e.g., Code
- * Page 932 for the Japanese Windows systems.
+ * Calls RegGetValue to get the value for the specified key.
+ * First tries the Unicode version, if that fails,
+ * falls back to the ANSI version and converts to Unicode.
  *
  * `keyIndex' is an index value to the keyNames in Unicode
  * (WCHAR). `keyIndex' + 1 points to its ANSI value.
@@ -83,7 +80,6 @@ static void *keyNames[] = {
 static LONG
 getValueInRegistry(HKEY hKey,
                    int keyIndex,
-                   LPDWORD typePtr,
                    LPBYTE buf,
                    LPDWORD bufLengthPtr)
 {
@@ -93,21 +89,17 @@ getValueInRegistry(HKEY hKey,
     DWORD valSize;
     int len;
 
-    *typePtr = 0;
-    ret = RegQueryValueExW(hKey, (WCHAR *) keyNames[keyIndex], NULL,
-                           typePtr, buf, bufLengthPtr);
-    if (ret == ERROR_SUCCESS && *typePtr == REG_SZ) {
+    ret = RegGetValueW(hKey, NULL, (WCHAR*) keyNames[keyIndex],
+                       RRF_RT_REG_SZ, NULL, buf, bufLengthPtr);
+    if (ret == ERROR_SUCCESS) {
         return ret;
     }
 
     valSize = sizeof(val);
-    ret = RegQueryValueExA(hKey, (char *) keyNames[keyIndex + 1], NULL,
-                           typePtr, val, &valSize);
+    ret = RegGetValueA(hKey, NULL, (char*) keyNames[keyIndex+1],
+                       RRF_RT_REG_SZ, NULL, val, &valSize);
     if (ret != ERROR_SUCCESS) {
         return ret;
-    }
-    if (*typePtr != REG_SZ) {
-        return ERROR_BADKEY;
     }
 
     len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
@@ -154,7 +146,6 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
     DWORD val;
     HANDLE hKey = NULL;
     LONG ret;
-    ULONG valueType;
 
     /*
      * Get the dynamic time zone information so that time zone redirection
@@ -196,8 +187,8 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
          * Determine if auto-daylight time adjustment is turned off.
          */
         bufSize = sizeof(val);
-        ret = RegQueryValueExA(hKey, "DynamicDaylightTimeDisabled", NULL,
-                               &valueType, (LPBYTE) &val, &bufSize);
+        ret = RegGetValueA(hKey, NULL, "DynamicDaylightTimeDisabled",
+                           RRF_RT_REG_DWORD, NULL, (LPBYTE) &val, &bufSize);
         if (ret != ERROR_SUCCESS) {
             goto err;
         }
@@ -212,8 +203,8 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
         }
 
         bufSize = MAX_ZONE_CHAR;
-        ret = RegQueryValueExA(hKey, "TimeZoneKeyName", NULL,
-                               &valueType, (LPBYTE) winZoneName, &bufSize);
+        ret = RegGetValueA(hKey, NULL, "TimeZoneKeyName",
+                           RRF_RT_REG_SZ, NULL, (LPBYTE) winZoneName, &bufSize);
         if (ret != ERROR_SUCCESS) {
             goto err;
         }
@@ -226,7 +217,6 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
         TIME_ZONE_INFORMATION tzi;
         HANDLE hSubKey = NULL;
         DWORD nSubKeys, i;
-        ULONG valueType;
         TCHAR subKeyName[MAX_ZONE_CHAR];
         TCHAR szValue[MAX_ZONE_CHAR];
         WCHAR stdNameInReg[MAX_ZONE_CHAR];
@@ -245,8 +235,8 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
              * Determine if auto-daylight time adjustment is turned off.
              */
             bufSize = sizeof(val);
-            ret = RegQueryValueExA(hKey, "DynamicDaylightTimeDisabled", NULL,
-                                   &valueType, (LPBYTE) &val, &bufSize);
+            ret = RegGetValueA(hKey, NULL, "DynamicDaylightTimeDisabled",
+                               RRF_RT_REG_DWORD, NULL, (LPBYTE) &val, &bufSize);
             if (ret == ERROR_SUCCESS) {
                 if (val == 1 && tzi.DaylightDate.wMonth != 0) {
                     (void) RegCloseKey(hKey);
@@ -265,8 +255,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
              */
             if (tzi.StandardName[0] == 0) {
                 bufSize = sizeof(stdNameInReg);
-                ret = getValueInRegistry(hKey, STANDARD_NAME, &valueType,
-                                         (LPBYTE) stdNameInReg, &bufSize);
+                ret = getValueInRegistry(hKey, STANDARD_NAME, (LPBYTE) stdNameInReg, &bufSize);
                 if (ret != ERROR_SUCCESS) {
                     goto err;
                 }
@@ -315,18 +304,9 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
             }
 
             size = sizeof(szValue);
-            ret = getValueInRegistry(hSubKey, STD_NAME, &valueType,
-                                     szValue, &size);
+            ret = getValueInRegistry(hSubKey, STD_NAME, szValue, &size);
             if (ret != ERROR_SUCCESS) {
-                /*
-                 * NT 4.0 SP3 fails here since it doesn't have the "Std"
-                 * entry in the Time Zones registry.
-                 */
                 RegCloseKey(hSubKey);
-                ret = RegOpenKeyExW(hKey, stdNamePtr, 0, KEY_READ, (PHKEY)&hSubKey);
-                if (ret != ERROR_SUCCESS) {
-                    goto err;
-                }
                 break;
             }
 
@@ -339,8 +319,8 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
                  * zone.
                  */
                 DWORD tziValueSize = sizeof(tempTzi);
-                ret = RegQueryValueEx(hSubKey, "TZI", NULL, &valueType,
-                                      (unsigned char *) &tempTzi, &tziValueSize);
+                ret = RegGetValueA(hSubKey, NULL, "TZI", RRF_RT_REG_BINARY, NULL,
+                                   (unsigned char*) &tempTzi, &tziValueSize);
                 if (ret == ERROR_SUCCESS) {
                     if ((tzi.Bias != tempTzi.bias) ||
                         (memcmp((const void *) &tzi.StandardDate,
@@ -363,6 +343,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
                  * found matched record, terminate search
                  */
                 strcpy(winZoneName, subKeyName);
+                RegCloseKey(hSubKey);
                 break;
             }
         out:
@@ -547,9 +528,8 @@ getGMTOffsetID()
     if (ret == ERROR_SUCCESS) {
         DWORD val;
         DWORD bufSize = sizeof(val);
-        ULONG valueType = 0;
-        ret = RegQueryValueExA(hKey, "ActiveTimeBias",
-                               NULL, &valueType, (LPBYTE) &val, &bufSize);
+        ret = RegGetValueA(hKey, NULL, "ActiveTimeBias",
+                           RRF_RT_REG_DWORD, NULL, (LPBYTE) &val, &bufSize);
         if (ret == ERROR_SUCCESS) {
             bias = (LONG) val;
         }

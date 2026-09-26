@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,15 @@
  * @bug     8047795 8053938
  * @summary Ensure that replaceAll operator cannot add bad elements
  * @author  Mike Duigou
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.*;
 import java.util.function.UnaryOperator;
 
 public class CheckedListReplaceAll {
+
     public static void main(String[] args) {
         List unwrapped = Arrays.asList(new Object[]{1, 2, 3});
         List<Object> wrapped = Collections.checkedList(unwrapped, Integer.class);
@@ -57,5 +60,16 @@ public class CheckedListReplaceAll {
             thwarted.printStackTrace(System.out);
             System.out.println("Curses! Foiled again!");
         }
+
+        List<VClass> vList = Collections.checkedList(new ArrayList<VClass>(Arrays.asList(new VClass(1, new int[] { 1 }))), VClass.class);
+        vList.replaceAll(v -> new VClass(v.x + 1, new int[] { v.x + 1 }));
+        if (!vList.get(0).equals(new VClass(2, new int[] { 2 })))
+            throw new RuntimeException("value checkedList replaceAll failed");
+
+        List raw = Collections.checkedList(new ArrayList<VClass>(Arrays.asList(new VClass(1, new int[] { 1 }))), VClass.class);
+        try {
+            raw.replaceAll(e -> "not a Tuple");
+            throw new RuntimeException("value checkedList replaceAll accepted wrong type");
+        } catch (ClassCastException expected) { }
     }
 }
