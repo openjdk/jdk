@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -61,7 +61,7 @@ import org.xml.sax.helpers.LocatorImpl;
  *
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
- * @LastModified: May 2025
+ * @LastModified: July 2026
  */
 public class DOMParser
     extends AbstractDOMParser {
@@ -575,7 +575,7 @@ public class DOMParser
              * internally the support of this property is done through
              * XMLSecurityPropertyManager
              */
-            securityPropertyManager.setValue(index, FeaturePropertyBase.State.APIPROPERTY, (String)value);
+            securityPropertyManager.setValue(index, JdkProperty.State.APIPROPERTY, (String)value);
         } else {
             //check if the property is managed by security manager
             if (!securityManager.setLimit(propertyId, JdkProperty.State.APIPROPERTY, value)) {

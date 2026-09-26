@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -71,7 +71,7 @@ import org.xml.sax.SAXParseException;
  *
  * @author Kohsuke Kawaguchi
  *
- * @LastModified: May 2025
+ * @LastModified: July 2026
  */
 public final class XMLSchemaFactory extends SchemaFactory {
 
@@ -446,9 +446,9 @@ public final class XMLSchemaFactory extends SchemaFactory {
             fSecurityManager.setSecureProcessing(value);
             if (value) {
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
-                        FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                    JdkProperty.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA,
-                        FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                    JdkProperty.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
             }
 
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);

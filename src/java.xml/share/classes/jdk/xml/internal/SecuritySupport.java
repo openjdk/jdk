@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,18 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.text.MessageFormat;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 /**
  * This class contains utility methods for reading resources in the JAXP packages
@@ -268,65 +271,89 @@ public class SecuritySupport {
     }
 
     /**
+     * Checks whether access to resource represented by the systemId is permitted
+     * by Resource Access and/or External Access Properties (EAP)
+     * @param systemId the systemId
+     * @param xsm the XMLSecurityManager
+     * @param eap the External Access Property, e.g. ACCESS_EXTERNAL_DTD
+     * @param allowedProtocols protocols allowed by the EAP
+     * @return true if access is permitted, false otherwise
+     * @throws IOException if the systemId is invalid
+     */
+    public static String checkAccess(String systemId, XMLSecurityManager xsm,
+        String eap, String allowedProtocols) {
+        String errMsg = null;
+        if (xsm != null && !xsm.isAccessAllowed(systemId)) {
+            errMsg = "Resource Access (jdk.xml.resource.access)";
+        }
+
+        if (!checkAccess(systemId, allowedProtocols)) {
+            errMsg = (errMsg != null) ? errMsg + " and " + eap : eap;
+        }
+        return errMsg;
+    }
+
+    /**
      * Check the protocol used in the systemId against allowed protocols
      *
      * @param systemId the Id of the URI
      * @param allowedProtocols a list of allowed protocols separated by comma
-     * @param accessAny keyword to indicate allowing any protocol
-     * @return the name of the protocol if rejected, null otherwise
+     * @return true if access is permitted, false otherwise
      */
-    public static String checkAccess(String systemId, String allowedProtocols,
-            String accessAny) throws IOException {
+    public static boolean checkAccess(String systemId, String allowedProtocols) {
+        if (Utils.isEmpty(allowedProtocols)) {
+            return false;
+        }
         if (systemId == null || (allowedProtocols != null &&
-                allowedProtocols.equalsIgnoreCase(accessAny))) {
-            return null;
+                allowedProtocols.equalsIgnoreCase(JdkConstants.ACCESS_EXTERNAL_ALL))) {
+            return true;
         }
 
-        String protocol;
-        if (!systemId.contains(":")) {
-            protocol = "file";
+        URI uri = Utils.createURI(systemId);
+        String scheme = uri.getScheme();
+        if (scheme == null) {
+            scheme = "file";
         } else {
-            @SuppressWarnings("deprecation")
-            URL url = new URL(systemId);
-            protocol = url.getProtocol();
-            if (protocol.equalsIgnoreCase("jar")) {
-                String path = url.getPath();
-                protocol = path.substring(0, path.indexOf(":"));
-            } else if (protocol.equalsIgnoreCase("jrt")) {
-                // if the systemId is "jrt" then allow access if "file" allowed
-                protocol = "file";
+            scheme = scheme.toLowerCase(Locale.ROOT);
+            if ("jar".equals(scheme)) {
+                String ssp = uri.getSchemeSpecificPart(); // e.g. file:/x.jar!/a.xml
+                int sep = ssp.indexOf("!/");
+                if (sep != -1) {
+                    URI nested = Utils.createURI(ssp.substring(0, sep));
+                    String nestedScheme = nested.getScheme();
+                    if (nestedScheme != null) {
+                        scheme = nestedScheme.toLowerCase(Locale.ROOT);
+                    }
+                }
+            } else if ("jrt".equals(scheme)) {
+                // allow access if it's "file"
+                scheme = "file";
             }
         }
 
-        if (isProtocolAllowed(protocol, allowedProtocols)) {
-            //access allowed
-            return null;
-        } else {
-            return protocol;
-        }
+        Set<String> allowed = parseProtocols(allowedProtocols);
+        return allowed.contains(scheme);
     }
 
     /**
-     * Check if the protocol is in the allowed list of protocols. The check
-     * is case-insensitive while ignoring whitespaces.
-     *
-     * @param protocol a protocol
-     * @param allowedProtocols a list of allowed protocols
-     * @return true if the protocol is in the list
+     * Parses allowed protocols.
+     * @param protocols the protocol setting
+     * @return a set containing allowed protocols
      */
-    private static boolean isProtocolAllowed(String protocol, String allowedProtocols) {
-         if (allowedProtocols == null) {
-             return false;
-         }
-         String temp[] = allowedProtocols.split(",");
-         for (String t : temp) {
-             t = t.trim();
-             if (t.equalsIgnoreCase(protocol)) {
-                 return true;
-             }
-         }
-         return false;
-     }
+    private static Set<String> parseProtocols(String protocols) {
+        Set<String> set = new HashSet<>();
+        if (protocols == null || protocols.isEmpty()) {
+            return set;
+        }
+
+        for (String p : protocols.split(",")) {
+            String trimmed = p.trim().toLowerCase(Locale.ROOT);
+            if (!trimmed.isEmpty()) {
+                set.add(trimmed);
+            }
+        }
+        return set;
+    }
 
     public static ClassLoader getContextClassLoader() {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
