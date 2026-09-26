@@ -54,6 +54,9 @@ class CDSConfig : public AllStatic {
   static bool  _new_aot_flags_used;
   static bool  _disable_heap_dumping;
 
+  // preserve CompileThresholdScaling for A2 compilation
+  static double _aot_compile_threshold_scaling;
+
   static JavaThread* _dumper_thread;
 #endif
 
@@ -202,6 +205,8 @@ public:
   static void disable_dumping_aot_code()                     NOT_CDS_RETURN;
   static void enable_dumping_aot_code()                      NOT_CDS_RETURN;
   static bool is_dumping_adapters()                          NOT_CDS_RETURN_(false);
+
+  static double aot_compile_threshold_scaling() { return CDS_ONLY(_aot_compile_threshold_scaling) NOT_CDS(1.0); }
 
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:

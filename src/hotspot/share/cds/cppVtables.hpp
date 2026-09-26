@@ -31,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ArchiveBuilder;
+class Klass;
 class Method;
 class SerializeClosure;
 class CppVtableInfo;
@@ -44,6 +45,7 @@ public:
   static intptr_t* get_archived_vtable(MetaspaceClosureType type, address obj);
   static void serialize(SerializeClosure* sc);
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
+  static bool is_valid_shared_klass(const Klass* k) NOT_CDS_RETURN_(false);
   static char* vtables_serialized_base() { return _vtables_serialized_base; }
 };
 

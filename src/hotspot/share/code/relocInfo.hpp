@@ -1310,6 +1310,31 @@ class trampoline_stub_Relocation : public Relocation {
 
   void pack_data_to(CodeSection * dest) override;
   void unpack_data() override;
+// Platforms that keep the call destination in a trampoline stub read and write it
+// through these. A platform needing USE_TRAMPOLINE_STUB_FIX_OWNER also needs them.
+#if defined(USE_TRAMPOLINE_STUB_DESTINATION) || defined(USE_TRAMPOLINE_STUB_FIX_OWNER)
+  address pd_destination     ();
+  void    pd_set_destination (address x);
+#else
+  address pd_destination     () {
+    fatal("trampoline_stub_Relocation::destination() unimplemented");
+    return (address)-1;
+  }
+  void    pd_set_destination (address x) {
+    fatal("trampoline_stub_Relocation::set_destination() unimplemented");
+  }
+#endif
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+  void    fix_owner_after_move() {
+    pd_fix_owner_after_move();
+  }
+#endif
+  address destination() {
+    return pd_destination();
+  }
+  void    set_destination(address x) {
+    pd_set_destination(x);
+  }
 
   // Find the trampoline stub for a call.
   static address get_trampoline_for(address call, nmethod* code);
@@ -1400,7 +1425,7 @@ class internal_word_Relocation : public DataRelocation {
   void unpack_data() override;
 
   void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
-  void fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr);
+  void fix_relocation_after_aot_load(address current_base_addr, int delta);
 
   address  target();        // if _target==nullptr, fetch addr from code stream
   int      section()        { return _section;   }

@@ -111,7 +111,6 @@ OopMap::OopMap(int frame_size, int arg_count) {
 #endif
 }
 
-
 OopMap::OopMap(OopMap::DeepCopyToken, OopMap* source) {
   // This constructor does a deep copy
   // of the source OopMap.
