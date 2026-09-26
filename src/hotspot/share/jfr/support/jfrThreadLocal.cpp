@@ -379,7 +379,6 @@ bool JfrThreadLocal::is_impersonating(const Thread* t) {
 
 void JfrThreadLocal::impersonate(const Thread* t, traceid other_thread_id) {
   assert(t != nullptr, "invariant");
-  assert(other_thread_id != 0, "invariant");
   JfrThreadLocal* const tl = t->jfr_thread_local();
   tl->_thread_id_alias = other_thread_id;
 }
