@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.remote.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
@@ -194,6 +195,11 @@ public class PStack extends Tool {
                   }
                   f = f.sender(th, senderSP, senderFP, senderPC);
                }
+            } catch (DwarfException dex) {
+               // Linux: DwarfException will be thrown if DWARF processing fails.
+               // Stack unwinding should be aborted. However, we can continue for other threads.
+               // See JDK-8392132 and the review thread on GitHub for details.
+               IO.println(dex.toString());
             } catch (Exception exp) {
                exp.printStackTrace();
                // continue, may be we can do a better job for other threads
