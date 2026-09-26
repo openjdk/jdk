@@ -165,7 +165,8 @@ public:
     decl(SVE2,          sve2          )    \
     decl(A53MAC,        a53mac        )    \
     decl(ECV,           ecv           )    \
-    decl(WFXT,          wfxt          )
+    decl(WFXT,          wfxt          )    \
+    decl(ASIMDDP,       asimddp       )
 
   enum Feature_Flag {
 #define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,

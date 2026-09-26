@@ -26,9 +26,12 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
-// Since PF_ARM_SVE_INSTRUCTIONS_AVAILABLE and related constants were added in
-// Windows 11 (version 24H2) and in Windows Server 2025, we define them here for
-// compatibility with older SDK versions.
+// The constants below may be missing from older SDK versions
+// so we define them here for compatibility.
+#ifndef PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE 43
+#endif
+
 #ifndef PF_ARM_SVE_INSTRUCTIONS_AVAILABLE
 #define PF_ARM_SVE_INSTRUCTIONS_AVAILABLE 46
 #endif
@@ -109,6 +112,9 @@ void VM_Version::get_os_cpu_info() {
   }
   if (IsProcessorFeaturePresent(PF_ARM_SHA512_INSTRUCTIONS_AVAILABLE)) {
     set_feature(CPU_SHA512);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_ASIMDDP);
   }
 
   __int64 dczid_el0 = _ReadStatusReg(0x5807 /* ARM64_DCZID_EL0 */);
