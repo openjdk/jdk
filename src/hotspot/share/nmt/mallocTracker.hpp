@@ -181,7 +181,7 @@ class MallocMemorySnapshot {
 
   // Total peak malloc
   size_t total_peak() const {
-    return _all_mallocs.peak_size();
+    return _all_mallocs.peak_size() + _all_mallocs.peak_count() * MallocHeader::malloc_overhead();
   }
 
   // Total peak count
