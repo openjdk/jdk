@@ -35,7 +35,7 @@
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveUtils.hpp"
+#include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
@@ -61,12 +61,15 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/flatArrayOop.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -105,14 +108,6 @@ size_t HeapShared::_alloc_size[HeapShared::ALLOC_STAT_SLOTS];
 size_t HeapShared::_total_obj_count;
 size_t HeapShared::_total_obj_size;
 
-#ifndef PRODUCT
-#define ARCHIVE_TEST_FIELD_NAME "archivedObjects"
-static Array<char>* _archived_ArchiveHeapTestClass = nullptr;
-static const char* _test_class_name = nullptr;
-static Klass* _test_class = nullptr;
-static const ArchivedKlassSubGraphInfoRecord* _test_class_record = nullptr;
-#endif
-
 #ifdef ASSERT
 // All classes that have at least one instance in the cached heap.
 static ArchivableKlassTable* _dumptime_classes_with_cached_oops = nullptr;
@@ -142,9 +137,6 @@ static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
   {ARCHIVED_BOOT_LAYER_CLASS,                     ARCHIVED_BOOT_LAYER_FIELD},
   {"java/lang/Module$ArchivedData",               "archivedData"},
 
-#ifndef PRODUCT
-  {nullptr, nullptr}, // Extra slot for -XX:ArchiveHeapTestClass
-#endif
   {nullptr, nullptr},
 };
 
@@ -153,6 +145,8 @@ ArchivedKlassSubGraphInfoRecord* HeapShared::_run_time_special_subgraph;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_objects_table = nullptr;
+static GrowableArray<int>* _dumptime_resolved_methods = nullptr;
+static Array<int>* _runtime_resolved_methods = nullptr;
 
 static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], InstanceKlass* ik) {
   for (int i = 0; fields[i].valid(); i++) {
@@ -429,6 +423,22 @@ void HeapShared::archive_interned_string(oop string) {
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
 }
 
+void HeapShared::update_scratch_mirror_field(oop scratch_m, int field_offset, oop new_field_obj) {
+  archive_updated_mirror_field(scratch_m->obj_field(field_offset), new_field_obj);
+  scratch_m->obj_field_put(field_offset, new_field_obj);
+}
+
+// It's possible for a scratch mirror to be scanned before one of its oop fields (such as acmp_maps) is
+// updated. When this happens, we must ensure that the new oop is also archived.
+void HeapShared::archive_updated_mirror_field(oop old_field_obj, oop new_field_obj) {
+  if (old_field_obj != new_field_obj) {
+    assert(old_field_obj == nullptr, "cannot update a non-null oop field that might have already been scanned");
+    assert(new_field_obj != nullptr, "must be");
+    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, new_field_obj);
+    assert(success, "mirror field must be archivable");
+  }
+}
+
 void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
   if (HeapShared::is_loading()) {
     if (HeapShared::is_loading_streaming_mode()) {
@@ -453,7 +463,7 @@ void HeapShared::make_archived_object_cache_gc_safe() {
 
   // Copy all CachedOopInfo into a new table using a different hashing algorithm
   archived_object_cache()->iterate_all([&] (OopHandle oh, CachedOopInfo info) {
-      if (Arguments::is_valhalla_enabled() && oh.resolve()->klass()->is_inline_klass()) {
+      if (Arguments::is_valhalla_enabled() && oh.resolve()->klass()->is_value_klass()) {
         // After make_archived_object_cache_gc_safe() returns,
         // _archived_object_cache->get() is called only from the (future) AOT code
         // compiler to access heap oops referenced by AOT-compiled method.
@@ -651,6 +661,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         m = RegeneratedClasses::maybe_get_regenerated_object(m);
         InstanceKlass* method_holder = m->method_holder();
         AOTArtifactFinder::add_cached_class(method_holder);
+        _dumptime_resolved_methods->append(HeapShared::append_root(obj));
       }
     }
   }
@@ -723,6 +734,7 @@ void HeapShared::remove_scratch_resolved_references(ConstantPool* src) {
 
 void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _dumptime_resolved_methods = new (mtClassShared) GrowableArray<int>(100, mtClassShared);
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
   _pending_roots->append(nullptr); // root index 0 represents a null oop
   DEBUG_ONLY(_dumptime_classes_with_cached_oops = new (mtClassShared)ArchivableKlassTable());
@@ -797,11 +809,7 @@ void HeapShared::remove_scratch_objects(Klass* k) {
 //changes the names in the JDK code.  See discussion in JDK-8342481 for
 //related ideas about marking AOT-related classes.
 bool HeapShared::is_lambda_form_klass(InstanceKlass* ik) {
-  return ik->is_hidden() &&
-    (ik->name()->starts_with("java/lang/invoke/LambdaForm$MH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$DMH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$BMH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$VH+"));
+  return ik->is_hidden() && ik->name()->starts_with("java/lang/invoke/LambdaForm$");
 }
 
 bool HeapShared::is_lambda_proxy_klass(InstanceKlass* ik) {
@@ -817,12 +825,12 @@ bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
     (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik) || is_string_concat_klass(ik));
 }
 
-
 void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   ik->set_has_aot_initialized_mirror();
 
   oop orig_mirror;
   if (RegeneratedClasses::is_regenerated_object(ik)) {
+    assert(!ik->is_value_klass(), "not supported");
     InstanceKlass* orig_ik = RegeneratedClasses::get_original_object(ik);
     precond(orig_ik->is_initialized());
     orig_mirror = orig_ik->java_mirror();
@@ -847,11 +855,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
             // to null and it will be recreated at runtime.
             field_obj = nullptr;
           }
-          m->obj_field_put(offset, field_obj);
-          if (field_obj != nullptr) {
-            bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, field_obj);
-            assert(success, "sanity");
-          }
+          update_scratch_mirror_field(m, offset, field_obj);
         }
         break;
       case T_BOOLEAN:
@@ -886,10 +890,15 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   }
 
   oop class_data = java_lang_Class::class_data(orig_mirror);
+  archive_updated_mirror_field(java_lang_Class::class_data(m), class_data);
   java_lang_Class::set_class_data(m, class_data);
-  if (class_data != nullptr) {
-    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, class_data);
-    assert(success, "sanity");
+
+  if (ik->is_value_klass()) {
+    ValueKlass* vk = ValueKlass::cast(ik);
+    if (vk->supports_nullable_layouts()) {
+      oop null_reset_value = vk->null_reset_value();
+      update_scratch_mirror_field(m, vk->null_reset_value_offset(), null_reset_value);
+    }
   }
 
   if (log_is_enabled(Debug, aot, init)) {
@@ -903,7 +912,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
 void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (!orig_mirror->fast_no_hash_check()) {
+  if (orig_mirror->has_identity_hash()) {
     intptr_t src_hash = orig_mirror->identity_hash();
     if (UseCompactObjectHeaders) {
       narrowKlass nk = CompressedKlassPointers::encode(orig_mirror->klass());
@@ -912,7 +921,7 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
       // For valhalla, the prototype header is the same as markWord::prototype();
       scratch_m->set_mark(markWord::prototype().copy_set_hash(src_hash));
     }
-    assert(scratch_m->mark().is_unlocked(), "sanity");
+    assert(scratch_m->mark().is_lock_neutral(), "sanity");
 
     DEBUG_ONLY(intptr_t archived_hash = scratch_m->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
@@ -922,24 +931,20 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   if (k != nullptr && k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
-    if (ik->is_inline_klass() && ik->is_initialized()) {
-      // Only concrete value classes need the null_reset field
-      InlineKlass* ilk = InlineKlass::cast(k);
-      if (ilk->supports_nullable_layouts()) {
-        scratch_m->obj_field_put(ilk->null_reset_value_offset(), ilk->null_reset_value());
-      }
-    }
-
     if (ik->has_acmp_maps_offset()) {
       int maps_offset = ik->acmp_maps_offset();
-      oop maps = orig_mirror->obj_field(maps_offset);
-      scratch_m->obj_field_put(maps_offset, maps);
+      update_scratch_mirror_field(scratch_m, maps_offset, orig_mirror->obj_field(maps_offset));
     }
   }
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
-    java_lang_Class::set_module(scratch_m, java_lang_Class::module(orig_mirror));
-    java_lang_Class::set_protection_domain(scratch_m, java_lang_Class::protection_domain(orig_mirror));
+    oop module = java_lang_Class::module(orig_mirror);
+    archive_updated_mirror_field(java_lang_Class::module(scratch_m), module);
+    java_lang_Class::set_module(scratch_m, module);
+
+    oop pd = java_lang_Class::protection_domain(orig_mirror);
+    archive_updated_mirror_field(java_lang_Class::protection_domain(scratch_m), pd);
+    java_lang_Class::set_protection_domain(scratch_m, pd);
   }
 }
 
@@ -990,9 +995,9 @@ void HeapShared::start_scanning_for_oops() {
     if (HeapShared::is_writing_mapping_mode() && (UseG1GC || UseCompressedOops)) {
       aot_log_info(aot)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                     UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                        p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                    G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) :) 0L,
                     UseCompressedOops ? p2i(CompressedOops::end()) :
-                                        p2i((address)G1CollectedHeap::heap()->reserved().end()));
+                    G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) :) 0L);
     }
 
     archive_subgraphs();
@@ -1031,6 +1036,10 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
 
   delete _pending_roots;
   _pending_roots = nullptr;
+
+  _runtime_resolved_methods = ArchiveUtils::archive_array(_dumptime_resolved_methods);
+  delete _dumptime_resolved_methods;
+  _dumptime_resolved_methods = nullptr;
 
   make_archived_object_cache_gc_safe();
 }
@@ -1144,8 +1153,13 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   } else if (orig_k->is_objArray_klass()) {
     Klass* abk = ObjArrayKlass::cast(orig_k)->bottom_klass();
     if (abk->is_instance_klass()) {
-      assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
-            "must be boot class");
+      if (!AOTClassInitializer::has_test_class()) {
+        // Without `-XX:AOTInitTestClass`, no Java code outside of the boot loader will
+        // be executed in the AOT assembly phase, so we can't have an initialized class
+        // outside of the boot loader.
+        assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
+               "must be boot class");
+      }
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
     if (orig_k == Universe::objectArrayKlass()) {
@@ -1196,19 +1210,9 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
     }
   }
 
-#ifndef PRODUCT
-  if (!ik->module()->is_named() && ik->package() == nullptr && ArchiveHeapTestClass != nullptr) {
-    // This class is loaded by ArchiveHeapTestClass
-    return;
-  }
-  const char* testcls_msg = ", or a test class in an unnamed package of an unnamed module";
-#else
-  const char* testcls_msg = "";
-#endif
-
   ResourceMark rm;
-  log_error(aot, heap)("Class %s not allowed in archive heap. Must be in java.base%s%s",
-                       ik->external_name(), lambda_msg, testcls_msg);
+  log_error(aot, heap)("Class %s not allowed in archive heap. Must be in java.base%s",
+                       ik->external_name(), lambda_msg);
   AOTMetaspace::unrecoverable_writing_error();
 }
 
@@ -1318,32 +1322,33 @@ void HeapShared::write_subgraph_info_table() {
   d_table->iterate(&copy);
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
 
-#ifndef PRODUCT
-  if (ArchiveHeapTestClass != nullptr) {
-    size_t len = strlen(ArchiveHeapTestClass) + 1;
-    Array<char>* array = ArchiveBuilder::new_ro_array<char>((int)len);
-    strncpy(array->adr_at(0), ArchiveHeapTestClass, len);
-    _archived_ArchiveHeapTestClass = array;
-  }
-#endif
   if (log_is_enabled(Info, aot, heap)) {
     print_stats();
   }
 }
 
 void HeapShared::serialize_tables(SerializeClosure* soc) {
-
-#ifndef PRODUCT
-  soc->do_ptr(&_archived_ArchiveHeapTestClass);
-  if (soc->reading() && _archived_ArchiveHeapTestClass != nullptr) {
-    _test_class_name = _archived_ArchiveHeapTestClass->adr_at(0);
-    setup_test_class(_test_class_name);
-  }
-#endif
-
   _run_time_subgraph_info_table.serialize_header(soc);
   soc->do_ptr(&_run_time_special_subgraph);
+  soc->do_ptr(&_runtime_resolved_methods);
   DEBUG_ONLY(soc->do_ptr(&_runtime_classes_with_cached_oops));
+}
+
+void HeapShared::load_cached_resolved_methods() {
+  precond(CDSConfig::is_using_aot_linked_classes());
+  if (_runtime_resolved_methods != nullptr) {
+    JavaThread* current = JavaThread::current();
+    HandleMark hm(current);
+    for (int i = 0; i < _runtime_resolved_methods->length(); i++) {
+      int root_index = _runtime_resolved_methods->at(i);
+      Handle mem_name(current,  get_root(root_index, /*clear=*/true));
+      Method* method = java_lang_invoke_ResolvedMethodName::vmtarget(mem_name());
+      InstanceKlass* holder = method->method_holder();
+      holder->set_has_resolved_methods();
+      oop o = ResolvedMethodTable::add_method(method, mem_name);
+      precond(o == mem_name());
+    }
+  }
 }
 
 static void verify_the_heap(Klass* k, const char* which) {
@@ -1471,13 +1476,13 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
   }
 
   if (k->name()->equals("jdk/internal/module/ArchivedModuleGraph") &&
-      !CDSConfig::is_using_optimized_module_handling() &&
+      !CDSConfig::is_using_full_module_graph() &&
       // archive was created with --module-path
       AOTClassLocationConfig::runtime()->num_module_paths() > 0) {
     // ArchivedModuleGraph was created with a --module-path that's different than the runtime --module-path.
     // Thus, it might contain references to modules that do not exist at runtime. We cannot use it.
-    log_info(aot, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_optimized_module_handling=%s num_module_paths=%d",
-                        BOOL_TO_STR(CDSConfig::is_using_optimized_module_handling()),
+    log_info(aot, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_full_module_graph=%s num_module_paths=%d",
+                        BOOL_TO_STR(CDSConfig::is_using_full_module_graph()),
                         AOTClassLocationConfig::runtime()->num_module_paths());
     return;
   }
@@ -1508,13 +1513,6 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
   }
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
-
-#ifndef PRODUCT
-  if (_test_class_name != nullptr && k->name()->equals(_test_class_name) && record != nullptr) {
-    _test_class = k;
-    _test_class_record = record;
-  }
-#endif
 
   // Initialize from archived data. Currently this is done only
   // during VM initialization time. No lock is needed.
@@ -1752,6 +1750,95 @@ void HeapShared::init_box_classes(TRAPS) {
   }
 }
 
+// Used by HeapShared::find_flat_field_klasses().
+class HeapShared::FlatFieldKlassFinder : public FieldClosure {
+  KlassSubGraphInfo* _subgraph_info;
+  oop _obj;
+  const ValuePayloadContext* _vpc;
+public:
+  FlatFieldKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, const ValuePayloadContext* vpc = nullptr)
+    : FieldClosure(), _subgraph_info(subgraph_info), _obj(obj), _vpc(vpc) {
+    precond(obj != nullptr);
+    assert(vpc == nullptr || obj->klass() != vpc->klass(), "a value object cannot be flattened into itself");
+  }
+
+  void do_field(fieldDescriptor* fd) override {
+    if (fd->is_flat()) {
+      precond(fd->field_type() == T_OBJECT);
+
+      if (!fd->is_flat_field_marked_as_null(_obj, _vpc)) {
+        // Found a non-null flat field of type vk. Let's record vk.
+        ValueKlass* vk = fd->flat_field_klass();
+        add_flat_field_klass(_subgraph_info, vk);
+        if (vk->has_flat_fields()) {
+          // Scan the fields inside the flat field of type vk whose payload is at field_offset_in_obj.
+          ValuePayloadContext field_vpc{vk, fd->field_offset_in_obj(_vpc)};
+          FlatFieldKlassFinder finder(_subgraph_info, _obj, &field_vpc);
+          vk->do_nonstatic_fields(&finder);
+        }
+      }
+    }
+  }
+};
+
+void HeapShared::add_flat_field_klass(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
+  subgraph_info->add_subgraph_object_klass(k);
+  if (InstanceKlass::cast(k)->is_enum_subclass()
+      || (subgraph_info == _dump_time_special_subgraph)) {
+      AOTArtifactFinder::add_aot_inited_class(k);
+  }
+}
+
+// Recursively scan for any ValueKlass K that has least one non-null flat field
+// inside orig_obj. K should be recorded with add_flat_field_klass().
+//
+// Reason for doing this:
+//
+//     value class Point { short x; short y; ... }
+//     value class Line {
+//         @NullRestricted Point p1;
+//         @NullRestricted Point p2; ... }
+//
+// Klasses of non-flat fields are already recorded by HeapShared::archive_object().
+//
+// If only a single instance of Line is archived, HeapShared::archive_object() would
+// have never visited a heap oop instance of Point, but we must store Point in
+// AOT-initialized state. This function finds Point.
+void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
+  Klass* klass = orig_obj->klass();
+
+  if (klass->is_flatArray_klass()) {
+    FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
+    precond(orig_obj->is_flatArray());
+    flatArrayOop fa = oop_cast<flatArrayOop>(orig_obj);
+    ValueKlass* elem_k = fak->element_klass();
+    bool added = false;
+    for (int i = 0; i < fa->length(); i++) {
+      if (fak->is_null_free_array_klass() || !fa->obj_at_is_null(i)) {
+        if (!added) {
+          // add elem_k for the first non-null element that we found.
+          add_flat_field_klass(subgraph_info, elem_k);
+          added = true;
+        }
+
+        // Each element in fa may have different null flat fields, so we must scan
+        // all elements to ensure discovery of all non-null flat fields.
+        if (elem_k->has_flat_fields()) {
+          ValuePayloadContext vpc{elem_k, fa->value_offset_as_int(i, fak->layout_helper())};
+          FlatFieldKlassFinder finder(subgraph_info, orig_obj, &vpc);
+          elem_k->do_nonstatic_fields(&finder);
+        }
+      }
+    }
+  } else if (klass->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+    if (ik->has_flat_fields()) {
+      FlatFieldKlassFinder finder(subgraph_info, orig_obj);
+      ik->do_nonstatic_fields(&finder);
+    }
+  }
+}
+
 // (1) If orig_obj has not been archived yet, archive it.
 // (2) If orig_obj has not been seen yet (since start_recording_subgraph() was called),
 //     trace all  objects that are reachable from it, and make sure these objects are archived.
@@ -1886,6 +1973,8 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     OopFieldPusher pusher(stack, level, record_klasses_only, subgraph_info, orig_obj);
     orig_obj->oop_iterate(&pusher);
   }
+
+  find_flat_field_klasses(subgraph_info, orig_obj);
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     // The enum klasses are archived with aot-initialized mirror.
@@ -2140,18 +2229,6 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name);
     ResourceMark rm; // for stringStream::as_string() etc.
 
-#ifndef PRODUCT
-    bool is_test_class = (ArchiveHeapTestClass != nullptr) && (strcmp(info->klass_name, ArchiveHeapTestClass) == 0);
-    const char* test_class_name = ArchiveHeapTestClass;
-#else
-    bool is_test_class = false;
-    const char* test_class_name = ""; // avoid C++ printf checks warnings.
-#endif
-
-    if (is_test_class) {
-      log_warning(aot)("Loading ArchiveHeapTestClass %s ...", test_class_name);
-    }
-
     Klass* k = SystemDictionary::resolve_or_fail(klass_name, true, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
@@ -2170,35 +2247,15 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     assert(InstanceKlass::cast(ik)->defined_by_boot_loader(),
            "Only support boot classes");
 
-    if (is_test_class) {
-      if (ik->module()->is_named()) {
-        // We don't want ArchiveHeapTestClass to be abused to easily load/initialize arbitrary
-        // core-lib classes. You need to at least append to the bootclasspath.
-        stringStream st;
-        st.print("ArchiveHeapTestClass %s is not in unnamed module", test_class_name);
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
-      }
-
-      if (ik->package() != nullptr) {
-        // This restriction makes HeapShared::is_a_test_class_in_unnamed_module() easy.
-        stringStream st;
-        st.print("ArchiveHeapTestClass %s is not in unnamed package", test_class_name);
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
-      }
-    } else {
-      if (ik->module()->name() != vmSymbols::java_base()) {
-        // We don't want to deal with cases when a module is unavailable at runtime.
-        // FUTURE -- load from archived heap only when module graph has not changed
-        //           between dump and runtime.
-        stringStream st;
-        st.print("%s is not in java.base module", info->klass_name);
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
-      }
+    if (ik->module()->name() != vmSymbols::java_base()) {
+      // We don't want to deal with cases when a module is unavailable at runtime.
+      // FUTURE -- load from archived heap only when module graph has not changed
+      //           between dump and runtime.
+      stringStream st;
+      st.print("%s is not in java.base module", info->klass_name);
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
     }
 
-    if (is_test_class) {
-      log_warning(aot)("Initializing ArchiveHeapTestClass %s ...", test_class_name);
-    }
     ik->initialize(CHECK);
 
     ArchivableStaticFieldFinder finder(ik, field_name);
@@ -2222,89 +2279,8 @@ void HeapShared::init_subgraph_entry_fields(TRAPS) {
   }
 }
 
-#ifndef PRODUCT
-void HeapShared::setup_test_class(const char* test_class_name) {
-  ArchivableStaticFieldInfo* p = archive_subgraph_entry_fields;
-  int num_slots = sizeof(archive_subgraph_entry_fields) / sizeof(ArchivableStaticFieldInfo);
-  assert(p[num_slots - 2].klass_name == nullptr, "must have empty slot that's patched below");
-  assert(p[num_slots - 1].klass_name == nullptr, "must have empty slot that marks the end of the list");
-
-  if (test_class_name != nullptr) {
-    p[num_slots - 2].klass_name = test_class_name;
-    p[num_slots - 2].field_name = ARCHIVE_TEST_FIELD_NAME;
-  }
-}
-
-// See if ik is one of the test classes that are pulled in by -XX:ArchiveHeapTestClass
-// during runtime. This may be called before the module system is initialized so
-// we cannot rely on InstanceKlass::module(), etc.
-bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
-  if (_test_class != nullptr) {
-    if (ik == _test_class) {
-      return true;
-    }
-    Array<Klass*>* klasses = _test_class_record->subgraph_object_klasses();
-    if (klasses == nullptr) {
-      return false;
-    }
-
-    for (int i = 0; i < klasses->length(); i++) {
-      Klass* k = klasses->at(i);
-      if (k == ik) {
-        Symbol* name;
-        if (k->is_instance_klass()) {
-          name = InstanceKlass::cast(k)->name();
-        } else if (k->is_objArray_klass()) {
-          Klass* bk = ObjArrayKlass::cast(k)->bottom_klass();
-          if (!bk->is_instance_klass()) {
-            return false;
-          }
-          name = bk->name();
-        } else {
-          return false;
-        }
-
-        // See KlassSubGraphInfo::check_allowed_klass() - we only allow test classes
-        // to be:
-        //   (A) java.base classes (which must not be in the unnamed module)
-        //   (B) test classes which must be in the unnamed package of the unnamed module.
-        // So if we see a '/' character in the class name, it must be in (A);
-        // otherwise it must be in (B).
-        if (name->index_of_at(0, "/", 1)  >= 0) {
-          return false; // (A)
-        }
-
-        return true; // (B)
-      }
-    }
-  }
-
-  return false;
-}
-
-void HeapShared::initialize_test_class_from_archive(JavaThread* current) {
-  Klass* k = _test_class;
-  if (k != nullptr && is_archived_heap_in_use()) {
-    JavaThread* THREAD = current;
-    ExceptionMark em(THREAD);
-    const ArchivedKlassSubGraphInfoRecord* record =
-      resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
-
-    // The _test_class is in the unnamed module, so it can't call CDS.initializeFromArchive()
-    // from its <clinit> method. So we set up its "archivedObjects" field first, before
-    // calling its <clinit>. This is not strictly clean, but it's a convenient way to write unit
-    // test cases (see test/hotspot/jtreg/runtime/cds/appcds/cacheObject/ArchiveHeapTestClass.java).
-    if (record != nullptr) {
-      init_archived_fields_for(k, record);
-    }
-    resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/true, THREAD);
-  }
-}
-#endif
-
 void HeapShared::init_for_dumping(TRAPS) {
   if (CDSConfig::is_dumping_heap()) {
-    setup_test_class(ArchiveHeapTestClass);
     init_subgraph_entry_fields(CHECK);
   }
 }

@@ -38,7 +38,6 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/layoutKind.hpp"
@@ -49,6 +48,7 @@
 #include "oops/oopCast.inline.hpp"
 #include "oops/refArrayKlass.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valueKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -183,7 +183,7 @@ ArrayDescription ObjArrayKlass::array_layout_selection(Klass* element, ArrayProp
   if (!UseArrayFlattening || element->is_array_klass() || element->is_identity_class() || element->is_abstract()) {
     return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
   }
-  InlineKlass* vk = InlineKlass::cast(element);
+  ValueKlass* vk = ValueKlass::cast(element);
   if (!vk->maybe_flat_in_array()) {
     return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
   }
@@ -225,11 +225,11 @@ ObjArrayKlass* ObjArrayKlass::allocate_klass_from_description(ArrayDescription a
 
   switch (ad._kind) {
     case Klass::RefArrayKlassKind:
-      return RefArrayKlass::allocate_refArray_klass(class_loader_data(), dimension(), element_klass(), ad._properties, CHECK_NULL);
+      return RefArrayKlass::allocate_refArray_klass(class_loader_data(), dimension(), element_klass(), ad._properties, THREAD);
 
     case Klass::FlatArrayKlassKind:
       assert(dimension() == 1, "Flat arrays can only be dimension 1 arrays");
-      return FlatArrayKlass::allocate_klass(element_klass(), ad._properties, ad._layout_kind, CHECK_NULL);
+      return FlatArrayKlass::allocate_klass(element_klass(), ad._properties, ad._layout_kind, THREAD);
 
     default:
       ShouldNotReachHere();
@@ -238,7 +238,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_klass_from_description(ArrayDescription a
 
 objArrayOop ObjArrayKlass::allocate_instance(int length, ArrayProperties props, TRAPS) {
   ObjArrayKlass* ak = klass_with_properties(props, CHECK_NULL);
-  return ak->allocate_instance(length, CHECK_NULL);
+  return ak->allocate_instance(length, THREAD);
 }
 
 objArrayOop ObjArrayKlass::allocate_instance(int length, TRAPS) {
@@ -277,6 +277,50 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
 void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
                                int dst_pos, int length, TRAPS) {
   ShouldNotReachHere();
+}
+
+void ObjArrayKlass::array_copy_offsets_and_range_check(arrayOop s, int src_pos,
+                                                       arrayOop d, int dst_pos, int length, TRAPS) {
+  // Check if all offsets and lengths are non negative
+  if (src_pos < 0 || dst_pos < 0 || length < 0) {
+    // Pass specific exception reason.
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    if (src_pos < 0) {
+      ss.print("arraycopy: source index %d out of bounds for object array[%d]",
+               src_pos, s->length());
+    } else if (dst_pos < 0) {
+      ss.print(
+          "arraycopy: destination index %d out of bounds for object array[%d]",
+          dst_pos, d->length());
+    } else {
+      ss.print("arraycopy: length %d is negative", length);
+    }
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(),
+              ss.as_string());
+  }
+
+  // Check if the ranges are valid
+  if ((((unsigned int)length + (unsigned int)src_pos) >
+       (unsigned int)s->length()) ||
+      (((unsigned int)length + (unsigned int)dst_pos) >
+       (unsigned int)d->length())) {
+    // Pass specific exception reason.
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    if (((unsigned int)length + (unsigned int)src_pos) >
+        (unsigned int)s->length()) {
+      ss.print(
+          "arraycopy: last source index %u out of bounds for object array[%d]",
+          (unsigned int)length + (unsigned int)src_pos, s->length());
+    } else {
+      ss.print("arraycopy: last destination index %u out of bounds for object "
+                      "array[%d]",
+                      (unsigned int)length + (unsigned int)dst_pos, d->length());
+    }
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(),
+              ss.as_string());
+  }
 }
 
 bool ObjArrayKlass::can_be_primary_super_slow() const {

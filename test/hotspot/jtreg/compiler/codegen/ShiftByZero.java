@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8288445
+ * @bug 8288445 8389892
  * @summary Test shift by 0
- * @run main/othervm -Xbatch -XX:-TieredCompilation
- * compiler.codegen.ShiftByZero
+ * @run main/othervm -Xbatch -XX:-TieredCompilation ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=100000 ${test.main.class}
  */
 
 package compiler.codegen;

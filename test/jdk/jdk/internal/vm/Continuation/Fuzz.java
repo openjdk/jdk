@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,25 @@
  *
  * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                                -XX:+PreserveFramePointer
+ *                                Fuzz
+ */
+
+/*
+ * @test id=verify-cont
+ * @key randomness
+ * @summary Fuzz tests for jdk.internal.vm.Continuation
+ * @requires vm.debug == true & vm.continuations
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @modules java.base java.base/jdk.internal.vm.annotation java.base/jdk.internal.vm
+ * @library /test/lib
+ * @enablePreview
+ * @build java.base/java.lang.StackWalkerHelper
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                                -XX:+VerifyContinuations
  *                                Fuzz
  */
 

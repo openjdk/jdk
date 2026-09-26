@@ -466,9 +466,16 @@ public class IncludeLocalesPluginTest {
     }
 
     @AfterEach
-    public void cleanup() throws IOException {
+    public void cleanup() {
         if (testPassed && lastImageDir != null && Files.exists(lastImageDir)) {
-            FileUtils.deleteFileTreeWithRetry(lastImageDir);
+            // On Windows, the java.exe process spawned by testAvailableLocales() may
+            // hold open handles to files even after waitFor() returns.
+            // Use a non-throwing cleanup method but tolerate failures. Just log them.
+            List<IOException> failures = FileUtils.deleteFileTreeUnchecked(lastImageDir);
+            if (!failures.isEmpty()) {
+                System.err.println("WARNING: cleanup of " + lastImageDir + " incomplete:");
+                failures.forEach(e -> System.err.println("  " + e));
+            }
         }
     }
 

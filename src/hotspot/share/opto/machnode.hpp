@@ -512,7 +512,7 @@ public:
 };
 
 //------------------------------MachVEPNode-----------------------------------
-// Machine Inline Type Entry Point Node
+// Machine Value type Entry Point Node
 class MachVEPNode : public MachIdealNode {
 public:
   Label* _verified_entry;
@@ -533,7 +533,7 @@ public:
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const;
 
 #ifndef PRODUCT
-  virtual const char* Name() const { return "InlineType Entry-Point"; }
+  virtual const char* Name() const { return "ValueType Entry-Point"; }
   virtual void format(PhaseRegAlloc*, outputStream* st) const;
 #endif
 private:
@@ -851,14 +851,6 @@ public:
   MachGotoNode() : MachBranchNode() {
     init_class_id(Class_MachGoto);
   }
-};
-
-//------------------------------MachFastLockNode-------------------------------------
-// Machine-specific versions of FastLockNodes
-class MachFastLockNode : public MachNode {
-  virtual uint size_of() const { return sizeof(*this); } // Size is bigger
-public:
-  MachFastLockNode() : MachNode() {}
 };
 
 //------------------------------MachReturnNode--------------------------------

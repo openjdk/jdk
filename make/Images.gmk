@@ -194,23 +194,49 @@ endef
 ifeq ($(BUILD_CDS_ARCHIVE), true)
   $(foreach v, $(JVM_VARIANTS), \
     $(eval $(call CreateCDSArchive,$v,,)) \
-    $(eval $(call CreateCDSArchive,$v,,_preview)) \
   )
 
-  ifeq ($(call isTargetCpuBits, 64), true)
+  ifeq ($(BUILD_CDS_ARCHIVE_PREVIEW), true)
     $(foreach v, $(JVM_VARIANTS), \
-      $(eval $(call CreateCDSArchive,$v,_nocoops,)) \
-      $(eval $(call CreateCDSArchive,$v,_nocoops,_preview)) \
+      $(eval $(call CreateCDSArchive,$v,,_preview)) \
     )
+  endif
+
+  ifeq ($(call isTargetCpuBits, 64), true)
+    ifeq ($(BUILD_CDS_ARCHIVE_NOCOOPS), true)
+      $(foreach v, $(JVM_VARIANTS), \
+        $(eval $(call CreateCDSArchive,$v,_nocoops,)) \
+      )
+    endif
+
+    ifeq ($(BUILD_CDS_ARCHIVE_PREVIEW)+$(BUILD_CDS_ARCHIVE_NOCOOPS), true+true)
+      $(foreach v, $(JVM_VARIANTS), \
+        $(eval $(call CreateCDSArchive,$v,_nocoops,_preview)) \
+      )
+    endif
+
     ifeq ($(BUILD_CDS_ARCHIVE_NOCOH), true)
       $(foreach v, $(JVM_VARIANTS), \
         $(eval $(call CreateCDSArchive,$v,_nocoh)) \
-        $(eval $(call CreateCDSArchive,$v,_nocoh,_preview)) \
       )
-      $(foreach v, $(JVM_VARIANTS), \
-        $(eval $(call CreateCDSArchive,$v,_nocoops_nocoh)) \
-        $(eval $(call CreateCDSArchive,$v,_nocoops_nocoh,_preview)) \
-      )
+
+      ifeq ($(BUILD_CDS_ARCHIVE_PREVIEW), true)
+        $(foreach v, $(JVM_VARIANTS), \
+          $(eval $(call CreateCDSArchive,$v,_nocoh,_preview)) \
+        )
+      endif
+
+      ifeq ($(BUILD_CDS_ARCHIVE_NOCOOPS), true)
+        $(foreach v, $(JVM_VARIANTS), \
+          $(eval $(call CreateCDSArchive,$v,_nocoops_nocoh)) \
+        )
+      endif
+
+      ifeq ($(BUILD_CDS_ARCHIVE_PREVIEW)+$(BUILD_CDS_ARCHIVE_NOCOOPS), true+true)
+        $(foreach v, $(JVM_VARIANTS), \
+          $(eval $(call CreateCDSArchive,$v,_nocoops_nocoh,_preview)) \
+        )
+      endif
     endif
   endif
 endif

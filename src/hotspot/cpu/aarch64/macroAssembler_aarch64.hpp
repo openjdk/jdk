@@ -40,7 +40,7 @@
 #include "runtime/signature.hpp"
 
 
-class ciInlineKlass;
+class ciValueKlass;
 
 class OopMap;
 struct GtestFriendToMacroAssembler;
@@ -104,7 +104,6 @@ class MacroAssembler: public Assembler {
     KlassDecodeNone,
     KlassDecodeZero,
     KlassDecodeXor,
-    KlassDecodeMovk,
     KlassDecodeFallback
   };
 
@@ -717,13 +716,13 @@ public:
   static bool uses_implicit_null_check(void* address);
 
   // markWord tests, kills markWord reg
-  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+  void test_markword_is_value_type(Register markword, Label& is_value_type);
 
-  // inlineKlass queries, kills temp_reg
-  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+  // ValueKlass queries, kills temp_reg
+  void test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null = true);
 
-  void test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free);
-  void test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free);
+  void test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free);
   void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
 
   // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
@@ -981,11 +980,11 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
 
-  // inline type data payload offsets...
-  void payload_offset(Register inline_klass, Register offset);
-  void payload_address(Register oop, Register data, Register inline_klass);
+  // value type data payload offsets...
+  void payload_offset(Register value_klass, Register offset);
+  void payload_address(Register oop, Register data, Register value_klass);
 
   void load_heap_oop(Register dst, Address src, Register tmp1,
                      Register tmp2, DecoratorSet decorators = 0);
@@ -999,8 +998,6 @@ public:
   // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
-
-  void load_prototype_header(Register dst, Register src);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -1058,7 +1055,7 @@ public:
   );
   void verify_tlab();
 
-  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
+  void value_field_layout_info(Register holder_klass, Register index, Register layout_info);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -1523,9 +1520,9 @@ public:
 
   void adrp(Register reg1, const Address &dest, uint64_t &byte_offset);
 
-  void verified_entry(Compile* C, int sp_inc);
+  void verified_entry(Compile* C, int sp_inc, bool do_stack_bang = true);
 
-  // Inline type specific methods
+  // Value type specific methods
   #include "asm/macroAssembler_common.hpp"
 
   void save_stack_increment(int sp_inc, int frame_size);
@@ -1584,24 +1581,28 @@ public:
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
 // Ensure that the inline code and the stub use the same registers.
-#define ARRAYS_HASHCODE_REGISTERS \
-  do {                      \
-    assert(result == r0  && \
-           ary    == r1  && \
-           cnt    == r2  && \
-           vdata0 == v3  && \
-           vdata1 == v2  && \
-           vdata2 == v1  && \
-           vdata3 == v0  && \
-           vmul0  == v4  && \
-           vmul1  == v5  && \
-           vmul2  == v6  && \
-           vmul3  == v7  && \
-           vpow   == v12 && \
-           vpowm  == v13, "registers must match aarch64.ad"); \
+#define ARRAYS_HASHCODE_REGISTERS   \
+  do {                              \
+    assert(result   == r0  &&       \
+           ary      == r1  &&       \
+           cnt      == r2  &&       \
+           blocks   == r3  &&       \
+           tail     == r4  &&       \
+           sum      == r5  &&       \
+           v_block0 == v0  &&       \
+           v_block1 == v1  &&       \
+           v_block2 == v2  &&       \
+           v_block3 == v3  &&       \
+           v_p0     == v4  &&       \
+           v_p1     == v5  &&       \
+           v_p2     == v6  &&       \
+           v_p3     == v7  &&       \
+           v_input1 == v12 &&       \
+           v_input2 == v13,         \
+           "registers must match aarch64.ad"); \
   } while (0)
 
-  void string_equals(Register a1, Register a2, Register result, Register cnt1);
+  void string_equals(Register a1, Register a2, Register result, Register cnt1, Register a1_hi, Register a2_hi);
 
   void fill_words(Register base, Register cnt, Register value);
   void fill_words(Register base, uint64_t cnt, Register value);

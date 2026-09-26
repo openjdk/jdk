@@ -155,7 +155,8 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
-        jdk.jdeps; // Uses Valhalla reflective preview APIs
+        jdk.jdeps, // Uses Valhalla reflective preview APIs
+        jdk.incubator.json;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -232,6 +233,7 @@ module java.base {
     exports jdk.internal.ref to
         java.desktop,
         java.net.http,
+        java.smartcardio,
         jdk.naming.dns;
     exports jdk.internal.reflect to
         java.logging,

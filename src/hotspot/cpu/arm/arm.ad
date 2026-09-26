@@ -4269,6 +4269,27 @@ instruct storeL_volatile_fp(memoryD mem, iRegL src) %{
   ins_pipe(istore_mem_reg);
 %}
 
+instruct storeL_immI0(memorylong mem, immI0 zero, iRegI temp) %{
+  predicate(!((StoreLNode*)n)->require_atomic_access());
+  match(Set mem (StoreL mem zero));
+  effect(TEMP temp);
+  ins_cost(MEMORY_REF_COST + DEFAULT_COST);
+
+  size(12);
+  format %{ "MOV    $temp,0\n\t"
+            "STR    $temp,$mem\t! long zero\n\t"
+            "STR    $temp,$mem+4" %}
+
+  ins_encode %{
+    __ mov($temp$$Register, 0);
+    Address Amemlo = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp, relocInfo::none);
+    Address Amemhi = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp + 4, relocInfo::none);
+    __ str($temp$$Register, Amemlo);
+    __ str($temp$$Register, Amemhi);
+  %}
+  ins_pipe(istore_mem_reg);
+%}
+
 #ifdef XXX
 // Move SP Pointer
 //instruct movSP(sp_ptr_RegP dst, SPRegP src) %{
@@ -9007,8 +9028,8 @@ instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, i
 
 // Count and Base registers are fixed because the allocator cannot
 // kill unknown registers.  The encodings are generic.
-instruct clear_array(iRegX cnt, iRegP base, iRegI temp, iRegX zero, Universe dummy, flagsReg cpsr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct clear_array(iRegX cnt, iRegP base, iRegI temp, iRegX zero, immI0 val, Universe dummy, flagsReg cpsr) %{
+  match(Set dummy (ClearArray (Binary cnt base) val));
   effect(TEMP temp, TEMP zero, KILL cpsr);
   ins_cost(300);
   format %{ "MOV    $zero,0\n"

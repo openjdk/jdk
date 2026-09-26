@@ -30,6 +30,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -1353,8 +1354,8 @@ static void log_cpu_time() {
     return;
   }
 
-  const double process_cpu_time = os::elapsed_process_cpu_time();
-  if (process_cpu_time == 0 || process_cpu_time == -1) {
+  double process_cpu_time;
+  if (!os::elapsed_process_cpu_time(process_cpu_time) || process_cpu_time == 0) {
     // 0 can happen e.g. for short running processes with
     // low CPU utilization
     return;

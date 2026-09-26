@@ -535,6 +535,37 @@ public class Check {
         }
     };
 
+    /**
+     * Check context to be used when a type must be a subtype of a target,
+     * rather than querying isAssignable in general. This prevents
+     * isAssignable from leaking into subtype-only language checks.
+     */
+    CheckContext subtypeHandler = new CheckContext() {
+        public void report(DiagnosticPosition pos, JCDiagnostic details) {
+            log.error(pos, Errors.ProbFoundReq(details));
+        }
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return found.hasTag(ERROR) || found.hasTag(BOT) || types.isSubtype(found, req);
+        }
+
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
+            return types.noWarnings;
+        }
+
+        public InferenceContext inferenceContext() {
+            return infer.emptyContext;
+        }
+
+        public DeferredAttrContext deferredAttrContext() {
+            return deferredAttr.emptyDeferredAttrContext;
+        }
+
+        @Override
+        public String toString() {
+            return "CheckContext: subtypeHandler";
+        }
+    };
+
     /** Check that a given type is assignable to a given proto-type.
      *  If it is, return the type, otherwise return errType.
      *  @param pos        Position to be used for error reporting.
@@ -733,14 +764,15 @@ public class Check {
                                 t);
     }
 
-    /** Check that type is an identity type, i.e. not a value type.
+    /** Check that type is an identity reference type, i.e. a reference type and
+     *  not a value type.
      *  When not discernible statically, give it the benefit of doubt
      *  and defer to runtime.
      *
      *  @param pos           Position to be used for error reporting.
      *  @param t             The type to be checked.
      */
-    boolean checkIdentityType(DiagnosticPosition pos, Type t) {
+    boolean checkIdentityRefType(DiagnosticPosition pos, Type t) {
         if (t.hasTag(TYPEVAR)) {
             t = types.skipTypeVars(t, false);
         }
@@ -748,12 +780,15 @@ public class Check {
             IntersectionClassType ict = (IntersectionClassType)t;
             boolean result = true;
             for (Type component : ict.getExplicitComponents()) {
-                result &= checkIdentityType(pos, component);
+                result &= checkIdentityRefType(pos, component);
             }
             return result;
         }
-        if (t.isPrimitive() || (t.isValueClass() && !t.tsym.isAbstract())) {
-            typeTagError(pos, diags.fragment(Fragments.TypeReqIdentity), t);
+        if (!t.isReference() || (t.isValueClass() && !t.tsym.isAbstract())) {
+            Fragment required =
+                    allowValueClasses ? Fragments.TypeReqIdentity
+                                      : Fragments.TypeReqRef;
+            typeTagError(pos, diags.fragment(required), t);
             return false;
         }
         return true;

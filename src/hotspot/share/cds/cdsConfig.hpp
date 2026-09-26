@@ -38,7 +38,6 @@ class CDSConfig : public AllStatic {
   static bool _is_dumping_preimage_static_archive;
   static bool _is_dumping_final_static_archive;
   static bool _is_dumping_dynamic_archive;
-  static bool _is_using_optimized_module_handling;
   static bool _is_dumping_full_module_graph;
   static bool _is_using_full_module_graph;
   static bool _has_aot_linked_classes;
@@ -156,10 +155,6 @@ public:
   // This is *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
   static bool is_dumping_lambdas_in_legacy_mode()            NOT_CDS_RETURN_(false);
 
-  // optimized_module_handling -- can we skip some expensive operations related to modules?
-  static bool is_using_optimized_module_handling()           { return CDS_ONLY(_is_using_optimized_module_handling) NOT_CDS(false); }
-  static void stop_using_optimized_module_handling()         NOT_CDS_RETURN;
-
   static bool is_logging_lambda_form_invokers()              NOT_CDS_RETURN_(false);
   static bool is_dumping_regenerated_lambdaform_invokers()   NOT_CDS_RETURN_(false);
 
@@ -194,9 +189,10 @@ public:
   static bool is_dumping_invokedynamic()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_dumping_method_handles()                    NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  // full_module_graph (requires optimized_module_handling)
+  // full_module_graph (jdk.internal.module.ArchivedBootLayer::archivedBootLayer)
   static bool is_dumping_full_module_graph()                 { return CDS_ONLY(_is_dumping_full_module_graph) NOT_CDS(false); }
   static bool is_using_full_module_graph()                   NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static void disable_full_module_graph()                    NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_using_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
 

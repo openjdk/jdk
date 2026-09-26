@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class LIR_Assembler: public CompilationResourceObj {
   int                _immediate_oops_patched;
 
   Label              _unwind_handler_entry;
-  Label              _verified_inline_entry;
+  Label              _verified_value_entry;
 
 #ifdef ASSERT
   BlockList          _branch_target_blocks;
@@ -92,10 +92,6 @@ class LIR_Assembler: public CompilationResourceObj {
   void klass2reg_with_patching(Register reg, CodeEmitInfo* info);
 
   void emit_stubs(CodeStubList* stub_list);
-
-  bool needs_stack_repair() const {
-    return method()->c1_needs_stack_repair();
-  }
 
  public:
   // addresses
@@ -212,7 +208,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_rtcall(LIR_OpRTCall* op);
   void emit_profile_call(LIR_OpProfileCall* op);
   void emit_profile_type(LIR_OpProfileType* op);
-  void emit_profile_inline_type(LIR_OpProfileInlineType* op);
+  void emit_profile_value_type(LIR_OpProfileValueType* op);
   void emit_std_entries();
   void emit_std_entry(CodeOffsets::Entries entry, const CompiledEntrySignature* ces);
   void add_scalarized_debug_info(int call_offset);
@@ -236,7 +232,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void call(        LIR_OpJavaCall* op, relocInfo::relocType rtype);
   void ic_call(     LIR_OpJavaCall* op);
   void vtable_call( LIR_OpJavaCall* op);
-  int  store_inline_type_fields_to_buf(ciInlineKlass* vk);
+  int  store_value_type_fields_to_buf(ciValueKlass* vk);
 
   void osr_entry();
 
