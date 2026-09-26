@@ -6143,7 +6143,6 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   Register tmp2 = rscratch2;
   int elem_per_word = wordSize/elem_size;
   int log_elem_size = exact_log2(elem_size);
-  int klass_offset  = arrayOopDesc::klass_offset_in_bytes();
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset
     = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
@@ -6151,11 +6150,19 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   // then we align it down. This is valid because the new
   // offset will always be the klass which is the same
   // for type arrays.
-  int start_offset = align_down(length_offset, BytesPerWord);
-  int extra_length = base_offset - start_offset;
-  assert(start_offset == length_offset || start_offset == klass_offset,
-         "start offset must be 8-byte-aligned or be the klass offset");
-  assert(base_offset != start_offset, "must include the length field");
+  int start_offset;
+  int extra_length;
+  const bool has_alignment_gap = length_offset + BytesPerInt != base_offset;
+  if (has_alignment_gap) {
+    // Don't compare the alignment gap
+    start_offset = base_offset;
+    extra_length = 0;
+  } else {
+    start_offset = align_down(length_offset, BytesPerWord);
+    extra_length = base_offset - start_offset;
+  }
+  assert(is_aligned(start_offset, BytesPerWord),
+         "start offset must be 8-byte-aligned");
   extra_length = extra_length / elem_size; // We count in elements, not bytes.
   int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
@@ -6193,6 +6200,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     ldrw(tmp5, Address(a2, length_offset));
     cmp(cnt1, tmp5);
     br(NE, DONE); // If lengths differ, return false
+    if (has_alignment_gap) {
+      cbzw(cnt1, SAME);
+    }
     // Increase loop counter by diff between base- and actual start-offset.
     addw(cnt1, cnt1, extra_length);
     lea(a1, Address(a1, start_offset));
@@ -6262,6 +6272,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     ldrw(tmp5, Address(a2, length_offset));
     cmp(cnt1, tmp5);
     br(NE, DONE); // If lengths differ, return false
+    if (has_alignment_gap) {
+      cbzw(cnt1, SAME);
+    }
     // Increase loop counter by diff between base- and actual start-offset.
     addw(cnt1, cnt1, extra_length);
 
