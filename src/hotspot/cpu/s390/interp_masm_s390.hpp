@@ -315,7 +315,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual);
   void profile_return_type(Register mdp, Register ret, Register tmp);
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2);
-  template <class ArrayData> void profile_array_type(Register array, Register tmp1, Register tmp2);
+  void profile_array_type(Register array, Register tmp1, Register tmp2);
+  void profile_multiple_array_types(Register array, Register tmp1, Register tmp2);
   void profile_element_type(Register element, Register tmp1, Register tmp2);
   void profile_multiple_element_types(Register element, Register tmp1, Register tmp2, Register tmp3);
 
