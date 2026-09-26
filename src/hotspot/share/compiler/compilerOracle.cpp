@@ -70,17 +70,17 @@ static const char* const default_compile_commands[] = {
 // All C1 levels           |  111
 // All levels              | 1111
 
-static const int comp_level_bitmask[CompLevel_count] = {0, 1, 10, 100, 1000};
-static const int comp_level_bitmask_all_levels = 1111;
-static const intx default_comp_level_argument = comp_level_bitmask_all_levels;
+static const uint comp_level_bitmask[CompLevel_count] = {0, 1, 10, 100, 1000};
+static const uint comp_level_bitmask_all_levels = 1111;
+static const uint default_comp_level_argument = comp_level_bitmask_all_levels;
 
-inline bool bitmask_applies_to_comp_level(int bitmask, int comp_level) {
+inline bool bitmask_applies_to_comp_level(uint bitmask, int comp_level) {
   assert(comp_level > CompLevel_none && comp_level < CompLevel_count, "CompLevel out of bounds");
   return (bitmask / comp_level_bitmask[comp_level]) % 10 == 1;
 }
 
-static bool is_valid_comp_level_bitmask(intx bitmask) {
-  if (bitmask < 0 || bitmask > comp_level_bitmask_all_levels) {
+static bool is_valid_comp_level_bitmask(uint bitmask) {
+  if (bitmask > comp_level_bitmask_all_levels) {
     return false;
   }
   for (; bitmask != 0; bitmask /= 10) {
@@ -127,6 +127,15 @@ static OptionType get_type_for() {
   return OptionType::Unknown;
 };
 
+template<> OptionType get_type_for<int>() {
+  return OptionType::Int;
+}
+
+template<> OptionType get_type_for<uint>() {
+  return OptionType::Uint;
+}
+
+#ifdef _LP64
 template<> OptionType get_type_for<intx>() {
   return OptionType::Intx;
 }
@@ -134,6 +143,7 @@ template<> OptionType get_type_for<intx>() {
 template<> OptionType get_type_for<uintx>() {
   return OptionType::Uintx;
 }
+#endif
 
 template<> OptionType get_type_for<bool>() {
   return OptionType::Bool;
@@ -180,8 +190,12 @@ class TypedMethodOptionMatcher : public MethodMatcher {
 
   union {
     bool bool_value;
+    int int_value;
+    uint uint_value;
+#ifdef _LP64
     intx intx_value;
     uintx uintx_value;
+#endif
     double double_value;
     ccstr ccstr_value;
   } _u;
@@ -218,6 +232,15 @@ class TypedMethodOptionMatcher : public MethodMatcher {
 };
 
 // A few templated accessors instead of a full template class.
+template<> int TypedMethodOptionMatcher::value<int>() {
+  return _u.int_value;
+}
+
+template<> uint TypedMethodOptionMatcher::value<uint>() {
+  return _u.uint_value;
+}
+
+#ifdef _LP64
 template<> intx TypedMethodOptionMatcher::value<intx>() {
   return _u.intx_value;
 }
@@ -225,6 +248,7 @@ template<> intx TypedMethodOptionMatcher::value<intx>() {
 template<> uintx TypedMethodOptionMatcher::value<uintx>() {
   return _u.uintx_value;
 }
+#endif
 
 template<> bool TypedMethodOptionMatcher::value<bool>() {
   return _u.bool_value;
@@ -238,6 +262,15 @@ template<> ccstr TypedMethodOptionMatcher::value<ccstr>() {
   return _u.ccstr_value;
 }
 
+template<> void TypedMethodOptionMatcher::set_value(int value) {
+  _u.int_value = value;
+}
+
+template<> void TypedMethodOptionMatcher::set_value(uint value) {
+  _u.uint_value = value;
+}
+
+#ifdef _LP64
 template<> void TypedMethodOptionMatcher::set_value(intx value) {
   _u.intx_value = value;
 }
@@ -245,6 +278,7 @@ template<> void TypedMethodOptionMatcher::set_value(intx value) {
 template<> void TypedMethodOptionMatcher::set_value(uintx value) {
   _u.uintx_value = value;
 }
+#endif
 
 template<> void TypedMethodOptionMatcher::set_value(double value) {
   _u.double_value = value;
@@ -264,6 +298,12 @@ void TypedMethodOptionMatcher::print() {
   const char* name = option2name(_option);
   enum OptionType type = option2type(_option);
   switch (type) {
+    case OptionType::Int:
+    tty->print_cr(" int %s = %d", name, value<int>());
+    break;
+    case OptionType::Uint:
+    tty->print_cr(" uint %s = %u", name, value<uint>());
+    break;
     case OptionType::Intx:
     tty->print_cr(" intx %s = %zd", name, value<intx>());
     break;
@@ -463,8 +503,12 @@ bool CompilerOracle::has_any_command_set() {
 }
 
 // Explicit instantiation for all OptionTypes supported.
+template bool CompilerOracle::has_option_value<int>(const methodHandle& method, CompileCommandEnum option, int& value);
+template bool CompilerOracle::has_option_value<uint>(const methodHandle& method, CompileCommandEnum option, uint& value);
+#ifdef _LP64
 template bool CompilerOracle::has_option_value<intx>(const methodHandle& method, CompileCommandEnum option, intx& value);
 template bool CompilerOracle::has_option_value<uintx>(const methodHandle& method, CompileCommandEnum option, uintx& value);
+#endif
 template bool CompilerOracle::has_option_value<bool>(const methodHandle& method, CompileCommandEnum option, bool& value);
 template bool CompilerOracle::has_option_value<ccstr>(const methodHandle& method, CompileCommandEnum option, ccstr& value);
 template bool CompilerOracle::has_option_value<double>(const methodHandle& method, CompileCommandEnum option, double& value);
@@ -478,11 +522,25 @@ bool CompilerOracle::option_matches_type(CompileCommandEnum option, T& value) {
   if (option_type == OptionType::Ccstrlist) {
     option_type = OptionType::Ccstr; // CCstrList type options are stored as Ccstr
   }
+#ifdef _LP64
   return (get_type_for<T>() == option_type);
+#else
+  // On 32-bit platforms get_type_for<T>() maps:
+  // int and intx => Int,
+  // uint and uintx => Uint.
+  enum OptionType actual_type = get_type_for<T>();
+  return option_type == actual_type
+     || (option_type == OptionType::Intx && actual_type == OptionType::Int)
+     || (option_type == OptionType::Uintx && actual_type == OptionType::Uint);
+#endif
 }
 
+template bool CompilerOracle::option_matches_type<int>(CompileCommandEnum option, int& value);
+template bool CompilerOracle::option_matches_type<uint>(CompileCommandEnum option, uint& value);
+#ifdef _LP64
 template bool CompilerOracle::option_matches_type<intx>(CompileCommandEnum option, intx& value);
 template bool CompilerOracle::option_matches_type<uintx>(CompileCommandEnum option, uintx& value);
+#endif
 template bool CompilerOracle::option_matches_type<bool>(CompileCommandEnum option, bool& value);
 template bool CompilerOracle::option_matches_type<ccstr>(CompileCommandEnum option, ccstr& value);
 template bool CompilerOracle::option_matches_type<double>(CompileCommandEnum option, double& value);
@@ -492,7 +550,7 @@ bool CompilerOracle::applies_to_comp_level(const methodHandle& method, CompileCo
     return false;
   }
 
-  intx bitmask = 0;
+  uint bitmask = 0;
   if (!has_option_value(method, command, bitmask)) {
     return false;
   }
@@ -798,7 +856,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
   return true;
 }
 
-static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
+static bool parseMemStat(const char* line, uint& value, int& bytes_read, char* errorbuf, const int buf_size) {
 
 #define IF_ENUM_STRING(S, CMD)                \
   if (strncasecmp(line, S, strlen(S)) == 0) { \
@@ -808,10 +866,10 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   }
 
   IF_ENUM_STRING("collect", {
-    value = (uintx)MemStatAction::collect;
+    value = (uint)MemStatAction::collect;
   });
   IF_ENUM_STRING("print", {
-    value = (uintx)MemStatAction::print;
+    value = (uint)MemStatAction::print;
   });
 #undef IF_ENUM_STRING
 
@@ -829,34 +887,66 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
   total_bytes_read += skipped;
   char parse_error_buf[80] = {};
 
-  if (type == OptionType::Intx) {
-    intx value;
-    bool success = false;
+  if (type == OptionType::Int) {
+    int value;
+    bool success = sscanf(line, "%d%n", &value, &bytes_read) == 1;
+    if (success) {
+      total_bytes_read += bytes_read;
+      return register_command(matcher, option, errorbuf, buf_size, value);
+    } else {
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      return false;
+    }
+  } else if (type == OptionType::Uint) {
+    uint value;
+    bool success;
     switch (option) {
-      case CompileCommandEnum::MemLimit:
-        // Special parsing for MemLimit
-        success = parseMemLimit(line, value, bytes_read, parse_error_buf, sizeof(parse_error_buf));
+      case CompileCommandEnum::MemStat:
+        // Special parsing for MemStat
+        success = parseMemStat(line, value, bytes_read, parse_error_buf, sizeof(parse_error_buf));
         break;
       case CompileCommandEnum::Break:
       case CompileCommandEnum::CompileOnly:
       case CompileCommandEnum::Exclude:
       case CompileCommandEnum::Print:
-        // In the commands above the parameter used to be a boolean. Now it is an int (a compilation level mask).
-        // For compatibility with previous versions we keep it optional. If user did not specify the mask, assume default value
+        // In the commands above the parameter used to be a boolean. Now it is a uint (a compilation level mask).
+        // For compatibility with the previous versions we keep it optional. If user did not specify the mask, assume a default value
         if (*line == '\0') {
           value = default_comp_level_argument;
           success = true;
         } else {
-          success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
-          if (success && !is_valid_comp_level_bitmask(value)) {
+          char *end;
+          errno = 0;
+          unsigned long ulong_value = strtoul(line, &end, 10);
+          bytes_read = end - line;
+          success = end != line && errno == 0 && ulong_value <= UINT_MAX;
+          if (success) {
+            value = (uint) ulong_value;
+          }
+          if (!success || !is_valid_comp_level_bitmask(value)) {
             jio_snprintf(parse_error_buf, sizeof(parse_error_buf), ": invalid compilation level bitmask '%.*s'", bytes_read, line);
             success = false;
           }
         }
         break;
       default:
-        // Is it a raw number?
-        success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
+        success = sscanf(line, "%u%n", &value, &bytes_read) == 1;
+    }
+    if (success) {
+      total_bytes_read += bytes_read;
+      return register_command(matcher, option, errorbuf, buf_size, value);
+    } else {
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parse_error_buf);
+      return false;
+    }
+  } else if (type == OptionType::Intx) {
+    intx value;
+    bool success;
+    if (option == CompileCommandEnum::MemLimit) {
+      // Special parsing for MemLimit
+      success = parseMemLimit(line, value, bytes_read, parse_error_buf, sizeof(parse_error_buf));
+    } else {
+      success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
     }
     if (success) {
       total_bytes_read += bytes_read;
@@ -867,19 +957,13 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
-    bool success = false;
-    if (option == CompileCommandEnum::MemStat) {
-      // Special parsing for MemStat
-      success = parseMemStat(line, value, bytes_read, parse_error_buf, sizeof(parse_error_buf));
-    } else {
-      // parse as raw number
-      success = sscanf(line, "%zu%n", &value, &bytes_read) == 1;
-    }
+    // parse as raw number
+    bool success = sscanf(line, "%zu%n", &value, &bytes_read) == 1;
     if (success) {
       total_bytes_read += bytes_read;
       return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
-      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parse_error_buf);
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
       return false;
     }
   } else if (type == OptionType::Ccstr) {
@@ -1101,7 +1185,7 @@ bool CompilerOracle::parse_from_line(char* line) {
     // Type (1) is used to enable a boolean option for a method.
     //
     // Type (2) is used to support options with a value. Values can have the
-    // the following types: intx, uintx, bool, ccstr, ccstrlist, and double.
+    // the following types: int, uint, intx, uintx, bool, ccstr, ccstrlist, and double.
 
     char option_type[256]; // stores option for Type (1) and type of Type (2)
     skip_comma(line);
@@ -1184,7 +1268,7 @@ bool CompilerOracle::parse_from_line(char* line) {
           break;
         case CompileCommandEnum::MemStat:
           // MemStat default action is to collect data but to not print
-          if (!register_command(matcher, option, error_buf, sizeof(error_buf), (uintx)MemStatAction::collect)) {
+          if (!register_command(matcher, option, error_buf, sizeof(error_buf), (uint)MemStatAction::collect)) {
             print_parse_error(error_buf, original.get());
             return false;
           }
