@@ -320,7 +320,7 @@ int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** sy
       char buffer[PROC_PIDPATHINFO_MAXSIZE];
       memset(buffer, 0 , sizeof(buffer));
       if (proc_pidpath(pid, buffer, sizeof(buffer)) != -1) {
-        int length = strlen(buffer);
+        size_t length = strlen(buffer);
         if (length > 0) {
           SystemProcess* current = new SystemProcess();
           char * path = NEW_C_HEAP_ARRAY(char, length + 1, mtInternal);
