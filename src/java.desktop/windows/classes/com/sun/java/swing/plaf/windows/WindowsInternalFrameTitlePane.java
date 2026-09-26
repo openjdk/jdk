@@ -387,7 +387,15 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         showSystemPopupMenu(systemLabel);
     }
 
+    private boolean isOptionDialog() {
+        return "optionDialog".equals(frame.getClientProperty("JInternalFrame.frameType"));
+    }
+
     private void showSystemPopupMenu(Component invoker){
+        if (isOptionDialog()) {
+            return;
+        }
+
         Dimension dim = new Dimension();
         Border border = frame.getBorder();
         if (border != null) {
