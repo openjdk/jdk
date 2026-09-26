@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,16 @@ void ZGlobalsPointers::flip_old_relocate_start() {
 
 size_t ZGlobalsPointers::min_address_offset_request() {
   // See ZVirtualMemoryReserver for logic around setting up the heap for NUMA
-  const size_t desired_for_heap = MaxHeapSize * ZVirtualToPhysicalRatio;
   const size_t desired_for_numa_multiplier = ZNUMA::count() > 1 ? 2 : 1;
-  return round_up_power_of_2(desired_for_heap * desired_for_numa_multiplier);
+  const size_t desired_heap_multiplier = ZVirtualToPhysicalRatio * desired_for_numa_multiplier;
+
+  // Saturate to avoid overflow with a huge MaxHeapSize. The platform code
+  // clamps the request and ZGlobalsPointers::initialize() then rejects the
+  // heap as too large.
+  const size_t max_desired_for_heap = max_power_of_2<size_t>() / desired_heap_multiplier;
+  const size_t desired_for_heap = (MaxHeapSize > max_desired_for_heap)
+      ? max_power_of_2<size_t>()
+      : MaxHeapSize * desired_heap_multiplier;
+
+  return round_up_power_of_2(desired_for_heap);
 }
