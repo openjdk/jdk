@@ -32,7 +32,7 @@ import java.util.Random;
 
 /**
  * @test
- * @bug 8328528
+ * @bug 8328528 8360517
  * @key randomness
  * @summary test the long typed parallel iv replacing transformation for int counted loop
  * @library /test/lib /
@@ -54,6 +54,12 @@ public class TestParallelIvInIntCountedLoop {
                 "-XX:PerMethodTrapLimit=100",
                 "-XX:+UseLoopLimitCheckPredicate",
                 "-XX:+UseParsePredicates"
+        );
+        TestFramework.runWithFlags(
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:StressLongCountedLoop=0",
+                "-XX:PerMethodTrapLimit=100",
+                "-XX:LoopMaxUnroll=0" // the peeled case needs unrolling off
         );
     }
 
@@ -392,5 +398,88 @@ public class TestParallelIvInIntCountedLoop {
         int init2 = RNG.nextInt(Integer.MIN_VALUE + s + 1, s); // Limit bounds to avoid loop variables from overflowing.
         Asserts.assertEQ(Math.ceilDiv(((long) s - init2), (long) STRIDE) * (long) STRIDE_2 + init1,
                 testIntCountedLoopWithLongIVWithRandomStridesAndInits(init1, init2, s));
+    }
+
+    // prev == i+const on every iteration ?
+    //   => prev's usage is replaced by (i+const)
+    //   => C2 removes the variable as it is not used any more
+    //   => C2 finds a trivial CountedLoop and removes it as well
+    @Test
+    @IR(failOn = { IRNode.LOOP, IRNode.COUNTED_LOOP })
+    private static int testIntCountedLoopWithDoubledIv(int stop) {
+        int a = 0, prev = -1;
+        for (int i = 0; i < stop; i++) {
+            a = prev;
+            prev = i;
+        }
+
+        return a;
+    }
+
+    @Run(test = "testIntCountedLoopWithDoubledIv")
+    private static void runTestIntCountedLoopWithDoubledIv() {
+        int s = RNG.nextInt(2, 1024);
+        Asserts.assertEQ(s - 2, testIntCountedLoopWithDoubledIv(s));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LOOP, IRNode.COUNTED_LOOP })
+    private static int testIntCountedLoopWithDoubledIvAndNegativeStride(int stop) {
+        int a = 0, prev = 5;
+        for (int i = 0; i > stop; i -= 5) {
+            a = prev;
+            prev = i;
+        }
+
+        return a;
+    }
+
+    @Run(test = "testIntCountedLoopWithDoubledIvAndNegativeStride")
+    private static void runTestIntCountedLoopWithDoubledIvAndNegativeStride() {
+        int s = RNG.nextInt(2, 1024);
+        Asserts.assertEQ(10 - Math.ceilDiv(s, 5) * 5, testIntCountedLoopWithDoubledIvAndNegativeStride(-s));
+    }
+
+    // prev lags the counter by a constant other than the stride
+    @Test
+    @IR(failOn = { IRNode.LOOP, IRNode.COUNTED_LOOP })
+    private static int testIntCountedLoopWithDoubledIvPlusConstant(int stop) {
+        int a = 0, prev = 2; // == init + 3 - stride
+        for (int i = 0; i < stop; i++) {
+            a = prev;
+            prev = i + 3;
+        }
+
+        return a;
+    }
+
+    @Run(test = "testIntCountedLoopWithDoubledIvPlusConstant")
+    private static void runTestIntCountedLoopWithDoubledIvPlusConstant() {
+        int s = RNG.nextInt(2, 1024);
+        Asserts.assertEQ(s + 1, testIntCountedLoopWithDoubledIvPlusConstant(s));
+    }
+
+    // prev does not lag the counter on entry in the original code, but it does after the loop is peeled
+    // (unrolling is off: otherwise the loop is split into pre/main/post and the post loop remains)
+    @Test
+    @IR(applyIf = { "LoopMaxUnroll", "0" }, failOn = { IRNode.LOOP, IRNode.COUNTED_LOOP })
+    private static int testIntCountedLoopWithDoubledIvAfterPeeling(int stop, boolean flag) {
+        int a = 0, prev = 0;
+        for (int i = 0; i < stop; i++) {
+            if (flag) {
+                break;
+            }
+            a = prev;
+            prev = i;
+        }
+
+        return a;
+    }
+
+    @Run(test = "testIntCountedLoopWithDoubledIvAfterPeeling")
+    private static void runTestIntCountedLoopWithDoubledIvAfterPeeling() {
+        int s = RNG.nextInt(2, 1024);
+        Asserts.assertEQ(0, testIntCountedLoopWithDoubledIvAfterPeeling(s, true));
+        Asserts.assertEQ(s - 2, testIntCountedLoopWithDoubledIvAfterPeeling(s, false));
     }
 }

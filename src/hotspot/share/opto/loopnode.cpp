@@ -4571,8 +4571,72 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
   return true;
 }
 
+// If (n2 - n1) is a constant, return it in offset.
+static bool is_constant_difference(Node* n2, Node* n1, jint& offset) {
+  jint off = 0;
+  if (n2->Opcode() == Op_AddI && n2->in(2)->Opcode() == Op_ConI) {
+    off = java_add(off, n2->in(2)->get_int());
+    n2 = n2->in(1);
+  }
+  if (n1->Opcode() == Op_AddI && n1->in(2)->Opcode() == Op_ConI) {
+    off = java_subtract(off, n1->in(2)->get_int());
+    n1 = n1->in(1);
+  }
+  if (n2->Opcode() == Op_ConI && n1->Opcode() == Op_ConI) {
+    off = java_add(off, java_subtract(n2->get_int(), n1->get_int()));
+  } else if (n2->uncast() != n1->uncast()) {
+    return false;
+  }
+  offset = off;
+  return true;
+}
+
+// Look for an index that repeats the trip counter one iteration late:
+//    int prev = init + const_offset - const_stride;
+//    for (int iv = init; iv != limit; iv += const_stride) { use(prev); prev = iv + const_offset; }
+bool PhaseIdealLoop::replace_lagging_index(IdealLoopTree* loop, PhiNode* phi2) {
+  CountedLoopNode* cl = loop->_head->as_CountedLoop();
+  jint next_off = 0; // At the end of the iteration prev == iv + next_off?
+  jint init_off = 0; // Before the first iteration prev == iv + init_off?
+  if (phi2->region() != cl ||
+      !is_constant_difference(phi2->in(LoopNode::LoopBackControl), cl->phi(), next_off) ||
+      !is_constant_difference(phi2->in(LoopNode::EntryControl), cl->init_trip(), init_off) ||
+      init_off != java_subtract(next_off, checked_cast<jint>(cl->stride_con()))) {
+    return false;
+  }
+  replace_with_affine_index(loop, phi2, 1, T_INT);
+  return true;
+}
+
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
+void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
+  assert(loop->_head->is_CountedLoop(), "");
+  CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  if (!cl->is_valid_counted_loop(T_INT)) {
+    return;         // skip malformed counted loop
+  }
+  Node *incr = cl->incr();
+  if (incr == nullptr) {
+    return;         // Dead loop?
+  }
+  Node *phi  = cl->phi();
+
+  // Visit all children, looking for Phis
+  for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
+    Node *out = cl->out(i);
+    // Look for other phis (secondary IVs). Skip dead ones
+    if (!out->is_Phi() || out == phi || !has_node(out)) {
+      continue;
+    }
+
+    PhiNode* phi2 = out->as_Phi();
+    if (replace_lagging_index(loop, phi2) || replace_independent_index(loop, phi2)) {
+      --i; // deleted this phi; rescan starting with next position
+    }
+  }
+}
+
 // This optimization looks for patterns similar to:
 //
 //    int a = init2;
@@ -4608,114 +4672,104 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
 //
 //     long iv2 = ((long) iv * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
 //
-void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
-  assert(loop->_head->is_CountedLoop(), "");
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop(T_INT)) {
-    return;         // skip malformed counted loop
-  }
-  Node *incr = cl->incr();
-  if (incr == nullptr) {
-    return;         // Dead loop?
-  }
-  Node *init = cl->init_trip();
-  Node *phi  = cl->phi();
+bool PhaseIdealLoop::replace_independent_index(IdealLoopTree* loop, PhiNode* phi2) {
+  CountedLoopNode* cl = loop->_head->as_CountedLoop();
+  Node* incr = cl->incr();
   jlong stride_con = cl->stride_con();
 
-  // Visit all children, looking for Phis
-  for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
-    Node *out = cl->out(i);
-    // Look for other phis (secondary IVs). Skip dead ones
-    if (!out->is_Phi() || out == phi || !has_node(out)) {
-      continue;
-    }
+  Node* incr2 = phi2->in(LoopNode::LoopBackControl);
+  // Look for induction variables of the form:  X += constant
+  if (phi2->region() != loop->_head ||
+      incr2->req() != 3 ||
+      incr2->in(1)->uncast() != phi2 ||
+      incr2 == incr ||
+      (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
+      !incr2->in(2)->is_Con()) {
+    return false;
+  }
 
-    PhiNode* phi2 = out->as_Phi();
-    Node* incr2 = phi2->in(LoopNode::LoopBackControl);
-    // Look for induction variables of the form:  X += constant
-    if (phi2->region() != loop->_head ||
-        incr2->req() != 3 ||
-        incr2->in(1)->uncast() != phi2 ||
-        incr2 == incr ||
-        (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
-        !incr2->in(2)->is_Con()) {
-      continue;
-    }
+  if (incr2->in(1)->is_ConstraintCast() &&
+      !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
+    // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
+    return false;
+  }
+  // Check for parallel induction variable (parallel to trip counter)
+  // via an affine function.  In particular, count-down loops with
+  // count-up array indices are common. We only RCE references off
+  // the trip-counter, so we need to convert all these to trip-counter
+  // expressions.
 
-    if (incr2->in(1)->is_ConstraintCast() &&
-        !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
-      // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
-      continue;
-    }
-    // Check for parallel induction variable (parallel to trip counter)
-    // via an affine function.  In particular, count-down loops with
-    // count-up array indices are common. We only RCE references off
-    // the trip-counter, so we need to convert all these to trip-counter
-    // expressions.
-    Node* init2 = phi2->in(LoopNode::EntryControl);
+  // Determine the basic type of the stride constant (and the iv being incremented).
+  BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
+  jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
 
-    // Determine the basic type of the stride constant (and the iv being incremented).
-    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
-    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
+  // The ratio of the two strides cannot be represented as an int
+  // if stride_con2 is min_jint (or min_jlong, respectively) and
+  // stride_con is -1.
+  if (stride_con2 == min_signed_integer(stride_con2_bt) && stride_con == -1) {
+    return false;
+  }
 
-    // The ratio of the two strides cannot be represented as an int
-    // if stride_con2 is min_jint (or min_jlong, respectively) and
-    // stride_con is -1.
-    if (stride_con2 == min_signed_integer(stride_con2_bt) && stride_con == -1) {
-      continue;
-    }
+  // The general case here gets a little tricky.  We want to find the
+  // GCD of all possible parallel IV's and make a new IV using this
+  // GCD for the loop.  Then all possible IVs are simple multiples of
+  // the GCD.  In practice, this will cover very few extra loops.
+  // Instead we require 'stride_con2' to be a multiple of 'stride_con',
+  // where +/-1 is the common case, but other integer multiples are
+  // also easy to handle.
+  jlong ratio_con = stride_con2 / stride_con;
 
-    // The general case here gets a little tricky.  We want to find the
-    // GCD of all possible parallel IV's and make a new IV using this
-    // GCD for the loop.  Then all possible IVs are simple multiples of
-    // the GCD.  In practice, this will cover very few extra loops.
-    // Instead we require 'stride_con2' to be a multiple of 'stride_con',
-    // where +/-1 is the common case, but other integer multiples are
-    // also easy to handle.
-    jlong ratio_con = stride_con2 / stride_con;
+  if ((ratio_con * stride_con) != stride_con2) { // Check for exact (no remainder)
+    return false;
+  }
 
-    if ((ratio_con * stride_con) != stride_con2) { // Check for exact (no remainder)
-        continue;
-    }
+  replace_with_affine_index(loop, phi2, ratio_con, stride_con2_bt);
+  return true;
+}
+
+void PhaseIdealLoop::replace_with_affine_index(IdealLoopTree* loop, PhiNode* phi2, jlong ratio_con, BasicType stride_con2_bt) {
+  CountedLoopNode* cl = loop->_head->as_CountedLoop();
+  Node* init = cl->init_trip();
+  Node* phi = cl->phi();
+
+  Node* init2 = phi2->in(LoopNode::EntryControl);
 
 #ifndef PRODUCT
-    if (TraceLoopOpts) {
-      tty->print("Parallel IV: %d ", phi2->_idx);
-      loop->dump_head();
-    }
+  if (TraceLoopOpts) {
+    tty->print("Parallel IV: %d ", phi2->_idx);
+    loop->dump_head();
+  }
 #endif
 
-    // Convert to using the trip counter.  The parallel induction
-    // variable differs from the trip counter by a loop-invariant
-    // amount, the difference between their respective initial values.
-    // It is scaled by the 'ratio_con'.
-    Node* ratio = integercon(ratio_con, stride_con2_bt);
+  // Convert to using the trip counter.  The parallel induction
+  // variable differs from the trip counter by a loop-invariant
+  // amount, the difference between their respective initial values.
+  // It is scaled by the 'ratio_con'.
+  Node* ratio = integercon(ratio_con, stride_con2_bt);
 
-    Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
-    Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
+  Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
+  Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
 
-    Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
-    set_early_ctrl(ratio_init, false);
+  Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
+  _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
+  set_early_ctrl(ratio_init, false);
 
-    Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(diff, init2);
-    set_early_ctrl(diff, false);
+  Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
+  _igvn.register_new_node_with_optimizer(diff, init2);
+  set_early_ctrl(diff, false);
 
-    Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
-    set_ctrl(ratio_idx, cl);
+  Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
+  _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
+  set_ctrl(ratio_idx, cl);
 
-    Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(add);
-    set_ctrl(add, cl);
+  Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
+  _igvn.register_new_node_with_optimizer(add);
+  set_ctrl(add, cl);
 
-    _igvn.replace_node( phi2, add );
-    // Sometimes an induction variable is unused
-    if (add->outcnt() == 0) {
-      _igvn.remove_dead_node(add, PhaseIterGVN::NodeOrigin::Graph);
-    }
-    --i; // deleted this phi; rescan starting with next position
+  _igvn.replace_node( phi2, add );
+  // Sometimes an induction variable is unused
+  if (add->outcnt() == 0) {
+    _igvn.remove_dead_node(add, PhaseIterGVN::NodeOrigin::Graph);
   }
 }
 
