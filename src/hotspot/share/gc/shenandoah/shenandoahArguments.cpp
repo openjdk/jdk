@@ -152,7 +152,7 @@ void ShenandoahArguments::initialize() {
 
   // Record more information about previous cycles for improved debugging pleasure
   if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
-    FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
+    FLAG_SET_DEFAULT(LogEventsBufferEntries, NOT_DEBUG(150) DEBUG_ONLY(250));
   }
 
   if ((InitialHeapSize == MaxHeapSize) && ShenandoahUncommit) {
