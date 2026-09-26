@@ -154,11 +154,15 @@ void ZGlobalsPointers::flip_old_relocate_start() {
 size_t ZGlobalsPointers::min_address_offset_request() {
   // See ZVirtualMemoryReserver for logic around setting up the heap for NUMA
   const size_t desired_for_numa_multiplier = ZNUMA::count() > 1 ? 2 : 1;
-  // Saturate to avoid overflow with a huge MaxHeapSize. The platform code clamps
-  // the request and ZGlobalsPointers::initialize() then rejects the heap as too large
-  if (MaxHeapSize > max_power_of_2<size_t>() / (ZVirtualToPhysicalRatio * desired_for_numa_multiplier)) {
-    return max_power_of_2<size_t>();
-  }
-  const size_t desired_for_heap = MaxHeapSize * ZVirtualToPhysicalRatio;
-  return round_up_power_of_2(desired_for_heap * desired_for_numa_multiplier);
+  const size_t desired_heap_multiplier = ZVirtualToPhysicalRatio * desired_for_numa_multiplier;
+
+  // Saturate to avoid overflow with a huge MaxHeapSize. The platform code
+  // clamps the request and ZGlobalsPointers::initialize() then rejects the
+  // heap as too large.
+  const size_t max_desired_for_heap = max_power_of_2<size_t>() / desired_heap_multiplier;
+  const size_t desired_for_heap = (MaxHeapSize > max_desired_for_heap)
+      ? max_power_of_2<size_t>()
+      : MaxHeapSize * desired_heap_multiplier;
+
+  return round_up_power_of_2(desired_for_heap);
 }
