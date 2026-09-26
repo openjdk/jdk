@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Stress test of StructuredTaskScope cancellation with running and starting threads
- * @enablePreview
  * @run junit ${test.main.class}
  */
 
