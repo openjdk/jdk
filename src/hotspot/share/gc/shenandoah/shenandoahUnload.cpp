@@ -90,6 +90,10 @@ public:
 class ShenandoahCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
   virtual bool lock(nmethod* nm) {
+    if (is_safe(nm)) {
+      return false;
+    }
+
     ShenandoahNMethodLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->lock();
