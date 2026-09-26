@@ -4609,9 +4609,11 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
 //     long iv2 = ((long) iv * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
-  assert(loop->_head->is_CountedLoop(), "");
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop(T_INT)) {
+  assert(loop->_head->is_CountedLoop() || loop->_head->is_LongCountedLoop(), "");
+
+  BaseCountedLoopNode* cl = loop->_head->as_BaseCountedLoop();
+  BasicType bt = cl->bt();
+  if (!cl->is_valid_counted_loop(bt)) {
     return;         // skip malformed counted loop
   }
   Node *incr = cl->incr();
@@ -4674,6 +4676,33 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // also easy to handle.
     jlong ratio_con = stride_con2 / stride_con;
 
+    // Our ultimate goal is to know if above division is exact (i.e., remainder = 0), we verify this
+    // by reversing it into multiplication and check for exact equal.
+    //
+    // However, we need to first prove there is no overflow by reversing the division:
+    //         stride_con2 = ratio_con * stride_con + remainder
+    //
+    // with known properties:
+    //     (1) |remainder| < |stride_con|
+    //     (2) remainder has the same sign as stride_con2 (truncation towards zero)
+    //
+    // after rearranging, we have:
+    //     (3) stride_con2 - remainder = ratio_con * stride_con
+    //
+    // Because of (2), subtracting remainder moves the result towards zero:
+    //     (a)    stride_con2 >= 0 && remainder >= 0
+    //         -> 0 <= stride_con2 - remainder <= stride_con2
+    //     (b)    stride_con2 < 0 && remainder <= 0
+    //         -> 0 >  stride_con2 - remainder >= stride_con2
+    // Or:
+    //     (4) |stride_con2 - remainder| <= |stride_con2|
+    //
+    // Substitute (3) into (4):
+    //         |ratio_con * stride_con| <= |stride_con2|
+    //
+    // Because stride_con2 is always within jlong range, we have proven ratio_con * stride_con is
+    // also always within jlong range, enabling us to check for exact division naively without
+    // overflowing:
     if ((ratio_con * stride_con) != stride_con2) { // Check for exact (no remainder)
         continue;
     }
@@ -4787,6 +4816,27 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     phase->replace_parallel_iv(this);
   } else if (_head->is_LongCountedLoop() || phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print_cr("=== LongCountedLoop shape ===");
+      dump_head();
+      tty->print_cr("--- head and outs (depth 2) ---");
+      _head->dump(2);
+      tty->print_cr("--- all phis ---");
+      for (DUIterator i = _head->outs(); _head->has_out(i); i++) {
+        Node* out = _head->out(i);
+        if (out->is_Phi()) {
+          tty->print("  phi: ");
+          out->dump();
+          tty->print("    back edge: ");
+          out->in(LoopNode::LoopBackControl)->dump();
+        }
+      }
+      tty->print_cr("=== end LongCountedLoop shape ===");
+    }
+#endif
+
+    phase->replace_parallel_iv(this);
   } else {
     // When StressCountedLoop is enabled, this loop may intentionally avoid a counted loop conversion.
     // This is expected behavior for the stress mode, which exercises alternative compilation paths.
