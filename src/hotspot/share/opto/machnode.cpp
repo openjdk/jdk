@@ -157,6 +157,15 @@ uint MachNode::emit_size(PhaseRegAlloc *ra_) const {
   return ra_->C->output()->scratch_emit_size(this);
 }
 
+uint MachJumpNode::size(PhaseRegAlloc* ra_) const {
+  uint size = MachNode::emit_size(ra_);
+  if (Matcher::use_compressed_jump_table) {
+    uint table_size = outcnt() * ra_->C->output()->jump_table_entry_size();
+    size += align_up(table_size, Pipeline::instr_unit_size());
+  }
+  return size;
+}
+
 
 
 //------------------------------hash-------------------------------------------

@@ -110,7 +110,7 @@ static int constant_size(ConstantTable::Constant* con) {
   case T_DOUBLE:  return sizeof(jdouble);
   case T_METADATA: return sizeof(Metadata*);
     // We use T_VOID as marker for jump-table entries (labels) which
-    // need an internal word relocation.
+    // need an internal word relocation on platform without compressed jump tables.
   case T_VOID:
   case T_ADDRESS:
   case T_OBJECT:  return sizeof(jobject);
@@ -186,8 +186,10 @@ bool ConstantTable::emit(C2_MacroAssembler* masm) const {
         break;
       }
       // We use T_VOID as marker for jump-table entries (labels) which
-      // need an internal word relocation.
+      // need an internal word relocation on platforms without compressed jump tables.
       case T_VOID: {
+        assert(!Matcher::use_compressed_jump_table,
+               "compressed jump tables do not go through the constant table");
         MachConstantNode* n = (MachConstantNode*) con.get_jobject();
         // Fill the jump-table with a dummy word.  The real value is
         // filled in later in fill_jump_table.
@@ -297,6 +299,8 @@ ConstantTable::Constant ConstantTable::add(MachConstantNode* n, MachOper* oper) 
 }
 
 ConstantTable::Constant ConstantTable::add_jump_table(MachConstantNode* n) {
+  assert(!Matcher::use_compressed_jump_table,
+         "compressed jump tables do not go through the constant table");
   jvalue value;
   // We can use the node pointer here to identify the right jump-table
   // as this method is called from Compile::Fill_buffer right before
@@ -309,6 +313,9 @@ ConstantTable::Constant ConstantTable::add_jump_table(MachConstantNode* n) {
 }
 
 void ConstantTable::fill_jump_table(C2_MacroAssembler* masm, MachConstantNode* n, GrowableArray<Label*> labels) const {
+  assert(!Matcher::use_compressed_jump_table,
+         "compressed jump tables do not go through the constant table");
+
   // If called from Compile::scratch_emit_size do nothing.
   if (Compile::current()->output()->in_scratch_emit_size())  return;
 
