@@ -297,24 +297,22 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 + (void) runAWTLoopWithApp:(NSApplication*)app {
-    NSAutoreleasePool *pool = [NSAutoreleasePool new];
+    @autorelasepool {
+        // Make sure that when we run in javaRunLoopMode we don't exit randomly
+        [[NSRunLoop currentRunLoop] addPort:[NSPort port] forMode:[ThreadUtilities javaRunLoopMode]];
 
-    // Make sure that when we run in javaRunLoopMode we don't exit randomly
-    [[NSRunLoop currentRunLoop] addPort:[NSPort port] forMode:[ThreadUtilities javaRunLoopMode]];
+        do {
+            @try {
+                [app run];
+            } @catch (NSException* e) {
+                NSLog(@"Apple AWT Startup Exception: %@", [e description]);
+                NSLog(@"Apple AWT Startup Exception callstack: %@", [e callStackSymbols]);
+                NSLog(@"Apple AWT Restarting Native Event Thread");
 
-    do {
-        @try {
-            [app run];
-        } @catch (NSException* e) {
-            NSLog(@"Apple AWT Startup Exception: %@", [e description]);
-            NSLog(@"Apple AWT Startup Exception callstack: %@", [e callStackSymbols]);
-            NSLog(@"Apple AWT Restarting Native Event Thread");
-
-            [app stop:app];
-        }
-    } while (YES);
-
-    [pool drain];
+                [app stop:app];
+            }
+        } while (YES);
+    }
 }
 
 - (BOOL)usingDefaultNib {
@@ -388,43 +386,43 @@ untilDate:(NSDate *)expiration inMode:(NSString *)mode dequeue:(BOOL)deqFlag {
 {
     void (^copy)() = [block copy];
     NSInteger encode = (NSInteger) copy;
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
-                                        location: NSMakePoint(0,0)
-                                   modifierFlags: 0
-                                       timestamp: 0
-                                    windowNumber: 0
-                                         context: nil
-                                         subtype: ExecuteBlockEvent
-                                           data1: encode
-                                           data2: ExecuteBlockEvent];
+    @autoreleasepool {
+        NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
+                                            location: NSMakePoint(0,0)
+                                    modifierFlags: 0
+                                        timestamp: 0
+                                        windowNumber: 0
+                                            context: nil
+                                            subtype: ExecuteBlockEvent
+                                            data1: encode
+                                            data2: ExecuteBlockEvent];
 
-    [NSApp postEvent: event atStart: NO];
-    [pool drain];
+        [NSApp postEvent: event atStart: NO];
+    }
 }
 
 - (void)postDummyEvent:(bool)useCocoa {
     seenDummyEventLock = [[NSConditionLock alloc] initWithCondition:NO];
     dummyEventTimestamp = [NSProcessInfo processInfo].systemUptime;
 
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
-                                        location: NSMakePoint(0,0)
-                                   modifierFlags: 0
-                                       timestamp: dummyEventTimestamp
-                                    windowNumber: 0
-                                         context: nil
-                                         subtype: NativeSyncQueueEvent
-                                           data1: NativeSyncQueueEvent
-                                           data2: NativeSyncQueueEvent];
-    if (useCocoa) {
-        [NSApp postEvent:event atStart:NO];
-    } else {
-        ProcessSerialNumber psn;
-        GetCurrentProcess(&psn);
-        CGEventPostToPSN(&psn, [event CGEvent]);
+    @autoreleasepool {
+        NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
+                                            location: NSMakePoint(0,0)
+                                    modifierFlags: 0
+                                        timestamp: dummyEventTimestamp
+                                        windowNumber: 0
+                                            context: nil
+                                            subtype: NativeSyncQueueEvent
+                                            data1: NativeSyncQueueEvent
+                                            data2: NativeSyncQueueEvent];
+        if (useCocoa) {
+            [NSApp postEvent:event atStart:NO];
+        } else {
+            ProcessSerialNumber psn;
+            GetCurrentProcess(&psn);
+            CGEventPostToPSN(&psn, [event CGEvent]);
+        }
     }
-    [pool drain];
 }
 
 - (void)waitForDummyEvent:(double)timeout {
