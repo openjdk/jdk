@@ -142,6 +142,9 @@ abstract class HandshakeContext implements ConnectionContext {
     // SupportedGroups
     List<NamedGroup>                        clientRequestedNamedGroups;
 
+    // Groups for initial key share
+    List<NamedGroup>                        clientInitialKeyShareGroups;
+
     // HelloRetryRequest
     NamedGroup                              serverSelectedNamedGroup;
 
