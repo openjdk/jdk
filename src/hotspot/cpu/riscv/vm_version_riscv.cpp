@@ -252,11 +252,14 @@ void VM_Version::common_initialize() {
 
   // Misc Intrinsics that could depend on RVV.
 
-  if (!AvoidUnalignedAccesses && (UseZba || UseRVV)) {
+  const bool crc32_intrinsic_default = !AvoidUnalignedAccesses && (UseZba || UseRVV);
+  const bool crc32_intrinsic_supported = !AvoidUnalignedAccesses && (UseZba || UseZbc || UseRVV);
+
+  if (crc32_intrinsic_default) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
     }
-  } else {
+  } else if (!crc32_intrinsic_supported) {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       warning("CRC32 intrinsic is not available on this CPU.");
     }
