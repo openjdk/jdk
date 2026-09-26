@@ -28,6 +28,10 @@ import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.Warmup;
+import jdk.test.lib.Asserts;
+
+import java.util.Arrays;
 
 /*
  * @test
@@ -39,6 +43,8 @@ import compiler.lib.ir_framework.TestFramework;
  */
 
 public class TestRCESideLoopSafepointNodes {
+    private static final int[] VALUES = new int[256];
+
     public static void main(String[] args) {
         runWithStripMiningIter(1);
         runWithStripMiningIter(1000);
@@ -48,7 +54,14 @@ public class TestRCESideLoopSafepointNodes {
         TestFramework.runWithFlags("-XX:-TieredCompilation",
                                    "-XX:+UseCountedLoopSafepoints",
                                    "-XX:LoopStripMiningIter=" + iterations,
-                                   "-XX:LoopUnrollLimit=0");
+                                   "-XX:LoopUnrollLimit=0",
+                                   "-DTest=test,testRejectedRCE");
+        TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                   "-XX:+UseCountedLoopSafepoints",
+                                   "-XX:LoopStripMiningIter=" + iterations,
+                                   "-XX:LoopUnrollLimit=1000",
+                                   "-XX:LoopMaxUnroll=4",
+                                   "-DTest=testDelayedRCE,testSunkStores");
     }
 
     @Test
@@ -95,5 +108,62 @@ public class TestRCESideLoopSafepointNodes {
     @Run(test = "testRejectedRCE")
     private static void testRejectedRCERunner() {
         testRejectedRCE(0, 10_000, -1);
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "3", IRNode.SAFEPOINT, "3"})
+    public static int testDelayedRCE(int start, int limit, int initialBound, int bound) {
+        int sum = 0;
+        int b0 = initialBound, b1 = initialBound, b2 = initialBound;
+        for (int i = start; i < limit; i++) {
+            Thread.onSpinWait();
+            java.lang.invoke.VarHandle.fullFence();
+            if (i * 2 > b0) {
+                break;
+            }
+            sum += VALUES[i & 255];
+            // The bound becomes invariant only after unrolling exposes the assignments.
+            b0 = b1;
+            b1 = b2;
+            b2 = bound;
+        }
+        return sum;
+    }
+
+    @Run(test = "testDelayedRCE")
+    @Warmup(1)
+    public static void testDelayedRCERunner() {
+        Arrays.fill(VALUES, 1);
+        Asserts.assertEQ(testDelayedRCE(Integer.MIN_VALUE, Integer.MIN_VALUE + 100,
+                                      Integer.MAX_VALUE, Integer.MAX_VALUE), 100);
+        Asserts.assertEQ(testDelayedRCE(0, 100, Integer.MAX_VALUE, 50), 26);
+    }
+
+    private static class Cell {
+        int value;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SAFEPOINT, "1"})
+    private static int testSunkStores(Cell first, Cell second, int limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += VALUES[i & 255];
+            first.value = i;
+            second.value = -i;
+        }
+        return sum;
+    }
+
+    @Run(test = "testSunkStores")
+    private static void testSunkStoresRunner() {
+        Arrays.fill(VALUES, 1);
+        Cell first = new Cell();
+        Cell second = new Cell();
+        Asserts.assertEQ(testSunkStores(first, second, 100), 100);
+        Asserts.assertEQ(first.value, 99);
+        Asserts.assertEQ(second.value, -99);
+        Asserts.assertEQ(testSunkStores(first, first, 101), 101);
+        Asserts.assertEQ(first.value, -100);
     }
 }

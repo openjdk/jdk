@@ -1495,12 +1495,14 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   CountedLoopNode *post_head = nullptr;
   Node* post_incr = incr;
   OpaqueRCESideLoopNode* rce_side_loop = nullptr;
-  if (main_head->is_strip_mined()) {
+  // A peeled pre-loop permanently disables RCE for the main loop.
+  const CloneLoopMode clone_mode = peel_only ? ControlAroundStripMined : CloneIncludesSafepoint;
+  if (!peel_only && main_head->is_strip_mined()) {
     rce_side_loop = new OpaqueRCESideLoopNode(C, intcon(0));
     register_new_node(rce_side_loop, main_head->skip_strip_mined()->in(LoopNode::EntryControl));
   }
   Node* main_exit = insert_post_loop(loop, old_new, main_head, main_end, post_incr, limit, post_head,
-                                    CloneIncludesSafepoint, rce_side_loop);
+                                    clone_mode, rce_side_loop);
   C->print_method(PHASE_AFTER_POST_LOOP, 4, post_head);
 
   //------------------------------
@@ -1519,7 +1521,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
 
   const uint first_node_index_in_pre_loop_body = Compile::current()->unique();
   uint dd_main_head = dom_depth(outer_main_head);
-  clone_loop(loop, old_new, dd_main_head, CloneIncludesSafepoint);
+  clone_loop(loop, old_new, dd_main_head, clone_mode);
   CountedLoopNode*    pre_head = old_new[main_head->_idx]->as_CountedLoop();
   CountedLoopEndNode* pre_end  = old_new[main_end ->_idx]->as_CountedLoopEnd();
   pre_head->set_pre_loop(main_head);
@@ -1668,16 +1670,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // finds some, but we _know_ they are all useless.
   peeled_dom_test_elim(loop,old_new);
   loop->record_for_igvn();
-
-  if (rce_side_loop != nullptr) {
-    SafePointNode* pre_safepoint = pre_end->in(CountedLoopEndNode::TestControl)->as_SafePoint();
-    OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(
-        pre_head, pre_safepoint->in(TypeFunc::Control)->as_IfFalse(), &_igvn, this);
-    CountedLoopEndNode* post_end = post_head->loopexit();
-    SafePointNode* post_safepoint = post_end->in(CountedLoopEndNode::TestControl)->as_SafePoint();
-    OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(
-        post_head, post_safepoint->in(TypeFunc::Control)->as_IfFalse(), &_igvn, this);
-  }
 
   C->print_method(PHASE_AFTER_PRE_MAIN_POST, 4, main_head);
 }
@@ -1907,7 +1899,13 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
       if (!ctrl_is_member(outer_loop, store->in(MemNode::Memory))) {
         Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
         Node* store_new = old_new[store->_idx];
-        store_new->set_req(MemNode::Memory, mem_out);
+        if (clone_mode == CloneIncludesSafepoint) {
+          Node* phi = store_new->in(MemNode::Memory);
+          assert(phi->is_memory_phi() && phi->in(0) == post_head, "cloning added a memory phi");
+          _igvn.replace_input_of(phi, LoopNode::EntryControl, mem_out);
+        } else {
+          _igvn.replace_input_of(store_new, MemNode::Memory, mem_out);
+        }
       }
     }
   }
@@ -2736,8 +2734,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
   return false;
 }
 
-static void remove_unneeded_rce_side_loop_safepoint(IdealLoopTree* loop) {
-  CountedLoopNode* head = loop->_head->as_CountedLoop();
+static void remove_unneeded_rce_side_loop_safepoint(CountedLoopNode* head, PhaseIterGVN& igvn) {
   bool remove = false;
   if (head->is_pre_loop() && head->limit()->Opcode() == Op_Opaque1) {
     Opaque1Node* limit = head->limit()->as_Opaque1();
@@ -2753,7 +2750,29 @@ static void remove_unneeded_rce_side_loop_safepoint(IdealLoopTree* loop) {
   if (remove) {
     Node* safepoint = head->loopexit()->in(CountedLoopEndNode::TestControl);
     if (safepoint->is_SafePoint()) {
-      loop->_phase->replace_node_and_forward_ctrl(safepoint, safepoint->in(TypeFunc::Control));
+      igvn.replace_node(safepoint, safepoint->in(TypeFunc::Control));
+    }
+  }
+}
+
+// RCE can become possible in a later loop-optimization pass, so wait until all passes are finished.
+void PhaseIdealLoop::remove_unneeded_rce_side_loop_safepoints(PhaseIterGVN& igvn) {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(igvn.C->root());
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    for (uint j = 0; j < n->req(); j++) {
+      Node* in = n->in(j);
+      if (in != nullptr && in->is_CFG()) {
+        worklist.push(in);
+      }
+    }
+  }
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    if (n->is_CountedLoop() && n->as_CountedLoop()->is_valid_counted_loop(T_INT)) {
+      remove_unneeded_rce_side_loop_safepoint(n->as_CountedLoop(), igvn);
     }
   }
 }
@@ -3651,10 +3670,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   if (!cl->is_valid_counted_loop(T_INT)) return true; // Ignore various kinds of broken loops
 
   // Do nothing special to pre- and post- loops
-  if (cl->is_pre_loop() || cl->is_post_loop()) {
-    remove_unneeded_rce_side_loop_safepoint(this);
-    return true;
-  }
+  if (cl->is_pre_loop() || cl->is_post_loop()) return true;
 
   // With multiversioning, we create a fast_loop and a slow_loop, and a multiversion_if that
   // decides which loop is taken at runtime. At first, the multiversion_if always takes the
