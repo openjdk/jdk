@@ -87,4 +87,7 @@ public:
   void store_parameter(jint c,     int offset_from_esp_in_words);
   void store_parameter(jobject c,  int offset_from_esp_in_words);
 
+  LIR_Opr adjust_mdo_address(LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
+                             BasicType t);
+
 #endif // CPU_AARCH64_C1_LIRASSEMBLER_AARCH64_HPP

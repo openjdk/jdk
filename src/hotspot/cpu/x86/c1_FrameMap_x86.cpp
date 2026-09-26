@@ -129,6 +129,8 @@ LIR_Opr FrameMap::r12_metadata_opr;
 LIR_Opr FrameMap::r13_metadata_opr;
 LIR_Opr FrameMap::r14_metadata_opr;
 
+LIR_Opr FrameMap::profile_rng_opr;
+
 LIR_Opr FrameMap::_caller_save_cpu_regs[] = {};
 LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 LIR_Opr FrameMap::_caller_save_xmm_regs[] = {};
@@ -167,6 +169,12 @@ void FrameMap::initialize() {
   map_register(13, r15);  r15_opr = LIR_OprFact::single_cpu(13);
   map_register(14, rsp);
   map_register(15, rbp);
+  // r_profile_rng is allocated conditionally. It is used to hold the random
+  // generator for profile counters.
+  r_profile_rng
+    = (UseCompressedOops && ProfileCaptureRatio > 1) ? r14
+    : (ProfileCaptureRatio > 1) ? r12
+    : noreg;
 
   long0_opr = LIR_OprFact::double_cpu(3 /*eax*/, 3 /*eax*/);
   long1_opr = LIR_OprFact::double_cpu(2 /*ebx*/, 2 /*ebx*/);
@@ -260,6 +268,10 @@ void FrameMap::initialize() {
   r12_metadata_opr = as_metadata_opr(r12);
   r13_metadata_opr = as_metadata_opr(r13);
   r14_metadata_opr = as_metadata_opr(r14);
+
+  if (ProfileCaptureRatio > 1) {
+    profile_rng_opr = LIR_OprFact::single_cpu(cpu_reg2rnr(r_profile_rng));
+  }
 
   VMRegPair regs;
   BasicType sig_bt = T_OBJECT;

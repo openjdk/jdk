@@ -127,6 +127,8 @@
   static LIR_Opr fpu0_float_opr;
   static LIR_Opr fpu0_double_opr;
 
+  static LIR_Opr profile_rng_opr;
+
   static LIR_Opr as_long_opr(Register r) {
     return LIR_OprFact::double_cpu(cpu_reg2rnr(r), cpu_reg2rnr(r));
   }
@@ -147,6 +149,11 @@
       range -= 1;
     }
 
+    // Use r26 or r27 for randomized profile captures.
+    if (ProfileCaptureRatio > 1) {
+      range -= 1;
+    }
+
     // r29 is not allocatable when PreserveFramePointer is on,
     // but fp saving is handled in MacroAssembler::build_frame()/remove_frame()
     if (exclude_fp) {
@@ -162,5 +169,6 @@
   static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map);  }
   static int last_cpu_reg()             { return adjust_reg_range(pd_last_cpu_reg, PreserveFramePointer);  }
   static int last_byte_reg()            { return adjust_reg_range(pd_last_byte_reg, PreserveFramePointer); }
+  static int last_fpu_reg()             { return pd_last_fpu_reg; }
 
 #endif // CPU_AARCH64_C1_FRAMEMAP_AARCH64_HPP

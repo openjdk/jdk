@@ -40,7 +40,7 @@
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 
-#define __ _masm->
+#define __ masm()->
 
 // Note: Rtemp usage is this file should not impact C2 and should be
 // correct as long as it is not implicitly used in lower layers (the
@@ -240,6 +240,8 @@ int LIR_Assembler::emit_unwind_handler() {
 
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(Rexception_obj);
+
+  __ restore_profile_rng();
 
   // Perform needed unlocking
   MonitorExitStub* stub = nullptr;
@@ -1095,6 +1097,7 @@ void LIR_Assembler::typecheck_profile_helper2(ciMethodData* md, ciProfileData* d
 
 // Sets `res` to true, if `cond` holds.
 static void set_instanceof_result(MacroAssembler* _masm, Register res, AsmCondition cond) {
+  auto masm = [_masm]() { return _masm; };
   __ mov(res, 1, cond);
 }
 
@@ -1896,14 +1899,17 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 
 void LIR_Assembler::align_call(LIR_Code code) {
-  // Not needed
 }
 
+void LIR_Assembler::save_profile_rng() {
+  __ save_profile_rng();
+}
 
 void LIR_Assembler::call(LIR_OpJavaCall *op, relocInfo::relocType rtype) {
   int ret_addr_offset = __ patchable_call(op->addr(), rtype);
   assert(ret_addr_offset == __ offset(), "embedded return address not allowed");
   add_call_info_here(op->info());
+  __ restore_profile_rng();
 }
 
 
@@ -1946,6 +1952,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall *op) {
     __ bind(call_return);
   }
   add_call_info(code_offset(), op->info());
+  __ restore_profile_rng();
 }
 
 void LIR_Assembler::emit_static_call_stub() {
@@ -2456,6 +2463,150 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
   __ ldr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+}
+
+void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
+                                          LIR_Opr freq_opr,
+                                          LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
+                                          CodeStub* overflow_stub) {
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("increment_event_counter {");
+  }
+#endif
+
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
+  uint64_t threshold = (UCONST64(1) << 32) >> ratio_shift;
+
+  assert(threshold > 0, "must be");
+
+  ProfileStub *counter_stub
+    = ProfileCaptureRatio > 1 ? new ProfileStub() : nullptr;
+
+  Register dest = dest_opr->as_register();
+
+  auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
+                 md_reg, md_opr, md_offset_opr] (LIR_Assembler* ce, LIR_Op* op) {
+
+    auto masm = [ce]() { return ce->masm(); };
+    Address counter_address;
+
+    if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
+
+    if (md_opr->is_valid()) {
+      if (md_opr->type() == T_METADATA) {
+        __ mov_metadata(md_reg->as_register(),
+                        md_opr->as_constant_ptr()->as_metadata());
+      } else {
+        __ lea(md_reg->as_pointer_register(),
+               ExternalAddress(md_opr->as_constant_ptr()->as_pointer()));
+      }
+      if (md_offset_opr->is_constant()) {
+        // Fix up any out-of-range offsets.
+        auto offset = md_offset_opr->as_constant_ptr()->as_jint();
+        bool is_memoryI =  offset < 4096 && offset > -4096;
+        if (!is_memoryI) {
+          __ block_comment("out-of-range offset");
+          __ add_slow(md_reg->as_pointer_register(), md_reg->as_pointer_register(),
+                      offset);
+          offset = 0;
+        }
+        counter_address = Address(md_reg->as_pointer_register(), offset);
+      } else {
+        counter_address = Address(md_reg->as_pointer_register(),
+                                  md_offset_opr->as_register());
+      }
+    } else {
+      ShouldNotReachHere();
+    }
+    if (step->is_register()) {
+      Register inc = step->as_register();
+      if (ProfileCaptureRatio > 1) {
+        __ mov(inc, AsmOperand(inc, lsl, ratio_shift));
+      }
+      __ increment_mdp_data_at(counter_address, dest, inc);
+      if (ProfileCaptureRatio > 1) {
+        __ mov(inc, AsmOperand(inc, lsr, ratio_shift));
+      }
+    } else {
+      jint inc = step->as_constant_ptr()->as_jint_bits();
+      switch (dest_opr->type()) {
+        case T_INT: {
+          inc *= ProfileCaptureRatio;
+          __ increment_mdp_data_at(counter_address, dest, inc);
+          break;
+        }
+        case T_LONG:
+          assert(false, "On 32-bit platforms, 64-bit profile counters "
+                 "are never used");
+          // fallthrough
+        default:
+          ShouldNotReachHere();
+      }
+    }
+
+    if (overflow_stub != nullptr) {
+      guarantee(step->is_valid(), "must be");
+      if (!freq_opr->is_valid()) {
+        if (!step->is_constant()) {
+          __ cbz(step->as_register(), *overflow_stub->entry());
+        } else {
+          __ b(*overflow_stub->entry());
+        }
+      } else {
+        if (!step->is_constant()) {
+          // If step is 0, make sure the stub check below always fails
+          __ cmp(step->as_register(), 0);
+          __ mov(Rtemp, InvocationCounter::count_increment * ProfileCaptureRatio);
+          __ mov(dest, Rtemp, eq);
+        }
+        juint mask = freq_opr->as_jint();
+        __ mov_slow(Rtemp, mask);
+        __ andrs(dest, dest, Rtemp);
+
+        // If (dest & mask) < step, we just overflowed.
+        switch (ProfileCaptureRatio) {
+          case 1:
+            __ b(*overflow_stub->entry(), eq);
+            break;
+          default:
+            if (step->is_register()) {
+              __ cmp(dest, AsmOperand(step->as_register(), lsl, ratio_shift));
+            } else {
+              __ mov(Rtemp, step->as_constant_ptr()->as_jint_bits() << ratio_shift);
+              __ cmp(dest, Rtemp);
+            }
+            __ b(*overflow_stub->entry(), lo);
+            break;
+        }
+      }
+
+      __ bind(*overflow_stub->continuation());
+    }
+
+    if (counter_stub != nullptr) {
+      __ b(*counter_stub->continuation());
+    }
+  };
+
+  if (counter_stub != nullptr) {
+    __ movs(Rtemp, AsmOperand(r_profile_rng, lsr, 32 - ratio_shift));
+    __ b(*counter_stub->entry(), eq);
+    __ bind(*counter_stub->continuation());
+    __ step_random(r_profile_rng, Rtemp);
+
+    counter_stub->set_action(lambda, nullptr);
+    counter_stub->set_name("IncrementEventCounter");
+    append_code_stub(counter_stub);
+  } else {
+    lambda(this, nullptr);
+  }
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} increment_event_counter");
+  }
+#endif
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

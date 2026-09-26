@@ -101,6 +101,8 @@
   static LIR_Opr r13_metadata_opr;
   static LIR_Opr r14_metadata_opr;
 
+  static LIR_Opr profile_rng_opr;
+
   static LIR_Opr long0_opr;
   static LIR_Opr long1_opr;
   static LIR_Opr xmm0_float_opr;
@@ -127,8 +129,15 @@
   }
 
   static int adjust_reg_range(int range) {
-    // Reduce the number of available regs (to free r12) in case of compressed oops
-    if (UseCompressedOops) return range - 1;
+    int result = range;
+    // Reduce the number of available regs (to free r12 or r14) in
+    // case of compressed oops and randomized profile captures.
+    if (UseCompressedOops)        result -= 1;
+    if (ProfileCaptureRatio > 1)  result -= 1;
+    return result;
+  }
+
+  static int adjust_fpreg_range(int range) {
     return range;
   }
 
@@ -139,5 +148,6 @@
   static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map); }
   static int last_cpu_reg()             { return adjust_reg_range(pd_last_cpu_reg);  }
   static int last_byte_reg()            { return adjust_reg_range(pd_last_byte_reg); }
+  static int last_fpu_reg()             { return adjust_fpreg_range(pd_last_fpu_reg);  }
 
 #endif // CPU_X86_C1_FRAMEMAP_X86_HPP

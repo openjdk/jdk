@@ -40,6 +40,28 @@
  *                   compiler.tiered.LevelTransitionTest
  */
 
+/**
+ * @test LevelTransitionTest
+ * @requires vm.compMode != "Xcomp"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64"
+ * @summary Test the correctness of compilation level transitions for different methods
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ *        compiler.tiered.LevelTransitionTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:ProfileCaptureRatio=64
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
+ *                   -XX:-BackgroundCompilation
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *                   -XX:CompileCommand=compileonly,compiler.tiered.LevelTransitionTest$ExtendedTestCase$CompileMethodHolder::*
+ *                   compiler.tiered.LevelTransitionTest
+ */
+
+
 package compiler.tiered;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
