@@ -87,32 +87,18 @@ public:
   }
 };
 
-// Simple lock using PlatformMonitor
+// Simple lock using PlatformMutex
 class ShenandoahSimpleLock {
 private:
-  PlatformMonitor   _lock; // native lock
+  PlatformMutex   _lock; // native lock
+  Atomic<Thread*> _owner;
 public:
   ShenandoahSimpleLock();
   void lock(bool allow_block_for_safepoint = false);
   void unlock();
-};
-
-// templated reentrant lock
-template<typename Lock>
-class ShenandoahReentrantLock : public Lock {
-private:
-  Atomic<Thread*>       _owner;
-  uint64_t              _count;
-
-public:
-  ShenandoahReentrantLock();
-  ~ShenandoahReentrantLock();
-
-  void lock(bool allow_block_for_safepoint = false);
-  void unlock();
-
-  // If the lock already owned by this thread
-  bool owned_by_self() const ;
+  bool owned_by_self() const {
+    return _owner.load_relaxed() == Thread::current();
+  }
 };
 
 // template based ShenandoahLocker
@@ -129,5 +115,27 @@ public:
     _lock->unlock();
   }
 };
+
+template <typename Lock>
+class ShenandoahReentrantLocker : public StackObj {
+private:
+  Lock* _lock;
+
+public:
+  ShenandoahReentrantLocker(Lock* lock) : _lock(nullptr) {
+    if (!lock->owned_by_self()) {
+      _lock = lock;
+      _lock->lock();
+    }
+  }
+
+  ~ShenandoahReentrantLocker() {
+    if (_lock != nullptr) {
+      _lock->unlock();
+      _lock = nullptr;
+    }
+  }
+};
+
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHLOCK_HPP
