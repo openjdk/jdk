@@ -470,6 +470,7 @@ private:
 
   static void useRVA23U64Profile();
 
+ public:
   // VM modes (satp.mode) privileged ISA 1.10
   enum VM_MODE : int {
     VM_NOTSET = -1,
@@ -480,6 +481,7 @@ private:
     VM_SV64   = 64
   };
 
+ private:
   static VM_MODE parse_satp_mode(const char* vm_mode);
 
   // Values from riscv_hwprobe()
@@ -553,6 +555,25 @@ private:
   // RISCV64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
+
+  static int max_va_bits() {
+    assert(satp_mode.enabled(), "satp mode not initialized yet");
+    switch ((int)satp_mode.value()) {
+      case VM_SV39: return 39;
+      case VM_SV48: return 48;
+      default:
+        ShouldNotReachHere();
+        return 0;
+    }
+  }
+
+  // Check if an address is canonical for the current VA mode.
+  // Canonical addresses have bits [63:va_bits] equal to bit va_bits-1.
+  static bool is_canonical_address(address addr) {
+    const int va_bits = max_va_bits();
+    const uintptr_t upper = (uintptr_t)addr >> (va_bits - 1);
+    return upper == 0 || upper == (UINTPTR_MAX >> (va_bits - 1));
+  }
 
   static bool supports_float16_float_conversion() {
     return UseZfh || UseZfhmin;
