@@ -24,12 +24,14 @@
 #include "libTestDwarfHelper.h"
 #include <stdio.h>
 
-int zero = 0;
+volatile int zero = 0;
 int result = 0;
 int limit = 20;
 
-// Explicitly don't inline. foo needs complexity so GCC/Clang don't optimize it away.
-#if !defined(_MSC_VER)
+// Explicitly don't inline.
+#if defined(_MSC_VER)
+__declspec(noinline)
+#else
 __attribute__((noinline))
 #endif
 void foo(int x) {
@@ -62,8 +64,8 @@ JNIEXPORT void JNICALL Java_TestDwarf_crashNativeDivByZero(JNIEnv* env, jclass j
   foo(34 / zero); // Crash
 }
 
-JNIEXPORT void JNICALL Java_TestDwarf_crashNativeDereferenceNull(JNIEnv* env, jclass jclazz) {
-  dereference_null();
+JNIEXPORT void JNICALL Java_TestDwarf_crashNativeStoreToNull(JNIEnv* env, jclass jclazz) {
+  store_to_null();
 }
 
 JNIEXPORT void JNICALL Java_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jclass jclazz, jint x) {
@@ -78,13 +80,3 @@ JNIEXPORT void JNICALL Java_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jc
     result += zero + i;
   }
 }
-
-// Need to tell if Clang was used to build libTestDwarf.
-JNIEXPORT jboolean JNICALL Java_TestDwarf_isUsingClang(JNIEnv* env, jobject obj) {
-#if defined(__clang__)
-    return JNI_TRUE;
-#else
-    return JNI_FALSE;
-#endif
-}
-
