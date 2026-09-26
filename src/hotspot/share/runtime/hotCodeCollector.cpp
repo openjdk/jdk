@@ -140,18 +140,9 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
     switch (do_relocation(candidate, 0, &num_relocated)) {
       case nmethod::RelocationResult::SUCCESS:
         break;
-      case nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP: {
-        CodeHeap* heap = CodeCache::get_code_heap(CodeBlobType::MethodHot);
-        if (heap->full_count() == 1) {
-          // Avoid multiple reporting the MethodHot heap being full
-          log_warning(codecache)("Allocation failed in MethodHot heap (%zu bytes free). "
-                                 "Stopping hot methods relocation.",
-                                 heap->unallocated_capacity());
-          log_warning(codecache)("Try increasing the code heap size using -XX:HotCodeHeapSize=");
-        }
+      case nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP:
         hot_code_heap_full = true;
         break;
-      }
       case nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD:
         num_skipped++;
         break;
