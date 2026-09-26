@@ -2213,6 +2213,9 @@ enum VectorMask {
   INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
   INSN(vnsrl_wi, 0b1010111, 0b011, 0b101100);
 
+  // Vector Widening Shift Left Logical (Zvbb) Extension
+  INSN(vwsll_vi, 0b1010111, 0b011, 0b110101);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -2773,6 +2776,9 @@ enum Nf {
   INSN(vror_vv,    0b1010111, 0b000, 0b010100);
   INSN(vrol_vv,    0b1010111, 0b000, 0b010101);
 
+  // Vector Widening Shift Left Logical (Zvbb) Extension
+  INSN(vwsll_vv,   0b1010111, 0b000, 0b110101);
+
   // Vector Bit-manipulation used in Cryptography (Zvbc) Extension
   INSN(vclmul_vv,  0b1010111, 0b010, 0b001100);
   INSN(vclmulh_vv, 0b1010111, 0b010, 0b001101);
@@ -2788,6 +2794,9 @@ enum Nf {
   INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
   INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
   INSN(vror_vx,    0b1010111, 0b100, 0b010100);
+
+  // Vector Widening Shift Left Logical (Zvbb) Extension
+  INSN(vwsll_vx,   0b1010111, 0b100, 0b110101);
 
 #undef INSN
 
