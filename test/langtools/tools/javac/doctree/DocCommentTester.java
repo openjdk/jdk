@@ -61,6 +61,7 @@ import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.NoteTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.RawTextTree;
@@ -573,6 +574,20 @@ public class DocCommentTester {
 
             public Void visitLiteral(LiteralTree node, Void p) {
                 header(node, compress(node.getBody().getBody()));
+                return null;
+            }
+
+            @Override
+            public Void visitNote(NoteTree node, Void unused) {
+                header(node);
+                indent(+1);
+                print("tagName", node.getTagName());
+                print("inline", String.valueOf(node.isInline()));
+                print("attributes", node.getAttributes());
+                print("body", node.getBody());
+                indent(-1);
+                indent();
+                out.println("]");
                 return null;
             }
 

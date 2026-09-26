@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocTree;
 
 import com.sun.source.doctree.InlineTagTree;
+import com.sun.source.doctree.NoteTree;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet.Location;
@@ -137,6 +138,11 @@ public class TagletManager {
     private final Set<String> potentiallyConflictingTags;
 
     /**
+     * The set of all custom tags.
+     */
+    private final Set<String> customTags;
+
+    /**
      * The set of unseen custom tags.
      */
     private final Set<String> unseenCustomTags;
@@ -179,6 +185,7 @@ public class TagletManager {
         overriddenStandardTags = new HashSet<>();
         potentiallyConflictingTags = new HashSet<>();
         standardTags = new HashSet<>();
+        customTags = new HashSet<>();
         unseenCustomTags = new HashSet<>();
         allTaglets = new LinkedHashMap<>();
         this.config = config;
@@ -195,6 +202,7 @@ public class TagletManager {
         this.utils = config.utils;
         this.tagletPath = options.tagletPath();
         initStandardTaglets();
+        initPreviewTaglets();
     }
 
     public Set<String> getAllTagletNames() {
@@ -224,14 +232,14 @@ public class TagletManager {
     }
 
     /**
-     * Adds a new {@code Taglet}.
+     * Adds a new user {@code Taglet}.
      *
      * Prints a message to indicate whether or not the Taglet was registered properly.
      *
      * @param classname  the name of the class representing the custom tag
      * @param fileManager the file manager to load classes and resources
      */
-    public void addCustomTag(String classname, JavaFileManager fileManager) {
+    public void addUserTaglet(String classname, JavaFileManager fileManager) {
         ClassLoader tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
         if (config.workArounds.accessInternalAPI()) {
             Module thisModule = getClass().getModule();
@@ -285,7 +293,7 @@ public class TagletManager {
     }
 
     /**
-     * Adds a new {@code SimpleTaglet}.
+     * Adds a new {@code NoteTaglet} or changes the order of an existing tag.
      *
      * If this tag already exists and the header passed as an argument is {@code null},
      * move tag to the back of the list. If this tag already exists and the
@@ -296,21 +304,29 @@ public class TagletManager {
      * @param header the header to output
      * @param locations the possible locations that this tag can appear in
      */
-    public void addNewSimpleCustomTag(String tagName, String header, String locations) {
+    public void addCustomTag(String tagName, String header, String locations) {
         if (tagName == null || locations == null) {
             return;
         }
         // remove + put in both branches below move the tag to the back of the map's ordering
         Taglet tag = allTaglets.remove(tagName);
         if (tag == null || header != null) {
-            allTaglets.put(tagName, new SimpleTaglet(config, tagName, header, locations));
+            allTaglets.put(tagName, new NoteTaglet(config, tagName, header, locations));
             if (Utils.toLowerCase(locations).indexOf('x') == -1) {
                 checkTagName(tagName);
             }
+            customTags.add(tagName);
         } else {
             // Move existing tag to the back
             allTaglets.put(tagName, tag);
         }
+    }
+
+    /**
+     * {@return the names of custom note tags}
+     */
+    public Set<String> getCustomTags() {
+        return customTags;
     }
 
     /**
@@ -342,12 +358,14 @@ public class TagletManager {
      *
      * @param element the tags holder
      * @param trees the trees containing the comments
+     * @param {@code true} if trees contains inline tags
      */
-    public void checkTags(Element element, Iterable<? extends DocTree> trees) {
+    public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean isInline) {
         for (DocTree tag : trees) {
             String name = switch (tag.getKind()) {
                 case UNKNOWN_INLINE_TAG -> ((InlineTagTree) tag).getTagName();
                 case UNKNOWN_BLOCK_TAG -> ((BlockTagTree) tag).getTagName();
+                case NOTE -> ((NoteTree) tag).getTagName();
                 default -> tag.getKind().tagName;
             };
             if (name == null) {
@@ -369,6 +387,15 @@ public class TagletManager {
             final Taglet taglet = allTaglets.get(name);
             if (taglet instanceof SimpleTaglet st && !st.isEnabled()) {
                 continue; // taglet has been disabled
+            }
+
+            // Check inline/block use for custom note tags
+            if (taglet instanceof NoteTaglet noteTaglet) {
+                if (isInline && !noteTaglet.isInlineTag()) {
+                    messages.warning("doclet.tag_block_only", noteTaglet.getName());
+                } else if (!isInline && !noteTaglet.isBlockTag()) {
+                    messages.warning("doclet.tag_inline_only", noteTaglet.getName());
+                }
             }
 
             // Check and verify tag usage
@@ -621,6 +648,7 @@ public class TagletManager {
         addStandardTaglet(new LinkTaglet(config, DocTree.Kind.LINK_PLAIN));
         addStandardTaglet(new LiteralTaglet(config, DocTree.Kind.CODE));
         addStandardTaglet(new LiteralTaglet(config, DocTree.Kind.LITERAL));
+        addStandardTaglet(new NoteTaglet(config));
         addStandardTaglet(new SnippetTaglet(config));
         addStandardTaglet(new IndexTaglet(config));
         addStandardTaglet(new SummaryTaglet(config));
@@ -629,13 +657,25 @@ public class TagletManager {
         // Keep track of the names of standard tags for error checking purposes.
         // The following are not handled above.
         addStandardTaglet(new DeprecatedTaglet(config));
-        addStandardTaglet(new BaseTaglet(config, USES, false, EnumSet.of(jdk.javadoc.doclet.Taglet.Location.MODULE)));
-        addStandardTaglet(new BaseTaglet(config, PROVIDES, false, EnumSet.of(jdk.javadoc.doclet.Taglet.Location.MODULE)));
+        addStandardTaglet(new BaseTaglet(config, USES, false, EnumSet.of(Location.MODULE)));
+        addStandardTaglet(new BaseTaglet(config, PROVIDES, false, EnumSet.of(Location.MODULE)));
         addStandardTaglet(
                 new SimpleTaglet(config, SERIAL, null,
-                        EnumSet.of(jdk.javadoc.doclet.Taglet.Location.PACKAGE, jdk.javadoc.doclet.Taglet.Location.TYPE, jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                        EnumSet.of(Location.PACKAGE, Location.TYPE, Location.FIELD)));
         addStandardTaglet(
-                new SimpleTaglet(config, SERIAL_FIELD, null, EnumSet.of(jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                new SimpleTaglet(config, SERIAL_FIELD, null, EnumSet.of(Location.FIELD)));
+    }
+
+    private void initPreviewTaglets() {
+        // Add taglets for undocumented preview feature and note options
+        var previewNoteTag = config.getOptions().previewNoteTag();
+        if (previewNoteTag != null && !allTaglets.containsKey(previewNoteTag)) {
+            addCustomTag(previewNoteTag, config.docResources.getText("doclet.Preview_Note_Default_Header"), "a");
+        }
+        var previewFeatureTag = config.getOptions().previewFeatureTag();
+        if (previewFeatureTag != null && !allTaglets.containsKey(previewFeatureTag)) {
+            addCustomTag(previewFeatureTag, null, "xb");
+        }
     }
 
     /**
@@ -644,11 +684,11 @@ public class TagletManager {
     private void initJavaFXTaglets() {
         addStandardTaglet(new SimpleTaglet(config, "propertyDescription",
                 resources.getText("doclet.PropertyDescription"),
-                EnumSet.of(jdk.javadoc.doclet.Taglet.Location.METHOD, jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                EnumSet.of(Location.METHOD, Location.FIELD)));
         addStandardTaglet(new SimpleTaglet(config, "defaultValue", resources.getText("doclet.DefaultValue"),
-                EnumSet.of(jdk.javadoc.doclet.Taglet.Location.METHOD, jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                EnumSet.of(Location.METHOD, Location.FIELD)));
         addStandardTaglet(new SimpleTaglet(config, "treatAsPrivate", null,
-                EnumSet.of(jdk.javadoc.doclet.Taglet.Location.TYPE, jdk.javadoc.doclet.Taglet.Location.METHOD, jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
     }
 
     private void addStandardTaglet(Taglet taglet) {
@@ -664,7 +704,11 @@ public class TagletManager {
         standardTags.add(name);
     }
 
-    public boolean isKnownCustomTag(String tagName) {
+    /**
+     * {@return {@code true} if a tag with the given name exists}
+     * @param tagName the tag name
+     */
+    public boolean isKnownTag(String tagName) {
         return allTaglets.containsKey(tagName);
     }
 
