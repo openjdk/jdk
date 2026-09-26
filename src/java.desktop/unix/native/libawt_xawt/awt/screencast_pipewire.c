@@ -318,7 +318,7 @@ static void onStreamProcess(void *userdata) {
         || spaBuffer->n_datas < 1
         || spaBuffer->datas[0].data == NULL) {
         DEBUG_SCREEN_PREFIX(screen, "!!! no data, n_datas %d\n",
-                            spaBuffer->n_datas);
+                            spaBuffer ? (int) spaBuffer->n_datas : -1);
         return;
     }
 
