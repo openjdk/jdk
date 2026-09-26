@@ -820,7 +820,7 @@ public final class StackMapGenerator {
         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
             if (nameAndType.name().equalsString(OBJECT_INITIALIZER_NAME)) {
                 Type type = currentFrame.popStack();
-                if (type == Type.UNITIALIZED_THIS_TYPE) {
+                if (type == Type.UNINITIALIZED_THIS_TYPE) {
                     if (inTryBlock) {
                         processExceptionHandlerTargets(bci, true);
                     }
@@ -1064,7 +1064,7 @@ public final class StackMapGenerator {
                     stack[i] = new_object;
                 }
             }
-            if (old_object == Type.UNITIALIZED_THIS_TYPE) {
+            if (old_object == Type.UNINITIALIZED_THIS_TYPE) {
                 flags &= ~FLAG_THIS_UNINIT;
                 assert flags == 0 : flags;
             }
@@ -1132,7 +1132,7 @@ public final class StackMapGenerator {
                     int strictFieldCount = strictFieldsToPut.length;
                     this.unsetFields = UnsetField.copyArray(strictFieldsToPut, strictFieldCount);
                     this.unsetFieldsSize = strictFieldCount;
-                    type = Type.UNITIALIZED_THIS_TYPE;
+                    type = Type.UNINITIALIZED_THIS_TYPE;
                     this.flags = FLAG_THIS_UNINIT;
                 } else {
                     this.unsetFields = UnsetField.EMPTY_ARRAY;
@@ -1339,12 +1339,19 @@ public final class StackMapGenerator {
         }
 
         boolean hasUninitializedThis() {
-            int size = this.localsSize;
+            int localsSize = this.localsSize;
             var localVars = this.locals;
-            for (int i = 0; i < size; i++) {
-                if (localVars[i] == Type.UNITIALIZED_THIS_TYPE)
+            for (int i = 0; i < localsSize; i++) {
+                if (localVars[i] == Type.UNINITIALIZED_THIS_TYPE)
                     return true;
             }
+            int stackSize = this.stackSize;
+            var stack = this.stack;
+            for (int i = 0; i < stackSize; i++) {
+                if (stack[i] == Type.UNINITIALIZED_THIS_TYPE)
+                    return true;
+            }
+
             return false;
         }
 
@@ -1421,7 +1428,7 @@ public final class StackMapGenerator {
                 CHAR_TYPE = simpleType(ITEM_CHAR),
                 SHORT_TYPE = simpleType(ITEM_SHORT),
                 DOUBLE2_TYPE = simpleType(ITEM_DOUBLE_2ND),
-                UNITIALIZED_THIS_TYPE = simpleType(ITEM_UNINITIALIZED_THIS);
+                UNINITIALIZED_THIS_TYPE = simpleType(ITEM_UNINITIALIZED_THIS);
 
         //frequently used types to reduce footprint
         static final Type OBJECT_TYPE = referenceType(CD_Object),
