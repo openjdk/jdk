@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,10 +288,10 @@ void VM_CollectForMetadataAllocation::doit() {
   log_debug(gc)("After Metaspace GC failed to allocate size %zu", _size);
 }
 
-VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause)
-    : VM_GC_Collect_Operation(gc_count_before, cause), _word_size(word_size), _result(nullptr) {
+VM_CollectForAllocation::VM_CollectForAllocation(AllocationRequest request, uint gc_count_before, GCCause::Cause cause)
+    : VM_GC_Collect_Operation(gc_count_before, cause), _request(request), _result(nullptr) {
   // Only report if operation was really caused by an allocation.
-  if (_word_size != 0) {
-    AllocTracer::send_allocation_requiring_gc_event(_word_size * HeapWordSize, GCId::peek());
+  if (!_request.is_empty()) {
+    AllocTracer::send_allocation_requiring_gc_event(_request.word_size() * HeapWordSize, GCId::peek());
   }
 }
