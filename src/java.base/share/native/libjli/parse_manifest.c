@@ -295,39 +295,27 @@ find_positions(int fd, Byte *eb, jlong* base_offset, jlong* censtart)
     free(buffer);
     return (-1);
 }
-
+// The size of the buffer for reading the Central Directory of the ZIP/JAR file.
+// It needs to be large enough to accommodate the largest possible single record
+// and the signature of the next record
 #define BUFSIZE (3 * 65536 + CENHDR + SIGSIZ)
 #define MINREAD 1024
 
 /*
- * Locate the manifest file with the zip/jar file.
+ * Locate an entry with the given file_name within the ZIP/JAR file.
  *
- *      fd:     File descriptor of the jar file.
- *      entry:  To be populated with the information necessary to perform
- *              the inflation (the compressed and uncompressed sizes and
- *              the offset in the file where the compressed data is located).
+ *      fd:     File descriptor of the ZIP/JAR file.
+ *      entry:  The zentry that will be populated from the located
+ *              entry. Minimally, it will be populated with information
+ *              necessary to perform the inflation - the compressed and
+ *              uncompressed sizes, the compression method, and the offset
+ *              in the file where the entry's data is located.
  *
- * Returns zero upon success. Returns a negative value upon failure.
- *
- * The buffer for reading the Central Directory if the zip/jar file needs
- * to be large enough to accommodate the largest possible single record
- * and the signature of the next record which is:
- *
- *      3*2**16 + CENHDR + SIGSIZ
- *
- * Each of the three variable sized fields (name, comment and extension)
- * has a maximum possible size of 64k.
- *
- * Typically, only a small bit of this buffer is used with bytes shuffled
- * down to the beginning of the buffer.  It is one thing to allocate such
- * a large buffer and another thing to actually start faulting it in.
- *
- * In most cases, all that needs to be read are the first two entries in
- * a typical jar file (META-INF and META-INF/MANIFEST.MF). Keep this factoid
- * in mind when optimizing this code.
+ * Returns zero upon success. Returns -2 if the entry wasn't found.
+ * Returns a negative value upon any other failure.
  */
 static int
-find_file(int fd, zentry *entry, const char *file_name)
+find_file(const int fd, zentry *entry, const char *file_name)
 {
     int     bytes;
     int     res;
@@ -355,8 +343,10 @@ find_file(int fd, zentry *entry, const char *file_name)
     Byte    *buffer;
     Byte    locbuf[LOCHDR];
 
+    // Typically, only a small bit of this buffer is used with bytes shuffled
+    // down to the beginning of the buffer.
     if ((buffer = (Byte*)malloc(BUFSIZE)) == NULL) {
-        return(-1);
+        return -1;
     }
 
     bp = buffer;
@@ -372,7 +362,7 @@ find_file(int fd, zentry *entry, const char *file_name)
 
     if ((bytes = read(fd, bp, MINREAD)) < 0) {
         free(buffer);
-        return (-1);
+        return -1;
     }
     p = bp;
     /*
@@ -394,7 +384,7 @@ find_file(int fd, zentry *entry, const char *file_name)
             p = memmove(bp, p, bytes);
             if ((res = read(fd, bp + bytes, MINREAD)) <= 0) {
                 free(buffer);
-                return (-1);
+                return -1;
             }
             bytes += res;
         }
@@ -406,29 +396,28 @@ find_file(int fd, zentry *entry, const char *file_name)
             read_size = (read_size < MINREAD) ? MINREAD : read_size;
             if ((res = read(fd, bp + bytes,  read_size)) <= 0) {
                 free(buffer);
-                return (-1);
+                return -1;
             }
             bytes += res;
         }
 
         /*
-         * Check if the name is the droid we are looking for; the jar file
-         * manifest.  If so, build the entry record from the data found in
-         * the header located and return success.
+         * Check if this is the entry we are looking for. If so, build the
+         * entry record from the data found in the header located and return success.
          */
         if ((size_t)CENNAM(p) == JLI_StrLen(file_name) &&
           memcmp((p + CENHDR), file_name, JLI_StrLen(file_name)) == 0) {
             if (JLI_Lseek(fd, base_offset + CENOFF(p), SEEK_SET) < (jlong)0) {
                 free(buffer);
-                return (-1);
+                return -1;
             }
             if (read(fd, locbuf, LOCHDR) < 0) {
                 free(buffer);
-                return (-1);
+                return -1;
             }
             if (!LOCSIG_AT(locbuf)) {
                 free(buffer);
-                return (-1);
+                return -1;
             }
             entry->isize = CENLEN(p);
             entry->csize = CENSIZ(p);
@@ -436,7 +425,7 @@ find_file(int fd, zentry *entry, const char *file_name)
                 LOCNAM(locbuf) + LOCEXT(locbuf);
             entry->how = CENHOW(p);
             free(buffer);
-            return (0);
+            return 0; // successfully located the entry
         }
 
         /*
@@ -447,7 +436,7 @@ find_file(int fd, zentry *entry, const char *file_name)
         p += entry_size;
     }
     free(buffer);
-    return (-1);        /* Fell off the end the loop without a Manifest */
+    return -2;        /* entry not found in the ZIP/JAR */
 }
 
 /*
@@ -565,14 +554,14 @@ parse_nv_pair(char **lp, char **name, char **value)
 }
 
 /*
- * Read the manifest from the specified jar file and fill in the manifest_info
+ * Read the manifest from the specified JAR file and fill in the manifest_info
  * structure with the information found within.
  *
  * Error returns are as follows:
  *    0 Success
  *   -1 Unable to open jarfile
- *   -2 Error accessing the manifest from within the jarfile (most likely
- *      a manifest is not present, or this isn't a valid zip/jar file).
+ *   -2 Manifest file is not present in the JAR file
+ *   -3 Any other error when parsing the manifest
  */
 int
 JLI_ParseManifest(char *jarfile, manifest_info *info)
@@ -592,17 +581,17 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
         | O_BINARY /* use binary mode on windows */
 #endif
         )) == -1) {
-        return (-1);
+        return -1;
     }
     info->splashscreen_image_file_name = NULL;
     if ((rc = find_file(fd, &entry, manifest_name)) != 0) {
         close(fd);
-        return (-2);
+        return rc == -2 ? rc : -3; // -2 if manifest file not found, -3 for other errors
     }
     manifest = inflate_file(fd, &entry, NULL);
     if (manifest == NULL) {
         close(fd);
-        return (-2);
+        return -3;
     }
     lp = manifest;
     while ((rc = parse_nv_pair(&lp, &name, &value)) > 0) {
@@ -612,9 +601,9 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
     }
     close(fd);
     if (rc == 0)
-        return (0);
+        return 0;
     else
-        return (-2);
+        return -3;
 }
 
 /*
