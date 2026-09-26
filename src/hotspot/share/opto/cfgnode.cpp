@@ -2977,7 +2977,7 @@ private:
             _nodes_from_phi.push(in);
           }
         }
-      } else if (n->is_ConstraintCast()) {
+      } else if (should_skip_over(n)) {
         Node* in = n->in(1);
         if (in != nullptr) {
           _nodes_from_phi.push(in);
@@ -2991,6 +2991,7 @@ private:
     for (int i = _nodes_from_phi.size() - 1; i >= 0; i--) {
       Node* n = _nodes_from_phi.at(i);
       if (!n->is_ValueType()) {
+        assert(!n->is_Phi() || n->bottom_type()->make_oopptr() != nullptr, "broken graph");
         _nodes_from_phi.remove(i);
       }
     }
@@ -3005,16 +3006,24 @@ private:
             _nodes_from_phi.push(in);
           }
         }
-      } else if (n->is_ConstraintCast()) {
+      } else if (should_skip_over(n)) {
         Node* in = n->in(1);
         if (in != nullptr) {
           _nodes_from_phi.push(in);
         }
       } else if (n->is_ValueType()) {
-        Node* buf = n->as_ValueType()->get_oop();
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* buf = value_type->get_oop();
         if (buf != nullptr) {
           _nodes_from_phi.push(buf);
           _subgraph_to_clone.push(n);
+        }
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          const Type* field_type = _phase->type(field);
+          if (field_type->isa_instptr() && !field_type->is_valueklassptr() && field_type->is_instptr()->can_be_value_type()) {
+            _nodes_from_phi.push(field);
+          }
         }
       }
     }
@@ -3076,17 +3085,26 @@ private:
             }
           }
         }
-      } else if (n->is_ConstraintCast()) {
+      } else if (should_skip_over(n)) {
         Node* in = n->in(1);
         Node* in_clone = get_clone(in);
         assert(in_clone != nullptr, "must be cloned");
         n_clone->set_req(1, in_clone);
       } else if (n->is_ValueType()) {
-        Node* in = n->as_ValueType()->get_oop();
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* in = value_type->get_oop();
         Node* in_clone = get_clone(in);
         if (in_clone != nullptr) {
           _phase->is_IterGVN()->rehash_node_delayed(n);
-          n->as_ValueType()->set_oop(*_phase, in_clone);
+          value_type->set_oop(*_phase, in_clone);
+        }
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          Node* field_clone = get_clone(field);
+          if (field_clone != nullptr) {
+            _phase->is_IterGVN()->rehash_node_delayed(n);
+            value_type->set_field_value(j, field_clone);
+          }
         }
       }
     }
@@ -3102,12 +3120,15 @@ private:
     uint vts_to_skip = 0;
     uint before_phis = 0;
     uint before_casts = 0;
+    uint before_encode_decode = 0;
     for (uint i = 0; i < _nodes_from_phi.size(); ++i) {
       Node *n = _nodes_from_phi.at(i);
       if (n->is_Phi()) {
         before_phis++;
       } else if (n->is_ConstraintCast()) {
         before_casts++;
+      } else if (n->is_DecodeN() || n->is_EncodeP()) {
+        before_encode_decode++;
       } else if (n->is_ValueType()) {
         Node* buf = n->as_ValueType()->get_oop();
         if (buf != nullptr && i >= _init_nodes) {
@@ -3127,7 +3148,7 @@ private:
             after.push(in);
           }
         }
-      } else if (n->is_ConstraintCast()) {
+      } else if (should_skip_over(n)) {
         Node* in = n->in(1);
         if (in != nullptr) {
           after.push(in);
@@ -3142,6 +3163,7 @@ private:
     }
     uint after_phis = 0;
     uint after_casts = 0;
+    uint after_encode_decode = 0;
     uint init_nodes = after.size();
     for (uint i = 0; i < after.size(); ++i) {
       Node* n = after.at(i);
@@ -3159,19 +3181,38 @@ private:
         if (in != nullptr) {
           after.push(in);
         }
+      } else if (n->is_DecodeN() || n->is_EncodeP()) {
+        after_encode_decode++;
+        Node* in = n->in(1);
+        if (in != nullptr) {
+          after.push(in);
+        }
       } else if (n->is_ValueType()) {
         assert(i < init_nodes, "");
-        Node* buf = n->as_ValueType()->get_oop();
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* buf = value_type->get_oop();
         if (buf != nullptr) {
           after.push(buf);
+        }
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          const Type* field_type = _phase->type(field);
+          if (field_type->isa_instptr() && !field_type->is_valueklassptr() && field_type->is_instptr()->can_be_value_type()) {
+            after.push(field);
+          }
         }
       }
     }
     assert(after.size() + vts_to_skip == _nodes_from_phi.size(), "");
     assert(before_casts == after_casts, "no cast should have been dropped");
-    assert(before_phis == after_phis, "no phi should");
+    assert(before_phis == after_phis, "no phi should have been dropped");
+    assert(before_encode_decode == after_encode_decode, "no DecodeN/EncodeP should have been dropped");
   }
 #endif
+
+  bool should_skip_over(Node* n) {
+    return n->is_ConstraintCast() || n->is_EncodeP() || n->is_DecodeN();
+  }
 
   Node* do_transform(PhiNode* phi) {
     assert(_value_klass != nullptr, "must be");
@@ -3187,8 +3228,10 @@ private:
       if (n == nullptr) {
         continue;
       }
-      while (n->is_ConstraintCast()) {
-        casts.push(n);
+      while (should_skip_over(n)) {
+        if (n->is_ConstraintCast()) {
+          casts.push(n);
+        }
         n = n->in(1);
       }
       if (_phase->type(n)->is_zero_type()) {
@@ -3202,6 +3245,7 @@ private:
           n = _phase->transform(do_transform(n->as_Phi()));
         }
       }
+      assert(n->is_top() || n->is_ValueType(), "Only InlineType or top at this point.");
       while (casts.size() != 0) {
         // Push the cast(s) through the ValueTypeNode
         Node *cast = casts.pop()->clone();
@@ -3223,8 +3267,10 @@ private:
         vt->merge_with(_phase, n->as_ValueType(), i, transform);
       } // else nothing to do: phis above vt created by clone_with_phis are initialized to top already.
     }
+    if (phi == _root_phi && _root_phi->bottom_type()->isa_narrowoop()) {
+      return new EncodePNode(_phase->transform(vt), _root_phi->bottom_type());
+    }
     return vt;
-
   }
 
   PhiNode* _root_phi;
@@ -3252,7 +3298,7 @@ public:
     for (uint next = 0; next < _nodes_from_phi.size(); next++) {
       Node* n = _nodes_from_phi.at(next);
       if (n->is_Phi()) {
-        assert(n->bottom_type()->isa_ptr(), "broken graph");
+        assert(n->bottom_type()->make_ptr() != nullptr, "broken graph");
         if (n != _root_phi && !_can_reshape) {
           return false;
         }
@@ -3263,6 +3309,9 @@ public:
           // Will die, don't optimize
           return false;
         }
+        continue;
+      }
+      if (n->is_EncodeP() || n->is_DecodeN()) {
         continue;
       }
       const Type* type = _phase->type(n);
