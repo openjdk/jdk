@@ -196,8 +196,8 @@ public class PStack extends Tool {
                   f = f.sender(th, senderSP, senderFP, senderPC);
                }
             } catch (DwarfException dex) {
-               // Linux: DwarfException would be shown if DWARF processing is failed.
-               // Stack unwinding should be aborted, however we can continue for other threads.
+               // Linux: DwarfException will be thrown if DWARF processing fails.
+               // Stack unwinding should be aborted. However, we can continue for other threads.
                // See JDK-8392132 and the review thread on GitHub for details.
                IO.println(dex.toString());
             } catch (Exception exp) {
