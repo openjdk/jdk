@@ -29,10 +29,14 @@
  *          On a UBSAN build the signed overflow would be caught as UB;
  *          on a normal build the test verifies no crash from the bogus
  *          allocation size that resulted from the overflow.
+ *          Set the stack size to the default stack size used on Linux.
+ *          This is smaller than the default stack size used on macOS
+ *          (2048K) but large enough to avoid stack overflow exceptions
+ *          resulting from the smaller default stack size of 1MB on Windows.
  *
  * @requires vm.compiler2.enabled
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation
+ * @run main/othervm -Xss2040K -Xcomp -XX:-TieredCompilation
  *      compiler.escapeAnalysis.TestBCEscapeAnalyzerOverflow
  */
 
