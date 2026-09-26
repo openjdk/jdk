@@ -922,11 +922,24 @@ public class Pretty extends JCTree.Visitor {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         try {
             print("for (");
-            printExpr(tree.var);
+            printExpr(tree.varOrRecordPattern);
             print(" : ");
             printExpr(tree.expr);
             print(") ");
             printStat(tree.body);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitEnhancedVariableDeclaration(JCEnhancedVariableDeclaration tree) {
+        try {
+            printExpr(tree.pattern);
+            if (tree.expr != null) {
+                print(" = ");
+                printExpr(tree.expr );
+            }
+            print(";");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

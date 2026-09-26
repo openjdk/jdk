@@ -684,8 +684,7 @@ class TaskFactory {
                  .stream()
                  .filter(s -> s.status() == Status.VALID)
                  .filter(s -> s.kind() == Snippet.Kind.VAR)
-                 .filter(s -> s.subKind() == Snippet.SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND ||
-                              s.subKind() == Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND)
+                 .filter(s -> s.subKind().supportsEnhancedTypes())
                  .forEach(s -> setVariableType((VarSnippet) s));
             variablesSet = true;
         }
