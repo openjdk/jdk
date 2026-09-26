@@ -3024,14 +3024,6 @@ operand immIpowerOf2() %{
   interface(CONST_INTER);
 %}
 
-operand immLpowerOf2() %{
-  predicate(is_power_of_2((julong)(n->get_long())));
-  match(ConL);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Int immediate: the mask of a bitfield extract, i.e. contiguous low-order
 // ones, whose width is log2i_exact(mask + 1), e.g. 0xfff, 0xffff, 0x7fffffff.
 // Masks that fit into a 12-bit immediate are excluded: a shift followed by

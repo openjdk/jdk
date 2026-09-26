@@ -665,22 +665,23 @@ instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpow
   ins_pipe(ialu_reg_reg);
 %}
 
-// AndL 0b0..010..0 + ConvI2B
-instruct convI2Bool_andL_reg_immLpowerOf2(iRegINoSp dst, iRegL src, immLpowerOf2 mask) %{
+instruct extractI_reg_imm(iRegINoSp dst, iRegIorL2I src, immI shift, immI_1 one) %{
   predicate(UseZbs);
-  match(Set dst (Conv2B (AndL src mask)));
+  match(Set dst (AndI (URShiftI src shift) one));
   ins_cost(ALU_COST);
 
-  format %{ "bexti  $dst, $src, $mask\t#@convI2Bool_andL_reg_immLpowerOf2" %}
+  format %{ "bexti  $dst, $src, ($shift & 0x1f)\t#@extractI_reg_imm" %}
   ins_encode %{
-    __ bexti($dst$$Register, $src$$Register, exact_log2_long((julong)($mask$$constant)));
+    __ bexti(as_Register($dst$$reg), as_Register($src$$reg),
+             (unsigned)$shift$$constant & 0x1f);
   %}
 
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(ialu_reg_shift);
 %}
 
 instruct extractI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI_1 one) %{
-  predicate(UseZbs);
+  predicate(UseZbs && (n->in(1)->in(2)->bottom_type()->is_int()->_lo >= 0 &&
+            n->in(1)->in(2)->bottom_type()->is_int()->_hi <= 31));
   match(Set dst (AndI (URShiftI src1 src2) one));
   ins_cost(ALU_COST);
 
@@ -691,6 +692,34 @@ instruct extractI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI_
   %}
 
   ins_pipe(ialu_reg_reg);
+%}
+
+instruct extractI2L_reg_imm(iRegLNoSp dst, iRegIorL2I src, immI shift, immI_1 one) %{
+  predicate(UseZbs);
+  match(Set dst (ConvI2L (AndI (URShiftI src shift) one)));
+  ins_cost(ALU_COST);
+
+  format %{ "bexti  $dst, $src, ($shift & 0x1f)\t#@extractI2L_reg_imm" %}
+  ins_encode %{
+    __ bexti(as_Register($dst$$reg), as_Register($src$$reg),
+             (unsigned)$shift$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct extractL_reg_imm(iRegLNoSp dst, iRegL src, immI shift, immL_1 one) %{
+  predicate(UseZbs);
+  match(Set dst (AndL (URShiftL src shift) one));
+  ins_cost(ALU_COST);
+
+  format %{ "bexti  $dst, $src, ($shift & 0x3f)\t#@extractL_reg_imm" %}
+  ins_encode %{
+    __ bexti(as_Register($dst$$reg), as_Register($src$$reg),
+             (unsigned)$shift$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
 %}
 
 instruct extractL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_1 one) %{
