@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,9 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import nsk.share.*;
 import nsk.share.jpda.*;
@@ -88,6 +85,26 @@ public class startlis001 {
         return new startlis001().runIt(argv, out);
     }
 
+    private boolean isExpectedLoopbackAddress(String listenAddr, String expectedPort) {
+        int split = listenAddr.lastIndexOf(':');
+        if (split < 0) {
+            return false;
+        }
+
+        String host = listenAddr.substring(0, split);
+        String actualPort = listenAddr.substring(split + 1);
+
+        if (expectedPort != null && !actualPort.equals(expectedPort)) {
+            return false;
+        }
+
+        try {
+            return InetAddress.getByName(host).isLoopbackAddress();
+        } catch (UnknownHostException e) {
+            return false;
+        }
+    }
+
     private int runIt(String argv[], PrintStream out) {
         String port;
         String addr;
@@ -101,23 +118,6 @@ public class startlis001 {
         log = new Log(out, argHandler);
 
         long timeout = argHandler.getWaitTime() * 60 * 1000;
-
-        /* Check that listening address returned by ListeningConnector.startListening()
-         * matches the address which was set via connector's arguments.
-         * Empty host address causes listening for local connections only (loopback interface).
-         * */
-        String hostname = "localhost";
-        List<String> validAddresses = new LinkedList<>();
-        validAddresses.add(hostname);
-        try {
-            Arrays.stream(InetAddress.getAllByName(hostname))
-                    .forEach(address -> validAddresses.add(address.getHostAddress()));
-        } catch (UnknownHostException e) {
-            log.complain("FAILURE: caught UnknownHostException " +
-                    e.getMessage());
-            totalRes = false;
-        }
-
         port = argHandler.getTransportPortIfNotDynamic();
 
         initConnector(port);
@@ -125,17 +125,11 @@ public class startlis001 {
             log.complain("Test case #1 FAILED: unable to start listening");
             totalRes = false;
         } else {
-            String validAddrList = validAddresses.stream()
-                    .map(value -> value + ":" + port)
-                    .collect(Collectors.joining(" or "));
             log.display("Test case #1: start listening the address " + addr);
-            log.display("Expected addresses: " + validAddrList);
             final String listenAddr = addr;
-            boolean isValid = validAddresses.stream()
-                    .anyMatch(value -> listenAddr.startsWith(value) && (port == null || listenAddr.endsWith(port)));
-            if (!isValid) {
+            if (!isExpectedLoopbackAddress(listenAddr, port)) {
                 log.complain("Test case #1 FAILED: listening address " + addr +
-                    "\ndoes not match expected address:\n" + validAddrList);
+                    "\ndoes not match expected a loopback address");
                 totalRes = false;
             }
             if (!stopListen()) {
