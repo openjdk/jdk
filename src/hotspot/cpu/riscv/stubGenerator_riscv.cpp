@@ -4217,11 +4217,226 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  #ifdef COMPILER2
+  /******************************************************************************/
+  //                     String handling intrinsics(SIMD)
+  //                     --------------------------
+  //
+  // Currently implements scheme described in http://0x80.pl/articles/simd-strfind.html
+  // Implementation can be found at https://github.com/WojciechMula/sse4-strstr
+  //
+  // The general idea is as follows:
+  // 1. Broadcast the first char of the needle to a first-char vector register
+  // 2. Broadcast the last char of the needle to a last-char vector register
+  // 3. Compare the first-char vector register to the first position of the haystack
+  // 4. Compare the last-char vector register to the (k-1)st position of the haystack
+  //    where k is the length of the needle
+  // 5. Logically AND the results of the comparison
+  //
+  // Note: riscv can compare vec register with scalar value by vmseq_vx, so broadcast is
+  //       unnecessary
+  //
+  // The result of the AND yields the position within the haystack where both the first
+  // and last char of the needle exist in their correct relative positions.  Check the full
+  // needle value against the haystack to confirm a match.
+  //
+  // x10 result - index of the first match in characters, or -1
+  // x11 src (haystack)
+  // x12 src count, in characters (haystack_len)
+  // x13 pattern (needle)
+  // x14 pattern count, in characters (needle_len)
+  //
+  // Callers must check 8 <= needle_len <= haystack_len
+  /******************************************************************************/
+  address generate_string_indexof_linear_v(StubId stub_id) {
+    assert(UseRVV && UseZbb, "sanity");
+    bool needle_isL;
+    bool haystack_isL;
+    switch (stub_id) {
+    case StubId::stubgen_string_indexof_linear_ll_v_id:
+      needle_isL = true;
+      haystack_isL = true;
+      break;
+    case StubId::stubgen_string_indexof_linear_ul_v_id:
+      needle_isL = true;
+      haystack_isL = false;
+      break;
+    case StubId::stubgen_string_indexof_linear_uu_v_id:
+      needle_isL = false;
+      haystack_isL = false;
+      break;
+    default:
+      ShouldNotReachHere();
+    };
+
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+
+    int needle_chr_size = needle_isL ? 1 : 2;
+    int haystack_chr_size = haystack_isL ? 1 : 2;
+    int needle_chr_shift = needle_isL ? 0 : 1;
+    int haystack_chr_shift = haystack_isL ? 0 : 1;
+    Assembler::SEW haystack_sew = haystack_isL ? Assembler::e8 : Assembler::e16;
+    // always use 256 as vector length
+    assert(MaxVectorSize == 16 || MaxVectorSize == 32, "sanity");
+    Assembler::LMUL lmul = MaxVectorSize == 16 ? Assembler::m2 : Assembler::m1;
+
+    // parameters
+    Register result = x10, haystack = x11, haystack_len = x12, needle = x13, needle_len = x14;
+    // haystack becomes the cursor of the chunk being scanned and haystack_len
+    // the number of candidate start positions not examined yet
+    Register hs = haystack, hs_remains = haystack_len;
+    // temporary registers
+    Register nptr = x18, hptr = x19, ncnt = x20, chunk_vl = x21, mpos = x22;
+    Register idx = x28, ch_first = x29, ch_last = x30, hs_last = x31;
+    Register tmp = t0, tmp2 = t1, cand = x7;
+    RegSet spilled_regs = RegSet::of(x7) + RegSet::range(x18, x22) + RegSet::range(x28, x31);
+    __ push_reg(spilled_regs, sp);
+
+    // Vector registers: v0 and v1 are mask registers, [v2 .. v6] are used for data
+    VectorRegister mask0 = v0, mask1 = v1;
+
+    Label L_SCAN_LOOP, L_CANDIDATE_LOOP, L_CMP_LOOP, L_CONTINUE_CMP, L_NEXT_CHUNK, L_FOUND, NOMATCH, DONE;
+
+    // First char position is in [0 .. (haystack_len - needle_len + 1)]
+    __ sub(hs_remains, haystack_len, needle_len);
+    __ addi(hs_remains, hs_remains, 1);
+
+    // load first and last char of needle
+    __ subi(tmp, needle_len, 1);
+    if (needle_isL) {
+      __ lbu(ch_first, Address(needle));
+      __ shadd(ch_last, tmp, needle, ch_last /* tmp */, needle_chr_shift);
+      __ lbu(ch_last, Address(ch_last));
+    } else {
+      __ lhu(ch_first, Address(needle));
+      __ shadd(ch_last, tmp, needle, ch_last /* tmp */, needle_chr_shift);
+      __ lhu(ch_last, Address(ch_last));
+    }
+    __ shadd(hs_last, tmp, haystack, hs_last /* tmp */, haystack_chr_shift);
+
+    // character index of the chunk hs points at
+    __ mv(idx, zr);
+
+    __ align(OptoLoopAlignment);
+    // Loop of scanning haystack to find candidates
+    __ bind(L_SCAN_LOOP);
+    __ vsetvli(chunk_vl, hs_remains, haystack_sew, lmul);
+    __ vlex_v(v2, hs, haystack_sew);
+    __ vmseq_vx(mask0, v2, ch_first);
+    // in case no first char match, skip the second vector load and goto next chunk
+    __ vfirst_m(mpos, mask0);
+    __ bltz(mpos, L_NEXT_CHUNK);
+    // hs_last = hs + k -1, hs_remains is in [0 .. (haystack_len - needle_len +1)]
+    __ vlex_v(v4, hs_last, haystack_sew);
+    __ vmseq_vx(mask1, v4, ch_last);
+    // Logical and 2 vector registers to get candidates
+    __ vmand_mm(mask0, mask0, mask1);
+
+    // We can use fewer instructions (vfirst_m/vmsif_m/vmandn_mm) to check and clear candidate bit.
+    // But in my test, vector instruction is slower than scalar instruction.
+    // So I move mask0 to GR here to reduce vector instructions
+    if (haystack_isL) {
+      // We need take 32 bit mask value
+      __ vsetvli(tmp, zr, Assembler::e32, Assembler::m1);
+    }
+    __ vmv_x_s(cand, mask0);
+    // keep last chunk_vl bits in cand register
+    __ li(tmp, -1);
+    __ sll(tmp, tmp, chunk_vl);
+    __ andn(cand, cand, tmp);
+    // no candidates
+    __ beqz(cand, L_NEXT_CHUNK);
+
+    __ bind(L_CANDIDATE_LOOP);
+    // cand is nonzero here. Take the lowest candidate and retire its bit right
+    // away so that the mismatch exit only has to test the GPR. Nothing below
+    // reads vl until the next vsetvli, so the widened vtype of the bitmap read
+    // needs no restoring.
+    __ ctz(mpos, cand);
+    __ addi(tmp, cand, -1);
+    __ andr(cand, tmp, cand);
+
+    // needle[0] and needle[k - 1] match, compare to needle[1, k - 2]
+    __ subi(ncnt, needle_len, 2);
+    __ shadd(hptr, mpos, hs, hptr /* tmp */, haystack_chr_shift);
+    __ addi(hptr, hptr, haystack_chr_size);
+    __ addi(nptr, needle, needle_chr_size);
+
+    // Loop of comparing the candidate to needle[1, k - 2]
+    __ bind(L_CMP_LOOP);
+    if (needle_isL == haystack_isL) {
+      // UU or LL
+      __ vsetvli(tmp, ncnt, haystack_sew, lmul);
+      __ vlex_v(v2, hptr, haystack_sew);
+      __ vlex_v(v4, nptr, haystack_sew);
+    } else {
+      // UL: inflate the Latin1 needle characters before comparing
+      __ vsetvli(tmp, ncnt, Assembler::e16, lmul);
+      __ vle8_v(v6, nptr);
+      __ vzext_vf2(v4, v6);
+      __ vle16_v(v2, hptr);
+    }
+    __ vmsne_vv(mask1, v2, v4);
+    __ vfirst_m(tmp2, mask1);
+    __ bltz(tmp2, L_CONTINUE_CMP); // characters of tmp length matched, continue to check rest
+    // mismatch: check next candidate.
+    __ bnez(cand, L_CANDIDATE_LOOP);
+    __ j(L_NEXT_CHUNK);
+
+    __ bind(L_CONTINUE_CMP);
+    __ sub(ncnt, ncnt, tmp);
+    __ shadd(hptr, tmp, hptr, tmp2, haystack_chr_shift);
+    __ shadd(nptr, tmp, nptr, tmp2, needle_chr_shift);
+    __ bnez(ncnt, L_CMP_LOOP);
+    // all matches: found it
+    __ j(L_FOUND);
+
+    __ bind(L_NEXT_CHUNK);
+    __ sub(hs_remains, hs_remains, chunk_vl);
+    __ beqz(hs_remains, NOMATCH);
+    __ add(idx, idx, chunk_vl);
+    // advance both cursors by chunk_vl characters
+    __ shadd(hs, chunk_vl, hs, tmp, haystack_chr_shift);
+    __ shadd(hs_last, chunk_vl, hs_last, tmp, haystack_chr_shift);
+    __ j(L_SCAN_LOOP);
+
+    __ bind(L_FOUND);
+    __ add(result, idx, mpos);
+    __ j(DONE);
+
+    __ bind(NOMATCH);
+    __ mv(result, -1);
+
+    __ bind(DONE);
+    __ pop_reg(spilled_regs, sp);
+    __ ret();
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
+    return entry;
+  }
+  #endif
+
   void generate_string_indexof_stubs()
   {
     StubRoutines::riscv::_string_indexof_linear_ll = generate_string_indexof_linear(StubId::stubgen_string_indexof_linear_ll_id);
     StubRoutines::riscv::_string_indexof_linear_uu = generate_string_indexof_linear(StubId::stubgen_string_indexof_linear_uu_id);
     StubRoutines::riscv::_string_indexof_linear_ul = generate_string_indexof_linear(StubId::stubgen_string_indexof_linear_ul_id);
+    if (UseVectorizedStringIndexOf) {
+      StubRoutines::riscv::_string_indexof_linear_ll_v = generate_string_indexof_linear_v(StubId::stubgen_string_indexof_linear_ll_v_id);
+      StubRoutines::riscv::_string_indexof_linear_uu_v = generate_string_indexof_linear_v(StubId::stubgen_string_indexof_linear_uu_v_id);
+      StubRoutines::riscv::_string_indexof_linear_ul_v = generate_string_indexof_linear_v(StubId::stubgen_string_indexof_linear_ul_v_id);
+    }
   }
 
 #ifdef COMPILER2

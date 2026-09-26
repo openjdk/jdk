@@ -11898,7 +11898,7 @@ instruct string_indexofUU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           iRegI_R10 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
                           iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
 %{
-  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(!UseVectorizedStringIndexOf && ((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);
@@ -11919,7 +11919,7 @@ instruct string_indexofLL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           iRegI_R10 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
                           iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
 %{
-  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(!UseVectorizedStringIndexOf && ((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);
@@ -11940,7 +11940,7 @@ instruct string_indexofUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           iRegI_R10 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
                           iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
 %{
-  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
+  predicate(!UseVectorizedStringIndexOf && ((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);

@@ -274,6 +274,15 @@ void VM_Version::common_initialize() {
     }
   }
 
+  if (UseRVV && UseZbb) {
+    if (FLAG_IS_DEFAULT(UseVectorizedStringIndexOf)) {
+      FLAG_SET_DEFAULT(UseVectorizedStringIndexOf, true);
+    }
+  } else if (UseVectorizedStringIndexOf) {
+    warning("VectorizedStringIndexOf stubs requires RVV and Zbb.");
+    FLAG_SET_DEFAULT(UseVectorizedStringIndexOf, false);
+  }
+
   if (ValueTypePassFieldsAsArgs) {
     warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
     FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
