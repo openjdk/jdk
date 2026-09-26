@@ -474,6 +474,10 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
     }
   }
 
+  // Useless nodes might be added to the worklist during parsing and in
+  // the loop above. Let's remove them from the worklist now they are
+  // not in the graph anymore.
+  worklist.remove_useless_nodes(useful.member_set());
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
   remove_useless_nodes(_parse_predicates,   useful); // remove useless Parse Predicate nodes
   // Remove useless Template Assertion Predicate opaque nodes

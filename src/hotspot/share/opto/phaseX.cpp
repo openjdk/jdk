@@ -388,9 +388,6 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist
   // Must be done before disconnecting nodes to preserve hash-table-invariant
   gvn->remove_useless_nodes(_useful.member_set());
 
-  // Remove all useless nodes from future worklist
-  worklist.remove_useless_nodes(_useful.member_set());
-
   // Disconnect 'useless' nodes that are adjacent to useful nodes
   C->disconnect_useless_nodes(_useful, worklist);
 }
@@ -3469,7 +3466,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
   switch( n->Opcode() ) {
   case Op_CallStaticJava:  // Give post-parse call devirtualization a chance
   case Op_CallDynamicJava:
-  case Op_FastLock:        // Revisit FastLocks for lock coarsening
   case Op_If:
   case Op_CountedLoopEnd:
   case Op_Region:
@@ -3479,6 +3475,8 @@ Node *PhaseCCP::transform_once( Node *n ) {
   case Op_Opaque1:
     _worklist.push(n);
     break;
+  case Op_FastLock:
+    assert(false, "should not be materialized yet");
   default:
     break;
   }

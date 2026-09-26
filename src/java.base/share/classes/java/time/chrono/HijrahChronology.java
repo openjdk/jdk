@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,7 +530,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
         checkCalendarInit();
         return switch (field) {
             case DAY_OF_MONTH -> ValueRange.of(1, 1, getMinimumMonthLength(), getMaximumMonthLength());
-            case DAY_OF_YEAR -> ValueRange.of(1, getMaximumDayOfYear());
+            case DAY_OF_YEAR -> ValueRange.of(1, getSmallestMaximumDayOfYear(), getMaximumDayOfYear());
             case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, 5);
             case YEAR, YEAR_OF_ERA -> ValueRange.of(getMinimumYear(), getMaximumYear());
             case ERA -> ValueRange.of(1, 1);
@@ -902,8 +902,11 @@ public final class HijrahChronology extends AbstractChronology implements Serial
             hijrahEpochMonthStartDays = createEpochMonths(minEpochDay, minYear, maxYear, years);
             maxEpochDay = hijrahEpochMonthStartDays[hijrahEpochMonthStartDays.length - 1];
 
+            minYearLength = Integer.MAX_VALUE;
+            maxYearLength = Integer.MIN_VALUE;
+
             // Compute the min and max year length in days.
-            for (int year = minYear; year < maxYear; year++) {
+            for (int year = minYear; year <= maxYear; year++) {
                 int length = getYearLength(year);
                 minYearLength = Math.min(minYearLength, length);
                 maxYearLength = Math.max(maxYearLength, length);
@@ -945,7 +948,8 @@ public final class HijrahChronology extends AbstractChronology implements Serial
                 epochMonths[epochMonth++] = epochDay;
 
                 if (length < 29 || length > 32) {
-                    throw new IllegalArgumentException("Invalid month length in year: " + minYear);
+                    throw new IllegalArgumentException("Invalid month length in year: " + year +
+                            ", month: " + (month + 1) + ", length: " + length);
                 }
                 epochDay += length;
                 minMonthLength = Math.min(minMonthLength, length);
