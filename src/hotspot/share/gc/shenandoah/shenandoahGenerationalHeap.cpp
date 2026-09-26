@@ -802,7 +802,9 @@ private:
 
     struct ShenandoahRegionChunk assignment;
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
+    ShenandoahHeapRegion* humongous_start_cache = nullptr;
 
+    // Cancellation of update is low priority because we will soon eliminate degeneration behaviors.
     while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
       // Keep grabbing next work chunk to process until finished, or asked to yield
       ShenandoahHeapRegion* r = assignment._r;
@@ -821,7 +823,7 @@ private:
         if (is_mixed) {
           if (r->is_humongous()) {
             // Need to examine both dirty and clean cards during mixed evac.
-            r->oop_iterate_humongous_slice_all(&cl,start_of_range, assignment._chunk_size);
+            r->oop_iterate_humongous_slice_all(&cl,start_of_range, assignment._chunk_size, humongous_start_cache);
           } else {
             // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
             // and filled.  This will use mark bits to find objects that need to be updated.
@@ -832,7 +834,8 @@ private:
           size_t cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
           size_t clusters = assignment._chunk_size / cluster_size;
           assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
-          scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
+          scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id,
+                                        humongous_start_cache);
         }
       }
     }
@@ -902,8 +905,7 @@ private:
 
 void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
-  const uint nworkers = workers()->active_workers();
-  ShenandoahRegionChunkIterator work_list(nworkers);
+  ShenandoahRegionChunkIterator work_list(this);
   if (concurrent) {
     ShenandoahGenerationalUpdateHeapRefsTask<true> task(generation, &_update_refs_iterator, &work_list);
     workers()->run_task(&task);
@@ -914,6 +916,7 @@ void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* ge
 
   if (ShenandoahEnableCardStats) {
     // Only do this if we are collecting card stats
+    const uint nworkers = workers()->active_workers();
     ShenandoahScanRemembered* card_scan = old_generation()->card_scan();
     assert(card_scan != nullptr, "Card table must exist when card stats are enabled");
     card_scan->log_card_stats(nworkers, CARD_STAT_UPDATE_REFS);
