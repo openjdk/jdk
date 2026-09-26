@@ -1038,7 +1038,7 @@ Node* LibraryCallKit::current_thread_helper(Node*& tls_output, ByteSize handle_o
 
   Node* thread_obj_handle
     = (is_immutable
-      ? LoadNode::make(_gvn, nullptr, immutable_memory(), p, p->bottom_type()->is_ptr(),
+      ? LoadNode::make(_gvn, nullptr, immutable_memory(), p,
         TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered)
       : make_load(nullptr, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered));
   thread_obj_handle = _gvn.transform(thread_obj_handle);
@@ -1782,10 +1782,12 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     return false;
   }
   old_state.discard();
+  assert(C->get_alias_index(TypeAryPtr::BYTES) == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
+    "slice of address and input slice don't match");
   if (is_store) {
-    access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
+    access_store_at(value, adr, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
-    ch = access_load_at(value, adr, TypeAryPtr::BYTES, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD);
+    ch = access_load_at(value, adr, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD);
     set_result(ch);
   }
   return true;
@@ -2644,7 +2646,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     }
 
     if (p == nullptr) { // Could not constant fold the load
-      p = access_load_at(heap_base_oop, adr, adr_type, value_type, type, decorators);
+      p = access_load_at(heap_base_oop, adr, value_type, type, decorators);
       const TypeOopPtr* ptr = value_type->make_oopptr();
       if (ptr != nullptr && ptr->is_valueklassptr()) {
         // Load a non-flattened value type from memory
@@ -2669,7 +2671,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       val = ConvL2X(val);
       val = gvn().transform(new CastX2PNode(val));
     }
-    access_store_at(heap_base_oop, adr, adr_type, val, value_type, type, decorators);
+    access_store_at(heap_base_oop, adr, val, value_type, type, decorators);
   }
 
   return true;
@@ -2820,8 +2822,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     assert(value_type == TypePtr::NULL_PTR || value_type->value_klass() == value_klass,
            "value is of type %s while value klass is %s", value_type->value_klass()->name()->as_utf8(), value_klass->name()->as_utf8());
     if (layout == LayoutKind::REFERENCE) {
-      const TypePtr* ptr_type = (decorators & C2_MISMATCHED) != 0 ? TypeRawPtr::BOTTOM : _gvn.type(ptr)->is_ptr();
-      access_store_at(base, ptr, ptr_type, value, value_type, T_OBJECT, decorators);
+      access_store_at(base, ptr, value, value_type, T_OBJECT, decorators);
     } else {
       bool atomic = LayoutKindHelper::is_atomic_flat(layout);
       bool null_free = !LayoutKindHelper::is_nullable_flat(layout);
@@ -2836,8 +2837,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     decorators |= (C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD);
     ValueTypeNode* result;
     if (layout == LayoutKind::REFERENCE) {
-      const TypePtr* ptr_type = (decorators & C2_MISMATCHED) != 0 ? TypeRawPtr::BOTTOM : _gvn.type(ptr)->is_ptr();
-      Node* oop = access_load_at(base, ptr, ptr_type, Type::get_const_type(value_klass), T_OBJECT, decorators);
+      Node* oop = access_load_at(base, ptr, Type::get_const_type(value_klass), T_OBJECT, decorators);
       result = ValueTypeNode::make_from_oop(this, oop, value_klass);
     } else {
       bool atomic = LayoutKindHelper::is_atomic_flat(layout);
@@ -3087,24 +3087,24 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   Node* result = nullptr;
   switch (kind) {
     case LS_cmp_exchange: {
-      result = access_atomic_cmpxchg_val_at(base, adr, adr_type, alias_idx,
+      result = access_atomic_cmpxchg_val_at(base, adr, alias_idx,
                                             oldval, newval, value_type, type, decorators);
       break;
     }
     case LS_cmp_swap_weak:
       decorators |= C2_WEAK_CMPXCHG;
     case LS_cmp_swap: {
-      result = access_atomic_cmpxchg_bool_at(base, adr, adr_type, alias_idx,
+      result = access_atomic_cmpxchg_bool_at(base, adr, alias_idx,
                                              oldval, newval, value_type, type, decorators);
       break;
     }
     case LS_get_set: {
-      result = access_atomic_xchg_at(base, adr, adr_type, alias_idx,
+      result = access_atomic_xchg_at(base, adr, alias_idx,
                                      newval, value_type, type, decorators);
       break;
     }
     case LS_get_add: {
-      result = access_atomic_add_at(base, adr, adr_type, alias_idx,
+      result = access_atomic_add_at(base, adr, alias_idx,
                                     newval, value_type, type, decorators);
       break;
     }
@@ -3226,7 +3226,7 @@ bool LibraryCallKit::inline_getFieldMap() {
 
   Node* map_addr = basic_plus_adr(mirror, field_map_offset);
   const TypeAryPtr* val_type = TypeAryPtr::INTS->cast_to_ptr_type(TypePtr::NotNull)->with_offset(0);
-  Node* map = access_load_at(mirror, map_addr, TypeAryPtr::INTS, val_type, T_ARRAY, IN_HEAP | MO_UNORDERED);
+  Node* map = access_load_at(mirror, map_addr, val_type, T_ARRAY, IN_HEAP | MO_UNORDERED);
 
   set_result(map);
   return true;
@@ -3391,16 +3391,16 @@ bool LibraryCallKit::inline_native_vthread_start_transition(address funcAddr, co
   Node* thread = ideal.thread();
   Node* jt_addr = off_heap_plus_addr(thread, in_bytes(JavaThread::is_in_vthread_transition_offset()));
   Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_vthread_transition_offset());
-  access_store_at(nullptr, jt_addr, _gvn.type(jt_addr)->is_ptr(), ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
-  access_store_at(nullptr, vt_addr, _gvn.type(vt_addr)->is_ptr(), ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+  access_store_at(nullptr, jt_addr, ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+  access_store_at(nullptr, vt_addr, ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
   insert_mem_bar(Op_MemBarStoreLoad);
   ideal.sync_kit(this);
 
   Node* global_disable_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::global_vthread_transition_disable_count_address()));
-  Node* global_disable = ideal.load(ideal.ctrl(), global_disable_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, true /*require_atomic_access*/);
+  assert(C->get_alias_index(gvn().type(global_disable_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+  Node* global_disable = ideal.load(ideal.ctrl(), global_disable_addr, TypeInt::INT, T_INT, true /*require_atomic_access*/);
   Node* vt_disable_addr = basic_plus_adr(vt_oop, java_lang_Thread::vthread_transition_disable_count_offset());
-  const TypePtr* vt_disable_addr_t = _gvn.type(vt_disable_addr)->is_ptr();
-  Node* vt_disable = ideal.load(ideal.ctrl(), vt_disable_addr, TypeInt::INT, T_INT, C->get_alias_index(vt_disable_addr_t), true /*require_atomic_access*/);
+  Node* vt_disable = ideal.load(ideal.ctrl(), vt_disable_addr, TypeInt::INT, T_INT, true /*require_atomic_access*/);
   Node* disabled = _gvn.transform(new AddINode(global_disable, vt_disable));
 
   ideal.if_then(disabled, BoolTest::ne, ideal.ConI(0)); {
@@ -3421,7 +3421,8 @@ bool LibraryCallKit::inline_native_vthread_end_transition(address funcAddr, cons
   IdealKit ideal(this);
 
   Node* _notify_jvmti_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::notify_jvmti_events_address()));
-  Node* _notify_jvmti = ideal.load(ideal.ctrl(), _notify_jvmti_addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+  assert(C->get_alias_index(gvn().type(_notify_jvmti_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+  Node* _notify_jvmti = ideal.load(ideal.ctrl(), _notify_jvmti_addr, TypeInt::BOOL, T_BOOLEAN);
 
   ideal.if_then(_notify_jvmti, BoolTest::eq, ideal.ConI(1)); {
     sync_kit(ideal);
@@ -3435,8 +3436,8 @@ bool LibraryCallKit::inline_native_vthread_end_transition(address funcAddr, cons
     Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_vthread_transition_offset());
 
     sync_kit(ideal);
-    access_store_at(nullptr, jt_addr, _gvn.type(jt_addr)->is_ptr(), ideal.ConI(0), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
-    access_store_at(nullptr, vt_addr, _gvn.type(vt_addr)->is_ptr(), ideal.ConI(0), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    access_store_at(nullptr, jt_addr, ideal.ConI(0), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    access_store_at(nullptr, vt_addr, ideal.ConI(0), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
     ideal.sync_kit(this);
   } ideal.end_if();
 
@@ -3458,10 +3459,9 @@ bool LibraryCallKit::inline_native_notify_jvmti_sync() {
     Node* thread = ideal.thread();
     Node* arg = argument(0); // argument for notification
     Node* addr = off_heap_plus_addr(thread, in_bytes(JavaThread::is_disable_suspend_offset()));
-    const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
 
     sync_kit(ideal);
-    access_store_at(nullptr, addr, addr_type, arg, _gvn.type(arg), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    access_store_at(nullptr, addr, arg, _gvn.type(arg), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
     ideal.sync_kit(this);
   }
   final_sync(ideal);
@@ -3503,10 +3503,14 @@ bool LibraryCallKit::inline_native_classID() {
 
   __ if_then(kls, BoolTest::ne, null()); {
     Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
-    Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
+
+    assert(C->get_alias_index(gvn().type(kls_trace_id_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+    Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG);
 
     Node* epoch_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_address()));
-    Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+
+    assert(C->get_alias_index(gvn().type(epoch_address)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+    Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN);
     epoch = _gvn.transform(new LShiftLNode(longcon(1), epoch));
     Node* mask = _gvn.transform(new LShiftLNode(epoch, intcon(META_SHIFT)));
     mask = _gvn.transform(new OrLNode(mask, epoch));
@@ -3531,7 +3535,9 @@ bool LibraryCallKit::inline_native_classID() {
                                                    TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
     __ if_then(array_kls, BoolTest::ne, null()); {
       Node* array_kls_trace_id_addr = basic_plus_adr(array_kls, in_bytes(KLASS_TRACE_ID_OFFSET));
-      Node* array_kls_trace_id_raw = ideal.load(ideal.ctrl(), array_kls_trace_id_addr, TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
+
+      assert(C->get_alias_index(gvn().type(array_kls_trace_id_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+      Node* array_kls_trace_id_raw = ideal.load(ideal.ctrl(), array_kls_trace_id_addr, TypeLong::LONG, T_LONG);
       Node* array_kls_trace_id = _gvn.transform(new URShiftLNode(array_kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT)));
       ideal.set(result, _gvn.transform(new AddLNode(array_kls_trace_id, longcon(1))));
     } __ else_(); {
@@ -3540,9 +3546,11 @@ bool LibraryCallKit::inline_native_classID() {
     } __ end_if();
 
     Node* signaled_flag_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::signal_address()));
-    Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw, true, MemNode::acquire);
+
+    assert(C->get_alias_index(gvn().type(signaled_flag_address)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+    Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, true, MemNode::acquire);
     __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
-      ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);
+      ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, MemNode::release, true);
     } __ end_if();
   } __ end_if();
 
@@ -3779,7 +3787,6 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   // Load the raw epoch value from the threadObj.
   Node* threadObj_epoch_offset = basic_plus_adr(threadObj, java_lang_Thread::jfr_epoch_offset());
   Node* threadObj_epoch_raw = access_load_at(threadObj, threadObj_epoch_offset,
-                                             _gvn.type(threadObj_epoch_offset)->isa_ptr(),
                                              TypeInt::CHAR, T_CHAR,
                                              IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
 
@@ -3799,7 +3806,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
 
   // Load the raw epoch value from the vthread.
   Node* vthread_epoch_offset = basic_plus_adr(vthread, java_lang_Thread::jfr_epoch_offset());
-  Node* vthread_epoch_raw = access_load_at(vthread, vthread_epoch_offset, _gvn.type(vthread_epoch_offset)->is_ptr(),
+  Node* vthread_epoch_raw = access_load_at(vthread, vthread_epoch_offset,
                                            TypeInt::CHAR, T_CHAR,
                                            IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
 
@@ -4046,7 +4053,7 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
 
   // Load the raw epoch value from the vthread.
   Node* epoch_offset = basic_plus_adr(thread, java_lang_Thread::jfr_epoch_offset());
-  Node* epoch_raw = access_load_at(thread, epoch_offset, _gvn.type(epoch_offset)->is_ptr(), TypeInt::CHAR, T_CHAR,
+  Node* epoch_raw = access_load_at(thread, epoch_offset, TypeInt::CHAR, T_CHAR,
                                    IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
 
   // Mask off the excluded information from the epoch.
@@ -4159,7 +4166,7 @@ bool LibraryCallKit::inline_native_try_update_epoch() {
   // Load the epoch value from the oop.
   Node* oop_epoch = access_load_at(oop,
                                    oop_epoch_field_offset,
-                                   adr_type, oop_epoch_field_type,
+                                   oop_epoch_field_type,
                                    bt, IN_HEAP | MO_UNORDERED);
 
   // Load the current JFR epoch generation. The value is unsigned 16-bit, so we type it as T_CHAR.
@@ -4185,7 +4192,7 @@ bool LibraryCallKit::inline_native_try_update_epoch() {
 
   Node* result = access_atomic_cmpxchg_val_at(oop,
                                               oop_epoch_field_offset,
-                                              adr_type, alias_idx,
+                                              alias_idx,
                                               oop_epoch, // expected value
                                               current_epoch_generation, // new value
                                               oop_epoch_field_type,
@@ -4265,8 +4272,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   Node* p = off_heap_plus_addr(thread, in_bytes(JavaThread::vthread_offset()));
   Node* thread_obj_handle
     = make_load(nullptr, p, p->bottom_type()->is_ptr(), T_OBJECT, MemNode::unordered);
-  const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
-  access_store_at(nullptr, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
+  access_store_at(nullptr, thread_obj_handle, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
 
   // Change the _monitor_owner_id of the JavaThread
   Node* tid = load_field_from_object(arr, "tid", "J");
@@ -4315,8 +4321,7 @@ bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* cache_obj_handle = scopedValueCache_helper();
   const Type* objects_type = scopedValueCache_type();
 
-  const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
-  access_store_at(nullptr, cache_obj_handle, adr_type, arr, objects_type, T_OBJECT, IN_NATIVE | MO_UNORDERED);
+  access_store_at(nullptr, cache_obj_handle, arr, objects_type, T_OBJECT, IN_NATIVE | MO_UNORDERED);
 
   return true;
 }
@@ -7093,12 +7098,10 @@ bool LibraryCallKit::inline_arraycopy() {
       Node* src_klass = load_object_klass(src);
       Node* adr_prop_src = basic_plus_adr(top(), src_klass, in_bytes(ArrayKlass::properties_offset()));
       Node* prop_src = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_prop_src,
-                                                     _gvn.type(adr_prop_src)->is_ptr(), TypeInt::INT, T_INT,
-                                                     MemNode::unordered));
+                                                     TypeInt::INT, T_INT, MemNode::unordered));
       Node* adr_prop_dest = basic_plus_adr(top(), refined_dest_klass, in_bytes(ArrayKlass::properties_offset()));
       Node* prop_dest = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_prop_dest,
-                                                      _gvn.type(adr_prop_dest)->is_ptr(), TypeInt::INT, T_INT,
-                                                      MemNode::unordered));
+                                                      TypeInt::INT, T_INT, MemNode::unordered));
 
       const ArrayProperties props_null_restricted = ArrayProperties::Default().with_null_restricted();
       jint props_value = (jint)props_null_restricted.value();
@@ -8161,12 +8164,10 @@ bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
   DecoratorSet decorators = IN_HEAP | AS_NO_KEEPALIVE;
   decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
   Node* referent_field_addr = basic_plus_adr(reference_obj, java_lang_ref_Reference::referent_offset());
-  const TypePtr* referent_field_addr_type = _gvn.type(referent_field_addr)->isa_ptr();
   const Type* val_type = TypeOopPtr::make_from_klass(env()->Object_klass());
 
   Node* referent = access_load_at(reference_obj,
                                   referent_field_addr,
-                                  referent_field_addr_type,
                                   val_type,
                                   T_OBJECT,
                                   decorators);
@@ -8177,7 +8178,6 @@ bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
     sync_kit(ideal);
     access_store_at(reference_obj,
                     referent_field_addr,
-                    referent_field_addr_type,
                     null(),
                     val_type,
                     T_OBJECT,
@@ -8244,7 +8244,7 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
     decorators |= MO_SEQ_CST;
   }
 
-  return access_load_at(fromObj, adr, adr_type, type, bt, decorators);
+  return access_load_at(fromObj, adr, type, bt, decorators);
 }
 
 Node * LibraryCallKit::field_address_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString,
@@ -10291,9 +10291,8 @@ Node* LibraryCallKit::unbox_fp16_value(const TypeInstPtr* float16_box_type, ciFi
     return nullptr;
   }
   assert(not_null_box->bottom_type()->is_instptr()->maybe_null() == false, "");
-  const TypePtr* adr_type = C->alias_type(field)->adr_type();
   Node* adr = basic_plus_adr(not_null_box, field->offset_in_bytes());
-  return access_load_at(not_null_box, adr, adr_type, TypeInt::SHORT, T_SHORT, IN_HEAP);
+  return access_load_at(not_null_box, adr, TypeInt::SHORT, T_SHORT, IN_HEAP);
 }
 
 Node* LibraryCallKit::box_fp16_value(const TypeInstPtr* float16_box_type, ciField* field, Node* value) {
@@ -10309,7 +10308,6 @@ Node* LibraryCallKit::box_fp16_value(const TypeInstPtr* float16_box_type, ciFiel
 
   Node* field_store = _gvn.transform(access_store_at(box,
                                                      value_field,
-                                                     value_adr_type,
                                                      value,
                                                      TypeInt::SHORT,
                                                      T_SHORT,
