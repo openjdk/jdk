@@ -127,6 +127,7 @@ extern "C" {
 int pathmap_open(const char* name);
 
 void print_debug(const char* format,...);
+void print_warning(const char* format,...);
 void print_error(const char* format,...);
 bool is_debug();
 
