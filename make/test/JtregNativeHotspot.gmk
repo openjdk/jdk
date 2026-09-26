@@ -58,7 +58,8 @@ HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
 # Platform specific setup
 
 ifeq ($(call isTargetOs, linux), true)
-  HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoFramePointer := -fomit-frame-pointer
+  HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoFramePointer := \
+      -fomit-frame-pointer -fasynchronous-unwind-tables
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeinvoke := java.base:libjvm

@@ -94,13 +94,7 @@ class LinuxCDebugger implements CDebugger {
        return LinuxAARCH64CFrame.getTopFrame(dbg, context);
     } else if (cpu.equals("riscv64")) {
        RISCV64ThreadContext context = (RISCV64ThreadContext) thread.getContext();
-       Address sp = context.getRegisterAsAddress(RISCV64ThreadContext.SP);
-       if (sp == null) return null;
-       Address fp = context.getRegisterAsAddress(RISCV64ThreadContext.FP);
-       if (fp == null) return null;
-       Address pc  = context.getRegisterAsAddress(RISCV64ThreadContext.PC);
-       if (pc == null) return null;
-       return new LinuxRISCV64CFrame(dbg, sp, fp, pc);
+       return LinuxRISCV64CFrame.getTopFrame(dbg, context);
     } else {
        // Runtime exception thrown by LinuxThreadContextFactory if unknown cpu
        ThreadContext context = thread.getContext();
