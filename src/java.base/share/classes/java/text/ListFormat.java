@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
@@ -286,7 +288,7 @@ public final class ListFormat extends Format {
      * n = 1: {0}
      * n = 2: parsed pattern for "two"
      * n = 3: parsed pattern for "three"
-     * n > 3: (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
+     * n > 3: (start_before){0}start_between{1}middle_between{2} ... middle_between{n-1}end_between{n}(end_after)
      * }
      * As an example, the following table shows a pattern array which is equivalent to
      * {@code STANDARD} type, {@code FULL} style in US English:
@@ -402,6 +404,20 @@ public final class ListFormat extends Format {
         Objects.requireNonNull(toAppendTo);
 
         return format(obj, StringBufFactory.of(toAppendTo)).asStringBuffer();
+    }
+
+    /**
+     * {@return a {@code Collector} that concatenates the input elements into a
+     * string with the patterns of this {@code ListFormat}, in encounter order}
+     *
+     * <p>The collector returns an empty string if there are no input elements.
+     *
+     * @since 28
+     */
+    public Collector<CharSequence, ?, String> toCollector() {
+        return Collectors.collectingAndThen(
+                Collectors.mapping(String::valueOf, Collectors.toList()),
+                input -> input.isEmpty() ? "" : format(input));
     }
 
     @Override
