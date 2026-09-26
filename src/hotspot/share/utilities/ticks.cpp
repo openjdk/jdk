@@ -27,6 +27,8 @@
 
 #if defined(X86) && !defined(ZERO)
 #include "rdtsc_x86.hpp"
+#elif defined(AARCH64) && !defined(ZERO)
+#include "cntvctss_aarch64.hpp"
 #endif
 
 template <typename TimeSource, const int unit>
@@ -66,6 +68,12 @@ uint64_t FastUnorderedElapsedCounterSource::frequency() {
     static const uint64_t freq = (uint64_t)Rdtsc::frequency();
     return freq;
   }
+#elif defined(AARCH64) && !defined(ZERO)
+  static bool valid_cntvctss = Cntvctss::enabled();
+  if (valid_cntvctss) {
+    static const uint64_t freq = (uint64_t)Cntvctss::frequency();
+    return freq;
+  }
 #endif
   static const uint64_t freq = (uint64_t)os::elapsed_frequency();
   return freq;
@@ -76,6 +84,11 @@ FastUnorderedElapsedCounterSource::Type FastUnorderedElapsedCounterSource::now()
   static bool valid_rdtsc = Rdtsc::enabled();
   if (valid_rdtsc) {
     return Rdtsc::elapsed_counter();
+  }
+#elif defined(AARCH64) && !defined(ZERO)
+  static bool valid_cntvctss = Cntvctss::enabled();
+  if (valid_cntvctss) {
+    return Cntvctss::elapsed_counter();
   }
 #endif
   return os::elapsed_counter();
@@ -108,6 +121,11 @@ CompositeElapsedCounterSource::Type CompositeElapsedCounterSource::now() {
   static bool valid_rdtsc = Rdtsc::enabled();
   if (valid_rdtsc) {
     ct.val2 = Rdtsc::elapsed_counter();
+  }
+#elif defined(AARCH64) && !defined(ZERO)
+  static bool valid_cntvctss = Cntvctss::enabled();
+  if (valid_cntvctss) {
+    ct.val2 = Cntvctss::elapsed_counter();
   }
 #endif
   return ct;
