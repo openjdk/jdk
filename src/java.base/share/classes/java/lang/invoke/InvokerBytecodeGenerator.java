@@ -763,7 +763,7 @@ class InvokerBytecodeGenerator {
             assert(isStaticallyInvocableType(member.getMethodOrFieldType()));
             return true;
         }
-        if (cls.isArray() || cls.isPrimitive())
+        if (!cls.isClassOrInterface())
             return false;  // FIXME
         if (cls.isAnonymousClass() || cls.isLocalClass())
             return false;  // inner class of some sort
