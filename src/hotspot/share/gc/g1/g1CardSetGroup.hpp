@@ -133,6 +133,11 @@ public:
     assert(_group_id != InvalidId, "group must have an assigned id");
     return _group_id;
   }
+
+  // Iterate the cards in this card set group for merging them into the card table.
+  // The passed closure must be a CardOrRangeVisitor.
+  template <class CardOrRangeVisitor>
+  inline void iterate_for_merge(CardOrRangeVisitor& cl);
 };
 
 using G1CardSetGroupListIterator = GrowableArrayIterator<G1CardSetGroup*>;
