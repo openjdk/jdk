@@ -39,22 +39,45 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
+
+Atomic<int> ShenandoahGCStateResetter::_active_count;
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
   _saved_gc_state(_heap->gc_state()),
   _saved_gc_state_changed(_heap->_gc_state_changed) {
-  // Clear state to deactivate barriers. Indicate that state has changed
-  // so that verifier threads will use this value, rather than thread local
-  // values (which we are _not_ changing here).
-  _heap->_gc_state.clear();
-  _heap->_gc_state_changed = true;
+
+  // Need to complete GC processing before deactivating the barriers.
+  // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
+  // that would patch barriers or process the oops incorrectly. Verifier code
+  // can enter stack watermark processing as part of regular thread root work.
+  // This pretends Java threads have fixed up all state before we go for verification.
+  // Do this unconditionally in all callers to get to the same consensus point.
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
+    StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
+  }
+
+  // From this moment on, level-1 resetter is active.
+  if (_active_count.compare_set(0, 1, memory_order_relaxed)) {
+    // Clear state to deactivate barriers. Indicate that state has changed
+    // so that verifier threads will use this value, rather than thread local
+    // values (which we are _not_ changing here).
+    _heap->_gc_state.clear();
+    _heap->_gc_state_changed = true;
+  }
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
+  if (_active_count.add_then_fetch(-1, memory_order_relaxed) > 0) {
+    // Nested, nothing to do.
+    return;
+  }
+
   _heap->_gc_state.set(_saved_gc_state);
   _heap->_gc_state_changed = _saved_gc_state_changed;
   assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
