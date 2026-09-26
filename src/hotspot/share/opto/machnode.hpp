@@ -315,6 +315,9 @@ public:
   int           pd_alignment_required() const;
   virtual int   alignment_required() const { return pd_alignment_required(); }
 
+  // Copy platform-dependent flags, if needed.
+  void          pd_copy_flags_to(MachNode* replacement) const;
+
   // Return the padding (in bytes) to be emitted before this
   // instruction to properly align it.
   virtual int   compute_padding(int current_offset) const;
