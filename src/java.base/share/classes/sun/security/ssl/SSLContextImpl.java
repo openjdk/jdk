@@ -293,6 +293,12 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     // Is the context for DTLS protocols?
     abstract boolean isDTLS();
 
+    // Get supported Named Groups.
+    List<NamedGroup> getSupportedNamedGroups() {
+        return NamedGroup.SupportedGroups.getSupportedGroups(
+                getSupportedProtocolVersions(), getSupportedCipherSuites());
+    }
+
     // Get default protocols.
     List<ProtocolVersion> getDefaultProtocolVersions(boolean roleIsServer) {
         return roleIsServer ? getServerDefaultProtocolVersions()

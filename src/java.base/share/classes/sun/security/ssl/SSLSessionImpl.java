@@ -102,6 +102,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private final Collection<SignatureScheme>     localSupportedSignAlgs;
     private Collection<SignatureScheme> peerSupportedSignAlgs; //for certificate
     private boolean             useDefaultPeerSignAlgs = false;
+    private NamedGroup          namedGroup;
     private List<byte[]>        statusResponses;
     private SecretKey           exporterMasterSecret;  // TLSv1.3+ exporter info
     private RandomCookie        clientRandom;          // TLSv1.2- exporter info
@@ -1411,6 +1412,15 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     Collection<SignatureScheme> getPeerSupportedSignatureSchemes() {
         return peerSupportedSignAlgs;
+    }
+
+    @Override
+    public String getNamedGroup() {
+        return namedGroup == null ? null : namedGroup.name;
+    }
+
+    void setNamedGroup(NamedGroup namedGroup) {
+        this.namedGroup = namedGroup;
     }
 
     /**
