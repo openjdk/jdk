@@ -226,4 +226,18 @@ public:
   void roots_do(uint worker_id, OopClosure* oops);
 };
 
+class ShenandoahUpdateRootsTask : public WorkerTask {
+private:
+  ShenandoahRootUpdater*  _root_updater;
+  bool                    _check_alive;
+public:
+  ShenandoahUpdateRootsTask(ShenandoahRootUpdater* root_updater, bool check_alive) :
+    WorkerTask("Shenandoah Update Roots"),
+    _root_updater(root_updater),
+    _check_alive(check_alive){
+  }
+
+  void work(uint worker_id) override;
+};
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
