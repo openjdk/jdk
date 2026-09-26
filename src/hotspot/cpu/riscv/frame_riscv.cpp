@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -249,6 +249,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // Must be native-compiled frame. Since sender will try and use fp to find
   // linkages it must be safe
   if (!fp_safe) {
+    return false;
+  }
+
+  // sender_fp must be within the stack and above (but not equal) to
+  // current frame's fp.
+  address sender_fp = (address)this->link();
+  if (!thread->is_in_stack_range_excl(sender_fp, addr_fp)) {
     return false;
   }
 
@@ -619,6 +626,21 @@ frame::frame(void* ptr_sp, void* ptr_fp, void* pc) : _on_heap(false) {
 }
 
 #endif
+
+// Check for a method with scalarized value type arguments that needs
+// a stack repair and return the repaired sender stack pointer.
+
+intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
+  Unimplemented();
+  return nullptr;
+}
+
+bool frame::was_augmented_on_entry(int& real_size) const {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  assert(!_cb->as_nmethod()->needs_stack_repair(), "unimplemented");
+  real_size = _cb->frame_size();
+  return false;
+}
 
 void JavaFrameAnchor::make_walkable() {
   // last frame set?

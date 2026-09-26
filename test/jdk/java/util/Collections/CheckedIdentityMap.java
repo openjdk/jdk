@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6585904
+ * @bug 6585904 8336669
  * @run testng CheckedIdentityMap
  * @summary Checked collections with underlying maps with identity comparisons
  */
@@ -41,18 +41,18 @@ public class CheckedIdentityMap {
 
     @Test
     public void testHashCode() {
-        Map<Integer, Integer> m1 = checkedMap(
-            new IdentityHashMap<Integer, Integer>(),
-            Integer.class, Integer.class);
-        Map<Integer, Integer> m2 = checkedMap(
-            new IdentityHashMap<Integer, Integer>(),
-            Integer.class, Integer.class);
-        // NB: these are unique instances. Compare vs. Integer.valueOf(1)
-        m1.put(new Integer(1), new Integer(1));
-        m2.put(new Integer(1), new Integer(1));
+        Map<String, String> m1 = checkedMap(
+            new IdentityHashMap<>(),
+            String.class, String.class);
+        Map<String, String> m2 = checkedMap(
+            new IdentityHashMap<>(),
+            String.class, String.class);
+        // NB: these are unique instances. Compare vs. "A"
+        m1.put(new String("A"), new String("A"));
+        m2.put(new String("A"), new String("A"));
 
-        Map.Entry<Integer, Integer> e1 = m1.entrySet().iterator().next();
-        Map.Entry<Integer, Integer> e2 = m2.entrySet().iterator().next();
+        Map.Entry<String, String> e1 = m1.entrySet().iterator().next();
+        Map.Entry<String, String> e2 = m2.entrySet().iterator().next();
 
         assertNotEquals(e1, e2);
         assertEquals(e1.hashCode(), hashCode(e1));

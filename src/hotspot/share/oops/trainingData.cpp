@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -61,7 +62,7 @@ KlassTrainingData::KlassTrainingData() {
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
 }
 
-CompileTrainingData::CompileTrainingData() : _level(-1), _compile_id(-1) {
+CompileTrainingData::CompileTrainingData() : _level(-1), _is_osr(false), _compile_id(-1) {
   // Used by cppVtables.cpp only
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
 }
@@ -119,7 +120,7 @@ void TrainingData::verify() {
 }
 
 static bool is_excluded(InstanceKlass* k) {
-  if (!k->is_loaded() || k->has_been_redefined()) {
+  if (!k->is_loaded() || (TrainingData::need_data() && k->has_been_redefined())) {
     return true;
   }
   if (CDSConfig::is_at_aot_safepoint()) {
@@ -225,6 +226,7 @@ void MethodTrainingData::print_on(outputStream* st, bool name_only) const {
 
 CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
   int level = task->comp_level();
+  bool is_osr = (task->osr_bci() != CompileBroker::standard_entry_bci);
   int compile_id = task->compile_id();
   Thread* thread = Thread::current();
   methodHandle m(thread, task->method());
@@ -238,16 +240,16 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
   mtd->notice_compilation(level);
 
   TrainingDataLocker l;
-  CompileTrainingData* ctd = CompileTrainingData::allocate(mtd, level, compile_id);
-  if (ctd != nullptr) {
-    CompileTrainingData*& last_ctd = mtd->_last_toplevel_compiles[level - 1];
-    if (last_ctd != nullptr) {
-      assert(mtd->highest_top_level() >= level, "consistency");
-      if (last_ctd->compile_id() < compile_id) {
+  CompileTrainingData*& last_ctd = mtd->_last_toplevel_compiles[level - 1];
+  CompileTrainingData* ctd = nullptr;
+  if (last_ctd == nullptr ||                                                   // no previous CTD
+      (last_ctd->is_osr() == is_osr && last_ctd->compile_id() < compile_id) || // newer compile for same OSR status
+      (last_ctd->is_osr() && !is_osr)) {                                       // newer non-OSR compile after OSR compile
+    ctd = CompileTrainingData::allocate(mtd, level, is_osr, compile_id);
+    if (ctd != nullptr) {
+      if (last_ctd != nullptr) {
         last_ctd->clear_init_deps();
-        last_ctd = ctd;
       }
-    } else {
       last_ctd = ctd;
       mtd->notice_toplevel_compilation(level);
     }

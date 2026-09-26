@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,22 @@
  */
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import jdk.internal.jshell.tool.ConsoleIOContextTestSupport;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ToolTabSnippetTest extends UITesting {
 
@@ -56,9 +61,10 @@ public class ToolTabSnippetTest extends UITesting {
         super(true);
     }
 
-    @Test
-    public void testExpression() throws Exception {
-        Path classes = prepareZip();
+    @ParameterizedTest
+    @ValueSource(booleans={false, true})
+    public void testExpression(boolean createCombinedJar) throws Exception {
+        Path classes = prepareZip(createCombinedJar);
         doRunTest((inputSink, out) -> {
             inputSink.write("/env -class-path " + classes.toString() + "\n");
             waitOutput(out, resource("jshell.msg.set.restore") + "\n\\u001B\\[\\?2004h" + PROMPT);
@@ -278,7 +284,7 @@ public class ToolTabSnippetTest extends UITesting {
         });
     }
 
-    private Path prepareZip() {
+    private Path prepareZip(boolean createCombinedJar) {
         String clazz1 =
                 "package jshelltest;\n" +
                 "/**JShellTest 0" +
@@ -308,28 +314,80 @@ public class ToolTabSnippetTest extends UITesting {
                 "    public JShellTestAux(String str, int i) { }\n" +
                 "}\n";
 
-        Path srcZip = Paths.get("src.zip");
+        if (createCombinedJar) {
+            Path combinedJar = Paths.get("combined.jar");
 
-        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
-            out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
-            out.write(clazz1.getBytes());
-            out.putNextEntry(new JarEntry("jshelltest/JShellTestAux.java"));
-            out.write(clazz2.getBytes());
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
+            try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(combinedJar))) {
+                out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
+                out.write(clazz1.getBytes());
+                out.putNextEntry(new JarEntry("jshelltest/JShellTestAux.java"));
+                out.write(clazz2.getBytes());
+
+                compiler.compile(clazz1, clazz2);
+
+                for (String clazz : new String[] {"jshelltest/JShellTest.class", "jshelltest/JShellTestAux.class"}) {
+                    out.putNextEntry(new JarEntry(clazz));
+
+                    try (InputStream in = Files.newInputStream(compiler.getClassDir().resolve(clazz))) {
+                        in.transferTo(out);
+                    }
+                }
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+
+            //create a broken combined-sources.jar, which should not be used:
+            Path srcZip = Paths.get("combined-sources.jar");
+
+            try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
+                out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
+                out.write("""
+                          package jshelltest;
+                          /** wrong */
+                          public class JShellTest {
+                              /** wrong
+                               */
+                              public JShellTest(String str) {}
+                              /**JShellTest 2     */
+                              public JShellTest(String str, int i) {}
+                          }
+                          """.getBytes());
+
+                out.putNextEntry(new JarEntry("jshelltest/JShellTestAux.java"));
+                out.write("""
+                          package jshelltest;
+                          /** wrong */
+                          public class JShellTestAux {
+                              /** wrong */
+                              public JShellTestAux(String str) { }
+                              /** wrong */
+                              public JShellTestAux(String str, int i) { }
+                          }
+                          """.getBytes());
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+
+            return combinedJar;
+        } else {
+            Path srcZip = Paths.get("test-sources.jar");
+
+            try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
+                out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
+                out.write(clazz1.getBytes());
+                out.putNextEntry(new JarEntry("jshelltest/JShellTestAux.java"));
+                out.write(clazz2.getBytes());
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+
+            compiler.compile(clazz1, clazz2);
+
+            Path binaryJar = Paths.get("test.jar");
+            compiler.jar(compiler.getClassDir(), binaryJar, "jshelltest/JShellTest.class", "jshelltest/JShellTestAux.class");
+
+            return binaryJar;
         }
-
-        compiler.compile(clazz1, clazz2);
-
-        try {
-            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("availableSourcesOverride");
-            availableSources.setAccessible(true);
-            availableSources.set(null, Arrays.asList(srcZip));
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
-            throw new IllegalStateException(ex);
-        }
-
-        return compiler.getClassDir();
     }
     //where:
         private final Compiler compiler = new Compiler();
@@ -363,5 +421,26 @@ public class ToolTabSnippetTest extends UITesting {
             inputSink.write("CL" + TAB);
             waitOutput(out, "CL\\u001B\\[2Djava.lang.annotation.RetentionPolicy.CLASS \\u0008");
         });
+    }
+
+    @BeforeAll
+    public static void noJDKSources() {
+        setJDKSourcesOverride(List.of());
+    }
+
+    @AfterAll
+    public static void restoreJDKSources() {
+        setJDKSourcesOverride(null);
+    }
+
+    private static void setJDKSourcesOverride(List<Path> paths) throws IllegalStateException {
+        try {
+            //to ensure test stability, don't use JDK's src.zip:
+            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("jdkSourcesOverride");
+            availableSources.setAccessible(true);
+            availableSources.set(null, paths);
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

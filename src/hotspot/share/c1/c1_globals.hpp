@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,9 +238,6 @@
   develop(bool, UseSlowPath, false,                                         \
           "For debugging: test slow cases by always using them")            \
                                                                             \
-  develop(bool, GenerateArrayStoreCheck, true,                              \
-          "Generates code for array store checks")                          \
-                                                                            \
   develop(bool, PrintBailouts, false,                                       \
           "Print bailout and its reason")                                   \
                                                                             \
@@ -269,9 +266,6 @@
           "If GraphBuilder adds this many instructions, bails out")         \
           range(0, max_jint)                                                \
                                                                             \
-  develop(bool, ComputeExactFPURegisterUsage, true,                         \
-          "Compute additional live set for fpu registers to simplify fpu stack merge (Intel only)") \
-                                                                            \
   product(bool, C1ProfileCalls, true,                                       \
           "Profile calls when generating code for updating MDOs")           \
                                                                             \
@@ -294,7 +288,10 @@
           "Update MethodData*s in Tier 3 C1 generated code")                \
                                                                             \
   develop(bool, PrintCFGToFile, false,                                      \
-          "print control flow graph to a separate file during compilation")
+          "print control flow graph to a separate file during compilation") \
+                                                                            \
+  develop(bool, C1UseDelayedFlattenedFieldReads, true,                      \
+          "Use delayed reads of flat fields to reduce heap buffering")
 
 // end of C1_FLAGS
 

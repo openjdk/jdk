@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,18 @@
  *    You could, however, alt+tab out of a fullscreen window, or at least
  *    minimize it (if you've entered the fs mode with a Window, you'll need
  *    to minimize the owner frame).
- *    Note that there may be issues with FS exclusive mode with ddraw and
+ *    Note that there may be issues with FS exclusive mode with d3d draw and
  *    multiple fullscreen windows (one per device).
  *  - if display mode is supported that it did change
  *  - that the original display mode is restored once
  *    the ws window is disposed
  *  All of the above should work with and w/o DirectDraw
- *  (-Dsun.java2d.noddraw=true) on windows, and w/ and w/o opengl on X11
+ *  (-Dsun.java2d.d3d=false) on windows, and w/ and w/o opengl on X11
  *  (-Dsun.java2d.opengl=True).
  * @run main/manual/othervm -Dsun.java2d.pmoffscreen=true MultimonFullscreenTest
  * @run main/manual/othervm -Dsun.java2d.pmoffscreen=false MultimonFullscreenTest
  * @run main/manual/othervm -Dsun.java2d.d3d=True MultimonFullscreenTest
- * @run main/manual/othervm -Dsun.java2d.noddraw=true MultimonFullscreenTest
+ * @run main/manual/othervm -Dsun.java2d.d3d=false MultimonFullscreenTest
  * @run main/manual/othervm MultimonFullscreenTest
  */
 

@@ -32,10 +32,9 @@
 
 // keep in synch with jdk.internal.foreign.abi.CapturableState
 enum PreservableValues {
-  NONE = 0,
-  GET_LAST_ERROR = 1,
-  WSA_GET_LAST_ERROR = 1 << 1,
-  ERRNO = 1 << 2
+  GET_LAST_ERROR      = 1 << 0,
+  WSA_GET_LAST_ERROR  = 1 << 1,
+  ERRNO               = 1 << 2
 };
 
 // We call this from _thread_in_native, right before a downcall
@@ -72,6 +71,10 @@ JVM_LEAF(void, DowncallLinker::capture_state_post(int32_t* value_ptr, int captur
     *value_ptr = errno;
   }
 JVM_END
+
+bool DowncallLinker::is_downcall_stub(const CodeBlob* cb) {
+  return cb != nullptr && cb->is_runtime_stub() && (strcmp(cb->name(), "nep_invoker_blob") == 0);
+}
 
 void DowncallLinker::StubGenerator::add_offsets_to_oops(GrowableArray<VMStorage>& java_regs, VMStorage tmp1, VMStorage tmp2) const {
   int reg_idx = 0;

@@ -30,10 +30,13 @@
 #include "utilities/ticks.hpp"
 
 class G1UncommitRegionTask : public G1ServiceTask {
-  // Each execution of the uncommit task is limited to uncommit at most 128M.
+  // Each execution of the uncommit task is limited to uncommit at most 128M,
+  // subject to the minimum region requirement.
   // This limit is small enough to ensure that the duration of each invocation
   // is short, while still making reasonable progress.
-  static const uint UncommitSizeLimit = 128 * M;
+  static const uint MaxUncommitSize = 128 * M;
+  // Minimum number of regions to uncommit.
+  static const uint MinNumRegionsToUncommit = 1;
   // The delay between two uncommit task executions.
   static const uint UncommitTaskDelayMs = 10;
 
@@ -49,13 +52,13 @@ class G1UncommitRegionTask : public G1ServiceTask {
   // Members to keep a summary of the current concurrent uncommit
   // work. Used for printing when no more work is available.
   Tickspan _summary_duration;
-  uint _summary_region_count;
+  uint _summary_num_regions;
 
   G1UncommitRegionTask();
   bool is_active();
   void set_active(bool state);
 
-  void report_execution(Tickspan time, uint regions);
+  void report_execution(Tickspan uncommit_time, uint num_uncommitted_regions);
   void report_summary();
   void clear_summary();
 

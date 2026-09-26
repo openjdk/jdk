@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ package gc.gctests.WeakReference.weak005;
 
 import jdk.test.whitebox.WhiteBox;
 import nsk.share.gc.*;
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
 /**
@@ -56,23 +57,24 @@ public class weak005 extends ThreadedGCTest {
         private int length = 10000;
         private int objectSize = 10000;
         private WeakReference[] references;
+        private WeakReference lastReference;
 
         public Worker() {
             System.out.println("Array size: " + length);
             System.out.println("Object size: " + objectSize);
-            references = new WeakReference[length];
         }
 
         private void makeReferences() {
-            references[length - 1] = null;
             MemoryObject obj = new MemoryObject(objectSize);
+            references = new WeakReference[length];
             references[0] = new WeakReference(obj);
             for (int i = 1; i < length; ++i) {
                 references[i] = new WeakReference(references[i - 1]);
             }
-            for (int i = 0; i < length - 1; ++i) {
-                references[i] = null;
-            }
+            lastReference = references[length - 1];
+            // Drop all strong references to the chain in one write.
+            references = null;
+            Reference.reachabilityFence(obj);
         }
 
         public void run() {
@@ -81,7 +83,7 @@ public class weak005 extends ThreadedGCTest {
             if (!getExecutionController().continueExecution()) {
                 return;
             }
-            if (references[length - 1].get() != null) {
+            if (lastReference.get() != null) {
                 log.error("Last weak reference has not been cleared");
                 setFailed(true);
             }
