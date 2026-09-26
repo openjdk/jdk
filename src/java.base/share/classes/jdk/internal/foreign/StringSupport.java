@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,14 +318,14 @@ public final class StringSupport {
         DOUBLE_BYTE(2),
         QUAD_BYTE(4);
 
-        final int terminatorCharSize;
+        final int codeUnitSize;
 
-        CharsetKind(int terminatorCharSize) {
-            this.terminatorCharSize = terminatorCharSize;
+        CharsetKind(int codeUnitSize) {
+            this.codeUnitSize = codeUnitSize;
         }
 
-        public int terminatorCharSize() {
-            return terminatorCharSize;
+        public int codeUnitSize() {
+            return codeUnitSize;
         }
 
         public static CharsetKind of(Charset charset) {
@@ -334,9 +334,9 @@ public final class StringSupport {
                        charset == sun.nio.cs.ISO_8859_1.INSTANCE ||
                        charset == sun.nio.cs.US_ASCII.INSTANCE) {
                 return SINGLE_BYTE;
-            } else if (charset instanceof sun.nio.cs.UTF_16LE ||
-                       charset instanceof sun.nio.cs.UTF_16BE ||
-                       charset instanceof sun.nio.cs.UTF_16) {
+            } else if (charset == sun.nio.cs.UTF_16LE.INSTANCE ||
+                       charset == sun.nio.cs.UTF_16BE.INSTANCE ||
+                       charset == sun.nio.cs.UTF_16.INSTANCE) {
                 return DOUBLE_BYTE;
             } else if (charset instanceof sun.nio.cs.UTF_32LE ||
                        charset instanceof sun.nio.cs.UTF_32BE ||
@@ -358,8 +358,7 @@ public final class StringSupport {
 
     public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset, int srcIndex, int numChars) {
         if (bytesCompatible(string, charset, srcIndex, numChars)) {
-            copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
-            return numChars;
+            return copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
         } else {
             byte[] bytes = string.substring(srcIndex, srcIndex + numChars).getBytes(charset);
             MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
@@ -367,7 +366,7 @@ public final class StringSupport {
         }
     }
 
-    public static void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
-        JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset, srcIndex, srcLength);
+    public static int copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int numChars) {
+        return JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.nio.charset.CharsetEncoder;
 
 public class UTF_16 extends Unicode
 {
+    public static final UTF_16 INSTANCE = new UTF_16();
 
     public UTF_16() {
         super("UTF-16", StandardCharsets.aliases_UTF_16());
