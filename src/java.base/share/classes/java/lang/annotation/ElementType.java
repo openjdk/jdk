@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,106 +26,276 @@
 package java.lang.annotation;
 
 /**
- * The constants of this enumerated class provide a simple classification of the
- * syntactic locations where annotations may appear in a Java program. These
- * constants are used in {@link java.lang.annotation.Target Target}
- * meta-annotations to specify where it is legal to write annotations of a
- * given type.
+ * A syntactic location where an annotation may appear in Java code.
+ * An annotation interface may optionally restrict its usage to a
+ * particular subset of these locations using the {@link
+ * Target @Target} meta-annotation.
  *
- * <p>The syntactic locations where annotations may appear are split into
- * <em>declaration contexts</em>, where annotations apply to declarations, and
- * <em>type contexts</em>, where annotations apply to types used in
- * declarations and expressions.
+ * <p>For example, an annotation of the following type may only appear
+ * within a type parameter or local variable declaration:
  *
- * <p>The constants {@link #ANNOTATION_TYPE}, {@link #CONSTRUCTOR}, {@link
- * #FIELD}, {@link #LOCAL_VARIABLE}, {@link #METHOD}, {@link #PACKAGE}, {@link
- * #MODULE}, {@link #PARAMETER}, {@link #TYPE}, and {@link #TYPE_PARAMETER}
- * correspond to the declaration contexts in JLS {@jls 9.6.4.1}.
+ * {@snippet id='example' :
+ * @Target({ElementType.TYPE_PARAMETER, ElementType.LOCAL_VARIABLE})
+ * public @interface MyAnnotation {}
+ * }
  *
- * <p>For example, an annotation whose interface is meta-annotated with
- * {@code @Target(ElementType.FIELD)} may only be written as a modifier for a
- * field declaration.
+ * <h2 id="kinds-of-annotations">Declaration annotations and type-use
+ * annotations</h2>
  *
- * <p>The constant {@link #TYPE_USE} corresponds to the type contexts in JLS
- * {@jls 4.11}, as well as to two declaration contexts: class and interface
- * declarations (including annotation declarations) and type parameter
- * declarations.
+ * <p>Most annotations in Java code are <b>declaration
+ * annotations</b>, which act like modifiers of declarations (such as
+ * a field or method declaration). The constants of this class cover
+ * all the kinds of annotatable declarations, plus a subcategory of
+ * {@link #TYPE} called {@link #ANNOTATION_TYPE}. An annotation
+ * interface can be used as a declaration annotation if it either
+ * omits {@link Target @Target}, or uses it to list which specific
+ * kinds of declarations it should apply to.
  *
- * <p>For example, an annotation whose interface is meta-annotated with
- * {@code @Target(ElementType.TYPE_USE)} may be written on the class or
- * interface of a field (or within the class or interface of the field, if it
- * is a nested or parameterized class or interface, or array class), and may
- * also appear as a modifier for, say, a class declaration.
+ * <p>There are also <b>type-use annotations</b> (sometimes called
+ * "type annotations"), which can appear anywhere a Java type is being
+ * indicated (normally, immediately preceding that type). To be used
+ * as a type-use annotation, an annotation interface must explicitly
+ * include {@link #TYPE_USE} in {@link Target @Target}.
  *
- * <p>The {@code TYPE_USE} constant includes class and interface declarations
- * and type parameter declarations as a convenience for designers of
- * type checkers which give semantics to annotation interfaces. For example,
- * if the annotation interface {@code NonNull} is meta-annotated with
- * {@code @Target(ElementType.TYPE_USE)}, then {@code @NonNull}
- * {@code class C {...}} could be treated by a type checker as indicating that
- * all variables of class {@code C} are non-null, while still allowing
- * variables of other classes to be non-null or not non-null based on whether
- * {@code @NonNull} appears at the variable's declaration.
+ * <h3 id="ambiguous">Ambiguous contexts</h3>
  *
- * @author  Joshua Bloch
+ * <p>For some kinds of declarations, type-use annotations can also
+ * appear freely intermingled with declaration annotations and
+ * modifiers:
+ *
+ * <ul>
+ *   <li>a field, parameter, record component, or local variable (if
+ *       the type is being explicitly specified; treated as if it
+ *       precedes that variable's type)
+ *   <li>a non-void method (treated as if it precedes the method's
+ *       return type)
+ *   <li>a constructor (treated as if it modifies the constructed
+ *       type, even though this is not technically a type context)
+ * </ul>
+ *
+ * <p>In general, a library method for reading declaration annotations
+ * (such as {@link java.lang.reflect.Field#getAnnotations
+ * Field.getAnnotations()}) will not return type-use annotations found
+ * in the same location, and vice-versa.
+ *
+ * <p>An annotation interface may list both {@link #TYPE_USE} and one
+ * or more declaration targets, and thereby be fully usable as either
+ * kind. When an annotation of this type appears in one of the
+ * ambiguous contexts just listed, it functions as <em>both</em> a
+ * declaration annotation and a type-use annotation at the same time.
+ * The results may be counterintuitive in two cases: when the variable
+ * type or method return type is an inner type or an array type. In
+ * these cases, the declaration annotation applies to the "entire"
+ * declaration, yet the type-use annotation applies more narrowly to
+ * the <em>outer type</em>, or to the <em>element type</em> of the
+ * array.
+ *
+ * @author Joshua Bloch
  * @since 1.5
- * @jls 9.6.4.1 @Target
- * @jls 4.1 The Kinds of Types and Values
+ * @jls 9.7.4 Where Annotations May Appear
  */
 public enum ElementType {
-    /** Class, interface (including annotation interface), enum, or record
-     * declaration */
+
+    /**
+     * The declaration of a named class or interface. Classes without
+     * names (such as an anonymous class) cannot be annotated.
+     *
+     * <p><b>Terminology note:</b> an annotation on a class or
+     * interface declaration is not a case of a "type annotation",
+     * despite how this constant is named. That phrase is an
+     * abbreviation of "type-use annotation", which is supported by
+     * the {@link #TYPE_USE} target.
+     *
+     * @see java.lang.Class#getAnnotations()
+     * @jls 8.1 Class Declarations
+     * @jls 8.9 Enum Classes
+     * @jls 8.10 Record Classes
+     * @jls 9.1 Interface Declarations
+     * @jls 9.6 Annotation Interfaces
+     */
     TYPE,
 
-    /** Field declaration (includes enum constants) */
+    /**
+     * The declaration of a field (including that of an enum
+     * constant).
+     *
+     * <p>Any annotation valid for a field declaration may also appear
+     * on the declaration of a record component, and is automatically
+     * copied to the private field of the same name that is generated
+     * during compilation.
+     *
+     * @see java.lang.reflect.Field#getAnnotations()
+     * @jls 8.3 Field Declarations
+     * @jls 8.9.1 Enum Constants
+     * @jls 8.10.3 Record Members
+     */
     FIELD,
 
-    /** Method declaration */
+    /**
+     * The declaration of a method.
+     *
+     * <p>Any annotation valid for a method declaration may also
+     * appear on the declaration of a record component, and is
+     * automatically copied to the accessor method of the same name if
+     * one is generated during compilation.
+     *
+     * @see java.lang.reflect.Method#getAnnotations()
+     * @jls 8.4 Method Declarations (of classes)
+     * @jls 9.4 Method Declarations (of interfaces)
+     * @jls 9.6.1 Annotation Interface Elements
+     * @jls 8.10.3 Record Members
+     */
     METHOD,
 
-    /** Formal parameter declaration */
+    /**
+     * The declaration of a formal parameter of a method, constructor,
+     * or lambda expression, or of an exception parameter.
+     *
+     * <p>A lambda parameter declared using a <em>concise parameter
+     * specifier</em> cannot be annotated; either a type or the {@code
+     * var} keyword must be provided.
+     *
+     * <p>Any annotation valid for a parameter declaration may also
+     * appear on the declaration of a record component. Unless the
+     * canonical constructor's full signature was provided explicitly
+     * in the source code, this annotation is automatically copied to
+     * the corresponding parameter declaration of the constructor
+     * generated during compilation. This happens either if the
+     * constructor was not provided explicitly or it used the compact
+     * syntax without an explicit parameter list.
+     *
+     * @see java.lang.reflect.Parameter#getAnnotations()
+     *     Parameter.getAnnotations() (when applicable)
+     * @jls 8.4.1 Formal Parameters
+     * @jls 15.27.1 Lambda Parameters
+     * @jls 14.20 The {@code try} Statement
+     * @jls 8.10.4 Record Constructor Declarations
+     */
     PARAMETER,
 
-    /** Constructor declaration */
+    /**
+     * The declaration of a constructor.
+     *
+     * @see java.lang.reflect.Constructor#getAnnotations()
+     * @jls 8.8 Constructor Declarations
+     */
     CONSTRUCTOR,
 
-    /** Local variable declaration */
+    /**
+     * The declaration of a local variable. The variable might be
+     * declared in an ordinary declaration statement, in the header of
+     * a {@code for} or {@code try} statement, or within a pattern (as
+     * a pattern variable). However, an exception variable declared
+     * after {@code catch} is considered a {@link #PARAMETER} instead.
+     *
+     * <p>These annotations are not available via reflection.
+     *
+     * @jls 14.4 Local Variable Declarations
+     * @jls 14.20.3 Try-with-resources
+     * @jls 14.30.1 Kinds of Patterns
+     */
     LOCAL_VARIABLE,
 
-    /** Annotation interface declaration (Formerly known as an annotation type.) */
+    /**
+     * The declaration of an annotation interface (a subcategory of
+     * {@link #TYPE}).
+     *
+     * @see java.lang.Class#getAnnotations()
+     * @jls 9.6 Annotation Interfaces
+     */
     ANNOTATION_TYPE,
 
-    /** Package declaration */
+    /**
+     * A package declaration. For each package, at most one package
+     * declaration may be annotated; by convention it should be in a
+     * file named {@code package-info.java}.
+     *
+     * @see java.lang.Package#getAnnotations()
+     * @jls 7.4.1 Named Packages
+     */
     PACKAGE,
 
     /**
-     * Type parameter declaration
+     * The declaration of a type parameter within a generic class,
+     * interface, method, or constructor declaration.
      *
      * @since 1.8
+     * @see java.lang.reflect.TypeVariable#getAnnotations()
+     * @jls 4.4 Type Variables
      */
     TYPE_PARAMETER,
 
     /**
-     * Use of a type
+     * A syntactic location where a compile-time type is being
+     * explicitly indicated. An annotation in such a location is a
+     * <b>type-use annotation</b> (sometimes called a "type
+     * annotation", but not to be confused with {@link #TYPE}).
+     *
+     * <p>This is a very broad category: JLS {@jls 4.11} lists
+     * seventeen kinds of type contexts, followed by five more
+     * locations where type-use annotations can also appear. Several
+     * of these locations are also annotatable <em>declarations</em>
+     * themselves; see <a href="#ambiguous">ambiguous cases</a> above.
+     * Type-use annotations may only appear where a type is being
+     * explicitly given (not, for example, if the {@code var} keyword
+     * is used).
+     *
+     * <p>Type-use annotations present on types exposed through the
+     * reflection API (for example, a field type, but not a local
+     * variable type) can be accessed via the various reflection
+     * methods, with "Annotated" in their names, that return {@link
+     * java.lang.reflect.AnnotatedType}.
+     *
+     * <p>Specifying this target automatically implies the declaration
+     * targets {@link #TYPE} and {@link #TYPE_PARAMETER} as well.
+     * Annotations appearing in such declarations are declaration
+     * annotations. As a special rule, type-use annotations may also
+     * appear in a constructor declaration, to be obtained by {@link
+     * java.lang.reflect.Constructor#getAnnotatedReturnType()
+     * Constructor.getAnnotatedReturnType()}. These are <em>not</em>
+     * treated as declaration annotations unless {@link #CONSTRUCTOR}
+     * was also specified.
+     *
+     * <p>When the type of a record component is propagated to its
+     * generated field, accessor method, or constructor parameter, its
+     * embedded type-use annotations are propagated with it. No such
+     * propagation occurs if the parameter or method was declared
+     * explicitly in the source code.
      *
      * @since 1.8
+     * @see java.lang.reflect.AnnotatedType#getAnnotations()
+     * @jls 4.11 Where Types Are Used
      */
     TYPE_USE,
 
     /**
-     * Module declaration.
+     * The declaration of a module in a {@code module-info.java} file.
+     *
+     * <p><b>Warning:</b> If a client uses the module on the <em>class
+     * path</em> rather than the module path, the module declaration
+     * and all its annotations will be invisible to that client.
      *
      * @since 9
+     * @see java.lang.Module#getAnnotations()
+     * @jls 7.7 Module Declarations
      */
     MODULE,
 
     /**
-     * Record component
+     * The declaration of a record component in a record class
+     * declaration.
      *
-     * @jls 8.10.3 Record Members
-     * @jls 9.7.4 Where Annotations May Appear
+     * <p>The targets ({@link #FIELD}, {@link #METHOD}, and {@link
+     * #PARAMETER}) also enable usage on a record component
+     * declaration, as each explains. However, if the annotation
+     * interface uses {@link Target @Target} without explicitly
+     * including {@link #RECORD_COMPONENT}, annotations of that type
+     * will not be returned by {@link
+     * java.lang.reflect.RecordComponent#getAnnotations()
+     * RecordComponent.getAnnotations()}.
      *
      * @since 16
+     * @jls 8.10.1 Record Components
      */
     RECORD_COMPONENT;
 }
