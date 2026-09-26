@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,14 @@ final class Rfc2253Parser {
                 }
                 ++cur;          // consume '+'
             }
+
+            // RFC 2253 - RDN must contain at least one attributeTypeAndValue:
+            // RelativeDistinguishedName ::= SET SIZE (1..MAX) OF AttributeTypeAndValue
+            if (rdn.numAttributes() == 0) {
+                throw new InvalidNameException(
+                "no attribute type/value mapping present");
+            }
+
             rdn.sort();
             return rdn;
         }
