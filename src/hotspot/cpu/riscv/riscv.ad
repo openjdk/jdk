@@ -5098,7 +5098,7 @@ instruct loadN2P_unscaled(iRegPNoSp dst, memory mem)
               n->in(1)->as_Load()->barrier_data() == 0);
     match(Set dst (DecodeN (LoadN mem)));
 
-    ins_cost(LOAD_COST - 1);
+    ins_cost(LOAD_COST);
     format %{ "lwu $dst, $mem\t# compressed ptr decode (zero-based unscaled)" %}
 
     ins_encode %{
@@ -9669,7 +9669,7 @@ instruct decodeHeapOop(iRegPNoSp dst, iRegN src) %{
             n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
 
-  ins_cost(0);
+  ins_cost(ALU_COST);
   format %{ "decode_heap_oop  $dst, $src\t#@decodeHeapOop" %}
   ins_encode %{
     Register s = $src$$Register;
@@ -9684,7 +9684,7 @@ instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src) %{
             n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
 
-  ins_cost(0);
+  ins_cost(ALU_COST);
   format %{ "decode_heap_oop_not_null $dst, $src\t#@decodeHeapOop_not_null" %}
   ins_encode %{
     Register s = $src$$Register;
