@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle, Inc.
  * Copyright (c) 2023, 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +28,7 @@ package sun.security.util;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
@@ -332,7 +334,14 @@ public final class PBEUtil {
      * and PBKDF2KeyImpl (SunJCE).
      */
     public static byte[] encodePassword(char[] passwd) {
-        ByteBuffer bb = StandardCharsets.UTF_8.encode(CharBuffer.wrap(passwd));
+        return encodePassword(passwd, StandardCharsets.UTF_8);
+    }
+
+    /*
+     * Converts the password char[] to byte[] using the specified Charset.
+     */
+    public static byte[] encodePassword(char[] passwd, Charset cs) {
+        ByteBuffer bb = cs.encode(CharBuffer.wrap(passwd));
         int len = bb.limit();
         byte[] passwdBytes = new byte[len];
         bb.get(passwdBytes, 0, len);
