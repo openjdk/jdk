@@ -25,25 +25,7 @@
 package java.util.stream;
 
 import java.text.ListFormat;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.DoubleSummaryStatistics;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IntSummaryStatistics;
-import java.util.Iterator;
-import java.util.List;
-import java.util.LongSummaryStatistics;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
@@ -361,22 +343,45 @@ public final class Collectors {
     }
 
     /**
-     * {@return a {@code Collector} that concatenates the input elements into a
-     * string with the patterns of the specified {@link ListFormat}, in encounter order}
+     * {@return a {@code Collector} that concatenates the input elements
+     * in encounter order as an "and" list, producing a localized string
+     * using the specified {@link Locale}}
      *
-     * <p>The returned Collector requires at least one input element.
-     * It will throw {@link IllegalArgumentException} if there are no input elements.
+     * <p>For example, if the input stream contains three elements {@code "a"}, {@code "b"},
+     * and {@code "c"}, collecting it with {@code joiningConjunctively(Locale.ENGLISH)}
+     * produces the string {@code "a, b, and c"}.
      *
-     * @param format an instance of {@code ListFormat} to use for concatenation
-     * @throws NullPointerException if format is null
+     * <p>The returned {@code Collector} produces an empty string if there are no input elements.
+     *
+     * @param locale the {@code Locale} to use for concatenation
+     * @throws NullPointerException if locale is null
      *
      * @since 28
      */
-    public static Collector<CharSequence, ?, String> joining(ListFormat format) {
-        Objects.requireNonNull(format, "format");
-        return collectingAndThen(
-                mapping(String::valueOf, toList()),
-                format::format);
+    public static Collector<CharSequence, ?, String> joiningConjunctively(Locale locale) {
+        ListFormat format = ListFormat.getInstance(locale, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
+        return format.toCollector();
+    }
+
+    /**
+     * {@return a {@code Collector} that concatenates the input elements
+     * in encounter order as an "or" list, producing a localized string
+     * using the specified {@link Locale}}
+     *
+     * <p>For example, if the input stream contains three elements {@code "a"}, {@code "b"},
+     * and {@code "c"}, collecting it with {@code joiningConjunctively(Locale.ENGLISH)}
+     * produces the string {@code "a, b, or c"}.
+     *
+     * <p>The returned {@code Collector} produces an empty string if there are no input elements.
+     *
+     * @param locale the {@code Locale} to use for concatenation
+     * @throws NullPointerException if locale is null
+     *
+     * @since 28
+     */
+    public static Collector<CharSequence, ?, String> joiningDisjunctively(Locale locale) {
+        ListFormat format = ListFormat.getInstance(locale, ListFormat.Type.OR, ListFormat.Style.FULL);
+        return format.toCollector();
     }
 
     /**

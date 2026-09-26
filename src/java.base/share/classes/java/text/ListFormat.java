@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
@@ -372,8 +374,6 @@ public final class ListFormat extends Format {
      *              is thrown.
      * @throws IllegalArgumentException if the length of {@code input} is zero.
      * @throws NullPointerException if {@code input} is null.
-     *
-     * @see java.util.stream.Collectors#joining(ListFormat)
      */
     public String format(List<String> input) {
         Objects.requireNonNull(input);
@@ -404,6 +404,20 @@ public final class ListFormat extends Format {
         Objects.requireNonNull(toAppendTo);
 
         return format(obj, StringBufFactory.of(toAppendTo)).asStringBuffer();
+    }
+
+    /**
+     * {@return a {@code Collector} that concatenates the input elements into a
+     * string with the patterns of this {@code ListFormat}, in encounter order}
+     *
+     * <p>The collector returns an empty string if there are no input elements.
+     *
+     * @since 28
+     */
+    public Collector<CharSequence, ?, String> toCollector() {
+        return Collectors.collectingAndThen(
+                Collectors.mapping(String::valueOf, Collectors.toList()),
+                input -> input.isEmpty() ? "" : format(input));
     }
 
     @Override

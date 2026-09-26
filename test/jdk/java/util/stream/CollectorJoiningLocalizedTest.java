@@ -36,15 +36,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /*
  * @test
  * @bug 8391789
- * @summary Tests for joining(ListFormat) Collector
- * @run junit CollectorJoiningListFormatTest
+ * @summary Tests for joiningConjunctively(Locale) and joiningDisjunctively(Locale) Collectors
+ * @run junit CollectorJoiningLocalizedTest
  */
-public class CollectorJoiningListFormatTest {
+public class CollectorJoiningLocalizedTest {
     @Test
-    void joiningListFormat() {
-        assertThrows(NullPointerException.class, () -> Collectors.joining((ListFormat)null));
-        ListFormat format = ListFormat.getInstance(Locale.ENGLISH, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
-        Collector<CharSequence, ?, String> collector = Collectors.joining(format);
+    void joiningConjunctively() {
+        assertThrows(NullPointerException.class, () -> Collectors.joiningConjunctively(null));
+        Collector<CharSequence, ?, String> collector = Collectors.joiningConjunctively(Locale.ENGLISH);
         assertThrows(IllegalArgumentException.class, () -> Stream.<CharSequence>empty().collect(collector));
         assertEquals("a",
                 Stream.of("a").collect(collector));
@@ -59,6 +58,27 @@ public class CollectorJoiningListFormatTest {
         assertEquals("1, 2, 3, 4, 5, 6, 7, 8, and 9",
                 IntStream.range(1, 10).mapToObj(String::valueOf).collect(collector));
         assertEquals("1, 2, 3, 4, 5, 6, 7, 8, and 9",
+                IntStream.range(1, 10).parallel().mapToObj(String::valueOf).collect(collector));
+    }
+
+    @Test
+    void joiningDisjunctively() {
+        assertThrows(NullPointerException.class, () -> Collectors.joiningDisjunctively(null));
+        Collector<CharSequence, ?, String> collector = Collectors.joiningDisjunctively(Locale.ENGLISH);
+        assertThrows(IllegalArgumentException.class, () -> Stream.<CharSequence>empty().collect(collector));
+        assertEquals("a",
+                Stream.of("a").collect(collector));
+        assertEquals("a or b",
+                Stream.of("a", "b").collect(collector));
+        assertEquals("a, b, or c",
+                Stream.of("a", "b", "c").collect(collector));
+        assertEquals("a, b, or c",
+                Stream.of(new StringBuilder("a"), "b", new StringBuffer("c")).collect(collector));
+        assertEquals("a, b, c, or null",
+                Stream.of(new StringBuilder("a"), "b", new StringBuffer("c"), null).collect(collector));
+        assertEquals("1, 2, 3, 4, 5, 6, 7, 8, or 9",
+                IntStream.range(1, 10).mapToObj(String::valueOf).collect(collector));
+        assertEquals("1, 2, 3, 4, 5, 6, 7, 8, or 9",
                 IntStream.range(1, 10).parallel().mapToObj(String::valueOf).collect(collector));
     }
 }
