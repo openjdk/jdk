@@ -509,7 +509,7 @@ The following commands are available:
     **Note:**
 
     The *options* must be specified using either *key* or *key*`=`*value*
-    syntax. If no parameters are entered, then no recording is stopped.
+    syntax.
 
     *options*:
 
@@ -519,7 +519,8 @@ The following commands are available:
         timestamp, respectively. If no path is provided, the data from the
         recording is discarded. (FILE, no default value)
 
-    -   `name`: (Optional) Name of the recording (STRING, no default value)
+    -   `name`: Name of the recording. Use `JFR.check` to list the names of
+        the running recordings. (STRING, no default value)
 
 
 `JFR.view` \[*options*\]

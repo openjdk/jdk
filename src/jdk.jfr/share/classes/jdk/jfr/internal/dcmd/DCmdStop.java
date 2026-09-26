@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,9 @@ final class DCmdStop extends AbstractDCmd {
     @Override
     protected void execute(ArgumentParser parser)  throws DCmdException {
         parser.checkUnknownArguments();
+        if (!parser.checkMandatory()) {
+            throw new DCmdException("Missing mandatory argument 'name'. Use JFR.check to list recording names.");
+        }
         String name = parser.getOption("name");
         String filename = parser.getOption("filename");
         try {
@@ -85,7 +88,8 @@ final class DCmdStop extends AbstractDCmd {
                            Note: If a path is given, '%%p' in the path will be replaced by the PID,
                            and '%%t' will be replaced by the time in 'yyyy_MM_dd_HH_mm_ss' format.
 
-                 name      Name of the recording (STRING, no default value)
+                 name      (Mandatory) Name of the recording. Use JFR.check to list the names of the
+                           running recordings. (STRING, no default value)
 
                Options must be specified using the <key> or <key>=<value> syntax.
 
