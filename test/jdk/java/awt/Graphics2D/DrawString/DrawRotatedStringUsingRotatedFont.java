@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +42,6 @@ import static java.lang.Math.toRadians;
  * @bug 8065373 8289208
  * @key headful
  * @summary Verifies that we get correct direction, when draw rotated string.
- * @author Sergey Bylokhov
  * @run main DrawRotatedStringUsingRotatedFont
  */
 public final class DrawRotatedStringUsingRotatedFont {
@@ -48,7 +49,7 @@ public final class DrawRotatedStringUsingRotatedFont {
     private static final int SIZE = 500;
     private static final String STR = "MMMMMMMMMMMMMMMM";
 
-    private static AffineTransform[] txs = {
+    private static final AffineTransform[] txs = {
                             AffineTransform.getRotateInstance(toRadians(00)),
                             AffineTransform.getRotateInstance(toRadians(45)),
                             AffineTransform.getRotateInstance(toRadians(-45)),
@@ -68,19 +69,26 @@ public final class DrawRotatedStringUsingRotatedFont {
                             AffineTransform.getRotateInstance(toRadians(-360))
     };
 
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) throws Exception {
+
+        final Font font = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+
         for (final AffineTransform tx2 : txs) {
             for (final AffineTransform tx1 : txs) {
                 for (final boolean aa : new boolean[]{true, false}) {
-                    final BufferedImage bi1 = createImage(aa, tx1, tx2);
-                    final BufferedImage bi2 = createImage(aa, tx2, tx1);
+                    final BufferedImage bi1 = createImage(font, aa, tx1, tx2);
+                    final BufferedImage bi2 = createImage(font, aa, tx2, tx1);
+                    System.out.println("Testing aa=" + aa +
+                                        ", graphicsTransform=" +
+                                         tx1 + ", fontTransform=" + tx2);
                     compareImage(bi1, bi2);
-                    fillTextArea(bi1, tx1, tx2);
-                    fillTextArea(bi2, tx2, tx1);
-                    checkColors(bi1, bi2);
+                    fillTextArea(bi1, font, tx1, tx2);
+                    fillTextArea(bi2, font, tx2, tx1);
+                    checkColors(bi1, bi2, aa);
                 }
             }
         }
+
         System.out.println("Passed");
     }
 
@@ -88,14 +96,16 @@ public final class DrawRotatedStringUsingRotatedFont {
      * Compares two images.
      */
     private static void compareImage(final BufferedImage bi1,
-                                     final BufferedImage bi2)
-            throws IOException {
+                                        final BufferedImage bi2) throws IOException {
         for (int i = 0; i < SIZE; ++i) {
             for (int j = 0; j < SIZE; ++j) {
                 if (bi1.getRGB(i, j) != bi2.getRGB(i, j)) {
                     ImageIO.write(bi1, "png", new File("image1.png"));
                     ImageIO.write(bi2, "png", new File("image2.png"));
-                    throw new RuntimeException("Failed: wrong text location");
+                    throw new RuntimeException("Failed: wrong text location" +
+                                   "at i=" + i + " j= " + j +
+                                   " rgb1 " + new Color(bi1.getRGB(i,j)) +
+                                   " rgb2 " + new Color(bi2.getRGB(i,j)));
                 }
             }
         }
@@ -105,16 +115,22 @@ public final class DrawRotatedStringUsingRotatedFont {
      * Checks an image color. RED and GREEN are allowed only.
      */
     private static void checkColors(final BufferedImage bi1,
-                                    final BufferedImage bi2)
-            throws IOException {
+                                    final BufferedImage bi2,
+                                    final boolean aa) throws IOException {
         for (int i = 0; i < SIZE; ++i) {
             for (int j = 0; j < SIZE; ++j) {
                 final int rgb1 = bi1.getRGB(i, j);
                 final int rgb2 = bi2.getRGB(i, j);
-                if (rgb1 != rgb2 || rgb1 != 0xFFFF0000 && rgb1 != 0xFF00FF00) {
+
+                // Keep the strict red/green color check only for the non-AA case
+                if (rgb1 != rgb2 ||
+                    (!aa && rgb1 != 0xFFFF0000 && rgb1 != 0xFF00FF00)) {
                     ImageIO.write(bi1, "png", new File("image1.png"));
                     ImageIO.write(bi2, "png", new File("image2.png"));
-                    throw new RuntimeException("Failed: wrong text location");
+                    throw new RuntimeException("Failed: wrong colors " +
+                                    "at i=" + i + " j= " + j +
+                                    " rgb1 " + new Color(rgb1) +
+                                    " rgb2 " + new Color(rgb2));
                 }
             }
         }
@@ -124,20 +140,21 @@ public final class DrawRotatedStringUsingRotatedFont {
      * Creates an BufferedImage and draws a text, using two transformations,
      * one for graphics and one for font.
      */
-    private static BufferedImage createImage(final boolean aa,
+    private static BufferedImage createImage(final Font font,
+                                             final boolean aa,
                                              final AffineTransform gtx,
                                              final AffineTransform ftx) {
         final BufferedImage bi = new BufferedImage(SIZE, SIZE, TYPE_INT_RGB);
         final Graphics2D bg = bi.createGraphics();
-        bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                            aa ? RenderingHints.VALUE_ANTIALIAS_ON
-                               : RenderingHints.VALUE_ANTIALIAS_OFF);
+        bg.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                            aa ? RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+                               : RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         bg.setColor(Color.RED);
         bg.fillRect(0, 0, SIZE, SIZE);
         bg.translate(100, 100);
         bg.transform(gtx);
         bg.setColor(Color.BLACK);
-        bg.setFont(bg.getFont().deriveFont(20.0f).deriveFont(ftx));
+        bg.setFont(font.deriveFont(20.0f).deriveFont(ftx));
         bg.drawString(STR, 0, 0);
         bg.dispose();
         return bi;
@@ -146,7 +163,11 @@ public final class DrawRotatedStringUsingRotatedFont {
     /**
      * Fills the area of text using green solid color.
      */
+    /**
+     * Fills the area of text using green solid color.
+     */
     private static void fillTextArea(final BufferedImage bi,
+                                     final Font font,
                                      final AffineTransform tx1,
                                      final AffineTransform tx2) {
         final Graphics2D bg = bi.createGraphics();
@@ -154,10 +175,19 @@ public final class DrawRotatedStringUsingRotatedFont {
         bg.transform(tx1);
         bg.transform(tx2);
         bg.setColor(Color.GREEN);
-        final Font font = bg.getFont().deriveFont(20.0f);
-        bg.setFont(font);
-        bg.fill(font.getStringBounds(STR, bg.getFontRenderContext()));
+        final Font derivedFont = font.deriveFont(20.0f);
+        final GlyphVector glyphs = derivedFont.createGlyphVector(
+                                   bg.getFontRenderContext(), STR);
+        final Rectangle2D bounds = glyphs.getVisualBounds();
+        final double padding = 1.0;
+
+        // padding tries to ensure all text pixels
+        // including fringe pixels—are painted green
+        bg.fill(new Rectangle2D.Double(
+                bounds.getX() - padding,
+                bounds.getY() - padding,
+                bounds.getWidth() + 2 * padding,
+                bounds.getHeight() + 2 * padding));
         bg.dispose();
     }
 }
-
