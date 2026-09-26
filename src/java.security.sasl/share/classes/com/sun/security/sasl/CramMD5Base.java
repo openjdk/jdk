@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.util.logging.Logger;
 abstract class CramMD5Base {
     protected boolean completed = false;
     protected boolean aborted = false;
-    protected byte[] pw;
 
     protected CramMD5Base() {
         initLogger();
@@ -122,25 +121,6 @@ abstract class CramMD5Base {
         }
     }
 
-    public void dispose() throws SaslException {
-        clearPassword();
-    }
-
-    protected void clearPassword() {
-        if (pw != null) {
-            // zero out password
-            for (int i = 0; i < pw.length; i++) {
-                pw[i] = (byte)0;
-            }
-            pw = null;
-        }
-    }
-
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        clearPassword();
-    }
-
     private static final int MD5_BLOCKSIZE = 64;
     /**
      * Hashes its input arguments according to HMAC-MD5 (RFC 2104)
@@ -161,9 +141,8 @@ abstract class CramMD5Base {
         MessageDigest md5 = MessageDigest.getInstance("MD5");
 
         /* digest the key if longer than 64 bytes */
-        if (key.length > MD5_BLOCKSIZE) {
-            key = md5.digest(key);
-        }
+        key = (key.length > MD5_BLOCKSIZE ?
+                md5.digest(key) : key.clone());
 
         byte[] ipad = new byte[MD5_BLOCKSIZE];  /* inner padding */
         byte[] opad = new byte[MD5_BLOCKSIZE];  /* outer padding */
@@ -181,35 +160,36 @@ abstract class CramMD5Base {
             ipad[i] ^= 0x36;
             opad[i] ^= 0x5c;
         }
+        try {
+            /* inner MD5 */
+            md5.update(ipad);
+            md5.update(text);
+            digest = md5.digest();
 
-        /* inner MD5 */
-        md5.update(ipad);
-        md5.update(text);
-        digest = md5.digest();
+            /* outer MD5 */
+            md5.update(opad);
+            md5.update(digest);
+            digest = md5.digest();
 
-        /* outer MD5 */
-        md5.update(opad);
-        md5.update(digest);
-        digest = md5.digest();
+            // Get character representation of digest
+            StringBuilder digestString = new StringBuilder();
 
-        // Get character representation of digest
-        StringBuilder digestString = new StringBuilder();
-
-        for (i = 0; i < digest.length; i++) {
-            if ((digest[i] & 0x000000ff) < 0x10) {
-                digestString.append('0').append(Integer.toHexString(digest[i] & 0x000000ff));
-            } else {
-                digestString.append(
-                    Integer.toHexString(digest[i] & 0x000000ff));
+            for (i = 0; i < digest.length; i++) {
+                if ((digest[i] & 0x000000ff) < 0x10) {
+                    digestString.append('0').append(Integer.toHexString(digest[i] & 0x000000ff));
+                } else {
+                    digestString.append(
+                        Integer.toHexString(digest[i] & 0x000000ff));
+                }
             }
+            return (digestString.toString());
+        } finally {
+            Arrays.fill(ipad, (byte)0);
+            Arrays.fill(opad, (byte)0);
+            ipad = null;
+            opad = null;
+            Arrays.fill(key, (byte)0);
         }
-
-        Arrays.fill(ipad, (byte)0);
-        Arrays.fill(opad, (byte)0);
-        ipad = null;
-        opad = null;
-
-        return (digestString.toString());
     }
 
     /**

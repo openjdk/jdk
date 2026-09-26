@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,10 +121,10 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
             }
 
             // Create a context using credentials for Krb5 mech
-            secCtx = mgr.createContext(acceptorName,
+            updateSecCtx(mgr.createContext(acceptorName,
                 KRB5_OID,   /* mechanism */
                 credentials, /* credentials */
-                GSSContext.INDEFINITE_LIFETIME);
+                GSSContext.INDEFINITE_LIFETIME));
 
             // Request credential delegation when credentials have been supplied
             if (credentials != null) {
@@ -175,6 +175,7 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
         }
     }
 
+    @Override
     public boolean hasInitialResponse() {
         return true;
     }
@@ -193,6 +194,7 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
      * @return A non-null byte array containing the response to be
      * sent to the server.
      */
+    @Override
     public byte[] evaluateChallenge(byte[] challengeData) throws SaslException {
         if (completed) {
             throw new IllegalStateException(
