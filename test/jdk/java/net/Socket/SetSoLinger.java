@@ -41,9 +41,9 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
 
 public class SetSoLinger {
-    // on macos the linger value is limited to 32767 and on
+    // on bsd and macos the linger value is limited to 32767 and on
     // rest of the platforms it is limited to 65535
-    private static final int EXPECTED_MAX_LINGER = Platform.isOSX() ? 32767 : 65535;
+    private static final int EXPECTED_MAX_LINGER = Platform.isOSX() || Platform.isBSD() ? 32767 : 65535;
     // some arbitrary large linger value which is greater the max limit
     private static final int LARGE_LINGER = EXPECTED_MAX_LINGER + 42;
 
