@@ -26,6 +26,7 @@
 
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "atomic_riscv.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -7921,6 +7922,167 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+#if defined(LINUX)
+
+  // Atomic stubs used by AtomicAccess. The baseline implementations are in
+  // atomic_linux_riscv.S. Compare-and-exchange stubs use Zacas when it is
+  // available.
+  class AtomicStubMark {
+    address _entry_point;
+    riscv_atomic_stub_t* _stub;
+  public:
+    AtomicStubMark(MacroAssembler* masm, riscv_atomic_stub_t* stub) {
+      masm->align(32);
+      _entry_point = masm->pc();
+      _stub = stub;
+    }
+
+    ~AtomicStubMark() {
+      *_stub = (riscv_atomic_stub_t)_entry_point;
+    }
+  };
+
+  void gen_cas_entry(Assembler::operand_size size,
+                     atomic_memory_order order) {
+    Register addr = c_rarg0;
+    Register expected = c_rarg1;
+    Register new_value = c_rarg2;
+    Register result = c_rarg3;
+
+    Assembler::Aqrl acquire;
+    Assembler::Aqrl release;
+    switch (order) {
+      case memory_order_relaxed:
+        acquire = Assembler::relaxed;
+        release = Assembler::relaxed;
+        break;
+      case memory_order_release:
+        acquire = Assembler::relaxed;
+        release = Assembler::rl;
+        break;
+      default:
+        acquire = Assembler::aq;
+        release = Assembler::rl;
+        break;
+    }
+
+    bool use_single_cas = UseZacas &&
+                          ((size != Assembler::int8) || UseZabha);
+    if ((order == memory_order_conservative) && !use_single_cas) {
+      __ membar(MacroAssembler::AnyAny);
+    }
+
+    if (size == Assembler::int32) {
+      // lr.w and amocas.w return a sign-extended value. Normalize the
+      // expected value too, as callers with an unsigned T pass it
+      // zero-extended according to the C ABI.
+      __ sext_w(expected, expected);
+    }
+
+    if ((size == Assembler::int8) && !(UseZacas && UseZabha)) {
+      __ cmpxchg_narrow_value(addr, expected, new_value, size,
+                              acquire, release,
+                              result, false, x14, x15, x16);
+    } else {
+      __ cmpxchg(addr, expected, new_value, size,
+                 acquire, release, result);
+    }
+
+    if (order == memory_order_conservative) {
+      __ membar(MacroAssembler::AnyAny);
+    }
+    __ mv(c_rarg0, result);
+    __ ret();
+  }
+
+  void generate_atomic_entry_points() {
+    StubId stub_id = StubId::stubgen_atomic_entry_points_id;
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == entry_count - 1,
+             "unexpected extra entry count %d", entries.length());
+      riscv_atomic_cmpxchg_1_impl = (riscv_atomic_stub_t)start;
+      int idx = 0;
+      riscv_atomic_cmpxchg_4_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      riscv_atomic_cmpxchg_8_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      riscv_atomic_cmpxchg_1_relaxed_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      riscv_atomic_cmpxchg_4_relaxed_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      riscv_atomic_cmpxchg_8_relaxed_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      riscv_atomic_cmpxchg_4_release_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      riscv_atomic_cmpxchg_8_release_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      riscv_atomic_cmpxchg_4_seq_cst_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      riscv_atomic_cmpxchg_8_seq_cst_impl = (riscv_atomic_stub_t)entries.at(idx++);
+      assert(idx == entries.length(), "sanity!");
+      return;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    address end;
+    {
+      AtomicStubMark mark_cmpxchg_1(_masm, &riscv_atomic_cmpxchg_1_impl);
+      gen_cas_entry(Assembler::int8, memory_order_conservative);
+
+      AtomicStubMark mark_cmpxchg_4(_masm, &riscv_atomic_cmpxchg_4_impl);
+      gen_cas_entry(Assembler::int32, memory_order_conservative);
+
+      AtomicStubMark mark_cmpxchg_8(_masm, &riscv_atomic_cmpxchg_8_impl);
+      gen_cas_entry(Assembler::int64, memory_order_conservative);
+
+      AtomicStubMark mark_cmpxchg_1_relaxed
+        (_masm, &riscv_atomic_cmpxchg_1_relaxed_impl);
+      gen_cas_entry(Assembler::int8, memory_order_relaxed);
+
+      AtomicStubMark mark_cmpxchg_4_relaxed
+        (_masm, &riscv_atomic_cmpxchg_4_relaxed_impl);
+      gen_cas_entry(Assembler::int32, memory_order_relaxed);
+
+      AtomicStubMark mark_cmpxchg_8_relaxed
+        (_masm, &riscv_atomic_cmpxchg_8_relaxed_impl);
+      gen_cas_entry(Assembler::int64, memory_order_relaxed);
+
+      AtomicStubMark mark_cmpxchg_4_release
+        (_masm, &riscv_atomic_cmpxchg_4_release_impl);
+      gen_cas_entry(Assembler::int32, memory_order_release);
+
+      AtomicStubMark mark_cmpxchg_8_release
+        (_masm, &riscv_atomic_cmpxchg_8_release_impl);
+      gen_cas_entry(Assembler::int64, memory_order_release);
+
+      AtomicStubMark mark_cmpxchg_4_seq_cst
+        (_masm, &riscv_atomic_cmpxchg_4_seq_cst_impl);
+      gen_cas_entry(Assembler::int32, memory_order_seq_cst);
+
+      AtomicStubMark mark_cmpxchg_8_seq_cst
+        (_masm, &riscv_atomic_cmpxchg_8_seq_cst_impl);
+      gen_cas_entry(Assembler::int64, memory_order_seq_cst);
+
+      end = __ pc();
+      ICache::invalidate_range(start, end - start);
+    }
+
+    assert(start == (address)riscv_atomic_cmpxchg_1_impl,
+           "atomic stub should be at start of buffer");
+    entries.append((address)riscv_atomic_cmpxchg_4_impl);
+    entries.append((address)riscv_atomic_cmpxchg_8_impl);
+    entries.append((address)riscv_atomic_cmpxchg_1_relaxed_impl);
+    entries.append((address)riscv_atomic_cmpxchg_4_relaxed_impl);
+    entries.append((address)riscv_atomic_cmpxchg_8_relaxed_impl);
+    entries.append((address)riscv_atomic_cmpxchg_4_release_impl);
+    entries.append((address)riscv_atomic_cmpxchg_8_release_impl);
+    entries.append((address)riscv_atomic_cmpxchg_4_seq_cst_impl);
+    entries.append((address)riscv_atomic_cmpxchg_8_seq_cst_impl);
+
+    assert(entries.length() == entry_count - 1,
+           "unexpected extra entry count %d", entries.length());
+    store_archive_data(stub_id, start, end, &entries);
+  }
+
+#endif // LINUX
+
 #undef __
 
   // Initialization
@@ -7994,6 +8156,10 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
+
+#if defined(LINUX)
+    generate_atomic_entry_points();
+#endif
 
     StubRoutines::riscv::set_completed();
   }
@@ -8151,6 +8317,31 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 #endif // INCLUDE_CDS
 }; // end class declaration
+
+#if defined(LINUX)
+
+// Define pointers to the atomic stubs and initialize them to the baseline
+// code in atomic_linux_riscv.S.
+#define DEFAULT_ATOMIC_OP(SIZE, RELAXED)                                \
+  extern "C" uint64_t riscv_atomic_cmpxchg_ ## SIZE ## RELAXED ## _default_impl \
+    (volatile void* ptr, uint64_t compare_value, uint64_t exchange_value); \
+  riscv_atomic_stub_t riscv_atomic_cmpxchg_ ## SIZE ## RELAXED ## _impl \
+    = riscv_atomic_cmpxchg_ ## SIZE ## RELAXED ## _default_impl;
+
+DEFAULT_ATOMIC_OP(1, )
+DEFAULT_ATOMIC_OP(4, )
+DEFAULT_ATOMIC_OP(8, )
+DEFAULT_ATOMIC_OP(1, _relaxed)
+DEFAULT_ATOMIC_OP(4, _relaxed)
+DEFAULT_ATOMIC_OP(8, _relaxed)
+DEFAULT_ATOMIC_OP(4, _release)
+DEFAULT_ATOMIC_OP(8, _release)
+DEFAULT_ATOMIC_OP(4, _seq_cst)
+DEFAULT_ATOMIC_OP(8, _seq_cst)
+
+#undef DEFAULT_ATOMIC_OP
+
+#endif // LINUX
 
 void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
   StubGenerator g(code, blob_id, stub_data);
