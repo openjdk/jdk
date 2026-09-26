@@ -215,6 +215,7 @@
       <setting name="enabled">false</setting>
       <setting name="throttle">10ms</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="nativeStack">false</setting>
     </event>
 
     <event name="jdk.CPUTimeSamplesLost">

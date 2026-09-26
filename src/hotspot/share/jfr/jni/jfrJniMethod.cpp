@@ -177,6 +177,10 @@ JVM_ENTRY_NO_ENV(void, jfr_set_cpu_period(JNIEnv* env, jclass jvm, jlong period_
   JfrCPUTimeThreadSampling::set_period(period_nanos);
 JVM_END
 
+NO_TRANSITION(void, jfr_set_cpu_native_stack_trace(JNIEnv* env, jclass jvm, jboolean enabled))
+  JfrCPUTimeThreadSampling::set_native_stack_enabled(enabled == JNI_TRUE);
+NO_TRANSITION_END
+
 NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong event_type_id, jlong value))
   JfrEventSetting::set_miscellaneous(event_type_id, value);
   const JfrEventId typed_event_id = (JfrEventId)event_type_id;

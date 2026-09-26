@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,8 @@ jboolean JNICALL jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, 
 void JNICALL jfr_set_cpu_rate(JNIEnv* env, jclass jvm, jdouble rate);
 
 void JNICALL jfr_set_cpu_period(JNIEnv* env, jclass jvm, jlong period_nanos);
+
+void JNICALL jfr_set_cpu_native_stack_trace(JNIEnv* env, jclass jvm, jboolean enabled);
 
 void JNICALL jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong id, jlong value);
 
