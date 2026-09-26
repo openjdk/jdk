@@ -354,6 +354,7 @@ void VM_Version::xuantie_features() {
   ext_Zicbom.enable_feature();
   ext_Zicbop.enable_feature();
   ext_Zicboz.enable_feature();
+  ext_Ziccid.enable_feature();
   ext_Zicond.enable_feature();
   ext_Zicntr.enable_feature();
   ext_Zicsr.enable_feature();
