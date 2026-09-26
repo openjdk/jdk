@@ -14269,8 +14269,7 @@ instruct convD2F_reg_mem(regF dst, memory src)
 
 instruct convHF2I_reg_reg(rRegI dst, rRegI src, regF xtmp, rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_avx512_fp16() &&
-            !VM_Version::supports_avx10_2());
+  predicate(VM_Version::supports_avx512_fp16());
   match(Set dst (ConvF2I (ConvHF2F src)));
   effect(TEMP dst, KILL cr, TEMP xtmp);
   format %{ "convert_hf2i $dst, $src !\t using $xtmp as TEMP" %}
@@ -14282,8 +14281,7 @@ instruct convHF2I_reg_reg(rRegI dst, rRegI src, regF xtmp, rFlagsReg cr)
 
 instruct convHF2L_reg_reg(rRegL dst, rRegI src, regF xtmp, rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_avx512_fp16() &&
-            !VM_Version::supports_avx10_2());
+  predicate(VM_Version::supports_avx512_fp16());
   match(Set dst (ConvF2L (ConvHF2F src)));
   effect(TEMP dst, KILL cr, TEMP xtmp);
   format %{ "convert_hf2l $dst, $src !\t using $xtmp as TEMP" %}

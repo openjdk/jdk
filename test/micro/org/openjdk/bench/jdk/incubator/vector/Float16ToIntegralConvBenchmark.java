@@ -34,7 +34,7 @@ import static java.lang.Float.*;
 @Fork(value = 3, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 @Warmup(iterations = 3, time = 3)
 @Measurement(iterations = 5, time = 5)
-public class Float16ToIntegralConvBenchmark {
+public abstract class Float16ToIntegralConvBenchmark {
     @Param({"1024", "2048"})
     int size;
 
@@ -119,5 +119,17 @@ public class Float16ToIntegralConvBenchmark {
         for (int i = 0; i < size; i++) {
             bout[i] = shortBitsToFloat16(fp16inp[i]).byteValue();
         }
+    }
+
+    @Fork(value = 2, jvmArgs = {
+        "-XX:+UseSuperWord", "--add-modules=jdk.incubator.vector"
+    })
+    public static class Float16ToIntegralConvBenchmarkSuperWord extends Float16ToIntegralConvBenchmark {
+    }
+
+    @Fork(value = 2, jvmArgs = {
+        "-XX:-UseSuperWord", "--add-modules=jdk.incubator.vector"
+    })
+    public static class Float16ToIntegralConvBenchmarkNonSuperWord extends Float16ToIntegralConvBenchmark {
     }
 }

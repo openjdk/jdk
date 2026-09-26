@@ -86,11 +86,7 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_SCONV_HF2I, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
+        applyIfCPUFeature = {"avx512_fp16", "true"})
     public int testConvHF2I(int idx) {
         return (int) Float.float16ToFloat(fp16inp[idx]);
     }
@@ -104,11 +100,7 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_SCONV_HF2L, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
-    @IR(counts = {IRNode.X86_SCONV_F2L_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
+        applyIfCPUFeature = {"avx512_fp16", "true"})
     public long testConvHF2L(int idx) {
         return (long) Float.float16ToFloat(fp16inp[idx]);
     }
@@ -122,11 +114,7 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_SCONV_HF2I, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
+        applyIfCPUFeature = {"avx512_fp16", "true"})
     public short testConvHF2S(int idx) {
         return (short) Float.float16ToFloat(fp16inp[idx]);
     }
@@ -140,11 +128,7 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_SCONV_HF2I, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
+        applyIfCPUFeature = {"avx512_fp16", "true"})
     public byte testConvHF2B(int idx) {
         return (byte) Float.float16ToFloat(fp16inp[idx]);
     }
@@ -160,11 +144,7 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_SCONV_HF2I, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
+        applyIfCPUFeature = {"avx512_fp16", "true"})
     public int testConvHF2I_VAPI(int idx) {
         return shortBitsToFloat16(fp16inp[idx]).intValue();
     }
@@ -178,11 +158,7 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_SCONV_HF2L, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
-    @IR(counts = {IRNode.X86_SCONV_F2L_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
+        applyIfCPUFeature = {"avx512_fp16", "true"})
     public long testConvHF2L_VAPI(int idx) {
         return shortBitsToFloat16(fp16inp[idx]).longValue();
     }
@@ -196,11 +172,7 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_SCONV_HF2I, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
+        applyIfCPUFeature = {"avx512_fp16", "true"})
     public short testConvHF2S_VAPI(int idx) {
         return shortBitsToFloat16(fp16inp[idx]).shortValue();
     }
@@ -214,11 +186,7 @@ public class TestFloat16ToIntegralConv {
 
     @Test
     @IR(counts = {IRNode.X86_SCONV_HF2I, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_HF2F, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"}, phase = CompilePhase.FINAL_CODE,
-        applyIfCPUFeature = {"avx10_2", "true"})
+        applyIfCPUFeature = {"avx512_fp16", "true"})
     public byte testConvHF2B_VAPI(int idx) {
         return shortBitsToFloat16(fp16inp[idx]).byteValue();
     }
