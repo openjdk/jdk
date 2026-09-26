@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,6 @@ void RangeCheckEliminator::Visitor::do_LogicOp(LogicOp *lo) {
 void RangeCheckEliminator::Visitor::do_Phi(Phi *phi) {
   if (!phi->type()->as_IntType() && !phi->type()->as_ObjectType()) return;
 
-  BlockBegin *block = phi->block();
   int op_count = phi->operand_count();
   bool has_upper = true;
   bool has_lower = true;
@@ -220,7 +219,6 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
 
   if (ao->op() == Bytecodes::_irem) {
     Bound* x_bound = _rce->get_bound(x);
-    Bound* y_bound = _rce->get_bound(y);
     if (x_bound->lower() >= 0 && x_bound->lower_instr() == nullptr && y->as_ArrayLength() != nullptr) {
       _bound = new Bound(0, nullptr, -1, y);
     } else if (x_bound->has_lower() && x_bound->lower() >= 0 && y->type()->as_IntConstant() &&
@@ -872,7 +870,6 @@ void RangeCheckEliminator::process_access_indexed(BlockBegin *loop_header, Block
       }
 
       // Lower instruction
-      Value index_instr = ai->index();
       Value lower_instr = index_bound->lower_instr();
       if (!loop_invariant(loop_header, lower_instr)) {
         TRACE_RANGE_CHECK_ELIMINATION(

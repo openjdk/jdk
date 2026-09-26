@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,7 +395,7 @@ final class TestMethodSupplier {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static Object fromString(String value, Class<?> toType) {
+    static Object fromString(String value, Class<?> toType) {
         if (toType.isEnum()) {
             return Enum.valueOf((Class<? extends Enum>)toType, value);
         }

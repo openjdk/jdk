@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,6 +41,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
@@ -427,18 +428,16 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // ThreadStateTransition::transition_from_native() cannot be used
   // here because it does not check for asynchronous exceptions.
   // We have to manage the transition ourself.
-  thread->set_thread_state_fence(_thread_in_native_trans);
+  thread->set_thread_state_fence(_thread_in_Java);
 
   // Handle safepoint operations, pending suspend requests,
   // and pending asynchronous exceptions.
   if (SafepointMechanism::should_process(thread) ||
       thread->has_special_condition_for_native_trans()) {
-    JavaThread::check_special_condition_for_native_trans(thread);
+    SharedRuntime::check_special_condition_for_native_trans(thread);
     CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops());
   }
 
-  // Finally we can change the thread state to _thread_in_Java.
-  thread->set_thread_state(_thread_in_Java);
   fixup_after_potential_safepoint();
 
   // Notify the stack watermarks machinery that we are unwinding.
@@ -582,6 +581,12 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     return normal_entry(method, 0, THREAD);
   }
 
+  // Flattened entries require handling beyond a direct field load.
+  // Bail to slow path.
+  if (entry->is_flat()) {
+    return normal_entry(method, 0, THREAD);
+  }
+
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -670,6 +675,12 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   ConstantPoolCache* cache = method->constants()->cache();
   ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_putfield)) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  // Flattened entries require handling beyond a direct field store.
+  // Bail to slow path.
+  if (entry->is_flat()) {
     return normal_entry(method, 0, THREAD);
   }
 

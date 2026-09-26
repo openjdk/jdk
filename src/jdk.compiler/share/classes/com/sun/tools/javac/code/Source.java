@@ -218,6 +218,19 @@ public enum Source {
         return this.compareTo(MIN) >= 0;
     }
 
+    public static boolean isSupported(Feature feature, int majorVersion) {
+        Source source = null;
+        for (Target target : Target.values()) {
+            if (majorVersion == target.majorVersion) {
+                source = lookup(target.name);
+            }
+        }
+        if (source != null) {
+            return feature.allowedInSource(source);
+        }
+        return false;
+    }
+
     public Target requiredTarget() {
         return switch(this) {
         case JDK28  -> Target.JDK1_28;
@@ -291,6 +304,7 @@ public enum Source {
         PRIVATE_MEMBERS_IN_PERMITS_CLAUSE(JDK19),
         ERASE_POLY_SIG_RETURN_TYPE(JDK24),
         CAPTURE_MREF_RETURN_TYPE(JDK26),
+        VALUE_CLASSES(DEFAULT, Fragments.FeatureValueClasses, DiagKind.PLURAL),
         ;
 
         enum DiagKind {

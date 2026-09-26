@@ -61,6 +61,8 @@ DEF_HANDLE_CONSTR(instance , is_instance_noinline )
 DEF_HANDLE_CONSTR(array    , is_array_noinline    )
 DEF_HANDLE_CONSTR(objArray , is_objArray_noinline )
 DEF_HANDLE_CONSTR(typeArray, is_typeArray_noinline)
+DEF_HANDLE_CONSTR(flatArray, is_flatArray_noinline)
+DEF_HANDLE_CONSTR(refArray , is_refArray_noinline )
 
 // Constructor for metadata handles
 #define DEF_METADATA_HANDLE_FN(name, type) \

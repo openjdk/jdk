@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,12 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessByte
  */
 
@@ -44,9 +46,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
     static final byte static_final_v = (byte)0x01;
 
-    static byte static_v;
+    static byte static_v = (byte)0x01;
 
-    final byte final_v = (byte)0x01;
+    final byte final_v;
 
     byte v;
 
@@ -59,6 +61,12 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessByte() {
+        final_v = (byte)0x01;
+        v = (byte)0x01;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
@@ -286,10 +294,30 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (byte)0x01);
+
             byte o = (byte) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, (byte)0x23);
             assertEquals((byte)0x01, o, "getAndSet byte");
             byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals((byte)0x23, x, "getAndSet byte value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (byte)0x01);
+
+            byte o = (byte) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, (byte)0x23);
+            assertEquals((byte)0x01, o, "getAndSetAcquire byte");
+            byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals((byte)0x23, x, "getAndSetAcquire byte value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, (byte)0x01);
+
+            byte o = (byte) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, (byte)0x23);
+            assertEquals((byte)0x01, o, "getAndSetRelease byte");
+            byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals((byte)0x23, x, "getAndSetRelease byte value");
         }
 
         // get and add, add and get
@@ -574,7 +602,7 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact((byte)0x23, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSet byte");
             byte x = (byte) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals((byte)0x01, x, "failing weakCompareAndSetRe byte value");
+            assertEquals((byte)0x01, x, "failing weakCompareAndSet byte value");
         }
 
         // Compare set and get
@@ -587,7 +615,6 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
             assertEquals((byte)0x23, x, "getAndSet byte value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact((byte)0x01);
 
@@ -597,7 +624,6 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
             assertEquals((byte)0x23, x, "getAndSetAcquire byte value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact((byte)0x01);
 
@@ -869,10 +895,10 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, (byte)0x01, (byte)0x45);
-                assertEquals(success, false, "failing weakCompareAndSetAcquire byte");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, (byte)0x01, (byte)0x45);
+                assertEquals(success, false, "failing weakCompareAndSetRelease byte");
                 byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals((byte)0x23, x, "failing weakCompareAndSetAcquire byte value");
+                assertEquals((byte)0x23, x, "failing weakCompareAndSetRelease byte value");
             }
 
             {

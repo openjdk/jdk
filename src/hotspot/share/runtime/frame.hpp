@@ -226,7 +226,7 @@ class frame {
   inline void interpreted_frame_oop_map(InterpreterOopMap* mask) const;
 
   // returns the sending frame
-  inline frame sender(RegisterMap* map) const;
+  ALWAYSINLINE frame sender(RegisterMap* map) const;
 
   bool safe_for_sender(JavaThread *thread);
 
@@ -239,7 +239,7 @@ class frame {
 
  private:
   // Helper methods for better factored code in frame::sender
-  inline frame sender_for_compiled_frame(RegisterMap* map) const;
+  ALWAYSINLINE frame sender_for_compiled_frame(RegisterMap* map) const;
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_upcall_stub_frame(RegisterMap* map) const;
