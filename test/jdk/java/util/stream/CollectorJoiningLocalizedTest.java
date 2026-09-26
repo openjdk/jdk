@@ -44,7 +44,7 @@ public class CollectorJoiningLocalizedTest {
     void joiningConjunctively() {
         assertThrows(NullPointerException.class, () -> Collectors.joiningConjunctively(null));
         Collector<CharSequence, ?, String> collector = Collectors.joiningConjunctively(Locale.ENGLISH);
-        assertThrows(IllegalArgumentException.class, () -> Stream.<CharSequence>empty().collect(collector));
+        assertEquals("", Stream.<CharSequence>empty().collect(collector));
         assertEquals("a",
                 Stream.of("a").collect(collector));
         assertEquals("a and b",
@@ -65,7 +65,7 @@ public class CollectorJoiningLocalizedTest {
     void joiningDisjunctively() {
         assertThrows(NullPointerException.class, () -> Collectors.joiningDisjunctively(null));
         Collector<CharSequence, ?, String> collector = Collectors.joiningDisjunctively(Locale.ENGLISH);
-        assertThrows(IllegalArgumentException.class, () -> Stream.<CharSequence>empty().collect(collector));
+        assertEquals("", Stream.<CharSequence>empty().collect(collector));
         assertEquals("a",
                 Stream.of("a").collect(collector));
         assertEquals("a or b",
