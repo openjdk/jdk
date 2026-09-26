@@ -36,6 +36,7 @@ import java.util.List;
  * @test
  * @bug 8300258
  * @key randomness
+ * @requires vm.opt.final.UseUnalignedAccesses == true
  * @summary C2: vectorization fails on simple ByteBuffer loop
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
