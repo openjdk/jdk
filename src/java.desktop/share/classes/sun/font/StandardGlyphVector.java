@@ -430,15 +430,27 @@ public class StandardGlyphVector extends GlyphVector {
 
     // relative to gv origin
     public Shape getGlyphOutline(int ix) {
+        if (ix < 0 || ix > glyphs.length) {
+            throw new IndexOutOfBoundsException("ix = " + ix);
+        }
+
         return getGlyphsOutline(ix, 1, 0, 0);
     }
 
     // relative to gv origin offset by x, y
     public Shape getGlyphOutline(int ix, float x, float y) {
+        if (ix < 0 || ix > glyphs.length) {
+            throw new IndexOutOfBoundsException("ix = " + ix);
+        }
+
         return getGlyphsOutline(ix, 1, x, y);
     }
 
     public Point2D getGlyphPosition(int ix) {
+        if (ix < 0 || ix > glyphs.length) {
+            throw new IndexOutOfBoundsException("ix = " + ix);
+        }
+
         initPositions();
 
         ix *= 2;
