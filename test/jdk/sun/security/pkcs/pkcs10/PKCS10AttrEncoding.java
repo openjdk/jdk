@@ -36,8 +36,9 @@
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Enumeration;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10;
@@ -63,7 +64,8 @@ public class PKCS10AttrEncoding {
         int len = ids.length;
         Object[] values = {
             ObjectIdentifier.of("1.2.3.4"),
-            new GregorianCalendar(1970, 1, 25, 8, 56, 7).getTime(),
+                LocalDateTime.of(1970, 2, 25, 8, 56, 7)
+                        .toInstant(ZoneOffset.UTC),
             "challenging"
         };
         for (int j = 0; j < len; j++) {
