@@ -120,7 +120,7 @@ import jdk.internal.reflect.Reflection;
  * instantiating it, in order to determine if an instance of that service
  * provider would be useful. For example, a service provider for {@code
  * CodecFactory} that is capable of producing a "PNG" encoder may be annotated
- * with {@code @PNG}. The following code uses service loader's {@code stream}
+ * with {@code @PNG}. The following code uses the service loader's {@code stream}
  * method to yield instances of {@code Provider<CodecFactory>} in contrast to
  * how the iterator yields instances of {@code CodecFactory}:
  * <pre>{@code
@@ -140,10 +140,12 @@ import jdk.internal.reflect.Reflection;
  * <h2> Designing services </h2>
  *
  * <p> A service is a single type, usually an interface or abstract class. A
- * concrete class can be used, but this is not recommended. The type may have
- * any accessibility. The methods of a service are highly domain-specific, so
- * this API specification cannot give concrete advice about their form or
- * function. However, there are two general guidelines:
+ * concrete class can be used, but this is not recommended. The service type must
+ * not be a {@linkplain Class#isPrimitive() primitive type} (including {@code void}),
+ * an {@linkplain Class#isArray() array type} or a {@linkplain Class#isHidden()
+ * hidden class}. The type may have any accessibility. The methods of a service are
+ * highly domain-specific, so this API specification cannot give concrete advice about
+ * their form or function. However, there are two general guidelines:
  * <ol>
  *   <li><p> A service should declare as many methods as needed to allow service
  *   providers to communicate their domain-specific properties and other
@@ -275,12 +277,12 @@ import jdk.internal.reflect.Reflection;
  * <p><a id="format">The provider-configuration file must be encoded in UTF-8. </a>
  * Space and tab characters surrounding each service provider's name, as well as
  * blank lines, are ignored. The comment character is {@code '#'}
- * ({@code U+0023} <span style="font-size:smaller;">NUMBER SIGN</span>);
- * on each line all characters following the first comment character are ignored.
+ * ({@code U+0023} <span style="font-size:smaller;">NUMBER SIGN</span>).
+ * On each line, all characters following the first comment character are ignored.
  * If a service provider class name is listed more than once in a
- * provider-configuration file then the duplicate is ignored. If a service
- * provider class is named in more than one configuration file then the duplicate
- * is ignored.
+ * provider-configuration file, then the duplicate is ignored. If a service
+ * provider class is named in more than one configuration file for the same
+ * service, then the duplicate is ignored.
  *
  * <p> A service provider that is mentioned in a provider-configuration file may
  * be located in the same JAR file as the provider-configuration file or in a
@@ -362,7 +364,7 @@ import jdk.internal.reflect.Reflection;
  * <p> Instances of this class are not safe for use by multiple concurrent
  * threads.
  *
- * <h3> Null handling </h3>
+ * <h2> Null handling </h2>
  *
  * <p> Unless otherwise specified, passing a {@code null} argument to any
  * method in this class will cause a {@link NullPointerException} to be thrown.
@@ -454,9 +456,9 @@ public final class ServiceLoader<S>
      *         module does not use the service type.
      */
     private ServiceLoader(Class<?> caller, ModuleLayer layer, Class<S> svc) {
-        Objects.requireNonNull(caller);
         Objects.requireNonNull(layer);
         Objects.requireNonNull(svc);
+        checkService(svc);
         checkCaller(caller, svc);
 
         this.service = svc;
@@ -475,6 +477,7 @@ public final class ServiceLoader<S>
      */
     private ServiceLoader(Class<?> caller, Class<S> svc, ClassLoader cl) {
         Objects.requireNonNull(svc);
+        checkService(svc);
 
         if (VM.isBooted()) {
             checkCaller(caller, svc);
@@ -513,14 +516,29 @@ public final class ServiceLoader<S>
      *         If the caller module does not use the service type.
      */
     private ServiceLoader(Module callerModule, Class<S> svc, ClassLoader cl) {
+        Objects.requireNonNull(callerModule);
+        Objects.requireNonNull(svc);
+        checkService(svc);
         if (!callerModule.canUse(svc)) {
             fail(svc, callerModule + " does not declare `uses`");
         }
 
-        this.service = Objects.requireNonNull(svc);
+        this.service = svc;
         this.serviceName = svc.getName();
         this.layer = null;
         this.loader = cl;
+    }
+
+    /**
+     * Checks that the service type is legal to use.
+     */
+    private static void checkService(Class<?> svc) {
+        if (svc.isPrimitive())
+            failIllegalService(svc, "primitive type");
+        if (svc.isArray())
+            failIllegalService(svc, "array type");
+        if (svc.isHidden())
+            failIllegalService(svc, "hidden class");
     }
 
     /**
@@ -563,6 +581,10 @@ public final class ServiceLoader<S>
         throws ServiceConfigurationError
     {
         fail(service, u + ":" + line + ": " + msg);
+    }
+
+    private static void failIllegalService(Class<?> service, String msg) {
+        throw new IllegalArgumentException(service.getName() + ": " + msg);
     }
 
     /**
@@ -1197,7 +1219,7 @@ public final class ServiceLoader<S>
      * adding each one to the cache in turn. If this loader's provider caches are
      * cleared by invoking the {@link #reload() reload} method then existing
      * iterators for this service loader should be discarded.
-     * The {@code  hasNext} and {@code next} methods of the iterator throw {@link
+     * The {@code hasNext} and {@code next} methods of the iterator throw {@link
      * java.util.ConcurrentModificationException ConcurrentModificationException}
      * if used after the provider cache has been cleared.
      *
@@ -1286,7 +1308,7 @@ public final class ServiceLoader<S>
      *
      * <p> The following examples demonstrate usage. The first example creates
      * a stream of {@code CodecFactory} objects, the second example is the same
-     * except that it sorts the providers by provider class name (and so locate
+     * except that it sorts the providers by provider class name (and so locates
      * all providers).
      * <pre>{@code
      *    Stream<CodecFactory> providers = ServiceLoader.load(CodecFactory.class)
@@ -1377,7 +1399,7 @@ public final class ServiceLoader<S>
      * @param  <S> the class of the service type
      *
      * @param  service
-     *         The interface or abstract class representing the service
+     *         The interface or class representing the service
      *
      * @param  loader
      *         The class loader to be used to load provider-configuration files
@@ -1407,8 +1429,8 @@ public final class ServiceLoader<S>
      * <ul>
      *   <li> <p> Step 1: Locate providers in named modules. </p>
      *
-     *   <p> Service providers are located in all named modules of the class
-     *   loader or to any class loader reachable via parent delegation. </p>
+     *   <p> Service providers are located in all named modules defined to the class
+     *   loader or any class loader reachable via parent delegation. </p>
      *
      *   <p> In addition, if the class loader is not the bootstrap or {@linkplain
      *   ClassLoader#getPlatformClassLoader() platform class loader}, then service
@@ -1431,7 +1453,7 @@ public final class ServiceLoader<S>
      *   loader has modules in a module layer then all providers in that module
      *   layer are located (irrespective of their class loader) before the
      *   providers in the parent class loader are located. The ordering of
-     *   modules in same class loader, or the ordering of modules in a module
+     *   modules in the same class loader, or the ordering of modules in a module
      *   layer, is not defined. </p>
      *
      *   <p> If a module declares more than one provider then the providers
@@ -1454,7 +1476,7 @@ public final class ServiceLoader<S>
      *   <p> In a provider-configuration file, any mention of a service provider
      *   that is deployed in a named module is ignored. This is to avoid
      *   duplicates that would otherwise arise when a named module has both a
-     *   <i>provides</i> directive and a provider-configuration file that mention
+     *   <i>provides</i> directive and a provider-configuration file that mentions
      *   the same service provider. </p>
      *
      *   <p> The provider class must be visible to the class loader. </p> </li>
@@ -1482,7 +1504,7 @@ public final class ServiceLoader<S>
      * @param  <S> the class of the service type
      *
      * @param  service
-     *         The interface or abstract class representing the service
+     *         The interface or class representing the service
      *
      * @param  loader
      *         The class loader to be used to load provider-configuration files
@@ -1492,8 +1514,11 @@ public final class ServiceLoader<S>
      *
      * @return A new service loader
      *
+     * @throws IllegalArgumentException
+     *         If the service type is a primitive type, an array type, or a hidden class
+     *
      * @throws ServiceConfigurationError
-     *         if the service type is not accessible to the caller or the
+     *         If the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
      *         not declare that it uses {@code service}
      */
@@ -1532,12 +1557,15 @@ public final class ServiceLoader<S>
      * @param  <S> the class of the service type
      *
      * @param  service
-     *         The interface or abstract class representing the service
+     *         The interface or class representing the service
      *
      * @return A new service loader
      *
+     * @throws IllegalArgumentException
+     *         If the service type is a primitive type, an array type, or a hidden class
+     *
      * @throws ServiceConfigurationError
-     *         if the service type is not accessible to the caller or the
+     *         If the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
      *         not declare that it uses {@code service}
      */
@@ -1565,12 +1593,15 @@ public final class ServiceLoader<S>
      * @param  <S> the class of the service type
      *
      * @param  service
-     *         The interface or abstract class representing the service
+     *         The interface or class representing the service
      *
      * @return A new service loader
      *
+     * @throws IllegalArgumentException
+     *         If the service type is a primitive type, an array type, or a hidden class
+     *
      * @throws ServiceConfigurationError
-     *         if the service type is not accessible to the caller or the
+     *         If the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
      *         not declare that it uses {@code service}
      */
@@ -1615,12 +1646,15 @@ public final class ServiceLoader<S>
      *         The module layer
      *
      * @param  service
-     *         The interface or abstract class representing the service
+     *         The interface or class representing the service
      *
      * @return A new service loader
      *
+     * @throws IllegalArgumentException
+     *         If the service type is a primitive type, an array type, or a hidden class
+     *
      * @throws ServiceConfigurationError
-     *         if the service type is not accessible to the caller or the
+     *         If the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
      *         not declare that it uses {@code service}
      *
