@@ -1289,9 +1289,10 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     register_new_node(new_limit, predicates.entry());
   } else {
     assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");
+    uint new_nodes = C->unique();
     PredicateIterator predicate_iterator(entry_control);
     Node* new_init = new_assertion_predicate_opaque_init(entry_control, init, int_zero);
-    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this);
+    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this, new_nodes);
     predicate_iterator.for_each(update_init_for_template_assertion_predicates);
   }
   IfNode* exit_test = head->loopexit();

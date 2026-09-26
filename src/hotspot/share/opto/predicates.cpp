@@ -258,11 +258,14 @@ class ReplaceOpaqueStrideInput : public BFSActions {
 class ReplaceOpaqueInitNode : public BFSActions {
   Node* _new_opaque_init_node;
   PhaseIterGVN& _igvn;
+  uint _new_nodes;
 
   public:
-  ReplaceOpaqueInitNode(Node* new_opaque_init_node, PhaseIterGVN& igvn)
+  ReplaceOpaqueInitNode(Node* new_opaque_init_node, PhaseIterGVN& igvn, uint new_nodes)
       : _new_opaque_init_node(new_opaque_init_node),
-        _igvn(igvn) {}
+        _igvn(igvn),
+        _new_nodes(new_nodes) {
+    }
   NONCOPYABLE(ReplaceOpaqueInitNode);
 
   void replace_for(OpaqueTemplateAssertionPredicateNode* opaque_node) {
@@ -275,7 +278,7 @@ class ReplaceOpaqueInitNode : public BFSActions {
   }
 
   bool is_target_node(Node* node) const override {
-    return node->is_OpaqueLoopInit();
+    return node->is_OpaqueLoopInit() && node->_idx < _new_nodes;
   }
 
   void target_node_action(Node* child, uint i) override {
@@ -292,9 +295,9 @@ void TemplateAssertionPredicate::replace_opaque_stride_input(Node* new_stride, P
 }
 
 // Replace the OpaqueLoopInitNode with 'new_init' and leave the other nodes unchanged.
-void TemplateAssertionPredicate::replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn) const {
+void TemplateAssertionPredicate::replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn, uint new_nodes) const {
   DEBUG_ONLY(verify();)
-  ReplaceOpaqueInitNode replace_opaque_init_node(new_init, igvn);
+  ReplaceOpaqueInitNode replace_opaque_init_node(new_init, igvn, new_nodes);
   replace_opaque_init_node.replace_for(opaque_node());
 }
 
@@ -1244,7 +1247,7 @@ void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate
 }
 
 void UpdateInitForTemplateAssertionPredicates::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
-  template_assertion_predicate.replace_opaque_init_node(_new_init, _phase->igvn());
+  template_assertion_predicate.replace_opaque_init_node(_new_init, _phase->igvn(), _new_nodes);
 }
 
 // Do the following to find and eliminate useless Parse and Template Assertion Predicates:
