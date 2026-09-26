@@ -83,10 +83,23 @@ public class LingeredAppWithValueObject extends LingeredApp {
 
     private static NonFlattenedValueObj nonFlattenedValObj;
 
+    private static ValueObj[] valObjArray;
+
+    private static NonFlattenedValueObj[] nonFlattenedValObjArray;
+
     static {
         valObj = new ValueObj((byte)1, (byte)10, (byte)20);
         nonNullValObj = new NonNullValueObj((byte)2, (byte)30, (byte)40);
         nonFlattenedValObj = new NonFlattenedValueObj(100, new Object());
+
+        valObjArray = new ValueObj[] {
+          new ValueObj((byte)1, (byte)10, (byte)20),
+          new ValueObj((byte)2, (byte)30, (byte)40)
+        };
+        nonFlattenedValObjArray = new NonFlattenedValueObj[] {
+          new NonFlattenedValueObj(100, new Object()),
+          new NonFlattenedValueObj(200, new Object())
+        };
     }
 
     public static void main(String[] args) {
@@ -95,6 +108,8 @@ public class LingeredAppWithValueObject extends LingeredApp {
         addresses.setProperty("valObj", String.format("0x%x", wb.getObjectAddress(valObj)));
         addresses.setProperty("nonNullValObj", String.format("0x%x", wb.getObjectAddress(nonNullValObj)));
         addresses.setProperty("nonFlattenedValObj", String.format("0x%x", wb.getObjectAddress(nonFlattenedValObj)));
+        addresses.setProperty("valObjArray", String.format("0x%x", wb.getObjectAddress(valObjArray)));
+        addresses.setProperty("nonFlattenedValObjArray", String.format("0x%x", wb.getObjectAddress(nonFlattenedValObjArray)));
 
         try (var out = Files.newOutputStream(ADDR_FILE_PATH)) {
             addresses.store(out, null);
