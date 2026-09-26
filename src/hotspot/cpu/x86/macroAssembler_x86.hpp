@@ -1864,6 +1864,7 @@ public:
 
   // AVX-512 mask operations.
   void kand(BasicType etype, KRegister dst, KRegister src1, KRegister src2);
+  void kandn(BasicType etype, KRegister dst, KRegister src1, KRegister src2);
   void kor(BasicType type, KRegister dst, KRegister src1, KRegister src2);
   void knot(uint masklen, KRegister dst, KRegister src, KRegister ktmp = knoreg, Register rtmp = noreg);
   void kxor(BasicType type, KRegister dst, KRegister src1, KRegister src2);
