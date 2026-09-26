@@ -651,8 +651,10 @@ class URICertStore extends CertStoreSpi {
                     // configured maximum length.
                     if (debug != null) {
                         debug.println("Discarding CRL: " + iae.getMessage());
-                        crl = null;
                     }
+                    lastModified = 0;
+                    crl = null;
+                    return Collections.emptyList();
                 }
             }
             return getMatchingCRLs(crl, selector);
@@ -675,7 +677,7 @@ class URICertStore extends CertStoreSpi {
      */
     private static Collection<X509CRL> getMatchingCRLs
         (X509CRL crl, CRLSelector selector) {
-        if (selector == null || (crl != null && selector.match(crl))) {
+        if (crl != null && (selector == null || selector.match(crl))) {
             return Collections.singletonList(crl);
         } else {
             return Collections.emptyList();
