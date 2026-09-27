@@ -314,14 +314,14 @@ public class ReadAll {
             assertEquals("", isr.readAllAsString());
         }
 
-        // InputStreamReader implementation: External decoder, on empty input stream
+        // InputStreamReader implementation: Explicitly provided decoder, on empty input stream
         try (InputStreamReader isr = new InputStreamReader(
                 InputStream.nullInputStream(),
                 StandardCharsets.UTF_8.newDecoder())) {
             assertEquals("", isr.readAllAsString());
         }
 
-        // InputStreamReader implementation: External decoder, empty stream but decoder has bytes
+        // InputStreamReader implementation: Explicitly provided decoder, empty stream but decoder has bytes
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41 }),
                 StandardCharsets.UTF_8.newDecoder())) {
@@ -330,7 +330,7 @@ public class ReadAll {
             assertEquals(-1, isr.read());
         }
 
-        // InputStreamReader implementation: External decoder, without leftover, then readAllAsString() twice
+        // InputStreamReader implementation: Explicitly provided decoder, without leftover, then readAllAsString() twice
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41 }),
                 StandardCharsets.UTF_8.newDecoder())) {
@@ -340,7 +340,7 @@ public class ReadAll {
             assertEquals(-1, isr.read());
         }
 
-        // InputStreamReader implementation: External decoder, with leftover then readAllAsString() again
+        // InputStreamReader implementation: Explicitly provided decoder, with leftover then readAllAsString() again
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42 }),
                 StandardCharsets.UTF_8.newDecoder())) {
