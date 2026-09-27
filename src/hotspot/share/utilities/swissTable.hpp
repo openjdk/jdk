@@ -117,9 +117,9 @@ public:
 
 private:
   enum class Marker : uint8_t {
-    _empty_marker   = uint8_t(-1),
+    _empty_marker     = uint8_t(-1),
     _tombstone_marker = uint8_t(-2),
-    _oob_marker     = uint8_t(-3),
+    _oob_marker       = uint8_t(-3),
   };
 
   enum class InsertPointNecessity {
