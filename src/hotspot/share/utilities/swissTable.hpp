@@ -122,9 +122,18 @@ private:
     _oob_marker       = uint8_t(-3),
   };
 
+  // When doing a lookup, whether an insertion point should be returned when the entry is absent
   enum class InsertPointNecessity {
-    _necessary,
-    _unnecessary,
+    // Insertion point is unnecessary, used for find operation.
+    UNNECESSARY,
+    // Insertion point is necessary, but we can skip checking for tombstone. The lookup will return
+    // the insertion point corresponding to the first empty bucket. This is used when resizing the
+    // table because there is no tombstone then.
+    IGNORE_TOMBSTONES,
+    // Insertion point is necessary. The lookup will return the insertion point corresponding to
+    // the first bucket that either is empty or is a tombstone. This is used for a typical emplace
+    // operation.
+    LOOK_FOR_TOMBSTONES,
   };
 
   static constexpr int _h1_shift = 7;
@@ -181,18 +190,23 @@ private:
       }
 
       Marker cur_marker = metadata[idx];
-      bool need_insert_point = INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point;
+      if (cur_marker == Marker(h2) && TOKEN_HASH_MATCH(token, hash, table[idx])) {
+        return LookupResult(true, idx);
+      }
+
       if (cur_marker == Marker::_empty_marker) {
-        insert_point = need_insert_point ? idx : insert_point;
+        if (INSERT_POINT_NECESSITY == InsertPointNecessity::IGNORE_TOMBSTONES) {
+          insert_point = idx;
+        } else if (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES && insert_point == _no_insert_point) {
+          insert_point = idx;
+        }
+
         return LookupResult(false, insert_point);
       }
 
-      if (need_insert_point && cur_marker == Marker::_tombstone_marker) {
+      if (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES &&
+          insert_point == _no_insert_point && cur_marker == Marker::_tombstone_marker) {
         insert_point = idx;
-      }
-
-      if (cur_marker == Marker(h2) && TOKEN_HASH_MATCH(token, hash, table[idx])) {
-        return LookupResult(true, idx);
       }
     }
   }
@@ -248,7 +262,8 @@ private:
       const auto& entry = _table[idx];
       uint64_t hash = entry.hash();
       int dummy_token = 0;
-      auto lookup_res = look_up<int, cannot_match, InsertPointNecessity::_necessary>(new_metadata, new_table, new_table_size_minus_one, hash, dummy_token);
+      auto lookup_res = look_up<int, cannot_match, InsertPointNecessity::IGNORE_TOMBSTONES>(new_metadata, new_table, new_table_size_minus_one,
+                                                                                            hash, dummy_token);
 
       assert(!lookup_res.exist(), "must not exist");
       size_t insert_point = lookup_res.idx();
@@ -288,7 +303,7 @@ public:
       return FindResult(FindResult::NOT_EXIST, nullptr);
     }
 
-    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::_unnecessary>(_metadata, _table, _table_size_minus_one, hash, token);
+    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::UNNECESSARY>(_metadata, _table, _table_size_minus_one, hash, token);
     if (lookup_res.exist()) {
       return FindResult(FindResult::FOUND, &_table[lookup_res.idx()]);
     } else {
@@ -303,7 +318,7 @@ public:
       return EmplaceResult(EmplaceResult::FAIL_TO_ALLOCATE);
     }
 
-    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::_necessary>(_metadata, _table, _table_size_minus_one, hash, token);
+    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::LOOK_FOR_TOMBSTONES>(_metadata, _table, _table_size_minus_one, hash, token);
     size_t insert_point = lookup_res.idx();
     Marker old_marker = _metadata[insert_point];
     assert(lookup_res.exist() == (int8_t(old_marker) >= 0), "inconsistent");
@@ -332,7 +347,7 @@ public:
       return EraseResult(EraseResult::NOT_EXIST);
     }
 
-    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::_unnecessary>(_metadata, _table, _table_size_minus_one, hash, token);
+    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::UNNECESSARY>(_metadata, _table, _table_size_minus_one, hash, token);
     if (!lookup_res.exist()) {
       return EraseResult(EraseResult::NOT_EXIST);
     }
@@ -407,7 +422,7 @@ SwissTableImpl<Entry, Allocator>::look_up(const Marker* metadata, const Entry* t
   }
 
   size_t insert_point = _no_insert_point;
-  if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary) {
+  if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES) {
     if (int8_t(first_marker) < 0) {
       if (first_marker == Marker::_empty_marker) {
         return LookupResult(false, start_idx);

@@ -136,7 +136,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up_neon(const Marker* metadata, const E
       match_index_mask = vorrq_u8(match_index_mask, match_off_mask);
     }
 
-    if (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point) {
+    if (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES && insert_point == _no_insert_point) {
       uint8x16_t tombstone_marker_vec = vdupq_n_u8(uint8_t(Marker::_tombstone_marker));
       uint8x16_t tombstone_mask = vceqq_u8(cur_vec, tombstone_marker_vec);
       uint8x16_t insert_point_mask = vorrq_u8(tombstone_mask, empty_mask);
@@ -156,7 +156,13 @@ PDSwissTableImpl<Entry, Allocator>::look_up_neon(const Marker* metadata, const E
     // If we find no match in this batch, but there is an empty bucket, it means the entry we want
     // to find is not in the table
     if (empty_off < vector_size) {
-      assert(INSERT_POINT_NECESSITY == InsertPointNecessity::_unnecessary || insert_point != _no_insert_point, "must found an insertion point");
+      if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::IGNORE_TOMBSTONES) {
+        assert(insert_point == _no_insert_point, "must not have found an insertion point");
+        insert_point = idx + empty_off;
+      } else if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES) {
+        assert(insert_point != _no_insert_point, "must have found an insertion point");
+      }
+
       return LookupResult(false, insert_point);
     }
 

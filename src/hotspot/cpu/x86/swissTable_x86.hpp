@@ -178,7 +178,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up_avx512(const Marker* metadata, const
 
     // Find an insert point if none has been found, it should be the first bucket that either is
     // empty or is a tombstone
-    if (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point) {
+    if (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES && insert_point == _no_insert_point) {
       __m512i tombstone_marker_vec = _mm512_set1_epi8(uint8_t(Marker::_tombstone_marker));
       uint64_t tombstone_mask = _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, tombstone_marker_vec));
       uint64_t insert_point_mask = tombstone_mask | empty_mask;
@@ -193,7 +193,14 @@ PDSwissTableImpl<Entry, Allocator>::look_up_avx512(const Marker* metadata, const
     // If we find no match in this batch, but there is an empty bucket, it means the entry we want
     // to find is not in the table
     if (empty_mask != 0) {
-      assert(INSERT_POINT_NECESSITY == InsertPointNecessity::_unnecessary || insert_point != _no_insert_point, "must have found an insertion point");
+      if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::IGNORE_TOMBSTONES) {
+        assert(insert_point == _no_insert_point, "must not have found an insertion point");
+        size_t empty_off = _tzcnt_u64(empty_mask);
+        insert_point = idx + empty_off;
+      } else if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES) {
+        assert(insert_point != _no_insert_point, "must have found an insertion point");
+      }
+
       return LookupResult(false, insert_point);
     }
 
@@ -236,7 +243,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up_avx2(const Marker* metadata, const E
       match_mask = _blsr_u32(match_mask);
     }
 
-    if (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point) {
+    if (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES && insert_point == _no_insert_point) {
       __m256i tombstone_marker_vec = _mm256_set1_epi8(uint8_t(Marker::_tombstone_marker));
       uint32_t tombstone_mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, tombstone_marker_vec));
       uint32_t insert_point_mask = tombstone_mask | empty_mask;
@@ -249,7 +256,14 @@ PDSwissTableImpl<Entry, Allocator>::look_up_avx2(const Marker* metadata, const E
     }
 
     if (empty_mask != 0) {
-      assert(INSERT_POINT_NECESSITY == InsertPointNecessity::_unnecessary || insert_point != _no_insert_point, "must have found an insertion point");
+      if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::IGNORE_TOMBSTONES) {
+        assert(insert_point == _no_insert_point, "must not have found an insertion point");
+        size_t empty_off = _tzcnt_u32(empty_mask);
+        insert_point = idx + empty_off;
+      } else if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES) {
+        assert(insert_point != _no_insert_point, "must have found an insertion point");
+      }
+
       return LookupResult(false, insert_point);
     }
 
@@ -294,7 +308,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up_sse2(const Marker* metadata, const E
       match_mask &= (match_mask - 1);
     }
 
-    if (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point) {
+    if (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES && insert_point == _no_insert_point) {
       __m128i tombstone_marker_vec = _mm_set1_epi8(uint8_t(Marker::_tombstone_marker));
       uint32_t tombstone_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(cur_vec, tombstone_marker_vec));
       uint32_t insert_point_mask = tombstone_mask | empty_mask;
@@ -307,7 +321,14 @@ PDSwissTableImpl<Entry, Allocator>::look_up_sse2(const Marker* metadata, const E
     }
 
     if (empty_mask != 0) {
-      assert(INSERT_POINT_NECESSITY == InsertPointNecessity::_unnecessary || insert_point != _no_insert_point, "must have found an insertion point");
+      if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::IGNORE_TOMBSTONES) {
+        assert(insert_point == _no_insert_point, "must not have found an insertion point");
+        size_t empty_off = count_trailing_zeros(empty_mask);
+        insert_point = idx + empty_off;
+      } else if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::LOOK_FOR_TOMBSTONES) {
+        assert(insert_point != _no_insert_point, "must have found an insertion point");
+      }
+
       return LookupResult(false, insert_point);
     }
 
