@@ -66,17 +66,6 @@ private:
     }
   }
 
-  // User-provided hash functions often have poor avalance effect. For example, most of the time,
-  // the provided hash function for Key = int would be the identity function. In addition, the
-  // algorithm requires good avalanche. So, we hash the result again. This function is the same as
-  // j.u.SplittableRandom::mix64.
-  static uint64_t internal_hash(const Key& key) {
-    uint64_t h = HASH(key);
-    h = (h ^ (h >> 30)) * 0xbf58476d1ce4e5b9;
-    h = (h ^ (h >> 27)) * 0x94d049bb133111eb;
-    return h ^ (h >> 31);
-  }
-
 public:
   template <class... AllocatorParms>
   FlatHashTable(AllocatorParms... parms) : _impl(Allocator(parms...)) {}
@@ -86,7 +75,7 @@ public:
   }
 
   const T* get(const Key& key) const {
-    uint64_t h = internal_hash(key);
+    uint64_t h = HASH(key);
     auto find_res = _impl.template find<Key, key_hash_match>(h, key);
     if (find_res.result() == ImplType::FindResult::NOT_EXIST) {
       return nullptr;
@@ -101,7 +90,7 @@ public:
   }
 
   bool put(const Key& key, const T& value) {
-    uint64_t h = internal_hash(key);
+    uint64_t h = HASH(key);
     auto emplace_entry = [&](bool exist, Entry* n) {
       ::new(n) Entry(h, key, value);
     };
@@ -113,7 +102,7 @@ public:
   }
 
   bool put_if_absent(const Key& key, const T& value) {
-    uint64_t h = internal_hash(key);
+    uint64_t h = HASH(key);
     auto emplace_entry = [&](bool exist, Entry* n) {
       if (!exist) {
         ::new(n) Entry(h, key, value);
@@ -131,7 +120,7 @@ public:
   // copy-constructible. However, users will need to launder the value, which is error-prone and
   // harder to use.
   bool remove(const Key& key, T* value = nullptr) {
-    uint64_t h = internal_hash(key);
+    uint64_t h = HASH(key);
     auto extract_entry = [&](Entry& entry) {
       if (value != nullptr) {
         *value = entry._value;
@@ -168,10 +157,22 @@ public:
   }
 };
 
-template <class Key, class T, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
+// A hash function that is not too expensive but has a very good avalanche effect. It can be
+// applied on top of another hash function to achieve a better avalanche effect, as long as the
+// first function does not produce too many collisions. This function is the same as
+// j.u.SplittableRandom::mix64.
+template <class K>
+uint64_t split_mix_hash(const K& k) {
+  uint64_t h = uint64_t(k);
+  h = (h ^ (h >> 30)) * 0xbf58476d1ce4e5b9;
+  h = (h ^ (h >> 27)) * 0x94d049bb133111eb;
+  return h ^ (h >> 31);
+}
+
+template <class Key, class T, auto HASH = split_mix_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
 using FlatHashTableArena = FlatHashTable<Key, T, HASH, KEY_EQUAL, FlatHashTableArenaAllocator>;
 
-template <class Key, class T, MemTag mem_tag, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
+template <class Key, class T, MemTag mem_tag, auto HASH = split_mix_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
 using FlatHashTableCHeap = FlatHashTable<Key, T, HASH, KEY_EQUAL, FlatHashTableCHeapAllocator<mem_tag>>;
 
 #endif // SHARE_UTILITIES_FLATHASHTABLE_HPP
