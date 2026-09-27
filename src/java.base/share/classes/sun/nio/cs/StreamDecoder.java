@@ -309,7 +309,7 @@ public class StreamDecoder extends Reader {
         return rem;
     }
 
-    int implRead(char[] cbuf, int off, int end) throws IOException {
+    private int implRead(char[] cbuf, int off, int end) throws IOException {
         // In order to handle surrogate pairs, this method requires that
         // the invoker attempt to read at least two characters.  Saving the
         // extra character, if any, at a higher level is easier than trying
