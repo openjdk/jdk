@@ -35,10 +35,10 @@
 // fast lookup. A 64-bit hash value is divided into 2 parts, H2 consists of the last 7 bits, and H1
 // is the remaining 57 bits. Each element in the side table will then contain either the 7-bit H2
 // value of the key corresponding to that bucket, or a marker value which signifies that the bucket
-// is empty, or the entry there has been removed. The marker values are negative, while a H2 value
-// is always positive, so there will be no ambiguity. Another marker value denotes out-of-bound
-// buckets which are allocated so the algorithm can freely read the metadata table even at the very
-// end.
+// is empty, or the entry there has been removed. The marker values are negative (have their
+// highest bit set), while a H2 value is always non-negative (has its highest bit unset), so there
+// will be no ambiguity. Another marker value denotes out-of-bound buckets which are allocated so
+// the algorithm can freely read the metadata table even at the very end.
 //
 // When performing a lookup, we use H1 of the key to compute an index in the tables. Starting from
 // that index, we traverse the side table to find an element that has the stored H2 value match H2

@@ -101,7 +101,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up_neon(const Marker* metadata, const E
     // empty_mask is true, otherwise, the element is 0xff
     uint8x16_t empty_index_mask = vbslq_u8(empty_mask, iota_vec, max_uint8_t_vec);
 
-    // The offset of the first bucket that is empty, or vector_size if there is none
+    // The offset of the first bucket that is empty, or 0xff if there is none
     size_t empty_off = vminvq_u8(empty_index_mask);
 
     uint64_t h2 = hash & _h2_mask;
