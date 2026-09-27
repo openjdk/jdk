@@ -380,6 +380,14 @@ G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitori
                     all_memory_pools_affected) {
 }
 
+G1YoungGCMonitoringScope::~G1YoungGCMonitoringScope() {
+  G1GCPhaseTimes* phase_times = G1CollectedHeap::heap()->phase_times();
+  if (phase_times->sum_thread_work_items(G1GCPhaseTimes::EagerlyReclaimHumongousObjects,
+                                         G1GCPhaseTimes::EagerlyReclaimNumReclaimed) != 0) {
+    set_all_memory_pools_affected();
+  }
+}
+
 G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
   G1MonitoringScope(monitoring_support,
                     monitoring_support->_full_collection_counters,
