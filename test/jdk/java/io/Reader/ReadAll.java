@@ -280,7 +280,7 @@ public class ReadAll {
             assertEquals("", isr.readAllAsString());
         }
 
-        // InputStreamReader implementation: Internal decoder, empty stream but decoder has bytes
+        // InputStreamReader implementation: Decoder belongs to the Charset instance, empty stream but decoder has bytes
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41 }),
                 StandardCharsets.UTF_8)) {
@@ -288,7 +288,7 @@ public class ReadAll {
             assertEquals("", isr.readAllAsString());
         }
 
-        // InputStreamReader implementation: Internal decoder, with leftover char
+        // InputStreamReader implementation: Decoder belongs to the Charset instance, with leftover char
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42 }),
                 StandardCharsets.UTF_8)) {
@@ -296,7 +296,7 @@ public class ReadAll {
             assertEquals("B", isr.readAllAsString());
         }
 
-        // InputStreamReader implementation: Internal decoder, readAllAsString() called twice
+        // InputStreamReader implementation: Decoder belongs to the Charset instance, readAllAsString() called twice
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41 }),
                 StandardCharsets.UTF_8)) {
@@ -305,7 +305,7 @@ public class ReadAll {
             assertEquals("", isr.readAllAsString());
         }
 
-        // InputStreamReader implementation: Internal decoder, with leftover then readAllAsString() again
+        // InputStreamReader implementation: Decoder belongs to the Charset instance, with leftover then readAllAsString() again
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42 }),
                 StandardCharsets.UTF_8)) {
