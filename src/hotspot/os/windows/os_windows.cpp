@@ -2794,15 +2794,33 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       address addr = (address)exception_record->ExceptionInformation[1];
       StackOverflow* overflow_state = thread->stack_overflow_state();
 
-      if (overflow_state->stack_guards_enabled() &&
-          overflow_state->in_stack_yellow_reserved_zone(addr)) {
-        // The exact faulting page depends on the generated stack-bang sequence;
-        // for instance, a compiled prologue may issue just one probe, large
-        // frames may probe page by page, and native wrappers may have their own
-        // banging patterns.  So we deliberately do not constrain the valid
-        // addresses that we might observe here.
-        return handle_recoverable_stack_overflow(thread, exceptionInfo, pc, addr,
-                                                 in_java, in_vm);
+      if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+        // Native code may fault once while accessing the yellow zone (after
+        // which HotSpot would un-guard the yellow and reserved zones before
+        // retrying the instruction) and again (at a possibly different
+        // instruction) due to a page-wise probe (for example, from a
+        // compiler-generated probe like `_chkstk()`).
+        //
+        // If we're here due to the second fault (which we detect by probing
+        // whether HotSpot has un-guarded the yellow and reserved zones), then
+        // we simply retry the instruction, which we expect to complete
+        // successfully because HotSpot has already opened the yellow and
+        // reserved zones.  If the stack probe continues into the red zone, we
+        // will see an `EXCEPTION_ACCESS_VIOLATION`.
+        if (overflow_state->stack_yellow_reserved_zone_disabled()) {
+          return EXCEPTION_CONTINUE_EXECUTION;
+        }
+
+        if (overflow_state->stack_guards_enabled()) {
+          // The exact faulting page depends on the generated stack-bang
+          // sequence; for instance, a compiled prologue may issue just one
+          // probe, large frames may probe page by page, and native wrappers may
+          // have their own banging patterns.  So we deliberately do not require
+          // that the stack overflow address has to be in one particular page of
+          // the recoverable yellow or reserved ranges.
+          return handle_recoverable_stack_overflow(thread, exceptionInfo, pc,
+                                                   addr, in_java, in_vm);
+        }
       }
 
       handle_unrecoverable_stack_overflow(thread, exception_code, pc,
