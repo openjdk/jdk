@@ -26,7 +26,6 @@
 #define CPU_AARCH64_SWISSTABLE_AARCH64_HPP
 
 #include "cppstdlib/limits.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/swissTable.hpp"
 
@@ -45,11 +44,11 @@ private:
   using Marker = typename SwissTableImpl<Entry, Allocator>::Marker;
   using InsertPointNecessity = typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity;
 
-  static constexpr uint64_t _h1_mask = SwissTableImpl<Entry, Allocator>::_h1_mask;
+  static constexpr uint64_t _h2_mask = SwissTableImpl<Entry, Allocator>::_h2_mask;
   static constexpr size_t _no_insert_point = SwissTableImpl<Entry, Allocator>::_no_insert_point;
 
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
-  static LookupResult look_up_neon(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+  static LookupResult look_up_neon(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
                                    uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
 
 public:
@@ -57,7 +56,7 @@ public:
   static size_t metadata_out_of_bounds_size();
 
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
-  static LookupResult look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+  static LookupResult look_up(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
                               uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
 };
 
@@ -75,7 +74,7 @@ size_t PDSwissTableImpl<Entry, Allocator>::metadata_out_of_bounds_size() {
 template <class Entry, class Allocator>
 template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-PDSwissTableImpl<Entry, Allocator>::look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+PDSwissTableImpl<Entry, Allocator>::look_up(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
                                             uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
   return look_up_neon<Token, TOKEN_HASH_MATCH, INSERT_POINT_NECESSITY>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
 }
@@ -83,7 +82,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up(const uint8_t* metadata, const Entry
 template <class Entry, class Allocator>
 template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-PDSwissTableImpl<Entry, Allocator>::look_up_neon(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+PDSwissTableImpl<Entry, Allocator>::look_up_neon(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
                                                  uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
   constexpr size_t vector_size = sizeof(uint8x16_t);
   size_t idx = start_idx;
@@ -92,7 +91,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up_neon(const uint8_t* metadata, const 
       idx = 0;
     }
 
-    uint8x16_t cur_vec = vld1q_u8(&metadata[idx]);
+    uint8x16_t cur_vec = vld1q_u8(reinterpret_cast<const uint8_t*>(&metadata[idx]));
     uint8x16_t empty_marker_vec = vdupq_n_u8(uint8_t(Marker::_empty_marker));
     uint8x16_t empty_mask = vceqq_u8(cur_vec, empty_marker_vec);
 
@@ -105,11 +104,11 @@ PDSwissTableImpl<Entry, Allocator>::look_up_neon(const uint8_t* metadata, const 
     // The offset of the first bucket that is empty, or vector_size if there is none
     size_t empty_off = vminvq_u8(empty_index_mask);
 
-    uint64_t h1 = hash & _h1_mask;
-    uint8x16_t h1_vec = vdupq_n_u8(h1);
-    // Each true element in this vector means the corresponding bucket has the same h1 value as the
+    uint64_t h2 = hash & _h2_mask;
+    uint8x16_t h2_vec = vdupq_n_u8(h2);
+    // Each true element in this vector means the corresponding bucket has the same h2 value as the
     // one we want to find
-    uint8x16_t match_mask = vceqq_u8(cur_vec, h1_vec);
+    uint8x16_t match_mask = vceqq_u8(cur_vec, h2_vec);
 
     // An element has the value equal to its index in the vector if the corresponding element in
     // match_mask is true, otherwise, the element is 0xff
@@ -118,7 +117,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up_neon(const uint8_t* metadata, const 
       // This is the offset of the first bucket that we need to inspect
       size_t match_off = vminvq_u8(match_index_mask);
       // The bucket we want to find cannot appear after an empty bucket, this also takes care of
-      // the case where there is no bucket with matching h1 value
+      // the case where there is no bucket with matching h2 value
       if (match_off >= empty_off) {
         break;
       }

@@ -32,16 +32,16 @@
 #include "utilities/powerOfTwo.hpp"
 
 // A Swiss table is an open-addressed hash table implementation that uses a small side table for
-// fast lookup. A 64-bit hash value is divided into 2 parts, H1 consists of the last 7 bits, and H2
-// is the remaining 57 bits. Each element in the side table will then contain either the 7-bit H1
+// fast lookup. A 64-bit hash value is divided into 2 parts, H2 consists of the last 7 bits, and H1
+// is the remaining 57 bits. Each element in the side table will then contain either the 7-bit H2
 // value of the key corresponding to that bucket, or a marker value which signifies that the bucket
-// is empty, or the entry there has been removed. The marker values are negative, while a H1 value
+// is empty, or the entry there has been removed. The marker values are negative, while a H2 value
 // is always positive, so there will be no ambiguity. Another marker value denotes out-of-bound
 // buckets which are allocated so the algorithm can freely read the metadata table even at the very
 // end.
 //
-// When performing a lookup, we use H2 of the key to compute an index in the tables. Starting from
-// that index, we traverse the side table to find an element that has the stored H1 value match H1
+// When performing a lookup, we use H1 of the key to compute an index in the tables. Starting from
+// that index, we traverse the side table to find an element that has the stored H2 value match H2
 // of the looked up key, then compare the key stored in the main table. The strength of Swiss table
 // comes from the fact that each element in the side table is very small, which allows us to
 // operate on multiple of them at a time using simd instructions.
@@ -127,13 +127,13 @@ private:
     _unnecessary,
   };
 
-  static constexpr int _h2_shift = 7;
-  static constexpr uint64_t _h1_mask = right_n_bits(_h2_shift);
+  static constexpr int _h1_shift = 7;
+  static constexpr uint64_t _h2_mask = right_n_bits(_h1_shift);
   static constexpr size_t _no_insert_point = size_t(-1);
   static constexpr size_t _min_table_size = 8;
 
   Allocator _alloc;
-  uint8_t* _metadata;
+  Marker* _metadata;
   Entry* _table;
   size_t _table_size_minus_one;
   size_t _size_include_tombstones;
@@ -154,7 +154,11 @@ private:
 
     // The allocation needs metadata_out_of_bounds_size for out-of-bound markers of the metadata
     // table, and (alignof(Entry) - 1) to align the main table
-    size_t max_allocatable_table_size = (max_allocatable - metadata_out_of_bounds_size() - (alignof(Entry) - 1)) / (sizeof(Entry) + sizeof(uint8_t));
+    static_assert(alignof(Marker) == 1);
+    size_t max_padding_size = metadata_out_of_bounds_size() + (alignof(Entry) - 1);
+    size_t max_allocatable_table_size_in_bytes = max_allocatable - max_padding_size;
+
+    size_t max_allocatable_table_size = max_allocatable_table_size_in_bytes / (sizeof(Entry) + sizeof(Marker));
     assert(max_allocatable_table_size >= _min_table_size, "impossible values %zu - %zu", max_allocatable_table_size, _min_table_size);
     size_t max_table_size = round_down_power_of_2(max_allocatable_table_size);
     return max_table_size;
@@ -164,30 +168,30 @@ private:
   // that derived implementations can support looking up a key using a token without the need to
   // construct an actual key.
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
-  static LookupResult look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+  static LookupResult look_up(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
                              uint64_t hash, const Token& token);
 
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
-  static LookupResult look_up_fallback(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+  static LookupResult look_up_fallback(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
                                        uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
-    uint64_t h1 = hash & _h1_mask;
+    uint64_t h2 = hash & _h2_mask;
     for (size_t idx = start_idx;; idx++) {
       if (idx > table_size_minus_one) {
         idx = 0;
       }
 
-      uint8_t cur_metadata = metadata[idx];
+      Marker cur_marker = metadata[idx];
       bool need_insert_point = INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point;
-      if (cur_metadata == uint8_t(Marker::_empty_marker)) {
+      if (cur_marker == Marker::_empty_marker) {
         insert_point = need_insert_point ? idx : insert_point;
         return LookupResult(false, insert_point);
       }
 
-      if (need_insert_point && cur_metadata == uint8_t(Marker::_tombstone_marker)) {
+      if (need_insert_point && cur_marker == Marker::_tombstone_marker) {
         insert_point = idx;
       }
 
-      if (cur_metadata == h1 && TOKEN_HASH_MATCH(token, hash, table[idx])) {
+      if (cur_marker == Marker(h2) && TOKEN_HASH_MATCH(token, hash, table[idx])) {
         return LookupResult(true, idx);
       }
     }
@@ -210,27 +214,34 @@ private:
 
     size_t new_table_size = MAX2(table_size * 2, _min_table_size);
     assert(is_power_of_2(new_table_size), "invalid table size %zu", new_table_size);
-    size_t metadata_size_in_bytes = sizeof(uint8_t) * new_table_size;
+    static_assert(alignof(Marker) == 1);
+    size_t metadata_size_in_bytes = sizeof(Marker) * new_table_size;
+    // Pad the metadata table with distinguishable data so SIMD algorithm can work fine even at the
+    // end of the table
     size_t metadata_size_include_out_of_bounds = metadata_size_in_bytes + metadata_out_of_bounds_size();
     // Add (alignof(Entry) - 1) to align the main table
-    size_t allocated_size = metadata_size_include_out_of_bounds + (alignof(Entry) - 1) + sizeof(Entry) * new_table_size;
+    size_t metadata_size_include_padding = metadata_size_include_out_of_bounds + (alignof(Entry) - 1);
+    size_t allocated_size = metadata_size_include_padding + sizeof(Entry) * new_table_size;
 
-    // It is less verbose to deal with allocation failure when you only do one, so we allocate both
-    // of the tables in one call
-    void* allocated = _alloc.allocate(allocated_size);
+    // There are 3 reasons that we allocate both tables in one call:
+    // - We may need to align the main table, and if we do so, we need to store both the allocated
+    //   pointer and the aligned pointer, which is cumbersome.
+    // - It is slightly less verbose dealing with allocation failure when there is only one.
+    // - It is more performant, both during allocation and during table accesses.
+    char* allocated = static_cast<char*>(_alloc.allocate(allocated_size));
     if (allocated == nullptr) {
       return false;
     }
 
-    uint8_t* new_metadata = static_cast<uint8_t*>(allocated);
-    Entry* new_table = reinterpret_cast<Entry*>(align_up(new_metadata + metadata_size_include_out_of_bounds, alignof(Entry)));
+    Marker* new_metadata = reinterpret_cast<Marker*>(allocated);
+    Entry* new_table = reinterpret_cast<Entry*>(align_up(allocated + metadata_size_include_out_of_bounds, alignof(Entry)));
     size_t new_table_size_minus_one = new_table_size - 1;
-    ::memset(new_metadata, uint8_t(Marker::_empty_marker), metadata_size_in_bytes);
-    ::memset(new_metadata + metadata_size_in_bytes, uint8_t(Marker::_oob_marker), metadata_out_of_bounds_size());
+    ::memset(allocated, uint8_t(Marker::_empty_marker), metadata_size_in_bytes);
+    ::memset(allocated + metadata_size_in_bytes, uint8_t(Marker::_oob_marker), metadata_out_of_bounds_size());
 
     for (size_t idx = 0; idx < table_size; idx++) {
-      uint8_t cur_metadata = _metadata[idx];
-      if (int8_t(cur_metadata) < 0) {
+      Marker cur_marker = _metadata[idx];
+      if (int8_t(cur_marker) < 0) {
         continue;
       }
 
@@ -242,9 +253,9 @@ private:
       assert(!lookup_res.exist(), "must not exist");
       size_t insert_point = lookup_res.idx();
       assert(insert_point < new_table_size, "unexpected insert point %zu out-of-bound %zu", insert_point, new_table_size);
-      assert(new_metadata[insert_point] == uint8_t(Marker::_empty_marker), "must be empty but %u", new_metadata[insert_point]);
-      uint64_t h1 = hash & _h1_mask;
-      new_metadata[insert_point] = h1;
+      assert(new_metadata[insert_point] == Marker::_empty_marker, "must be empty but %u", uint32_t(new_metadata[insert_point]));
+      uint64_t h2 = hash & _h2_mask;
+      new_metadata[insert_point] = Marker(h2);
       ::new(&new_table[insert_point]) Entry(entry);
     }
 
@@ -294,11 +305,11 @@ public:
 
     auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::_necessary>(_metadata, _table, _table_size_minus_one, hash, token);
     size_t insert_point = lookup_res.idx();
-    uint8_t old_metadata = _metadata[insert_point];
-    assert(lookup_res.exist() == (int8_t(old_metadata) >= 0), "inconsistent");
+    Marker old_marker = _metadata[insert_point];
+    assert(lookup_res.exist() == (int8_t(old_marker) >= 0), "inconsistent");
 
-    if (int8_t(old_metadata) < 0) {
-      if (old_metadata == uint8_t(Marker::_empty_marker)) {
+    if (int8_t(old_marker) < 0) {
+      if (old_marker == Marker::_empty_marker) {
         if (must_not_insert_new) {
           return EmplaceResult(EmplaceResult::FAIL_TO_ALLOCATE);
         }
@@ -306,8 +317,8 @@ public:
       }
       _size++;
       assert(_size <= _size_include_tombstones, "inconsistent");
-      uint64_t h1 = hash & _h1_mask;
-      _metadata[insert_point] = h1;
+      uint64_t h2 = hash & _h2_mask;
+      _metadata[insert_point] = Marker(h2);
     }
 
     Entry* entry = &_table[insert_point];
@@ -329,7 +340,7 @@ public:
     size_t idx = lookup_res.idx();
     extract_entry(_table[idx]);
     assert(int8_t(_metadata[idx]) >= 0, "inconsistent");
-    _metadata[idx] = uint8_t(Marker::_tombstone_marker);
+    _metadata[idx] = Marker::_tombstone_marker;
     _size--;
     return EraseResult(EraseResult::ERASED);
   }
@@ -343,6 +354,9 @@ public:
 
 template <class Entry, class Allocator>
 class PDSwissTableImpl {
+private:
+  using Marker = typename SwissTableImpl<Entry, Allocator>::Marker;
+
 public:
   static double default_load_factor() {
     // Not much guarantee when the entries are processed one by one
@@ -355,7 +369,7 @@ public:
 
   template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
   static typename SwissTableImpl<Entry, Allocator>::LookupResult
-  look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+  look_up(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
           uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
     return SwissTableImpl<Entry, Allocator>
            ::template look_up_fallback<Token, TOKEN_HASH_MATCH, INSERT_POINT_NECESSITY>(metadata, table, table_size_minus_one,
@@ -378,14 +392,14 @@ size_t SwissTableImpl<Entry, Allocator>::metadata_out_of_bounds_size() {
 template <class Entry, class Allocator>
 template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-SwissTableImpl<Entry, Allocator>::look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+SwissTableImpl<Entry, Allocator>::look_up(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
                                           uint64_t hash, const Token& token) {
   assert(table != nullptr, "must have been initialized");
-  uint64_t h2 = hash >> _h2_shift;
-  size_t start_idx = h2 & table_size_minus_one;
+  uint64_t h1 = hash >> _h1_shift;
+  size_t start_idx = h1 & table_size_minus_one;
 
-  uint8_t first_metadata = metadata[start_idx];
-  if (uint64_t h1 = hash & _h1_mask; first_metadata == h1) {
+  Marker first_marker = metadata[start_idx];
+  if (uint64_t h2 = hash & _h2_mask; uint64_t(first_marker) == h2) {
     const Entry& entry = table[start_idx];
     if (TOKEN_HASH_MATCH(token, hash, entry)) {
       return LookupResult(true, start_idx);
@@ -394,16 +408,16 @@ SwissTableImpl<Entry, Allocator>::look_up(const uint8_t* metadata, const Entry* 
 
   size_t insert_point = _no_insert_point;
   if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary) {
-    if (int8_t(first_metadata) < 0) {
-      if (first_metadata == uint8_t(Marker::_empty_marker)) {
+    if (int8_t(first_marker) < 0) {
+      if (first_marker == Marker::_empty_marker) {
         return LookupResult(false, start_idx);
       } else {
-        assert(first_metadata == uint8_t(Marker::_tombstone_marker), "unexpected metadata value %d", first_metadata);
+        assert(first_marker == Marker::_tombstone_marker, "unexpected marker value %d", uint8_t(first_marker));
         insert_point = start_idx;
       }
     }
   } else {
-    if (first_metadata == uint8_t(Marker::_empty_marker)) {
+    if (first_marker == Marker::_empty_marker) {
       return LookupResult(false, start_idx);
     }
   }
