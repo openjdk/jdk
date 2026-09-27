@@ -122,16 +122,21 @@ private:
     _oob_marker     = uint8_t(-3),
   };
 
+  enum class InsertPointNecessity {
+    _necessary,
+    _unnecessary,
+  };
+
   static constexpr int _h2_shift = 7;
   static constexpr uint64_t _h1_mask = right_n_bits(_h2_shift);
-  static constexpr size_t _no_insert_point = -1;
+  static constexpr size_t _no_insert_point = size_t(-1);
   static constexpr size_t _min_table_size = 8;
 
   Allocator _alloc;
   uint8_t* _metadata;
   Entry* _table;
   size_t _table_size_minus_one;
-  size_t _size_include_removed;
+  size_t _size_include_tombstones;
   double _load_factor;
   size_t _size;
 
@@ -158,13 +163,13 @@ private:
   // The most basic block of the data structure. Token and TOKEN_HASH_MATCH are parameterized so
   // that derived implementations can support looking up a key using a token without the need to
   // construct an actual key.
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+  template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
+  static LookupResult look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
                              uint64_t hash, const Token& token);
 
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult lookup_fallback(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                      uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
+  template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
+  static LookupResult look_up_fallback(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                       uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
     uint64_t h1 = hash & _h1_mask;
     for (size_t idx = start_idx;; idx++) {
       if (idx > table_size_minus_one) {
@@ -172,11 +177,13 @@ private:
       }
 
       uint8_t cur_metadata = metadata[idx];
+      bool need_insert_point = INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point;
       if (cur_metadata == uint8_t(Marker::_empty_marker)) {
-        return LookupResult(false, insert_point == _no_insert_point ? idx : insert_point);
+        insert_point = need_insert_point ? idx : insert_point;
+        return LookupResult(false, insert_point);
       }
 
-      if (insert_point == _no_insert_point && cur_metadata == uint8_t(Marker::_tombstone_marker)) {
+      if (need_insert_point && cur_metadata == uint8_t(Marker::_tombstone_marker)) {
         insert_point = idx;
       }
 
@@ -188,7 +195,7 @@ private:
 
   bool should_grow() {
     size_t size_to_grow = MIN2(size_t(double(_table_size_minus_one + 1) * _load_factor), _table_size_minus_one);
-    return _size_include_removed >= size_to_grow;
+    return _size_include_tombstones >= size_to_grow;
   }
 
   static bool cannot_match(uint64_t, int, const Entry&) {
@@ -230,7 +237,7 @@ private:
       const auto& entry = _table[idx];
       uint64_t hash = entry.hash();
       int dummy_token = 0;
-      auto lookup_res = lookup<int, cannot_match>(new_metadata, new_table, new_table_size_minus_one, hash, dummy_token);
+      auto lookup_res = look_up<int, cannot_match, InsertPointNecessity::_necessary>(new_metadata, new_table, new_table_size_minus_one, hash, dummy_token);
 
       assert(!lookup_res.exist(), "must not exist");
       size_t insert_point = lookup_res.idx();
@@ -245,14 +252,14 @@ private:
     _metadata = new_metadata;
     _table = new_table;
     _table_size_minus_one = new_table_size_minus_one;
-    _size_include_removed = _size;
+    _size_include_tombstones = _size;
     return true;
   }
 
 public:
   SwissTableImpl(Allocator alloc)
     : _alloc(alloc), _metadata(nullptr), _table(nullptr), _table_size_minus_one(std::numeric_limits<size_t>::max()),
-      _size_include_removed(0), _load_factor(default_load_factor()), _size(0) {
+      _size_include_tombstones(0), _load_factor(default_load_factor()), _size(0) {
     assert(_load_factor >= 0.1 && _load_factor < 1, "invalid load factor %lf", _load_factor);
   }
 
@@ -270,7 +277,7 @@ public:
       return FindResult(FindResult::NOT_EXIST, nullptr);
     }
 
-    auto lookup_res = lookup<Token, TOKEN_HASH_MATCH>(_metadata, _table, _table_size_minus_one, hash, token);
+    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::_unnecessary>(_metadata, _table, _table_size_minus_one, hash, token);
     if (lookup_res.exist()) {
       return FindResult(FindResult::FOUND, &_table[lookup_res.idx()]);
     } else {
@@ -285,7 +292,7 @@ public:
       return EmplaceResult(EmplaceResult::FAIL_TO_ALLOCATE);
     }
 
-    auto lookup_res = lookup<Token, TOKEN_HASH_MATCH>(_metadata, _table, _table_size_minus_one, hash, token);
+    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::_necessary>(_metadata, _table, _table_size_minus_one, hash, token);
     size_t insert_point = lookup_res.idx();
     uint8_t old_metadata = _metadata[insert_point];
     assert(lookup_res.exist() == (int8_t(old_metadata) >= 0), "inconsistent");
@@ -295,10 +302,10 @@ public:
         if (must_not_insert_new) {
           return EmplaceResult(EmplaceResult::FAIL_TO_ALLOCATE);
         }
-        _size_include_removed++;
+        _size_include_tombstones++;
       }
       _size++;
-      assert(_size <= _size_include_removed, "inconsistent");
+      assert(_size <= _size_include_tombstones, "inconsistent");
       uint64_t h1 = hash & _h1_mask;
       _metadata[insert_point] = h1;
     }
@@ -314,13 +321,13 @@ public:
       return EraseResult(EraseResult::NOT_EXIST);
     }
 
-    auto lookup_res = lookup<Token, TOKEN_HASH_MATCH>(_metadata, _table, _table_size_minus_one, hash, token);
+    auto lookup_res = look_up<Token, TOKEN_HASH_MATCH, InsertPointNecessity::_unnecessary>(_metadata, _table, _table_size_minus_one, hash, token);
     if (!lookup_res.exist()) {
       return EraseResult(EraseResult::NOT_EXIST);
     }
 
     size_t idx = lookup_res.idx();
-    extract_entry(&_table[idx]);
+    extract_entry(_table[idx]);
     assert(int8_t(_metadata[idx]) >= 0, "inconsistent");
     _metadata[idx] = uint8_t(Marker::_tombstone_marker);
     _size--;
@@ -346,12 +353,13 @@ public:
     return 0;
   }
 
-  template <class Token, auto TOKEN_HASH_MATCH>
+  template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
   static typename SwissTableImpl<Entry, Allocator>::LookupResult
-  lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-         uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
-    return SwissTableImpl<Entry, Allocator>::template lookup_fallback<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one,
-                                                                                               hash, token, start_idx, insert_point);
+  look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+          uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
+    return SwissTableImpl<Entry, Allocator>
+           ::template look_up_fallback<Token, TOKEN_HASH_MATCH, INSERT_POINT_NECESSITY>(metadata, table, table_size_minus_one,
+                                                                                        hash, token, start_idx, insert_point);
   }
 };
 
@@ -368,19 +376,15 @@ size_t SwissTableImpl<Entry, Allocator>::metadata_out_of_bounds_size() {
 }
 
 template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
+template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-SwissTableImpl<Entry, Allocator>::lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                         uint64_t hash, const Token& token) {
+SwissTableImpl<Entry, Allocator>::look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                          uint64_t hash, const Token& token) {
   assert(table != nullptr, "must have been initialized");
   uint64_t h2 = hash >> _h2_shift;
   size_t start_idx = h2 & table_size_minus_one;
 
   uint8_t first_metadata = metadata[start_idx];
-  if (first_metadata == uint8_t(Marker::_empty_marker)) {
-    return LookupResult(false, start_idx);
-  }
-
   if (uint64_t h1 = hash & _h1_mask; first_metadata == h1) {
     const Entry& entry = table[start_idx];
     if (TOKEN_HASH_MATCH(token, hash, entry)) {
@@ -389,11 +393,24 @@ SwissTableImpl<Entry, Allocator>::lookup(const uint8_t* metadata, const Entry* t
   }
 
   size_t insert_point = _no_insert_point;
-  if (first_metadata == uint8_t(Marker::_tombstone_marker)) {
-    insert_point = start_idx;
+  if constexpr (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary) {
+    if (int8_t(first_metadata) < 0) {
+      if (first_metadata == uint8_t(Marker::_empty_marker)) {
+        return LookupResult(false, start_idx);
+      } else {
+        assert(first_metadata == uint8_t(Marker::_tombstone_marker), "unexpected metadata value %d", first_metadata);
+        insert_point = start_idx;
+      }
+    }
+  } else {
+    if (first_metadata == uint8_t(Marker::_empty_marker)) {
+      return LookupResult(false, start_idx);
+    }
   }
-  return PDSwissTableImpl<Entry, Allocator>::template lookup<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one,
-                                                                                      hash, token, start_idx + 1, insert_point);
+
+  return PDSwissTableImpl<Entry, Allocator>
+         ::template look_up<Token, TOKEN_HASH_MATCH, INSERT_POINT_NECESSITY>(metadata, table, table_size_minus_one,
+                                                                             hash, token, start_idx + 1, insert_point);
 }
 
 #endif // SHARE_UTILITIES_SWISSTABLE_HPP

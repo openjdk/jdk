@@ -107,7 +107,7 @@ public:
     };
     auto emplace_res = _impl.template emplace<Key, key_hash_match>(h, key, emplace_entry);
     if (emplace_res.result() == ImplType::EmplaceResult::FAIL_TO_ALLOCATE) {
-      vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Fail to put a new entry into the UnstableUnorderedMap");
+      vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Fail to put a new entry into the FlatHashTable");
     }
     return emplace_res.result() == ImplType::EmplaceResult::NOT_EXIST;
   }
@@ -121,14 +121,22 @@ public:
     };
     auto emplace_res = _impl.template emplace<Key, key_hash_match>(h, key, emplace_entry);
     if (emplace_res.result() == ImplType::EmplaceResult::FAIL_TO_ALLOCATE) {
-      vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Fail to put a new entry into the UnstableUnorderedMap");
+      vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Fail to put a new entry into the FlatHashTable");
     }
     return emplace_res.result() == ImplType::EmplaceResult::NOT_EXIST;
   }
 
-  bool remove(const Key& key) {
+  // This operation requires T to be copy-assignable. One may think since T is required to be
+  // trivially destructible, we can use placement-new and lift the restriction to T being
+  // copy-constructible. However, users will need to launder the value, which is error-prone and
+  // harder to use.
+  bool remove(const Key& key, T* value = nullptr) {
     uint64_t h = internal_hash(key);
-    auto extract_entry = [](Entry* n) {};
+    auto extract_entry = [&](Entry& entry) {
+      if (value != nullptr) {
+        *value = entry._value;
+      }
+    };
     auto erase_res = _impl.template erase<Key, key_hash_match>(h, key, extract_entry);
     return erase_res.result() == ImplType::EraseResult::ERASED;
   }

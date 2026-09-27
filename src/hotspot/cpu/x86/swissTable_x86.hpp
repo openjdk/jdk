@@ -27,6 +27,7 @@
 
 #include "cppstdlib/cstdlib.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 #include "utilities/swissTable.hpp"
 
 template <class Entry, class Allocator>
@@ -34,6 +35,7 @@ class PDSwissTableImpl {
 private:
   using LookupResult = typename SwissTableImpl<Entry, Allocator>::LookupResult;
   using Marker = typename SwissTableImpl<Entry, Allocator>::Marker;
+  using InsertPointNecessity = typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity;
 
   static constexpr uint64_t _h1_mask = SwissTableImpl<Entry, Allocator>::_h1_mask;
   static constexpr size_t _no_insert_point = SwissTableImpl<Entry, Allocator>::_no_insert_point;
@@ -41,24 +43,24 @@ private:
   static bool should_use_avx512();
   static bool should_use_avx2();
 
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult lookup_avx512(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                    uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
+  template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
+  static LookupResult look_up_avx512(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                     uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
 
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult lookup_avx2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                  uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
+  template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
+  static LookupResult look_up_avx2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                   uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
 
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult lookup_sse2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                  uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
+  template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
+  static LookupResult look_up_sse2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                   uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
 
 public:
   static double default_load_factor();
   static size_t metadata_out_of_bounds_size();
 
-  template <class Token, auto TOKEN_HASH_MATCH>
-  static LookupResult lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+  template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
+  static LookupResult look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
                              uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
 };
 
@@ -116,19 +118,19 @@ size_t PDSwissTableImpl<Entry, Allocator>::metadata_out_of_bounds_size() {
 }
 
 template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
+template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-PDSwissTableImpl<Entry, Allocator>::lookup(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                           uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
+PDSwissTableImpl<Entry, Allocator>::look_up(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                            uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
 #ifdef __GNUC__
   if (should_use_avx512()) {
-    return lookup_avx512<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
+    return look_up_avx512<Token, TOKEN_HASH_MATCH, INSERT_POINT_NECESSITY>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
   } else if (should_use_avx2()) {
-    return lookup_avx2<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
+    return look_up_avx2<Token, TOKEN_HASH_MATCH, INSERT_POINT_NECESSITY>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
   }
 #endif // __GNUC__
 
-  return lookup_sse2<Token, TOKEN_HASH_MATCH>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
+  return look_up_sse2<Token, TOKEN_HASH_MATCH, INSERT_POINT_NECESSITY>(metadata, table, table_size_minus_one, hash, token, start_idx, insert_point);
 }
 
 #ifdef __GNUC__
@@ -136,11 +138,11 @@ PDSwissTableImpl<Entry, Allocator>::lookup(const uint8_t* metadata, const Entry*
 // instructions when only AVX2 is available. The repetition is unfortunate, but using macro would
 // make it really hard to read and trace.
 template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
+template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
 __attribute__((target("bmi,avx512bw")))
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-PDSwissTableImpl<Entry, Allocator>::lookup_avx512(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                                  uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
+PDSwissTableImpl<Entry, Allocator>::look_up_avx512(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                                   uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
   constexpr size_t vector_size = sizeof(__m512i);
   size_t idx = start_idx;
   while (true) {
@@ -152,22 +154,16 @@ PDSwissTableImpl<Entry, Allocator>::lookup_avx512(const uint8_t* metadata, const
 
     __m512i empty_marker_vec = _mm512_set1_epi8(uint8_t(Marker::_empty_marker));
     uint64_t empty_mask = _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, empty_marker_vec));
-    // The offset of the first bucket that is empty, or vector_size if there is none
-    size_t empty_off = _tzcnt_u64(empty_mask);
+    // Can only match up to the first empty bucket
+    uint64_t match_valid_mask = _blsmsk_u64(empty_mask);
 
     uint64_t h1 = hash & _h1_mask;
     __m512i h1_vec = _mm512_set1_epi8(h1);
     // Each bit 1 in this mask corresponds to a bucket in which the h1 value matches that of the
     // current token, counting from the lowest bit
-    uint64_t match_mask = _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, h1_vec));
+    uint64_t match_mask = match_valid_mask & _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, h1_vec));
     while (match_mask != 0) {
       size_t match_off = _tzcnt_u64(match_mask);
-      // The first match bucket is after the first empty bucket, must not be the bucket we want to
-      // find
-      if (match_off > empty_off) {
-        break;
-      }
-
       size_t match_idx = idx + match_off;
       assert(match_idx <= table_size_minus_one, "match_idx %zu out-of-bounds for table size %zu", match_idx, table_size_minus_one + 1);
       const Entry& entry = table[match_idx];
@@ -177,19 +173,18 @@ PDSwissTableImpl<Entry, Allocator>::lookup_avx512(const uint8_t* metadata, const
 
       // Unset the lowest bit of match_mask, the implication is that we are done with the bucket
       // corresponding to the lowest set bit, so we continue to the second lowest one
-      match_mask &= (match_mask - 1);
+      match_mask = _blsr_u64(match_mask);
     }
 
     // Find an insert point if none has been found, it should be the first bucket that either is
     // empty or is a tombstone
-    if (insert_point == _no_insert_point) {
+    if (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point) {
       __m512i tombstone_marker_vec = _mm512_set1_epi8(uint8_t(Marker::_tombstone_marker));
       uint64_t tombstone_mask = _cvtmask64_u64(_mm512_cmpeq_epi8_mask(cur_vec, tombstone_marker_vec));
-      // The offset of the first bucket that is a tombstone, or vector_size if there is none
-      size_t tombstone_off = _tzcnt_u64(tombstone_mask);
+      uint64_t insert_point_mask = tombstone_mask | empty_mask;
 
-      size_t insert_point_off = MIN2(empty_off, tombstone_off);
-      if (insert_point_off < vector_size) {
+      if (insert_point_mask != 0) {
+        size_t insert_point_off = _tzcnt_u64(insert_point_mask);
         insert_point = idx + insert_point_off;
         assert(insert_point <= table_size_minus_one, "insert_point %zu out-of-bounds for table size %zu", insert_point, table_size_minus_one + 1);
       }
@@ -197,8 +192,8 @@ PDSwissTableImpl<Entry, Allocator>::lookup_avx512(const uint8_t* metadata, const
 
     // If we find no match in this batch, but there is an empty bucket, it means the entry we want
     // to find is not in the table
-    if (empty_off < vector_size) {
-      assert(insert_point != _no_insert_point, "must found an insertion point");
+    if (empty_mask != 0) {
+      assert(INSERT_POINT_NECESSITY == InsertPointNecessity::_unnecessary || insert_point != _no_insert_point, "must have found an insertion point");
       return LookupResult(false, insert_point);
     }
 
@@ -208,11 +203,11 @@ PDSwissTableImpl<Entry, Allocator>::lookup_avx512(const uint8_t* metadata, const
 }
 
 template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
+template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
 __attribute__((target("bmi,avx2")))
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-PDSwissTableImpl<Entry, Allocator>::lookup_avx2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                                uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
+PDSwissTableImpl<Entry, Allocator>::look_up_avx2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                                 uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
   constexpr size_t vector_size = sizeof(__m256i);
   size_t idx = start_idx;
   while (true) {
@@ -224,17 +219,13 @@ PDSwissTableImpl<Entry, Allocator>::lookup_avx2(const uint8_t* metadata, const E
 
     __m256i empty_marker_vec = _mm256_set1_epi8(uint8_t(Marker::_empty_marker));
     uint32_t empty_mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, empty_marker_vec));
-    size_t empty_off = _tzcnt_u32(empty_mask);
+    uint32_t match_valid_mask = _blsmsk_u32(empty_mask);
 
     uint64_t h1 = hash & _h1_mask;
     __m256i h1_vec = _mm256_set1_epi8(h1);
-    uint32_t match_mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, h1_vec));
+    uint32_t match_mask = match_valid_mask & _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, h1_vec));
     while (match_mask != 0) {
       size_t match_off = _tzcnt_u32(match_mask);
-      if (match_off > empty_off) {
-        break;
-      }
-
       size_t match_idx = idx + match_off;
       assert(match_idx <= table_size_minus_one, "match_idx %zu out-of-bounds for table size %zu", match_idx, table_size_minus_one + 1);
       const Entry& entry = table[match_idx];
@@ -242,23 +233,23 @@ PDSwissTableImpl<Entry, Allocator>::lookup_avx2(const uint8_t* metadata, const E
         return LookupResult(true, match_idx);
       }
 
-      match_mask &= (match_mask - 1);
+      match_mask = _blsr_u32(match_mask);
     }
 
-    if (insert_point == _no_insert_point) {
+    if (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point) {
       __m256i tombstone_marker_vec = _mm256_set1_epi8(uint8_t(Marker::_tombstone_marker));
-      uint32_t tombstone = _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, tombstone_marker_vec));
-      size_t tombstone_off = _tzcnt_u32(tombstone);
+      uint32_t tombstone_mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(cur_vec, tombstone_marker_vec));
+      uint32_t insert_point_mask = tombstone_mask | empty_mask;
 
-      size_t insert_point_off = MIN2(empty_off, tombstone_off);
-      if (insert_point_off < vector_size) {
+      if (insert_point_mask != 0) {
+        size_t insert_point_off = _tzcnt_u32(insert_point_mask);
         insert_point = idx + insert_point_off;
         assert(insert_point <= table_size_minus_one, "insert_point %zu out-of-bounds for table size %zu", insert_point, table_size_minus_one + 1);
       }
     }
 
-    if (empty_off < vector_size) {
-      assert(insert_point != _no_insert_point, "must found an insertion point");
+    if (empty_mask != 0) {
+      assert(INSERT_POINT_NECESSITY == InsertPointNecessity::_unnecessary || insert_point != _no_insert_point, "must have found an insertion point");
       return LookupResult(false, insert_point);
     }
 
@@ -269,10 +260,10 @@ PDSwissTableImpl<Entry, Allocator>::lookup_avx2(const uint8_t* metadata, const E
 #endif // __GNUC__
 
 template <class Entry, class Allocator>
-template <class Token, auto TOKEN_HASH_MATCH>
+template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
 typename SwissTableImpl<Entry, Allocator>::LookupResult
-PDSwissTableImpl<Entry, Allocator>::lookup_sse2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
-                                                uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
+PDSwissTableImpl<Entry, Allocator>::look_up_sse2(const uint8_t* metadata, const Entry* table, size_t table_size_minus_one,
+                                                 uint64_t hash, const Token& token, size_t start_idx, size_t insert_point) {
   constexpr size_t vector_size = sizeof(__m128i);
   size_t idx = start_idx;
   while (true) {
@@ -284,17 +275,14 @@ PDSwissTableImpl<Entry, Allocator>::lookup_sse2(const uint8_t* metadata, const E
 
     __m128i empty_marker_vec = _mm_set1_epi8(uint8_t(Marker::_empty_marker));
     uint32_t empty_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(cur_vec, empty_marker_vec));
-    size_t empty_off = count_trailing_zeros(empty_mask | 0x10000);
+    // This is the C++ portable version of blsmsk, see x86 documentation
+    uint32_t match_valid_mask = empty_mask ^ (empty_mask - 1);
 
     uint64_t h1 = hash & _h1_mask;
     __m128i h1_vec = _mm_set1_epi8(h1);
-    uint32_t match_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(cur_vec, h1_vec));
+    uint32_t match_mask = match_valid_mask & _mm_movemask_epi8(_mm_cmpeq_epi8(cur_vec, h1_vec));
     while (match_mask != 0) {
       size_t match_off = count_trailing_zeros(match_mask | 0x10000);
-      if (match_off > empty_off) {
-        break;
-      }
-
       size_t match_idx = idx + match_off;
       assert(match_idx <= table_size_minus_one, "match_idx %zu out-of-bounds for table size %zu", match_idx, table_size_minus_one + 1);
       const Entry& entry = table[match_idx];
@@ -302,23 +290,24 @@ PDSwissTableImpl<Entry, Allocator>::lookup_sse2(const uint8_t* metadata, const E
         return LookupResult(true, match_idx);
       }
 
+      // This is the C++ portable version of blsr, see x86 documentation
       match_mask &= (match_mask - 1);
     }
 
-    if (insert_point == _no_insert_point) {
+    if (INSERT_POINT_NECESSITY == InsertPointNecessity::_necessary && insert_point == _no_insert_point) {
       __m128i tombstone_marker_vec = _mm_set1_epi8(uint8_t(Marker::_tombstone_marker));
       uint32_t tombstone_mask = _mm_movemask_epi8(_mm_cmpeq_epi8(cur_vec, tombstone_marker_vec));
-      size_t tombstone_off = count_trailing_zeros(tombstone_mask | 0x10000);
+      uint32_t insert_point_mask = tombstone_mask | empty_mask;
 
-      size_t insert_point_off = MIN2(empty_off, tombstone_off);
-      if (insert_point_off < vector_size) {
+      if (insert_point_mask != 0) {
+        size_t insert_point_off = count_trailing_zeros(insert_point_mask);
         insert_point = idx + insert_point_off;
         assert(insert_point <= table_size_minus_one, "insert_point %zu out-of-bounds for table size %zu", insert_point, table_size_minus_one + 1);
       }
     }
 
-    if (empty_off < vector_size) {
-      assert(insert_point != _no_insert_point, "must found an insertion point");
+    if (empty_mask != 0) {
+      assert(INSERT_POINT_NECESSITY == InsertPointNecessity::_unnecessary || insert_point != _no_insert_point, "must have found an insertion point");
       return LookupResult(false, insert_point);
     }
 

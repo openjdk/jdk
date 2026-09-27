@@ -102,7 +102,9 @@ void test_basic() {
     ASSERT_EQ(0, *v);
     ASSERT_EQ(2U, map.size());
 
-    ASSERT_TRUE(map.remove(1));
+    int r = 0;
+    ASSERT_TRUE(map.remove(1, &r));
+    ASSERT_EQ(1, r);
     ASSERT_EQ(1U, map.size());
     v = map.get(0);
     ASSERT_NE(nullptr, v);
@@ -115,7 +117,8 @@ void test_basic() {
     ASSERT_EQ(0, *v);
     ASSERT_EQ(1U, map.size());
 
-    ASSERT_TRUE(map.remove(0));
+    ASSERT_TRUE(map.remove(0, &r));
+    ASSERT_EQ(0, r);
     ASSERT_EQ(0U, map.size());
     ASSERT_EQ(nullptr, map.get(0));
     ASSERT_EQ(nullptr, map.get(1));
@@ -164,7 +167,9 @@ void test_large_map() {
       ASSERT_EQ(i, *v);
     }
     for (int i = 0; i < iterations; i++) {
-      ASSERT_TRUE(map.remove(i));
+      int r = 0;
+      ASSERT_TRUE(map.remove(i, &r));
+      ASSERT_EQ(i, r);
     }
 
     // No memory should be allocated apart from the first iteration
@@ -331,10 +336,12 @@ void test_random() {
         break;
       }
       case TableOp::TableOpType::REMOVE: {
+        int r = 0;
         bool exist = expected_exists[key];
-        ASSERT_EQ(exist, map.remove(key));
+        ASSERT_EQ(exist, map.remove(key, &r));
         expected_exists[key] = false;
         if (exist) {
+          ASSERT_EQ(expected_values[key], r);
           expected_size--;
         }
         break;
@@ -472,12 +479,14 @@ void test_custom_key() {
         break;
       }
       case TableOp::TableOpType::REMOVE: {
+        CustomValue r(0);
         bool exist = expected_exists[key];
-        ASSERT_EQ(exist, map.remove(custom_key));
+        ASSERT_EQ(exist, map.remove(custom_key, &r));
         CustomValue* v = map.get(custom_key);
         ASSERT_EQ(nullptr, v);
         expected_exists[key] = false;
         if (exist) {
+          ASSERT_TRUE(CustomValue::equal(CustomValue(expected_values[key]), r));
           expected_size--;
         }
         break;
