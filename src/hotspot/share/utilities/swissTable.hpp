@@ -32,23 +32,23 @@
 #include "utilities/powerOfTwo.hpp"
 
 // A Swiss table is an open-addressed hash table implementation that uses a small side table for
-// fast lookup. A 64-bit hash value is divided into 2 parts, H2 consists of the last 7 bits, and H1
-// is the remaining 57 bits. Each element in the side table will then contain either the 7-bit H2
-// value of the key corresponding to that bucket, or a marker value which signifies that the bucket
-// is empty, or the entry there has been removed. The marker values are negative (have their
-// highest bit set), while a H2 value is always non-negative (has its highest bit unset), so there
-// will be no ambiguity. Another marker value denotes out-of-bound buckets which are allocated so
-// the algorithm can freely read the metadata table even at the very end.
+// fast lookup. A 64-bit hash value is divided into two parts, H2 consists of the lowest 7 bits,
+// and H1 is the remaining 57 bits. Each element in the side table will then contain either the
+// 7-bit H2 value of the key corresponding to that bucket, or a marker value which signifies that
+// the bucket is empty or the entry there has been removed. The marker values are negative (have
+// their highest bit set), while a H2 value is always non-negative (has its highest bit unset), so
+// there will be no ambiguity. Another marker value denotes out-of-bounds buckets which are
+// allocated so the algorithm can freely read the metadata table even at the very end.
 //
 // When performing a lookup, we use H1 of the key to compute an index in the tables. Starting from
 // that index, we traverse the side table to find an element that has the stored H2 value match H2
 // of the looked up key, then compare the key stored in the main table. The strength of Swiss table
 // comes from the fact that each element in the side table is very small, which allows us to
-// operate on multiple of them at a time using simd instructions.
+// process multiple of them at a time using simd instructions.
 //
-// This is the base implementation. It is implemented focusing on generality instead of usability.
-// Users looking for a hash table should use one of the derived implementations of this class, or
-// build one themselves if it is necessary.
+// This is the low-level implementation. It is implemented focusing on generality instead of
+// usability. Users looking for a hash table should use one of the high-level wrappers of this
+// class, or build one themselves if it is necessary.
 template <class Entry, class Allocator>
 class SwissTableImpl {
 private:
@@ -124,11 +124,11 @@ private:
 
   // When doing a lookup, whether an insertion point should be returned when the entry is absent
   enum class InsertPointNecessity {
-    // Insertion point is unnecessary, used for find operation.
+    // Insertion point is unnecessary, used for find and erase operation.
     UNNECESSARY,
     // Insertion point is necessary, but we can skip checking for tombstone. The lookup will return
     // the insertion point corresponding to the first empty bucket. This is used when resizing the
-    // table because there is no tombstone then.
+    // table because there is no tombstone in the newly allocated table then.
     IGNORE_TOMBSTONES,
     // Insertion point is necessary. The lookup will return the insertion point corresponding to
     // the first bucket that either is empty or is a tombstone. This is used for a typical emplace
@@ -174,7 +174,7 @@ private:
   }
 
   // The most basic block of the data structure. Token and TOKEN_HASH_MATCH are parameterized so
-  // that derived implementations can support looking up a key using a token without the need to
+  // that high-level wrappers can support looking up a key using a token without the need to
   // construct an actual key.
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
   static LookupResult look_up(const Marker* metadata, const Entry* table, size_t table_size_minus_one,

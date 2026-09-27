@@ -43,11 +43,11 @@ BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 END_ALLOW_FORBIDDEN_FUNCTIONS
 #endif // LINUX
 
-// A degenerate hash means that all keys are probed to the same bucket. As a result, we get to
+// A degenerate hash means that all keys start probing at the same bucket. As a result, we get to
 // exercise multiple different scenarios:
 // - Wrap around when the walk reaches the end of the table.
 // - Correctly skip tombstones and only stop at an empty bucket when looking for a key.
-// - Correctly reuse tombstone during insertion.
+// - Correctly reuse tombstones during insertion.
 template <class Key>
 uint64_t degenerate_hash(const Key& key) {
   return 1;

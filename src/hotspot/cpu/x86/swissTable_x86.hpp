@@ -135,7 +135,7 @@ PDSwissTableImpl<Entry, Allocator>::look_up(const Marker* metadata, const Entry*
 
 #ifdef __GNUC__
 // Each function needs to be declared separately, so that the compiler does not use AVX512
-// instructions when only AVX2 is available. The repetition is unfortunate, but using macro would
+// instructions when only AVX2 is available. The repetition is unfortunate, but using macros would
 // make it really hard to read and trace.
 template <class Entry, class Allocator>
 template <class Token, auto TOKEN_HASH_MATCH, typename SwissTableImpl<Entry, Allocator>::InsertPointNecessity INSERT_POINT_NECESSITY>
@@ -171,8 +171,8 @@ PDSwissTableImpl<Entry, Allocator>::look_up_avx512(const Marker* metadata, const
         return LookupResult(true, match_idx);
       }
 
-      // Unset the lowest bit of match_mask, the implication is that we are done with the bucket
-      // corresponding to the lowest set bit, so we continue to the second lowest one
+      // Unset the lowest set bit of match_mask, the implication is that we are done with the
+      // bucket corresponding to the lowest set bit, so we continue to the second lowest one
       match_mask = _blsr_u64(match_mask);
     }
 

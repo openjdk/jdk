@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_UNORDEREDMAP_HPP
-#define SHARE_UTILITIES_UNORDEREDMAP_HPP
+#ifndef SHARE_UTILITIES_FLATHASHTABLE_HPP
+#define SHARE_UTILITIES_FLATHASHTABLE_HPP
 
 #include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
@@ -35,8 +35,8 @@
 // A FlatHashTable is an open-addressed hash table that puts all of its entries in a flat array.
 // This means that pointers to entries are not stable and may be invalidated when the table grows
 // or shrinks. This aims to be an easy-to-use hash table implementation that is performant in most
-// of the cases. In contrast to ResizeableHashTable, this table may grow automatically upon
-// insertion instead of users having to manually grow it.
+// cases. In contrast to ResizeableHashTable, this table may grow automatically upon insertion
+// instead of users having to manually grow it.
 template <class Key, class T, auto HASH, auto KEY_EQUAL, class Allocator>
 class FlatHashTable {
 private:
@@ -66,8 +66,8 @@ private:
     }
   }
 
-  // User-provided hash functions often have terrible avalanche. For example, most of the time, the
-  // provided hash function for Key = int would be the identity function. In addition, the
+  // User-provided hash functions often have poor avalance effect. For example, most of the time,
+  // the provided hash function for Key = int would be the identity function. In addition, the
   // algorithm requires good avalanche. So, we hash the result again. This function is the same as
   // j.u.SplittableRandom::mix64.
   static uint64_t internal_hash(const Key& key) {
@@ -174,4 +174,4 @@ using FlatHashTableArena = FlatHashTable<Key, T, HASH, KEY_EQUAL, FlatHashTableA
 template <class Key, class T, MemTag mem_tag, auto HASH = primitive_hash<Key>, auto KEY_EQUAL = primitive_equals<Key>>
 using FlatHashTableCHeap = FlatHashTable<Key, T, HASH, KEY_EQUAL, FlatHashTableCHeapAllocator<mem_tag>>;
 
-#endif // SHARE_UTILITIES_UNORDEREDMAP_HPP
+#endif // SHARE_UTILITIES_FLATHASHTABLE_HPP
