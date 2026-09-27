@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8354724
- * @summary Test Reader readAllLines and readAllAstring methods
+ * @summary Test Reader readAllLines and readAllAsString methods
  * @library .. /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.RandomFactory
  * @run junit ReadAll
@@ -266,14 +266,14 @@ public class ReadAll {
         }
         assertEquals("CD" + p8192, string);
 
-        // InputStreamReader implementation: read() after readAllString()
+        // InputStreamReader implementation: read() after readAllAsString()
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(stringExpected.getBytes()))) {
             assertEquals(stringExpected, isr.readAllAsString());
             assertEquals(-1, isr.read()); // must not throw but return -1
         }
 
-        // InputStreamReader implementation: readAllAsString() after readAllString()
+        // InputStreamReader implementation: readAllAsString() after readAllAsString()
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(stringExpected.getBytes()))) {
             assertEquals(stringExpected, isr.readAllAsString());
