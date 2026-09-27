@@ -53,6 +53,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReadAll {
     private static final String PHRASE =
@@ -348,6 +349,27 @@ public class ReadAll {
             assertEquals("B", isr.readAllAsString());
             assertEquals("", isr.readAllAsString());
             assertEquals(-1, isr.read());
+        }
+
+        // Proofs that internal optimization in InputStreamReader is skipped with subclasses
+        try (InputStreamReaderSubclass isrs = new InputStreamReaderSubclass(
+                new ByteArrayInputStream(stringExpected.getBytes(StandardCharsets.UTF_8)))) {
+            assertEquals(stringExpected, isrs.readAllAsString());
+            assertTrue(isrs.readCalled);
+        }
+    }
+
+    private static class InputStreamReaderSubclass extends InputStreamReader {
+        boolean readCalled;
+
+        InputStreamReaderSubclass(InputStream in) {
+            super(in, StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public int read(char[] cbuf, int off, int len) throws IOException {
+            readCalled = true;
+            return super.read(cbuf, off, len);
         }
     }
 }
