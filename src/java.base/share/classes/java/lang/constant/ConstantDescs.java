@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,5 +383,22 @@ public final class ConstantDescs {
         System.arraycopy(CONDY_BOOTSTRAP_ARGS, 0, fullParamTypes, 0, prefixLen);
         System.arraycopy(paramTypes, 0, fullParamTypes, prefixLen, paramTypes.length);
         return MethodHandleDesc.ofMethod(STATIC, owner, name, MethodTypeDescImpl.ofTrusted(returnType, fullParamTypes));
+    }
+
+    /**
+     * A hook interface for {@link DynamicCallSiteDesc} to support binary
+     * linkage to the {@code MethodHandleDesc bootstrapMethod()} method.
+     *
+     * @sealedGraph
+     * @since 28
+     */
+    public sealed interface CallSiteBootstrapMethodHook permits DynamicCallSiteDesc {
+        /**
+         * Returns a {@link MethodHandleDesc} describing the bootstrap method for
+         * the {@code invokedynamic}.
+         *
+         * @return the bootstrap method for the {@code invokedynamic}
+         */
+        MethodHandleDesc bootstrapMethod();
     }
 }

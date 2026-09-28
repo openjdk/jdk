@@ -2614,19 +2614,6 @@ public final class EmergencySoundbank {
             data[i] *= gain;
     }
 
-    public static void normalize(float[] data, double target) {
-        double maxvalue = 0.5;
-        for (int i = 0; i < data.length; i++) {
-            if (data[i * 2] > maxvalue)
-                maxvalue = data[i * 2];
-            if (-data[i * 2] > maxvalue)
-                maxvalue = -data[i * 2];
-        }
-        double gain = target / maxvalue;
-        for (int i = 0; i < data.length; i++)
-            data[i * 2] *= gain;
-    }
-
     public static double[] realPart(double[] in) {
         double[] out = new double[in.length / 2];
         for (int i = 0; i < out.length; i++) {

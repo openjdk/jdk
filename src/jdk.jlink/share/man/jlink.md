@@ -106,13 +106,20 @@ Developers are responsible for updating their custom runtime images.
     options; see [jlink Plug-ins].
 
 [`-p`]{#option-module-path} or `--module-path` *modulepath*
-:   Specifies the module path.
+:   A ":"-separated list of elements (";" on Windows), each of which is a file
+    path to a module or a directory containing modules. Each module is either a
+    modular JAR file, a JMOD file, or an exploded-module directory.
 
-    If this option is not specified, then the default module path is
-    `$JAVA_HOME/jmods`. This directory contains the `java.base` module and the
-    other standard and JDK modules. If this option is specified but the
-    `java.base` module cannot be resolved from it, then the `jlink` command
-    appends `$JAVA_HOME/jmods` to the module path.
+    If the specified module path does not contain `java.base`, it is prepended to
+    the default module path. The default module path contains the standard and
+    JDK modules provided by the JDK running `jlink`. This allows `jlink` to find
+    `java.base` and other modules without specifying their locations to the
+    `--module-path` option. If the `--module-path` option is not specified, then
+    only the default module path is used.
+
+    When creating a run-time image for a different target platform (cross-linking),
+    the specified module path must contain all modules required for the target
+    platform, including `java.base`.
 
 [`--no-header-files`]{#option--no-header-files}
 :   Excludes header files.
@@ -226,6 +233,14 @@ Options
 
 Description
 :   Strips debug information from the output image.
+
+    Source-file names, source-debug extensions, line numbers, and local-variable
+    information are removed from class files. Consequently, stack traces for
+    affected classes omit source-file names and line numbers, and debuggers lose
+    source-line and local-variable information. On supported platforms, native
+    debug symbols are also stripped. External debug-symbol files and directories,
+    such as `.pdb`, `.map`, `.dSYM`, `.debuginfo`, and `.diz`, are excluded from
+    the output image.
 
 ### Plugin `generate-cds-archive`
 

@@ -41,7 +41,7 @@ inline void G1CollectionSet::merge_collection_set_card_set_groups(CardOrRangeVis
     return;
   }
 
-  uint start_pos = (worker_id * next_selected_group_increment) / num_workers;
+  uint start_pos = (uint)((uint64_t)worker_id * next_selected_group_increment / num_workers);
   uint cur_pos = start_pos;
   do {
     G1HeapRegionRemSet::iterate_for_merge(_selected_groups.at(offset + cur_pos)->card_set(), cl);

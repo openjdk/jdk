@@ -120,7 +120,7 @@ private:
 
   bool eliminate_boxing_node(CallStaticJavaNode* call);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  void undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc);
+  void undo_previous_scalarizations(Node_List& safepoints_done, Node_List& scalar_objects_done, AllocateNode* alloc);
   bool scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints);
   void process_users_of_allocation(CallNode *alloc, bool value_type_alloc = false);
 
@@ -225,7 +225,7 @@ private:
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);
-  Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word);
+  Node* opt_bits_test(Node* ctrl, Node* region, int edge, CmpNode* cmp);
   void copy_predefined_input_for_runtime_call(Node * ctrl, CallNode* oldcall, CallNode* call);
   CallNode* make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call,
                            const char* leaf_name, Node* slow_path, Node* parm0, Node* parm1,

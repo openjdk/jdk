@@ -2135,7 +2135,7 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     }
   }
   if (strstr(typeName, " const") == typeName + len - 6) {
-    char * s = os::strdup_check_oom(typeName);
+    char * s = os::strdup_check_oom(typeName, mtInternal);
     s[len - 6] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {

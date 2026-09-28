@@ -97,7 +97,7 @@ class StubGenerator: public StubCodeGenerator {
     int save_nonvolatile_registers_size = __ save_nonvolatile_registers_size(true, SuperwordUseVSX);
 
     // some sanity checks
-    STATIC_ASSERT(StackAlignmentInBytes == 16);
+    static_assert(StackAlignmentInBytes == 16);
     assert((sizeof(frame::native_abi_minframe) % 16) == 0,    "unaligned");
     assert((sizeof(frame::native_abi_reg_args) % 16) == 0,    "unaligned");
     assert((save_nonvolatile_registers_size % 16) == 0,       "unaligned");
@@ -132,7 +132,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mr(r_entryframe_fp, R1_SP);
 
       // calculate frame size
-      STATIC_ASSERT(Interpreter::logStackElementSize == 3);
+      static_assert(Interpreter::logStackElementSize == 3);
 
       // space for arguments aligned up: ((arg_count + 1) * 8) &~ 15
       __ addi(r_frame_size, r_arg_argument_count, 1);

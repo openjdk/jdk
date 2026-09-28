@@ -1695,6 +1695,11 @@ Node* ValueTypeNode::is_loaded(PhaseGVN* phase, ciValueKlass* vk, Node* base, in
       assert(!field->is_flat() || field->type()->is_value_klass(), "must be a value type");
       ValueTypeNode* vt = value->as_ValueType();
       if (vt->type()->value_klass()->is_empty()) {
+        // Skip nullable empty fields because they have observable
+        // null state that is not represented by declared fields.
+        if (!field->is_null_free()) {
+          return nullptr;
+        }
         continue;
       } else if (field->is_flat() && vt->is_ValueType()) {
         // Check value type field load recursively
