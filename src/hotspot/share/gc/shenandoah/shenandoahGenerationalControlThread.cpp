@@ -94,6 +94,9 @@ void ShenandoahGenerationalControlThread::run_service() {
   notify_gc_waiters();
   notify_alloc_failure_waiters();
   set_gc_mode(stopped);
+
+  // We're done writing GC stats, so print them here.
+  _heap->print_gc_stats_at_exit();
 }
 
 void ShenandoahGenerationalControlThread::stop_service() {
