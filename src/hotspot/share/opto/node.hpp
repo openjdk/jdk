@@ -1464,6 +1464,8 @@ public:
 
   bool is_div_or_mod(BasicType bt) const;
 
+  bool is_boxing_or_unboxing_call() const;
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  public:
