@@ -68,7 +68,7 @@ class VerificationType {
 
     // Enum for the _data field
     enum : uint {
-      // Bottom three bits determine if the type is a reference, value type,
+      // Bottom three bits determine if the type is a reference,
       // primitive, uninitialized or a query-type.
       TypeMask           = 0x00000007,
 

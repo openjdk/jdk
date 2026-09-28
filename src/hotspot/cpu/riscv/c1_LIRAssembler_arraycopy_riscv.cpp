@@ -347,11 +347,11 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 void LIR_Assembler::arraycopy_prepare_params(Register src, Register src_pos, Register length,
                                              Register dst, Register dst_pos, BasicType basic_type) {
   int scale = array_element_size(basic_type);
-  __ shadd(c_rarg0, src_pos, src, t0, scale);
-  __ addi(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(basic_type));
+  __ shift_left_add(t0, src_pos, src, scale);
+  __ addi(c_rarg0, t0, arrayOopDesc::base_offset_in_bytes(basic_type));
   assert_different_registers(c_rarg0, dst, dst_pos, length);
-  __ shadd(c_rarg1, dst_pos, dst, t0, scale);
-  __ addi(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(basic_type));
+  __ shift_left_add(t0, dst_pos, dst, scale);
+  __ addi(c_rarg1, t0, arrayOopDesc::base_offset_in_bytes(basic_type));
   assert_different_registers(c_rarg1, dst, length);
   __ mv(c_rarg2, length);
   assert_different_registers(c_rarg2, dst);

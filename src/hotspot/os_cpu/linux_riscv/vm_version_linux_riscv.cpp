@@ -341,6 +341,8 @@ void VM_Version::xuantie_features() {
   }
 
   ext_v.enable_feature();
+  ext_Zacas.enable_feature();
+  ext_Zabha.enable_feature();
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbc.enable_feature();
@@ -351,6 +353,8 @@ void VM_Version::xuantie_features() {
   ext_Zfhmin.enable_feature();
   ext_Zicbom.enable_feature();
   ext_Zicbop.enable_feature();
+  ext_Zicboz.enable_feature();
+  ext_Zicond.enable_feature();
   ext_Zicntr.enable_feature();
   ext_Zicsr.enable_feature();
   ext_Zic64b.enable_feature();
@@ -361,13 +365,6 @@ void VM_Version::xuantie_features() {
   ext_Zvfh.enable_feature();
   ext_Zvkn.enable_feature();
   ext_Zvkg.enable_feature();
-
-#ifndef PRODUCT
-  ext_Zacas.enable_feature();
-  ext_Zicboz.enable_feature();
-  ext_Zicond.enable_feature();
-  ext_Ztso.enable_feature();
-#endif
 
   unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   unaligned_vector.enable_feature(MISALIGNED_VECTOR_FAST);

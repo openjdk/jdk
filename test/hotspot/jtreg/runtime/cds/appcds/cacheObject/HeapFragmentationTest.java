@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Relocate CDS archived regions to the top of the G1 heap
  * @bug 8214455
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.gc.G1
  * @requires (sun.arch.data.model == "64" & os.maxMemory > 4g)
  * @requires vm.gc == "null"
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds

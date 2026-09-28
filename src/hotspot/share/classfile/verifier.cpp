@@ -2736,7 +2736,7 @@ void ClassVerifier::verify_invoke_instructions(
   // or any superclass (including Object).
   else if (opcode == Bytecodes::_invokespecial
            && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
-           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) { // super() can never be a value_type.
+           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) {
 
     // We know it is not current class, direct superinterface or immediate superclass. That means it
     // could be:

@@ -1520,7 +1520,7 @@ public:
 
   void adrp(Register reg1, const Address &dest, uint64_t &byte_offset);
 
-  void verified_entry(Compile* C, int sp_inc);
+  void verified_entry(Compile* C, int sp_inc, bool do_stack_bang = true);
 
   // Value type specific methods
   #include "asm/macroAssembler_common.hpp"

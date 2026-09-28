@@ -104,13 +104,15 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
   product(bool, UseRVV, false, DIAGNOSTIC, "Use RVV instructions")               \
   product(bool, UseZba, false, DIAGNOSTIC, "Use Zba instructions")               \
   product(bool, UseZbb, false, DIAGNOSTIC, "Use Zbb instructions")               \
+  product(bool, UseZbc, false, DIAGNOSTIC, "Use Zbc instructions")               \
   product(bool, UseZbkb, false, EXPERIMENTAL, "Use Zbkb instructions")           \
   product(bool, UseZbs, false, DIAGNOSTIC, "Use Zbs instructions")               \
   product(bool, UseZfa, false, DIAGNOSTIC, "Use Zfa instructions")               \
   product(bool, UseZfh, false, DIAGNOSTIC, "Use Zfh instructions")               \
   product(bool, UseZfhmin, false, DIAGNOSTIC, "Use Zfhmin instructions")         \
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \
-  product(bool, UseZabha, false, EXPERIMENTAL, "Use UseZabha instructions")      \
+  product(bool, UseZabha, false, EXPERIMENTAL, "Use Zabha instructions")         \
+  product(bool, UseZalasr, false, EXPERIMENTAL, "Use Zalasr instructions")       \
   product(bool, UseZcb, false, DIAGNOSTIC, "Use Zcb instructions")               \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
