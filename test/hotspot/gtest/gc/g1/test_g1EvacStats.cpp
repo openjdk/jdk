@@ -58,7 +58,7 @@ void G1EvacStatsTest::compute_desired_plab_size_zero_used(uint target_plab_waste
   stats.add_allocated(0);
 
   size_t actual = stats.compute_desired_plab_size();
-  ASSERT_EQ(actual, 0);
+  ASSERT_EQ(actual, size_t(0));
 }
 
 void G1EvacStatsTest::compute_desired_plab_size_larger_waste(uint target_plab_waste_percent, double last_plab_average_occupancy) {
@@ -70,7 +70,7 @@ void G1EvacStatsTest::compute_desired_plab_size_larger_waste(uint target_plab_wa
   stats.add_region_end_waste(500001);
 
   size_t actual = stats.compute_desired_plab_size();
-  ASSERT_EQ(actual, 0);
+  ASSERT_EQ(actual, size_t(0));
 
   stats.reset();
 
@@ -78,7 +78,7 @@ void G1EvacStatsTest::compute_desired_plab_size_larger_waste(uint target_plab_wa
   stats.add_region_end_waste(500000);
 
   actual = stats.compute_desired_plab_size();
-  ASSERT_EQ(actual, 0);
+  ASSERT_EQ(actual, size_t(0));
 }
 
 void G1EvacStatsTest::compute_desired_plab_size_check_overflow(size_t allocation_words) {
