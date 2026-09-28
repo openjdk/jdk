@@ -109,8 +109,8 @@ class TestReturnValueArgument {
         globalIdObj = returnedHolder.obj;
     }
 
-    // Return holder cast as an Object, which naturally inhibits scalarization
-    // of the returned value. Because the holder is then stored globally, the
+    // Return holder as an Object, which naturally inhibits scalarization of the
+    // returned value. Because the holder is then stored globally, the
     // IdentityObject it points to escapes, and its synchronization should not
     // be removed. Depending on the value of the ValueTypePassFieldsAsArgs flag,
     // the holder is scalarized as argument of the returnAsObject() call.
@@ -148,7 +148,7 @@ class TestReturnValueArgument {
 
     @Test
     // Return holder passed as argument, do not force a global escape. In the
-    // cases whether the holder is passed and returned in the same form (both
+    // cases when the holder is passed and returned in the same form (both
     // scalarized or both buffered), we expect C2 to exploit the bytecode escape
     // analyzer's ability to detect the argument as "local" and "returned" and
     // optimize away the lock and unlock operations implementing the
