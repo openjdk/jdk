@@ -870,12 +870,12 @@ public class TestArrayLoadProfiling {
     static value class MyValue1 implements I {
         byte byteField;
         byte byteField2;
-        int byteField3;
+        int intField3;
 
         MyValue1(byte byteField) {
             this.byteField = byteField;
             this.byteField2 = byteField;
-            this.byteField3 = byteField;
+            this.intField3 = byteField;
         }
 
         public void m() {
