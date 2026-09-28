@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,9 +116,10 @@ gboolean rebuildScreenData(GVariantIter *iterStreams, gboolean isTheOnlyMon) {
         DEBUG_SCREENCAST("\n==== screenId#%i\n", nodeID);
 
         if (screenIndex >= screenSpace.allocated) {
+            const int newAllocated = screenSpace.allocated + 1;
             struct ScreenProps *newScreens = realloc(
                     screenSpace.screens,
-                    ++screenSpace.allocated * sizeof(struct ScreenProps)
+                    newAllocated * sizeof(struct ScreenProps)
             );
 
             if (!newScreens) {
@@ -127,6 +128,7 @@ gboolean rebuildScreenData(GVariantIter *iterStreams, gboolean isTheOnlyMon) {
             }
 
             screenSpace.screens = newScreens;
+            screenSpace.allocated = newAllocated;
         }
 
         struct ScreenProps * screen = &screenSpace.screens[screenIndex];
