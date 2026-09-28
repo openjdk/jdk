@@ -49,8 +49,6 @@ import java.util.Properties;
 import java.util.Map;
 import java.util.concurrent.*;
 
-import jdk.internal.util.OperatingSystem;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
@@ -225,14 +223,9 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
     }
 
     private static String drain(InputStream is) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line).append(System.lineSeparator());
-            }
+        try (var reader = new InputStreamReader(is, UTF_8)) {
+            return reader.readAllAsString();
         }
-        return sb.toString();
     }
 
     @Override

@@ -178,7 +178,7 @@ public class JCmdRevival {
             throw new NullPointerException("testing NPE");
         } else if (args[0].equals("oom")) {
             Object[] oa = new Object[Integer.MAX_VALUE / 2];
-            for(int i = 0; i < oa.length; i++) {
+            for (int i = 0; i < oa.length; i++) {
                 oa[i] = new Object[Integer.MAX_VALUE / 2];
             }
         } else if (args[0].equals("oom2")) {

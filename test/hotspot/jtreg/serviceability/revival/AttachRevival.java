@@ -23,7 +23,9 @@
 
 /**
  * @test
+ * @bug 8378084
  * @summary Test attach API on a core file.
+ *
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  * @modules jdk.attach/sun.tools.attach
@@ -83,7 +85,7 @@ public class AttachRevival {
         } else if (args[0].equals("oom")) {
             // Cause OOM:
             Object[] oa = new Object[Integer.MAX_VALUE / 2];
-            for(int i = 0; i < oa.length; i++) {
+            for (int i = 0; i < oa.length; i++) {
                 oa[i] = new Object[Integer.MAX_VALUE / 2];
             }
         } else {

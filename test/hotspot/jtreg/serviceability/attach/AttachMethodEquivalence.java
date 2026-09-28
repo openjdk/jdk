@@ -22,8 +22,11 @@
  */
 
 /*
- * @test Check method attach(id, env) method can be equivalent to existing attach(id)
+ * @test
  * @bug 8378084
+ * @summary Check method attach(id, env) method can be equivalent to existing attach(id)
+ *
+ * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach
  * @run main AttachMethodEquivalence

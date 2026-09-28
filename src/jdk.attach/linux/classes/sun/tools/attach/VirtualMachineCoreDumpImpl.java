@@ -46,11 +46,8 @@ import java.util.concurrent.*;
 import java.util.List;
 import java.util.Map;
 
-import jdk.internal.util.OperatingSystem;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-@SuppressWarnings("restricted")
 public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachineCoreDump {
 
     VirtualMachineCoreDumpImpl(AttachProvider provider, String vmid, Map<String, ?> env)
