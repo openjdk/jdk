@@ -276,7 +276,7 @@ public:
 
   static TableOp generate_random() {
     TableOpType type = static_cast<TableOpType>(uint32_t(os::random()) % uint32_t(TableOpType::OP_NUM));
-    int key = uint32_t(os::random()) % key_limit; 
+    int key = uint32_t(os::random()) % key_limit;
     int value = os::random();
     return TableOp{type, key, value};
   }
