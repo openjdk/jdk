@@ -103,7 +103,7 @@ jvmtiCapabilities JvmtiManageCapabilities::init_always_capabilities() {
   jc.can_generate_object_free_events = 1;
   jc.can_generate_resource_exhaustion_heap_events = 1;
   jc.can_generate_resource_exhaustion_threads_events = 1;
-  jc.can_support_virtual_threads = 1;
+  jc.can_support_virtual_threads = DoJVMTIVirtualThreadTransitions;
   jc.can_support_value_objects = 1;
   return jc;
 }
@@ -276,7 +276,8 @@ jvmtiError JvmtiManageCapabilities::add_capabilities(const jvmtiCapabilities *cu
   exclude(&always_solo_remaining_capabilities, desired, &always_solo_remaining_capabilities);
   exclude(&onload_solo_remaining_capabilities, desired, &onload_solo_remaining_capabilities);
 
-  if (desired->can_support_virtual_threads != 0 && current->can_support_virtual_threads == 0) {
+  if (DoJVMTIVirtualThreadTransitions &&
+      desired->can_support_virtual_threads != 0 && current->can_support_virtual_threads == 0) {
     _can_support_virtual_threads_count++;
   }
   if (desired->can_support_value_objects != 0 && current->can_support_value_objects == 0) {

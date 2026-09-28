@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,6 +34,9 @@ import java.security.Security;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /*
@@ -60,7 +64,9 @@ public final class ImportKeyToP12 extends PKCS11Test {
     };
     private static final String[] pbeMacAlgs = new String[] {
             "HmacPBESHA1", "HmacPBESHA224", "HmacPBESHA256",
-            "HmacPBESHA384", "HmacPBESHA512"
+            "HmacPBESHA384", "HmacPBESHA512", "PBEWithHmacSHA1",
+            "PBEWithHmacSHA224", "PBEWithHmacSHA256", "PBEWithHmacSHA384",
+            "PBEWithHmacSHA512"
     };
     private static final KeyStore p12;
     private static final String sep = "======================================" +
@@ -74,6 +80,14 @@ public final class ImportKeyToP12 extends PKCS11Test {
         p12 = tP12;
     }
 
+    private record PBMAC1Algorithms(String pbkdf2, String hmac) {}
+
+    private static PBMAC1Algorithms pbmac1Algorithms(String algorithm) {
+        // PBMAC1 algorithms with matching PBKDF2 PRF and HMAC names.
+        String hmac = algorithm.substring("PBEWith".length());
+        return new PBMAC1Algorithms("PBKDF2With" + hmac, hmac);
+    }
+
     public void main(Provider sunPKCS11) throws Exception {
         System.out.println("SunPKCS11: " + sunPKCS11.getName());
         // Test all privacy PBE algorithms with an integrity algorithm fixed
@@ -84,8 +98,25 @@ public final class ImportKeyToP12 extends PKCS11Test {
         }
         // Test all integrity PBE algorithms with a privacy algorithm fixed
         for (String pbeMacAlg : pbeMacAlgs) {
-            // Make sure that SunPKCS11 implements the Mac algorithm
-            Mac.getInstance(pbeMacAlg, sunPKCS11);
+            // Verify the PBKDF2/HMAC components needed for PBMAC1 are present
+            if (pbeMacAlg.startsWith("PBEWith")) {
+                byte[] salt = { 0, 1, 2, 3, 4, 5, 6, 7,
+                        8, 9, 10, 11, 12, 13, 14, 15 };
+
+                PBMAC1Algorithms algorithms = pbmac1Algorithms(pbeMacAlg);
+                Mac m = Mac.getInstance(algorithms.hmac(), sunPKCS11);
+                int keyLength = m.getMacLength() * Byte.SIZE;
+                SecretKeyFactory skf = SecretKeyFactory.getInstance(
+                        algorithms.pbkdf2(), sunPKCS11);
+                PBEKeySpec keySpec = new PBEKeySpec(password,
+                        salt, 10000, keyLength);
+
+                SecretKey pbeKey = skf.generateSecret(keySpec);
+                m.init(pbeKey);
+                m.doFinal();
+            } else {
+                Mac.getInstance(pbeMacAlg, sunPKCS11);
+            }
             testWith(sunPKCS11, pbeCipherAlgs[0], pbeMacAlg);
         }
         System.out.println("TEST PASS - OK");

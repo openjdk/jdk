@@ -81,7 +81,7 @@ public class failedtoinit002 {
     }
 
     private static void print_log_anyway(String message) {
-        test_log_handler.println(message);
+        test_log_handler.display(message);
     }
 
     /**

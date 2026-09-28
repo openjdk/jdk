@@ -47,7 +47,6 @@
  *        nsk.jdi.ReferenceType.visibleMethods.visibmethod001a
  * @run driver
  *      nsk.jdi.ReferenceType.visibleMethods.visibmethod001
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

@@ -26,11 +26,13 @@
  * @test
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude and compileonly with different compilation levels,
- *          monitoring compilation events in VM -XX:+PrintCompilation and -XX:+PrintTieredEvents output
+ *          monitoring compilation events in VM -XX:+PrintCompilation output
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *          & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *          & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main ${test.main.class} runner
  */
 
@@ -39,6 +41,7 @@ package compiler.compilercontrol.commands;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.management.InputArguments;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -58,7 +61,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -80,6 +82,7 @@ public class CompileLevelPrintTest {
     static final String TEST_METHOD_SIGNATURE = TEST_METHOD_NAME_DBL_COLON + "(";
 
     static final String TESTEE_WAITING_FOR_START_CMD = "==> waiting for start command";
+    static final String TESTEE_WAITING_FOR_STOP_CMD = "==> waiting for stop command";
 
     static final String START_CMD = "start";
     static final String STOP_CMD = "stop";
@@ -90,8 +93,8 @@ public class CompileLevelPrintTest {
 
     static class TesteeState {
         final CountDownLatch waitingForStartTest = new CountDownLatch(1);
-        final AtomicInteger compiler1QueueSize = new AtomicInteger();
-        final AtomicInteger compiler2QueueSize = new AtomicInteger(0);
+        volatile boolean readyForStartTest;
+        volatile boolean readyForStopTest;
         final Set<String> compileCommandsReported = Collections.synchronizedSet(new HashSet<>());
         volatile Set<String> testMethodCompiledAtLevel = Collections.synchronizedSet(new HashSet<>());
         final Set<String> testMethodExcludedAtLevel = Collections.synchronizedSet(new HashSet<>());
@@ -161,9 +164,6 @@ public class CompileLevelPrintTest {
 
         private static final Pattern reCompileCommand = Pattern.compile(
                 "CompileCommand: (.*)");
-        private static final Pattern reTieredEvent = Pattern.compile(
-                "[0-9.]+: \\[(call|loop|compile|force-compile|remove-from-queue|update-in-queue|reprofile|make-not-entrant) "
-                      + "level=\\d \\[([^]]+)] @-?\\d+ queues=(\\d+),(\\d+).*]");
         private static final Pattern reCompilation = Pattern.compile(
                 "(\\d+) (C1|C2|no compiler): *(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+).*");
         private static final Pattern reExcludeCompile = Pattern.compile(
@@ -189,9 +189,10 @@ public class CompileLevelPrintTest {
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+WhiteBoxAPI",
+                    "-Xbootclasspath/a:.",
                     "-XX:+PrintCompilation",
                     "-XX:+CIPrintCompilerName",
-                    "-XX:+PrintTieredEvents",
                     "-XX:+LogVMOutput",
                     "-XX:+LogCompilation",
                     "-XX:" + (tieredCompilation ? "+" : "-") + "TieredCompilation",
@@ -215,14 +216,10 @@ public class CompileLevelPrintTest {
                             matchTesteeMessages(processErrOut, testeeState, "testee-" + process.pid() + ".err"));
 
                     IO.println("##> Waiting for testee to get ready for the start command");
-                    if (!testeeState.waitingForStartTest.await(TIMEOUT_SEC, TimeUnit.SECONDS)) {
-                        throw new RuntimeException("No start signal from testee");
-                    }
+                    testeeState.waitingForStartTest.await();
+                    Asserts.assertTrue(testeeState.readyForStartTest,
+                            "Testee exited before signaling readiness");
 
-                    Asserts.assertTrue(waitUntil(() -> !process.isAlive()
-                            || (testeeState.compiler1QueueSize.get() < 5
-                                    && testeeState.compiler2QueueSize.get() < 5)),
-                            "Compiler queue is still not empty");
                     Asserts.assertTrue(testeeState.compileCommandsReported.contains(
                             compileCmd + " " + TEST_METHOD_NAME_DOT + " intx " + compileCmd + " = " + cmdCompLevel),
                             "'CompileCommand: " + compileCmd + "...' was not printed");
@@ -234,6 +231,7 @@ public class CompileLevelPrintTest {
                     processInput.write(START_CMD); processInput.newLine(); processInput.flush();
 
                     waitUntil(() -> !process.isAlive()
+                            || testeeState.readyForStopTest
                             || (!expectedCompLevel.isEmpty() && !expectExcludedAtLevels.isEmpty()
                                     && expectedCompLevel.equals(testeeState.testMethodCompiledAtLevel)
                                     && expectedCompLevel.equals(testeeState.testMethodPrintedAtLevel)
@@ -311,17 +309,7 @@ public class CompileLevelPrintTest {
 
                         msg = "Compile command reported: " + matcher.group(1);
 
-                    } else if ((matcher = reTieredEvent.matcher(line)).matches()) {
-                        testeeState.compiler1QueueSize.set(Integer.parseInt(matcher.group(3)));
-                        testeeState.compiler2QueueSize.set(Integer.parseInt(matcher.group(4)));
-
                     } else if ((matcher = reCompilation.matcher(line)).matches()) {
-                        if ("C1".equalsIgnoreCase(matcher.group(2))) {
-                            testeeState.compiler1QueueSize.decrementAndGet();
-                        } else {
-                            testeeState.compiler2QueueSize.decrementAndGet();
-                        }
-
                         if (matcher.group(6).contains(TEST_METHOD_NAME_DBL_COLON)) {
                             testeeState.testMethodCompiledAtLevel.add(matcher.group(5));
 
@@ -390,7 +378,11 @@ public class CompileLevelPrintTest {
 
                     if (TESTEE_WAITING_FOR_START_CMD.equals(line)) {
                         IO.println("##> Testee is waiting for start command");
+                        testeeState.readyForStartTest = true;
                         testeeState.waitingForStartTest.countDown();
+                    } else if (TESTEE_WAITING_FOR_STOP_CMD.equals(line)) {
+                        IO.println("##> Testee is waiting for stop command");
+                        testeeState.readyForStopTest = true;
                     } else if (line.startsWith("==>")) {
                         IO.println(line);
                     } else if (line.startsWith("Exception in thread ") || line.startsWith("at ")) {
@@ -401,11 +393,15 @@ public class CompileLevelPrintTest {
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
+            } finally {
+                // Unblock the runner if the testee exits before signaling readiness.
+                testeeState.waitingForStartTest.countDown();
             }
         }
     }
 
     static class Testee {
+        private static final WhiteBox WB = WhiteBox.getWhiteBox();
         private static final CountDownLatch startCmd = new CountDownLatch(1);
         private static final CountDownLatch stopCmd = new CountDownLatch(1);
 
@@ -419,12 +415,12 @@ public class CompileLevelPrintTest {
                     return;
                 }
 
-                // Print 3 times, since the output can be intermixed with
+                Asserts.assertTrue(waitUntil(() -> WB.getCompileQueuesSize() == 0),
+                        "Compiler queue is still not empty");
+
+                // Signal readiness after the compiler queues have drained, then wait for the runner.
                 System.err.println(TESTEE_WAITING_FOR_START_CMD);
-                if (!startCmd.await(TIMEOUT_SEC + 1, TimeUnit.SECONDS)) {
-                    System.err.println("==> 'start' command was not given in stdin");
-                    return;
-                }
+                startCmd.await();
 
                 if (stopCmd.getCount() == 0) {
                     return;
@@ -432,6 +428,10 @@ public class CompileLevelPrintTest {
 
                 System.err.println("==> starting test");
                 runTestCode();
+
+                // Keep the input pipe open until the runner has consumed the required output.
+                System.err.println(TESTEE_WAITING_FOR_STOP_CMD);
+                stopCmd.await();
             } finally {
                 System.err.println("==> exiting testee()");
             }

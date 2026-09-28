@@ -448,7 +448,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                         Aux next = a.next;
                         if (a == node) {
                             if (prev != null)
-                                prev.casNext(prev, next);
+                                prev.casNext(a, next);
                             else if (casAux(a, next))
                                 break clean;
                             break;            // check for failed or stale CAS

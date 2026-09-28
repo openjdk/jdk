@@ -416,6 +416,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
+                "--enable-deprecated-ports",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
                 "SETFILE=/usr/bin/SetFile"
@@ -1192,8 +1193,8 @@ var getJibProfilesDependencies = function (input, common) {
             server: "jpg",
             product: "jcov",
             version: "3.0",
-            build_number: "6",
-            file: "bundles/jcov-3.0+6.zip",
+            build_number: "9",
+            file: "bundles/jcov-3.0+9.zip",
             environment_name: "JCOV_HOME",
         },
 

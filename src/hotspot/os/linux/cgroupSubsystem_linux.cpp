@@ -41,7 +41,7 @@
 #ifndef CGROUP2_SUPER_MAGIC
 #  define CGROUP2_SUPER_MAGIC 0x63677270
 #else
-  STATIC_ASSERT(CGROUP2_SUPER_MAGIC == 0x63677270);
+  static_assert(CGROUP2_SUPER_MAGIC == 0x63677270);
 #endif
 
 // controller names have to match the *_IDX indices
@@ -670,7 +670,7 @@ bool CgroupSubsystem::active_processor_count(int (*cpu_bound_func)(), double& va
  *
  * return:
  *    false if retrieving the value failed
- *    true if retrieving the value was successfull and the value was
+ *    true if retrieving the value was successful and the value was
  *    set in the 'value' reference.
  */
 bool CgroupSubsystem::memory_limit_in_bytes(physical_memory_size_type upper_bound,

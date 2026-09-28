@@ -856,6 +856,14 @@ inline void Assembler::lxvd2x(  VectorSRegister d, Register s1)              { e
 inline void Assembler::lxvd2x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1)              { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
 inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::lxvw4x(  VectorSRegister d, Register s1)              { emit_int32( LXVW4X_OPCODE  | vsrt(d) | ra(0) | rb(s1)); }
+inline void Assembler::lxvw4x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVW4X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::stxvw4x( VectorSRegister d, Register s1)              { emit_int32( STXVW4X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
+inline void Assembler::stxvw4x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVW4X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::lxvb16x( VectorSRegister d, Register s1)              { emit_int32( LXVB16X_OPCODE | vsrt(d) | ra(0) | rb(s1)); }
+inline void Assembler::lxvb16x( VectorSRegister d, Register s1, Register s2) { emit_int32( LXVB16X_OPCODE | vsrt(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::stxvb16x(VectorSRegister d, Register s1)              { emit_int32( STXVB16X_OPCODE| vsrs(d) | ra(0) | rb(s1)); }
+inline void Assembler::stxvb16x(VectorSRegister d, Register s1, Register s2) { emit_int32( STXVB16X_OPCODE| vsrs(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::mtvsrd(  VectorSRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d)  | ra(a)); }
 inline void Assembler::mtvsrdd( VectorSRegister d, Register a, Register b)   { emit_int32( MTVSRDD_OPCODE | vsrt(d)  | ra(a) | rb(b)); }
 inline void Assembler::mfvsrd(  Register d, VectorSRegister a)               { emit_int32( MFVSRD_OPCODE  | vsrs(a)  | ra(d)); }
@@ -1230,6 +1238,108 @@ inline void Assembler::vec_perm(VectorRegister dest, VectorRegister first, Vecto
 #else
   vperm(dest, first, second, perm);
 #endif
+}
+
+inline void Assembler::load_byte_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp,
+                                                  VectorRegister vp) {
+  VectorSRegister vsr = dest->to_vsr();
+  if (PowerArchitecturePPC64 >= 9) {
+#if !defined(VM_LITTLE_ENDIAN)
+    lxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+#else
+    if (offs == 0) {
+      lxvb16x(vsr, base);
+    } else {
+      li(tmp, offs);
+      lxvb16x(vsr, base, tmp);
+    }
+#endif
+  } else { // Power8 only supports very limited instructions
+    if (offs == 0) {
+      lxvd2x(vsr, base);
+    } else {
+      li(tmp, offs);
+      lxvd2x(vsr, base, tmp);
+    }
+#if defined(VM_LITTLE_ENDIAN)
+    // need to swap bytes in both double-words
+    vperm(dest, dest, dest, vp);
+#endif
+  }
+}
+
+inline void Assembler::store_byte_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp,
+                                                   VectorRegister vp, VectorRegister vtmp) {
+  VectorSRegister vsr = val->to_vsr();
+  if (PowerArchitecturePPC64 >= 9) {
+#if !defined(VM_LITTLE_ENDIAN)
+    stxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+#else
+    if (offs == 0) {
+      stxvb16x(vsr, base);
+    } else {
+      li(tmp, offs);
+      stxvb16x(vsr, base, tmp);
+    }
+#endif
+  } else { // Power8 only supports very limited instructions
+#if defined(VM_LITTLE_ENDIAN)
+    // need to swap bytes in both double-words
+    if (vtmp != vnoreg) {
+      vperm(vtmp, val, val, vp);
+      vsr = vtmp->to_vsr();
+    } else {
+      vperm(val, val, val, vp); // clobbers val!
+    }
+#endif
+    if (offs == 0) {
+      stxvd2x(vsr, base);
+    } else {
+      li(tmp, offs);
+      stxvd2x(vsr, base, tmp);
+    }
+  }
+}
+
+inline void Assembler::compute_vp_for_byte_vector_unaligned(VectorRegister dest, VectorRegister vtmp) {
+#if defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 < 9) {
+    li(R0, 0);
+    vspltisb(vtmp, 7);      // vtmp = [7, ..., 7]
+    lvsl(dest, R0);         // dest = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    vxor(dest, dest, vtmp); // dest = [7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8]
+  }
+#endif
+}
+
+inline void Assembler::load_word_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp) {
+  VectorSRegister vsr = dest->to_vsr();
+#if !defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 >= 9) {
+    lxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+  } else
+#endif
+  if (offs == 0) {
+    lxvw4x(vsr, base);
+  } else {
+    li(tmp, offs);
+    lxvw4x(vsr, base, tmp);
+  }
+}
+
+inline void Assembler::store_word_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp) {
+  VectorSRegister vsr = val->to_vsr();
+#if !defined(VM_LITTLE_ENDIAN)
+  if (PowerArchitecturePPC64 >= 9) {
+    stxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
+  } else
+#endif
+  if (offs == 0) {
+    stxvw4x(vsr, base);
+  } else {
+    li(tmp, offs);
+    stxvw4x(vsr, base, tmp);
+  }
 }
 
 inline void Assembler::load_const(Register d, void* x, Register tmp) {

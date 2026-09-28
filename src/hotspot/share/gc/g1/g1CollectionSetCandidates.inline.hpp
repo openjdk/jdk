@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,7 @@
 
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 
-#include "utilities/growableArray.hpp"
-
-template<typename Func>
-void G1CSetCandidateGroupList::iterate(Func&& f) const {
-  for (G1CSetCandidateGroup* group : _groups) {
-    for (G1CollectionSetCandidateInfo ci : *group) {
-      G1HeapRegion* r = ci._r;
-      f(r);
-    }
-  }
-}
+#include "gc/g1/g1CardSetGroup.inline.hpp"
 
 template<typename Func>
 void G1CollectionSetCandidates::iterate_regions(Func&& f) const {
