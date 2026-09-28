@@ -1543,6 +1543,14 @@ public class ShortVectorMaxTests extends AbstractVectorTest {
         return (short) (a >= 0 ? Integer.numberOfLeadingZeros(a) - 16 : 0);
     }
 
+    static short compress(short a, short b) {
+        return (short) Integer.compress(a & ((1 << Short.SIZE) - 1), b & ((1 << Short.SIZE) - 1));
+    }
+
+    static short expand(short a, short b) {
+        return (short) Integer.expand(a & ((1 << Short.SIZE) - 1), b & ((1 << Short.SIZE) - 1));
+    }
+
     static short REVERSE_scalar(short a) {
         short b = ROL_scalar(a, (short) 8);
         b = (short) (((b & 0x5555) << 1) | ((b & 0xAAAA) >>> 1));
@@ -2324,7 +2332,7 @@ public class ShortVectorMaxTests extends AbstractVectorTest {
     }
 
     static short COMPRESS_BITS(short a, short b) {
-        return (short)(Integer.compress(a & ((1 << Short.SIZE) - 1), b & ((1 << Short.SIZE) - 1)));
+        return (short)(compress(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -2365,7 +2373,7 @@ public class ShortVectorMaxTests extends AbstractVectorTest {
     }
 
     static short EXPAND_BITS(short a, short b) {
-        return (short)(Integer.expand(a & ((1 << Short.SIZE) - 1), b & ((1 << Short.SIZE) - 1)));
+        return (short)(expand(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")

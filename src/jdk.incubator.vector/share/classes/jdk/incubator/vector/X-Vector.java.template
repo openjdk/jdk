@@ -1158,7 +1158,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
             case VECTOR_OP_RSHIFT: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)(a >> n));
             case VECTOR_OP_URSHIFT: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)((a & LSHR_SETUP_MASK) >>> n));
+                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)((a & ALL_BITS_MASK) >>> n));
             case VECTOR_OP_LROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
@@ -1177,9 +1177,9 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
                     v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(VectorMath.subSaturatingUnsigned(a, b)));
 #if[byteOrShort]
             case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)Integer.compress(a & LSHR_SETUP_MASK, n & LSHR_SETUP_MASK));
+                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)Integer.compress(a & ALL_BITS_MASK, n & ALL_BITS_MASK));
             case VECTOR_OP_EXPAND_BITS: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)Integer.expand(a & LSHR_SETUP_MASK, n & LSHR_SETUP_MASK));
+                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)Integer.expand(a & ALL_BITS_MASK, n & ALL_BITS_MASK));
 #end[byteOrShort]
 #if[intOrLong]
             case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
@@ -1383,7 +1383,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
             case VECTOR_OP_RSHIFT: return (v, n, m) ->
                     v.uOp(m, (i, a) -> ($type$)(a >> n));
             case VECTOR_OP_URSHIFT: return (v, n, m) ->
-                    v.uOp(m, (i, a) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
+                    v.uOp(m, (i, a) -> ($type$)((a & ALL_BITS_MASK) >>> n));
             case VECTOR_OP_LROTATE: return (v, n, m) ->
                     v.uOp(m, (i, a) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v, n, m) ->
@@ -1400,9 +1400,9 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     private static final int SHIFT_MASK = ($Boxtype$.SIZE - 1);
 #if[byteOrStrictShort]
     // Also simulate >>> on sub-word variables with a mask.
-    private static final int LSHR_SETUP_MASK = ((1 << $Boxtype$.SIZE) - 1);
+    private static final int ALL_BITS_MASK = ((1 << $Boxtype$.SIZE) - 1);
 #else[byteOrStrictShort]
-    private static final $type$ LSHR_SETUP_MASK = -1;
+    private static final $type$ ALL_BITS_MASK = -1;
 #end[byteOrStrictShort]
 #end[BITWISE]
 

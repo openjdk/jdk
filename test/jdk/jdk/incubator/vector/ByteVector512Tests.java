@@ -1547,6 +1547,14 @@ public class ByteVector512Tests extends AbstractVectorTest {
         return (byte) (a >= 0 ? Integer.numberOfLeadingZeros(a) - 24 : 0);
     }
 
+    static byte compress(byte a, byte b) {
+        return (byte) Integer.compress(a & ((1 << Byte.SIZE) - 1), b & ((1 << Byte.SIZE) - 1));
+    }
+
+    static byte expand(byte a, byte b) {
+        return (byte) Integer.expand(a & ((1 << Byte.SIZE) - 1), b & ((1 << Byte.SIZE) - 1));
+    }
+
     static byte REVERSE_scalar(byte a) {
         byte b = (byte) ROL_scalar(a, (byte) 4);
         b = (byte) (((b & 0x55) << 1) | ((b & 0xAA) >>> 1));
@@ -2322,7 +2330,7 @@ public class ByteVector512Tests extends AbstractVectorTest {
     }
 
     static byte COMPRESS_BITS(byte a, byte b) {
-        return (byte)(Integer.compress(a & ((1 << Byte.SIZE) - 1), b & ((1 << Byte.SIZE) - 1)));
+        return (byte)(compress(a, b));
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")
@@ -2363,7 +2371,7 @@ public class ByteVector512Tests extends AbstractVectorTest {
     }
 
     static byte EXPAND_BITS(byte a, byte b) {
-        return (byte)(Integer.expand(a & ((1 << Byte.SIZE) - 1), b & ((1 << Byte.SIZE) - 1)));
+        return (byte)(expand(a, b));
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")
