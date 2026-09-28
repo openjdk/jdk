@@ -2268,11 +2268,8 @@ public:
 
 bool ConnectionGraph::returns_an_argument(const CallNode* call) {
   ciMethod* meth = call->as_CallJava()->method();
+  assert(meth != nullptr, "call must have an associated method pointer");
   BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
-  if (call_analyzer == nullptr) {
-    return false;
-  }
-
   const TypeTuple* d = call->tf()->domain_sig();
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
     const Type* t = d->field_at(i);
@@ -2286,11 +2283,8 @@ bool ConnectionGraph::returns_an_argument(const CallNode* call) {
 
 bool ConnectionGraph::has_incompatible_argument_return(const CallNode* call) {
   ciMethod* meth = call->as_CallJava()->method();
+  assert(meth != nullptr, "call must have an associated method pointer");
   BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
-  if (call_analyzer == nullptr) {
-    return true;
-  }
-
   const TypeTuple* d = call->tf()->domain_sig();
   int arg_num = 0;
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
@@ -2428,7 +2422,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         // and the argument input to the call for that field. An edge is added between the projection for the returned
         // buffer and the call.
         // For incompatible argument/return (only one of them is scalarized, or their types do not match): the call is
-        // conservatively assumed to make argument and return globally escape.
+        // conservatively assumed to make all its arguments escape globally and return an unknown object.
         if (returns_an_argument(call) && !has_incompatible_argument_return(call) && !call->tf()->returns_value_type_as_fields()) {
           // returns non scalarized argument
           add_local_var(call, PointsToNode::ArgEscape);
