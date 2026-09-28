@@ -45,7 +45,7 @@ public class TestLoadN2PUnscaled {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
-        framework.addFlags("-Xms64m", "-XX:HeapBaseMinAddress=2g");
+        framework.addFlags("-Xms64m", "-XX:HeapBaseMinAddress=1g");
         framework.addScenarios(
             // A small heap is placed below 4GB, so compressed oops are
             // unscaled and decoding is a no-op zero-extension.
