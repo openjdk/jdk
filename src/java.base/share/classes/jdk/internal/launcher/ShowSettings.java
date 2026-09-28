@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import jdk.internal.util.OperatingSystem;
 import sun.util.calendar.ZoneInfoFile;
 
 /**
