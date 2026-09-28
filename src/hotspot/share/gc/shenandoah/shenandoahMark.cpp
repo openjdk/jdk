@@ -154,7 +154,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
 
-    uint work = 0;
+    size_t work = 0;
     for (uint i = 0; i < stride; i++) {
       if (q->pop(t) ||
           queues->steal(worker_id, t)) {
