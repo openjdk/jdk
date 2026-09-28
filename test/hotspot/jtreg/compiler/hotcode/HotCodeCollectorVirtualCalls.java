@@ -29,9 +29,13 @@
  *          virtual call sites. Inline cache access requires the IC lock
  *          under GCs with concurrent class unloading (ZGC, Shenandoah).
  * @requires vm.compiler2.enabled & vm.opt.SegmentedCodeCache != false
+ * @library /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap
  *                   -XX:+NMethodRelocation -XX:HotCodeIntervalSeconds=0 -XX:HotCodeSampleSeconds=5
  *                   -XX:HotCodeStablePercent=-1 -XX:HotCodeSamplePercent=100 -XX:HotCodeStartupDelaySeconds=0
+ *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   compiler.hotcode.HotCodeCollectorVirtualCalls
  */
 
@@ -39,10 +43,14 @@
  * @test id=ZGC
  * @bug 8390662
  * @requires vm.compiler2.enabled & vm.opt.SegmentedCodeCache != false & vm.gc.Z
+ * @library /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UseZGC
  *                   -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap
  *                   -XX:+NMethodRelocation -XX:HotCodeIntervalSeconds=0 -XX:HotCodeSampleSeconds=5
  *                   -XX:HotCodeStablePercent=-1 -XX:HotCodeSamplePercent=100 -XX:HotCodeStartupDelaySeconds=0
+ *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   compiler.hotcode.HotCodeCollectorVirtualCalls
  */
 
@@ -50,17 +58,28 @@
  * @test id=Shenandoah
  * @bug 8390662
  * @requires vm.compiler2.enabled & vm.opt.SegmentedCodeCache != false & vm.gc.Shenandoah
+ * @library /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UseShenandoahGC
  *                   -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap
  *                   -XX:+NMethodRelocation -XX:HotCodeIntervalSeconds=0 -XX:HotCodeSampleSeconds=5
  *                   -XX:HotCodeStablePercent=-1 -XX:HotCodeSamplePercent=100 -XX:HotCodeStartupDelaySeconds=0
+ *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   compiler.hotcode.HotCodeCollectorVirtualCalls
  */
 
 package compiler.hotcode;
 
+import java.lang.reflect.Method;
+import jdk.test.lib.Asserts;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.NMethod;
+
 public class HotCodeCollectorVirtualCalls {
 
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final long RUN_MILLIS = 60_000;
 
     private abstract static class Base {
@@ -86,7 +105,7 @@ public class HotCodeCollectorVirtualCalls {
     // Four receiver classes make the call site megamorphic.
     private static final Base[] RECEIVERS = { new A(), new B(), new C(), new D() };
 
-    private static int hot(int i) {
+    public static int hot(int i) {
         int s = 0;
         for (int j = 0; j < 1000; j++) {
             s += RECEIVERS[(i + j) & 3].f(j);
@@ -94,12 +113,19 @@ public class HotCodeCollectorVirtualCalls {
         return s;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        Method method = HotCodeCollectorVirtualCalls.class.getMethod("hot", int.class);
+        WHITE_BOX.testSetDontInlineMethod(method, true);
+
         long start = System.currentTimeMillis();
         long s = 0;
         while (System.currentTimeMillis() - start < RUN_MILLIS) {
             s += hot((int) s);
         }
         System.out.println("Checksum: " + s);
+
+        NMethod relocatedNMethod = NMethod.get(method, false);
+        Asserts.assertNotNull(relocatedNMethod);
+        Asserts.assertEQ(BlobType.MethodHot, relocatedNMethod.code_blob_type);
     }
 }
