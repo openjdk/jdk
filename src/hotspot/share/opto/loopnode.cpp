@@ -4602,21 +4602,21 @@ bool PhaseIdealLoop::replace_lagging_index(IdealLoopTree* loop, PhiNode* phi2) {
 
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
-void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
+void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree* loop) {
   assert(loop->_head->is_CountedLoop(), "");
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  CountedLoopNode* cl = loop->_head->as_CountedLoop();
   if (!cl->is_valid_counted_loop(T_INT)) {
-    return;         // skip malformed counted loop
+    return; // skip malformed counted loop
   }
-  Node *incr = cl->incr();
+  Node* incr = cl->incr();
   if (incr == nullptr) {
-    return;         // Dead loop?
+    return; // Dead loop?
   }
-  Node *phi  = cl->phi();
+  Node* phi = cl->phi();
 
   // Visit all children, looking for Phis
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
-    Node *out = cl->out(i);
+    Node* out = cl->out(i);
     // Look for other phis (secondary IVs). Skip dead ones
     if (!out->is_Phi() || out == phi || !has_node(out)) {
       continue;
@@ -4758,7 +4758,7 @@ void PhaseIdealLoop::replace_with_affine_index(IdealLoopTree* loop, PhiNode* phi
   _igvn.register_new_node_with_optimizer(add);
   set_ctrl(add, cl);
 
-  _igvn.replace_node( phi2, add );
+  _igvn.replace_node(phi2, add);
   // Sometimes an induction variable is unused
   if (add->outcnt() == 0) {
     _igvn.remove_dead_node(add, PhaseIterGVN::NodeOrigin::Graph);
