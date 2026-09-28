@@ -2927,7 +2927,7 @@ BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const
   Register Rresult = r14;  // See StubGenerator::generate_call_stub().
   __ ldr(r0, Address(Rresult));
   __ resolve_jobject(r0 /* value */,
-                     rscratch1 /* tmp */,
+                     r11 /* tmp */,
                      r12 /* tmp */);
   __ str(r0, Address(Rresult));
 
