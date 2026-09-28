@@ -1113,6 +1113,7 @@ protected:
 
   INSN(ecall,   0b1110011, 0b000, 0b000000000000);
   INSN(_ebreak, 0b1110011, 0b000, 0b000000000001);
+  INSN(wrs_sto, 0b1110011, 0b000, 0b000000011101);
 
 #undef INSN
 
