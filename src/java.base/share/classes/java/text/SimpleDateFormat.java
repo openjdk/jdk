@@ -1307,14 +1307,13 @@ public class SimpleDateFormat extends DateFormat {
                 // Check if an explicit metazone DST offset exists.
                 // Only check against instances of ZoneInfo, since the standard JDK timezones
                 // are guaranteed to extend this internal type.
-                if (tz instanceof ZoneInfo zi && !zi.isDirty()) {
+                if (tz instanceof ZoneInfo zi) {
                     explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
                     if (explicitDstOffset != null) {
-                        // Found match for dst offset in metazone data,
-                        // so ensure the zone rules match the expected id.
-                        // This handles the case when someone sets a different id on a standard zone.
-                        var cleanZone = ZoneInfo.getTimeZone(tzid);
-                        if (cleanZone == null || !cleanZone.hasSameRules(zi)) {
+                        // The time zone ID has an explicit dst offset. Ensure that
+                        // our current TimeZone is canonical.
+                        var canonicalZone = ZoneInfo.getTimeZone(tzid);
+                        if (canonicalZone == null || !canonicalZone.equals(zi)) {
                             explicitDstOffset = null;
                         }
                     }
