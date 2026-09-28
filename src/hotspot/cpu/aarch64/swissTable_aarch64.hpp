@@ -52,7 +52,7 @@ private:
                                    uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
 
 public:
-  static double default_load_factor();
+  static double default_max_load_factor();
   static size_t metadata_out_of_bounds_size();
 
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
@@ -61,7 +61,7 @@ public:
 };
 
 template <class Entry, class Allocator>
-double PDSwissTableImpl<Entry, Allocator>::default_load_factor() {
+double PDSwissTableImpl<Entry, Allocator>::default_max_load_factor() {
   // There is a 99% chance to encounter an empty bucket in the first 16 buckets
   return 0.75;
 }

@@ -53,7 +53,7 @@ uint64_t degenerate_hash(const Key& key) {
   return 1;
 }
 
-template <auto HASH = primitive_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
+template <auto HASH = split_mix_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
 void test_basic() {
   Arena arena(mtTest);
   FlatHashTableArena<int, int, HASH, KEY_EQUAL> map(&arena);
@@ -128,7 +128,7 @@ void test_basic() {
   }
 }
 
-template <auto HASH = primitive_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
+template <auto HASH = split_mix_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
 void test_large_map() {
   constexpr int iterations = 1000;
   Arena arena(mtTest);
@@ -282,7 +282,7 @@ public:
   }
 };
 
-template <auto HASH = primitive_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
+template <auto HASH = split_mix_hash<int>, auto KEY_EQUAL = primitive_equals<int>>
 void test_random() {
   constexpr int iterations = 10000;
   FlatHashTable<int, int, HASH, KEY_EQUAL, CustomAllocator> map;
@@ -374,10 +374,11 @@ public:
   }
 
   static uint64_t hash(const CustomKey& k) {
-    return uint64_t(k._value[0]) |
+    uint64_t h = uint64_t(k._value[0]) |
            (uint64_t(k._value[_key_size / 4]) << 16) |
            (uint64_t(k._value[_key_size / 2]) << 32) |
            (uint64_t(k._value[_key_size * 3 / 4]) << 48);
+    return split_mix_hash(h);
   }
 
   static bool equal(const CustomKey& k1, const CustomKey& k2) {

@@ -56,7 +56,7 @@ private:
                                    uint64_t hash, const Token& token, size_t start_idx, size_t insert_point);
 
 public:
-  static double default_load_factor();
+  static double default_max_load_factor();
   static size_t metadata_out_of_bounds_size();
 
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
@@ -92,7 +92,7 @@ bool PDSwissTableImpl<Entry, Allocator>::should_use_avx2() {
 #endif // __GNUC__
 
 template <class Entry, class Allocator>
-double PDSwissTableImpl<Entry, Allocator>::default_load_factor() {
+double PDSwissTableImpl<Entry, Allocator>::default_max_load_factor() {
   if (should_use_avx512()) {
     // If 10% of the buckets are empty, we have a 99.9% chance to encounter one of them in the
     // first 64 buckets

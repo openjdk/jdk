@@ -146,14 +146,15 @@ private:
   Entry* _table;
   size_t _table_size_minus_one;
   size_t _size_include_tombstones;
-  double _load_factor;
+  double _max_load_factor;
+  size_t _max_size_include_tombstone;
   size_t _size;
 
   // Implementation limitations
   static_assert(std::is_trivially_destructible_v<Entry>);
   NONCOPYABLE(SwissTableImpl);
 
-  static double default_load_factor();
+  static double default_max_load_factor();
   static size_t metadata_out_of_bounds_size();
 
   static size_t max_table_size() {
@@ -178,7 +179,7 @@ private:
   // construct an actual key.
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
   static LookupResult look_up(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
-                             uint64_t hash, const Token& token);
+                              uint64_t hash, const Token& token);
 
   template <class Token, auto TOKEN_HASH_MATCH, InsertPointNecessity INSERT_POINT_NECESSITY>
   static LookupResult look_up_fallback(const Marker* metadata, const Entry* table, size_t table_size_minus_one,
@@ -211,23 +212,59 @@ private:
     }
   }
 
-  bool should_grow() {
-    size_t size_to_grow = MIN2(size_t(double(_table_size_minus_one + 1) * _load_factor), _table_size_minus_one);
-    return _size_include_tombstones >= size_to_grow;
+  bool should_rehash_before_emplace() const {
+    return _size_include_tombstones >= _max_size_include_tombstone;
   }
 
+  // The maximum number of entries that can be supported by a certain number of buckets. This
+  // computation should be consistently performed in this order (i.e. do not try to infer the table
+  // size from the number of entries), otherwise floating-point inaccuracy may lead to surprising
+  // situations.
+  size_t max_size_for_bucket_counts(size_t table_size) const {
+    assert(table_size > 0, "overflow");
+    return MIN2(size_t(double(table_size) * _max_load_factor), table_size - 1);
+  }
+
+  // If we need to rehash the table before an emplace, try to find a good size for the new table.
+  // For small tables, generously enlarge it to avoid excessive rehash, be more conservative as the
+  // table size increases.
+  bool rehash_automatically() {
+    size_t table_size = _table_size_minus_one + 1;
+    size_t new_table_size;
+    if (table_size == 0) {
+      new_table_size = _min_table_size;
+    } else if (table_size < (size_t(1) << 4)) {
+      new_table_size = table_size * 8;
+    } else if (table_size < (size_t(1) << 8)) {
+      new_table_size = table_size * 4;
+    } else if (table_size < (size_t(1) << 10)) {
+      new_table_size = table_size * 2;
+    } else {
+      // For large tables, may not need to enlarge if the load factor is small since rehash will
+      // remove all tombstones
+      if (_size * 2 < _max_size_include_tombstone) {
+        new_table_size = table_size;
+      } else {
+        new_table_size = table_size * 2;
+      }
+    }
+
+    return rehash(new_table_size);
+  }
+
+  // The match function passed to look_up during rehash, always return false since an entry cannot
+  // match another entry
   static bool cannot_match(uint64_t, int, const Entry&) {
     return false;
   }
 
-  bool grow() {
-    size_t table_size = _table_size_minus_one + 1;
-    if (table_size == max_table_size()) {
+  bool rehash(size_t new_table_size) {
+    assert(is_power_of_2(new_table_size), "invalid table size %zu", new_table_size);
+    assert(new_table_size >= _min_table_size, "should not create a too small table %zu", new_table_size);
+    if (new_table_size > max_table_size()) {
       return false;
     }
 
-    size_t new_table_size = MAX2(table_size * 2, _min_table_size);
-    assert(is_power_of_2(new_table_size), "invalid table size %zu", new_table_size);
     static_assert(alignof(Marker) == 1);
     size_t metadata_size_in_bytes = sizeof(Marker) * new_table_size;
     // Pad the metadata table with distinguishable data so SIMD algorithm can work fine even at the
@@ -253,6 +290,8 @@ private:
     ::memset(allocated, uint8_t(Marker::_empty_marker), metadata_size_in_bytes);
     ::memset(allocated + metadata_size_in_bytes, uint8_t(Marker::_oob_marker), metadata_out_of_bounds_size());
 
+    // Also work with _table_size_minus_one == size_t(-1)
+    size_t table_size = _table_size_minus_one + 1;
     for (size_t idx = 0; idx < table_size; idx++) {
       Marker cur_marker = _metadata[idx];
       if (int8_t(cur_marker) < 0) {
@@ -279,24 +318,28 @@ private:
     _table = new_table;
     _table_size_minus_one = new_table_size_minus_one;
     _size_include_tombstones = _size;
+    _max_size_include_tombstone = max_size_for_bucket_counts(new_table_size);
     return true;
   }
 
 public:
   SwissTableImpl(Allocator alloc)
     : _alloc(alloc), _metadata(nullptr), _table(nullptr), _table_size_minus_one(std::numeric_limits<size_t>::max()),
-      _size_include_tombstones(0), _load_factor(default_load_factor()), _size(0) {
-    assert(_load_factor >= 0.1 && _load_factor < 1, "invalid load factor %lf", _load_factor);
+      _size_include_tombstones(0), _max_load_factor(default_max_load_factor()), _max_size_include_tombstone(0), _size(0) {
+    assert(_max_load_factor >= 0.1 && _max_load_factor < 1, "invalid max load factor %lf", _max_load_factor);
   }
 
   ~SwissTableImpl() {
     _alloc.deallocate(_metadata);
   }
 
+  // Return the number of entries in this Swiss table
   size_t size() const {
     return _size;
   }
 
+  // The typical find operation. Find an entry based on a token, return the pointer to that entry
+  // or nullptr if such entry is not found
   template <class Token, auto TOKEN_HASH_MATCH>
   FindResult find(uint64_t hash, const Token& token) const {
     if (_table == nullptr) {
@@ -311,9 +354,18 @@ public:
     }
   }
 
+  // The typical emplace operation. Try to emplace an entry at either a location where a matching
+  // entry has resided, an empty bucket, or a tombstone. Users have to emplace the entry themselves
+  // in emplace_entry, which takes a bool denoting whether the bucket is a matching entry or does
+  // not contain an entry, and a pointer to that bucket. Taking tombstones into consideration
+  // imposes a noticeable cost, so we may introduce emplace_ignore_tombstones, which does not
+  // consider tombstones as a valid insertion point.
   template <class Token, auto TOKEN_HASH_MATCH, class EmplaceEntry>
   EmplaceResult emplace(uint64_t hash, const Token& token, EmplaceEntry emplace_entry) {
-    bool must_not_insert_new = should_grow() && !grow();
+    bool must_not_insert_new = false;
+    if (should_rehash_before_emplace()) {
+      must_not_insert_new = !rehash_automatically();
+    }
     if (_table == nullptr) {
       return EmplaceResult(EmplaceResult::FAIL_TO_ALLOCATE);
     }
@@ -341,6 +393,8 @@ public:
     return EmplaceResult(lookup_res.exist() ? EmplaceResult::EXIST : EmplaceResult::NOT_EXIST);
   }
 
+  // The typical erase operation. Users can retrieve the entry that is about to be removed before
+  // the removal.
   template <class Token, auto TOKEN_HASH_MATCH, class ExtractEntry>
   EraseResult erase(uint64_t hash, const Token& token, ExtractEntry extract_entry) {
     if (_table == nullptr) {
@@ -373,7 +427,7 @@ private:
   using Marker = typename SwissTableImpl<Entry, Allocator>::Marker;
 
 public:
-  static double default_load_factor() {
+  static double default_max_load_factor() {
     // Not much guarantee when the entries are processed one by one
     return 0.75;
   }
@@ -395,8 +449,8 @@ public:
 #endif // __has_include(CPU_HEADER(swissTable))
 
 template <class Entry, class Allocator>
-double SwissTableImpl<Entry, Allocator>::default_load_factor() {
-  return PDSwissTableImpl<Entry, Allocator>::default_load_factor();
+double SwissTableImpl<Entry, Allocator>::default_max_load_factor() {
+  return PDSwissTableImpl<Entry, Allocator>::default_max_load_factor();
 }
 
 template <class Entry, class Allocator>
