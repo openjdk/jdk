@@ -29,6 +29,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 #include <cfloat>
 #include <cmath>
 
@@ -128,14 +129,10 @@ double HdrSeq::percentile(double level) const {
       for (int val = 0; val < ValBuckets; val++) {
         cnt += _hdr[mag][val];
         if (cnt >= target) {
-<<<<<<< HEAD
-          return std::pow(10.0, MagMinimum + mag) * val / ValBuckets;
-=======
           double value = std::ldexp(((double) val / ValBuckets) / 2.0 + 0.5, MagMinimum + mag);
           // value < _minimum and value > _maximum can be possible due to precision loss when
           // recomputing value. Clamping is done to fit value within the range.
           return clamp(value, minimum(), maximum());
->>>>>>> jdk/master
         }
       }
     }
@@ -281,3 +278,4 @@ int BinaryMagnitudeSeq::max_level() const {
   }
   return 0;
 }
+
