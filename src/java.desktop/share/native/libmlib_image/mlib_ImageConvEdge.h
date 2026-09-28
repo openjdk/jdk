@@ -62,30 +62,6 @@ mlib_status mlib_ImageConvZeroEdge(mlib_image *dst,
                                    mlib_s32   dy_b,
                                    mlib_s32   cmask);
 
-mlib_status mlib_ImageConvCopyEdge_Bit(mlib_image       *dst,
-                                       const mlib_image *src,
-                                       mlib_s32         dx_l,
-                                       mlib_s32         dx_r,
-                                       mlib_s32         dy_t,
-                                       mlib_s32         dy_b,
-                                       mlib_s32         cmask);
-
-mlib_status mlib_ImageConvCopyEdge(mlib_image       *dst,
-                                   const mlib_image *src,
-                                   mlib_s32         dx_l,
-                                   mlib_s32         dx_r,
-                                   mlib_s32         dy_t,
-                                   mlib_s32         dy_b,
-                                   mlib_s32         cmask);
-
-mlib_status mlib_ImageConvCopyEdge_Fp(mlib_image       *dst,
-                                      const mlib_image *src,
-                                      mlib_s32         dx_l,
-                                      mlib_s32         dx_r,
-                                      mlib_s32         dy_t,
-                                      mlib_s32         dy_b,
-                                      mlib_s32         cmask);
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
