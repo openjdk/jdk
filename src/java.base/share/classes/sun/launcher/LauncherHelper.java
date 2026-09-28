@@ -25,10 +25,7 @@
 
 package sun.launcher;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -42,24 +39,22 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.Locale.Category;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,7 +62,10 @@ import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
+import jdk.internal.platform.Container;
+import jdk.internal.platform.Metrics;
 import jdk.internal.util.OperatingSystem;
+import sun.util.calendar.ZoneInfoFile;
 
 /**
  * A utility package for the java(1), javaw(1) launchers.
@@ -96,6 +94,11 @@ public final class LauncherHelper {
     private static final String ENABLE_FINAL_FIELD_MUTATION = "Enable-Final-Field-Mutation";
 
     private static StringBuilder outBuf = new StringBuilder();
+
+    private static final String INDENT = "    ";
+    private static final String VM_SETTINGS     = "VM settings:";
+    private static final String PROP_SETTINGS   = "Property settings:";
+    private static final String LOCALE_SETTINGS = "Locale settings:";
 
     // sync with java.c and jdk.internal.misc.VM
     private static final String diagprop = "sun.java.launcher.diag";
