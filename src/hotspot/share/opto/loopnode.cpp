@@ -4615,17 +4615,20 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree* loop) {
   Node* phi = cl->phi();
 
   // Visit all children, looking for Phis
-  for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
-    Node* out = cl->out(i);
+  Node_List outs;
+  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
+    outs.push(cl->fast_out(i));
+  }
+  for (uint i = 0; i < outs.size(); i++) {
+    Node* out = outs.at(i);
     // Look for other phis (secondary IVs). Skip dead ones
-    if (!out->is_Phi() || out == phi || !has_node(out)) {
+    if (!out->is_Phi() || out == phi || out->in(0) == nullptr || !has_node(out)) {
       continue;
     }
 
     PhiNode* phi2 = out->as_Phi();
-    if (replace_lagging_index(loop, phi2) || replace_independent_index(loop, phi2)) {
-      --i; // deleted this phi; rescan starting with next position
-    }
+    if (replace_lagging_index(loop, phi2)) { continue; }
+    replace_independent_index(loop, phi2);
   }
 }
 
