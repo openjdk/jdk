@@ -488,7 +488,7 @@ static jint heap_inspection(AttachOperation* op, attachStream* out) {
   const char* path = op->arg(1);
   if (path != nullptr && path[0] != '\0') {
     // create file
-    fs = new (mtInternal) fileStream(path);
+    fs = new (mtServiceability) fileStream(path);
     if (fs == nullptr) {
       out->print_cr("Failed to allocate space for file: %s", path);
     }

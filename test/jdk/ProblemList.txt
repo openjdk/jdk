@@ -123,8 +123,6 @@ java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linu
 java/awt/Frame/InitialIconifiedTest.java 7144049,8203920 macosx-all,linux-all
 java/awt/Frame/FocusTest.java 8341480 macosx-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
-java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
-java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/FileListBetweenJVMsTest/FileListBetweenJVMsTest.java 8353673 macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64,macosx-all
@@ -167,7 +165,6 @@ java/awt/FullScreen/BufferStrategyExceptionTest/BufferStrategyExceptionTest.java
 java/awt/Focus/8013611/JDK8013611.java 8175366 windows-all,macosx-all
 java/awt/Focus/6981400/Test1.java 8029675 windows-all,macosx-all
 java/awt/Focus/6981400/Test3.java 8173264 generic-all
-java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows-all,macosx-all
 java/awt/event/KeyEvent/KeyChar/KeyCharTest.java 8169474,8224055 macosx-all,windows-all
 java/awt/event/KeyEvent/KeyTyped/CtrlASCII.java 8298910 linux-all
 

@@ -71,6 +71,9 @@ bool JVMFlag::is_unlocker() const {
 }
 
 bool JVMFlag::is_unlocked() const {
+  if (is_unlocker()) {
+    return true;
+  }
   if (is_diagnostic()) {
     return UnlockDiagnosticVMOptions;
   }
@@ -539,7 +542,7 @@ JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, 
       return (return_flag ? flag : nullptr);
     }
     // Report locked flags only if allowed.
-    if (!(flag->is_unlocked() || flag->is_unlocker())) {
+    if (!flag->is_unlocked()) {
       if (!allow_locked) {
         // disable use of locked flags, e.g. diagnostic, experimental,
         // etc. until they are explicitly unlocked
@@ -570,7 +573,7 @@ JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked
     return nullptr;
   }
 
-  if (!(match->is_unlocked() || match->is_unlocker())) {
+  if (!match->is_unlocked()) {
     if (!allow_locked) {
       return nullptr;
     }
