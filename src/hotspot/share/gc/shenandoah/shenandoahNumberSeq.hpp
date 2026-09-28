@@ -46,8 +46,11 @@ private:
     MagBuckets = 56,
     MagMinimum = -32
   };
-  int** _hdr;
+  int** _hdr; // Lazily allocated in add().
   double _minimum;
+  NONCOPYABLE(HdrSeq);
+
+  void allocate_hdr();
 
 public:
   HdrSeq();
