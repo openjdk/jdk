@@ -270,21 +270,21 @@ ciField* ValueTypeNode::field(uint index) const {
   return value_klass()->declared_nonstatic_field_at(index);
 }
 
-static uint add_top_to_safepoint(Node* top, ciValueKlass* vk, SafePointNode* sfpt) {
+static uint add_top_to_safepoint(ciValueKlass* vk, SafePointNode* sfpt) {
   uint cnt = 0;
   for (int i = 0; i < vk->nof_declared_nonstatic_fields(); ++i) {
     ciField* field = vk->declared_nonstatic_field_at(i);
     assert(!field->is_flat() || field->type()->is_value_klass(), "must be a value type");
     if (field->is_flat()) {
-      cnt += add_top_to_safepoint(top, field->type()->as_value_klass(), sfpt);
-      if (!field->is_null_free()) {
-        // The null marker of a flat field is added right after we scalarize that field
-        sfpt->add_req(top);
-        cnt++;
+      cnt += add_top_to_safepoint(field->type()->as_value_klass(), sfpt);
+      if (field->is_null_free()) {
+        continue;
       }
-      continue;
+      // The null marker of a flat field is added right after we scalarize that field, so the next
+      // add_req either stands for the null marker of `field`, or for the whole `field` itself if
+      // it isn't flat. It's top anyway.
     }
-    sfpt->add_req(top);
+    sfpt->add_req(Compile::current()->top());
     cnt++;
   }
   return cnt;
@@ -300,7 +300,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
       if (value->is_top()) {
         // An input is top. We act like it was a value type whose fields are all top.
         Node* top = value;
-        cnt += add_top_to_safepoint(top, field->type()->as_value_klass(), sfpt);
+        cnt += add_top_to_safepoint(field->type()->as_value_klass(), sfpt);
         if (!field->is_null_free()) {
           // The null marker of a flat field is added right after we scalarize that field
           sfpt->add_req(top);
