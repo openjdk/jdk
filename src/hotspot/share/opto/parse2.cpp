@@ -542,7 +542,7 @@ public:
       int flat_and_not_flat_count = saturated_add(flat_count, not_flat_count);
       if (profile.morphism() > 0 || profile.has_major_receiver()) {
         bool not_flat_checked = false;
-        int count = flat_and_not_flat_count;
+        int current_count = flat_and_not_flat_count;
         create_merge_point();
         int limit = MAX2(profile.morphism(), 1);
         bool done = false;
@@ -571,15 +571,15 @@ public:
               load_from_unknown_flat_array(element_ptr);
               done = true;
             } else {
-              float p = ((float) not_flat_count) / ((float) count);
+              float p = ((float) not_flat_count) / ((float) current_count);
               test_non_flat_array_and_emit_reference_load(p);
-              count -= not_flat_count;
+              current_count -= not_flat_count;
             }
           } else {
-            float p = ((float) profile.receiver_count(i)) / ((float) count);
+            float p = ((float) profile.receiver_count(i)) / ((float) current_count);
             ciKlass* klass = profile.receiver(i);
             test_known_flat_array_and_emit_load_flat(klass, p);
-            count -= profile.receiver_count(i);
+            current_count -= profile.receiver_count(i);
             i++;
           }
         }
