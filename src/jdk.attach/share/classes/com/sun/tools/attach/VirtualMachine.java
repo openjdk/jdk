@@ -189,6 +189,8 @@ public abstract class VirtualMachine {
     public static VirtualMachine attach(String id)
         throws AttachNotSupportedException, IOException
     {
+        // Do not call attach(id, env) as a common back end, for compatibility with a
+        // provider only implementing attach(id).
         if (id == null) {
             throw new NullPointerException("id cannot be null");
         }
@@ -196,15 +198,20 @@ public abstract class VirtualMachine {
         if (providers.size() == 0) {
             throw new AttachNotSupportedException("no providers installed");
         }
-        AttachNotSupportedException lastExc = null;
+        StringBuilder message = new StringBuilder();
+
         for (AttachProvider provider : providers) {
             try {
                 return provider.attachVirtualMachine(id);
             } catch (AttachNotSupportedException x) {
-                lastExc = x;
+                // Retain possibly multiple error messages:
+                if (!message.isEmpty()) {
+                    message.append(" | ");
+                }
+                message.append(x.getMessage());
             }
         }
-        throw lastExc;
+        throw new AttachNotSupportedException(message.toString());
     }
 
     /**
@@ -301,15 +308,20 @@ public abstract class VirtualMachine {
         if (providers.size() == 0) {
             throw new AttachNotSupportedException("no providers installed");
         }
-        AttachNotSupportedException lastExc = null;
+        StringBuilder message = new StringBuilder();
+
         for (AttachProvider provider : providers) {
             try {
                 return provider.attachVirtualMachine(id, env);
             } catch (AttachNotSupportedException x) {
-                lastExc = x;
+                // Retain possibly multiple error messages:
+                if (!message.isEmpty()) {
+                    message.append(" | ");
+                }
+                message.append(x.getMessage());
             }
         }
-        throw lastExc;
+        throw new AttachNotSupportedException(message.toString());
     }
 
     /**

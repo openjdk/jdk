@@ -189,8 +189,7 @@ public class AttachRevival {
         }
 
         // For jcmd we need a cast as executeJCmd is an implementation specific method.
-        //HotSpotVirtualMachine hvm = (VirtualMachineCoreDump) vm;
-        VirtualMachineCoreDump hvm = (VirtualMachineCoreDump) vm;
+        HotSpotVirtualMachine hvm = (HotSpotVirtualMachine) vm;
 
         // Test IOException is thrown after detaching:
         vm.detach();

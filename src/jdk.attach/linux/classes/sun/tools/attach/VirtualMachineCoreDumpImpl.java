@@ -51,7 +51,7 @@ import jdk.internal.util.OperatingSystem;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @SuppressWarnings("restricted")
-public class VirtualMachineCoreDumpImpl extends VirtualMachineCoreDump {
+public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachineCoreDump {
 
     VirtualMachineCoreDumpImpl(AttachProvider provider, String vmid, Map<String, ?> env)
             throws AttachNotSupportedException, IllegalArgumentException, IOException {

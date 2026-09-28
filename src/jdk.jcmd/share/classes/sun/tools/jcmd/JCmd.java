@@ -43,7 +43,6 @@ import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
 import sun.tools.attach.HotSpotVirtualMachine;
-import sun.tools.attach.VirtualMachineCoreDump;
 import sun.tools.common.ProcessArgumentMatcher;
 import sun.tools.common.PrintStreamPrinter;
 import sun.tools.jstat.JStatLogger;
@@ -65,10 +64,16 @@ public class JCmd {
             System.exit(1);
         }
 
-        if (arg.isShowUsage()) {
+        boolean noCommand = arg.getCommand() == null || arg.getCommand().isEmpty();
+        if (arg.isShowUsage() ||
+            (noCommand && !arg.isListCounters() && !arg.isListProcesses())
+            ) {
+            // "help" is already added, for a PID, to show available commands.
+            // For cores, show usage as -L may be required.
             Arguments.usage();
             System.exit(0);
         }
+        // jcmd with no args must show live process list
 
         ProcessArgumentMatcher ap = null;
         try {
@@ -172,22 +177,15 @@ public class JCmd {
     }
 
     private static void executeCommandCommon(VirtualMachine vm, String command) throws IOException, UnsupportedEncodingException {
+        // Cast to HotSpotVirtualMachine as executeJCmd is an implementation specific method.
+        HotSpotVirtualMachine hvm = (HotSpotVirtualMachine) vm;
         String lines[] = command.split("\\n");
         for (String line : lines) {
             if (line.trim().equals("stop")) {
                 break;
             }
 
-            InputStream is = null;
-            // Cast to HotSpotVirtualMachine (or core dump) as executeJCmd is an
-            // implementation specific method.
-            if (vm instanceof HotSpotVirtualMachine) {
-                is = ((HotSpotVirtualMachine) vm).executeJCmd(line);
-            } else if (vm instanceof VirtualMachineCoreDump) {
-                is = ((VirtualMachineCoreDump) vm).executeJCmd(line);
-            } else {
-                throw new AttachOperationFailedException("incompatible VM: " + vm);
-            }
+            InputStream is = hvm.executeJCmd(line);
 
             if (PrintStreamPrinter.drainUTF8(is, System.out) == 0) {
                 System.out.println("Command executed successfully");

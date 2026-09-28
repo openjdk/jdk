@@ -38,9 +38,9 @@ class Arguments {
     private boolean showUsage     = false;
     private String  command       = null;
     private String  processString = null;
-    private boolean forceCore = false;
-    private String libDirs = null;
-    private String revivalCachePath = null;
+    private boolean forceCore     = false;
+    private String  libDirs       = null;
+    private String  revivalCachePath = null;
 
     public boolean isListProcesses() { return listProcesses; }
     public boolean isListCounters() { return listCounters; }
@@ -86,9 +86,7 @@ class Arguments {
             }
             i++;
         }
-        if (i >= args.length - 1) {
-            throw new IllegalArgumentException("Incomplete arguments, process ID, name or dump filename required.");
-        }
+
         // Remaining arguments: process string or pid, and command.
         processString = args[i++];
 
@@ -117,14 +115,23 @@ class Arguments {
                 sb.append(args[i]).append(" ");
             }
         }
-
-        if (listCounters != true && sb.length() == 0) {
+        if (!listCounters && sb.length() == 0 && !forceCore && isPID(processString)) {
             // Omitting the command shall cause the target VM to print out a list
             // of available commands.
+            // Not for cores as -L may be needed.
             sb.append("help");
         }
 
         command = sb.toString().trim();
+    }
+
+    private static boolean isPID(String s) {
+        try {
+            Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
     }
 
     private void readCommandFile(String path) throws IOException {

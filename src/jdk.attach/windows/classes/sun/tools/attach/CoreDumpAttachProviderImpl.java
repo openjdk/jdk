@@ -31,6 +31,7 @@ import com.sun.tools.attach.spi.AttachProvider;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class CoreDumpAttachProviderImpl extends HotSpotAttachProvider {
@@ -45,6 +46,11 @@ public class CoreDumpAttachProviderImpl extends HotSpotAttachProvider {
     @Override
     public String type() {
         return "core";
+    }
+
+    @Override
+    public List<VirtualMachineDescriptor> listVirtualMachines() {
+        return List.of();
     }
 
     @Override

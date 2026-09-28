@@ -54,10 +54,10 @@ import jdk.internal.util.OperatingSystem;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
- * Common class for implementation of VirtualMachine for a core dump or MiniDump.
+ * Common class for implementing HotSpotVirtualMachine for a core dump or MiniDump.
  */
 @SuppressWarnings("restricted")
-public abstract class VirtualMachineCoreDump extends VirtualMachine {
+public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachine {
 
     protected boolean attached;
     protected String libDirs;
@@ -66,7 +66,7 @@ public abstract class VirtualMachineCoreDump extends VirtualMachine {
     /**
      * Attaches to a core file or minidump.
      */
-    VirtualMachineCoreDump(AttachProvider provider, String vmid, Map<String, ?> env)
+    HotSpotVirtualMachineCoreDump(AttachProvider provider, String vmid, Map<String, ?> env)
             throws AttachNotSupportedException, IllegalArgumentException, IOException {
 
         super(provider, vmid);
@@ -122,15 +122,6 @@ public abstract class VirtualMachineCoreDump extends VirtualMachine {
 
     private static final int HELPER_TRIES = 100; // Default attempts to run helper
     private static final int HELPER_RETRY = 7;   // revivalhelper exit value hint to retry due to e.g. address space clash
-
-
-/*    public InputStream executeCommand(String cmd, Object ... args) throws IOException {
-        return execute(cmd, args);
-    } */
-
-    public InputStream executeJCmd(String command) throws IOException {
-        return execute("jcmd", command);
-    }
 
     /**
      * Execute the given command in the target VM.
@@ -220,7 +211,7 @@ public abstract class VirtualMachineCoreDump extends VirtualMachine {
                     ok = true;
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException ex) {
-                System.err.println("VirtualMachineCoreDump.execute: " + ex);
+                System.err.println("HotSpotVirtualMachineCoreDump.execute: " + ex);
                 if (verbose) {
                     ex.printStackTrace();
                 }
