@@ -193,6 +193,7 @@ char *findJavaTZ_md(const char *java_home_dir)
 
     DYNAMIC_TIME_ZONE_INFORMATION dtzi;
     DWORD timeType;
+    LONG activeBias;
 
     /*
      * Get the dynamic time zone information so that time zone redirection
@@ -200,14 +201,26 @@ char *findJavaTZ_md(const char *java_home_dir)
      */
     timeType = GetDynamicTimeZoneInformation(&dtzi);
     if (timeType == TIME_ZONE_ID_INVALID) {
+        /*
+         * If GetDynamicTimeZoneInformation fails, return NULL.
+         * The time zone detection will then fail over to getGMTOffsetID
+         */
         return NULL;
     }
 
     /*
-     * If DynamicDaylightTime is enabled, map TimeZoneKeyName to a Java TZ.
+     * If DynamicDaylightTime is disabled,
+     * return a custom time zone name based on the GMT offset.
+     */
+    if (dtzi.DynamicDaylightTimeDisabled != 0) {
+        customZoneName(dtzi.Bias, winZoneName, MAX_ZONE_CHAR);
+        return _strdup(winZoneName);
+    }
+    /*
+     * Map TimeZoneKeyName to a Java TZ.
      * If that succeeds, return the Java TZ name.
      */
-    if (dtzi.DynamicDaylightTimeDisabled == 0 && dtzi.TimeZoneKeyName[0] != 0) {
+    if (dtzi.TimeZoneKeyName[0] != 0) {
         wcstombs(winZoneName, dtzi.TimeZoneKeyName, MAX_ZONE_CHAR);
         std_timezone = matchJavaTZ(java_home_dir, winZoneName);
         if (std_timezone != NULL) {
@@ -216,10 +229,24 @@ char *findJavaTZ_md(const char *java_home_dir)
     }
 
     /*
-     * If DynamicDaylightTime is disabled or TimeZoneKeyName is unknown,
-     * return a custom time zone name based on the GMT offset.
+     * If TimeZoneKeyName is not set or no mapping exists in tzmappings,
+     * return a custom time zone name based on the current GMT offset.
      */
-    customZoneName(dtzi.Bias, winZoneName, MAX_ZONE_CHAR);
+    switch (timeType) {
+        case TIME_ZONE_ID_UNKNOWN:
+            activeBias = dtzi.Bias;
+            break;
+        case TIME_ZONE_ID_STANDARD:
+            activeBias = dtzi.Bias + dtzi.StandardBias;
+            break;
+        case TIME_ZONE_ID_DAYLIGHT:
+            activeBias = dtzi.Bias + dtzi.DaylightBias;
+            break;
+        default:
+            /* should not happen */
+            return NULL;
+    }
+    customZoneName(activeBias, winZoneName, MAX_ZONE_CHAR);
     return _strdup(winZoneName);
 }
 
