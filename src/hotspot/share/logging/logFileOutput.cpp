@@ -52,8 +52,13 @@ LogFileOutput::LogFileOutput(const char* name)
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
 }
 
-bool LogFileOutput::is_same_file(const char* name) {
-  assert(strncmp(name, Prefix, strlen(Prefix)) == 0, "not a file output");
+bool LogFileOutput::matches_name(const char* name) const {
+  if (LogOutput::matches_name(name)) {
+    return true;
+  }
+  if (strncmp(name, Prefix, strlen(Prefix)) != 0) {
+    return false;
+  }
   char* file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
   bool same = os::same_files(_file_name, file_name);
   os::free(file_name);
@@ -380,7 +385,7 @@ void LogFileOutput::rotate() {
 
 char* LogFileOutput::make_file_name(const char* file_name,
                                     const char* pid_string,
-                                    const char* timestamp_string) {
+                                    const char* timestamp_string) const {
   char hostname_string[HostnameBufferSize];
   char* result = nullptr;
 

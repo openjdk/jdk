@@ -177,12 +177,7 @@ static bool normalize_output_name(const char* full_name, char* buffer, size_t le
 
 size_t LogConfiguration::find_output(const char* name) {
   for (size_t i = 0; i < _n_outputs; i++) {
-    if (strcmp(_outputs[i]->name(), name) == 0) {
-      return i;
-    }
-    if (strncmp(name, LogFileOutput::Prefix, strlen(LogFileOutput::Prefix)) == 0 &&
-        strncmp(_outputs[i]->name(), LogFileOutput::Prefix, strlen(LogFileOutput::Prefix)) == 0 &&
-        static_cast<LogFileOutput*>(_outputs[i])->is_same_file(name)) {
+    if (_outputs[i]->matches_name(name)) {
       return i;
     }
   }

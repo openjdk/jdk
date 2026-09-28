@@ -67,7 +67,7 @@ class LogFileOutput : public LogFileStreamOutput {
 
   void archive();
   void rotate();
-  char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
+  char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string) const;
 
   bool should_rotate() {
     return _file_count > 0 && _rotate_size > 0 && _current_size >= _rotate_size;
@@ -96,7 +96,7 @@ class LogFileOutput : public LogFileStreamOutput {
   }
 
   const char* cur_log_file_name();
-  bool is_same_file(const char* name);
+  virtual bool matches_name(const char* name) const;
   static const char* const Prefix;
   static void set_file_name_parameters(jlong start_time);
 };
