@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/javaThread.hpp"
@@ -61,6 +62,11 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
     StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
   }
+
+  // Processing stack frames can also enqueue elements in current thread SATB.
+  // We need to flush it here, to avoid triggering the empty SATB verification code.
+  ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
+  satb_qs.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
 
   // From this moment on, level-1 resetter is active.
   if (_active_count.compare_set(0, 1, memory_order_relaxed)) {
