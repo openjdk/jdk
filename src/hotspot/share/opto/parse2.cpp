@@ -306,14 +306,14 @@ public:
         for (uint i = 0; i < megamorphic_type_data->row_limit(); ++i) {
           ciKlass* receiver = megamorphic_type_data->receiver(i);
           if (receiver != nullptr && receiver->is_subtype_of(element_ptr->is_instptr()->instance_klass())) {
-            ciFlatArrayKlass* flat_array_klass = receiver->as_flat_array_klass();;
+            ciFlatArrayKlass* flat_array_klass = receiver->as_flat_array_klass();
             if (!flat_array_klass->is_elem_null_free()) {
-              saturated_add(flat_nullable_count, megamorphic_type_data->receiver_count(i));
+              flat_nullable_count = saturated_add(flat_nullable_count, megamorphic_type_data->receiver_count(i));
             } else {
               if (flat_array_klass->is_elem_atomic()) {
-                saturated_add(flat_nullfree_atomic_count, megamorphic_type_data->receiver_count(i));
+                flat_nullfree_atomic_count = saturated_add(flat_nullfree_atomic_count, megamorphic_type_data->receiver_count(i));
               } else {
-                saturated_add(flat_nullfree_not_atomic_count, megamorphic_type_data->receiver_count(i));
+                flat_nullfree_not_atomic_count = saturated_add(flat_nullfree_not_atomic_count, megamorphic_type_data->receiver_count(i));
               }
             }
           }
@@ -504,8 +504,8 @@ public:
         _bt = T_BOOLEAN;
       }
       Node* ld = emit_plain_load(_array, false, true);
-      _parse.push_node(_bt, ld);
       ld = _parse.record_profile_for_speculation_at_array_load(ld);
+      _parse.push_node(_bt, ld);
       return;
     }
 
@@ -542,7 +542,7 @@ public:
       int flat_and_not_flat_count = saturated_add(flat_count, not_flat_count);
       if (profile.morphism() > 0 || profile.has_major_receiver()) {
         bool not_flat_checked = false;
-        float prob = 1;
+        int count = flat_and_not_flat_count;
         create_merge_point();
         int limit = MAX2(profile.morphism(), 1);
         bool done = false;
@@ -571,16 +571,16 @@ public:
               load_from_unknown_flat_array(element_ptr);
               done = true;
             } else {
-              float p = ((float) not_flat_count) / ((float) flat_and_not_flat_count);
-              test_non_flat_array_and_emit_reference_load(p / prob);
-              prob = 1 - p;
+              float p = ((float) not_flat_count) / ((float) count);
+              test_non_flat_array_and_emit_reference_load(p);
+              count -= not_flat_count;
             }
           } else {
-            float p = ((float) profile.receiver_count(i)) / ((float) flat_and_not_flat_count);
+            float p = ((float) profile.receiver_count(i)) / ((float) count);
             ciKlass* klass = profile.receiver(i);
-            test_known_flat_array_and_emit_load_flat(klass, p / prob);
+            test_known_flat_array_and_emit_load_flat(klass, p);
+            count -= profile.receiver_count(i);
             i++;
-            prob = 1 - p;
           }
         }
         if (!done) {

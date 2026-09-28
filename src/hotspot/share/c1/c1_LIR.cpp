@@ -2284,6 +2284,9 @@ void LIR_OpProfileValueType::print_instr(outputStream* out) const {
 }
 
 void LIR_OpProfileMultipleArrayTypes::print_instr(outputStream* out) const {
+  array()->print(out);        out->print(" ");
+  tmp1()->print(out);         out->print(" ");
+  tmp2()->print(out);         out->print(" ");
 }
 
 #endif // PRODUCT

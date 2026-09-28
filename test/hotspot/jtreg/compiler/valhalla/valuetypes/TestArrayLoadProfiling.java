@@ -24,7 +24,6 @@
 /**
  * @test
  * @bug 8390866
- * @library /test/lib /
  * @requires vm.flagless
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -861,55 +860,6 @@ public class TestArrayLoadProfiling {
     static I test32Inline(I[] array) {
         return array[0];
     }
-
-    // @Test
-    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "3" })
-    // @IR(failOn = IRNode.ALLOC)
-    // public static void test28(I[] array) {
-    //     array[0].m();
-    //     array[0].m();
-    // }
-
-    // @Run(test = "test28")
-    // public static void test28Runner() {
-    //     test28(array5);
-    // }
-
-
-    // @Test
-    // // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "4" })
-    // // @IR(failOn = IRNode.ALLOC)
-    // public static I test26(I[] array) {
-    //     return array[0];
-    // }
-
-    // @Run(test = "test26")
-    // public static void test26Runner() {
-    //     // test26(array21); // not flat, nullable
-    //     // test26(array20); // flat, nullable, atomic
-    //     // test26(array19); // flat, nullable, atomic
-    //     // test26(array14); // flat, null restricted atomic
-    //     test26(array13); // flat, null restricted, non atomic
-
-    //     // test26(array14);
-    //     // test26(array17);
-    //     // test26(array18);
-    //     // test26(array15);
-    //     // test26(array16);
-    // }
-
-    // @Test
-    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
-    // @IR(failOn = IRNode.ALLOC)
-    // public static void test24(I[] array) {
-    //     array[0].m();
-    // }
-
-    // @Run(test = "test24")
-    // public static void test24Runner() {
-    //     test24(array3);
-    //     test24(array10);
-    // }
 
     interface I {
         void m();

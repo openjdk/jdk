@@ -2297,6 +2297,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 }
 
 void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int mdp_offset) {
+  assert_different_registers(recv, mdp, rscratch1, rscratch2);
+
   int base_receiver_offset                  = in_bytes(ArrayLoadData::receiver_offset(0));
   int receiver_to_count_step                = in_bytes(ArrayLoadData::receiver_count_offset(0)) - base_receiver_offset;
   int flat_nullable_count_offset            = in_bytes(ArrayLoadData::flat_nullable_count_offset());
