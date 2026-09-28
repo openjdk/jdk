@@ -144,14 +144,11 @@ class WithScopedValue {
 
             // underlying flock should be closed and fork should fail to start a thread
             StructuredTaskScope<Void, Void, ExecutionException> scope = box.scope;
-            AtomicBoolean ran = new AtomicBoolean();
-            Subtask<Void> subtask = scope.fork(() -> {
-                ran.set(true);
-                return null;
-            });
-            scope.join();
-            assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
-            assertFalse(ran.get());
+            var executed = new AtomicBoolean();
+            assertThrows(IllegalStateException.class,
+                         () -> scope.fork(() -> executed.set(true)));
+            assertThrows(ExecutionException.class, scope::join);
+            assertFalse(executed.get());
         } finally {
             StructuredTaskScope<Void, Void, ExecutionException> scope = box.scope;
             if (scope != null) {
