@@ -5122,8 +5122,8 @@ class StubGenerator: public StubCodeGenerator {
     Register state1 = c_rarg1;
 
     // use r3..r17,r19..r28 to keep a0..a24.
-    // a0..a24 are respective locals from SHA3.java
     RegSetIterator<Register> regs = (RegSet::range(r0, r28) - r18_tls).begin();
+    // a0..a24 are respective locals from SHA3.java
     Register a[25];
     Register tmp0 = *regs, tmp1 = *++regs, tmp2 = *++regs;
     for (int i = 0; i < 25; i++) {
@@ -9098,8 +9098,8 @@ class StubGenerator: public StubCodeGenerator {
     Register limit         = c_rarg4;
 
     // use r3..r17,r19..r28 to keep a0..a24.
-    // a0..a24 are respective locals from SHA3.java
     RegSetIterator<Register> regs = (RegSet::range(r0, r28) - r18_tls).begin();
+    // a0..a24 are respective locals from SHA3.java
     Register a[25];
     Register tmp1 = *regs, tmp2 = *++regs, tmp0 = *++regs, tmp3 = lr;
     for (int i = 0; i < 25; i++) {
