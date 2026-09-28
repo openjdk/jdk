@@ -37,15 +37,15 @@ class AllocationRequest {
   :_word_size(word_size), _numa_id(numa_id) {}
 
 public:
-  static constexpr int AnyNumaId = -1;
+  static constexpr int InvalidNumaId = -1;
 
   static AllocationRequest no_allocation() {
-    return AllocationRequest(0, AnyNumaId);
+    return AllocationRequest(0, InvalidNumaId);
   }
 
   static AllocationRequest for_allocation(size_t word_size) {
     assert(word_size != 0, "An allocation should always be requested with this operation.");
-    return AllocationRequest(word_size, AnyNumaId);
+    return AllocationRequest(word_size, InvalidNumaId);
   }
 
   static AllocationRequest for_numa_allocation(size_t word_size, int numa_id) {
@@ -54,10 +54,10 @@ public:
     return AllocationRequest(word_size, numa_id);
   }
 
- size_t word_size() const {return _word_size;}
- int numa_id() const {return _numa_id;}
- bool is_empty() const {return _word_size == 0;}
- bool has_numa_id() const {return _numa_id != AnyNumaId;}
+ size_t word_size() const { return _word_size; }
+ int numa_id() const { return _numa_id; }
+ bool is_empty() const { return _word_size == 0; }
+ bool has_numa_id() const { return _numa_id != InvalidNumaId; }
 };
 
 #endif //SHARE_GC_SHARED_ALLOCATIONREQUEST_HPP

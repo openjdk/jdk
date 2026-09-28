@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1COLLECTEDHEAP_HPP
 #define SHARE_GC_G1_G1COLLECTEDHEAP_HPP
 
+#include "gc/g1/g1AllocationRequest.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardSet.hpp"
@@ -44,7 +45,6 @@
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/g1YoungRegions.hpp"
-#include "gc/shared/allocationRequest.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -452,15 +452,14 @@ private:
   // First-level mutator allocation attempt: try to allocate out of
   // the mutator alloc region without taking the Heap_lock. This
   // should only be used for non-humongous allocations.
-  inline HeapWord* attempt_allocation(size_t min_word_size,
-                                      size_t desired_word_size,
+  inline HeapWord* attempt_allocation(G1AllocationRequest request,
                                       size_t* actual_word_size,
                                       bool allow_gc);
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause if allow_gc is set. This should only be used for non-humongous
   // allocations.
-  HeapWord* attempt_allocation_slow(AllocationRequest request, bool allow_gc);
+  HeapWord* attempt_allocation_slow(G1AllocationRequest request, bool allow_gc);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
