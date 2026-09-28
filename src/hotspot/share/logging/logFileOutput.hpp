@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ class LogFileOutput : public LogFileStreamOutput {
   }
 
   const char* cur_log_file_name();
+  bool is_same_file(const char* name);
   static const char* const Prefix;
   static void set_file_name_parameters(jlong start_time);
 };

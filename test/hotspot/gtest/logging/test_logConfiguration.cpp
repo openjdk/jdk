@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,6 +548,44 @@ TEST_VM_F(LogConfigurationTest, output_name_normalization) {
 
   // Remove the extra log file created
   delete_file("file=leaf_file_name");
+}
+
+TEST_VM_F(LogConfigurationTest, equivalent_file_paths) {
+  const char* separator = os::file_separator();
+  const char* leaf = strrchr(TestLogFileName, separator[0]);
+  ASSERT_NE(nullptr, leaf);
+
+  char alias[JVM_MAXPATHLEN];
+  int ret = jio_snprintf(alias, sizeof(alias), "%.*s.%s%s",
+                         static_cast<int>(leaf - TestLogFileName + 1),
+                         TestLogFileName, separator, leaf + 1);
+  ASSERT_GT(ret, 0);
+  ASSERT_LT(static_cast<size_t>(ret), sizeof(alias));
+
+  set_log_config(TestLogFileName, "gc=info");
+  set_log_config(alias, "safepoint=info");
+  EXPECT_TRUE(is_described("#2: "));
+  EXPECT_FALSE(is_described("#3: "));
+}
+
+TEST_VM_F(LogConfigurationTest, equivalent_placeholder_paths) {
+  char pattern[JVM_MAXPATHLEN];
+  char expanded[JVM_MAXPATHLEN];
+  int pattern_len = jio_snprintf(pattern, sizeof(pattern), "%s.%%p", TestLogFileName);
+  int expanded_len = jio_snprintf(expanded, sizeof(expanded), "%s.%d",
+                                  TestLogFileName, os::current_process_id());
+  ASSERT_GT(pattern_len, 0);
+  ASSERT_LT(static_cast<size_t>(pattern_len), sizeof(pattern));
+  ASSERT_GT(expanded_len, 0);
+  ASSERT_LT(static_cast<size_t>(expanded_len), sizeof(expanded));
+
+  set_log_config(pattern, "gc=info");
+  set_log_config(expanded, "safepoint=info");
+  EXPECT_TRUE(is_described("#2: "));
+  EXPECT_FALSE(is_described("#3: "));
+
+  set_log_config(pattern, "all=off");
+  delete_file(expanded);
 }
 
 static size_t count_occurrences(const char* haystack, const char* needle) {

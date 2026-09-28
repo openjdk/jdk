@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,11 @@ static bool normalize_output_name(const char* full_name, char* buffer, size_t le
 size_t LogConfiguration::find_output(const char* name) {
   for (size_t i = 0; i < _n_outputs; i++) {
     if (strcmp(_outputs[i]->name(), name) == 0) {
+      return i;
+    }
+    if (strncmp(name, LogFileOutput::Prefix, strlen(LogFileOutput::Prefix)) == 0 &&
+        strncmp(_outputs[i]->name(), LogFileOutput::Prefix, strlen(LogFileOutput::Prefix)) == 0 &&
+        static_cast<LogFileOutput*>(_outputs[i])->is_same_file(name)) {
       return i;
     }
   }
