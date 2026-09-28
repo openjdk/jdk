@@ -1693,10 +1693,18 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
-    shld(vtemp, vtemp, Klass::SECONDARY_SUPERS_TABLE_MASK - bit);
+    int shift = Klass::SECONDARY_SUPERS_TABLE_MASK - bit;
+    shld(vtemp, vtemp, shift);
     cnt(vtemp, T8B, vtemp);
-    addv(vtemp, T8B, vtemp);
-    fmovd(r_array_index, vtemp);
+    // If the left shift is so great that all bytes below the most
+    // significant are zero, don't add across all byte lanes, just use
+    // the top byte.
+    if (BitsPerLong - shift <= BitsPerByte) {
+      umov(r_array_index, vtemp, B, BytesPerLong - 1);
+    } else {
+      addv(vtemp, T8B, vtemp);
+      umov(r_array_index, vtemp, B, 0);
+    }
   } else {
     mov(r_array_index, (u1)1);
   }
