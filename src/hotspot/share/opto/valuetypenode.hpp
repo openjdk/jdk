@@ -201,6 +201,10 @@ public:
 
   bool is_mismatched() const;
 
+  bool has_non_debug_use(const Node* n) const {
+    return find_edge(n) <= TypeFunc::Parms + 1;
+  }
+
 private:
   LoadFlatNode(ciValueKlass* vk, const TypeTuple* type, bool null_free, DecoratorSet decorators)
     : SafePointNode(TypeFunc::Parms + 2, nullptr, TypePtr::BOTTOM), _vk(vk), _type(type), _null_free(null_free), _decorators(decorators) {
@@ -241,6 +245,10 @@ public:
   const Type* Value(PhaseGVN* phase) const override;
 
   bool is_mismatched() const;
+
+  bool has_non_debug_use(const Node* n) const {
+    return find_edge(n) <= TypeFunc::Parms + 2;
+  }
 
 private:
   StoreFlatNode(bool null_free, DecoratorSet decorators)

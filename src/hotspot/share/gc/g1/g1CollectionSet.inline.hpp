@@ -27,13 +27,13 @@
 
 #include "gc/g1/g1CollectionSet.hpp"
 
-#include "gc/g1/g1HeapRegionRemSet.hpp"
+#include "gc/g1/g1CardSetGroup.inline.hpp"
 
 template <class CardOrRangeVisitor>
 inline void G1CollectionSet::merge_collection_set_card_set_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
   uint offset = _selected_groups_inc_part_start;
   if (offset == 0) {
-    G1HeapRegionRemSet::iterate_for_merge(_g1h->young_regions_card_set_group()->card_set(), cl);
+    _g1h->young_regions_card_set_group()->iterate_for_merge(cl);
   }
 
   const uint next_selected_group_increment = num_selected_groups_in_increment();
@@ -44,7 +44,7 @@ inline void G1CollectionSet::merge_collection_set_card_set_groups(CardOrRangeVis
   uint start_pos = (uint)((uint64_t)worker_id * next_selected_group_increment / num_workers);
   uint cur_pos = start_pos;
   do {
-    G1HeapRegionRemSet::iterate_for_merge(_selected_groups.at(offset + cur_pos)->card_set(), cl);
+    _selected_groups.at(offset + cur_pos)->iterate_for_merge(cl);
     cur_pos++;
     if (cur_pos == next_selected_group_increment) {
       cur_pos = 0;
