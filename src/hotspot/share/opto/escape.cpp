@@ -2427,6 +2427,8 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         // For scalarized argument/return: process_call_arguments() adds an edge between a call projection for a field
         // and the argument input to the call for that field. An edge is added between the projection for the returned
         // buffer and the call.
+        // For incompatible argument/return (only one of them is scalarized, or their types do not match): the call is
+        // conservatively assumed to make argument and return globally escape.
         if (returns_an_argument(call) && !has_incompatible_argument_return(call) && !call->tf()->returns_value_type_as_fields()) {
           // returns non scalarized argument
           add_local_var(call, PointsToNode::ArgEscape);
