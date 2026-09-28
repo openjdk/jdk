@@ -621,7 +621,6 @@ public final class SoftVoice extends VoiceStatus {
                             synthesizer.getFormat().getSampleRate());
                     osc_stream = resampler;
                 } catch (IOException e) {
-                    osc_stream = null;
                     //e.printStackTrace();
                 }
             } else {
