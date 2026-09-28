@@ -804,7 +804,8 @@ private:
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
     ShenandoahHeapRegion* humongous_start_cache = nullptr;
 
-    // Cancellation of update is low priority because we will soon eliminate degeneration behaviors.
+    // A planned enhancement to remove degenerated cycles (https://bugs.openjdk.org/browse/JDK-8387790) will reduce
+    // the value of quickly cancelling GC. As implemented, we check for cancellation only once per assignment.
     while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
       // Keep grabbing next work chunk to process until finished, or asked to yield
       ShenandoahHeapRegion* r = assignment._r;
@@ -823,7 +824,7 @@ private:
         if (is_mixed) {
           if (r->is_humongous()) {
             // Need to examine both dirty and clean cards during mixed evac.
-            r->oop_iterate_humongous_slice_all(&cl,start_of_range, assignment._chunk_size, humongous_start_cache);
+            r->oop_iterate_humongous_slice_all(&cl, start_of_range, assignment._chunk_size, humongous_start_cache);
           } else {
             // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
             // and filled.  This will use mark bits to find objects that need to be updated.

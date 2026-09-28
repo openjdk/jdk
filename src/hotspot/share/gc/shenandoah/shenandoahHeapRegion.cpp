@@ -520,7 +520,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* 
   assert(is_humongous(), "only humongous region here");
   oop obj;
   if ((humongous_start_cache == nullptr) || (humongous_start_cache->bottom() > this->bottom()) ||
-      (humongous_start_cache->bottom() + obj->size() <= this->bottom())) {
+      (humongous_start_cache->bottom() + (cast_to_oop(humongous_start_cache->bottom()))->size() <= this->bottom())) {
     humongous_start_cache = humongous_start_region();
   }
   obj = cast_to_oop(humongous_start_cache->bottom());
@@ -551,7 +551,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl
   assert(is_humongous(), "only humongous region here");
   oop obj;
   if ((humongous_start_cache == nullptr) || (humongous_start_cache->bottom() > this->bottom()) ||
-      (humongous_start_cache->bottom() + obj->size() <= this->bottom())) {
+      (humongous_start_cache->bottom() + (cast_to_oop(humongous_start_cache->bottom()))->size() <= this->bottom())) {
     humongous_start_cache = humongous_start_region();
   }
   obj = cast_to_oop(humongous_start_cache->bottom());

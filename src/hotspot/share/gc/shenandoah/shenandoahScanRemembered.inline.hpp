@@ -225,10 +225,8 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
             assert(obj == cast_to_oop(p), "Inconsistency detected");
             if (use_write_table) {
               // The head card may have become dirty after the worker responsible for the preceding slice passed it.
-              // This may result in redundant scanning of object p. However, the redundant scanning is necessary because
-              // we cannot distinguish when the card became dirty compared to when preceding card was processed.  See
-              // https://bugs.openjdk.org/browse/JDK-8389846. The redundant scanning is necessary. It fixes a subtle bug that had
-              // plagued GenShen for over two years.
+              // Redundant scanning is necessary because we cannot distinguish when the card became dirty compared to
+              // when preceding card was processed.  See https://bugs.openjdk.org/browse/JDK-8389846.
               p += obj->oop_iterate_size(cl);
             } else {
               // The stable read table guarantees that the worker processing
@@ -348,7 +346,7 @@ template <typename ClosureType>
 inline void
 ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, size_t start_offset, size_t clusters,
                                                HeapWord *end_of_range, ClosureType *cl, bool use_write_table,
-                                               uint worker_id,  ShenandoahHeapRegion*& humongous_start_cache) {
+                                               uint worker_id, ShenandoahHeapRegion*& humongous_start_cache) {
 
   // This is called only for young gen collection, when we scan old gen regions
   assert(region->is_old(), "Expecting an old region");
@@ -426,14 +424,19 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
       // Someone else claimed this region. I'll iterate and try to claim a different region.
     } else {
       // Misfit. Try to advance cursor to next OLD region.
-      while (region_index < _heap->num_regions() &&
-             _heap->region_affiliation(region_index) != OLD_GENERATION) {
+      while (region_index < _heap->num_regions() && _heap->region_affiliation(region_index) != OLD_GENERATION) {
         region_index++;
       }
       size_t skip_index = (region_index << ShenandoahHeapRegion::region_size_words_shift()) >> _chunk_shift;
       // Multiple worker threads may be running this same loop. If some other thread overwrites _index before I do,
       // compare_set() will fail, but I don't care as long as the value of _index is updated by someone.
       _index.compare_set(cur_index, skip_index, memory_order_relaxed);
+#ifdef ASSERT
+      for (size_t i = cur_index; i < skip_index; i++) {
+        region_index = (i << _chunk_shift) >> ShenandoahHeapRegion::region_size_words_shift();
+        assert(_heap->region_affiliation(region_index) != OLD_GENERATION, "affiliations do not change during chunk iteration");
+      }
+#endif
     }
   }
   // We break if _index is greater than or equal to _total_chunks.  All scanning is done.
