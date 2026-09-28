@@ -4155,7 +4155,7 @@ static float estimate_path_freq( Node *n ) {
         n = n->in(0);
         continue;
       }
-      return data->as_CounterData()->count()/FreqCountInvocations;
+      return data->as_CounterData()->count();
     }
     // See if there's a gating IF test
     Node *n_c = n->in(0);

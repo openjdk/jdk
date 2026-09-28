@@ -3125,7 +3125,7 @@ void Unique_Node_List::remove(Node* n) {
 
 //-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from worklist
-void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
+void Unique_Node_List::remove_useless_nodes(const VectorSet& useful) {
   for (uint i = 0; i < size(); ++i) {
     Node *n = at(i);
     assert( n != nullptr, "Did not expect null entries in worklist");
