@@ -337,23 +337,33 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   return nullptr;
 }
 
-//------------------------------sub--------------------------------------------
-// A subtract node differences it's two inputs.
-const Type *SubINode::sub( const Type *t1, const Type *t2 ) const {
-  const TypeInt *r0 = t1->is_int(); // Handy access
-  const TypeInt *r1 = t2->is_int();
-  int32_t lo = java_subtract(r0->_lo, r1->_hi);
-  int32_t hi = java_subtract(r0->_hi, r1->_lo);
+// A subtract node computes the difference of its two inputs.
+const Type* SubINode::sub(const Type* t1, const Type* t2) const {
+  const TypeInt* range0 = t1->is_int();
+  const TypeInt* range1 = t2->is_int();
 
-  // We next check for 32-bit overflow.
-  // If that happens, we just assume all integers are possible.
-  if( (((r0->_lo ^ r1->_hi) >= 0) ||    // lo ends have same signs OR
-       ((r0->_lo ^      lo) >= 0)) &&   // lo results have same signs AND
-      (((r0->_hi ^ r1->_lo) >= 0) ||    // hi ends have same signs OR
-       ((r0->_hi ^      hi) >= 0)) )    // hi results have same signs
-    return TypeInt::make(lo,hi,MAX2(r0->_widen,r1->_widen));
-  else                          // Overflow; assume all integers
-    return TypeInt::INT;
+  jlong lo_sub = (jlong)range0->_lo - (jlong)range1->_hi;
+  jlong hi_sub = (jlong)range0->_hi - (jlong)range1->_lo;
+
+  const jlong jint_wrap_offset = (jlong)max_juint + 1;
+
+  if (hi_sub < min_jint) {
+    // The entire range underflows.
+    lo_sub += jint_wrap_offset;
+    hi_sub += jint_wrap_offset;
+  } else if (lo_sub > max_jint) {
+    // The entire range overflows.
+    lo_sub -= jint_wrap_offset;
+    hi_sub -= jint_wrap_offset;
+  } else if (lo_sub < min_jint || hi_sub > max_jint) {
+    // The range crosses one or both jint boundaries.
+    lo_sub = min_jint;
+    hi_sub = max_jint;
+  }
+
+  return TypeInt::make(checked_cast<jint>(lo_sub),
+                       checked_cast<jint>(hi_sub),
+                       MAX2(range0->_widen, range1->_widen));
 }
 
 //=============================================================================

@@ -1865,21 +1865,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     }
 
     /**
-     * Gets the state of the flag which indicates if the old Windows
-     * look and feel should be rendered. This flag is used by the
-     * component UI delegates as a hint to determine which style the component
-     * should be rendered.
-     *
-     * @return true if Windows 95 and Windows NT 4 look and feel should
-     *         be rendered
-     * @since 1.4
-     */
-    public static boolean isClassicWindows() {
-        // we could probably remove the whole method
-        return false;
-    }
-
-    /**
      * <p>
      * Invoked when the user attempts an invalid operation,
      * such as pasting into an uneditable <code>JTextField</code>
