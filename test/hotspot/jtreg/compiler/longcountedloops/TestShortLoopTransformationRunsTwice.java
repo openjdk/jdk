@@ -25,6 +25,7 @@
  * @test
  * @bug 8391917
  * @run main/othervm -XX:-BackgroundCompilation ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.longcountedloops;

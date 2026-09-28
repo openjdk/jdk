@@ -1289,6 +1289,13 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     register_new_node(new_limit, predicates.entry());
   } else {
     assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");
+    // If an OpaqueLoopInitNode is shared by several template assertion predicates, the code that updates them (below)
+    // will encounter it several times. Updating it more than once introduces a dead loop:
+    // 1- current OpaqueLoopInitNode is replaced by (AddI (OpaqueLoopInitNode ..)) with a new OpaqueLoopInitNode
+    // 2- The new OpaqueLoopInitNode in (AddI (OpaqueLoopInitNode ..)) is encountered again and replaced by the same
+    //    (AddI (OpaqueLoopInitNode ..)) resulting in a dead loop
+    // new_nodes is set so the new OpaqueLoopInitNode is ignored by UpdateInitForTemplateAssertionPredicates so step 2
+    // doesn't happen
     uint new_nodes = C->unique();
     PredicateIterator predicate_iterator(entry_control);
     Node* new_init = new_assertion_predicate_opaque_init(entry_control, init, int_zero);

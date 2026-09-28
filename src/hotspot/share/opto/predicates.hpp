@@ -1326,7 +1326,7 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
 class UpdateInitForTemplateAssertionPredicates : public PredicateVisitor {
   Node* const _new_init;
   PhaseIdealLoop* const _phase;
-  uint _new_nodes;
+  uint _new_nodes; // only applied to nodes created before Compile::unique() was captured in _new_nodes
 
 public:
   UpdateInitForTemplateAssertionPredicates(Node* const new_init, PhaseIdealLoop* phase, uint new_nodes)
