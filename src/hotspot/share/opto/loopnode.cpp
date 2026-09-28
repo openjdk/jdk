@@ -4603,6 +4603,7 @@ bool PhaseIdealLoop::replace_lagging_index(IdealLoopTree* loop, PhiNode* phi2) {
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree* loop) {
+  ResourceMark rm;
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode* cl = loop->_head->as_CountedLoop();
   if (!cl->is_valid_counted_loop(T_INT)) {
