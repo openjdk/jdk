@@ -357,9 +357,7 @@ public:
   // The typical emplace operation. Try to emplace an entry at either a location where a matching
   // entry has resided, an empty bucket, or a tombstone. Users have to emplace the entry themselves
   // in emplace_entry, which takes a bool denoting whether the bucket is a matching entry or does
-  // not contain an entry, and a pointer to that bucket. Taking tombstones into consideration
-  // imposes a noticeable cost, so we may introduce emplace_ignore_tombstones, which does not
-  // consider tombstones as a valid insertion point.
+  // not contain an entry, and a pointer to that bucket.
   template <class Token, auto TOKEN_HASH_MATCH, class EmplaceEntry>
   EmplaceResult emplace(uint64_t hash, const Token& token, EmplaceEntry emplace_entry) {
     bool must_not_insert_new = false;
