@@ -27,6 +27,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHNUMBERSEQ_HPP
 
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 
 // HDR sequence stores the low-resolution high-dynamic-range values.
@@ -46,7 +47,7 @@ private:
     MagBuckets = 56,
     MagMinimum = -32
   };
-  int** _hdr; // Lazily allocated in add().
+  int** _hdr; // Lazily allocated on first add() and freed in the destructor.
   double _minimum;
   NONCOPYABLE(HdrSeq);
 
