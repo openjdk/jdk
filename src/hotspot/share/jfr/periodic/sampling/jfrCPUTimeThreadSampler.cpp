@@ -29,6 +29,7 @@
 #if defined(LINUX)
 #include "code/codeCache.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -48,8 +49,6 @@
 #include "utilities/ticks.hpp"
 
 static const int64_t RECOMPUTE_INTERVAL_MS = 100;
-
-static bool _native_stack_enabled = true;  // FIXME
 
 static bool is_excluded(JavaThread* jt) {
   return jt->is_hidden_from_external_view() ||
@@ -242,7 +241,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
 
   void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl, JfrTicks& now);
 
-  u4 walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs);
+  u4 walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs, u4 max_frames);
 
   // process the queues for all threads that are in native state (and requested to be processed)
   void stackwalk_threads_in_native();
@@ -604,12 +603,14 @@ static bool check_state(JavaThread* thread) {
 
 // Walks the native part of the stack until the topmost Java frame
 // and collects PC addresses of the native frames to the provided array.
-u4 JfrCPUSamplerThread::walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs) {
+u4 JfrCPUSamplerThread::walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs, u4 max_frames) {
+  assert(max_frames <= MAX_NATIVE_STACK_DEPTH, "invariant");
+
   frame f = os::fetch_frame_from_context(ucontext);
   const intptr_t* const last_java_sp = jt->last_Java_sp();
 
   u4 count = 0;
-  while (count < JfrCPUTimeSampleRequest::MAX_NATIVE_FRAMES) {
+  while (count < max_frames) {
     const address pc = f.pc();
     if (pc == nullptr || CodeCache::contains(pc)) {
       break; // reached generated Java code
@@ -655,8 +656,9 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
   sample_thread(request._request, context, jt, tl, now);
 
-  if (_native_stack_enabled && jt->thread_state() == _thread_in_native) {
-    request._native_pc_count = walk_native_stack(context, jt, request._native_pcs);
+  u4 native_stack_depth = JfrOptionSet::native_stack_depth();
+  if (native_stack_depth > 0 && jt->thread_state() == _thread_in_native) {
+    request._native_pc_count = walk_native_stack(context, jt, request._native_pcs, native_stack_depth);
   }
 
   const bool was_empty = queue.is_empty();

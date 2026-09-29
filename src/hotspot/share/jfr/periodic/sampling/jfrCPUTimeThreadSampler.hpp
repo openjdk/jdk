@@ -36,13 +36,11 @@ class JavaThread;
 #include "jfr/utilities/jfrTypes.hpp"
 
 struct JfrCPUTimeSampleRequest {
-  static const u4 MAX_NATIVE_FRAMES = 128;
-
   JfrSampleRequest _request;
   Tickspan _cpu_time_period;
   u4 _native_pc_count;
   // unused array elements are not stored in JfrCPUTimeTraceQueue
-  address _native_pcs[MAX_NATIVE_FRAMES];
+  address _native_pcs[MAX_NATIVE_STACK_DEPTH];
 
   JfrCPUTimeSampleRequest() : _native_pc_count(0) {}
 

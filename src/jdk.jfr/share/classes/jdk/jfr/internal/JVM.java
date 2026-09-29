@@ -347,6 +347,16 @@ public final class JVM {
     public static native void setStackDepth(int depth) throws IllegalArgumentException, IllegalStateException;
 
     /**
+     * Set the maximum number of native frames recorded in stack traces.
+     *
+     * @param depth
+     *
+     * @throws IllegalArgumentException if not within a valid range
+     * @throws IllegalStateException if depth can't be changed
+     */
+    public static native void setNativeStackDepth(int depth) throws IllegalArgumentException, IllegalStateException;
+
+    /**
      * Turn on stack trace for an event
      *
      * @param eventTypeId the event id

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,8 @@ void JNICALL jfr_set_method_sampling_period(JNIEnv* env, jclass jvm, jlong type,
 void JNICALL jfr_set_output(JNIEnv* env, jclass jvm, jstring path);
 
 void JNICALL jfr_set_stack_depth(JNIEnv* env, jclass jvm, jint depth);
+
+void JNICALL jfr_set_native_stack_depth(JNIEnv* env, jclass jvm, jint depth);
 
 void JNICALL jfr_set_stacktrace_enabled(JNIEnv* env, jclass jvm, jlong event_type_id, jboolean enabled);
 

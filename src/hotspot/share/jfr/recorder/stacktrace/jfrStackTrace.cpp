@@ -150,13 +150,14 @@ void JfrStackTrace::record_native_frames(const address* pcs, u4 count) {
   if (_hash == 0) {
     _hash = 1;
   }
-  for (u4 i = 0; i < count && _count < _max_frames; i++) {
+  for (u4 i = 0; i < count; i++) {
     const traceid pc = reinterpret_cast<traceid>(pcs[i]);
     _hash = (_hash * 31) + pc;
     _hash = (_hash * 31) + JfrStackFrame::FRAME_NON_JAVA;
     _frames->append(JfrStackFrame(pc, 0, JfrStackFrame::FRAME_NON_JAVA, nullptr));
     _count++;
   }
+  _max_frames += count; // native frames are excluded from stackdepth
 }
 
 void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request) {

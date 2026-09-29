@@ -38,29 +38,29 @@ import jdk.test.lib.jfr.Events;
 /*
  * @test
  * @summary Tests that jdk.CPUTimeSample records native frames when the
- *          nativeStack setting is enabled, and does not record them otherwise
+ *          nativestackdepth option is set, and does not record them otherwise
  * @requires vm.hasJFR & os.family == "linux"
  * @library /test/lib
- * @run main/othervm jdk.jfr.event.profiling.TestCPUTimeSampleNativeStack
+ * @run main/othervm jdk.jfr.event.profiling.TestCPUTimeSampleNativeStack 0
+ * @run main/othervm -XX:FlightRecorderOptions:nativestackdepth=2 jdk.jfr.event.profiling.TestCPUTimeSampleNativeStack 2
+ * @run main/othervm -XX:FlightRecorderOptions:nativestackdepth=64 jdk.jfr.event.profiling.TestCPUTimeSampleNativeStack 64
  */
 public class TestCPUTimeSampleNativeStack {
 
     private static final String EVENT_NAME = EventNames.CPUTimeSample;
     private static final long RECORDING_DURATION_MS = 2000;
 
-    private static volatile boolean alive = true;
-
     public static void main(String[] args) throws Exception {
         Thread worker = new Thread(TestCPUTimeSampleNativeStack::nativeWorkload, "NativeWorker");
         worker.setDaemon(true);
         worker.start();
 
-        try {
-            testWithNativeStack();
-            testWithoutNativeStack();
-        } finally {
-            alive = false;
-        }
+        List<RecordedEvent> events = record();
+
+        worker.interrupt();
+
+        int nativeStackDepth = args.length > 0 ? Integer.parseInt(args[0]) : 0;
+        checkEvents(events, nativeStackDepth);
     }
 
     // Spend CPU time inside libzip/libz
@@ -68,7 +68,7 @@ public class TestCPUTimeSampleNativeStack {
         byte[] input = new byte[64 * 1024];
         byte[] output = new byte[128 * 1024];
         try (Deflater deflater = new Deflater()) {
-            while (alive) {
+            while (!Thread.currentThread().isInterrupted()) {
                 deflater.reset();
                 deflater.setInput(input);
                 deflater.finish();
@@ -77,11 +77,9 @@ public class TestCPUTimeSampleNativeStack {
         }
     }
 
-    private static List<RecordedEvent> record(boolean nativeStack) throws Exception {
+    private static List<RecordedEvent> record() throws Exception {
         try (Recording r = new Recording()) {
-            r.enable(EVENT_NAME)
-                    .with("throttle", "1ms")
-                    .with("nativeStack", String.valueOf(nativeStack));
+            r.enable(EVENT_NAME).with("throttle", "1ms");
             r.start();
             Thread.sleep(RECORDING_DURATION_MS);
             r.stop();
@@ -89,8 +87,7 @@ public class TestCPUTimeSampleNativeStack {
         }
     }
 
-    private static void testWithNativeStack() throws Exception {
-        List<RecordedEvent> events = record(true);
+    private static void checkEvents(List<RecordedEvent> events, int nativeStackDepth) throws Exception {
         Asserts.assertFalse(events.isEmpty(), "No events recorded");
 
         int eventsWithNativeFrames = 0;
@@ -104,7 +101,7 @@ public class TestCPUTimeSampleNativeStack {
 
             List<RecordedFrame> frames = st.getFrames();
             boolean hasJavaFrames = false;
-            boolean hasNativeFrames = false;
+            int nativeFrames = 0;
             boolean foundWorkloadMethod = false;
             for (RecordedFrame frame : frames) {
                 if (frame.isJavaFrame()) {
@@ -113,7 +110,7 @@ public class TestCPUTimeSampleNativeStack {
                     Asserts.assertNull(frame.getValue("nativeFunction"), "Java frames never have nativeFunction");
                     foundWorkloadMethod |= "nativeWorkload".equals(frame.getMethod().getName());
                 } else {
-                    hasNativeFrames = true;
+                    nativeFrames++;
                     Asserts.assertFalse(hasJavaFrames, "Native frames must precede Java frames");
                     Asserts.assertNull(frame.getMethod(), "Native frames have no method");
                     Asserts.assertNotNull(frame.getValue("nativeFunction"), "Native frames always have nativeFunction");
@@ -122,28 +119,16 @@ public class TestCPUTimeSampleNativeStack {
                 }
             }
 
-            if (hasNativeFrames) {
+            Asserts.assertLessThanOrEqual(nativeFrames, nativeStackDepth, "Too many native frames");
+            if (nativeFrames > 0) {
                 eventsWithNativeFrames++;
                 Asserts.assertTrue(foundWorkloadMethod, "Unexpected Java stack trace");
             }
         }
 
-        Asserts.assertGreaterThan(eventsWithNativeFrames, 0, "No events with native frames");
-        Asserts.assertTrue(resolvedSymbol, "No resolved symbols");
-    }
-
-    private static void testWithoutNativeStack() throws Exception {
-        List<RecordedEvent> events = record(false);
-        Asserts.assertFalse(events.isEmpty(), "No events recorded");
-
-        for (RecordedEvent e : events) {
-            RecordedStackTrace st = e.getStackTrace();
-            if (st == null) {
-                continue;
-            }
-            for (RecordedFrame frame : st.getFrames()) {
-                Asserts.assertTrue(frame.isJavaFrame(), "No native frames expected: " + frame);
-            }
+        if (nativeStackDepth > 0) {
+            Asserts.assertGreaterThan(eventsWithNativeFrames, 0, "No events with native frames");
+            Asserts.assertTrue(resolvedSymbol, "No resolved symbols");
         }
     }
 
