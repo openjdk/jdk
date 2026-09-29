@@ -2284,7 +2284,10 @@ Node* PhiNode::split_through_mergemem(PhaseIterGVN& igvn) {
       if (input == nullptr) {
         continue;
       }
-      set_req_X(input_idx, input->base_memory(), &igvn);
+
+      Node* new_input = input->base_memory();
+      assert(new_input != input, "MergeMemNode cannot reference itself");
+      set_req_X(input_idx, new_input, &igvn);
     }
     return this;
   }
@@ -2708,7 +2711,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           continue;
         }
 
-        set_req_X(input_idx, input->memory_at(alias_idx), igvn);
+        Node* new_input = input->memory_at(alias_idx);
+        assert(new_input != input, "MergeMemNode cannot reference itself");
+        set_req_X(input_idx, new_input, igvn);
         progress = this;
       }
     }
