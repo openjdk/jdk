@@ -430,7 +430,7 @@ public class StandardGlyphVector extends GlyphVector {
 
     // relative to gv origin
     public Shape getGlyphOutline(int ix) {
-        if (ix < 0 || ix > glyphs.length) {
+        if (ix < 0 || ix >= glyphs.length) {
             throw new IndexOutOfBoundsException("ix = " + ix);
         }
 
@@ -439,7 +439,7 @@ public class StandardGlyphVector extends GlyphVector {
 
     // relative to gv origin offset by x, y
     public Shape getGlyphOutline(int ix, float x, float y) {
-        if (ix < 0 || ix > glyphs.length) {
+        if (ix < 0 || ix >= glyphs.length) {
             throw new IndexOutOfBoundsException("ix = " + ix);
         }
 
@@ -447,7 +447,7 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     public Point2D getGlyphPosition(int ix) {
-        if (ix < 0 || ix > glyphs.length) {
+        if (ix < 0 || ix >= glyphs.length) {
             throw new IndexOutOfBoundsException("ix = " + ix);
         }
 
@@ -458,7 +458,7 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     public void setGlyphPosition(int ix, Point2D pos) {
-        if (ix < 0 || ix > glyphs.length) {
+        if (ix < 0 || ix >= glyphs.length) {
             throw new IndexOutOfBoundsException("ix = " + ix);
         }
 

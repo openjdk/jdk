@@ -33,28 +33,29 @@ import java.awt.geom.Point2D;
 
 public class GlyphVectorIOBE {
 
-   static Font font = new Font(Font.DIALOG, Font.PLAIN, 12);
-   static FontRenderContext frc = new FontRenderContext(null, true, true);
-   static GlyphVector gv = font.createGlyphVector(frc, "A");
+    static Font font = new Font(Font.DIALOG, Font.PLAIN, 12);
+    static FontRenderContext frc = new FontRenderContext(null, true, true);
+    static GlyphVector gv = font.createGlyphVector(frc, "A");
 
-   public static void main(String[] args) {
-      runTests(-1);
-      runTests(2);
-      runTests(Integer.MIN_VALUE);
-   }
+    public static void main(String[] args) {
+        runTests(-1);
+        runTests(1);
+        runTests(2);
+        runTests(Integer.MIN_VALUE);
+    }
 
-   static void runTests(int ix) {
-      test(() -> gv.getGlyphPosition(ix));
-      test(() -> gv.setGlyphPosition(ix, new Point2D.Float()));
-      test(() -> gv.getGlyphOutline(ix));
-      test(() -> gv.getGlyphOutline(ix, 0f, 0f));
-   }
+    static void runTests(int ix) {
+        test(() -> gv.getGlyphPosition(ix));
+        test(() -> gv.setGlyphPosition(ix, new Point2D.Float()));
+        test(() -> gv.getGlyphOutline(ix));
+        test(() -> gv.getGlyphOutline(ix, 0f, 0f));
+    }
 
-   static void test(Runnable r) {
-       try {
-           r.run();
-           throw new RuntimeException("Test failed for " + r);
-      } catch (IndexOutOfBoundsException e) {
-      }
-   }
+    static void test(Runnable r) {
+        try {
+            r.run();
+            throw new RuntimeException("Test failed for " + r);
+        } catch (IndexOutOfBoundsException e) {
+        }
+    }
 }
