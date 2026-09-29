@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,11 @@ import javax.net.ssl.TrustManagerFactory;
 @Fork(value = 3)
 public class SSLHandshake {
 
-    // one global server context
-    private static final SSLContext sslServerCtx = getServerContext();
+    private static final SSLContext SSL_SERVER_CTX_ECDSA_P256 =
+            getServerContext(TestCertificates.AUTH_PROFILE_ECDSA_P256);
+    private static final SSLContext SSL_SERVER_CTX_MLDSA65 =
+            getServerContext(TestCertificates.AUTH_PROFILE_MLDSA65);
 
-    // per-thread client contexts
     private SSLContext sslClientCtx;
 
     private SSLEngine clientEngine;
@@ -77,18 +78,30 @@ public class SSLHandshake {
     boolean resume;
 
     @Param({
-            "TLSv1.2-secp256r1",
-            "TLSv1.3-x25519", "TLSv1.3-secp256r1", "TLSv1.3-secp384r1",
-            "TLSv1.3-X25519MLKEM768", "TLSv1.3-SecP256r1MLKEM768", "TLSv1.3-SecP384r1MLKEM1024"
+            "TLSv1.2-secp256r1-ecdsa_p256",
+            "TLSv1.3-x25519-ecdsa_p256",
+            "TLSv1.3-secp256r1-ecdsa_p256",
+            "TLSv1.3-secp384r1-ecdsa_p256",
+            "TLSv1.3-X25519MLKEM768-ecdsa_p256",
+            "TLSv1.3-SecP256r1MLKEM768-ecdsa_p256",
+            "TLSv1.3-SecP384r1MLKEM1024-ecdsa_p256",
+            "TLSv1.3-x25519-mldsa65",
+            "TLSv1.3-secp256r1-mldsa65",
+            "TLSv1.3-secp384r1-mldsa65",
+            "TLSv1.3-X25519MLKEM768-mldsa65",
+            "TLSv1.3-SecP256r1MLKEM768-mldsa65",
+            "TLSv1.3-SecP384r1MLKEM1024-mldsa65"
     })
-    String versionAndGroup;
+    String handshakeProfile;
 
     private String tlsVersion;
     private String namedGroup;
+    private String authProfile;
+    private String[] sigSchemes;
 
-    private static SSLContext getServerContext() {
+    private static SSLContext getServerContext(String authProfile) {
         try {
-            KeyStore ks = TestCertificates.getKeyStore();
+            KeyStore ks = TestCertificates.getKeyStore(authProfile);
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(
                     KeyManagerFactory.getDefaultAlgorithm());
@@ -102,13 +115,42 @@ public class SSLHandshake {
         }
     }
 
+    private static String[] getSigSchemes(String authProfile,
+            String tlsVersion) {
+        if (!"TLSv1.3".equals(tlsVersion)) {
+            return null;
+        }
+
+        return switch (authProfile) {
+            case TestCertificates.AUTH_PROFILE_ECDSA_P256 ->
+                    new String[] {"ecdsa_secp256r1_sha256"};
+            case TestCertificates.AUTH_PROFILE_MLDSA65 ->
+                    new String[] {"mldsa65", "rsa_pkcs1_sha384"};
+            default -> throw new IllegalArgumentException(
+                    "Unknown auth profile: " + authProfile);
+        };
+    }
+
+    private static SSLContext getProfileServerContext(String authProfile) {
+        return switch (authProfile) {
+            case TestCertificates.AUTH_PROFILE_ECDSA_P256 ->
+                    SSL_SERVER_CTX_ECDSA_P256;
+            case TestCertificates.AUTH_PROFILE_MLDSA65 ->
+                    SSL_SERVER_CTX_MLDSA65;
+            default -> throw new IllegalArgumentException(
+                    "Unknown auth profile: " + authProfile);
+        };
+    }
+
     @Setup(Level.Trial)
     public void init() throws Exception {
-        String[] components = versionAndGroup.split("-", 2);
+        String[] components = handshakeProfile.split("-", 3);
         tlsVersion = components[0];
         namedGroup = components[1];
+        authProfile = components[2];
+        sigSchemes = getSigSchemes(authProfile, tlsVersion);
 
-        KeyStore ts = TestCertificates.getTrustStore();
+        KeyStore ts = TestCertificates.getTrustStore(authProfile);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(
                 TrustManagerFactory.getDefaultAlgorithm());
@@ -199,7 +241,7 @@ public class SSLHandshake {
          * Configure the serverEngine to act as a server in the SSL/TLS
          * handshake.
          */
-        serverEngine = sslServerCtx.createSSLEngine();
+        serverEngine = getProfileServerContext(authProfile).createSSLEngine();
         serverEngine.setUseClientMode(false);
 
         /*
@@ -211,10 +253,16 @@ public class SSLHandshake {
         // Set the key exchange named group in client and server engines
         SSLParameters clientParams = clientEngine.getSSLParameters();
         clientParams.setNamedGroups(new String[]{namedGroup});
+        if (sigSchemes != null) {
+            clientParams.setSignatureSchemes(sigSchemes);
+        }
         clientEngine.setSSLParameters(clientParams);
 
         SSLParameters serverParams = serverEngine.getSSLParameters();
         serverParams.setNamedGroups(new String[]{namedGroup});
+        if (sigSchemes != null) {
+            serverParams.setSignatureSchemes(sigSchemes);
+        }
         serverEngine.setSSLParameters(serverParams);
     }
 }
