@@ -21,13 +21,14 @@
  * questions.
  */
 
-#include "unittest.hpp"
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
+#include "unittest.hpp"
+
 #include <cstdarg>
 
 // These tests will all be skipped (unless Shenandoah becomes the default
