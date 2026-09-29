@@ -80,6 +80,13 @@ class TestReturnValueArgument {
         return holder;
     }
 
+    @ForceInline
+    static ValueHolder createValueHolder() {
+        IdentityObject obj = new IdentityObject();
+        ValueHolder holder = new ValueHolder(obj);
+        return holder;
+    }
+
     @DontInline
     static ValueHolder returnArgument(ValueHolder holder) {
         return holder;
@@ -91,11 +98,21 @@ class TestReturnValueArgument {
     }
 
     @DontInline
-    static ValueHolder returnOneArg(boolean first, ValueHolder holder1, ValueHolder holder2) {
+    static ValueHolder returnOneArgument(boolean first, ValueHolder holder1, ValueHolder holder2) {
         if (first) {
             return holder1;
         }
         return holder2;
+    }
+
+    @DontInline
+    static ValueHolder returnMiddleArgument(ValueHolder holder1, ValueHolder holder2, ValueHolder holder3) {
+        return holder2;
+    }
+
+    @DontInline
+    static ValueHolder returnArgumentAfterTwoSlots(long unused, ValueHolder holder) {
+        return holder;
     }
 
     static class BaseReturner {
@@ -135,6 +152,16 @@ class TestReturnValueArgument {
         globalObj = returnedHolder.obj;
     }
 
+    // Variant of the above test where the holder is passed as an argument after
+    // another argument taking two slots. The same outcome is expected.
+    @Test
+    @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    static void testReturnHolderAfterTwoSlotsAndEscapeIdentityObject() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder returnedHolder = returnArgumentAfterTwoSlots(42L, holder);
+        globalObj = returnedHolder.obj;
+    }
+
     // Variant of the above test where one of two passed holders is returned.
     // The same outcome is expected for each of the IdentityObject instances.
     @Test
@@ -143,7 +170,20 @@ class TestReturnValueArgument {
     static void testReturnOneOfTwoHoldersAndEscapeIdentityObjects(boolean first) {
         ValueHolder holder1 = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder holder2 = createValueHolderWithSynchronizedFieldWrite();
-        ValueHolder returnedHolder = returnOneArg(first, holder1, holder2);
+        ValueHolder returnedHolder = returnOneArgument(first, holder1, holder2);
+        globalObj = returnedHolder.obj;
+    }
+
+    // Variant of the above test where three holders are passed and always one
+    // of them is returned. Synchronization of the IdentityObject held by the
+    // returned holder should be retained.
+    @Test
+    @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    static void testReturnHolderWithInterleavingArgsAndEscapeIdentityObject() {
+        ValueHolder holder1 = createValueHolder();
+        ValueHolder holder2 = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder holder3 = createValueHolder();
+        ValueHolder returnedHolder = returnMiddleArgument(holder1, holder2, holder3);
         globalObj = returnedHolder.obj;
     }
 
@@ -207,6 +247,34 @@ class TestReturnValueArgument {
     static void testReturnHolderWithoutEscape() {
         ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
         returnArgument(holder);
+    }
+
+    // Variant of the above test where the holder is passed as an argument after
+    // another argument taking two slots. The same outcome is expected.
+    @Test
+    @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "true", "ValueTypeReturnedAsFields", "true"},
+        failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "false", "ValueTypeReturnedAsFields", "false"},
+        failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    static void testReturnHolderAfterTwoSlotsWithoutEscape() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
+        returnArgumentAfterTwoSlots(42L, holder);
+    }
+
+    @Test
+    // Variant of the above test where three holders are passed and always one
+    // of them is returned. Similarly to above, we expect C2 to remove all
+    // synchronization, which it does except for the mismatched buffer/scalar
+    // cases.
+    @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "true", "ValueTypeReturnedAsFields", "true"},
+        failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "false", "ValueTypeReturnedAsFields", "false"},
+        failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    static void testReturnHolderWithInterleavingArgsAndNoEscape() {
+        ValueHolder holder1 = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder holder2 = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder holder3 = createValueHolderWithSynchronizedFieldWrite();
+        returnMiddleArgument(holder1, holder2, holder3);
     }
 
 }
