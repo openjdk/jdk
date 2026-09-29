@@ -47,7 +47,7 @@ import javax.swing.JOptionPane;
 
 /*
  * @test
- * @bug 6362683 8012381
+ * @bug 6362683 8012381 8345685
  * @summary Collation should work.
  * @key printer
  * @library /java/awt/regtesthelpers
