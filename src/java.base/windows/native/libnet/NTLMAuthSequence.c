@@ -142,7 +142,7 @@ cleanup:
     if (ss == SEC_E_OK) {
         return (jlong) pCred;
     } else {
-        if (pCred != NULL) free(pCred);
+        free(pCred);
         return 0;
     }
 }
