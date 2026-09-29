@@ -1772,7 +1772,8 @@ public final class Unsafe {
                                                 V expected,
                                                 V x) {
         Object[] array = newSpecialArray(valueType, 2, layout);
-        return compareAndSetFlatValueAsBytes(array, o, offset, layout, valueType, expected, x);
+        int containerLayout = arrayLayout(array);
+        return compareAndSetFlatValueAsBytes(array, o, offset, containerLayout, valueType, expected, x);
     }
 
     @IntrinsicCandidate
