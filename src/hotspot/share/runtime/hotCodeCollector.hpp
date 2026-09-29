@@ -26,6 +26,7 @@
 #ifndef SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
 #define SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
 
+#include "code/nmethod.hpp"
 #include "runtime/javaThread.hpp"
 
 class Candidates;
@@ -41,7 +42,7 @@ class HotCodeCollector : public JavaThread {
 
   static void do_grouping(Candidates& candidates);
 
-  static int do_relocation(void* candidate, uint call_level);
+  static nmethod::RelocationResult do_relocation(void* candidate, uint call_level, int* num_relocated);
 
  public:
   static void initialize();

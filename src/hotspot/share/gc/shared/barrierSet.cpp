@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ BarrierSet::BarrierSet(BarrierSetAssembler* barrier_set_assembler,
 
 void BarrierSet::on_thread_attach(Thread* thread) {
   BarrierSetNMethod* bs_nm = barrier_set_nmethod();
-  thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
+  bs_nm->set_thread_disarmed_guard_value(thread);
 }
 
 // Called from init.cpp

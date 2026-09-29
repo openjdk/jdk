@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "code/compressedStream.hpp"
 #include "oops/method.hpp"
@@ -44,6 +45,12 @@ void ResolvedIndyEntry::remove_unshareable_info() {
   memset(this, 0, sizeof(*this));
   _resolved_references_index = saved_resolved_references_index;
   _cpool_index = saved_cpool_index;
+}
+
+// Called from AOTArtifactFinder.
+void ResolvedIndyEntry::record_archivable_classes() {
+  assert(is_resolved(), "must be");
+  AOTArtifactFinder::add_cached_class(_method->method_holder());
 }
 
 void ResolvedIndyEntry::mark_and_relocate() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,11 @@ public:
 
 class G1MarkAndPushClosure : public ClaimMetadataVisitingOopIterateClosure {
   G1FullGCMarker* _marker;
-  uint _worker_id;
 
 public:
-  G1MarkAndPushClosure(uint worker_id, G1FullGCMarker* marker, int claim, ReferenceDiscoverer* ref) :
+  G1MarkAndPushClosure(G1FullGCMarker* marker, int claim, ReferenceDiscoverer* ref) :
     ClaimMetadataVisitingOopIterateClosure(claim, ref),
-    _marker(marker),
-    _worker_id(worker_id) { }
+    _marker(marker) { }
 
   template <class T> inline void do_oop_work(T* p);
   virtual void do_oop(oop* p);

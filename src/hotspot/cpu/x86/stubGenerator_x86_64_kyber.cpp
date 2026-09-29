@@ -349,11 +349,13 @@ static void store4regs(Register address, int offset, int sourceRegs[],
   }
 }
 
-// In all 3 invocations of this function we use the same registers:
-// xmm0-xmm7 for the input and the result,
-// xmm8-xmm15 as scratch registers and
-// xmm16-xmm17 for the constants,
-// so we don't pass register arguments.
+// This stub helper vectorizes the reduction in implKyberBarrettReduceJava.
+// In all invocations of this function we use the same registers:
+// Input:   xmm0-xmm7 (signed short coefficients)
+//          xmm16: Barrett multiplier
+//          xmm17: q
+// Scratch: xmm8-xmm15
+// Output:  xmm0-xmm7 (reduced coefficients each in [0, q])
 static void barrettReduce(MacroAssembler *_masm) {
   for (int i = 0; i < 8; i++) {
     __ evpmulhw(xmm(i + 8), k0, xmm(i), xmm16, false, Assembler::AVX_512bit);
@@ -490,7 +492,7 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
   store4regs(coeffs, 256, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -621,7 +623,7 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
   store4regs(coeffs, 256, xmm12_15, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -771,7 +773,7 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
   __ pop_ppx(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -824,7 +826,7 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
   store4regs(result, 256, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -886,7 +888,7 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
   store4regs(result, 256, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -975,7 +977,7 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
       __ jcc(Assembler::greater, VBMILoop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov64(rax, 0); // return 0
+    __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
     __ ret(0);
 
     // record the stub entry and end
@@ -1051,7 +1053,7 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
     __ jcc(Assembler::greater, Loop);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -1096,7 +1098,7 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
   store4regs(coeffs, 256, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -1108,15 +1110,13 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
 void StubGenerator::generate_kyber_stubs() {
   // Generate Kyber intrinsics code
   if (UseKyberIntrinsics) {
-    if (VM_Version::supports_evex()) {
-      StubRoutines::_kyberNtt = generate_kyberNtt_avx512(this, _masm);
-      StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt_avx512(this, _masm);
-      StubRoutines::_kyberNttMult = generate_kyberNttMult_avx512(this, _masm);
-      StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2_avx512(this, _masm);
-      StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3_avx512(this, _masm);
-      StubRoutines::_kyber12To16 = generate_kyber12To16_avx512(this, _masm);
-      StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce_avx512(this, _masm);
-    }
+    StubRoutines::_kyberNtt = generate_kyberNtt_avx512(this, _masm);
+    StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt_avx512(this, _masm);
+    StubRoutines::_kyberNttMult = generate_kyberNttMult_avx512(this, _masm);
+    StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2_avx512(this, _masm);
+    StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3_avx512(this, _masm);
+    StubRoutines::_kyber12To16 = generate_kyber12To16_avx512(this, _masm);
+    StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce_avx512(this, _masm);
   }
 }
 

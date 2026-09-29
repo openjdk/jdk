@@ -99,7 +99,7 @@
 #ifndef MAP_ANON_64K
   #define MAP_ANON_64K 0x400
 #else
-  STATIC_ASSERT(MAP_ANON_64K == 0x400);
+  static_assert(MAP_ANON_64K == 0x400);
 #endif
 #include <sys/resource.h>
 #include <sys/select.h>
@@ -450,7 +450,7 @@ static void query_multipage_support() {
         if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
           const int en = errno;
           ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
+          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", en);
         } else {
           // Attach and double check pageisze.
           void* p = ::shmat(shmid, nullptr, 0);
@@ -1089,7 +1089,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result == nullptr && eno == ENOENT) {
     const char* pointer_to_dot = strrchr(filename, '.');
     if (pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
-      STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
+      static_assert(sizeof(old_extension) >= sizeof(new_extension));
       char* tmp_path = os::strdup(filename);
       size_t prefix_size = pointer_delta(pointer_to_dot, filename, 1);
       os::snprintf_checked(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
@@ -1409,7 +1409,6 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
   // addresses on Aix. See, e.g., ReservedHeapSpace.
   char* const addr = (char*) shmat(shmid, requested_addr, 0);
-  const int errno_shmat = errno;
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
   if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
@@ -1897,7 +1896,11 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
     }
   }
 
-  assert(rc == true, "mprotect failed.");
+  if (!rc) {
+    // Reporting success via mprotect but failing to mprotect is a symptom of calling mprotect
+    // on SystemV-memory. It should not happen for mmap-mode.
+    assert(!g_multipage_support.can_use_64K_mmap_pages, "Should only happen in old-style shmat mode");
+  }
 
   return rc;
 }

@@ -32,7 +32,7 @@
 void G1EvacStats::reset() {
   PLABStats::reset();
   _region_end_waste.store_relaxed(0);
-  _regions_filled.store_relaxed(0);
+  _num_filled_regions.store_relaxed(0);
   _num_plab_filled.store_relaxed(0);
   _direct_allocated.store_relaxed(0);
   _num_direct_allocated.store_relaxed(0);
@@ -63,7 +63,7 @@ void G1EvacStats::log_plab_allocation() {
                       "failure wasted: %zuB",
                       _description,
                       region_end_waste() * HeapWordSize,
-                      regions_filled(),
+                      num_filled_regions(),
                       num_plab_filled(),
                       direct_allocated() * HeapWordSize,
                       num_direct_allocated(),
@@ -132,7 +132,7 @@ G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab
   _desired_net_plab_size(default_per_thread_plab_size * ParallelGCThreads),
   _net_plab_size_filter(wt),
   _region_end_waste(0),
-  _regions_filled(0),
+  _num_filled_regions(0),
   _num_plab_filled(0),
   _direct_allocated(0),
   _num_direct_allocated(0),

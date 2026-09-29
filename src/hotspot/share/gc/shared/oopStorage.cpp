@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,8 +223,8 @@ OopStorage::Block::Block(const OopStorage* owner, void* memory) :
   _deferred_updates_next(nullptr),
   _release_refcount(0)
 {
-  STATIC_ASSERT(_data_pos == 0);
-  STATIC_ASSERT(section_size * section_count == ARRAY_SIZE(_data));
+  static_assert(_data_pos == 0);
+  static_assert(section_size * section_count == ARRAY_SIZE(_data));
   assert(offset_of(Block, _data) == _data_pos, "invariant");
   assert(owner != nullptr, "null owner");
   assert(is_aligned(this, block_alignment), "misaligned block");
@@ -244,7 +244,7 @@ OopStorage::Block::~Block() {
 
 size_t OopStorage::Block::allocation_size() {
   // _data must be first member, so aligning Block aligns _data.
-  STATIC_ASSERT(_data_pos == 0);
+  static_assert(_data_pos == 0);
   return sizeof(Block) + block_alignment - sizeof(void*);
 }
 
@@ -301,12 +301,12 @@ void OopStorage::Block::set_active_index(size_t index) {
 }
 
 size_t OopStorage::Block::active_index_safe(const Block* block) {
-  STATIC_ASSERT(sizeof(intptr_t) == sizeof(block->_active_index));
+  static_assert(sizeof(intptr_t) == sizeof(block->_active_index));
   // Be careful, because block could be a false positive from block_for_ptr.
   assert(block != nullptr, "precondition");
   uintptr_t block_addr = reinterpret_cast<uintptr_t>(block);
   uintptr_t index_loc = block_addr + offset_of(Block, _active_index);
-  static_assert(sizeof(size_t) == sizeof(intptr_t), "assumption");
+  static_assert(sizeof(size_t) == sizeof(intptr_t));
   return static_cast<size_t>(SafeFetchN(reinterpret_cast<intptr_t*>(index_loc), 0));
 }
 
@@ -347,7 +347,7 @@ uintx OopStorage::Block::allocate_all() {
 
 OopStorage::Block* OopStorage::Block::new_block(const OopStorage* owner) {
   // _data must be first member: aligning block => aligning _data.
-  STATIC_ASSERT(_data_pos == 0);
+  static_assert(_data_pos == 0);
   size_t size_needed = allocation_size();
   void* memory = NEW_C_HEAP_ARRAY_RETURN_NULL(char, size_needed, owner->mem_tag());
   if (memory == nullptr) {
@@ -371,7 +371,7 @@ void OopStorage::Block::delete_block(const Block& block) {
 // require additional validation of the result.
 OopStorage::Block*
 OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
-  STATIC_ASSERT(_data_pos == 0);
+  static_assert(_data_pos == 0);
   assert(ptr != nullptr, "precondition");
   // Blocks are allocated section-aligned, so get the containing section.
   uintptr_t section_start = align_down(reinterpret_cast<uintptr_t>(ptr), block_alignment);
@@ -386,7 +386,7 @@ OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
   intptr_t owner_addr = reinterpret_cast<intptr_t>(owner);
   for (unsigned i = 0; i < section_count; ++i, section += section_size_in_bytes) {
     uintptr_t owner_loc = section + offset_of(Block, _owner_address);
-    static_assert(sizeof(OopStorage*) == sizeof(intptr_t), "assumption");
+    static_assert(sizeof(OopStorage*) == sizeof(intptr_t));
     if (SafeFetchN(reinterpret_cast<intptr_t*>(owner_loc), 0) == owner_addr) {
       return reinterpret_cast<Block*>(section);
     }
@@ -827,7 +827,7 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
 }
 
 OopStorage::OopStorage(const char* name, MemTag mem_tag) :
-  _name(os::strdup(name)),
+  _name(os::strdup(name, mem_tag)),
   _active_array(ActiveArray::create(initial_active_array_size, mem_tag)),
   _allocation_list(),
   _deferred_updates(nullptr),

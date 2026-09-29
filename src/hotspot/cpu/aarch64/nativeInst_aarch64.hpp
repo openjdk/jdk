@@ -39,7 +39,6 @@
 // - - NativeMovRegMem
 // - - NativeJump
 // - - - NativeGeneralJump
-// - - NativeIllegalInstruction
 // - - NativeCallTrampolineStub
 // - - NativeMembar
 // - - NativeLdSt
@@ -81,6 +80,14 @@ public:
   bool is_movk();
   bool is_stop();
 
+  bool is_udf(uint16_t imm) {
+    uint32_t insn = uint_at(0);
+    return Instruction_aarch64::extract(insn, 31, 16) == 0 &&
+      Instruction_aarch64::extract(insn, 15, 0) == imm;
+  }
+
+  enum : uint16_t { udf_stop = 1, udf_deopt };
+
 protected:
   address addr_at(int offset) const { return address(this) + offset; }
 
@@ -107,10 +114,22 @@ public:
 
   static bool is_adrp_at(address instr);
 
-  static bool is_ldr_literal_at(address instr);
+  static bool is_load_literal_at(address instr);
 
-  bool is_ldr_literal() {
-    return is_ldr_literal_at(addr_at(0));
+  bool is_load_literal() {
+    return is_load_literal_at(addr_at(0));
+  }
+
+  static bool is_ldr_gpr_literal_at(address instr);
+
+  bool is_ldr_gpr_literal() {
+    return is_ldr_gpr_literal_at(addr_at(0));
+  }
+
+  static bool is_ldrw_gpr_literal_at(address instr);
+
+  bool is_ldrw_gpr_literal() {
+    return is_ldrw_gpr_literal_at(addr_at(0));
   }
 
   static bool is_ldrw_to_zr(address instr);
@@ -125,7 +144,7 @@ public:
   }
 
   static bool maybe_cpool_ref(address instr) {
-    return is_adrp_at(instr) || is_ldr_literal_at(instr);
+    return is_adrp_at(instr) || is_load_literal_at(instr);
   }
 
   bool is_Membar() {
@@ -267,7 +286,7 @@ public:
       return addr_at(instruction_size);
     else if (is_adrp_at(instruction_address()))
       return addr_at(2*4);
-    else if (is_ldr_literal_at(instruction_address()))
+    else if (is_load_literal_at(instruction_address()))
       return(addr_at(4));
     assert(false, "Unknown instruction in NativeMovConstReg");
     return nullptr;
@@ -403,12 +422,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   DEBUG_ONLY(jump->verify());
   return jump;
 }
-
-class NativeIllegalInstruction: public NativeInstruction {
-public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
 
 inline bool NativeInstruction::is_nop() const{
   uint32_t insn = *(uint32_t*)addr_at(0);
@@ -609,8 +622,7 @@ class NativeDeoptInstruction: public NativeInstruction {
 
   static bool is_deopt_at(address instr) {
     assert(instr != nullptr, "");
-    uint32_t value = *(uint32_t *) instr;
-    return value == 0xd4ade001;
+    return nativeInstruction_at(instr)->is_udf(udf_deopt);
   }
 
   // MT-safe patching

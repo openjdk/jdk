@@ -27,7 +27,7 @@
  * @summary CPU feature compatibility test for AOT Code Cache
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
- * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
+ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64"
  * @comment The test verifies AOT checks during VM startup and not code generation.
  *          No need to run it with -Xcomp.
  * @library /test/lib /test/setup_aot
@@ -74,6 +74,11 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
                 testIncompatibleFeature("-XX:-UseCRC32", "crc32", IncompatibilityMode.MISSING);
                 testIncompatibleFeature("-XX:-UseCRC32", "crc32", IncompatibilityMode.ADDITIONAL);
             }
+        } else if (Platform.isRISCV64()) {
+            if (isZbaSupported(cpuFeatures)) {
+                testIncompatibleFeature("-XX:-UseZba", "zba", IncompatibilityMode.MISSING);
+                testIncompatibleFeature("-XX:-UseZba", "zba", IncompatibilityMode.ADDITIONAL);
+            }
         }
     }
 
@@ -87,12 +92,14 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
                     if (mode == IncompatibilityMode.MISSING) {
                         return new String[] {"-Xlog:aot+codecache*=debug"};
                     } else {
-                        return new String[] {vmOption, "-Xlog:aot+codecache*=debug"};
+                        // UnlockDiagnosticVMOptions must precede vmOption because
+                        // some tested CPU feature flags are diagnostic (e.g. UseZba on riscv).
+                        return new String[] {"-XX:+UnlockDiagnosticVMOptions", vmOption, "-Xlog:aot+codecache*=debug"};
                     }
                 } else if (runMode == RunMode.PRODUCTION) {
                     if (mode == IncompatibilityMode.MISSING) {
-                        return new String[] {vmOption,
-                                             "-XX:+UnlockDiagnosticVMOptions",
+                        return new String[] {"-XX:+UnlockDiagnosticVMOptions",
+                                             vmOption,
                                              // Prevent exiting VM on failure
                                              "-XX:-AbortVMOnAOTCodeFailure",
                                              "-Xlog:aot+codecache*=debug"};
@@ -148,5 +155,10 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
     // Only used on aarch64 platofrm
     static boolean isCRC32Supported(List<String> cpuFeatures) {
         return cpuFeatures.contains("crc32");
+    }
+
+    // Only used on riscv64 platform
+    static boolean isZbaSupported(List<String> cpuFeatures) {
+        return cpuFeatures.contains("zba");
     }
 }

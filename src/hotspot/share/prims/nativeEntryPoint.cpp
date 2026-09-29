@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
 
   oop type = JNIHandles::resolve(method_type);
-  objArrayOop arg_moves_oop = oop_cast<objArrayOop>(JNIHandles::resolve(arg_moves));
-  objArrayOop ret_moves_oop = oop_cast<objArrayOop>(JNIHandles::resolve(ret_moves));
+  refArrayOop arg_moves_oop = oop_cast<refArrayOop>(JNIHandles::resolve(arg_moves));
+  refArrayOop ret_moves_oop = oop_cast<refArrayOop>(JNIHandles::resolve(ret_moves));
   int pcount = java_lang_invoke_MethodType::ptype_count(type);
   int pslots = java_lang_invoke_MethodType::ptype_slot_count(type);
   BasicType* basic_type = NEW_RESOURCE_ARRAY(BasicType, pslots);

@@ -253,6 +253,7 @@ $(BUILDDIR)/$(BINUTILS_VER)/Makefile: $(BINUTILS_CFG)
 	      $(LINKER_CONFIG_ENABLE_GOLD) \
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
+	      --disable-gprofng \
 	      --program-prefix=$(TARGET)- \
 	      --enable-threads \
 	      --enable-plugins \

@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 8358521
+ * @bug 8358521 8385833
+ * @key randomness
  * @summary Test reassociation of broadcasted inputs across vector operations
  * @modules jdk.incubator.vector
  * @library /test/lib /
@@ -32,7 +33,10 @@
 
 package compiler.vectorapi;
 
+import compiler.lib.generators.Generator;
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.*;
 import jdk.incubator.vector.*;
 import java.util.stream.IntStream;
 
@@ -601,5 +605,57 @@ public class TestVectorReassociations {
                   .lanewise(VectorOperators.MUL,
                             ByteVector.broadcast(BSP, bb))
                   .intoArray(byteOut, 0);
+    }
+
+    private static final Generators RD = Generators.G;
+
+    static int uA, uB, uC;
+
+    static {
+        Generator<Integer> ig = RD.ints();
+        uA = ig.next(); uB = ig.next(); uC = ig.next();
+    }
+
+    static int[] umaxIntOut = new int[ISP.length()];
+    static int[] uminIntOut = new int[ISP.length()];
+
+    // UMAX(UMAX(bcast(uA), bcast(uB)), bcast(uC)).
+    @Test
+    @IR(counts = { IRNode.UMAX_VI, " >0 " },
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
+    @Warmup(value = 10000)
+    static void test_int_umax_all_broadcast() {
+        IntVector.broadcast(ISP, uA)
+                 .lanewise(VectorOperators.UMAX, uB)
+                 .lanewise(VectorOperators.UMAX, uC)
+                 .intoArray(umaxIntOut, 0);
+    }
+
+    @Check(test = "test_int_umax_all_broadcast")
+    static void check_int_umax_all_broadcast() {
+        int e = VectorMath.maxUnsigned(VectorMath.maxUnsigned(uA, uB), uC);
+        for (int v : umaxIntOut) {
+            Verify.checkEQ(v, e);
+        }
+    }
+
+    // UMIN(UMIN(bcast(uA), bcast(uB)), bcast(uC)).
+    @Test
+    @IR(counts = { IRNode.UMIN_VI, " >0 " },
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
+    @Warmup(value = 10000)
+    static void test_int_umin_all_broadcast() {
+        IntVector.broadcast(ISP, uA)
+                 .lanewise(VectorOperators.UMIN, uB)
+                 .lanewise(VectorOperators.UMIN, uC)
+                 .intoArray(uminIntOut, 0);
+    }
+
+    @Check(test = "test_int_umin_all_broadcast")
+    static void check_int_umin_all_broadcast() {
+        int e = VectorMath.minUnsigned(VectorMath.minUnsigned(uA, uB), uC);
+        for (int v : uminIntOut) {
+            Verify.checkEQ(v, e);
+        }
     }
 }

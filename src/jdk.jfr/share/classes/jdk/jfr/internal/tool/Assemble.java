@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,20 @@ package jdk.jfr.internal.tool;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
+import jdk.jfr.internal.consumer.ChunkHeader;
+import jdk.jfr.internal.consumer.RecordingInput;
 import jdk.jfr.internal.util.UserDataException;
 import jdk.jfr.internal.util.UserSyntaxException;
 
@@ -111,14 +115,36 @@ final class Assemble extends Command {
     }
 
     private void transferTo(List<Path> sourceFiles, Path output, FileChannel out) throws UserDataException {
-        long pos = 0;
         for (Path p : sourceFiles) {
+            long pos = 0;
+            long rem = 0;
+            try (RecordingInput input = new RecordingInput(p.toFile())) {
+                HeaderData hd = HeaderData.read(input);
+                if (hd == null) {
+                    println("Skipping recording chunk that is being updated " + p );
+                    continue;
+                }
+                if (hd.finished()) {
+                    rem = Files.size(p);
+                } else {
+                    hd.markFinished();
+                    hd.write(out);
+                    println("Truncating unfinished recording chunk  " + p);
+                    rem = hd.size() - ChunkHeader.HEADER_SIZE;
+                    pos = ChunkHeader.HEADER_SIZE;
+                }
+            } catch (IOException e) {
+                println("Skipping recording chunk  " + p + " due to: " + e.getMessage());
+                continue;
+            }
             println(" " + p.toString());
             try (FileChannel sourceChannel = FileChannel.open(p)) {
-                long rem = Files.size(p);
                 while (rem > 0) {
                     long n = Math.min(rem, 1024 * 1024);
-                    long w = out.transferFrom(sourceChannel, pos, n);
+                    long w = sourceChannel.transferTo(pos, n, out);
+                    if (w == 0) {
+                        throw new IOException("Could not transfer remaining bytes");
+                    }
                     pos += w;
                     rem -= w;
                 }

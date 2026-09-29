@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,9 @@ ifeq ($(call isTargetOs, linux), true)
   HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ldl
   HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libfast-math := -ffast-math
+  ifeq ($(call isTargetCpuBits, 32), true)
+    HOTSPOT_JTREG_LIBRARIES_LIBS_libSuspendInCritical += -latomic
+  endif
 else
   HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp

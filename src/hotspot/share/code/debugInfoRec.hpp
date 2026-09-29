@@ -106,6 +106,7 @@ class DebugInformationRecorder: public ResourceObj {
                       bool        reexecute,
                       bool        rethrow_exception = false,
                       bool        return_oop = false,
+                      bool        return_scalarized = false,
                       bool        has_ea_local_in_scope = false,
                       bool        arg_escape = false,
                       DebugToken* locals      = nullptr,

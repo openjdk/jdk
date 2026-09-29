@@ -340,7 +340,8 @@ bool CgroupV2MemoryController::read_memory_limit_in_bytes(physical_memory_size_t
       }
     }
   }
-  result = limit;
+  // treat exceeding physical memory as unlimited
+  result = exceeds_physical_mem ? value_unlimited : limit;
   return true;
 }
 

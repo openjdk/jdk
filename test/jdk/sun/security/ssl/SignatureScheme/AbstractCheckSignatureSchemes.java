@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
     // Helper map to correlate integral SignatureScheme identifiers to
     // their IANA string name counterparts.
     protected static final Map<Integer, String> sigSchemeMap = Map.ofEntries(
+            new SimpleImmutableEntry(0x0904, "mldsa44"),
+            new SimpleImmutableEntry(0x0905, "mldsa65"),
+            new SimpleImmutableEntry(0x0906, "mldsa87"),
             new SimpleImmutableEntry(0x0401, "rsa_pkcs1_sha256"),
             new SimpleImmutableEntry(0x0501, "rsa_pkcs1_sha384"),
             new SimpleImmutableEntry(0x0601, "rsa_pkcs1_sha512"),

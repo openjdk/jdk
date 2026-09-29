@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8193518 8249608
+ * @requires vm.compMode != "Xcomp"
  * @summary C2: Vector registers are sometimes corrupted at safepoint
  * @run main/othervm -XX:-BackgroundCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountedLoopSafepoints -XX:LoopStripMiningIter=2 -XX:-TieredCompilation TestVectorsNotSavedAtSafepoint test1
  * @run main/othervm -XX:-BackgroundCompilation TestVectorsNotSavedAtSafepoint test2
@@ -57,7 +58,7 @@ public class TestVectorsNotSavedAtSafepoint {
 
     static class GarbageProducerThread extends Thread {
         public void run() {
-            for(;;) {
+            while (!isInterrupted()) {
                 // Produce some garbage and then let the GC do its work which will
                 // corrupt vector registers if they are not saved at safepoints.
                 Object[] arrays = new Object[1024];
@@ -69,33 +70,38 @@ public class TestVectorsNotSavedAtSafepoint {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         Thread garbage_producer = new GarbageProducerThread();
         garbage_producer.setDaemon(true);
         garbage_producer.start();
 
-        if (args[0].equals("test1")) {
-            byte[] bArr = new byte[10];
-            long[] lArr = new long[1000];
-            for (int i = 0; i < 10_000; ++i) {
-                test1(bArr, bArr, bArr, lArr, -1);
-                for (int j = 0; j < lArr.length; ++j) {
-                    if (bArr[j % 10] != 0 || lArr[j] != -1) {
-                        throw new RuntimeException("Test1 failed at iteration " + i + ": bArr[" + (j % 10) + "] = " + bArr[j % 10] + ", lArr[" + j + "] = " + lArr[j]);
+        try {
+            if (args[0].equals("test1")) {
+                byte[] bArr = new byte[10];
+                long[] lArr = new long[1000];
+                for (int i = 0; i < 10_000; ++i) {
+                    test1(bArr, bArr, bArr, lArr, -1);
+                    for (int j = 0; j < lArr.length; ++j) {
+                        if (bArr[j % 10] != 0 || lArr[j] != -1) {
+                            throw new RuntimeException("Test1 failed at iteration " + i + ": bArr[" + (j % 10) + "] = " + bArr[j % 10] + ", lArr[" + j + "] = " + lArr[j]);
+                        }
+                    }
+                }
+            } else {
+                int iArr[] = new int[100];
+                long lArr[] = new long[100];
+                for (int i = 0; i < 10_000; ++i) {
+                    test2(iArr, lArr);
+                    for (int j = 0; j < lArr.length; ++j) {
+                        if (iArr[j] != 1 || lArr[j] != 1) {
+                            throw new RuntimeException("Test2 failed at iteration " + i + ": iArr[" + j + "] = " + iArr[j] + ", lArr[" + j + "] = " + lArr[j]);
+                        }
                     }
                 }
             }
-        } else {
-            int iArr[] = new int[100];
-            long lArr[] = new long[100];
-            for (int i = 0; i < 10_000; ++i) {
-                test2(iArr, lArr);
-                for (int j = 0; j < lArr.length; ++j) {
-                    if (iArr[j] != 1 || lArr[j] != 1) {
-                        throw new RuntimeException("Test2 failed at iteration " + i + ": iArr[" + j + "] = " + iArr[j] + ", lArr[" + j + "] = " + lArr[j]);
-                    }
-                }
-            }
+        } finally {
+            garbage_producer.interrupt();
+            garbage_producer.join();
         }
     }
 }

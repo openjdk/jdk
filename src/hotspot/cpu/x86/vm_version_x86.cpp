@@ -489,6 +489,25 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ jmp(wrapup);
 
     __ bind(start_simd_check);
+    // Query CPUID 0xD sub-leaf 5, 6, and 7 offsets for AVX-512 XSAVE components
+    __ movl(rax, 0xD);
+    __ movl(rcx, 5);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::opmask_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
+    __ movl(rax, 0xD);
+    __ movl(rcx, 6);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm0to15_hi256_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
+    __ movl(rax, 0xD);
+    __ movl(rcx, 7);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm16to31_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
     //
     // Some OSs have a bug when upper 128/256bits of YMM/ZMM
     // registers are not restored after a signal processing.
@@ -1042,8 +1061,7 @@ void VM_Version::get_processor_features() {
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
   if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
     if (FLAG_IS_DEFAULT(UseAPX)) {
-      FLAG_SET_DEFAULT(UseAPX, false); // by default UseAPX is false
-      clear_feature(CPU_APX_F);
+      FLAG_SET_DEFAULT(UseAPX, true); // by default UseAPX is false; enable if supported.
     } else if (!UseAPX) {
       clear_feature(CPU_APX_F);
     }
@@ -1058,6 +1076,14 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseAPX, false);
     }
   }
+#if defined(COMPILER2)
+  if (UseAPX) {
+    // Increase InlineSmallCode by 10%
+    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+      FLAG_SET_DEFAULT(InlineSmallCode, InlineSmallCode * 1.10);
+    }
+  }
+#endif
 
   CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), "CLMUL" MULTI_INST_WARNING_MSG);
   CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
@@ -1127,6 +1153,7 @@ void VM_Version::get_processor_features() {
            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   ss.print(", ");
   int features_offset = (int)ss.size();
+
   insert_features_names(_features, ss);
 
   _cpu_info_string = ss.as_string(true);
@@ -1251,7 +1278,7 @@ void VM_Version::get_processor_features() {
 
   // Kyber Intrinsics
   // Currently we only have them for AVX512
-  if (supports_evex() && supports_avx512bw()) {
+  if (supports_avx512vlbw()) {
     if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
       UseKyberIntrinsics = true;
     }
@@ -1324,7 +1351,7 @@ void VM_Version::get_processor_features() {
   }
 
   if (UseSHA && ((supports_evex() && supports_avx512vlbw()) ||
-      (EnableX86ECoreOpts && !supports_hybrid()))) {
+      (supports_avx2() && EnableX86ECoreOpts && !supports_hybrid()))) {
     if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
     }
@@ -1481,6 +1508,19 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
+
+    // Zhaoxin added BMI2 support in Lujiazui (KX-6000+).
+    // Based on community benchmarks(https://uops.info/html-instr/PDEP_R64_R64_R64.html),
+    // PEXT/PDEP performance is known to be similarly poor to pre-Zen3 AMD, suggesting a microcode implementation.
+    // This cannot be confirmed as Zhaoxin publishes no public optimization guide.
+    // Therefore we disable the flag by default, but allow it to be enabled explicitly on command line,
+    // provided bmi2 support is enabled.
+    if (FLAG_IS_DEFAULT(UseParallelBitInstructions) || (!supports_bmi2() && UseParallelBitInstructions)) {
+      if (!FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+        warning("pdep/pext instructions are not available on this CPU");
+      }
+      FLAG_SET_DEFAULT(UseParallelBitInstructions, false);
+    }
   }
 
   if (is_amd_family()) { // AMD cpus specific settings
@@ -1546,11 +1586,33 @@ void VM_Version::get_processor_features() {
       if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
+    }
+
 #ifdef COMPILER2
+    // Enable UseFPUForSpilling on Zen1/Zen2 (family 0x17) and Hygon Dhyana (family 0x18).
+    // On Zen3 (family 0x19) and beyond it should be default off.
+    if (cpu_family() >= 0x17 && cpu_family() < 0x19) {
       if (supports_sse4_2() && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
         FLAG_SET_DEFAULT(UseFPUForSpilling, true);
       }
-#endif
+    }
+#endif // COMPILER2
+    if (is_amd()) {
+      // AMD added BMI2 in Excavator (Family 0x15, model 0x60+) but used
+      // microcode for PEXT/PDEP through all of Zen 2 (Family 0x17).
+      // Native ALU hardware support arrived with Zen 3 (Family 0x19).
+      // Therefore disable UseParallelBitInstructions by default on family < 0x19.
+      // Source: AMD Software Optimization Guide (doc #56665), Section 2.10.2, https://developer.amd.com/resources/developer-guides-manuals/
+      if (supports_bmi2()) {
+        if (cpu_family() >= CPU_FAMILY_AMD_19H && FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+          FLAG_SET_DEFAULT(UseParallelBitInstructions, true);
+        }
+      } else if (UseParallelBitInstructions) {
+        if (!FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+          warning("pdep/pext instructions are not available on this CPU");
+        }
+        FLAG_SET_DEFAULT(UseParallelBitInstructions, false);
+      }
     }
   }
 
@@ -1612,6 +1674,21 @@ void VM_Version::get_processor_features() {
     }
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
+    }
+
+    // All Intel CPUs with BMI2 (Haswell+) implement PEXT/PDEP natively.
+    // 3-cycle latency, 1-per-cycle throughput on a dedicated ALU port.
+    // Source: Intel Intrinsics Guide, https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html
+    if (supports_bmi2()) {
+      // tzcnt does not require VEX prefix
+      if (FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+        FLAG_SET_DEFAULT(UseParallelBitInstructions, true);
+      }
+    } else if (UseParallelBitInstructions) {
+      if (!FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+        warning("pdep/pext instructions are not available on this CPU");
+      }
+      FLAG_SET_DEFAULT(UseParallelBitInstructions, false);
     }
   }
 
@@ -1724,7 +1801,7 @@ void VM_Version::get_processor_features() {
 #endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
-  if (!UseFastStosb && UseUnalignedLoadStores) {
+  if (UseUnalignedLoadStores) {
     if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
       UseXMMForObjInit = true;
     }
@@ -1775,7 +1852,12 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
-      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      // Spilling to FPU registers not beneficial on Haswell and beyond
+      if (UseAVX > 1) {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+      } else {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      }
     }
 #endif
   }
@@ -3009,8 +3091,10 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
       vm_features.set_feature(CPU_SERIALIZE);
     if (sef_cpuid7_edx.bits.hybrid != 0)
       vm_features.set_feature(CPU_HYBRID);
-    if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
-      vm_features.set_feature(CPU_AVX512_FP16);
+  }
+
+  if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0) {
+    vm_features.set_feature(CPU_AVX512_FP16);
   }
 
   // ZX additional features.

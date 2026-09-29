@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ class StringConcat : public ResourceObj {
   Node_List           _control;        // List of control nodes that will be deleted
   Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
                                        // to restart at the initial JVMState.
+  Unique_Node_List    _allowed_compares; // validate_control_flow() needs to know which compare nodes are
+                                         // accepted users of call results. In case of stacked concats,
+                                         // these need to be persisted across merges for validation.
 
   static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
                                                           // The value 256 was derived by measuring
@@ -286,6 +289,10 @@ void StringConcat::eliminate_unneeded_control() {
 
 StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   StringConcat* result = new StringConcat(_stringopts, _end);
+
+  Unique_Node_List null_check_ifs;
+  Unique_Node_List skipped_phis;
+
   for (uint x = 0; x < _control.size(); x++) {
     Node* n = _control.at(x);
     if (n->is_Call()) {
@@ -311,6 +318,17 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
         result->append(other->argument(y), other->mode(y));
       }
       arguments_appended += other->num_arguments();
+      // Cache elements for later verification.
+      if (argument(x)->is_Phi()) {
+        Node* phi = argument(x);
+        assert(phi->as_Phi()->is_diamond_phi() > 0, "must be a diamond phi (ref. skip_string_null_check).");
+        Node* iff = phi->in(0)->in(1)->in(0);
+        Node* bol = iff->in(1);
+        Node* cmpp = bol->as_Bool()->in(1);
+        null_check_ifs.push(iff);
+        skipped_phis.push(phi);
+        result->_allowed_compares.push(cmpp);
+      }
     } else {
       result->append(argx, mode(x));
       arguments_appended++;
@@ -327,13 +345,55 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
       return nullptr;
     }
   }
+
+  // Verify that the diamond region isn't shared with non-null check phis;
+  // and that the associated bool doesn't have external uses.
+  for (uint i = 0; i < skipped_phis.size(); i++) {
+    Node* n = skipped_phis.at(i);
+    Node* r = n->in(0);
+    for (SimpleDUIterator j(r); j.has_next(); j.next()) {
+      Node* n2 = j.get();
+      if (n2->is_Phi() && !n2->is_memory_phi() && !skipped_phis.member(n2)) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print_cr("null-check diamond region has external phi uses");
+        }
+#endif
+        return nullptr;
+      }
+    }
+    Node* iff = n->in(0)->in(1)->in(0);
+    Node* bol = iff->in(1);
+    for (SimpleDUIterator j(bol); j.has_next(); j.next()) {
+      if (!null_check_ifs.member(j.get())) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print_cr("null-check diamond bool has external uses.");
+        }
+#endif
+        return nullptr;
+      }
+    }
+  }
+
   result->set_allocation(other->_begin);
   for (uint i = 0; i < _constructors.size(); i++) {
     result->add_constructor(_constructors.at(i));
   }
+
   for (uint i = 0; i < other->_constructors.size(); i++) {
     result->add_constructor(other->_constructors.at(i));
   }
+
+  // We add previous _allowed_compares in case of repeated stacked concatenation.
+  for (uint i = 0; i < _allowed_compares.size(); i++) {
+    result->_allowed_compares.push(_allowed_compares.at(i));
+  }
+
+  for (uint i = 0; i < other->_allowed_compares.size(); i++) {
+    result->_allowed_compares.push(other->_allowed_compares.at(i));
+  }
+
   result->_multiple = true;
   return result;
 }
@@ -341,37 +401,37 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
 
 void StringConcat::eliminate_call(CallNode* call) {
   Compile* C = _stringopts->C;
-  CallProjections projs;
-  call->extract_projections(&projs, false);
-  if (projs.fallthrough_catchproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_catchproj, call->in(TypeFunc::Control));
+  CallProjections* projs = call->extract_projections(false);
+  if (projs->fallthrough_catchproj != nullptr) {
+    C->gvn_replace_by(projs->fallthrough_catchproj, call->in(TypeFunc::Control));
   }
-  if (projs.fallthrough_memproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_memproj, call->in(TypeFunc::Memory));
+  if (projs->fallthrough_memproj != nullptr) {
+    C->gvn_replace_by(projs->fallthrough_memproj, call->in(TypeFunc::Memory));
   }
-  if (projs.catchall_memproj != nullptr) {
-    C->gvn_replace_by(projs.catchall_memproj, C->top());
+  if (projs->catchall_memproj != nullptr) {
+    C->gvn_replace_by(projs->catchall_memproj, C->top());
   }
-  if (projs.fallthrough_ioproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_ioproj, call->in(TypeFunc::I_O));
+  if (projs->fallthrough_ioproj != nullptr) {
+    C->gvn_replace_by(projs->fallthrough_ioproj, call->in(TypeFunc::I_O));
   }
-  if (projs.catchall_ioproj != nullptr) {
-    C->gvn_replace_by(projs.catchall_ioproj, C->top());
+  if (projs->catchall_ioproj != nullptr) {
+    C->gvn_replace_by(projs->catchall_ioproj, C->top());
   }
-  if (projs.catchall_catchproj != nullptr) {
+  if (projs->catchall_catchproj != nullptr) {
     // EA can't cope with the partially collapsed graph this
     // creates so put it on the worklist to be collapsed later.
-    for (SimpleDUIterator i(projs.catchall_catchproj); i.has_next(); i.next()) {
+    for (SimpleDUIterator i(projs->catchall_catchproj); i.has_next(); i.next()) {
       Node *use = i.get();
       int opc = use->Opcode();
       if (opc == Op_CreateEx || opc == Op_Region) {
         _stringopts->record_dead_node(use);
       }
     }
-    C->gvn_replace_by(projs.catchall_catchproj, C->top());
+    C->gvn_replace_by(projs->catchall_catchproj, C->top());
   }
-  if (projs.resproj != nullptr) {
-    C->gvn_replace_by(projs.resproj, C->top());
+  if (projs->resproj[0] != nullptr) {
+    assert(projs->nb_resproj == 1, "unexpected number of results");
+    C->gvn_replace_by(projs->resproj[0], C->top());
   }
   C->gvn_replace_by(call, C->top());
 }
@@ -936,6 +996,10 @@ bool StringConcat::validate_control_flow() {
   int null_check_count = 0;
   Unique_Node_List ctrl_path;
 
+  // Local version of _allowed_compares that stores allowed comparisons discovered during traversal
+  // but that we won't persist across merges.
+  Unique_Node_List local_allowed_compares;
+
   assert(_control.contains(_begin), "missing");
   assert(_control.contains(_end), "missing");
 
@@ -993,11 +1057,31 @@ bool StringConcat::validate_control_flow() {
       Node* v2 = cmp->in(2);
       Node* otherproj = iff->proj_out(1 - ptr->as_Proj()->_con);
 
-      // Null check of the return of append which can simply be eliminated
+      // Either a null check of the return of append which can simply be eliminated,
+      // or possibly of a toString during stacked concats.
       if (b->_test._test == BoolTest::ne &&
           v2->bottom_type() == TypePtr::NULL_PTR &&
           v1->is_Proj() && ctrl_path.member(v1->in(0))) {
-        // null check of the return value of the append
+        if (!is_SB_toString(v1->in(0))) {
+          // append type
+          assert(v1->in(0)->as_CallStaticJava()->method()->name() == ciSymbols::append_name(), "must be");
+          local_allowed_compares.push(cmp);
+        } else {
+          // toString
+          assert(_multiple, "if not _multiple, we should not have a toString on this control path");
+          if (!_allowed_compares.member(cmp)) {
+            // Should have been populated during merge if valid.
+            // This should also be caught in result use verification later but we can fail early here.
+            fail = true;
+#ifndef PRODUCT
+            if (PrintOptimizeStringConcat) {
+              tty->print_cr("Failing as toString()-dependent compare is not part of a recognized string null check.");
+              cmp->dump();
+            }
+#endif
+            break;
+          }
+        }
         null_check_count++;
         if (otherproj->outcnt() == 1) {
           CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
@@ -1022,6 +1106,8 @@ bool StringConcat::validate_control_flow() {
               ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
                (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
             // iftrue -> if -> bool -> cmpp -> resproj -> tostring
+            assert(!_allowed_compares.member(cmp) && !local_allowed_compares.member(cmp), "Unsound dependency on intermediate values");
+            // Would be caught by containment analysis later but we can fail early here.
             fail = true;
             break;
           }
@@ -1147,11 +1233,16 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
       int opc = use->Opcode();
-      if (opc == Op_CmpP || opc == Op_Node) {
+      if (opc == Op_Node ||
+         (opc == Op_CmpP && (use->outcnt() == 1) // The cmpp validation assumes a unique use.
+                         && (local_allowed_compares.member(use) || _allowed_compares.member(use)))) {
         ctrl_path.push(use);
         continue;
       }
       if (opc == Op_CastPP || opc == Op_CheckCastPP) {
+        if (opc == Op_CheckCastPP) {
+          worklist.push(use);
+        }
         for (SimpleDUIterator j(use); j.has_next(); j.next()) {
           worklist.push(j.get());
         }
@@ -1969,9 +2060,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         ShouldNotReachHere();
     }
     if (argi > 0) {
-      // Check that the sum hasn't overflowed
+      // Check that the sum won't overflow the destination byte array.
       IfNode* iff = kit.create_and_map_if(kit.control(),
-                                          __ Bool(__ CmpI(length, __ intcon(0)), BoolTest::lt),
+                                          __ Bool(_gvn->transform(new CmpUNode(length, __ RShiftI(__ intcon(max_jint), coder))), BoolTest::gt),
                                           PROB_MIN, COUNT_UNKNOWN);
       kit.set_control(__ IfFalse(iff));
       overflow->set_req(argi, __ IfTrue(iff));

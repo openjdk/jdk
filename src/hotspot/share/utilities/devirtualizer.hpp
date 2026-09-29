@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,23 @@ class ClassLoaderData;
 // a concrete implementation, otherwise a virtual call is taken.
 class Devirtualizer {
  public:
-  template <typename OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
-  template <typename OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
-  template <typename OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
-  template <typename OopClosureType>             static bool do_metadata(OopClosureType* closure);
-  template <typename DerivedOopClosureType>      static void do_derived_oop(DerivedOopClosureType* closure, derived_base* base, derived_pointer* derived);
-  template <typename BitMapClosureType>          static bool do_bit(BitMapClosureType* closure, BitMap::idx_t index);
+  template <typename OopClosureType, typename T>
+  static ALWAYSINLINE void do_oop(OopClosureType* closure, T* p);
+
+  template <typename OopClosureType>
+  static ALWAYSINLINE void do_klass(OopClosureType* closure, Klass* k);
+
+  template <typename OopClosureType>
+  static ALWAYSINLINE void do_cld(OopClosureType* closure, ClassLoaderData* cld);
+
+  template <typename OopClosureType>
+  static ALWAYSINLINE bool do_metadata(OopClosureType* closure);
+
+  template <typename DerivedOopClosureType>
+  static ALWAYSINLINE void do_derived_oop(DerivedOopClosureType* closure, derived_base* base, derived_pointer* derived);
+
+  template <typename BitMapClosureType>
+  static ALWAYSINLINE bool do_bit(BitMapClosureType* closure, BitMap::idx_t index);
 };
 
 #endif // SHARE_UTILITIES_DEVIRTUALIZER_HPP
