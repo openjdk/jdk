@@ -2672,6 +2672,11 @@ WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
   return os::is_containerized();
 WB_END
 
+// Physical memory of the machine (respecting container limits)
+WB_ENTRY(jlong, WB_PhysicalMemory(JNIEnv* env, jobject o))
+  return static_cast<jlong>(os::physical_memory());
+WB_END
+
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   return static_cast<jlong>(os::Machine::physical_memory());
@@ -2695,11 +2700,6 @@ WB_ENTRY(jlong, WB_HostPhysicalSwap(JNIEnv* env, jobject o))
   return static_cast<jlong>(swap_val);
 #endif
   return -1; // Not used/implemented on other platforms
-WB_END
-
-// Physical memory of the machine (respecting container limits)
-WB_ENTRY(jlong, WB_PhysicalMemory(JNIEnv* env, jobject o))
-  return static_cast<jlong>(os::physical_memory());
 WB_END
 
 WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,

@@ -849,13 +849,17 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+
+  // Total physical memory as seen by the VM, respecting container limits.
+  public native long physicalMemory();
+
+  // Total physical memory as seen by the VM, deliberately ignoring container limits.
   public native long hostPhysicalMemory();
   public native long hostAvailableMemory();
   public native long hostPhysicalSwap();
   public native int hostCPUs();
 
-  // Total physical memory as seen by the VM, respecting container limits.
-  public native long physicalMemory();
+
 
   // Decoder
   public native void disableElfSectionCache();

@@ -124,7 +124,7 @@ public class TestMaxRAMPercentage {
 
     long requiredTotalMemory = maxcoopheap + headroom;
 
-    // Get total memory
+    // Get total memory. This needs to be the container-aware value (if any) for the test to work
     long totalMemory = wb.physicalMemory();
 
     System.out.println("totalMemory: " + totalMemory + ", requiredTotalMemory: " + requiredTotalMemory);
