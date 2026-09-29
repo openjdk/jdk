@@ -124,6 +124,7 @@ gboolean rebuildScreenData(GVariantIter *iterStreams, gboolean isTheOnlyMon) {
 
             if (!newScreens) {
                 ERR("failed to allocate memory\n");
+                gtk->g_variant_unref(prop);
                 return FALSE;
             }
 
@@ -167,7 +168,6 @@ gboolean rebuildScreenData(GVariantIter *iterStreams, gboolean isTheOnlyMon) {
         DEBUG_SCREEN(screen);
         DEBUG_SCREENCAST("#---------------------#\n\n", NULL);
 
-        gtk->g_variant_unref(prop);
         screenIndex++;
     };
 
