@@ -771,6 +771,8 @@ public class TestVM {
         CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests, shouldExcludeTest);
         allTests.add(customRunTest);
         if (PRINT_VALID_IR_RULES) {
+            // A @Run method can still run when some associated tests are excluded.
+            // Apply the filter to each test method for IR verification.
             tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod(), shouldExcludeTest(test.getTestMethod())));
         }
     }

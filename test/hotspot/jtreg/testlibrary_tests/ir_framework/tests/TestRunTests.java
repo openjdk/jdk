@@ -34,7 +34,6 @@ import java.util.Arrays;
 
 /*
  * @test
- * @bug 8369663
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler1.enabled & vm.compiler2.enabled & vm.flagless
  * @summary Test different custom run tests.
  * @library /test/lib /testlibrary_tests /
