@@ -885,18 +885,10 @@ int portalScreenCastOpenPipewireRemote() {
     gtk->g_variant_get(
             response,
             "(h)",
-            &index,
-            &err
+            &index
     );
 
     gtk->g_variant_unref(response);
-
-    if (err) {
-        DEBUG_SCREENCAST("Failed to get pipewire fd index: %s\n",
-                         err->message);
-        ERR_HANDLE(err);
-        return RESULT_ERROR;
-    }
 
     int fd = gtk->g_unix_fd_list_get(
             fdList,
