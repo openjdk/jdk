@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1ALLOCATOR_HPP
 #define SHARE_GC_G1_G1ALLOCATOR_HPP
 
-#include "gc/g1/g1AllocRegion.hpp"
 #include "gc/g1/g1AllocationRequest.hpp"
+#include "gc/g1/g1AllocRegion.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
