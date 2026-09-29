@@ -2146,7 +2146,7 @@ void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
     int real_count_offset = mdp_offset + in_bytes(MegamorphicTypeData::receiver_count_offset(base, c));
     int offset = base_receiver_offset + receiver_step*c;
     int count_offset = offset + receiver_to_count_step;
-    assert(offset== real_recv_offset, "receiver slot math");
+    assert(offset == real_recv_offset, "receiver slot math");
     assert(count_offset == real_count_offset, "receiver count math");
   }
 #endif

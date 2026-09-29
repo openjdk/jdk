@@ -5019,7 +5019,7 @@ void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
   //     if (receiver(i) == recv) goto found_recv(i);
   //   }
   //
-  //   // Fast: no receiver, but profile is full
+  //   // Fast: no receiver, but profile is not full
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == null) goto found_null(i);
   //   }
@@ -5049,7 +5049,7 @@ void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
   cmpptr(offset, end_receiver_offset);
   jccb(Assembler::notEqual, L_loop_search_receiver);
 
-  // Fast: no receiver, but profile is full
+  // Fast: no receiver, but profile is not full
   movptr(offset, base_receiver_offset);
   bind(L_loop_search_empty);
   cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);

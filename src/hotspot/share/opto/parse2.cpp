@@ -318,21 +318,21 @@ public:
             }
           }
         }
-        float count = saturated_add(flat_nullable_count, saturated_add(flat_nullfree_atomic_count, flat_nullfree_not_atomic_count));
+        int count = saturated_add(flat_nullable_count, saturated_add(flat_nullfree_atomic_count, flat_nullfree_not_atomic_count));
         if (flat_nullable_count == 0) {
           null_free_prob = 1;
         } else if (flat_nullable_count == count) {
           null_free_prob = 0;
         } else {
-          null_free_prob = clamp(1 - (float)flat_nullable_count / count, PROB_MIN, PROB_MAX);
+          null_free_prob = clamp(1 - (float)flat_nullable_count / (float)count, PROB_MIN, PROB_MAX);
         }
-        float null_free_count = saturated_add(flat_nullfree_atomic_count, flat_nullfree_not_atomic_count);
+        int null_free_count = saturated_add(flat_nullfree_atomic_count, flat_nullfree_not_atomic_count);
         if (flat_nullfree_atomic_count == 0) {
           null_free_atomic_prob = 0;
         } else if (flat_nullfree_atomic_count == null_free_count) {
           null_free_atomic_prob = 1;
         } else {
-          null_free_atomic_prob = clamp((float) flat_nullfree_atomic_count / null_free_count, PROB_MIN, PROB_MAX);
+          null_free_atomic_prob = clamp((float) flat_nullfree_atomic_count / (float)null_free_count, PROB_MIN, PROB_MAX);
         }
       }
 
