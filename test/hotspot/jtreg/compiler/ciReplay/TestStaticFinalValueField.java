@@ -25,11 +25,10 @@
  * @test
  * @enablePreview
  * @library / /test/lib
- * @summary Replaying compilation with value  static final fields results in a crash
+ * @summary Replaying compilation with value static final fields results in a crash
  * @requires vm.flagless & vm.flightRecorder != true & vm.compMode != "Xint" & vm.compMode != "Xcomp" &
  *           vm.debug == true & vm.compiler2.enabled
- * @modules java.base/jdk.internal.misc
- *          java.base/jdk.internal.value
+ * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
