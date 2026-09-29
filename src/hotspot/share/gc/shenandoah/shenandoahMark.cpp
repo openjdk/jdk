@@ -28,7 +28,6 @@
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -39,6 +38,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "gc/shared/taskqueue.inline.hpp" // do not reorder
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "oops/flatArrayKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"

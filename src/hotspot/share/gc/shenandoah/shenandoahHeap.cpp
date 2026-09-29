@@ -44,7 +44,6 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -95,6 +94,7 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahStackChunkGCData.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "gc/shared/taskqueue.inline.hpp" // do not reorder
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "gc/shenandoah/shenandoahUncommitThread.hpp"

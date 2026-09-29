@@ -33,8 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-enum class MemTag : uint8_t;
-
 template <class E, MemTag MT, unsigned int N>
 bool BufferedOverflowTaskQueue<E, MT, N>::pop(E &t) {
   if (!_buf_empty) {
