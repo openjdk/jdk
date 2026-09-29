@@ -372,8 +372,11 @@ private:
   // Compute the escape state for arguments to a call.
   void process_call_arguments(CallNode *call);
 
+  // Whether a call returns one of its arguments, according to BCEA.
   bool returns_an_argument(const CallNode* call);
 
+  // Whether a call's returned argument cannot be connected due to scalarization
+  // or type mismatches.
   bool has_incompatible_argument_return(const CallNode* call);
 
   // Add PointsToNode node corresponding to a call

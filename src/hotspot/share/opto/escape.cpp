@@ -1633,6 +1633,7 @@ void ConnectionGraph::add_proj(Node* n, Unique_Node_List* delayed_worklist) {
       // either:
       // - not an argument returned
       // - the returned buffer for a returned scalarized argument
+      // - incompatible returned argument
       add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(0), delayed_worklist);
     } else {
       add_local_var(n, PointsToNode::NoEscape);
@@ -2422,7 +2423,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         // and the argument input to the call for that field. An edge is added between the projection for the returned
         // buffer and the call.
         // For incompatible argument/return (only one of them is scalarized, or their types do not match): the call is
-        // conservatively assumed to make all its arguments escape globally and return an unknown object.
+        // conservatively assumed to make all its oop arguments escape globally and return an unknown object.
         if (returns_an_argument(call) && !has_incompatible_argument_return(call) && !call->tf()->returns_value_type_as_fields()) {
           // returns non scalarized argument
           add_local_var(call, PointsToNode::ArgEscape);
