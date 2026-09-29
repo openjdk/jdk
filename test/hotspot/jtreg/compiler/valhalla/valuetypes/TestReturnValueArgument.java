@@ -179,7 +179,7 @@ class TestReturnValueArgument {
     // returned holder should be retained.
     @Test
     @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
-    static void testReturnHolderWithInterleavingArgsAndEscapeIdentityObject() {
+    static void testReturnMiddleHolderAndEscapeIdentityObject() {
         ValueHolder holder1 = createValueHolder();
         ValueHolder holder2 = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder holder3 = createValueHolder();
@@ -231,7 +231,6 @@ class TestReturnValueArgument {
         globalObj = returnedHolder.obj;
     }
 
-    @Test
     // Return holder passed as argument, do not force a global escape. In the
     // cases when the holder is passed and returned in the same form (both
     // scalarized or both buffered), we expect C2 to exploit the bytecode escape
@@ -240,6 +239,7 @@ class TestReturnValueArgument {
     // synchronized block.
     // Currently C2 does not exploit bytecode escape analyzer information for
     // returned arguments with mismatched buffer/scalar representations.
+    @Test
     @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "true", "ValueTypeReturnedAsFields", "true"},
         failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
     @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "false", "ValueTypeReturnedAsFields", "false"},
@@ -261,16 +261,16 @@ class TestReturnValueArgument {
         returnArgumentAfterTwoSlots(42L, holder);
     }
 
-    @Test
     // Variant of the above test where three holders are passed and always one
     // of them is returned. Similarly to above, we expect C2 to remove all
     // synchronization, which it does except for the mismatched buffer/scalar
     // cases.
+    @Test
     @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "true", "ValueTypeReturnedAsFields", "true"},
         failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
     @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "false", "ValueTypeReturnedAsFields", "false"},
         failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
-    static void testReturnHolderWithInterleavingArgsAndNoEscape() {
+    static void testReturnMiddleHolderAndNoEscape() {
         ValueHolder holder1 = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder holder2 = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder holder3 = createValueHolderWithSynchronizedFieldWrite();
