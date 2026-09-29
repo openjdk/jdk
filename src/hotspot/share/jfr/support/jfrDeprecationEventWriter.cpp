@@ -70,6 +70,7 @@ void JfrDeprecatedStackTraceWriter::install_stacktrace_blob(JfrDeprecatedEdge* e
   writer.write<u4>(edge->linenumber());
   writer.write<u4>(edge->bci());
   writer.write<u1>(edge->frame_type());
+  writer.write<u8>(0); // native function
   JfrBlobHandle blob = writer.move();
   edge->set_stacktrace(blob);
 }

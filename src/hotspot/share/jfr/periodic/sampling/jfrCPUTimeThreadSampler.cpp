@@ -27,6 +27,7 @@
 #include "logging/log.hpp"
 
 #if defined(LINUX)
+#include "code/codeCache.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
@@ -35,6 +36,7 @@
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -42,9 +44,12 @@
 #include "runtime/vmOperation.hpp"
 #include "runtime/vmThread.hpp"
 #include "signals_posix.hpp"
+#include "utilities/align.hpp"
 #include "utilities/ticks.hpp"
 
 static const int64_t RECOMPUTE_INTERVAL_MS = 100;
+
+static bool _native_stack_enabled = true;  // FIXME
 
 static bool is_excluded(JavaThread* jt) {
   return jt->is_hidden_from_external_view() ||
@@ -67,32 +72,39 @@ static JavaThread* get_java_thread_if_valid() {
 }
 
 JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) :
-   _data(nullptr), _capacity(capacity), _head(0), _lost_samples(0), _lost_samples_due_to_queue_full(0) {
+   _data(nullptr), _capacity(capacity), _offset(0), _lost_samples(0), _lost_samples_due_to_queue_full(0) {
   if (capacity != 0) {
-    _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
+    _data = JfrCHeapObj::new_array<u1>(capacity);
   }
 }
 
 JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
   if (_data != nullptr) {
     assert(_capacity != 0, "invariant");
-    JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
+    JfrCHeapObj::free(_data, _capacity);
   }
 }
 
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(JavaThread::current()->jfr_thread_local()->is_cpu_time_jfr_enqueue_locked(), "invariant");
   assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
-  if (_head >= _capacity) {
+
+  u4 size = request.size();
+  u4 offset = _offset;
+  assert(is_aligned(offset, sizeof(address)), "invariant");
+  if (offset + size > _capacity) {
     return false;
   }
-  _data[_head++] = request;
+
+  memcpy(_data + offset, &request, size);
+  _offset = offset + size;
   return true;
 }
 
-JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
-  assert(index < _head, "invariant");
-  return _data[index];
+JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 offset) const {
+  assert(offset < _offset, "invariant");
+  assert(is_aligned(offset, sizeof(address)), "invariant");
+  return *reinterpret_cast<JfrCPUTimeSampleRequest*>(_data + offset);
 }
 
 static volatile u4 _lost_samples_sum = 0;
@@ -101,13 +113,13 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   if (capacity == _capacity) {
     return;
   }
-  _head = 0;
+  _offset = 0;
   if (_data != nullptr) {
     assert(_capacity != 0, "invariant");
-    JfrCHeapObj::free(_data, _capacity * sizeof(JfrCPUTimeSampleRequest));
+    JfrCHeapObj::free(_data, _capacity);
   }
   if (capacity != 0) {
-    _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
+    _data = JfrCHeapObj::new_array<u1>(capacity);
   } else {
     _data = nullptr;
   }
@@ -140,7 +152,7 @@ void JfrCPUTimeTraceQueue::init() {
 }
 
 void JfrCPUTimeTraceQueue::clear() {
-  _head = 0;
+  _offset = 0;
 }
 
 void JfrCPUTimeTraceQueue::resize_if_needed() {
@@ -150,7 +162,7 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
   }
   u4 capacity = _capacity;
   if (capacity < CPU_TIME_QUEUE_MAX_CAPACITY) {
-    float ratio = (float)lost_samples_due_to_queue_full / (float)capacity;
+    float ratio = (float)(lost_samples_due_to_queue_full * JfrCPUTimeSampleRequest::fixed_size()) / (float)capacity;
     int factor = 1;
     if (ratio > 8) { // idea is to quickly scale the queue in the worst case
       factor = ratio;
@@ -229,6 +241,8 @@ class JfrCPUSamplerThread : public NonJavaThread {
   int64_t get_sampling_period() const { return AtomicAccess::load(&_current_sampling_period_ns); };
 
   void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl, JfrTicks& now);
+
+  u4 walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs);
 
   // process the queues for all threads that are in native state (and requested to be processed)
   void stackwalk_threads_in_native();
@@ -588,6 +602,35 @@ static bool check_state(JavaThread* thread) {
   }
 }
 
+// Walks the native part of the stack until the topmost Java frame
+// and collects PC addresses of the native frames to the provided array.
+u4 JfrCPUSamplerThread::walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs) {
+  frame f = os::fetch_frame_from_context(ucontext);
+  const intptr_t* const last_java_sp = jt->last_Java_sp();
+
+  u4 count = 0;
+  while (count < JfrCPUTimeSampleRequest::MAX_NATIVE_FRAMES) {
+    const address pc = f.pc();
+    if (pc == nullptr || CodeCache::contains(pc)) {
+      break; // reached generated Java code
+    }
+    pcs[count++] = pc;
+
+    if (!jt->is_in_full_stack_checked(reinterpret_cast<address>(f.fp())) ||
+        (last_java_sp != nullptr && f.fp() >= last_java_sp) ||
+        os::is_first_C_frame(&f)) {
+      break;
+    }
+
+    const frame sender = os::get_sender_for_C_frame(&f);
+    if (sender.fp() <= f.fp()) {
+      break; // frame pointers must increase
+    }
+    f = sender;
+  }
+  return count;
+}
+
 void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   JfrTicks now = JfrTicks::now();
   JavaThread* jt = get_java_thread_if_valid();
@@ -612,8 +655,13 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
   sample_thread(request._request, context, jt, tl, now);
 
+  if (_native_stack_enabled && jt->thread_state() == _thread_in_native) {
+    request._native_pc_count = walk_native_stack(context, jt, request._native_pcs);
+  }
+
+  const bool was_empty = queue.is_empty();
   if (queue.enqueue(request)) {
-    if (queue.size() == 1) {
+    if (was_empty) {
       tl->set_has_cpu_time_jfr_requests(true);
       SafepointMechanism::arm_local_poll_release(jt);
     }
