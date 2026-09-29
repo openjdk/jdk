@@ -485,7 +485,7 @@ JRT_END
 
 
 static void profile_flat_array(JavaThread* current, bool load, bool null_free) {
-  // Skip profiling if array access profiling are disabled.
+  // Skip profiling if array access profiling is disabled.
   if (!C1UpdateMethodData || !MethodData::profile_array_accesses()) {
     return;
   }
