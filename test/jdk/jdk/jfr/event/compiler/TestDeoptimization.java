@@ -51,9 +51,7 @@ class Dummy {
  * @requires vm.flagless
  * @summary sanity test for Deoptimization event, depends on Compilation event
  * @requires vm.hasJFR
- * @requires vm.compMode == "Xmixed"
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
+ * @requires vm.flavor == "server"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
