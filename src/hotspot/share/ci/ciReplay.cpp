@@ -43,12 +43,12 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -1035,11 +1035,11 @@ class CompileReplay : public StackObj {
     }
   }
 
-  class InlineTypeFieldInitializer : public FieldClosure {
+  class ValueTypeFieldInitializer : public FieldClosure {
     oop _vt;
     CompileReplay* _replay;
   public:
-    InlineTypeFieldInitializer(oop vt, CompileReplay* replay)
+    ValueTypeFieldInitializer(oop vt, CompileReplay* replay)
   : _vt(vt), _replay(replay) {}
 
     void do_field(fieldDescriptor* fd) {
@@ -1092,11 +1092,11 @@ class CompileReplay : public StackObj {
       }
       case T_ARRAY:
       case T_OBJECT:
-        if (fd->is_null_free_inline_type() && fd->is_flat()) {
-          InlineKlass* vk = InlineKlass::cast(fd->field_holder()->get_inline_type_field_klass(fd->index()));
+        if (fd->is_null_free_value_type() && fd->is_flat()) {
+          ValueKlass* vk = fd->flat_field_klass();
           int field_offset = fd->offset() - vk->payload_offset();
           oop obj = cast_to_oop(cast_from_oop<address>(_vt) + field_offset);
-          InlineTypeFieldInitializer init_fields(obj, _replay);
+          ValueTypeFieldInitializer init_fields(obj, _replay);
           vk->do_nonstatic_fields(&init_fields);
         } else {
           JavaThread* THREAD = JavaThread::current();
@@ -1166,7 +1166,7 @@ class CompileReplay : public StackObj {
               Klass* actual_array_klass = parse_klass(CHECK_(true));
               Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
               ArrayProperties props = ArrayProperties::Default().with_non_atomic(non_atomic).with_null_restricted(null_restricted);
-              value = oopFactory::new_flatArray(InlineKlass::cast(kelem), length, props, CHECK_(true));
+              value = oopFactory::new_flatArray(ValueKlass::cast(kelem), length, props, CHECK_(true));
             } else {
               report_error("unrecognized array kind");
             }
@@ -1259,11 +1259,11 @@ class CompileReplay : public StackObj {
       const char* string_value = parse_escaped_string();
       double value = atof(string_value);
       java_mirror->double_field_put(fd.offset(), value);
-    } else if (fd.is_null_free_inline_type() && fd.is_flat()) {
+    } else if (fd.is_null_free_value_type() && fd.is_flat()) {
       Klass* kelem = resolve_klass(field_signature, CHECK);
-      InlineKlass* vk = InlineKlass::cast(kelem);
+      ValueKlass* vk = ValueKlass::cast(kelem);
       oop value = vk->allocate_instance(CHECK);
-      InlineTypeFieldInitializer init_fields(value, this);
+      ValueTypeFieldInitializer init_fields(value, this);
       vk->do_nonstatic_fields(&init_fields);
       java_mirror->obj_field_put(fd.offset(), value);
     } else {

@@ -104,6 +104,8 @@ public class WhiteBox {
   // printed by the VM.
   public native String printString(String str, int maxLength);
 
+  public native String printObject(Object obj);
+
   public native void lockAndStuckInSafepoint();
 
   public int countAliveClasses(String name) {
@@ -223,7 +225,7 @@ public class WhiteBox {
   }
 
   public native int getMarkWordOffset();
-  public native long getInlineTypePattern();
+  public native long getValueTypePattern();
   public native long getNullFreeArrayBitInPlace();
   public native long getFlatArrayBitInPlace();
 

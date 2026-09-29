@@ -252,6 +252,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
+  // sender_fp must be within the stack and above (but not equal) to
+  // current frame's fp.
+  address sender_fp = (address)this->link();
+  if (!thread->is_in_stack_range_excl(sender_fp, addr_fp)) {
+    return false;
+  }
+
   // Will the pc we fetch be non-zero (which we'll find at the oldest frame)
   if ((address)this->fp()[return_addr_offset] == nullptr) { return false; }
 
@@ -620,7 +627,7 @@ frame::frame(void* ptr_sp, void* ptr_fp, void* pc) : _on_heap(false) {
 
 #endif
 
-// Check for a method with scalarized inline type arguments that needs
+// Check for a method with scalarized value type arguments that needs
 // a stack repair and return the repaired sender stack pointer.
 
 intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {

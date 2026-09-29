@@ -144,14 +144,14 @@ void G1NewTracer::send_evacuation_info_event(G1EvacInfo* info) {
   EventEvacuationInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_cSetRegions(info->collection_set_regions());
+    e.set_cSetRegions(info->num_collection_set_regions());
     e.set_cSetUsedBefore(info->collection_set_used_before());
     e.set_cSetUsedAfter(info->collection_set_used_after());
-    e.set_allocationRegions(info->allocation_regions());
+    e.set_allocationRegions(info->num_allocation_regions());
     e.set_allocationRegionsUsedBefore(info->alloc_regions_used_before());
     e.set_allocationRegionsUsedAfter(info->alloc_regions_used_before() + info->bytes_used());
     e.set_bytesCopied(info->bytes_used());
-    e.set_regionsFreed(info->regions_freed());
+    e.set_regionsFreed(info->num_freed_regions());
     e.commit();
   }
 }
@@ -181,7 +181,7 @@ create_g1_evacstats(unsigned gcid, const G1EvacSummary& summary) {
   s.set_used(summary.used() * HeapWordSize);
   s.set_undoWaste(summary.undo_wasted() * HeapWordSize);
   s.set_regionEndWaste(summary.region_end_waste() * HeapWordSize);
-  s.set_regionsRefilled(summary.regions_filled());
+  s.set_regionsRefilled(summary.num_regions_filled());
   s.set_directAllocated(summary.direct_allocated() * HeapWordSize);
   s.set_failureUsed(summary.failure_used() * HeapWordSize);
   s.set_failureWaste(summary.failure_waste() * HeapWordSize);

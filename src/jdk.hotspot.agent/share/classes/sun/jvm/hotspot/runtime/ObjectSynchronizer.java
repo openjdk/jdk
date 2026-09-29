@@ -27,7 +27,6 @@ package sun.jvm.hotspot.runtime;
 import java.util.*;
 
 import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
@@ -50,23 +49,7 @@ public class ObjectSynchronizer {
   }
 
   public long identityHashValueFor(Oop obj) {
-    Mark mark = obj.getMark();
-    if (mark.isNeutral()) {
-      // FIXME: can not generate marks in debugging system
-      return mark.hash();
-    } else if (mark.hasMonitor()) {
-      return mark.hash();
-    } else {
-      if (Assert.ASSERTS_ENABLED) {
-        Assert.that(VM.getVM().isDebugging(), "Can not access displaced header otherwise");
-      }
-      if (mark.hasDisplacedMarkHelper()) {
-        Mark temp = mark.displacedMarkHelper();
-        return temp.hash();
-      }
-      // FIXME: can not do anything else here in debugging system
-      return 0;
-    }
+    return obj.getMark().hash();
   }
 
   public static Iterator objectMonitorIterator() {

@@ -4009,7 +4009,9 @@ public class Resolve {
             // early this can only qualify instance field accesses
             return false;
         }
-        return isSimpleEarlyFieldRefAllowed(pos, env, context, field, writeOnlyTarget);
+        // early qualified access only allowed for writes
+        return writeOnlyTarget &&
+                isSimpleEarlyFieldRefAllowed(pos, env, context, field, writeOnlyTarget);
     }
 
     /** Implements early access checks for unqualified field references (6.5.6.1) */

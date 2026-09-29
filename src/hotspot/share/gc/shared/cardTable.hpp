@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public:
   // All code generators assume that the size of a card table entry is one byte.
   // They need to be updated to reflect any change to this.
   // This code can typically be found by searching for the byte_map_base() method.
-  STATIC_ASSERT(sizeof(CardValue) == 1);
+  static_assert(sizeof(CardValue) == 1);
 
 protected:
   // The declaration order of these const fields is important; see the
@@ -94,10 +94,11 @@ protected:
     return cards_required(_whole_heap.word_size()) - 1;
   }
 
+  MemRegion committed_for(const MemRegion mr) const;
+
 private:
   void initialize_covered_region(void* region0_start, void* region1_start);
 
-  MemRegion committed_for(const MemRegion mr) const;
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable() = default;
