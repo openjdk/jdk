@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ import sun.security.util.math.intpoly.IntegerPolynomialP256;
 import sun.security.util.math.MutableIntegerModuloP;
 import sun.security.util.math.ImmutableIntegerModuloP;
 
-@Fork(jvmArgs = {"-XX:+AlwaysPreTouch",
+@Fork(jvmArgs = {"-XX:+AlwaysPreTouch", "-XX:+UnlockDiagnosticVMOptions",
+"-XX:CompileCommand=dontinline,sun.security.util.math.intpoly.IntegerPolynomial$MutableElement::conditionalSet",
     "--add-exports", "java.base/sun.security.util.math.intpoly=ALL-UNNAMED",
     "--add-exports", "java.base/sun.security.util.math=ALL-UNNAMED"}, value = 1)
 @Warmup(iterations = 3, time = 3)
@@ -53,9 +54,12 @@ public class PolynomialP256Bench {
     final IntegerPolynomialP256 residueField = IntegerPolynomialP256.ONE;
     final BigInteger refx =
         new BigInteger("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", 16);
-    final ImmutableIntegerModuloP x = residueField.getElement(refx);
-    final ImmutableIntegerModuloP X = montField.getElement(refx);
-    final ImmutableIntegerModuloP one = montField.get1();
+    final ImmutableIntegerModuloP xResidue = residueField.getElement(refx);
+    final ImmutableIntegerModuloP xMontgomery = montField.getElement(refx);
+    final ImmutableIntegerModuloP oneResidue = residueField.get1();
+    final ImmutableIntegerModuloP oneMontgomery = montField.get1();
+    final int ITERATIONS = 10_000;
+    boolean run = false;
 
     @Param({"true", "false"})
     private boolean isMontBench;
@@ -63,43 +67,54 @@ public class PolynomialP256Bench {
     @Benchmark
     public MutableIntegerModuloP benchMultiply() {
         MutableIntegerModuloP test;
-        if (isMontBench) {
-            test = X.mutable();
-        } else {
-            test = x.mutable();
-        }
 
-        for (int i = 0; i< 10000; i++) {
+        if (isMontBench) {
+            test = xMontgomery.mutable();
+        } else {
+            test = xResidue.mutable();
+        }
+        for (int i = 0; i < ITERATIONS; i++) {
             test = test.setProduct(test);
         }
+
         return test;
     }
 
     @Benchmark
     public MutableIntegerModuloP benchSquare() {
         MutableIntegerModuloP test;
-        if (isMontBench) {
-            test = X.mutable();
-        } else {
-            test = x.mutable();
-        }
 
-        for (int i = 0; i< 10000; i++) {
+        if (isMontBench) {
+            test = xMontgomery.mutable();
+        } else {
+            test = xResidue.mutable();
+        }
+        for (int i = 0; i < ITERATIONS; i++) {
             test = test.setSquare();
         }
+
         return test;
     }
 
     @Benchmark
     public MutableIntegerModuloP benchAssign() {
-        MutableIntegerModuloP test1 = X.mutable();
-        MutableIntegerModuloP test2 = one.mutable();
-        for (int i = 0; i< 10000; i++) {
+        MutableIntegerModuloP test1;
+        MutableIntegerModuloP test2;
+
+        if (isMontBench) {
+            test1 = xMontgomery.mutable();
+            test2 = oneMontgomery.mutable();
+        } else {
+            test1 = xResidue.mutable();
+            test2 = oneResidue.mutable();
+        }
+        for (int i = 0; i < ITERATIONS; i++) {
             test1.conditionalSet(test2, 0);
             test1.conditionalSet(test2, 1);
             test2.conditionalSet(test1, 0);
             test2.conditionalSet(test1, 1);
         }
+
         return test2;
     }
 }

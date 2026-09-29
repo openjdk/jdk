@@ -529,10 +529,6 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "CompilationMode",              JDK_Version::jdk(28), JDK_Version::jdk(29), JDK_Version::jdk(30)},
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -548,6 +544,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
   { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
+  { "OptoBundling",                 JDK_Version::undefined(), JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1008,7 +1005,7 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
   } else {
     *bldarray = REALLOC_C_HEAP_ARRAY(*bldarray, new_count, mtArguments);
   }
-  (*bldarray)[*count] = os::strdup_check_oom(arg);
+  (*bldarray)[*count] = os::strdup_check_oom(arg, mtArguments);
   *count = new_count;
 }
 
@@ -1091,7 +1088,7 @@ void Arguments::set_jvm_flags_file(const char *value) {
   if (_jvm_flags_file != nullptr) {
     os::free(_jvm_flags_file);
   }
-  _jvm_flags_file = os::strdup_check_oom(value);
+  _jvm_flags_file = os::strdup_check_oom(value, mtArguments);
 }
 
 void Arguments::print_jvm_flags_on(outputStream* st) {
@@ -1528,7 +1525,7 @@ void Arguments::process_java_launcher_argument(const char* launcher, void* extra
   if (_sun_java_launcher != _default_java_launcher) {
     os::free(const_cast<char*>(_sun_java_launcher));
   }
-  _sun_java_launcher = os::strdup_check_oom(launcher);
+  _sun_java_launcher = os::strdup_check_oom(launcher, mtArguments);
 }
 
 bool Arguments::created_by_java_launcher() {
@@ -2329,7 +2326,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);
       _legacyGCLogging.lastFlag = 2;
-      _legacyGCLogging.file = os::strdup_check_oom(tail);
+      _legacyGCLogging.file = os::strdup_check_oom(tail, mtArguments);
     } else if (match_option(option, "-Xlog", &tail)) {
       bool ret = false;
       if (strcmp(tail, ":help") == 0) {
@@ -2520,7 +2517,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
 }
 
 void Arguments::set_ext_dirs(char *value) {
-  _ext_dirs = os::strdup_check_oom(value);
+  _ext_dirs = os::strdup_check_oom(value, mtArguments);
 }
 
 void Arguments::add_patch_mod_prefix(const char* module_name, const char* path) {
@@ -2719,7 +2716,7 @@ class ScopedVMInitArgs : public StackObj {
     if (_vm_options_file_arg != nullptr) {
       os::free(_vm_options_file_arg);
     }
-    _vm_options_file_arg = os::strdup_check_oom(vm_options_file_arg);
+    _vm_options_file_arg = os::strdup_check_oom(vm_options_file_arg, mtArguments);
   }
 
   ~ScopedVMInitArgs() {
@@ -3513,8 +3510,8 @@ jint Arguments::apply_ergo() {
     WARN_IF_NOT_DEFAULT_FLAG(flag)                  \
     FLAG_SET_DEFAULT(flag, false);
 
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(InlineTypePassFieldsAsArgs);
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(InlineTypeReturnedAsFields);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(ValueTypePassFieldsAsArgs);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(ValueTypeReturnedAsFields);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseArrayFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseFieldFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullFreeNonAtomicValueFlattening);
@@ -3523,15 +3520,14 @@ jint Arguments::apply_ergo() {
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullableNonAtomicValueFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseAcmpFastPath);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseHashcodeFastPath);
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintInlineLayout);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintValueLayout);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintFlatArrayLayout);
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(IgnoreAssertUnsetFields);
     WARN_IF_NOT_DEFAULT_FLAG(FlatArrayElementMaxOops);
     WARN_IF_NOT_DEFAULT_FLAG(ForceNonTearable);
 #ifdef ASSERT
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(StressCallingConvention);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PreloadClasses);
-    WARN_IF_NOT_DEFAULT_FLAG(PrintInlineKlassFields);
+    WARN_IF_NOT_DEFAULT_FLAG(PrintValueKlassFields);
 #endif
 #ifdef COMPILER1
     DEBUG_ONLY(DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(C1UseDelayedFlattenedFieldReads);)
@@ -3557,11 +3553,11 @@ jint Arguments::apply_ergo() {
     DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(FlatteningBudget, 0);
 #undef DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING
     if (is_interpreter_only() && !CDSConfig::is_dumping_archive() && !UseSharedSpaces) {
-      // Disable calling convention optimizations if inline types are not supported.
+      // Disable calling convention optimizations if value types are not supported.
       // Also these aren't useful in -Xint. However, don't disable them when dumping or using
       // the CDS archive, as the values must match between dumptime and runtime.
-      FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
-      FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+      FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+      FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
     }
     if (!UseNullFreeNonAtomicValueFlattening &&
         !UseNullableAtomicValueFlattening &&

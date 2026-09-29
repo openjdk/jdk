@@ -33,16 +33,14 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/divnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/deoptimization.hpp"
 
 class BarrierSetC2;
-class FastLockNode;
-class FastUnlockNode;
 class IdealKit;
 class LibraryCallKit;
 class Parse;
@@ -525,7 +523,7 @@ class GraphKit : public Phase {
   Node* local(uint idx)         const { map_not_null(); return _map->local(      _map->_jvms, idx); }
   Node* stack(uint idx)         const { map_not_null(); return _map->stack(      _map->_jvms, idx); }
   Node* argument(uint idx)      const { map_not_null(); return _map->argument(   _map->_jvms, idx); }
-  Node* monitor_box(uint idx)   const { map_not_null(); return _map->monitor_box(_map->_jvms, idx); }
+  BoxLockNode* monitor_box(uint idx) const { map_not_null(); return _map->monitor_box(_map->_jvms, idx); }
   Node* monitor_obj(uint idx)   const { map_not_null(); return _map->monitor_obj(_map->_jvms, idx); }
 
   void set_control  (Node* c)         { map_not_null()->set_control(c); }
@@ -603,7 +601,7 @@ class GraphKit : public Phase {
                         BasicType bt,
                         DecoratorSet decorators,
                         bool safe_for_replace = true,
-                        const InlineTypeNode* vt = nullptr);
+                        const ValueTypeNode* vt = nullptr);
 
   Node* access_load_at(Node* obj,   // containing obj
                        Node* adr,   // actual address to load val at
@@ -664,8 +662,8 @@ class GraphKit : public Phase {
                               const TypeInt* sizetype = nullptr,
                               // Optional control dependency (for example, on range check)
                               Node* ctrl = nullptr);
-  Node* cast_to_flat_array(Node* array, ciInlineKlass* elem_vk);
-  Node* cast_to_flat_array_exact(Node* array, ciInlineKlass* elem_vk, bool is_null_free, bool is_atomic);
+  Node* cast_to_flat_array(Node* array, ciValueKlass* elem_vk);
+  Node* cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic);
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
@@ -827,8 +825,8 @@ class GraphKit : public Phase {
   Node* insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent = nullptr);
   Node* insert_reachability_fence(Node* referent);
   // Optional 'precedent' is appended as an extra edge, to force ordering.
-  FastLockNode* shared_lock(Node* obj);
-  void shared_unlock(Node* box, Node* obj);
+  BoxLockNode* shared_lock(Node* obj);
+  void         shared_unlock(BoxLockNode* box, Node* obj);
 
   // helper functions for the fast path/slow path idioms
   Node* fast_and_slow(Node* in, const Type *result_type, Node* null_result, IfNode* fast_test, Node* fast_result, address slow_call, const TypeFunc *slow_call_type, Node* slow_arg, Klass* ex_klass, Node* slow_result);
@@ -843,14 +841,14 @@ class GraphKit : public Phase {
                       SafePointNode** new_cast_failure_map = nullptr, bool null_free = false,
                       bool maybe_larval = false);
 
-  // Inline types
-  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq, bool check_lock = true);
-  Node* inline_type_test(Node* obj, bool is_inline = true);
+  // Value types
+  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq);
+  Node* value_type_test(Node* obj, bool is_value = true);
   Node* flat_array_test(Node* array_or_klass, bool flat = true);
   Node* null_free_array_test(Node* array, bool null_free = true);
-  Node* null_free_atomic_array_test(Node* array, ciInlineKlass* vk);
+  Node* null_free_atomic_array_test(Node* array, ciValueKlass* vk);
   Node* atomic_layout_array_test_and_get_layout_kind(Node* array, RegionNode* atomic_region);
-  Node* inline_array_null_guard(Node* ary, Node* val, int nargs);
+  Node* value_array_null_guard(Node* ary, Node* val, int nargs);
 
   Node* gen_subtype_check(Node* obj, Node* superklass);
 
@@ -874,7 +872,7 @@ class GraphKit : public Phase {
                      Node* slow_test = nullptr,
                      Node* *return_size_val = nullptr,
                      bool deoptimize_on_exception = false,
-                     InlineTypeNode* inline_type_node = nullptr);
+                     ValueTypeNode* value_type_node = nullptr);
   Node* new_array(Node* klass_node, Node* count_val, int nargs,
                   Node* *return_size_val = nullptr,
                   bool deoptimize_on_exception = false,

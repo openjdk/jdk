@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -49,7 +50,6 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
 #include "oops/flatArrayOop.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -59,6 +59,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -254,7 +255,7 @@ JRT_ENTRY(void, InterpreterRuntime::write_flat_field(JavaThread* current, oopDes
   assert(oopDesc::is_oop_or_null(value), "Sanity check");
 
   FlatFieldPayload payload(instanceOop(obj), entry);
-  payload.write(inlineOop(value), CHECK);
+  payload.write(valueOop(value), CHECK);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* current, BasicType type, jint size))
@@ -747,18 +748,27 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
   Bytecodes::Code get_code = (Bytecodes::Code)0;
   Bytecodes::Code put_code = (Bytecodes::Code)0;
   if (uninitialized_static && (info.is_strict_static_unset() || strict_static_final)) {
-    // During <clinit>, closely track the state of strict statics.
-    // 1. if we are reading an uninitialized strict static, throw
-    // 2. if we are writing one, clear the "unset" flag
-    //
-    // Note: If we were handling an attempted write of a null to a
-    // null-restricted strict static, we would NOT clear the "unset"
-    // flag.
-    assert(klass->is_being_initialized(), "else should have thrown");
-    assert(klass->is_reentrant_initialization(THREAD),
-      "<clinit> must be running in current thread");
-    klass->notify_strict_static_access(info.index(), is_put, CHECK);
-    assert(!info.is_strict_static_unset(), "after initialization, no unset flags");
+    if (init_mode == ClassInitMode::dont_init) {
+      // During an AOT assembly run, the VM resolves constant pool field references
+      // and may come across a strict static field whose holder is in the linked,
+      // not initialized, state. Strict static field access should not be notified
+      // in this case since this isn't a true access. Leave it uncached until
+      // an actual runtime access.
+      precond(CDSConfig::is_dumping_archive());
+    } else {
+      // During <clinit>, closely track the state of strict statics.
+      // 1. if we are reading an uninitialized strict static, throw
+      // 2. if we are writing one, clear the "unset" flag
+      //
+      // Note: If we were handling an attempted write of a null to a
+      // null-restricted strict static, we would NOT clear the "unset"
+      // flag.
+      assert(klass->is_being_initialized(), "else should have thrown");
+      assert(klass->is_reentrant_initialization(THREAD),
+        "<clinit> must be running in current thread");
+      klass->notify_strict_static_access(info.index(), is_put, CHECK);
+      assert(!info.is_strict_static_unset(), "after initialization, no unset flags");
+    }
   } else if (!uninitialized_static || VM_Version::supports_fast_class_init_checks()) {
     get_code = ((is_static) ? Bytecodes::_getstatic : Bytecodes::_getfield);
     if ((is_put && !has_initialized_final_update) || !info.access_flags().is_final()) {
@@ -798,14 +808,6 @@ JRT_END
 JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   oop obj = elem->obj();
   assert(Universe::heap()->is_in(obj), "must be an object");
-  // The object could become unlocked through a JNI call, which we have no other checks for.
-  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
-  if (obj->is_unlocked()) {
-    if (CheckJNICalls) {
-      fatal("Object has been unlocked by JNI");
-    }
-    return;
-  }
   ObjectSynchronizer::exit(obj, elem->lock(), JavaThread::current());
   // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
   // again at method exit or in the case of an exception.

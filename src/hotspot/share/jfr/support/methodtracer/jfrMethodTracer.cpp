@@ -57,6 +57,55 @@ ModuleEntry*                         JfrMethodTracer::_jdk_jfr_module = nullptr;
 GrowableArray<JfrInstrumentedClass>* JfrMethodTracer::_instrumented_classes = nullptr;
 GrowableArray<jlong>*                JfrMethodTracer::_timing_entries = nullptr;
 
+constexpr static unsigned int JFR_PLACEHOLDER_TABLE_SIZE = 1009;
+constexpr static unsigned int MAX_JFR_PLACEHOLDER_TABLE_SIZE = 0x3fffffff;
+
+static JfrPlaceholderTable* _placeholder_table = nullptr; // Guarded by ClassLoaderDataGraph_lock
+
+static JfrPlaceholderTable* placeholder_table() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  if (_placeholder_table == nullptr) {
+    _placeholder_table = new (mtTracing) JfrPlaceholderTable(JFR_PLACEHOLDER_TABLE_SIZE, MAX_JFR_PLACEHOLDER_TABLE_SIZE);
+  }
+  return _placeholder_table;
+}
+
+class JfrPlaceholderTableCleaner : StackObj {
+ public:
+  bool do_entry(const traceid& id, const InstanceKlass*& ik) {
+    // Returning true removes the unloaded entry from the placeholder table.
+    return JfrKlassUnloading::is_unloaded(id, true);
+  }
+};
+
+static void clean_unloaded_placeholders() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  if (placeholder_table()->number_of_entries() > 0) {
+    JfrPlaceholderTableCleaner cleaner;
+    placeholder_table()->unlink(&cleaner);
+  }
+}
+
+/*
+ * Since the InstanceKlass* is not yet officially loaded, we need to stage the registration via a placeholder table.
+ * Iff the InstanceKlass* manages to pass through the class loading pipeline, and become selected for definition,
+ * we will get a callback to complete the registration process and put it onto the instrumented classes list.
+ * Only at that point is it safe to enqueue the ik for tagging purposes.
+ * Since these classes are in the process of loading, they have not yet registered with any JVM support structure
+ * (e.g., add_to_hierarchy or a dictionary).Therefore, this table is the only means of reaching these classes,
+ * which is necessary should a new filter be installed.
+ */
+static void register_placeholder(const InstanceKlass* ik, const JfrMethodProcessor& mp) {
+  assert(ik != nullptr, "invariant");
+  assert(!ik->is_loaded(), "invariant");
+  assert(!ik->is_scratch_class(), "invariant");
+  JfrTraceTagging::tag_preload_sticky(ik);
+  MutexLocker lock(ClassLoaderDataGraph_lock);
+  JfrTraceTagging::tag_sticky(ik, mp);
+  assert(!placeholder_table()->contains(JfrTraceId::load_raw(ik)), "invariant");
+  placeholder_table()->put(JfrTraceId::load_raw(ik), ik);
+}
+
 // Quick and unlocked check to see if the Method Tracer has been activated.
 // This is flipped to not null the first time a filter is set and will stay non-null forever.
 bool JfrMethodTracer::in_use() {
@@ -84,7 +133,7 @@ jlongArray JfrMethodTracer::set_filters(JNIEnv* env, jobjectArray classes, jobje
   JfrFilterClassClosure filter_class_closure(THREAD);
   {
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    filter_class_closure.iterate_all_classes(instrumented_classes());
+    filter_class_closure.iterate_all_classes(instrumented_classes(), placeholder_table());
     ::clear(instrumented_classes());
   }
   retransform(env, filter_class_closure, THREAD);
@@ -128,10 +177,25 @@ void JfrMethodTracer::retransform(JNIEnv* env, const JfrFilterClassClosure& clas
   }
 }
 
-static void handle_no_bytecode_result(const InstanceKlass* ik) {
+#ifdef ASSERT
+static bool in_list(const InstanceKlass* ik, const GrowableArray<JfrInstrumentedClass>* list) {
   assert(ik != nullptr, "invariant");
+  assert(list != nullptr, "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  const JfrInstrumentedClass jic(JfrTraceId::load_raw(ik), ik, false);
+  return list->find(jic) != -1;
+}
+#endif
+
+void JfrMethodTracer::handle_no_bytecode_result(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  MutexLocker lock(ClassLoaderDataGraph_lock);
   if (JfrTraceId::has_sticky_bit(ik)) {
-    MutexLocker lock(ClassLoaderDataGraph_lock);
+    if (!ik->is_loaded() && placeholder_table()->remove(JfrTraceId::load_raw(ik))) {
+      JfrTraceTagging::clear_sticky_for_placeholder(ik);
+      return;
+    }
+    JfrTraceTagging::clear_sticky_methods(ik);
     JfrTraceTagging::clear_sticky(ik);
   }
 }
@@ -175,22 +239,28 @@ void JfrMethodTracer::on_klass_creation(InstanceKlass*& ik, ClassFileParser& par
     JfrClassTransformer::rewrite_klass_pointer(ik, new_ik, parser, THREAD); // The ik is modified to point to new_ik here.
     mp.update_methods(existing_ik);
     existing_ik->module()->add_read(jdk_jfr_module());
+    const bool is_loaded = existing_ik->is_loaded();
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    if (!is_loaded && placeholder_table()->contains(JfrTraceId::load_raw(existing_ik))) {
+      assert(JfrTraceId::has_sticky_bit(existing_ik), "invariant");
+      if (mp.has_timing() && !JfrTraceId::has_timing_bit(existing_ik)) {
+        JfrTraceId::set_timing_bit(existing_ik);
+      }
+      JfrTraceTagging::tag_sticky_for_placeholder_retransform_klass(existing_ik, ik, mp);
+      return;
+    }
     // By setting the sticky bit on the existng klass, we receive a callback into on_klass_redefinition (see below)
     // when our new methods are installed into the existing klass as part of retransformation / redefinition.
     // Only when we know our new methods have been installed can we add the klass to the instrumented list (done as part of callback).
-    JfrTraceTagging::tag_sticky_for_retransform_klass(existing_ik, ik, mp.methods(), mp.has_timing());
+    JfrTraceTagging::tag_sticky_for_retransform_klass(existing_ik, ik, mp);
     return;
   }
   // Initial class load.
   JfrClassTransformer::cache_class_file_data(new_ik, clone, THREAD); // save the initial class file bytes (clone stream)
   JfrClassTransformer::rewrite_klass_pointer(ik, new_ik, parser, THREAD); // The ik is modified to point to new_ik here.
   mp.update_methods(ik);
-  // On initial class load the newly created klass can be installed into the instrumented class list directly.
-  add_instrumented_class(ik, mp.methods());
-  if (mp.has_timing()) {
-    // After having installed the newly created klass into the list, perform an upcall to publish the associated TimedClass.
-    JfrUpcalls::publish_method_timers_for_klass(JfrTraceId::load_raw(ik), THREAD);
-  }
+  ik->module()->add_read(jdk_jfr_module());
+  register_placeholder(ik, mp);
 }
 
 static inline void log_add(const InstanceKlass* ik) {
@@ -235,31 +305,55 @@ void JfrMethodTracer::on_klass_redefinition(const InstanceKlass* ik, bool has_ti
   }
 }
 
-#ifdef ASSERT
-static bool in_instrumented_list(const InstanceKlass* ik, const GrowableArray<JfrInstrumentedClass>* list) {
-  assert(ik != nullptr, "invariant");
-  assert(list != nullptr, "invariant");
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  const JfrInstrumentedClass jic(JfrTraceId::load_raw(ik), ik, false);
-  return list->find(jic) != -1;
+static void remove_from_placeholder_table(traceid id) {
+  assert(placeholder_table()->contains(id), "invariant");
+  placeholder_table()->remove(id);
+  assert(!placeholder_table()->contains(id), "invariant");
 }
-#endif
 
-void JfrMethodTracer::add_instrumented_class(InstanceKlass* ik, GrowableArray<JfrTracedMethod>* methods) {
+void JfrMethodTracer::add_instrumented_class(const InstanceKlass* ik, JavaThread* jt) {
   assert(ik != nullptr, "invariant");
-  assert(!ik->is_scratch_class(), "invariant");
-  assert(methods->is_nonempty(), "invariant");
-  ik->module()->add_read(jdk_jfr_module());
-  MutexLocker lock(ClassLoaderDataGraph_lock);
-  assert(!in_instrumented_list(ik, instrumented_classes()), "invariant");
-  JfrTraceTagging::tag_sticky(ik, methods);
-  const JfrInstrumentedClass jik(JfrTraceId::load_raw(ik), ik, false);
-  const int idx = instrumented_classes()->append(jik);
-  if (idx == 0) {
-    JfrTraceIdEpoch::set_method_tracer_tag_state();
+  assert(!ik->is_loaded(), "invariant");
+  assert(jt != nullptr, "invariant");
+  const traceid id = JfrTraceId::load_raw(ik);
+  bool has_timing = false;
+  {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    if (!JfrTraceId::has_sticky_bit(ik)) {
+      // A filter retransform removed the sticky bit from the ik
+      // and the corresponding entry in the placeholder table.
+      assert(!JfrTraceId::has_timing_bit(ik), "invariant");
+      assert(!placeholder_table()->contains(id), "invariant");
+      return;
+    }
+    remove_from_placeholder_table(id);
+    has_timing = JfrTraceId::has_timing_bit(ik);
+    if (has_timing) {
+      JfrTraceId::clear_timing_bit(ik);
+    }
+    JfrTraceTagging::enqueue(ik);
+    assert(!in_list(ik, instrumented_classes()), "invariant");
+    const JfrInstrumentedClass jic(id, ik, false);
+    const int idx = instrumented_classes()->append(jic);
+    if (idx == 0) {
+      JfrTraceIdEpoch::set_method_tracer_tag_state();
+    }
+    assert(in_list(ik, instrumented_classes()), "invariant");
   }
-  assert(in_instrumented_list(ik, instrumented_classes()), "invariant");
   log_add(ik);
+  if (has_timing) {
+    JfrUpcalls::publish_method_timers_for_klass(id, jt);
+  }
+}
+
+void JfrMethodTracer::on_definition(const InstanceKlass* ik, JavaThread* jt) {
+  assert(ik != nullptr, "invariant");
+  assert(JfrTraceId::has_preload_sticky_bit(ik), "invariant");
+  assert(in_use(), "invariant");
+  JfrTraceId::clear_preload_sticky_bit(ik);
+  // Last station before the ik is enqueued. The lifespan of preload bits ends here.
+  assert(0 == JfrTraceId::preload_bits(ik), "invariant");
+  add_instrumented_class(ik, jt);
 }
 
 ModuleEntry* JfrMethodTracer::jdk_jfr_module() {
@@ -338,8 +432,10 @@ void JfrMethodTracer::add_to_unloaded_set(const Klass* k) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(JfrTraceId::has_sticky_bit(k), "invariant");
   assert(_current_unloaded_class_ids != nullptr, "invariant");
-  assert(_current_unloaded_class_ids->find(JfrTraceId::load_raw(k)) == -1, "invariant");
-  _current_unloaded_class_ids->append(static_cast<jlong>(JfrTraceId::load_raw(k)));
+  const jlong id = static_cast<jlong>(JfrTraceId::load_raw(k));
+  if (_current_unloaded_class_ids->find(id) == -1) {
+    _current_unloaded_class_ids->append(id);
+  }
 }
 
 // Invoked from JfrTypeSet after having finalized rotation.
@@ -359,6 +455,8 @@ void JfrMethodTracer::trim_instrumented_classes(bool trim) {
     delete _instrumented_classes;
     _instrumented_classes = trimmed_classes;
   }
+
+  clean_unloaded_placeholders();
 
   if (instrumented_classes()->is_nonempty()) {
     if (!JfrTraceIdEpoch::has_method_tracer_changed_tag_state()) {

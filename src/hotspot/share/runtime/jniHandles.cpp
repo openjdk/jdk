@@ -53,8 +53,8 @@ OopStorage* JNIHandles::_global_handles = nullptr;
 OopStorage* JNIHandles::_weak_global_handles = nullptr;
 
 void jni_handles_init() {
-  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global", mtInternal);
-  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak", mtInternal);
+  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global", mtJNI);
+  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak", mtJNI);
 }
 
 jobject JNIHandles::make_local(oop obj) {
@@ -68,7 +68,7 @@ jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_
   } else {
     assert(oopDesc::is_oop(obj), "not an oop");
     assert(!current_thread_in_native(), "must not be in native");
-    STATIC_ASSERT(TypeTag::local == 0);
+    static_assert(TypeTag::local == 0);
     return thread->active_handles()->allocate_handle(thread, obj, alloc_failmode);
   }
 }
@@ -293,8 +293,8 @@ bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
 
   if (!ret && Arguments::is_valhalla_enabled()) {
     if (obj1 != nullptr && obj2 != nullptr &&
-        obj1->klass() == obj2->klass() && obj1->klass()->is_inline_klass()) {
-      // The two references are different, they are not null and they are both inline types,
+        obj1->klass() == obj2->klass() && obj1->klass()->is_value_klass()) {
+      // The two references are different, they are not null and they are both value types,
       // a full substitutability test is required, calling ValueObjectMethods.isSubstitutable()
       // (similarly to InterpreterRuntime::is_substitutable).
       // The jobjects must be re-resolved as the no-keepalive variants are not safe to use
@@ -337,7 +337,7 @@ static inline uintptr_t untag_free_list(uintptr_t value) {
 // oops. The freelist handling currently relies on the size of oops
 // being the same as a native pointer. If this ever changes, then
 // this freelist handling must change too.
-STATIC_ASSERT(sizeof(oop) == sizeof(uintptr_t));
+static_assert(sizeof(oop) == sizeof(uintptr_t));
 
 #ifdef ASSERT
 void JNIHandleBlock::zap() {
