@@ -63,7 +63,7 @@
 
 #define JAR_ERROR_CANNOT_OPEN       "Error: Unable to open JAR file %s"
 #define JAR_ERROR_MANIFEST_MISSING  "Error: No manifest in JAR file %s"
-#define JAR_ERROR_MANIFEST_PARSE    "Error: Unable to parse the manifest of JAR file %s"
+#define JAR_ERROR_MANIFEST_PARSE    "Error: Unable to parse the manifest, invalid or corrupt JAR file %s"
 
 #define CFG_WARN1       "Warning: %s VM not supported; %s VM will be used"
 #define CFG_WARN2       "Warning: No leading - on line %d of `%s'"
