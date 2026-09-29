@@ -1549,7 +1549,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_impl(GraphKit* kit, ciValueKlass* v
   return LoadFlatNode::load(kit, vk, base, ptr, null_free, trust_null_free_oop, decorators);
 }
 
-ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* vk, Node* base, Node* idx, float null_free_prob,float null_free_atomic_prob) {
+ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* vk, Node* base, Node* idx, float null_free_prob, float null_free_atomic_prob) {
   assert(vk->maybe_flat_in_array(), "element type %s cannot be flat in array", vk->name()->as_utf8());
   PhaseGVN& gvn = kit->gvn();
   // The flat field loads are dependent on both the array layout checks as well as the range check.
