@@ -58,8 +58,9 @@ static gboolean checkVariantType(const char *functionName,
     return FALSE;
 }
 
-#define CHECK_VARIANT_TYPE(VALUE, TYPE, CAPTION) \
-    checkVariantType(__func__, __LINE__, (VALUE), (TYPE), (CAPTION))
+#define GET_VARIANT_CHECKED(VALUE, TYPE, FORMAT, CAPTION, ...) \
+    (checkVariantType(__func__, __LINE__, (VALUE), (TYPE), (CAPTION)) && \
+    (gtk->g_variant_get((VALUE), (FORMAT), __VA_ARGS__), TRUE))
 
 GDBusProxy *getProxy() {
     return isRemoteDesktop ? portal->remoteDesktopProxy : portal->screenCastProxy;
@@ -235,13 +236,12 @@ gboolean checkVersion() {
             return FALSE;
         }
 
-        if (!CHECK_VARIANT_TYPE(retVersion, "(v)", "Version response")) {
+        GVariant *varVersion = NULL;
+        if (!GET_VARIANT_CHECKED(retVersion, "(v)", "(v)",
+                                 "Version response", &varVersion)) {
             gtk->g_variant_unref(retVersion);
             return FALSE;
         }
-
-        GVariant *varVersion = NULL;
-        gtk->g_variant_get(retVersion, "(v)", &varVersion);
 
         if (!varVersion){
             gtk->g_variant_unref(retVersion);
@@ -249,13 +249,11 @@ gboolean checkVersion() {
             return FALSE;
         }
 
-        if (!CHECK_VARIANT_TYPE(varVersion, "u", "Version")) {
+        if (!GET_VARIANT_CHECKED(varVersion, "u", "u", "Version", &version)) {
             gtk->g_variant_unref(varVersion);
             gtk->g_variant_unref(retVersion);
             return FALSE;
         }
-
-        version = gtk->g_variant_get_uint32(varVersion);
 
         gtk->g_variant_unref(varVersion);
         gtk->g_variant_unref(retVersion);
@@ -451,18 +449,12 @@ static void callbackScreenCastCreateSession(
     uint32_t status;
     GVariant *result = NULL;
 
-    if (!CHECK_VARIANT_TYPE(parameters, "(ua{sv})", "CreateSession response")) {
+    if (!GET_VARIANT_CHECKED(parameters, "(ua{sv})", "(u@a{sv})",
+                             "CreateSession response", &status, &result)) {
         helper->isDone = TRUE;
         callbackEnd();
         return;
     }
-
-    gtk->g_variant_get(
-            parameters,
-            "(u@a{sv})",
-            &status,
-            &result
-    );
 
     if (status != 0) {
         DEBUG_SCREENCAST("Failed to create ScreenCast: %u\n", status);
@@ -582,13 +574,12 @@ static void callbackScreenCastSelectSources(
     uint32_t status;
     GVariant* result = NULL;
 
-    if (!CHECK_VARIANT_TYPE(parameters, "(ua{sv})", "SelectSources response")) {
+    if (!GET_VARIANT_CHECKED(parameters, "(ua{sv})", "(u@a{sv})",
+                             "SelectSources response", &status, &result)) {
         helper->isDone = TRUE;
         callbackEnd();
         return;
     }
-
-    gtk->g_variant_get(parameters, "(u@a{sv})", &status, &result);
 
     if (status != 0) {
         DEBUG_SCREENCAST("Failed select sources: %u\n", status);
@@ -621,13 +612,12 @@ static void callbackRemoteDesktopSelectDevices(
     uint32_t status;
     GVariant* result = NULL;
 
-    if (!CHECK_VARIANT_TYPE(parameters, "(ua{sv})", "SelectDevices response")) {
+    if (!GET_VARIANT_CHECKED(parameters, "(ua{sv})", "(u@a{sv})",
+                             "SelectDevices response", &status, &result)) {
         helper->isDone = TRUE;
         callbackEnd();
         return;
     }
-
-    gtk->g_variant_get(parameters, "(u@a{sv})", &status, &result);
 
     if (status != 0) {
         DEBUG_SCREENCAST("Failed select devices: %u\n", status);
@@ -762,14 +752,13 @@ static void callbackScreenCastStart(
     GVariant* result = NULL;
     const gchar *oldToken = startHelper->token;
 
-    if (!CHECK_VARIANT_TYPE(parameters, "(ua{sv})", "Start response")) {
+    if (!GET_VARIANT_CHECKED(parameters, "(ua{sv})", "(u@a{sv})",
+                             "Start response", &status, &result)) {
         startHelper->result = RESULT_ERROR;
         helper->isDone = TRUE;
         callbackEnd();
         return;
     }
-
-    gtk->g_variant_get(parameters, "(u@a{sv})", &status, &result);
 
     if (status != 0) {
         // Cancel pressed on the system dialog
@@ -946,18 +935,13 @@ int portalScreenCastOpenPipewireRemote() {
         return RESULT_ERROR;
     }
 
-    if (!CHECK_VARIANT_TYPE(response, "(h)", "OpenPipeWireRemote response")) {
+    gint32 index;
+    if (!GET_VARIANT_CHECKED(response, "(h)", "(h)",
+                             "OpenPipeWireRemote response", &index)) {
         gtk->g_variant_unref(response);
         gtk->g_object_unref(fdList);
         return RESULT_ERROR;
     }
-
-    gint32 index;
-    gtk->g_variant_get(
-            response,
-            "(h)",
-            &index
-    );
 
     gtk->g_variant_unref(response);
 
