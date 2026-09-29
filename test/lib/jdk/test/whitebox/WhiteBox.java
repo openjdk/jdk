@@ -859,8 +859,6 @@ public class WhiteBox {
   public native long hostPhysicalSwap();
   public native int hostCPUs();
 
-
-
   // Decoder
   public native void disableElfSectionCache();
 
