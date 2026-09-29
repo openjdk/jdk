@@ -50,16 +50,12 @@ struct AtomicAccess::PlatformAdd {
     static_assert(byte_size >= 4);
 #endif
 
-    if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
+    switch (order) {
+      case memory_order_relaxed:
+        return __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+      default:
+        return __atomic_add_fetch(dest, add_value, __ATOMIC_SEQ_CST);
     }
-
-    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
-
-    if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
-    }
-    return res;
   }
 
   template<typename D, typename I>
@@ -169,16 +165,12 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
   static_assert(byte_size == sizeof(T));
   static_assert(byte_size == 4 || byte_size == 8);
 
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+  switch (order) {
+    case memory_order_relaxed:
+      return __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+    default:
+      return __atomic_exchange_n(dest, exchange_value, __ATOMIC_SEQ_CST);
   }
-
-  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-  return res;
 }
 
 // __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
