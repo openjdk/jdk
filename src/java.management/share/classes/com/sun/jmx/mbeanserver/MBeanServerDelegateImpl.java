@@ -89,7 +89,7 @@ final class MBeanServerDelegateImpl
                                    "(the version of this product).",
                                    true,false,false),
             new MBeanAttributeInfo("ImplementationVendor","java.lang.String",
-                                   "the JMX implementation vendor "+
+                                   "The JMX implementation vendor "+
                                    "(the vendor of this product).",
                                    true,false,false)
                 };
