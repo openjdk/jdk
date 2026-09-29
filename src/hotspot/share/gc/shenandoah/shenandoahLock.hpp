@@ -94,7 +94,7 @@ private:
   Atomic<Thread*> _owner;
 public:
   ShenandoahSimpleLock();
-  void lock(bool allow_block_for_safepoint = false);
+  bool lock();
   void unlock();
   bool owned_by_self() const {
     return _owner.load_relaxed() == Thread::current();
@@ -123,9 +123,8 @@ private:
 
 public:
   ShenandoahReentrantLocker(Lock* lock) : _lock(nullptr) {
-    if (!lock->owned_by_self()) {
+    if (lock->lock()) {
       _lock = lock;
-      _lock->lock();
     }
   }
 

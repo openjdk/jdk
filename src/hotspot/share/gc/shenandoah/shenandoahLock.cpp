@@ -93,10 +93,16 @@ ShenandoahSimpleLock::ShenandoahSimpleLock() : _owner(nullptr) {
   assert(os::mutex_init_done(), "Too early!");
 }
 
-void ShenandoahSimpleLock::lock(bool allow_block_for_safepoint) {
+bool ShenandoahSimpleLock::lock() {
+  if (_owner.load_relaxed() == Thread::current()) {
+    return false;
+  }
+
   _lock.lock();
   assert(_owner.load_relaxed() == nullptr, "No owner yet.");
   _owner.store_relaxed(Thread::current());
+
+  return true;
 }
 
 void ShenandoahSimpleLock::unlock() {
