@@ -32,7 +32,7 @@ import tests.JImageGenerator;
 /*
  * @test
  * @summary Tests whether a custom Hijrah configuration properties file works correctly
- * @bug 8187987 8392848
+ * @bug 8187987 8392848 8393048
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library /tools/lib /test/lib
  * @modules java.base/jdk.internal.jimage

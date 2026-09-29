@@ -76,7 +76,9 @@ public class HijrahConfigCheck {
         }
 
         // Variant configuration test
-        HijrahChronology variantChronology = (HijrahChronology) Chronology.of("islamic-variant");
+        // Year 1300 month 1 in the variant config has 29 days,
+        // so day 30 is clamped to 29.
+        HijrahChronology variantChronology = (HijrahChronology) Chronology.of(VARIANT_CALTYPE);
         HijrahDate hijrahDateWithVariant = HijrahDate.of(1300, 1, 30).withVariant(variantChronology);
         HijrahDate expected = variantChronology.date(1300,1,29);
         if (!hijrahDateWithVariant.equals(expected)) {
