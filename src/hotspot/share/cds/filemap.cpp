@@ -1284,6 +1284,9 @@ MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* 
   header()->set_mapped_base_address(header()->requested_base_address() + addr_delta);
   if (addr_delta != 0 && !relocate_pointers_in_core_regions(addr_delta)) {
     return MAP_ARCHIVE_OTHER_FAILURE;
+  } else if (VerifySharedSpaces) {
+    // Map and check the CRC of the bitmap region even if it may not be used.
+    map_bitmap_region();
   }
 
   return MAP_ARCHIVE_SUCCESS;

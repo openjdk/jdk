@@ -363,7 +363,8 @@ void AOTMetaspace::post_initialize(TRAPS) {
     // Close any open file descriptors. However, mmap'ed pages will remain in memory.
     static_mapinfo->close();
 
-    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
+    if (!(HeapShared::is_loading() && HeapShared::is_loading_streaming_mode())) {
+      // Streaming mode will unmap the bm region later in AOTStreamedHeapLoader::cleanup()
       static_mapinfo->unmap_region(AOTMetaspace::bm);
     }
 
