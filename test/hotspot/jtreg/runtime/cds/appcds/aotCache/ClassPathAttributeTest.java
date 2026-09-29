@@ -35,7 +35,7 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import java.nio.file.Paths;
 import jdk.test.lib.cds.CDSJarUtils;
 import jdk.test.lib.cds.CDSJarUtils.JarOptions;
 import jdk.test.lib.cds.SimpleCDSAppTester;
@@ -51,7 +51,7 @@ public class ClassPathAttributeTest {
         final String emptyJar = "cp.jar";
 
         String appAbsolutePath = Path.of(appJar).toAbsolutePath().toString().replace("\\", "/");
-        final String classPathAttribute = Platform.isWindows() ? "file:/" + appAbsolutePath : "file:" + appAbsolutePath;
+        final String classPathAttribute = Paths.get(appJar).toUri().toString();
 
         // Create manifest using absolute path
         Path manifest = Path.of("cp.mf");
