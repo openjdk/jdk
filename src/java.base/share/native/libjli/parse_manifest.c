@@ -586,7 +586,10 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
     info->splashscreen_image_file_name = NULL;
     if ((rc = find_file(fd, &entry, manifest_name)) != 0) {
         close(fd);
-        return rc == -2 ? rc : -3; // -2 if manifest file not found, -3 for other errors
+        if (rc == -2) {
+            return -2; // manfiest entry not found
+        }
+        return -3; // some other error
     }
     manifest = inflate_file(fd, &entry, NULL);
     if (manifest == NULL) {
