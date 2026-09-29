@@ -405,6 +405,20 @@ void PhaseChaitin::verify_killed_inputs(PhaseLive& live) {
   }
   assert(!failed, "");
 }
+
+void PhaseChaitin::dump() {
+  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+    Block* block = _cfg.get_block(i);
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      LRG &lrg = lrgs(_lrg_map.live_range_id(n));
+      OptoReg::Name reg = lrg.reg();
+      tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
+      DEBUG_ONLY(n->dump("\n", false, tty);)
+    }
+  }
+}
+
 #endif
 void PhaseChaitin::Register_Allocate() {
 
@@ -705,17 +719,6 @@ void PhaseChaitin::Register_Allocate() {
   // Count number of Simplify-Select trips per coloring success.
   _allocator_attempts += _trip_cnt + 1;
   _allocator_successes += 1;
-
-  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
-    Block* block = _cfg.get_block(i);
-    for (uint j = 0; j < block->number_of_nodes(); j++) {
-      Node* n = block->get_node(j);
-      LRG &lrg = lrgs(_lrg_map.live_range_id(n));
-      OptoReg::Name reg = lrg.reg();
-      tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
-      DEBUG_ONLY(n->dump("\n", false, tty);)
-    }
-  }
 
   // Peephole remove copies
   post_allocate_copy_removal();

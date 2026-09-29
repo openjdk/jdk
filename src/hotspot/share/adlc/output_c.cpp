@@ -1756,7 +1756,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         const char *regmask    = reg_mask(*op);
         const char *ideal_type = op->ideal_type(_globalNames, _register);
 
-        if (!node->is_noninput_operand(node->_components.operand_position(comp->_name))) {
+        if (comp->isa(Component::USE)) {
           continue;
         }
 

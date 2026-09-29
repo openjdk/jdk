@@ -327,10 +327,24 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
     for (uint i = 1; i < def->req(); i++) {
       Node *in = def->in(i);
       uint lidx = _lrg_map.live_range_id(in);
+      bool killed = false;
+      for (DUIterator_Fast jmax, j = in->fast_outs(jmax); j < jmax && !killed; j++) {
+        Node* u = in->fast_out(j);
+        if (u != def && u->is_Mach() && u->as_Mach()->has_killed_inputs()) {
+          MachNode* mach = u->as_Mach();
+          for (uint k = 0; k < u->req(); ++k) {
+            Node* m_in = mach->in(k);
+            if (m_in == in && mach->is_killed_input(k)) {
+              killed = true;
+            }
+          }
+        }
+      }
+
       // We do not need this for live ranges that are only defined once.
       // However, this is not true for spill copies that are added in this
       // Split() pass, since they might get coalesced later on in this pass.
-      if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).is_singledef()) {
+      if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).is_singledef() && !killed) {
         continue;
       }
 
