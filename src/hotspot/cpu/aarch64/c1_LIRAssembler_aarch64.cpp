@@ -2737,7 +2737,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
-LIR_Opr LIR_Assembler::adjust_mdo_address(LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
+LIR_Address *LIR_Assembler::adjust_mdo_address(LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
                                           BasicType t) {
   int size = type2aelembytes(t);
   if (!md_offset_opr->is_constant()) {
@@ -2779,7 +2779,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
   address md_base_address =
     md_opr->type() == T_METADATA ? (address)md_opr->as_constant_ptr()->as_metadata()
                                  : (address)md_opr->as_constant_ptr()->as_pointer();
-  LIR_Opr counter_address_opr
+  LIR_Address *counter_address_opr
     = md_offset_opr->is_constant()
       ? new LIR_Address(md_reg, md_offset_opr->as_constant_ptr()->as_jint(), dest_opr->type())
       : new LIR_Address(md_reg, md_offset_opr, dest_opr->type());
@@ -2790,20 +2790,20 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
   // Insert a runtime check iff the counter is zero at the time we
   // generate this code.
-  const bool load_dest_early = counter_contents == 0;
+  const bool load_dest_early = counter_contents == 0 && counter_stub != nullptr;
   if (load_dest_early) {
     const2reg(md_opr, md_reg, lir_patch_none, nullptr);
-    counter_address_opr = adjust_mdo_address(md_reg, md_opr, md_offset_opr,
-                                             dest_opr->type());
-    mem2reg(counter_address_opr, dest_opr,
-            dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+    // mem2reg(counter_address_opr, dest_opr,
+    //         dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+    __ block_comment("counter is zero or unknown");
+    __ lea(as_reg(md_reg), as_Address(counter_address_opr, as_reg(md_reg)));
+    counter_address_opr = new LIR_Address(md_reg, dest_opr->type());
+    __ mov(dest, (u1)0);      // expected
+    __ mov(rscratch1, (u1)1); // new
+    __ lse_cas(dest, rscratch1, as_reg(md_reg),
+               (Assembler::operand_size)exact_log2(type2aelembytes(dest_opr->type())),
+               /*acquire*/false, /*release*/false, /*not_pair*/true);
   }
-
-  if (md_offset_opr->is_constant() &&
-      __ legitimize_address_requires_lea(Address(noreg, md_offset_opr->as_constant_ptr()->as_jint()),
-                                         type2aelembytes(dest_opr->type()))) {
-  }
-
 
   auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
                  md_reg, md_opr, md_offset_opr, counter_address_opr, load_dest_early]
@@ -2895,7 +2895,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     if (load_dest_early) {
       // Insert a runtime check iff the counter is zero at the time we
       // generate this code.
-      __ cbz(dest, *counter_stub->entry());
+      // __ cbz(dest, *counter_stub->entry());
     } else {
       __ block_comment("Counter is already non-zero");
     }
