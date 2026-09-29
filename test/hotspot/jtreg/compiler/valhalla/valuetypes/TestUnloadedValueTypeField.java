@@ -36,7 +36,6 @@ import static compiler.valhalla.valuetypes.ValueTypes.rI;
  * @key randomness
  * @summary Test the handling of fields of unloaded value classes.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation

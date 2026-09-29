@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.jfr.api.consumer.recordingstream;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jdk.jfr.Event;
 import jdk.jfr.consumer.RecordingStream;
@@ -46,6 +47,31 @@ public class TestOnClose {
         testOnCloseNull();
         testOnClosedUnstarted();
         testOnClosedStarted();
+        testOnCloseOnce();
+        testOnCloseImmediately();
+    }
+
+    private static void testOnCloseImmediately() {
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.close();
+            AtomicBoolean state = new AtomicBoolean();
+            rs.onClose(() -> state.set(true));
+            if (!state.get()) {
+                throw new AssertionError("Expected close action to run immediately on an already closed stream");
+            }
+        }
+    }
+
+    private static void testOnCloseOnce() {
+        AtomicLong counter = new AtomicLong(0);
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.onClose(counter::incrementAndGet);
+            rs.close();
+            // try-with-resources closes stream a second time
+         }
+        if (counter.get() != 1) {
+            throw new AssertionError("Expected close action to be run once");
+        }
     }
 
     private static void testOnCloseNull() {

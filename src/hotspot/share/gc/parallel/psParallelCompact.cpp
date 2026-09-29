@@ -1283,25 +1283,6 @@ void PSParallelCompact::adjust_pointers() {
   ParallelScavengeHeap::heap()->workers().run_task(&task);
 }
 
-// Split [start, end) evenly for a number of workers and return the
-// range for worker_id.
-static void split_regions_for_worker(size_t start, size_t end,
-                                     uint worker_id, uint num_workers,
-                                     size_t* worker_start, size_t* worker_end) {
-  assert(start < end, "precondition");
-  assert(num_workers > 0, "precondition");
-  assert(worker_id < num_workers, "precondition");
-
-  size_t num_regions = end - start;
-  size_t num_regions_per_worker = num_regions / num_workers;
-  size_t remainder = num_regions % num_workers;
-  // The first few workers will get one extra.
-  *worker_start = start + worker_id * num_regions_per_worker
-                  + MIN2(checked_cast<size_t>(worker_id), remainder);
-  *worker_end = *worker_start + num_regions_per_worker
-                + (worker_id < remainder ? 1 : 0);
-}
-
 static bool safe_to_read_header(size_t words) {
   precond(words > 0);
 
@@ -1389,12 +1370,12 @@ void PSParallelCompact::forward_to_new_addr() {
 
         size_t dense_prefix_region = _summary_data.addr_to_region_idx(dense_prefix_addr);
         size_t top_region = _summary_data.addr_to_region_idx(_summary_data.region_align_up(top));
-        size_t start_region;
-        size_t end_region;
-        split_regions_for_worker(dense_prefix_region, top_region,
-                                 worker_id, _num_workers,
-                                 &start_region, &end_region);
-        for (size_t cur_region = start_region; cur_region < end_region; ++cur_region) {
+        assert(dense_prefix_region < top_region, "inv");
+
+        // Distribute adjacent regions across workers to balance forwarding work
+        // when live objects are clustered in the heap.
+        size_t start_region = dense_prefix_region + worker_id;
+        for (size_t cur_region = start_region; cur_region < top_region; cur_region += _num_workers) {
           RegionData* region_ptr = _summary_data.region(cur_region);
           size_t partial_obj_size = region_ptr->partial_obj_size();
 
