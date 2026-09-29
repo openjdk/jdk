@@ -21234,7 +21234,7 @@ instruct vshiftB_gfni(vec dst, vec src, vec shift, rRegL rtmp, rRegL rbase) %{
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
   effect(TEMP dst, TEMP rtmp, TEMP rbase);
-  format %{ "vector_shift_gfni $dst,$src,$shift\t! using $rtmp and $rbase as TEMP" %}
+  format %{ "vector_byte_shift_gfni $dst,$src,$shift\t! using $rtmp and $rbase as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vshiftb_gfni(this->ideal_Opcode(),
