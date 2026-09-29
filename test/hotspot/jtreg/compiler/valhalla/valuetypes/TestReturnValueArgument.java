@@ -28,7 +28,8 @@ import compiler.lib.ir_framework.*;
 /**
  * @test
  * @bug 8392337
- * @summary TBD
+ * @summary Test that C2 propagates escape state correctly for returned
+ *          arguments in non-inlined calls for different scalarization choices.
  * @library /test/lib /
  * @enablePreview
  * @run driver ${test.main.class}
@@ -65,8 +66,18 @@ class TestReturnValueArgument {
         }
     }
 
-    static IdentityObject globalIdObj = null;
-    static Object globalObj = null;
+    static IdentityObject globalObj = null;
+    static Object globalPlainObj = null;
+
+    @ForceInline
+    static ValueHolder createValueHolderWithSynchronizedFieldWrite() {
+        IdentityObject obj = new IdentityObject();
+        ValueHolder holder = new ValueHolder(obj);
+        synchronized (obj) {
+            obj.val = 42;
+        }
+        return holder;
+    }
 
     @DontInline
     static ValueHolder returnArgument(ValueHolder holder) {
@@ -96,17 +107,11 @@ class TestReturnValueArgument {
     // ValueTypeReturnedAsFields flags, the holder is scalarized as argument
     // and/or return of the returnArgument() call.
     @Test
-    @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.FAST_LOCK, "> 0",
-                  IRNode.FAST_UNLOCK, "> 0"})
-    static void testReturnHolderAndEscapeIdentityObject(int val) {
-        IdentityObject obj = new IdentityObject();
-        synchronized (obj) {
-            obj.val = val;
-        }
-        ValueHolder holder = new ValueHolder(obj);
+    @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    static void testReturnHolderAndEscapeIdentityObject() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder returnedHolder = returnArgument(holder);
-        globalIdObj = returnedHolder.obj;
+        globalObj = returnedHolder.obj;
     }
 
     // Return holder as an Object, which naturally inhibits scalarization of the
@@ -115,17 +120,11 @@ class TestReturnValueArgument {
     // be removed. Depending on the value of the ValueTypePassFieldsAsArgs flag,
     // the holder is scalarized as argument of the returnAsObject() call.
     @Test
-    @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.FAST_LOCK, "> 0",
-                  IRNode.FAST_UNLOCK, "> 0"})
-    static void testReturnHolderAsObjectAndEscapeHolder(int val) {
-        IdentityObject obj = new IdentityObject();
-        synchronized (obj) {
-            obj.val = val;
-        }
-        ValueHolder holder = new ValueHolder(obj);
+    @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    static void testReturnHolderAsObjectAndEscapeHolder() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
         Object holderAsObject = returnAsObject(holder);
-        globalObj = holderAsObject;
+        globalPlainObj = holderAsObject;
     }
 
     // Return holder via a non-static override of a native method, which
@@ -133,17 +132,11 @@ class TestReturnValueArgument {
     // to be scalarized on return. Because the IdentityObject held by it is then
     // stored globally, its synchronization should not be removed.
     @Test
-    @Arguments(values = {Argument.NUMBER_42})
-    @IR(counts = {IRNode.FAST_LOCK, "> 0",
-                  IRNode.FAST_UNLOCK, "> 0"})
-    static void testReturnHolderViaNativeSuperclassAndEscapeIdentityObject(int val) {
-        IdentityObject obj = new IdentityObject();
-        synchronized (obj) {
-            obj.val = val;
-        }
-        ValueHolder holder = new ValueHolder(obj);
+    @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    static void testReturnHolderViaNativeSuperclassAndEscapeIdentityObject() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder returnedHolder = new Returner().returnArgument(holder);
-        globalIdObj = returnedHolder.obj;
+        globalObj = returnedHolder.obj;
     }
 
     @Test
@@ -155,17 +148,12 @@ class TestReturnValueArgument {
     // synchronized block.
     // Currently C2 does not exploit bytecode escape analyzer information for
     // returned arguments with mismatched buffer/scalar representations.
-    @Arguments(values = {Argument.NUMBER_42})
     @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "true", "ValueTypeReturnedAsFields", "true"},
         failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
     @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "false", "ValueTypeReturnedAsFields", "false"},
         failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
-    static void testReturnHolderWithoutEscape(int val) {
-        IdentityObject obj = new IdentityObject();
-        ValueHolder holder = new ValueHolder(obj);
-        synchronized (obj) {
-            obj.val = val;
-        }
+    static void testReturnHolderWithoutEscape() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
         returnArgument(holder);
     }
 
