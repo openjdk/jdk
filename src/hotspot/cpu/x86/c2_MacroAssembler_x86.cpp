@@ -1369,6 +1369,28 @@ void C2_MacroAssembler::varshiftbw(int opcode, XMMRegister dst, XMMRegister src,
   vpackusdw(dst, dst, vtmp, 0);
 }
 
+void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift,
+                                     Register rtmp, Register rbase, int vlen_enc) {
+  assert(VM_Version::supports_gfni(), "required");
+  int kind = 0;
+  if (opcode == Op_URShiftVB) {
+    kind = 1;
+  } else if (opcode == Op_RShiftVB) {
+    kind = 2;
+  } else {
+    assert(opcode == Op_LShiftVB, "%s", NodeClassNames[opcode]);
+  }
+  movdl(rtmp, shift);
+  andl(rtmp, 7);
+  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix() + kind * 8 * 8));
+  if (vlen_enc == Assembler::AVX_128bit) {
+    movddup(dst, Address(rbase, rtmp, Address::times_8));
+  } else {
+    vpbroadcastq(dst, Address(rbase, rtmp, Address::times_8), vlen_enc);
+  }
+  vgf2p8affineqb(dst, src, dst, 0, vlen_enc);
+}
+
 // Variable shift src by shift using vtmp and scratch as TEMPs giving byte result in dst
 void C2_MacroAssembler::evarshiftb(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp) {
   assert(opcode == Op_LShiftVB ||
