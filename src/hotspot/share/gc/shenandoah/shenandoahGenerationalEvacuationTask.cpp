@@ -88,10 +88,11 @@ void log_region(const ShenandoahHeapRegion* r, LogStream* ls) {
 
 void ShenandoahGenerationalEvacuationTask::promote_regions() {
 
+  LogTarget(Debug, gc) lt;
   ShenandoahInPlacePromoter promoter(_heap);
   ShenandoahHeapRegion* r;
   while ((r = _regions->next()) != nullptr) {
-    if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
+    if (lt.is_enabled()) {
       LogStream ls(lt);
       log_region(r, &ls);
     }
