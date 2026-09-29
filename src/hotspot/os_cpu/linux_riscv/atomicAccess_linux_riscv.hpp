@@ -73,7 +73,7 @@ inline T riscv_atomic_fastcall(F stub, volatile T* dest, T compare_value,
 template<size_t byte_size>
 struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
-  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
     // If we add add and fetch for sub word and are using older compiler
@@ -81,21 +81,21 @@ struct AtomicAccess::PlatformAdd {
     static_assert(byte_size >= 4);
 #endif
 
-    switch (order) {
-      case memory_order_relaxed:
-        return __atomic_fetch_add(dest, add_value, __ATOMIC_RELAXED);
-      default:
-        // The release part of the RMW orders preceding accesses, so only the
-        // trailing full barrier required by memory_order_conservative remains.
-        D result = __atomic_fetch_add(dest, add_value, __ATOMIC_ACQ_REL);
-        FULL_MEM_BARRIER;
-        return result;
+    if (order != memory_order_relaxed) {
+      FULL_MEM_BARRIER;
     }
+
+    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+
+    if (order != memory_order_relaxed) {
+      FULL_MEM_BARRIER;
+    }
+    return res;
   }
 
   template<typename D, typename I>
-  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return fetch_then_add(dest, add_value, order) + add_value;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_then_fetch(dest, add_value, order) - add_value;
   }
 };
 
@@ -177,16 +177,16 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
   static_assert(byte_size == sizeof(T));
   static_assert(byte_size == 4 || byte_size == 8);
 
-  switch (order) {
-    case memory_order_relaxed:
-      return __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
-    default:
-      // The release part of the RMW orders preceding accesses, so only the
-      // trailing full barrier required by memory_order_conservative remains.
-      T result = __atomic_exchange_n(dest, exchange_value, __ATOMIC_ACQ_REL);
-      FULL_MEM_BARRIER;
-      return result;
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
   }
+
+  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
+  return res;
 }
 
 template<size_t byte_size>
