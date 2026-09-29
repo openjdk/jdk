@@ -67,6 +67,7 @@ class TestReturnValueArgument {
     }
 
     static IdentityObject globalObj = null;
+    static ValueHolder globalHolder = null;
     static Object globalPlainObj = null;
 
     @ForceInline
@@ -89,6 +90,14 @@ class TestReturnValueArgument {
         return holder;
     }
 
+    @DontInline
+    static ValueHolder returnOneArg(boolean first, ValueHolder holder1, ValueHolder holder2) {
+        if (first) {
+            return holder1;
+        }
+        return holder2;
+    }
+
     static class BaseReturner {
         native ValueHolder returnArgument(ValueHolder holder);
     }
@@ -99,6 +108,18 @@ class TestReturnValueArgument {
         ValueHolder returnArgument(ValueHolder holder) {
             return holder;
         }
+    }
+
+    @DontInline
+    static ValueHolder escapeAndReturnArgument(ValueHolder holder) {
+        globalHolder = holder;
+        return holder;
+    }
+
+    @DontInline
+    static ValueHolder escapeFieldAndReturnArgument(ValueHolder holder) {
+        globalObj = holder.obj;
+        return holder;
     }
 
     // Return holder passed as argument. Because the IdentityObject held by it
@@ -112,6 +133,37 @@ class TestReturnValueArgument {
         ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
         ValueHolder returnedHolder = returnArgument(holder);
         globalObj = returnedHolder.obj;
+    }
+
+    // Variant of the above test where one of two passed holders is returned.
+    // The same outcome is expected for each of the IdentityObject instances.
+    @Test
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
+    @IR(counts = {IRNode.FAST_LOCK, "> 1", IRNode.FAST_UNLOCK, "> 1"})
+    static void testReturnOneOfTwoHoldersAndEscapeIdentityObjects(boolean first) {
+        ValueHolder holder1 = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder holder2 = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder returnedHolder = returnOneArg(first, holder1, holder2);
+        globalObj = returnedHolder.obj;
+    }
+
+    // Variant of the above test where the passed and returned holder escapes
+    // within the call. The same outcome is expected.
+    @Test
+    @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    static void testReturnEscapedHolder() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
+        escapeAndReturnArgument(holder);
+    }
+
+    // Variant of the above test where the IdentityObject referred to by the
+    // passed and returned holder escapes within the call. The same outcome is
+    // expected.
+    @Test
+    @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    static void testReturnHolderWithEscapedField() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
+        escapeFieldAndReturnArgument(holder);
     }
 
     // Return holder as an Object, which naturally inhibits scalarization of the
