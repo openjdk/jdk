@@ -150,10 +150,11 @@ private:
   }
 
   int profiled_not_flat_count() const {
-    if (profile_data()->not_flat_count() < 0) {
+    ciArrayLoadData* array_load_data = profile_data();
+    if (array_load_data->not_flat_count() < 0) {
       return max_jint;
     }
-    return profile_data()->not_flat_count();
+    return array_load_data->not_flat_count();
   }
 
 public:
@@ -346,7 +347,7 @@ public:
       if (!flat_array->is_top()) {
          vt = ValueTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
       } else {
-        vt  = ValueTypeNode::make_null(_gvn, vk);
+        vt = ValueTypeNode::make_null(_gvn, vk);
       }
       ld = vt;
     } else {

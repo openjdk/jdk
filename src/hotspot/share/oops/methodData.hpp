@@ -1280,8 +1280,7 @@ public:
     assert(layout->tag() == DataLayout::receiver_type_data_tag ||
            layout->tag() == DataLayout::virtual_call_data_tag ||
            layout->tag() == DataLayout::virtual_call_type_data_tag ||
-           layout->tag() == DataLayout::array_store_data_tag ||
-           layout->tag() == DataLayout::array_load_data_tag, "wrong type");
+           layout->tag() == DataLayout::array_store_data_tag, "wrong type");
   }
 
   static int base_of_megamorphic_type_data() {
