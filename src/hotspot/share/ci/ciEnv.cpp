@@ -1059,6 +1059,8 @@ void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool aot_prel
     // During assembly phase we need to replace previous
     // AOT preload code with normal AOT code to check
     // success of compilation in AOTCompileIterator.
+    // After JDK-8380476 FIXME: AOT compiler should not be installing
+    // nmethods on the Method::code pointer. Find other way to report success.
     if (TieredCompilation || AOTCodeCache::is_using_code() || is_aot_compile()) {
       // If there is an old version we're done with it
       nmethod* old = method->code();
@@ -1309,6 +1311,14 @@ void ciEnv::register_method(ciMethod* target,
             nm->set_aot_preloaded(true);
           }
         }
+        // After JDK-8380476 FIXME: The AOT compiler runs in a special AOT assembly
+        // phase, not part of any Java application.  The compiled code is not
+        // runnable in this instance of the JVM.  For consistency of access,
+        // we will fall through to make_code_usable and link the Method::code
+        // field to the new nmethod nm.  But this would be a mistake if (for
+        // any reason) the compiled method were to be invoked in this JVM
+        // instance.  Consider returning at this point, relying only on
+        // AOTCodeCache::store_nmethod to keep track of the new nmethod.
       }
 #endif
       make_code_usable(THREAD, target, /* aot_preload */ false, entry_bci, /* aot_code_entry */ nullptr, nm);
@@ -1908,6 +1918,35 @@ bool ciEnv::is_aot_compile() const {
   return (task() != nullptr) && task()->is_aot_compile();
 }
 
+// The AOT compiler must model clinit state before classes are actually loaded
+// in the eventual production run.  Its model is provisional and approximate,
+// and any nmethod compiled from this model must conserve semantic
+// correctness.
+//
+// For "preload" AOT code (AP tier), the model optimistically speculates that
+// the class is probably loaded, but the speculation is checked before every
+// static field or method use or instance allocation, just like the
+// interpreter.  (See Parse::do_call and GraphKit::clinit_barrier.)  Thus, we
+// usually return fully_initialized, when compiling preload code.
+//
+// For non-preload AOT code (A tier), we can make some predictions about which
+// classes must be initialized by the time the code gets executed.  First,
+// 1. the top-level method's holder can be assumed initialized, since somebody
+// else already triggered initialization before the method could be called.
+// Also 2. the clinit dependencies listed in the CompileTrainingData are
+// always checked off before a non-preload nmethod is installed, so all those
+// classes can be assumed initialized.  (And see AOTCodeReader::read_klass for
+// another check.)  Finally 3. certain core JDK classes are always
+// force-initialized early enough that all compiled code can assume they are
+// initialized.
+//
+// Neither the JIT nor the AOT compiler will attempt to optimize code classes
+// that are unusable because their initializers have failed.  This fallback
+// is also used when there is not enough information available about a class
+// during AOT cache assembly.  In that case, we return the special sentinel
+// value initialization_error, used here as a sentinel meaning "unknown"; a distinct
+// value (unavailable_aot) is proposed for a later change.
+//
 InstanceKlass::ClassState ciEnv::compute_init_state_for_aot_compile(InstanceKlass* ik) {
   ASSERT_IN_VM;
   ResourceMark rm;

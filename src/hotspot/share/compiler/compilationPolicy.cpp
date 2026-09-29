@@ -92,9 +92,13 @@ AOTCodeEntry* find_aot_code_entry(const methodHandle& method, int comp_level,
           compile_reason == CompileTask::Reason_MustBeCompiled);
   if (AOTCodeCache::is_using_code()) {
     AOTCodeEntry* aot_code_entry = AOTCodeCache::find_code_entry(method, comp_level);
-    // There is no concurrency in reading AOTCodeEntry::_loaded field here.
-    // It is updated when compilation_is_in_queue(method) is true and
-    // find_aot_code_entry() is only called when the method is not in queue.
+    // There is harmless concurrency here when reading fields in the AOTCodeEntry.
+    // The _loaded field is monotonic, going true in ciEnv::register_aot_method under
+    // MethodCompileQueue_lock.  We might race with other threads which quickly queue
+    // and then load the method, and harmlessly conclude that this code entry is
+    // still loadable.  Even if we manage to queue a second load concurrently,
+    // CompileBroker::compile_method_base checks, under the MCQ lock, with
+    // compilation_is_in_queue and compilation_is_complete, to avoid duplicate work.
     if (aot_code_entry != nullptr && !aot_code_entry->is_loaded() &&
         !aot_code_entry->not_entrant() && !aot_code_entry->is_verified()) {
       return aot_code_entry;
@@ -780,6 +784,18 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
     if (task->is_aot_load()) {
       // AOTCodeCache tasks are on separate queue, and they should load fast. There is no need to walk
       // the rest of the queue, just take the task and go.
+      //
+      // If the task will load "preload" (AP4) code, we could do a quick poll here
+      // to see if, in fact, the fully optimized AOT code (A4) is ready, because the
+      // clinit dependencies have been concurrently satisfied while the AP4 task was
+      // waiting on the ac2 loading queue.  In addition, when the JVM finds that the
+      // A4 task is ready, it tries to queue it, but if the AP4 is already queued,
+      // the JVM will quietly drop the A4 request.  This means the poorer AP4 code
+      // will be used, until the invocation counter times out and a proper JIT task
+      // is queued - the benefit from A4 is lost in this case.
+      //
+      // Patching this hole did not give performance benefits in early testing, but
+      // it may help with certain scales or configurations in the future.
       return task;
     }
     if (task->is_blocking() && task->compile_reason() == CompileTask::Reason_Whitebox) {
@@ -920,7 +936,9 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
       MutexLocker ml(Compile_lock);
       NoSafepointVerifier nsv;
       if (mh->has_compiled_code()) {
+        // All new activations will use the interpreter.
         mh->code()->make_not_used();
+        // And handle old activations by deoptimizing them...
       }
       // Deoptimize immediately (we don't have to wait for a compile).
       JavaThread* jt = THREAD;
@@ -1307,6 +1325,10 @@ CompLevel CompilationPolicy::trained_transition(const methodHandle& method, Comp
  *   3 - C1 with full profiling (CompLevel_full_profile)
  *   4 - C2 (CompLevel_full_optimization)
  *
+ * Special AOT states:
+ *   AP4 - C2 with "preload" clinit barriers (CompLevel_preload_optimization)
+ *   A4 - C2 with less static final folding (CompLevel_full_optimization)
+ *
  * Common state transition patterns:
  * a. 0 -> 3 -> 4.
  *    The most common path. But note that even in this straightforward case
@@ -1331,6 +1353,11 @@ CompLevel CompilationPolicy::trained_transition(const methodHandle& method, Comp
  *    This can happen if a method fails C1 compilation (it will still be profiled in the interpreter)
  *    or because of a deopt that didn't require reprofiling (compilation won't happen in this case because
  *    the compiled version already exists).
+ *
+ * f. AP4 -> A4 -> 4 or just AP4 -> 4
+ *    AP4 "preload" code is loaded before clinit dependencies are satisfied.
+ *    After clinit dependencies A4 is loaded, with an invocation counter.
+ *    After that counter finishes, the JIT may reoptimize to level 4.
  *
  * Note that since state 0 can be reached from any other state via deoptimization different loops
  * are possible.

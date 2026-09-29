@@ -201,6 +201,9 @@ class CompileBroker: AllStatic {
   static CompileQueue* _c1_compile_queue;
   static CompileQueue* _ac1_compile_queue;
   static CompileQueue* _ac2_compile_queue;
+  // Note: AOT nmethods are "virtually compiled" - copied in from the AOT cache.
+  // The dynamics of method replacement and dependency checks are common to AOT and JIT.
+  // See checks of is_aot_load and is_aot_compile for behavioral differences.
 
   // performance counters
   static PerfCounter* _perf_total_compilation;

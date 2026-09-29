@@ -342,6 +342,14 @@ void AOTCodeCache::initialize() {
     return;
   }
   if (is_dumping) {
+    // After JDK-8380476 FIXME: We cannot dump the AOT cache if these flags get set wrong.
+    // But the FLAG_SET_DEFAULT macro seems to allow the flag setting to change later.
+    // FoldStableValues=true can compile bad code, folding the wrong values for production runs.
+    // ForceUnreachable=false calls might not reach their targets in the production.
+    // DelayCompilerStubsGeneration=true the address table would fail to mention stubs.
+    // Such settings must be enforced, not just set as defaults.
+    // Consider adding checks before and after AOT compialtion that they still have
+    // the same values.
     FLAG_SET_DEFAULT(FoldStableValues, false);
     FLAG_SET_DEFAULT(ForceUnreachable, true);
   }
@@ -1315,7 +1323,7 @@ bool AOTCodeCache::skip_aot_code(uint comp_level) {
         return true;
       }
       break;
-    case CompLevel_full_optimization + 1:
+    case CompLevel_preload_optimization:
       if ((DisableAOTCode / 10000) % 10 == 1) {
         return true;  // skip AOT preload code (level 5);
       }
@@ -1332,7 +1340,9 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
   }
 
   MethodCounters* mc = method->method_counters();
-  // AOT T4 code uses carry bit to indicate recompilation request
+  // Generically, the carry bit means that the counter has reached a saturation value.
+  // In that ending state, the counter has finished its work of gathering information.
+  // Therefore AOT T4 code uses the carry bit to indicate a recompilation request.
   if (mc != nullptr && mc->invocation_counter()->carry()) {
     return nullptr; // Already requested JIT compilation
   }
@@ -3057,7 +3067,7 @@ void AOTCodeCache::preload_code(JavaThread* thread) {
     return;
   }
 
-  if (skip_aot_code(CompLevel_full_optimization + 1)) {
+  if (skip_aot_code(CompLevel_preload_optimization)) {
     return; // no preloaded code (level 5);
   }
 
@@ -3147,6 +3157,24 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
 
 #define BAD_ADDRESS_ID -2
 
+// The next two functions, write_id_for_relocations and restore_relocations,
+// handle relocation information for AOT code.  The relocations are written
+// by the compiler backend during AOT cache assembly.  Their targeting information
+// gets re-encoded into the AOT cache so that the relocations can be restored later
+// during the production run.
+//
+// Relocs targeting oops and metadata record a global list index.
+// Relocs targeting internal addresses record a local offset.
+// Relocs targeting external addresses (including calls) record a global address ID.
+// Certain special non-address constants are treated like external addresses.
+// In all cases, the reloc is edited to replace a live address with a small integer,
+// as the nmethod is placed into the AOT cache.  During the production run, the process
+// is reversed, as the small integers are decoded back into live addresses.
+//
+// Consider a later refactoring cleanup that moves more of this logic into
+// relocInfo.cpp.  Perhaps relocInfo.cpp should "know more about" the external
+// address IDs and oop indexes?  Perhaps we want a protocol for relocs
+// named [un]pack_aot_data?
 bool AOTCodeCache::write_id_for_relocations(CodeBlob& code_blob, RelocIterator& iter,
                                             bool assert_for_unknown_external_address,
                                             GrowableArray<Handle>* oop_list,
@@ -3640,6 +3668,8 @@ bool AOTCodeCache::write_klass(Klass* klass) {
   }
   uint init_state = 0;
   if (klass->is_instance_klass()) {
+    // A few classes are initialized in the assembly phase before code generation.
+    // When run in production, the code will assume they are initialized, again.
     InstanceKlass* ik = InstanceKlass::cast(klass);
     init_state = (ik->is_initialized() ? 1 : 0);
     can_write &= AOTCacheAccess::can_generate_aot_code_for(ik);
@@ -3710,8 +3740,12 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
     log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for klass %s: not loaded",
               compile_id(), comp_level(), k->external_name());
     return nullptr;
-  } else
-  // Allow not initialized klass which was uninitialized during code caching or for preload
+  }
+  // If the klass was seen to be initialized during AOT cache assembly,
+  // it must also be initialized here, in the production run.
+  // Exception:  "preload" code (AP4) can handle uninitialized classes.
+  // There is no exception for A1, A2 code or A4 code. Those are loaded only when
+  // all referenced classes have the same state as during training and AOT compilation.
   if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_initialized() && (init_state == 1) && !_entry->for_preload()) {
     set_lookup_failed("Klass is not initialized");
     log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for klass %s: not initialized",
@@ -5359,7 +5393,7 @@ private:
   void inc_loaded_cnt(AOTCodeEntry* entry) {
     inc_entry_loaded_cnt(entry->kind());
     if (entry->is_nmethod()) {
-      entry->for_preload() ? inc_nmethod_loaded_cnt(AOTCompLevel_count-1)
+      entry->for_preload() ? inc_nmethod_loaded_cnt(CompLevel_preload_optimization)
                            : inc_nmethod_loaded_cnt(entry->comp_level());
     }
   }
@@ -5367,7 +5401,7 @@ private:
   void inc_invalidated_cnt(AOTCodeEntry* entry) {
     inc_entry_invalidated_cnt(entry->kind());
     if (entry->is_nmethod()) {
-      entry->for_preload() ? inc_nmethod_invalidated_cnt(AOTCompLevel_count-1)
+      entry->for_preload() ? inc_nmethod_invalidated_cnt(CompLevel_preload_optimization)
                            : inc_nmethod_invalidated_cnt(entry->comp_level());
     }
   }
@@ -5375,7 +5409,7 @@ private:
   void inc_load_failed_cnt(AOTCodeEntry* entry) {
     inc_entry_load_failed_cnt(entry->kind());
     if (entry->is_nmethod()) {
-      entry->for_preload() ? inc_nmethod_load_failed_cnt(AOTCompLevel_count-1)
+      entry->for_preload() ? inc_nmethod_load_failed_cnt(CompLevel_preload_optimization)
                            : inc_nmethod_load_failed_cnt(entry->comp_level());
     }
   }

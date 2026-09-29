@@ -1302,6 +1302,48 @@ static bool is_auto_boxed_primitive(Node* n) {
 }
 
 #if INCLUDE_CDS
+// Even the highest tier of AOT code (A4) incorporates an invocation
+// counter on entry to an AOT nmethod.  This is necessary because AOT
+// optimizations are performed on less accurate information than JIT
+// optimizations.  A long-running JVM is likely to eventually
+// recompile AOT code with the JIT compiler, so as to reoptimize with
+// the fullest possible information.  This helps AOT-assisted
+// workloads attain the same peak performance as pure JIT-based
+// workloads.
+//
+// One example of "less accurate" information for optimization is a
+// static final field value which the AOT compiler refuses to fold as
+// a constant, because many static finals cannot be predicted AOT.
+// Another is the exact configuration of block and type profiles; the
+// AOT compiler only sees profile information from the training run up
+// to the point at which the AOT cache was built, while a production
+// run may execute much longer, eventually adding very different
+// information to the profile.
+//
+// The counter helps decide when to reoptimize.  The counter limit
+// chosen depends on the invocation count observed during the training
+// run.  The limit is an approximately linear function of the observed
+// count, but at least about a hundred (see AOTCodeInvokeBase), and
+// saturating out to about a million (times AOTCodeInvokeScale).
+//
+// The diagnostic flag UseAOTCodeCounters can be used to determine
+// whether the counter overhead affected application performance.
+// Note that the counter is only on the root method of any given
+// nmethod.  Inlined method calls are not counted.  Counting overhead
+// is therefore expected to be small.
+//
+// After JDK-8380476 TODO: The interpreter also uses a backedge counter
+// to ensure eventual optimization of a method with a small invocation
+// count that sits in a long-running loop.  A4 methods could be given an
+// equivalent counter, if they contain loops which may turn out to be
+// long-running.  It is help to deoptimize a long-running loop to the
+// interpreter, without replacing the A4 method.  The interpreter
+// could be primed with a high backedge count, so that the loop will
+// be reoptimized quickly by an OSR compilation.  This whole concern
+// is a corner case of a corner case, since OSR assumes low invocation
+// count, while reoptimization to peak assumes a long-lived production
+// run.
+
 static int scale_limit(int64_t limit) {
  // To scale invocation limit a hyperbolic saturation curve formula
  // is used with upper limit 1M.

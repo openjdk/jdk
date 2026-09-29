@@ -62,10 +62,10 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Replay,           // ciReplay
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp (see CompilationPolicy::must_be_compiled())
-      Reason_AOTLoad,          // load AOT code
-      Reason_AOTPreload,       // pre-load AOT code
-      Reason_AOTCompile,
-      Reason_AOTCompileForPreload,
+      Reason_AOTLoad,          // "virtual compilation" - copy in normal AOT code
+      Reason_AOTPreload,       // "virtual compilation" - copy in "preload" AOT code
+      Reason_AOTCompile,       // create normal AOT code (assembly phase only)
+      Reason_AOTCompileForPreload, // create "preload" AOT code (assembly phase only)
       Reason_Count
   };
 

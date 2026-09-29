@@ -4756,8 +4756,9 @@ void JNIid::verify(InstanceKlass* holder) {
 
 void InstanceKlass::set_init_state(ClassState state) {
 #ifdef ASSERT
+  // TODO enable: assert(state <= initialization_error, "only store known states");
   bool good_state = in_aot_cache() ? (_init_state <= state)
-                                               : (_init_state < state);
+                                   : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");

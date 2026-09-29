@@ -2304,7 +2304,21 @@ void nmethod::unlink_from_method() {
   }
 }
 
-// Invalidate code
+// Invalidate code, making it impossible for future calls to the nmethod to
+// proceed past its entry point.  Future calls will instead be finished by a
+// different code path, lazily updating call sites that link to this this
+// nmethod.
+//
+// This function does nothing about existing activations of the nmethod.  The
+// nmethod code is sometimes out of date, so it cannot execute further; in
+// such cases the user of this function must also ensure that existing
+// activations are deoptimized.  In other cases, the nmethod code works
+// well enough to keep running the existing activations to completion.
+//
+// The invalidation reason is used as a label in logging the nmethod
+// transition.  It also affects invalidation policy for any associated
+// AOTCodeCache entry.
+// TODO: move keep_aot_entry to caller or derive from invalidation_reason.
 bool nmethod::make_not_entrant(InvalidationReason invalidation_reason, bool keep_aot_entry) {
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
@@ -2389,7 +2403,19 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason, bool keep
   return true;
 }
 
-// For concurrent GCs, there must be a handshake between unlink and flush
+// Remove an nmethod from service when a GC has determined its class is unreachable.
+// For concurrent GCs, there must be a handshake between unlink and flush.
+//
+// This function is roughly parallel to nmethod::make_not_entrant.  Both remove
+// the nmethod from the in_use state, this one because the nmethod is unreachable,
+// and the other because its code is may be reachable, but should not be executed.
+// AOT interaction:  While make_not_entrant marks associated AOT code assets unloaded,
+// this function does not touch them (see AOTCodeEntry).
+// After JDK-8380476 TODO:  Maybe unload the AOT method and record a reason like UNLOADING,
+// so that the activity can be traced.  AOT methods could get GC-ed if we support
+// custom class loaders.  Perhaps two versions of a custom class loader could use
+// the same asset twice?  In any case we need a comment like the above showing the
+// missing logic, even if we don't do anything yet.  Log messages would be nice too.
 void nmethod::unlink() {
   if (is_unlinked()) {
     // Already unlinked.
@@ -3298,8 +3324,8 @@ void nmethod::verify() {
     fatal("find_nmethod did not find this nmethod (" INTPTR_FORMAT ")", p2i(this));
   }
 
-  // Verification can be triggered during shutdown after AOTCodeCache is closed.
   // If the Scopes data is in the AOT code cache, then we should avoid verification during shutdown.
+  // Note that the AOT cache can be alive even during shutdown (it is never closed).
   if (!is_aot() || AOTCodeCache::is_on()) {
     for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
       if (! p->verify(this)) {

@@ -76,6 +76,19 @@ class RelocIterator;
   Fn(Nmethod) \
 
 // Descriptor of AOT Code Cache's entry
+//
+// These entries live in an array at the beginning of the "ac" region of the AOT cache.
+// State bits are mutated in place (monotonically) to manage the AOT code asset.
+// Main states are stored only, loaded, loaded & not_entrant, loaded & unloaded nmethod.
+//
+// For an nmethod, the id field is a narrow Method pointer, and certain other fields.
+// The nmethod is not directly pointed at from here; we indirect through Method::code.
+//
+// Most of the ac region is read-only (never copied on write), but the AOTCodeEntry
+// blocks are modified.  An alternative could be to move all remaining mutable ac data
+// into unmapped per-process data, indexed in parallel to the AOTCodeEntry blocks.
+// That does not seem to pay off, although it may if large pages ever store the ac bits.
+// The current organization is simpler, given small pages.
 class AOTCodeEntry {
   friend class VMStructs;
 public:
@@ -565,11 +578,12 @@ protected:
     uint jvmti_state() const { return _jvmti_state; }
   };
 
+  // Header of the "ac" region within the AOT cache.
   class Header : public CHeapObj<mtCode> {
   private:
     // Here should be version and other verification fields
     enum {
-      AOT_CODE_VERSION = 2
+      AOT_CODE_VERSION = 2   // Bump this number in releases where Header layout changes
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes
@@ -910,7 +924,12 @@ public:
   static void print_timers_on(outputStream* st) NOT_CDS_RETURN;
 };
 
-// Concurent AOT code reader
+// Control block for loading a single AOTCodeEntry asset from the "ac" region
+// into the code cache.  We use a few JIT-like worker threads to do this work,
+// so loading is done concurrently.  Each AOTCodeEntry is processed as its own
+// sequential task within a worker thread, using the reader's position cursor.
+// Loading copies code from the "ac" region, and also fixes up pointers used by
+// the code, including reloc-info and oops and metadata arrays.
 class AOTCodeReader {
 private:
   AOTCodeCache*  _cache;

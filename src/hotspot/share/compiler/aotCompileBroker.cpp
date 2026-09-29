@@ -203,6 +203,14 @@ public:
   }
 };
 
+// Top level driver for AOT code compilation.  Runs after metadata and
+// Java object heap have been added to the AOT cache.  Inside this pass,
+// the scope function CDSConfig::is_dumping_aot_code returns true.
+// Normal JIT compilation is suppressed, and the JIT pipeline is repurposed
+// to create AOT code (tasks are marked Reason_AOTCompileForPreload, etc.).
+// Some JIT policy flags are forcibly adjusted to settings required by AOT code.
+// These include -FoldStableValues, +ForceUnreachable, -DelayCompilerStubsGeneration,
+// +AOTCompileEagerly, CompileThresholdScaling=1.0
 void AOTCompileBroker::compile_aot_code(ArchiveBuilder* builder, TRAPS) {
   assert(AOTCodeCache::is_dumping_code(), "sanity");
   assert(CDSConfig::is_dumping_aot_code(), "AOT compilation must be enabled");
@@ -213,7 +221,7 @@ void AOTCompileBroker::compile_aot_code(ArchiveBuilder* builder, TRAPS) {
     ResourceMark rm;
     CompLevel highest_level = CompilationPolicy::highest_compile_level();
     if (highest_level >= CompLevel_full_optimization && ClassInitBarrierMode > 0 &&
-        !AOTCodeCache::skip_aot_code(CompLevel_full_optimization + 1)) {
+        !AOTCodeCache::skip_aot_code(CompLevel_preload_optimization)) {
       AOTCompileIterator aci(CompLevel_full_optimization, true /*for_preload*/, THREAD);
       TrainingData::iterate([&](TrainingData* td) {
         aci.apply(td);

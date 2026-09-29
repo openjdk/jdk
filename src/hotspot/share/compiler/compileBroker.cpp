@@ -1523,10 +1523,14 @@ bool CompileBroker::compilation_is_complete(const methodHandle&        method,
         return false;
       }
       if (result->is_aot()) {
+        // See if an AOTCodeEntry has already been AOT-loaded by register_aot_method.
+        // Both this logic and register_aot_method run under MethodCompileQueue_lock.
+        // Note that CompilationPolicy::find_aot_code_entry also checks AOT-loading,
+        // but tentatively, not under the lock.
         if (aot_code_entry == nullptr) {
           return false; // Allow replace AOT code with normal JITed code
         } else if (aot_code_entry == result->aot_code_entry()) {
-          return true;
+          return true; // Same code already AOT-loaded.
         } else if (result->aot_preloaded()) {
            // Allow replace preloaded AOT code with regular AOT code of the same level
           return (comp_level != result->comp_level());

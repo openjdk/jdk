@@ -50,6 +50,12 @@ class MethodCounters : public Metadata {
 
   Metadata*         _method_training_data;
 #if INCLUDE_CDS
+  // After JDK-8380476 FIXME: Jamming in a code reference here is a code
+  // smell.  Since access to this value is infrequent, it does not
+  // need to be a pointer.  (See AOTCodeCache::invalidate_entry.)
+  // Suggestion: Have finish_write build a two-column binary-search
+  // table in the AOT cache, to map method ID to preload method index.
+  // Searchable static indexes are a core competency for AOT.
   AOTCodeEntry*     _aot_preload_code_entry;      // AOT Code Cache entry for preload code
 #endif
   jlong             _prev_time;                   // Previous time the rate was acquired
