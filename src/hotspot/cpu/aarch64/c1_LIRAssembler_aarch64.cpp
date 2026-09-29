@@ -1328,27 +1328,32 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
-static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src) {
+static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src,
+                          address md_base_address) {
+  intptr_t counter_contents = (ProfileCaptureRatio > 1
+                                && md_base_address != nullptr
+                                && dst.getMode() == Address::base_plus_offset)
+    ? *(intptr_t*)(md_base_address + dst.offset())
+    : 0;
+
   auto as_C1_masm = C1_masm->as_C1_MacroAssembler();
   auto masm = [=]() { return as_C1_masm; };
   __ block_comment("increment_mdo {");
-  Label nope, do_increment;
-  int ratio_shift = exact_log2(ProfileCaptureRatio);
-  if (ProfileCaptureRatio > 1) {
-    __ cmp(zr, r_profile_rng, __ LSR, 32-ratio_shift);
-    __ br(__ EQ, do_increment);
-    __ ldr(rscratch1, dst);
-    __ cbnz(rscratch1, nope);
-    __ bind(do_increment); {
-      __ increment(rscratch1, src << ratio_shift);
-      __ str(rscratch1, dst);
-    }
-    __ bind(nope);
+  if (counter_contents != 0) {
+    Label nope;
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
+    __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
+    __ cbnz(rscratch1, nope); {
+      __ increment(dst, src << ratio_shift);
+    } __ bind(nope);
     __ step_random(r_profile_rng, rscratch2);
   } else {
-    __ increment(dst, src << ratio_shift);
+    __ increment(dst, src);
   }
   __ block_comment("} increment_mdo");
+}
+static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src) {
+  increment_mdo(C1_masm, dst, src, /*const_mdo*/nullptr);
 }
 
 void LIR_Assembler::type_profile_helper(Register mdo,
@@ -2771,9 +2776,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
   assert(threshold > 0, "must be");
 
-  ProfileStub *counter_stub
-    = ProfileCaptureRatio > 1 ? new ProfileStub() : nullptr;
-
   Register dest = dest_opr->as_pointer_register();
 
   address md_base_address =
@@ -2790,23 +2792,12 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
   // Insert a runtime check iff the counter is zero at the time we
   // generate this code.
-  const bool load_dest_early = counter_contents == 0 && counter_stub != nullptr;
-  if (load_dest_early) {
-    const2reg(md_opr, md_reg, lir_patch_none, nullptr);
-    // mem2reg(counter_address_opr, dest_opr,
-    //         dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
-    __ block_comment("counter is zero or unknown");
-    __ lea(as_reg(md_reg), as_Address(counter_address_opr, as_reg(md_reg)));
-    counter_address_opr = new LIR_Address(md_reg, dest_opr->type());
-    __ mov(dest, (u1)0);      // expected
-    __ mov(rscratch1, (u1)1); // new
-    __ lse_cas(dest, rscratch1, as_reg(md_reg),
-               (Assembler::operand_size)exact_log2(type2aelembytes(dest_opr->type())),
-               /*acquire*/false, /*release*/false, /*not_pair*/true);
-  }
+  const bool do_decimate = counter_contents != 0 && ProfileCaptureRatio > 1;
+
+  ProfileStub *counter_stub = do_decimate ? new ProfileStub() : nullptr;
 
   auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
-                 md_reg, md_opr, md_offset_opr, counter_address_opr, load_dest_early]
+                 md_reg, md_opr, md_offset_opr, counter_address_opr, do_decimate]
     (LIR_Assembler* ce, LIR_Op* op) {
 
     auto masm = [ce]() { return ce->masm(); };
@@ -2814,9 +2805,10 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
+    int capture_ratio = do_decimate ? ProfileCaptureRatio : 1;
     assert(md_opr->is_valid(), "must be");
 
-    if (!load_dest_early) {
+    {
       ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
       counter_address = ce->adjust_mdo_address(md_reg, md_opr, md_offset_opr,
                                            dest_opr->type());
@@ -2827,17 +2819,17 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     if (step->is_register()) {
       Register inc = step->as_register();
 
-      if (ProfileCaptureRatio > 1) {
+      if (capture_ratio > 1) {
         __ lsl(inc, inc, ratio_shift);
       }
       __ add(dest, dest, inc);
       ce->reg2mem(dest_opr, counter_address,
                   dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
-      if (ProfileCaptureRatio > 1) {
+      if (capture_ratio > 1) {
         __ lsr(inc, inc, ratio_shift);
       }
     } else {
-      intptr_t inc = step->as_constant_ptr()->as_jint_bits() * ProfileCaptureRatio;
+      intptr_t inc = step->as_constant_ptr()->as_jint_bits() * capture_ratio;
       __ increment(dest, inc);
       ce->reg2mem(dest_opr, counter_address,
                   dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
@@ -2855,7 +2847,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
         if (!step->is_constant()) {
           // If step is 0, make sure the stub check below always fails
           __ cmp(step->as_register(), (u1)0);
-          __ mov(rscratch1, InvocationCounter::count_increment * ProfileCaptureRatio);
+          __ mov(rscratch1, InvocationCounter::count_increment * capture_ratio);
           __ csel(dest, dest, rscratch1, __ NE);
         }
         juint mask = freq_opr->as_jint();
@@ -2867,7 +2859,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
         }
 
         // If (dest & mask) < step, we just overflowed.
-        switch (ProfileCaptureRatio) {
+        switch (capture_ratio) {
           case 1:
             __ cbz(dest, *overflow_stub->entry());
             break;
@@ -2891,15 +2883,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     }
   };
 
-  if (counter_stub != nullptr) {
-    if (load_dest_early) {
-      // Insert a runtime check iff the counter is zero at the time we
-      // generate this code.
-      // __ cbz(dest, *counter_stub->entry());
-    } else {
-      __ block_comment("Counter is already non-zero");
-    }
-
+  if (do_decimate) {
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
     __ cbz(rscratch1, *counter_stub->entry());
     __ bind(*counter_stub->continuation());
@@ -2977,7 +2961,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       = __ form_address(tmp1, mdo,
                         md->byte_offset_of_slot(data, CounterData::count_offset()),
                         LogBytesPerWord);
-    increment_mdo(_masm, counter_addr, DataLayout::counter_increment);
+    increment_mdo(_masm, counter_addr, DataLayout::counter_increment, (address)md->constant_encoding());
   }
 #ifndef PRODUCT
   if (CommentedAssembly) {

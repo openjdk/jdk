@@ -875,7 +875,8 @@ void ciMethodData::print_data_on(outputStream* st) {
   }
   ciProfileData* data;
   for (data = first_data(); is_valid(data); data = next_data(data)) {
-    st->print("%d", dp_to_di(data->dp()));
+    address x = (address)data->dp();
+    st->print("[0x%016lx] %d ", (uintptr_t)x, dp_to_di(data->dp()));
     st->fill_to(6);
     data->print_data_on(st);
   }
@@ -883,6 +884,7 @@ void ciMethodData::print_data_on(outputStream* st) {
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
   for (;; dp = MethodData::next_extra(dp)) {
+    address x = (address)dp;
     assert(dp < end, "moved past end of extra data");
     switch (dp->tag()) {
     case DataLayout::no_tag:
@@ -900,7 +902,7 @@ void ciMethodData::print_data_on(outputStream* st) {
     default:
       fatal("unexpected tag %d", dp->tag());
     }
-    st->print("%d", dp_to_di(data->dp()));
+    st->print("[0x%016lx] %d ", (uintptr_t)x, dp_to_di(data->dp()));
     st->fill_to(6);
     data->print_data_on(st);
     if (dp >= end) return;
