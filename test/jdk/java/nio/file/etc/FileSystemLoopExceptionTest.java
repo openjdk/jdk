@@ -25,11 +25,9 @@
  * @summary Check file system loop exception structure
  * @bug 8393106
  * @requires os.family != "windows"
- * @run junit/othervm
+ * @run main/othervm
  *      FileSystemLoopExceptionTest
  */
-
-import org.junit.Test;
 
 import java.nio.channels.FileChannel;
 import java.nio.file.FileSystemLoopException;
@@ -38,12 +36,10 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 import static java.nio.file.StandardOpenOption.READ;
-import static org.junit.Assert.fail;
 
 public class FileSystemLoopExceptionTest {
 
-    @Test
-    public void symlinkLoop() throws Exception {
+    public static void main(String[] args) throws Exception {
         Path link = Files.createTempDirectory("loop_test").resolve("link");
         Files.createSymbolicLink(link, link);
 
@@ -91,7 +87,7 @@ public class FileSystemLoopExceptionTest {
             assertionError.addSuppressed(expectedException);
             throw assertionError;
         }
-        fail("Expected an exception but got a result: " + result);
+        throw new AssertionError("Expected an exception but got a result: " + result);
     }
 
     @FunctionalInterface
