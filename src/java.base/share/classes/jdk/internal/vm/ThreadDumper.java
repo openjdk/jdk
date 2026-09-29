@@ -185,7 +185,8 @@ public class ThreadDumper {
         Instant now = Instant.now();
         Thread.State state = snapshot.threadState();
         writer.println("#" + thread.threadId() + " \"" + snapshot.threadName()
-                + "\" " + (thread.isVirtual() ? "virtual " : "") + state + " " + now);
+                       + "\" " + (thread.isVirtual() ? "virtual " : "") + decorateObject(thread) +
+                       " " + state + " " + now);
 
         StackTraceElement[] stackTrace = snapshot.stackTrace();
         int depth = 0;
@@ -261,7 +262,8 @@ public class ThreadDumper {
                 "com.sun.management.HotSpotDiagnosticMXBean.dumpThreads.format";
         static final int JSON_FORMAT_V1 = 1;
         static final int JSON_FORMAT_V2 = 2;
-        private static final int JSON_FORMAT_LATEST = JSON_FORMAT_V2;
+        static final int JSON_FORMAT_V3 = 3;
+        private static final int JSON_FORMAT_LATEST = JSON_FORMAT_V3;
         private static final int JSON_FORMAT;
         static {
             int ver = Integer.getInteger(JSON_FORMAT_VERSION_PROP, JSON_FORMAT_LATEST);
@@ -359,6 +361,9 @@ public class ThreadDumper {
             jsonWriter.writeProperty("virtual", Boolean.TRUE);
         }
         jsonWriter.writeProperty("name", snapshot.threadName());
+        if (JsonFormat.formatVersion() >= JsonFormat.JSON_FORMAT_V3) {
+            jsonWriter.writeProperty("identity", Objects.toIdentityString(thread));
+        }
         jsonWriter.writeProperty("state", state);
 
         // park blocker

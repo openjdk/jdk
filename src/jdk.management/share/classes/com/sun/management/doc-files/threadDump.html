@@ -48,7 +48,7 @@ following members:
         <th scope="row"> formatVersion </th>
         <td> number </td>
         <td> no </td>
-        <td> The format version. Its value is 2. </td>
+        <td> The format version. Its value is 3. </td>
     </tr>
     <tr>
         <th scope="row"> processId </th>
@@ -158,6 +158,12 @@ following members:
         <td> string </td>
         <td> no </td>
         <td> The {@linkplain java.lang.Thread#getName() thread name}. </td>
+    </tr>
+    <tr>
+        <th scope="row"> identity </th>
+        <td> string </td>
+        <td> no </td>
+        <td> The {@linkplain java.util.Objects#toIdentityString() identity string of the thread}. </td>
     </tr>
     <tr>
         <th scope="row"> state </th>
