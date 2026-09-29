@@ -450,7 +450,7 @@ static void query_multipage_support() {
         if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
           const int en = errno;
           ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
+          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", en);
         } else {
           // Attach and double check pageisze.
           void* p = ::shmat(shmid, nullptr, 0);
@@ -1409,7 +1409,6 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
   // addresses on Aix. See, e.g., ReservedHeapSpace.
   char* const addr = (char*) shmat(shmid, requested_addr, 0);
-  const int errno_shmat = errno;
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
   if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
