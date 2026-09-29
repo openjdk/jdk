@@ -28,7 +28,7 @@
  * @bug 8390025
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
- * @compile ClassPathAttributeApp.java
+ * @build ClassPathAttributeTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar ClassPathAttributeApp
  * @run driver ClassPathAttributeTest
  */
@@ -74,5 +74,13 @@ public class ClassPathAttributeTest {
                 out.shouldMatch("path \\[\\d+\\] = " + appAbsolutePath);
             })
             .runAOTWorkflow();
+    }
+}
+
+final class ClassPathAttributeApp {
+    public static void main(String[] args) {
+        System.out.println("ClassPathAttributeApp loaded successfully");
+        System.out.println("ClassPathAttributeApp.class = " + ClassPathAttributeApp.class.getResource("/ClassPathAttributeApp.class"));
+        System.out.println("java.class.path = " + System.getProperty("java.class.path"));
     }
 }

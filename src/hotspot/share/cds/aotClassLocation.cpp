@@ -663,7 +663,7 @@ void AOTClassLocationConfig::add_class_location(JavaThread* current, GrowableCla
         ResourceMark rm(current);
         char* libname;
 
-        if (strncmp(file_start, "file:", 5) == 0) {
+        if (strncasecmp(file_start, "file:", 5) == 0) {
           // If the "file:" prefix is present in the attribute, the subsequent
           // path is absolute. Remove this prefix from the path name and use
           // the absolute path rather than appending to the parent directory.
