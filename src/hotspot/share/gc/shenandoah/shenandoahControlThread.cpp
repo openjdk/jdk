@@ -242,6 +242,9 @@ void ShenandoahControlThread::run_service() {
       }
     }
   }
+
+  // We're done writing GC stats, so print them here.
+  heap->print_gc_stats_at_exit();
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
