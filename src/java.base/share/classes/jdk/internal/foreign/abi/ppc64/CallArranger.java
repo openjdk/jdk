@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.ppc64;
 
 import jdk.internal.foreign.Utils;
@@ -50,8 +51,9 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.*;
 import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
+import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.StorageType;
+import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.abiFor;
 
 /**
  * For the PPC64 C ABI specifically, this class uses CallingSequenceBuilder
@@ -243,7 +245,12 @@ public abstract class CallArranger {
         // Regular struct, no HFA.
         VMStorage[] structAlloc(MemoryLayout layout) {
             // Allocate enough gp slots (regs and stack) such that the struct fits in them.
-            int numChunks = (int) Utils.alignUp(layout.byteSize(), MAX_COPY_SIZE) / MAX_COPY_SIZE;
+            final int numChunks;
+            try {
+                numChunks = Math.toIntExact(Utils.alignUp(layout.byteSize(), MAX_COPY_SIZE) / MAX_COPY_SIZE);
+            } catch (ArithmeticException ae) {
+                throw new IllegalArgumentException("Layout too large: " + layout, ae);
+            }
             VMStorage[] result = new VMStorage[numChunks];
             for (int i = 0; i < numChunks; i++) {
                 result[i] = nextStorage(StorageType.INTEGER, false);

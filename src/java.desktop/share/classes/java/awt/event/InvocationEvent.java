@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
 
     /**
      * The Runnable whose run() method will be called.
+     *
+     * @serial
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     protected Runnable runnable;
@@ -95,12 +97,13 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      * or after the event was disposed.
      *
      * @see #isDispatched
+     * @serial
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     protected volatile Object notifier;
 
     /**
-     * The (potentially null) Runnable whose run() method will be called
+     * @serial The (potentially null) Runnable whose run() method will be called
      * immediately after the event was dispatched or disposed.
      *
      * @see #isDispatched
@@ -110,7 +113,7 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
     private final Runnable listener;
 
     /**
-     * Indicates whether the {@code run()} method of the {@code runnable}
+     * @serial Indicates whether the {@code run()} method of the {@code runnable}
      * was executed or not.
      *
      * @see #isDispatched
@@ -122,18 +125,20 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      * Set to true if dispatch() catches Throwable and stores it in the
      * exception instance variable. If false, Throwables are propagated up
      * to the EventDispatchThread's dispatch loop.
+     *
+     * @serial
      */
     protected boolean catchExceptions;
 
     /**
-     * The (potentially null) Exception thrown during execution of the
+     * @serial The (potentially null) Exception thrown during execution of the
      * Runnable.run() method. This variable will also be null if a particular
      * instance does not catch exceptions.
      */
     private Exception exception = null;
 
     /**
-     * The (potentially null) Throwable thrown during execution of the
+     * @serial The (potentially null) Throwable thrown during execution of the
      * Runnable.run() method. This variable will also be null if a particular
      * instance does not catch exceptions.
      */

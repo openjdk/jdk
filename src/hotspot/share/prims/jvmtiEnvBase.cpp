@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -36,6 +35,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "prims/downcallLinker.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExtensions.hpp"
@@ -52,16 +52,18 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 
 
@@ -406,22 +408,22 @@ JvmtiEnvBase::set_native_method_prefixes(jint prefix_count, char** prefixes) {
     _native_method_prefixes = nullptr;
   } else {
     // there are prefixes, allocate an array to hold them, and fill it
-    char** new_prefixes = (char**)os::malloc((prefix_count) * sizeof(char*), mtInternal);
+    char** new_prefixes = (char**)os::malloc((prefix_count) * sizeof(char*), mtServiceability);
     if (new_prefixes == nullptr) {
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
     for (int i = 0; i < prefix_count; i++) {
       char* prefix = prefixes[i];
       if (prefix == nullptr) {
-        for (int j = 0; j < (i-1); j++) {
+        for (int j = 0; j < i; j++) {
           os::free(new_prefixes[j]);
         }
         os::free(new_prefixes);
         return JVMTI_ERROR_NULL_POINTER;
       }
-      prefix = os::strdup(prefixes[i]);
+      prefix = os::strdup(prefixes[i], mtServiceability);
       if (prefix == nullptr) {
-        for (int j = 0; j < (i-1); j++) {
+        for (int j = 0; j < i; j++) {
           os::free(new_prefixes[j]);
         }
         os::free(new_prefixes);
@@ -468,8 +470,7 @@ JvmtiEnvBase::get_all_native_method_prefixes(int* count_ptr) {
       // retrieve a prefix and so that it is safe against asynchronous changes
       // copy it into the resource area
       char* prefix = prefixes[j];
-      char* prefix_copy = NEW_RESOURCE_ARRAY(char, strlen(prefix)+1);
-      strcpy(prefix_copy, prefix);
+      char* prefix_copy = ResourceArea::strdup(prefix);
       prefix_array->at_put_grow(total_count++, prefix_copy);
     }
   }
@@ -555,7 +556,7 @@ JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
 }
 
 jthreadGroup *
-JvmtiEnvBase::new_jthreadGroupArray(int length, objArrayHandle groups) {
+JvmtiEnvBase::new_jthreadGroupArray(int length, refArrayHandle groups) {
   if (length == 0) {
     return nullptr;
   }
@@ -583,7 +584,6 @@ JvmtiEnvBase::jvf_for_thread_and_depth(JavaThread* java_thread, jint depth) {
   javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
 
   jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
-
   for (int d = 0; jvf != nullptr && d < depth; d++) {
     jvf = jvf->java_sender();
   }
@@ -598,6 +598,7 @@ JvmtiEnvBase::jvf_for_thread_and_depth(JavaThread* java_thread, jint depth) {
 jclass
 JvmtiEnvBase::get_jni_class_non_null(Klass* k) {
   assert(k != nullptr, "k != null");
+  assert(k->is_loader_alive(), "Must be alive");
   Thread *thread = Thread::current();
   return (jclass)jni_reference(Handle(thread, k->java_mirror()));
 }
@@ -650,40 +651,55 @@ JavaThread* JvmtiEnvBase::get_JavaThread_or_null(oop vthread) {
   return Continuation::is_continuation_mounted(java_thread, cont) ? java_thread : nullptr;
 }
 
+// An unmounted vthread may have an empty stack.
+// If unmounted from Java, it always has the yield0() and yield() frames we
+// need to hide. The methods yield0() and yield() are annotated with the @JvmtiHideEvents.
+javaVFrame*
+JvmtiEnvBase::skip_yield_frames_for_unmounted_vthread(oop vthread, javaVFrame* jvf) {
+  if (jvf == nullptr) {
+    return jvf; // empty stack is possible
+  }
+  if (java_lang_VirtualThread::is_preempted(vthread)) {
+    // Top method should not be from Continuation class.
+    assert(jvf->method()->method_holder() != vmClasses::Continuation_klass(), "");
+    return jvf;
+  }
+
+  assert(jvf->method()->jvmti_hide_events(), "sanity check");
+  assert(jvf->method()->method_holder() == vmClasses::Continuation_klass(), "expected Continuation class");
+  jvf = jvf->java_sender(); // skip yield0 frame
+
+  assert(jvf != nullptr && jvf->method()->jvmti_hide_events(), "sanity check");
+  assert(jvf->method()->method_holder() == vmClasses::Continuation_klass(), "expected Continuation class");
+  jvf = jvf->java_sender(); // skip yield frame
+  return jvf;
+}
+
+// A thread may have an empty stack.
+// Otherwise, some top frames may heed to be hidden.
+// Two cases are processed below:
+// - top frame is annotated with @JvmtiMountTransition: just skip top frames with annotated methods
+// - JavaThread is in VTMS transition: skip top frames until a frame annotated with @ChangesCurrentThread is found
 javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf) {
-  // The second condition is needed to hide notification methods.
-  if (!is_in_VTMS_transition && (jvf == nullptr || !jvf->method()->jvmti_mount_transition())) {
-    return jvf;  // No frames to skip.
+  if (jvf == nullptr) {
+    return jvf; // empty stack is possible
   }
-  // Find jvf with a method annotated with @JvmtiMountTransition.
-  for ( ; jvf != nullptr; jvf = jvf->java_sender()) {
-    if (jvf->method()->jvmti_mount_transition()) {  // Cannot actually appear in an unmounted continuation; they're never frozen.
-      jvf = jvf->java_sender();  // Skip annotated method.
-      break;
+  if (jvf->method()->jvmti_mount_transition()) {
+    // Skip frames annotated with @JvmtiMountTransition.
+    for ( ; jvf != nullptr && jvf->method()->jvmti_mount_transition(); jvf = jvf->java_sender()) {
     }
-    if (jvf->method()->changes_current_thread()) {
-      break;
+  } else if (is_in_VTMS_transition) {
+    // Skip frames above the frame annotated with @ChangesCurrentThread.
+    for ( ; jvf != nullptr && !jvf->method()->changes_current_thread(); jvf = jvf->java_sender()) {
     }
-    // Skip frame above annotated method.
   }
   return jvf;
 }
 
 javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf) {
-  jvf = check_and_skip_hidden_frames(jt->is_in_VTMS_transition(), jvf);
-  return jvf;
-}
-
-javaVFrame*
-JvmtiEnvBase::check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf) {
-  JvmtiThreadState* state = java_lang_Thread::jvmti_thread_state(vthread);
-  if (state == nullptr) {
-    // nothing to skip
-    return jvf;
-  }
-  jvf = check_and_skip_hidden_frames(java_lang_Thread::is_in_VTMS_transition(vthread), jvf);
+  jvf = check_and_skip_hidden_frames(jt->is_in_vthread_transition(), jvf);
   return jvf;
 }
 
@@ -705,12 +721,13 @@ JvmtiEnvBase::get_vthread_jvf(oop vthread) {
       return nullptr;
     }
     vframeStream vfs(java_thread);
+    assert(!java_thread->is_in_vthread_transition(), "invariant");
     jvf = vfs.at_end() ? nullptr : vfs.asJavaVFrame();
-    jvf = check_and_skip_hidden_frames(java_thread, jvf);
+    jvf = check_and_skip_hidden_frames(false, jvf);
   } else {
     vframeStream vfs(cont);
     jvf = vfs.at_end() ? nullptr : vfs.asJavaVFrame();
-    jvf = check_and_skip_hidden_frames(vthread, jvf);
+    jvf = skip_yield_frames_for_unmounted_vthread(vthread, jvf);
   }
   return jvf;
 }
@@ -723,11 +740,9 @@ JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_
   bool cthread_with_cont = JvmtiEnvBase::is_cthread_with_continuation(jt);
   javaVFrame *jvf = cthread_with_cont ? jt->carrier_last_java_vframe(reg_map_p)
                                       : jt->last_java_vframe(reg_map_p);
-  // Skip hidden frames only for carrier threads
-  // which are in non-temporary VTMS transition.
-  if (jt->is_in_VTMS_transition()) {
-    jvf = check_and_skip_hidden_frames(jt, jvf);
-  }
+
+  // Skip hidden frames for carrier threads only.
+  jvf = check_and_skip_hidden_frames(jt, jvf);
   return jvf;
 }
 
@@ -813,6 +828,17 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
   return state;
 }
 
+jint
+JvmtiEnvBase::get_thread_or_vthread_state(oop thread_oop, JavaThread* java_thread) {
+  jint state = 0;
+  if (java_lang_VirtualThread::is_instance(thread_oop)) {
+    state = JvmtiEnvBase::get_vthread_state(thread_oop, java_thread);
+  } else {
+    state = JvmtiEnvBase::get_thread_state(thread_oop, java_thread);
+  }
+  return state;
+}
+
 jvmtiError
 JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **thread_objs_p) {
   jint count = 0;
@@ -835,10 +861,11 @@ JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jin
 }
 
 jvmtiError
-JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p) {
+JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, refArrayHandle *group_objs_p) {
 
   // This call collects the strong and weak groups
   JavaThread* THREAD = current_thread;
+  JvmtiJavaUpcallMark jjum(current_thread); // hide JVMTI events for Java upcall
   JavaValue result(T_OBJECT);
   JavaCalls::call_virtual(&result,
                           group_hdl,
@@ -857,10 +884,10 @@ JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *
   }
 
   assert(result.get_type() == T_OBJECT, "just checking");
-  objArrayOop groups = (objArrayOop)result.get_oop();
+  refArrayOop groups = (refArrayOop)result.get_oop();
 
   *count_ptr = groups == nullptr ? 0 : groups->length();
-  *group_objs_p = objArrayHandle(current_thread, groups);
+  *group_objs_p = refArrayHandle(current_thread, groups);
 
   return JVMTI_ERROR_NONE;
 }
@@ -933,11 +960,16 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
       obj = mon->object();
       assert(obj != nullptr, "ObjectMonitor should have a valid object!");
     }
-    // implied else: no contended ObjectMonitor
   } else {
     // thread is doing an Object.wait() call
-    obj = mon->object();
-    assert(obj != nullptr, "Object.wait() should have an object");
+    oop thread_oop = get_vthread_or_thread_oop(java_thread);
+    jint state = get_thread_or_vthread_state(thread_oop, java_thread);
+
+    if (state & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER) {
+      // thread is re-entering the monitor in an Object.wait() call
+      obj = mon->object();
+      assert(obj != nullptr, "Object.wait() should have an object");
+    }
   }
 
   if (obj == nullptr) {
@@ -998,18 +1030,18 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
 }
 
 jvmtiError
-JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list) {
+JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* carrier, javaVFrame* jvf,
+                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list, oop vthread) {
   jvmtiError err = JVMTI_ERROR_NONE;
   Thread *current_thread = Thread::current();
-  assert(java_thread->is_handshake_safe_for(current_thread),
+  assert(carrier == nullptr || carrier->is_handshake_safe_for(current_thread),
          "call by myself or at handshake");
 
   int depth = 0;
   for ( ; jvf != nullptr; jvf = jvf->java_sender()) {
     if (MaxJavaStackTraceDepth == 0 || depth++ < MaxJavaStackTraceDepth) {  // check for stack too deep
       // Add locked objects for this frame into list.
-      err = get_locked_objects_in_frame(calling_thread, java_thread, jvf, owned_monitors_list, depth - 1);
+      err = get_locked_objects_in_frame(calling_thread, carrier, jvf, owned_monitors_list, depth - 1, vthread);
       if (err != JVMTI_ERROR_NONE) {
         return err;
       }
@@ -1018,7 +1050,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* java_th
 
   // Get off stack monitors. (e.g. acquired via jni MonitorEnter).
   JvmtiMonitorClosure jmc(calling_thread, owned_monitors_list, this);
-  ObjectSynchronizer::owned_monitors_iterate(&jmc, java_thread);
+  ObjectSynchronizer::owned_monitors_iterate(&jmc, carrier != nullptr ? carrier->threadObj() : vthread);
   err = jmc.error();
 
   return err;
@@ -1026,8 +1058,9 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* java_th
 
 // Save JNI local handles for any objects that this frame owns.
 jvmtiError
-JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread* java_thread,
-                                 javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list, jint stack_depth) {
+JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread* target,
+                                 javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
+                                 jint stack_depth, oop vthread) {
   jvmtiError err = JVMTI_ERROR_NONE;
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
@@ -1044,9 +1077,12 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     // at a safepoint or the calling thread is operating on itself so
     // it cannot leave the underlying wait() call.
     // Save object of current wait() call (if any) for later comparison.
-    ObjectMonitor *mon = java_thread->current_waiting_monitor();
-    if (mon != nullptr) {
-      wait_obj = mon->object();
+    if (target != nullptr) {
+      ObjectMonitor *mon = target->current_waiting_monitor();
+      if (mon != nullptr) wait_obj = mon->object();
+    } else {
+      ObjectMonitor *mon = java_lang_VirtualThread::current_waiting_monitor(vthread);
+      if (mon != nullptr) wait_obj = mon->object();
     }
   }
   oop pending_obj = nullptr;
@@ -1055,9 +1091,12 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     // at a safepoint or the calling thread is operating on itself so
     // it cannot leave the underlying enter() call.
     // Save object of current enter() call (if any) for later comparison.
-    ObjectMonitor *mon = java_thread->current_pending_monitor();
-    if (mon != nullptr) {
-      pending_obj = mon->object();
+    if (target != nullptr) {
+      ObjectMonitor *mon = target->current_pending_monitor();
+      if (mon != nullptr) pending_obj = mon->object();
+    } else {
+      ObjectMonitor *mon = java_lang_VirtualThread::current_pending_monitor(vthread);
+      if (mon != nullptr) pending_obj = mon->object();
     }
   }
 
@@ -1314,12 +1353,40 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
   if (jvf == nullptr) {
     return JVMTI_ERROR_NO_MORE_FRAMES;
   }
-  if (jvf->method()->is_native()) {
+  if (jvf->method()->is_native() ||
+      (depth == 0 && state->top_frame_is_exiting()) ||
+      (state->is_virtual() && jvf->method()->jvmti_hide_events())) {
     return JVMTI_ERROR_OPAQUE_FRAME;
   }
   assert(jvf->frame_pointer() != nullptr, "frame pointer mustn't be null");
   int frame_number = (int)get_frame_count(jvf);
-  state->env_thread_state((JvmtiEnvBase*)this)->set_frame_pop(frame_number);
+  JvmtiEnvThreadState* ets = state->env_thread_state(this);
+  if (ets->is_frame_pop(frame_number)) {
+    return JVMTI_ERROR_DUPLICATE;
+  }
+  JavaThread* thread = state->get_thread();
+  frame fr = jvf->fr();
+
+  if (jvf->is_compiled_frame()) {
+    if (!fr.can_be_deoptimized()) {
+      return JVMTI_ERROR_OPAQUE_FRAME;
+    }
+
+    if (fr.is_heap_frame()) {
+      assert(state->is_virtual(), "invariant");
+      fr.deoptimize(nullptr, jvf->stack_chunk());
+    } else {
+      Deoptimization::deoptimize(thread, fr);
+    }
+  }
+  ets->set_frame_pop(frame_number);
+  return JVMTI_ERROR_NONE;
+}
+
+jvmtiError
+JvmtiEnvBase::clear_all_frame_pops(JvmtiThreadState* state) {
+  JvmtiEnvThreadState* ets = state->env_thread_state(this);
+  ets->clear_all_frame_pops();
   return JVMTI_ERROR_NONE;
 }
 
@@ -1347,8 +1414,7 @@ JvmtiEnvBase::is_vthread_suspended(oop vt_oop, JavaThread* jt) {
   bool suspended = false;
   if (java_lang_VirtualThread::is_instance(vt_oop)) {
     suspended = JvmtiVTSuspender::is_vthread_suspended(vt_oop);
-  }
-  if (vt_oop->is_a(vmClasses::BoundVirtualThread_klass())) {
+  } else if (vt_oop->is_a(vmClasses::BoundVirtualThread_klass())) {
     suspended = jt->is_suspended();
   }
   return suspended;
@@ -1405,14 +1471,6 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, 
   return JVMTI_ERROR_NONE;
 }
 
-jvmtiError
-JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                           JavaThread** jt_pp, oop* thread_oop_p) {
-  JavaThread* cur_thread = JavaThread::current();
-  jvmtiError err = get_threadOop_and_JavaThread(t_list, thread, cur_thread, jt_pp, thread_oop_p);
-  return err;
-}
-
 // Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
 // Used in PopFrame and ForceEarlyReturn implementations.
 jvmtiError
@@ -1457,7 +1515,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
   ThreadsListHandle tlh(current_thread);
   JavaThread *owning_thread = nullptr;
-  ObjectMonitor *mon = nullptr;
   jvmtiMonitorUsage ret = {
       nullptr, 0, 0, nullptr, 0, nullptr
   };
@@ -1466,32 +1523,68 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   // first derive the object's owner and entry_count (if any)
   owning_thread = ObjectSynchronizer::get_lock_owner(tlh.list(), hobj);
   if (owning_thread != nullptr) {
-    Handle th(current_thread, get_vthread_or_thread_oop(owning_thread));
+    oop thread_oop = get_vthread_or_thread_oop(owning_thread);
+    bool is_virtual = thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
+    if (is_virtual) {
+      thread_oop = nullptr;
+    }
+    Handle th(current_thread, thread_oop);
     ret.owner = (jthread)jni_reference(calling_thread, th);
 
     // The recursions field of a monitor does not reflect recursions
     // as lightweight locks before inflating the monitor are not included.
     // We have to count the number of recursive monitor entries the hard way.
     // We pass a handle to survive any GCs along the way.
-    ret.entry_count = count_locked_objects(owning_thread, hobj);
+    ret.entry_count = is_virtual ? 0 : count_locked_objects(owning_thread, hobj);
   }
   // implied else: entry_count == 0
 
   jint nWant = 0, nWait = 0;
   markWord mark = hobj->mark();
-  if (mark.has_monitor()) {
-    mon = mark.monitor();
-    assert(mon != nullptr, "must have monitor");
+  ResourceMark rm(current_thread);
+  GrowableArray<JavaThread*>* wantList = nullptr;
+
+  ObjectMonitor* mon = mark.has_monitor()
+      ? ObjectSynchronizer::read_monitor(hobj())
+      : nullptr;
+
+  if (mon != nullptr) {
     // this object has a heavyweight monitor
-    nWant = mon->contentions(); // # of threads contending for monitor
-    nWait = mon->waiters();     // # of threads in Object.wait()
-    ret.waiter_count = nWant + nWait;
-    ret.notify_waiter_count = nWait;
+    nWant = mon->contentions(); // # of threads contending for monitor entry, but not re-entry
+    nWait = mon->waiters();     // # of threads waiting for notification,
+                                // or to re-enter monitor, in Object.wait()
+
+    // Get the actual set of threads trying to enter, or re-enter, the monitor.
+    wantList = Threads::get_pending_threads(tlh.list(), nWant + nWait, (address)mon);
+    nWant = wantList->length();
   } else {
     // this object has a lightweight monitor
-    ret.waiter_count = 0;
-    ret.notify_waiter_count = 0;
   }
+
+  jint skipped = 0;
+  if (mon != nullptr) {
+    // Robustness: the actual waiting list can be smaller.
+    // The nWait count we got from the mon->waiters() may include the re-entering
+    // the monitor threads after being notified. Here we are correcting the actual
+    // number of the waiting threads by excluding those re-entering the monitor.
+    nWait = 0;
+    for (ObjectWaiter* waiter = mon->first_waiter();
+         waiter != nullptr && (nWait == 0 || waiter != mon->first_waiter());
+         waiter = mon->next_waiter(waiter)) {
+      JavaThread *w = mon->thread_of_waiter(waiter);
+      if (w == nullptr) {
+        skipped++;
+      } else {
+        oop thread_oop = get_vthread_or_thread_oop(w);
+        if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+          skipped++;
+        }
+      }
+      nWait++;
+    }
+  }
+  ret.waiter_count = nWant;
+  ret.notify_waiter_count = nWait - skipped;
 
   // Allocate memory for heavyweight and lightweight monitor.
   jvmtiError err;
@@ -1510,56 +1603,47 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   if (mon != nullptr) {
     // this object has a heavyweight monitor
 
-    // Number of waiters may actually be less than the waiter count.
-    // So null out memory so that unused memory will be null.
-    memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
-    memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
+    // null out memory for robustness
+    if (ret.waiters != nullptr) {
+      memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
+    }
+    if (ret.notify_waiters != nullptr) {
+      memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
+    }
 
-    if (ret.waiter_count > 0) {
-      // we have contending and/or waiting threads
-      if (nWant > 0) {
-        // we have contending threads
-        ResourceMark rm(current_thread);
-        // get_pending_threads returns only java thread so we do not need to
-        // check for non java threads.
-        GrowableArray<JavaThread*>* wantList = Threads::get_pending_threads(tlh.list(), nWant, (address)mon);
-        if (wantList->length() < nWant) {
-          // robustness: the pending list has gotten smaller
-          nWant = wantList->length();
-        }
-        for (int i = 0; i < nWant; i++) {
-          JavaThread *pending_thread = wantList->at(i);
-          Handle th(current_thread, get_vthread_or_thread_oop(pending_thread));
-          ret.waiters[i] = (jthread)jni_reference(calling_thread, th);
-        }
+    if (ret.waiter_count > 0) { // we have contending threads waiting to enter/re-enter the monitor
+      // identify threads waiting to enter and re-enter the monitor
+      // get_pending_threads returns only java thread so we do not need to
+      // check for non java threads.
+      for (int i = 0; i < nWant; i++) {
+        JavaThread *pending_thread = wantList->at(i);
+        Handle th(current_thread, get_vthread_or_thread_oop(pending_thread));
+        ret.waiters[i] = (jthread)jni_reference(calling_thread, th);
       }
-      if (nWait > 0) {
-        // we have threads in Object.wait()
-        int offset = nWant;  // add after any contending threads
-        ObjectWaiter *waiter = mon->first_waiter();
-        for (int i = 0, j = 0; i < nWait; i++) {
-          if (waiter == nullptr) {
-            // robustness: the waiting list has gotten smaller
-            nWait = j;
-            break;
-          }
-          JavaThread *w = mon->thread_of_waiter(waiter);
-          if (w != nullptr) {
-            // If the thread was found on the ObjectWaiter list, then
-            // it has not been notified. This thread can't change the
-            // state of the monitor so it doesn't need to be suspended.
-            Handle th(current_thread, get_vthread_or_thread_oop(w));
-            ret.waiters[offset + j] = (jthread)jni_reference(calling_thread, th);
-            ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
-          }
-          waiter = mon->next_waiter(waiter);
+    }
+    if (ret.notify_waiter_count > 0) { // we have threads waiting to be notified in Object.wait()
+      ObjectWaiter *waiter = mon->first_waiter();
+      jint skipped = 0;
+      for (int i = 0; i < nWait; i++) {
+        JavaThread *w = mon->thread_of_waiter(waiter);
+        bool is_virtual;
+        if (w == nullptr) {
+          is_virtual = true;
+        } else {
+          oop thread_oop = get_vthread_or_thread_oop(w);
+          is_virtual = thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
         }
+        if (is_virtual) {
+          skipped++;
+        } else {
+          // If the thread was found on the ObjectWaiter list, then
+          // it has not been notified.
+          Handle th(current_thread, w->threadObj());
+          ret.notify_waiters[i - skipped] = (jthread)jni_reference(calling_thread, th);
+        }
+        waiter = mon->next_waiter(waiter);
       }
-    } // ThreadsListHandle is destroyed here.
-
-    // Adjust count. nWant and nWait count values may be less than original.
-    ret.waiter_count = nWant + nWait;
-    ret.notify_waiter_count = nWait;
+    }
   } else {
     // this object has a lightweight monitor and we have nothing more
     // to do here because the defaults are just fine.
@@ -1622,19 +1706,15 @@ private:
   }
 
   // This function is called only if _enable == true.
-  // Iterates over all JavaThread's, counts VTMS transitions and restores
-  // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol.
-  int count_transitions_and_correct_jvmti_thread_states() {
-    int count = 0;
-
+  // Iterates over all JavaThread's, restores jt->jvmti_thread_state() and
+  // jt->jvmti_vthread() for VTMS transition protocol.
+  void correct_jvmti_thread_states() {
     for (JavaThread* jt : ThreadsListHandle()) {
-      if (jt->is_in_VTMS_transition()) {
-        count++;
+      if (jt->is_in_vthread_transition()) {
         continue; // no need in JvmtiThreadState correction below if in transition
       }
       correct_jvmti_thread_state(jt);
     }
-    return count;
   }
 
 public:
@@ -1644,10 +1724,10 @@ public:
   }
 
   void doit() {
-    int count = _enable ? count_transitions_and_correct_jvmti_thread_states() : 0;
-
-    JvmtiVTMSTransitionDisabler::set_VTMS_transition_count(count);
-    JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
+    if (_enable) {
+      correct_jvmti_thread_states();
+    }
+    MountUnmountDisabler::set_notify_jvmti_events(_enable);
   }
 };
 
@@ -1658,7 +1738,7 @@ JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
   if (!Continuations::enabled()) {
     return false;
   }
-  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+  if (MountUnmountDisabler::notify_jvmti_events()) {
     return false; // already enabled
   }
   VM_SetNotifyJvmtiEventsMode op(true);
@@ -1674,10 +1754,10 @@ JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
   if (!Continuations::enabled()) {
     return false;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+  if (!MountUnmountDisabler::notify_jvmti_events()) {
     return false; // already disabled
   }
-  JvmtiVTMSTransitionDisabler disabler(true); // ensure there are no other disablers
+  MountUnmountDisabler disabler(true); // ensure there are no other disablers
   VM_SetNotifyJvmtiEventsMode op(false);
   VMThread::execute(&op);
   return true;
@@ -1685,64 +1765,51 @@ JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
 
 // java_thread - protected by ThreadsListHandle
 jvmtiError
-JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
-                             int* need_safepoint_p) {
+JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend) {
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
   Handle thread_h(current, thread_oop);
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
 
-  if (is_virtual) {
-    if (single_suspend) {
-      if (JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
-        return JVMTI_ERROR_THREAD_SUSPENDED;
-      }
-      JvmtiVTSuspender::register_vthread_suspend(thread_h());
-      // Check if virtual thread is mounted and there is a java_thread.
-      // A non-null java_thread is always passed in the !single_suspend case.
-      oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_h());
-      java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
+  // Unmounted vthread case.
+
+  if (is_virtual && java_thread == nullptr) {
+    assert(single_suspend, "sanity check");
+    if (JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
+      return JVMTI_ERROR_THREAD_SUSPENDED;
     }
-    // The java_thread can be still blocked in VTMS transition after a previous JVMTI resume call.
-    // There is no need to suspend the java_thread in this case. After vthread unblocking,
-    // it will check for ext_suspend request and suspend itself if necessary.
-    if (java_thread == nullptr || java_thread->is_suspended()) {
-      // We are done if the virtual thread is unmounted or
-      // the java_thread is externally suspended.
-      return JVMTI_ERROR_NONE;
-    }
-    // The virtual thread is mounted: suspend the java_thread.
+    JvmtiVTSuspender::register_vthread_suspend(thread_h());
+    return JVMTI_ERROR_NONE;
   }
+
+  // Platform thread or mounted vthread cases.
+
+  assert(java_thread != nullptr, "sanity check");
+
   // Don't allow hidden thread suspend request.
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
-  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
-
-  // A case of non-virtual thread.
-  if (!is_virtual) {
-    // Thread.suspend() is used in some tests. It sets jt->is_suspended() only.
-    if (java_thread->is_carrier_thread_suspended() ||
-        (!is_thread_carrying && java_thread->is_suspended())) {
-      return JVMTI_ERROR_THREAD_SUSPENDED;
-    }
-    java_thread->set_carrier_thread_suspended();
-  }
-  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
-
-  assert(!single_suspend || (!is_virtual && java_thread->is_carrier_thread_suspended()) ||
-          (is_virtual && JvmtiVTSuspender::is_vthread_suspended(thread_h())),
-         "sanity check");
 
   // An attempt to handshake-suspend a thread carrying a virtual thread will result in
   // suspension of mounted virtual thread. So, we just mark it as suspended
   // and it will be actually suspended at virtual thread unmount transition.
-  if (!is_thread_carrying) {
+  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
+  if (is_thread_carrying) {
+    return java_thread->set_carrier_thread_suspended() ? JVMTI_ERROR_NONE : JVMTI_ERROR_THREAD_SUSPENDED;
+  } else {
+    // Platform thread (not carrying vthread) or mounted vthread cases.
     assert(thread_h() != nullptr, "sanity check");
     assert(single_suspend || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "SuspendAllVirtualThreads should never suspend non-virtual threads");
-    // Case of mounted virtual or attached carrier thread.
-    if (!JvmtiSuspendControl::suspend(java_thread)) {
+
+    // Ideally we would just need to check java_thread->is_suspended(), but we have to
+    // consider the case of trying to suspend a thread that was previously suspended while
+    // carrying a vthread but has already unmounted it.
+    if (java_thread->is_suspended() || (!is_virtual && java_thread->is_carrier_thread_suspended())) {
+      return JVMTI_ERROR_THREAD_SUSPENDED;
+    }
+    if (!java_thread->java_suspend(is_virtual && single_suspend)) {
       // Thread is already suspended or in process of exiting.
       if (java_thread->is_exiting()) {
         // The thread was in the process of exiting.
@@ -1750,8 +1817,8 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
       }
       return JVMTI_ERROR_THREAD_SUSPENDED;
     }
+    return JVMTI_ERROR_NONE;
   }
-  return JVMTI_ERROR_NONE;
 }
 
 // java_thread - protected by ThreadsListHandle
@@ -1762,54 +1829,50 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
   Handle thread_h(current, thread_oop);
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
 
-  if (is_virtual) {
-    if (single_resume) {
-      if (!JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
-        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      }
-      JvmtiVTSuspender::register_vthread_resume(thread_h());
-      // Check if virtual thread is mounted and there is a java_thread.
-      // A non-null java_thread is always passed in the !single_resume case.
-      oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_h());
-      java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
+  // Unmounted vthread case.
+
+  if (is_virtual && java_thread == nullptr) {
+    assert(single_resume, "sanity check");
+    if (!JvmtiVTSuspender::is_vthread_suspended(thread_h())) {
+      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     }
-    // The java_thread can be still blocked in VTMS transition after a previous JVMTI suspend call.
-    // There is no need to resume the java_thread in this case. After vthread unblocking,
-    // it will check for is_vthread_suspended request and remain resumed if necessary.
-    if (java_thread == nullptr || !java_thread->is_suspended()) {
-      // We are done if the virtual thread is unmounted or
-      // the java_thread is not externally suspended.
-      return JVMTI_ERROR_NONE;
-    }
-    // The virtual thread is mounted and java_thread is supended: resume the java_thread.
+    JvmtiVTSuspender::register_vthread_resume(thread_h());
+    return JVMTI_ERROR_NONE;
   }
+
+  // Platform thread or mounted vthread cases.
+
+  assert(java_thread != nullptr, "sanity check");
+
   // Don't allow hidden thread resume request.
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
+
   bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
+  if (is_thread_carrying) {
+    return java_thread->clear_carrier_thread_suspended() ? JVMTI_ERROR_NONE : JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+  } else {
+    // Platform thread (not carrying vthread) or mounted vthread cases.
 
-  // A case of a non-virtual thread.
-  if (!is_virtual) {
-    if (!java_thread->is_carrier_thread_suspended() &&
-        (is_thread_carrying || !java_thread->is_suspended())) {
-      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    }
-    java_thread->clear_carrier_thread_suspended();
-  }
-  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
-
-  if (!is_thread_carrying) {
     assert(thread_h() != nullptr, "sanity check");
     assert(single_resume || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "ResumeAllVirtualThreads should never resume non-virtual threads");
-    if (java_thread->is_suspended()) {
-      if (!JvmtiSuspendControl::resume(java_thread)) {
-        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      }
+
+    // Ideally we would not have to check this but we have to consider the case
+    // of trying to resume a thread that was previously suspended while carrying
+    // a vthread but has already unmounted it.
+    if (!is_virtual && java_thread->is_carrier_thread_suspended()) {
+      bool res = java_thread->clear_carrier_thread_suspended();
+      assert(res, "resume operations running concurrently?");
+      return JVMTI_ERROR_NONE;
     }
+
+    if (!java_thread->java_resume(is_virtual && single_resume)) {
+      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    }
+    return JVMTI_ERROR_NONE;
   }
-  return JVMTI_ERROR_NONE;
 }
 
 ResourceTracker::ResourceTracker(JvmtiEnv* env) {
@@ -1959,18 +2022,17 @@ class AdapterClosure : public HandshakeClosure {
 };
 
 // Supports platform and virtual threads.
-// JvmtiVTMSTransitionDisabler is always set by this function.
+// MountUnmountDisabler is always set by this function.
 void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
-
-  JvmtiVTMSTransitionDisabler disabler(target);
+  MountUnmountDisabler disabler(target);
   ThreadsListHandle tlh(current);
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
 
-  jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, &java_thread, &thread_obj);
+  jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), target, current, &java_thread, &thread_obj);
   if (err != JVMTI_ERROR_NONE) {
     hs_cl->set_result(err);
     return;
@@ -1982,15 +2044,21 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
 // Supports platform and virtual threads.
 // A virtual thread is always identified by the target_h oop handle.
 // The target_jt is always nullptr for an unmounted virtual thread.
-// JvmtiVTMSTransitionDisabler has to be set before call to this function.
+// MountUnmountDisabler has to be set before call to this function.
 void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* tlh,
                         JavaThread* target_jt, Handle target_h) {
-  bool self = target_jt == JavaThread::current();
+  JavaThread* current = JavaThread::current();
+  bool is_virtual = java_lang_VirtualThread::is_instance(target_h());
+  bool self = target_jt == current;
 
-  hs_cl->set_self(self);           // needed when suspend is required for non-current target thread
+  assert(!Continuations::enabled() || self || !is_virtual || current->is_vthread_transition_disabler(), "sanity check");
 
-  if (java_lang_VirtualThread::is_instance(target_h())) { // virtual thread
+  hs_cl->set_target_jt(target_jt);   // can be needed in the virtual thread case
+  hs_cl->set_is_virtual(is_virtual); // can be needed in the virtual thread case
+  hs_cl->set_self(self);             // needed when suspend is required for non-current target thread
+
+  if (is_virtual) {                // virtual thread
     if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
       return;
     }
@@ -2039,15 +2107,30 @@ VM_GetThreadListStackTraces::doit() {
 }
 
 void
-GetSingleStackTraceClosure::do_thread(Thread *target) {
-  JavaThread *jt = JavaThread::cast(target);
+GetSingleStackTraceClosure::doit() {
+  JavaThread *jt = _target_jt;
   oop thread_oop = JNIHandles::resolve_external_guard(_jthread);
 
-  if (!jt->is_exiting() && thread_oop != nullptr) {
+  if ((jt == nullptr || !jt->is_exiting()) && thread_oop != nullptr) {
     ResourceMark rm;
     _collector.fill_frames(_jthread, jt, thread_oop);
     _collector.allocate_and_fill_stacks(1);
+    set_result(_collector.result());
   }
+}
+
+void
+GetSingleStackTraceClosure::do_thread(Thread *target) {
+  assert(_target_jt == JavaThread::cast(target), "sanity check");
+  doit();
+}
+
+void
+GetSingleStackTraceClosure::do_vthread(Handle target_h) {
+  // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
+  // identity to carrier thread (see VirtualThread.switchToCarrierThread).
+  assert(_target_jt == nullptr || _target_jt->jvmti_vthread() == target_h(), "sanity check");
+  doit();
 }
 
 void
@@ -2087,6 +2170,17 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
 
   if (jvf->method()->is_native()) {
     return JVMTI_ERROR_OPAQUE_FRAME;
+  }
+
+  // Prevent ForceEarlyReturnVoid from returning early from the class initializer of a class with
+  // strictly-initialized static fields, or a constructor of a class with strictly-initialized
+  // instance fields in the class hierarchy.
+  if (tos == vtos) {
+    Method* method = jvf->method();
+    if ((method->is_class_initializer() && method->method_holder()->has_strict_static_fields()) ||
+        (method->is_object_constructor() && method->method_holder()->has_strict_instance_fields_in_hierarchy())) {
+      return JVMTI_ERROR_OPAQUE_FRAME;
+    }
   }
 
   // If the frame is a compiled one, need to deoptimize it.
@@ -2142,16 +2236,17 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
-  JvmtiVTMSTransitionDisabler disabler(thread);
+  MountUnmountDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_obj);
 
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
+  Handle thread_handle(current_thread, thread_obj);
   bool self = java_thread == current_thread;
 
   err = check_non_suspended_or_opaque_frame(java_thread, thread_obj, self);
@@ -2172,17 +2267,14 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
 
+  MutexLocker mu(JvmtiThreadState_lock);
   SetForceEarlyReturn op(state, value, tos);
-  if (self) {
-    op.doit(java_thread, self);
-  } else {
-    Handshake::execute(&op, java_thread);
-  }
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 }
 
 void
-SetForceEarlyReturn::doit(Thread *target, bool self) {
+SetForceEarlyReturn::doit(Thread *target) {
   JavaThread* java_thread = JavaThread::cast(target);
   Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
@@ -2232,6 +2324,7 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
   // Set pending step flag for this early return.
   // It is cleared when next step event is posted.
   _state->set_pending_step_for_earlyret();
+  _state->invalidate_cur_stack_depth();
 }
 
 void
@@ -2298,7 +2391,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
   }
 
   // Iterate over all the modules loaded to the system.
-  ClassLoaderDataGraph::modules_do(&do_module);
+  ClassLoaderDataGraph::modules_do_keepalive(&do_module);
 
   jint len = _tbl->length();
   guarantee(len > 0, "at least one module must be present");
@@ -2316,8 +2409,103 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
   return JVMTI_ERROR_NONE;
 }
 
+
+static bool is_async_unsafe_method(Method* m) {
+  return m != nullptr &&
+         (m->method_holder() == vmClasses::VirtualThread_klass() ||
+         // Checks for VirtualThread$VThreadContinuation$1.run
+         (m->name() == vmSymbols::run_method_name() && m->jvmti_hide_events()));
+}
+
+class StopThreadAsyncClosure : public AsyncExceptionHandshakeClosure {
+ public:
+  StopThreadAsyncClosure(OopHandle& exception)
+    : AsyncExceptionHandshakeClosure(exception, "StopThreadAsyncClosure") {}
+
+  virtual void do_thread(Thread* thread) {
+    JavaThread* java_thread = JavaThread::cast(thread);
+    DEBUG_ONLY(vframeStream vfst(java_thread);)
+    assert(vfst.at_end() || !is_async_unsafe_method(vfst.method()), "missing transition to Java with no async processing");
+    assert(!java_thread->is_in_vthread_transition(), "should not throw inside transition");
+
+    AsyncExceptionHandshakeClosure::do_thread(java_thread);
+  }
+};
+
+StopThreadClosure::StopThreadClosure(JavaThread* current_thread, oop exception)
+  : JvmtiUnitedHandshakeClosure("StopThread"), _exception(current_thread, exception) {}
+
 void
-UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
+StopThreadClosure::doit(JavaThread* target) {
+  OopHandle e(Universe::vm_global(), _exception());
+  target->install_async_exception(new StopThreadAsyncClosure(e));
+  _result = JVMTI_ERROR_NONE;
+}
+
+void
+StopThreadClosure::do_thread(Thread* target) {
+  assert(_target_jt == JavaThread::cast(target), "sanity check");
+
+  oop target_oop = _target_jt->threadObj();
+  if (target_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+    if (!_self && !JvmtiEnvBase::is_vthread_suspended(target_oop, _target_jt)) {
+      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+      return;
+    }
+  }
+  doit(_target_jt);
+}
+
+void
+StopThreadClosure::do_vthread(Handle target_h) {
+  if (!_self && !JvmtiVTSuspender::is_vthread_suspended(target_h())) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return;
+  }
+
+  if (_target_jt == nullptr) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  if (_target_jt->on_monitor_waited_event()) {
+    // The exception could end up being thrown in the
+    // carrier so skip this case.
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  vframeStream vfst(_target_jt);
+  Method* m = vfst.method();
+  if (is_async_unsafe_method(m)) {
+    // Throwing from a VirtualThread method might leave the
+    // virtual thread in an inconsistent state. The current
+    // implementation simply checks the top method, which is
+    // enough to fix known issues where transition bits could
+    // be left in an invalid state and trigger assertion failures.
+    // A more thorough approach would be to walk the stack and
+    // check for VirtualThread methods further up (excluding
+    // VirtualThread.run and VirtualThread$VThreadContinuation$1.run
+    // which are always present).
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  if (_target_jt->at_no_async_entry_count() > 0
+      || _target_jt->is_at_poll_safepoint()
+      || DowncallLinker::is_downcall_stub(_target_jt->last_frame().cb())) {
+    // The target will defer processing of the async exception to
+    // some later safepoint poll. We cannot guarantee where that
+    // will be so we conservatively skip this case.
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  doit(_target_jt);
+}
+
+void
+UpdateForPopTopFrameClosure::doit(Thread *target) {
   Thread* current_thread  = Thread::current();
   HandleMark hm(current_thread);
   JavaThread* java_thread = JavaThread::cast(target);
@@ -2405,8 +2593,9 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
 }
 
 void
-SetFramePopClosure::do_thread(Thread *target) {
+SetOrClearFramePopClosure::do_thread(Thread *target) {
   Thread* current = Thread::current();
+  ResourceMark rm(current); // vframes are resource allocated
   JavaThread* java_thread = JavaThread::cast(target);
 
   if (java_thread->is_exiting()) {
@@ -2417,28 +2606,41 @@ SetFramePopClosure::do_thread(Thread *target) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
+  if (!_set) { // ClearAllFramePops
+    _result = _env->clear_all_frame_pops(_state);
+    return;
+  }
   if (!java_thread->has_last_Java_frame()) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
     return;
   }
-  assert(_state->get_thread_or_saved() == java_thread, "Must be");
+  assert(_state->get_thread() == java_thread, "Must be");
 
   RegisterMap reg_map(java_thread,
                       RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
-  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
+  _result = _env->set_frame_pop(_state, jvf, _depth);
 }
 
 void
-SetFramePopClosure::do_vthread(Handle target_h) {
+SetOrClearFramePopClosure::do_vthread(Handle target_h) {
+  Thread* current = Thread::current();
+  ResourceMark rm(current); // vframes are resource allocated
+
   if (!_self && !JvmtiVTSuspender::is_vthread_suspended(target_h())) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
+  if (!_set) { // ClearAllFramePops
+    _result = _env->clear_all_frame_pops(_state);
+    return;
+  }
+  assert(_state->get_thread() == _target_jt, "sanity check");
+
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
-  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
+  _result = _env->set_frame_pop(_state, jvf, _depth);
 }
 
 void
@@ -2452,6 +2654,23 @@ GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
 }
 
 void
+GetOwnedMonitorInfoClosure::do_vthread(Handle target_h) {
+  Thread* current = Thread::current();
+  ResourceMark rm(current); // vframes are resource allocated
+  HandleMark hm(current);
+
+  javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
+
+  if (_target_jt == nullptr || (!_target_jt->is_exiting() && _target_jt->threadObj() != nullptr)) {
+    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread,
+                                                         _target_jt,
+                                                         jvf,
+                                                         _owned_monitors_list,
+                                                         target_h());
+  }
+}
+
+void
 GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
   JavaThread *jt = JavaThread::cast(target);
   if (!jt->is_exiting() && (jt->threadObj() != nullptr)) {
@@ -2460,6 +2679,20 @@ GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
                                                                     _owned_monitor_ptr,
                                                                     _is_virtual);
   }
+}
+
+void
+GetCurrentContendedMonitorClosure::do_vthread(Handle target_h) {
+  if (_target_jt == nullptr) {
+    ObjectMonitor *mon = java_lang_VirtualThread::current_pending_monitor(target_h());
+    if (mon != nullptr) {
+      *_owned_monitor_ptr = JNIHandles::make_local(_calling_thread, mon->object());
+    }
+    _result = JVMTI_ERROR_NONE; // target virtual thread is unmounted
+    return;
+  }
+  // mounted virtual thread case
+  do_thread(_target_jt);
 }
 
 void
@@ -2502,7 +2735,7 @@ PrintStackTraceClosure::do_thread_impl(Thread *target) {
                    "is_VTMS_transition_disabler: %d, is_in_VTMS_transition = %d\n",
                    tname, java_thread->name(), java_thread->is_exiting(),
                    java_thread->is_suspended(), java_thread->is_carrier_thread_suspended(), is_vt_suspended,
-                   java_thread->is_VTMS_transition_disabler(), java_thread->is_in_VTMS_transition());
+                   java_thread->is_vthread_transition_disabler(), java_thread->is_in_vthread_transition());
 
   if (java_thread->has_last_Java_frame()) {
     RegisterMap reg_map(java_thread,
@@ -2565,56 +2798,4 @@ void
 GetFrameLocationClosure::do_vthread(Handle target_h) {
   _result = ((JvmtiEnvBase*)_env)->get_frame_location(target_h(), _depth,
                                                       _method_ptr, _location_ptr);
-}
-
-void
-VirtualThreadGetOwnedMonitorInfoClosure::do_thread(Thread *target) {
-  if (!JvmtiEnvBase::is_vthread_alive(_vthread_h())) {
-    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    return;
-  }
-  JavaThread* java_thread = JavaThread::cast(target);
-  Thread* cur_thread = Thread::current();
-  ResourceMark rm(cur_thread);
-  HandleMark hm(cur_thread);
-
-  javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
-
-  if (!java_thread->is_exiting() && java_thread->threadObj() != nullptr) {
-    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(java_thread,
-                                                         java_thread,
-                                                         jvf,
-                                                         _owned_monitors_list);
-  }
-}
-
-void
-VirtualThreadGetThreadClosure::do_thread(Thread *target) {
-  assert(target->is_Java_thread(), "just checking");
-  JavaThread *jt = JavaThread::cast(target);
-  oop carrier_thread = java_lang_VirtualThread::carrier_thread(_vthread_h());
-  *_carrier_thread_ptr = (jthread)JNIHandles::make_local(jt, carrier_thread);
-}
-
-void
-VirtualThreadGetThreadStateClosure::do_thread(Thread *target) {
-  assert(target->is_Java_thread(), "just checking");
-  int vthread_state = java_lang_VirtualThread::state(_vthread_h());
-  oop carrier_thread_oop = java_lang_VirtualThread::carrier_thread(_vthread_h());
-  jint state;
-
-  if (vthread_state == java_lang_VirtualThread::RUNNING && carrier_thread_oop != nullptr) {
-    state = (jint) java_lang_Thread::get_thread_status(carrier_thread_oop);
-    JavaThread* java_thread = java_lang_Thread::thread(carrier_thread_oop);
-    if (java_thread->is_suspended()) {
-      state |= JVMTI_THREAD_STATE_SUSPENDED;
-    }
-  } else {
-    state = (jint) java_lang_VirtualThread::map_state_to_thread_status(vthread_state);
-  }
-  if (java_lang_Thread::interrupted(_vthread_h())) {
-    state |= JVMTI_THREAD_STATE_INTERRUPTED;
-  }
-  *_state_ptr = state;
-  _result = JVMTI_ERROR_NONE;
 }

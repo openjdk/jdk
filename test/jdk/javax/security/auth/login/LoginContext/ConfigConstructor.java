@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,8 @@
  * @modules jdk.security.auth
  * @summary can not specify Configuration to LoginContext constructor
  *
- * @run main/othervm/policy=ConfigConstructor.policy -Djava.security.auth.login.config=file:${test.src}/ConfigConstructor.config ConfigConstructor
+ * @run main/othervm -Djava.security.auth.login.config=file:${test.src}/ConfigConstructor.config ConfigConstructor
  *
- */
-
-/**
- * This test shares the login config with ConfigConstructorNoPerm.
- * This test has all necessary permissions configured in the policy
- * (ConfigConstructorNoPerm has no perms and checks for SecurityExceptions).
  */
 
 import java.util.Map;
@@ -91,49 +85,29 @@ public class ConfigConstructor {
         lc4.login();
         System.out.println("Test 4 Passed");
 
-        // test security (without permission)
-        try {
-            LoginContext lc5 = new LoginContext
-                        ("module5",
-                        null,
-                        null,
-                        c);
-            lc5.login();
-            throw new SecurityException("test failed - security check failed");
-        } catch (LoginException le) {
-            if (le.getCause() instanceof SecurityException) {
-                // test passed
-            } else {
-                le.printStackTrace();
-                throw new SecurityException("test failed: " +
-                    "LoginException did not have chained SecurityException");
-            }
-        }
+        // general test
+        LoginContext lc5 = new LoginContext
+                    ("module5",
+                    null,
+                    null,
+                    c);
+        lc5.login();
         System.out.println("Test 5 Passed");
 
-        // test security (with permission)
+        // test other
         LoginContext lc6 = new LoginContext
-                        ("module6",
+                        ("goToOther",
                         null,
                         null,
                         c);
         lc6.login();
         System.out.println("Test 6 Passed");
 
-        // test other
+        // test other old constructor
         LoginContext lc7 = new LoginContext
-                        ("goToOther",
-                        null,
-                        null,
-                        c);
+                        ("goToOther");
         lc7.login();
         System.out.println("Test 7 Passed");
-
-        // test other old constructor
-        LoginContext lc8 = new LoginContext
-                        ("goToOther");
-        lc8.login();
-        System.out.println("Test 8 Passed");
     }
 
     private static class MyConfig extends Configuration {
@@ -169,12 +143,6 @@ public class ConfigConstructor {
             } else if (name.equals("module5")) {
                 AppConfigurationEntry entry = new AppConfigurationEntry
                     ("ConfigConstructor$MyModule5",
-                    AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
-                    map);
-                entries[0] = entry;
-            } else if (name.equals("module6")) {
-                AppConfigurationEntry entry = new AppConfigurationEntry
-                    ("ConfigConstructor$MyModule6",
                     AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
                     map);
                 entries[0] = entry;
@@ -235,8 +203,7 @@ public class ConfigConstructor {
         public void initialize(Subject s, CallbackHandler ch,
                 Map<String,?> state, Map<String,?> options) {
             if (s != ConfigConstructor.s ||
-                ch == null ||
-                ch == ConfigConstructor.ch) {
+                ch == null) {
                 throw new SecurityException("Module 3 failed");
             }
         }
@@ -273,25 +240,6 @@ public class ConfigConstructor {
                 Map<String,?> state, Map<String,?> options) { }
 
         public boolean login() throws LoginException {
-            // do something security-sensitive
-            System.out.println(System.getProperty("user.name"));
-            return true;
-        }
-        public boolean commit() throws LoginException { return true; }
-        public boolean abort() throws LoginException { return true; }
-        public boolean logout() throws LoginException { return true; }
-    }
-
-    public static class MyModule6 implements LoginModule {
-
-        public MyModule6() { }
-
-        public void initialize(Subject s, CallbackHandler ch,
-                Map<String,?> state, Map<String,?> options) { }
-
-        public boolean login() throws LoginException {
-            // do something security-sensitive
-            System.out.println(System.getProperty("user.home"));
             return true;
         }
         public boolean commit() throws LoginException { return true; }

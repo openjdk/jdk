@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.font;
 
 import java.awt.*;
 import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -144,13 +142,11 @@ public final class CFontManager extends SunFontManager {
         }
     }
 
+    @Override
     protected void registerFontsInDir(final String dirName, boolean useJavaRasterizer,
                                       int fontRank, boolean defer, boolean resolveSymLinks) {
 
-        @SuppressWarnings("removal")
-        String[] files = AccessController.doPrivileged((PrivilegedAction<String[]>) () -> {
-            return new File(dirName).list(getTrueTypeFilter());
-        });
+        String[] files = new File(dirName).list(getTrueTypeFilter());
 
         if (files == null) {
            return;
@@ -205,24 +201,18 @@ public final class CFontManager extends SunFontManager {
     Object waitForFontsToBeLoaded  = new Object();
     private boolean loadedAllFonts = false;
 
-    @SuppressWarnings("removal")
+
+    @Override
     public void loadFonts()
     {
         synchronized(waitForFontsToBeLoaded)
         {
             super.loadFonts();
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Object>() {
-                    public Object run() {
-                        if (!loadedAllFonts) {
-                           loadNativeFonts();
-                           registerItalicDerived();
-                           loadedAllFonts = true;
-                        }
-                        return null;
-                    }
-                }
-            );
+            if (!loadedAllFonts) {
+                loadNativeFonts();
+                registerItalicDerived();
+                loadedAllFonts = true;
+            }
 
             String defaultFont = "Lucida Grande";
             String defaultFallback = "Lucida Grande";
@@ -298,8 +288,8 @@ public final class CFontManager extends SunFontManager {
     public String getFontPath(boolean noType1Fonts) {
         // In the case of the Cocoa toolkit, since we go through NSFont, we don't need to register /Library/Fonts
         Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof HeadlessToolkit) {
-            tk = ((HeadlessToolkit)tk).getUnderlyingToolkit();
+        if (tk instanceof HeadlessToolkit htk) {
+            tk = htk.getUnderlyingToolkit();
         }
         if (tk instanceof LWCToolkit) {
             return "";

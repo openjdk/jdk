@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import com.sun.org.apache.bcel.internal.Const;
  *
  * @see Constant
  * @see com.sun.org.apache.bcel.internal.generic.ConstantPoolGen
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public class ConstantPool implements Cloneable, Node, Iterable<Constant> {
 
@@ -73,7 +73,7 @@ public class ConstantPool implements Cloneable, Node, Iterable<Constant> {
      * @param constantPool Array of constants
      */
     public ConstantPool(final Constant[] constantPool) {
-        this.constantPool = constantPool;
+        setConstantPool(constantPool);
     }
 
     /**
@@ -88,6 +88,7 @@ public class ConstantPool implements Cloneable, Node, Iterable<Constant> {
         constantPool = new Constant[constantPoolCount];
         /*
          * constantPool[0] is unused by the compiler and may be used freely by the implementation.
+         * constantPool[0] is currently unused by the implementation.
          */
         for (int i = 1; i < constantPoolCount; i++) {
             constantPool[i] = Constant.readConstant(input);
@@ -288,7 +289,7 @@ public class ConstantPool implements Cloneable, Node, Iterable<Constant> {
      */
     public <T extends Constant> T getConstant(final int index, final byte tag, final Class<T> castTo) throws ClassFormatException {
         final T c = getConstant(index);
-        if (c.getTag() != tag) {
+        if (c == null || c.getTag() != tag) {
             throw new ClassFormatException("Expected class '" + Const.getConstantName(tag) + "' at index " + index + " and got " + c);
         }
         return c;
@@ -313,15 +314,17 @@ public class ConstantPool implements Cloneable, Node, Iterable<Constant> {
             throw new ClassFormatException("Invalid constant pool reference at index: " + index +
                     ". Expected " + castTo + " but was " + constantPool[index].getClass());
         }
+        if (index > 1) {
+            final Constant prev = constantPool[index - 1];
+            if (prev != null && (prev.getTag() == Const.CONSTANT_Double || prev.getTag() == Const.CONSTANT_Long)) {
+                throw new ClassFormatException("Constant pool at index " + index + " is invalid. The index is unused due to the preceeding "
+                        + Const.getConstantName(prev.getTag()) + ".");
+            }
+        }
         // Previous check ensures this won't throw a ClassCastException
         final T c = castTo.cast(constantPool[index]);
-        if (c == null
-            // the 0th element is always null
-            && index != 0) {
-            final Constant prev = constantPool[index - 1];
-            if (prev == null || prev.getTag() != Const.CONSTANT_Double && prev.getTag() != Const.CONSTANT_Long) {
-                throw new ClassFormatException("Constant pool at index " + index + " is null.");
-            }
+        if (c == null) {
+            throw new ClassFormatException("Constant pool at index " + index + " is null.");
         }
         return c;
     }
@@ -402,7 +405,7 @@ public class ConstantPool implements Cloneable, Node, Iterable<Constant> {
      * @return Length of constant pool.
      */
     public int getLength() {
-        return constantPool == null ? 0 : constantPool.length;
+        return constantPool.length;
     }
 
     @Override
@@ -421,7 +424,7 @@ public class ConstantPool implements Cloneable, Node, Iterable<Constant> {
      * @param constantPool
      */
     public void setConstantPool(final Constant[] constantPool) {
-        this.constantPool = constantPool;
+        this.constantPool = constantPool != null ? constantPool : Constant.EMPTY_ARRAY;
     }
 
     /**

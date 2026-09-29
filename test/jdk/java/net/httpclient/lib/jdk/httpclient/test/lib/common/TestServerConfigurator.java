@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
 package jdk.httpclient.test.lib.common;
 
 import java.net.InetAddress;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.List;
 
 import javax.net.ssl.SNIMatcher;
@@ -59,17 +57,22 @@ public final class TestServerConfigurator extends HttpsConfigurator {
     @Override
     public void configure(final HttpsParameters params) {
         final SSLParameters sslParams = getSSLContext().getDefaultSSLParameters();
-        @SuppressWarnings("removal") final SecurityManager sm = System.getSecurityManager();
+        addSNIMatcher(serverAddr, sslParams);
+        // configure the server with these custom SSLParameters
+        params.setSSLParameters(sslParams);
+    }
+
+    public static void addSNIMatcher(final InetAddress serverAddr, final SSLParameters sslParams) {
         final String hostname;
-        if (sm == null) {
-            hostname = serverAddr.getHostName();
+        if (serverAddr.isLoopbackAddress()) {
+            // when it's loopback address, don't rely on InetAddress.getHostName() to get us the
+            // hostname, since it has been observed on Windows setups that InetAddress.getHostName()
+            // can return an IP address (127.0.0.1) instead of the hostname for loopback address
+            hostname = "localhost";
         } else {
-            final PrivilegedAction<String> action = () -> serverAddr.getHostName();
-            hostname = AccessController.doPrivileged(action);
+                hostname = serverAddr.getHostName();
         }
         final List<SNIMatcher> sniMatchers = List.of(new ServerNameMatcher(hostname));
         sslParams.setSNIMatchers(sniMatchers);
-        // configure the server with these custom SSLParameters
-        params.setSSLParameters(sslParams);
     }
 }

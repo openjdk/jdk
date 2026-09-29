@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,18 @@
 /*
  * @test
  * @author Gary Ellison
- * @bug 4170635 8258247
+ * @bug 4170635 8258247 8367008
+ * @library /test/lib
  * @summary Verify equals()/hashCode() contract honored
  * @modules java.base/sun.security.x509 java.base/sun.security.util
  */
 
-import java.io.*;
+import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
+
+import jdk.test.lib.Asserts;
 
 import sun.security.util.DerValue;
 import sun.security.x509.*;
@@ -97,5 +100,20 @@ public class AlgorithmIdEqualsHashCode {
         } else {
             System.out.println("PASSED equals() test");
         }
+
+        // Construct an AlgorithmId with explicit DER NULL parameters
+        DerValue explicitNullParams = new DerValue(DerValue.tag_Null, new byte[0]);
+        AlgorithmId aiNullParams = new AlgorithmId(AlgorithmId.SHA256_oid,
+                explicitNullParams);
+        // The constructor should canonicalize this to "no parameters"
+        Asserts.assertTrue(aiNullParams.getEncodedParams() == null);
+        AlgorithmId aiNormal = AlgorithmId.get("SHA-256");
+        Asserts.assertEquals(aiNullParams, aiNormal);
+        Asserts.assertEquals(aiNullParams.hashCode(), aiNormal.hashCode());
+
+        // Test invalid ASN.1 NULL (non-zero length)
+        DerValue invalidNull = new DerValue(DerValue.tag_Null, new byte[]{0x00});
+        Asserts.assertThrows(IOException.class,
+                () -> new AlgorithmId(AlgorithmId.SHA256_oid, invalidNull));
     }
 }

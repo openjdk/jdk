@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import java.util.Optional;
 
 import sun.security.jca.JCAUtil;
@@ -156,7 +157,9 @@ abstract class ECDSASignature extends SignatureSpi {
         @Override
         protected void engineUpdate(byte[] b, int off, int len)
         throws SignatureException {
-            if (offset >= precomputedDigest.length) {
+            // Check capacity. If precomputedDigest is already full, this
+            // condition effectively becomes 'len > -1' and will always be true
+            if (len > precomputedDigest.length - offset) {
                 offset = RAW_ECDSA_MAX + 1;
                 return;
             }
@@ -171,7 +174,7 @@ abstract class ECDSASignature extends SignatureSpi {
             if (len <= 0) {
                 return;
             }
-            if (len >= precomputedDigest.length - offset) {
+            if (len > precomputedDigest.length - offset) {
                 offset = RAW_ECDSA_MAX + 1;
                 return;
             }
@@ -436,7 +439,14 @@ abstract class ECDSASignature extends SignatureSpi {
             random.nextBytes(seedBytes);
             ECDSAOperations.Seed seed = new ECDSAOperations.Seed(seedBytes);
             try {
-                return ops.signDigest(s, digest, seed);
+                // a new allocation for this value, rather than just
+                // returning it, is a trade-off to zero-out the local
+                // value for "s" when necessary
+                byte[] retValue = ops.signDigest(s, digest, seed);
+                if (!(priv instanceof ECPrivateKeyImpl)) {
+                    Arrays.fill(s, (byte)0x00);
+                }
+                return retValue;
             } catch (IntermediateValueException ex) {
                 // try again in the next iteration
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,9 +258,10 @@ public class Encoder {
                 }
             }
         }
+        assert encoding : "encoding is false";
     }
 
-    private boolean isHuffmanBetterFor(CharSequence value) {
+    protected final boolean isHuffmanBetterFor(CharSequence value) {
         // prefer Huffman encoding only if it is strictly smaller than Latin-1
         return huffmanWriter.lengthOf(value) < value.length();
     }
@@ -340,6 +341,10 @@ public class Encoder {
         return 0;
     }
 
+    protected final int tableIndexOf(CharSequence name, CharSequence value) {
+        return getHeaderTable().indexOf(name, value);
+    }
+
     /**
      * Encodes the {@linkplain #header(CharSequence, CharSequence) set up}
      * header into the given buffer.
@@ -380,6 +385,7 @@ public class Encoder {
             writer.reset(); // FIXME: WHY?
             encoding = false;
         }
+        assert done || encoding : "done: " + done + ", encoding: " + encoding;
         return done;
     }
 
@@ -541,5 +547,9 @@ public class Encoder {
             throw new IllegalStateException(
                     "Previous encoding operation hasn't finished yet");
         }
+    }
+
+    protected final Logger logger() {
+        return logger;
     }
 }

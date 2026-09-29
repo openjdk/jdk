@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ if [ "$VERBOSE" = "true" ] ; then
   echo "idea template dir: $IDEA_TEMPLATE"
 fi
 
-cd $TOP ; make -f "$IDEA_MAKE/idea.gmk" -I $MAKE_DIR/.. idea MAKEOVERRIDES= OUT=$IDEA_OUTPUT/env.cfg MODULES="$*" $CONF_ARG || exit 1
+cd $TOP ; make idea-gen-config ALLOW=IDEA_OUTPUT,MODULES IDEA_OUTPUT=$IDEA_OUTPUT MODULES="$*" $CONF_ARG || exit 1
 cd $SCRIPT_DIR
 
 . $IDEA_OUTPUT/env.cfg
@@ -125,7 +125,8 @@ if [ -d "$TOPLEVEL_DIR/.hg" ] ; then
     VCS_TYPE="hg4idea"
 fi
 
-if [ -d "$TOPLEVEL_DIR/.git" ] ; then
+# Git worktrees use a '.git' file rather than directory, so test both.
+if [ -d "$TOPLEVEL_DIR/.git" -o -f "$TOPLEVEL_DIR/.git" ] ; then
     VCS_TYPE="Git"
 fi
 
@@ -186,14 +187,18 @@ fi
 SOURCE_PREFIX="<sourceFolder url=\"file://"
 SOURCE_POSTFIX="\" isTestSource=\"false\" />"
 
+# SOURCES is a single string containing embeded newlines.
 for root in $MODULE_ROOTS; do
     if [ "x$CYGPATH" != "x" ]; then
       root=`$CYGPATH -am $root`
     elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
       root=`wslpath -am $root`
     fi
-
-    SOURCES=$SOURCES" $SOURCE_PREFIX""$root""$SOURCE_POSTFIX"
+    # Add line termination/indentation for everything after the first entry.
+    if [ "x$SOURCES" != "x" ]; then
+      SOURCES="${SOURCES}\n      "
+    fi
+    SOURCES="${SOURCES}${SOURCE_PREFIX}${root}${SOURCE_POSTFIX}"
 done
 
 add_replacement "###SOURCE_ROOTS###" "$SOURCES"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.awt.peer.ComponentPeer;
 import java.awt.peer.MenuComponentPeer;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessControlContext;
 
 import java.io.File;
 import java.util.ResourceBundle;
@@ -127,16 +126,6 @@ public final class AWTAccessor {
          * Sets the RequestFocusController.
          */
         void setRequestFocusController(RequestFocusController requestController);
-
-        /**
-         * Returns the appContext of the component.
-         */
-        AppContext getAppContext(Component comp);
-
-        /**
-         * Sets the appContext of the component.
-         */
-        void setAppContext(Component comp, AppContext appContext);
 
         /**
          * Returns the parent of the component.
@@ -244,13 +233,6 @@ public final class AWTAccessor {
          */
         void processEvent(Component comp, AWTEvent e);
 
-
-        /*
-         * Returns the acc this component was constructed with.
-         */
-        @SuppressWarnings("removal")
-        AccessControlContext getAccessControlContext(Component comp);
-
         /**
          * Revalidates the component synchronously.
          */
@@ -305,17 +287,6 @@ public final class AWTAccessor {
          */
         void updateWindow(Window window);
 
-        /**
-         * Set the size of the security warning.
-         */
-        void setSecurityWarningSize(Window w, int width, int height);
-
-        /** Request to recalculate the new position of the security warning for
-         * the given window size/location as reported by the native system.
-         */
-        Point2D calculateSecurityWarningPosition(Window window,
-                double x, double y, double w, double h);
-
         /** Sets the synchronous status of focus requests on lightweight
          * components in the specified window to the specified value.
          */
@@ -365,12 +336,6 @@ public final class AWTAccessor {
         boolean isSystemGenerated(AWTEvent ev);
 
         /**
-         * Returns the acc this event was constructed with.
-         */
-        @SuppressWarnings("removal")
-        AccessControlContext getAccessControlContext(AWTEvent ev);
-
-        /**
          * Returns binary data associated with this event;
          */
         byte[] getBData(AWTEvent ev);
@@ -386,13 +351,6 @@ public final class AWTAccessor {
          * Accessor for InputEvent.getButtonDownMasks()
          */
         int[] getButtonDownMasks();
-
-        /*
-         * Accessor for InputEvent.canAccessSystemClipboard field
-         */
-        boolean canAccessSystemClipboard(InputEvent event);
-        void setCanAccessSystemClipboard(InputEvent event,
-                boolean canAccessSystemClipboard);
     }
 
     /**
@@ -467,11 +425,6 @@ public final class AWTAccessor {
         void setMostRecentFocusOwner(Window window, Component component);
 
         /**
-         * Returns current KFM of the specified AppContext.
-         */
-        KeyboardFocusManager getCurrentKeyboardFocusManager(AppContext ctx);
-
-        /**
          * Return the current focus cycle root
          */
         Container getCurrentFocusCycleRoot();
@@ -481,16 +434,6 @@ public final class AWTAccessor {
      * An accessor for the MenuComponent class.
      */
     public interface MenuComponentAccessor {
-        /**
-         * Returns the appContext of the menu component.
-         */
-        AppContext getAppContext(MenuComponent menuComp);
-
-        /**
-         * Sets the appContext of the menu component.
-         */
-        void setAppContext(MenuComponent menuComp, AppContext appContext);
-
         /**
          * Returns the peer of the menu component.
          */
@@ -592,6 +535,11 @@ public final class AWTAccessor {
          * Returns whether the file dialog allows the multiple file selection.
          */
         boolean isMultipleMode(FileDialog fileDialog);
+
+        /*
+         * Returns whether dispose is being run
+         */
+        boolean isBeingDisposed(FileDialog fileDialog);
     }
 
     /*
@@ -802,8 +750,6 @@ public final class AWTAccessor {
      * An accessor object for the AccessibleContext class
      */
     public interface AccessibleContextAccessor {
-        void setAppContext(AccessibleContext accessibleContext, AppContext appContext);
-        AppContext getAppContext(AccessibleContext accessibleContext);
         Object getNativeAXResource(AccessibleContext accessibleContext);
         void setNativeAXResource(AccessibleContext accessibleContext, Object value);
     }

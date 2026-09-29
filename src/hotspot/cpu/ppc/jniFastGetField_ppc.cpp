@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -31,6 +30,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/safepoint.hpp"
 
 #define __ masm->
@@ -76,7 +76,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   __ ld(Rcounter, counter_offs, Rcounter_addr);
   __ andi_(R0, Rcounter, 1);
-  __ bne(CCR0, slow);
+  __ bne(CR0, slow);
 
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     // Field may be volatile.
@@ -92,14 +92,14 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     int fac_offs = __ load_const_optimized(Rtmp, JvmtiExport::get_field_access_count_addr(),
                                            R0, true);
     __ lwa(Rtmp, fac_offs, Rtmp);
-    __ cmpwi(CCR0, Rtmp, 0);
-    __ bne(CCR0, slow);
+    __ cmpwi(CR0, Rtmp, 0);
+    __ bne(CR0, slow);
   }
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->try_resolve_jobject_in_native(masm, Robj, R3_ARG1, R4_ARG2, Rtmp, slow);
 
-  __ srwi(Rtmp, R5_ARG3, 2); // offset
+  __ srdi(Rtmp, R5_ARG3, jfieldIDWorkaround::offset_shift); // offset
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();   // Used by the segfault handler
@@ -119,8 +119,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   // Order preceding load(s) wrt. succeeding check (LoadStore for volatile field).
   if (is_fp) {
     Label next;
-    __ fcmpu(CCR0, F1_RET, F1_RET);
-    __ bne(CCR0, next);
+    __ fcmpu(CR0, F1_RET, F1_RET);
+    __ bne(CR0, next);
     __ bind(next);
   } else {
     __ twi_0(Rtmp);
@@ -128,8 +128,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ isync();
 
   __ ld(R0, counter_offs, Rcounter_addr);
-  __ cmpd(CCR0, R0, Rcounter);
-  __ bne(CCR0, slow);
+  __ cmpd(CR0, R0, Rcounter);
+  __ bne(CR0, slow);
 
   if (!is_fp) {
     __ mr(R3_RET, Rtmp);
@@ -154,7 +154,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ load_const_optimized(R12, slow_case_addr, R0);
   __ call_c_and_return_to_caller(R12); // tail call
 
-  __ flush();
+  __ invalidate_icache();
 
   return fast_entry;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
+import static jdk.jpackage.test.HelloApp.configureAndExecute;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -39,12 +40,9 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Tests values of environment variables altered by jpackage launcher
- * @library ../helpers
- * @library /test/lib
- * @build AppLauncherEnvTest
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @build AppLauncherEnvTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppLauncherEnvTest
  */
@@ -56,6 +54,7 @@ public class AppLauncherEnvTest {
 
         JPackageCommand cmd = JPackageCommand
                 .helloAppImage(TEST_APP_JAVA + "*Hello")
+                .ignoreFakeRuntime()
                 .addArguments("--java-options", "-D" + testAddDirProp
                         + "=$APPDIR");
 
@@ -63,16 +62,12 @@ public class AppLauncherEnvTest {
 
         final String envVarName = envVarName();
 
-        final int attempts = 3;
-        final int waitBetweenAttemptsSeconds = 5;
-        List<String> output = new Executor()
+        List<String> output = configureAndExecute(0, new Executor()
                 .saveOutput()
                 .setExecutable(cmd.appLauncherPath().toAbsolutePath())
                 .addArguments("--print-env-var=" + envVarName)
                 .addArguments("--print-sys-prop=" + testAddDirProp)
-                .addArguments("--print-sys-prop=" + "java.library.path")
-                .executeAndRepeatUntilExitCode(0, attempts,
-                        waitBetweenAttemptsSeconds).getOutput();
+                .addArguments("--print-sys-prop=" + "java.library.path")).getOutput();
 
         BiFunction<Integer, String, String> getValue = (idx, name) -> {
             return  output.get(idx).substring((name + "=").length());
@@ -87,7 +82,7 @@ public class AppLauncherEnvTest {
         TKit.assertTextStream(expectedEnvVarValue)
             .predicate(TKit.isLinux() ? String::endsWith : String::equals)
             .label(String.format("value of %s env variable", envVarName))
-            .apply(Stream.of(actualEnvVarValue));
+            .apply(List.of(actualEnvVarValue));
 
         final String javaLibraryPath = getValue.apply(2, "java.library.path");
         TKit.assertTrue(

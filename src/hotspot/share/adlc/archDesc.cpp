@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 
 // archDesc.cpp - Internal format for architecture definition
+#include <unordered_set>  // do not reorder
 #include "adlc.hpp"
 
 static FILE *errfile = stderr;
@@ -684,6 +685,102 @@ bool ArchDesc::verify() {
   return true;
 }
 
+class MarkUsageFormClosure : public FormClosure {
+private:
+  ArchDesc* _ad;
+  std::unordered_set<Form*> *_visited;
+
+public:
+  MarkUsageFormClosure(ArchDesc* ad, std::unordered_set<Form*> *visit_map) {
+    _ad = ad;
+    _visited = visit_map;
+  }
+  virtual ~MarkUsageFormClosure() = default;
+
+  virtual void do_form(Form *form) {
+    if (_visited->find(form) == _visited->end()) {
+      _visited->insert(form);
+      form->forms_do(this);
+    }
+  }
+
+  virtual void do_form_by_name(const char* name) {
+    const Form* form = _ad->globalNames()[name];
+    if (form) {
+      do_form(const_cast<Form*>(form));
+      return;
+    }
+    RegisterForm* regs = _ad->get_registers();
+    if (regs->getRegClass(name)) {
+      do_form(regs->getRegClass(name));
+      return;
+    }
+  }
+};
+
+// check unused operands
+bool ArchDesc::check_usage() {
+  if (_disable_warnings) {
+    return true;
+  }
+
+  std::unordered_set<Form*> visited;
+  MarkUsageFormClosure callback(this, &visited);
+  _instructions.reset();
+  // iterate all instruction to mark used form
+  InstructForm* instr;
+  for ( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
+    callback.do_form(instr);
+  }
+
+  // these forms are coded in OperandForm::is_user_name_for_sReg
+  // it may happen no instruction use these operands, like stackSlotP in aarch64,
+  // but we can not desclare they are useless.
+  callback.do_form_by_name("stackSlotI");
+  callback.do_form_by_name("stackSlotP");
+  callback.do_form_by_name("stackSlotD");
+  callback.do_form_by_name("stackSlotF");
+  callback.do_form_by_name("stackSlotL");
+
+  // sReg* are initial created by adlc in ArchDesc::initBaseOpTypes()
+  // In ARM, no definition or usage in adfile, but they are reported as unused
+  callback.do_form_by_name("sRegI");
+  callback.do_form_by_name("sRegP");
+  callback.do_form_by_name("sRegD");
+  callback.do_form_by_name("sRegF");
+  callback.do_form_by_name("sRegL");
+
+  // special generic vector operands only used in Matcher::pd_specialize_generic_vector_operand
+#if defined(AARCH64)
+  callback.do_form_by_name("vecA");
+  callback.do_form_by_name("vecD");
+  callback.do_form_by_name("vecX");
+#elif defined(AMD64)
+  callback.do_form_by_name("vecS");
+  callback.do_form_by_name("vecD");
+  callback.do_form_by_name("vecX");
+  callback.do_form_by_name("vecY");
+  callback.do_form_by_name("vecZ");
+  callback.do_form_by_name("legVecS");
+  callback.do_form_by_name("legVecD");
+  callback.do_form_by_name("legVecX");
+  callback.do_form_by_name("legVecY");
+  callback.do_form_by_name("legVecZ");
+#endif
+
+  int cnt = 0;
+  _operands.reset();
+  OperandForm* operand;
+  for ( ; (operand = (OperandForm*)_operands.iter()) != nullptr; ) {
+    if(visited.find(operand) == visited.end() && !operand->ideal_only()) {
+      fprintf(stderr, "\nWarning: unused operand (%s)", operand->_ident);
+      cnt++;
+    }
+  }
+  if (cnt) fprintf(stderr, "\n-------Warning: total %d unused operands\n", cnt);
+
+  return true;
+}
 
 void ArchDesc::dump() {
   _pre_header.dump();
@@ -802,10 +899,12 @@ int ArchDesc::emit_msg(int quiet, int flag, int line, const char *fmt,
 
 // Construct the name of the register mask.
 static const char *getRegMask(const char *reg_class_name) {
-  if( reg_class_name == nullptr ) return "RegMask::Empty";
+  if (reg_class_name == nullptr) {
+    return "RegMask::EMPTY";
+  }
 
   if (strcmp(reg_class_name,"Universe")==0) {
-    return "RegMask::Empty";
+    return "RegMask::EMPTY";
   } else if (strcmp(reg_class_name,"stack_slots")==0) {
     return "(Compile::current()->FIRST_STACK_mask())";
   } else if (strcmp(reg_class_name, "dynamic")==0) {
@@ -823,7 +922,7 @@ static const char *getRegMask(const char *reg_class_name) {
 
 // Convert a register class name to its register mask.
 const char *ArchDesc::reg_class_to_reg_mask(const char *rc_name) {
-  const char *reg_mask = "RegMask::Empty";
+  const char* reg_mask = "RegMask::EMPTY";
 
   if( _register ) {
     RegClass *reg_class  = _register->getRegClass(rc_name);
@@ -842,7 +941,7 @@ const char *ArchDesc::reg_class_to_reg_mask(const char *rc_name) {
 
 // Obtain the name of the RegMask for an OperandForm
 const char *ArchDesc::reg_mask(OperandForm  &opForm) {
-  const char *regMask      = "RegMask::Empty";
+  const char* regMask = "RegMask::EMPTY";
 
   // Check constraints on result's register class
   const char *result_class = opForm.constrained_reg_class();
@@ -871,9 +970,9 @@ const char *ArchDesc::reg_mask(InstructForm &inForm) {
     abort();
   }
 
-  // Instructions producing 'Universe' use RegMask::Empty
+  // Instructions producing 'Universe' use RegMask::EMPTY
   if (strcmp(result,"Universe") == 0) {
-    return "RegMask::Empty";
+    return "RegMask::EMPTY";
   }
 
   // Lookup this result operand and get its register class
@@ -955,6 +1054,7 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
   case 'P':    return "TypePtr::BOTTOM";
   case 'N':    return "TypeNarrowOop::BOTTOM";
   case 'F':    return "Type::FLOAT";
+  case 'H':    return "Type::HALF_FLOAT";
   case 'D':    return "Type::DOUBLE";
   case 'L':    return "TypeLong::LONG";
   case 's':    return "TypeInt::CC /*flags*/";
@@ -992,7 +1092,7 @@ void ArchDesc::initBaseOpTypes() {
     char *ident = (char *)NodeClassNames[j];
     if (!strcmp(ident, "ConI") || !strcmp(ident, "ConP") ||
         !strcmp(ident, "ConN") || !strcmp(ident, "ConNKlass") ||
-        !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
+        !strcmp(ident, "ConH") || !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
         !strcmp(ident, "ConL") || !strcmp(ident, "Con" ) ||
         !strcmp(ident, "Bool")) {
       constructOperand(ident, true);

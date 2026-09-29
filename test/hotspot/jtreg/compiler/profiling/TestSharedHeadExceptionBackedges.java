@@ -25,6 +25,7 @@
  * @test
  * bug 8280842
  * @summary Access violation in ciTypeFlow::profiled_count
+ * @requires vm.compMode != "Xcomp"
  * @run main/othervm -XX:-BackgroundCompilation TestSharedHeadExceptionBackedges
  */
 

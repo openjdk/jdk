@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,16 @@
 
 #include "oops/accessBackend.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "oops/access.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "oops/valueKlass.hpp"
+#include "oops/valuePayload.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
-
-#include <type_traits>
 
 template <DecoratorSet decorators>
 template <DecoratorSet idecorators, typename T>
@@ -124,12 +126,12 @@ inline T RawAccessBarrier<decorators>::oop_atomic_xchg_at(oop base, ptrdiff_t of
 
 template <DecoratorSet decorators>
 template <typename T>
-inline bool RawAccessBarrier<decorators>::oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+inline void RawAccessBarrier<decorators>::oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
                                                         arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                                         size_t length) {
-  return arraycopy(src_obj, src_offset_in_bytes, src_raw,
-                   dst_obj, dst_offset_in_bytes, dst_raw,
-                   length);
+  arraycopy(src_obj, src_offset_in_bytes, src_raw,
+            dst_obj, dst_offset_in_bytes, dst_raw,
+            length);
 }
 
 template <DecoratorSet decorators>
@@ -140,7 +142,7 @@ RawAccessBarrier<decorators>::load_internal(void* addr) {
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     OrderAccess::fence();
   }
-  return Atomic::load_acquire(reinterpret_cast<const volatile T*>(addr));
+  return AtomicAccess::load_acquire(reinterpret_cast<const volatile T*>(addr));
 }
 
 template <DecoratorSet decorators>
@@ -148,7 +150,7 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_ACQUIRE>::value, T>::type
 RawAccessBarrier<decorators>::load_internal(void* addr) {
-  return Atomic::load_acquire(reinterpret_cast<const volatile T*>(addr));
+  return AtomicAccess::load_acquire(reinterpret_cast<const volatile T*>(addr));
 }
 
 template <DecoratorSet decorators>
@@ -156,7 +158,7 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_RELAXED>::value, T>::type
 RawAccessBarrier<decorators>::load_internal(void* addr) {
-  return Atomic::load(reinterpret_cast<const volatile T*>(addr));
+  return AtomicAccess::load(reinterpret_cast<const volatile T*>(addr));
 }
 
 template <DecoratorSet decorators>
@@ -164,7 +166,7 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_SEQ_CST>::value>::type
 RawAccessBarrier<decorators>::store_internal(void* addr, T value) {
-  Atomic::release_store_fence(reinterpret_cast<volatile T*>(addr), value);
+  AtomicAccess::release_store_fence(reinterpret_cast<volatile T*>(addr), value);
 }
 
 template <DecoratorSet decorators>
@@ -172,7 +174,7 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_RELEASE>::value>::type
 RawAccessBarrier<decorators>::store_internal(void* addr, T value) {
-  Atomic::release_store(reinterpret_cast<volatile T*>(addr), value);
+  AtomicAccess::release_store(reinterpret_cast<volatile T*>(addr), value);
 }
 
 template <DecoratorSet decorators>
@@ -180,7 +182,7 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_RELAXED>::value>::type
 RawAccessBarrier<decorators>::store_internal(void* addr, T value) {
-  Atomic::store(reinterpret_cast<volatile T*>(addr), value);
+  AtomicAccess::store(reinterpret_cast<volatile T*>(addr), value);
 }
 
 template <DecoratorSet decorators>
@@ -188,10 +190,10 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_RELAXED>::value, T>::type
 RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_value, T new_value) {
-  return Atomic::cmpxchg(reinterpret_cast<volatile T*>(addr),
-                         compare_value,
-                         new_value,
-                         memory_order_relaxed);
+  return AtomicAccess::cmpxchg(reinterpret_cast<volatile T*>(addr),
+                               compare_value,
+                               new_value,
+                               memory_order_relaxed);
 }
 
 template <DecoratorSet decorators>
@@ -199,10 +201,10 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_SEQ_CST>::value, T>::type
 RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_value, T new_value) {
-  return Atomic::cmpxchg(reinterpret_cast<volatile T*>(addr),
-                         compare_value,
-                         new_value,
-                         memory_order_conservative);
+  return AtomicAccess::cmpxchg(reinterpret_cast<volatile T*>(addr),
+                               compare_value,
+                               new_value,
+                               memory_order_conservative);
 }
 
 template <DecoratorSet decorators>
@@ -210,8 +212,8 @@ template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_SEQ_CST>::value, T>::type
 RawAccessBarrier<decorators>::atomic_xchg_internal(void* addr, T new_value) {
-  return Atomic::xchg(reinterpret_cast<volatile T*>(addr),
-                      new_value);
+  return AtomicAccess::xchg(reinterpret_cast<volatile T*>(addr),
+                            new_value);
 }
 
 class RawAccessBarrierArrayCopy: public AllStatic {
@@ -302,13 +304,12 @@ template<> struct RawAccessBarrierArrayCopy::IsHeapWordSized<void>: public std::
 
 template <DecoratorSet decorators>
 template <typename T>
-inline bool RawAccessBarrier<decorators>::arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+inline void RawAccessBarrier<decorators>::arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
                                                     arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                                     size_t length) {
   RawAccessBarrierArrayCopy::arraycopy<decorators>(src_obj, src_offset_in_bytes, src_raw,
                                                    dst_obj, dst_offset_in_bytes, dst_raw,
                                                    length);
-  return true;
 }
 
 template <DecoratorSet decorators>
@@ -329,6 +330,29 @@ inline void RawAccessBarrier<decorators>::clone(oop src, oop dst, size_t size) {
                                             align_object_size(size) / HeapWordsPerLong);
   // Clear the header
   dst->init_mark();
+}
+
+template <DecoratorSet decorators>
+inline void RawAccessBarrier<decorators>::value_copy(const ValuePayload& src, const ValuePayload& dst) {
+  precond(src.klass() == dst.klass());
+
+  const ValueKlass* klass = src.klass();
+  const LayoutKind copy_layout = LayoutKindHelper::get_copy_layout(
+      src.layout_kind(), dst.layout_kind());
+  const int size = klass->layout_size_in_bytes(copy_layout);
+
+  AccessInternal::value_copy_internal(src.addr(), dst.addr(),
+                                      static_cast<size_t>(size));
+}
+
+template <DecoratorSet decorators>
+inline void RawAccessBarrier<decorators>::value_store_null(const ValuePayload& dst) {
+  address dst_addr = dst.addr();
+  const LayoutKind lk = dst.layout_kind();
+  const ValueKlass* klass = dst.klass();
+  const int size = klass->layout_size_in_bytes(lk);
+
+  AccessInternal::value_store_null(dst_addr, static_cast<size_t>(size));
 }
 
 #endif // SHARE_OOPS_ACCESSBACKEND_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,28 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8042235
  * @summary redefining method used by multiple MethodHandles crashes VM
  * @library /
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.compiler
+ * @modules java.compiler
  *          java.instrument
  *          jdk.attach
  * @requires vm.jvmti
  *
- * @run main/othervm -Djdk.attach.allowAttachSelf compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
+ * @run main/othervm/timeout=480 -Djdk.attach.allowAttachSelf compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
  */
 
 package compiler.jsr292;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.instruction.ConstantInstruction;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -159,28 +156,15 @@ public class RedefineMethodUsedByMultipleMethodHandles {
         public byte[] transform(ClassLoader cl, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
             if (Foo.class.equals(classBeingRedefined)) {
                 System.out.println("redefining " + classBeingRedefined);
-                ClassReader cr = new ClassReader(classfileBuffer);
-                ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
-                ClassVisitor adapter = new ClassVisitor(Opcodes.ASM5, cw) {
-                    @Override
-                    public MethodVisitor visitMethod(int access, String base, String desc, String signature, String[] exceptions) {
-                        MethodVisitor mv = cv.visitMethod(access, base, desc, signature, exceptions);
-                        if (mv != null) {
-                            mv = new MethodVisitor(Opcodes.ASM5, mv) {
-                                @Override
-                                public void visitLdcInsn(Object cst) {
-                                    System.out.println("replacing \"" + cst + "\" with \"bar\"");
-                                    mv.visitLdcInsn("bar");
-                                }
-                            };
-                        }
-                        return mv;
+                var context = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofResourceParsing(cl)));
+                return context.transformClass(context.parse(classfileBuffer), ClassTransform.transformingMethodBodies((codeBuilder, codeElement) -> {
+                    if (codeElement instanceof ConstantInstruction.LoadConstantInstruction ldc) {
+                        System.out.println("replacing \"" + ldc.constantEntry().constantValue() + "\" with \"bar\"");
+                        codeBuilder.ldc("bar");
+                    } else {
+                        codeBuilder.with(codeElement);
                     }
-                };
-
-                cr.accept(adapter, ClassReader.SKIP_FRAMES);
-                cw.visitEnd();
-                return cw.toByteArray();
+                }));
             }
             return classfileBuffer;
         }

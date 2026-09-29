@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/heap.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/macros.hpp"
 
@@ -42,7 +43,7 @@ class MemoryManager;
 class SensorInfo;
 class ThresholdSupport;
 
-class MemoryPool : public CHeapObj<mtInternal> {
+class MemoryPool : public CHeapObj<mtServiceability> {
   friend class MemoryManager;
  public:
   enum PoolType {
@@ -61,7 +62,6 @@ class MemoryPool : public CHeapObj<mtInternal> {
   PoolType         _type;
   size_t           _initial_size;
   size_t           _max_size;
-  bool             _available_for_allocation; // Default is true
   MemoryManager*   _managers[max_num_managers];
   int              _num_managers;
   MemoryUsage      _peak_usage;               // Peak memory usage
@@ -73,7 +73,8 @@ class MemoryPool : public CHeapObj<mtInternal> {
   SensorInfo*      _usage_sensor;
   SensorInfo*      _gc_usage_sensor;
 
-  volatile OopHandle _memory_pool_obj;
+  OopHandle _memory_pool_obj;
+  volatile bool _memory_pool_obj_initialized;
 
   void add_manager(MemoryManager* mgr);
 
@@ -96,13 +97,6 @@ class MemoryPool : public CHeapObj<mtInternal> {
   virtual size_t max_size()    const       { return _max_size; }
 
   bool is_pool(instanceHandle pool) const;
-
-  bool available_for_allocation()   { return _available_for_allocation; }
-  bool set_available_for_allocation(bool value) {
-    bool prev = _available_for_allocation;
-    _available_for_allocation = value;
-    return prev;
-  }
 
   MemoryManager* get_memory_manager(int index) {
     assert(index >= 0 && index < _num_managers, "Invalid index");

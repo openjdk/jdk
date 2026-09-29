@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_OOPS_OBJARRAYOOP_HPP
 #define SHARE_OOPS_OBJARRAYOOP_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "oops/arrayOop.hpp"
 #include "utilities/align.hpp"
-#include <type_traits>
 
 class Klass;
 
@@ -35,7 +35,7 @@ class Klass;
 // Evaluating "String arg[10]" will create an objArrayOop.
 
 class objArrayOopDesc : public arrayOopDesc {
-  friend class ArchiveHeapWriter;
+  friend class AOTMappedHeapWriter;
   friend class ObjArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;
@@ -51,32 +51,6 @@ class objArrayOopDesc : public arrayOopDesc {
     return base_offset_in_bytes() + sizeof(T) * index;
   }
 
-private:
-  // Give size of objArrayOop in HeapWords minus the header
-  static int array_size(int length) {
-    const uint OopsPerHeapWord = HeapWordSize/heapOopSize;
-    assert(OopsPerHeapWord >= 1 && (HeapWordSize % heapOopSize == 0),
-           "Else the following (new) computation would be in error");
-    uint res = ((uint)length + OopsPerHeapWord - 1)/OopsPerHeapWord;
-#ifdef ASSERT
-    // The old code is left in for sanity-checking; it'll
-    // go away pretty soon. XXX
-    // Without UseCompressedOops, this is simply:
-    // oop->length() * HeapWordsPerOop;
-    // With narrowOops, HeapWordsPerOop is 1/2 or equal 0 as an integer.
-    // The oop elements are aligned up to wordSize
-    const uint HeapWordsPerOop = heapOopSize/HeapWordSize;
-    uint old_res;
-    if (HeapWordsPerOop > 0) {
-      old_res = length * HeapWordsPerOop;
-    } else {
-      old_res = align_up((uint)length, OopsPerHeapWord)/OopsPerHeapWord;
-    }
-    assert(res == old_res, "Inconsistency between old and new.");
-#endif  // ASSERT
-    return res;
-  }
-
  public:
   // Returns the offset of the first element.
   static int base_offset_in_bytes() {
@@ -87,34 +61,26 @@ private:
   HeapWord* base() const;
 
   // Accessing
-  oop obj_at(int index) const;
+
+  // Accessing an object array element may have to allocate in case of a
+  // flattened value. To access an object array element without allocating the
+  // caller must first type check the oop and ensure that it is a refArray.
+  [[deprecated("Type check and cast to refArrayOop to use the non-allocating obj_at")]]
+  oop obj_at(int index) const = delete;
+  oop obj_at(int index, TRAPS) const;
+  bool obj_at_is_null(int index) const;
 
   void obj_at_put(int index, oop value);
-
-  oop replace_if_null(int index, oop exchange_value);
-
-  // Sizing
-  static int header_size()    { return arrayOopDesc::header_size(T_OBJECT); }
-  size_t object_size()        { return object_size(length()); }
-
-  static size_t object_size(int length) {
-    // This returns the object size in HeapWords.
-    uint asz = array_size(length);
-    uint osz = align_object_size(header_size() + asz);
-    assert(osz >= asz,   "no overflow");
-    assert((int)osz > 0, "no overflow");
-    return (size_t)osz;
-  }
+  void obj_at_put(int index, oop value, TRAPS);
 
   Klass* element_klass();
 
-public:
-  // special iterators for index ranges, returns size of object
+  // Special iterators for an element index range.
   template <typename OopClosureType>
-  void oop_iterate_range(OopClosureType* blk, int start, int end);
+  void oop_iterate_elements_range(OopClosureType* blk, int start, int end);
 };
 
 // See similar requirement for oopDesc.
-static_assert(std::is_trivially_default_constructible<objArrayOopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<objArrayOopDesc>::value);
 
 #endif // SHARE_OOPS_OBJARRAYOOP_HPP

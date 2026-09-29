@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -34,162 +33,156 @@
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/basicLock.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  Label ic_miss, ic_hit;
-  verify_oop(receiver, FILE_AND_LINE);
-  int klass_offset = oopDesc::klass_offset_in_bytes();
-
-  if (!ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(klass_offset)) {
-    if (VM_Version::has_CompareBranch()) {
-      z_cgij(receiver, 0, Assembler::bcondEqual, ic_miss);
-    } else {
-      z_ltgr(receiver, receiver);
-      z_bre(ic_miss);
-    }
-  }
-
-  compare_klass_ptr(iCache, klass_offset, receiver, false);
-  z_bre(ic_hit);
-
-  // If icache check fails, then jump to runtime routine.
-  // Note: RECEIVER must still contain the receiver!
-  load_const_optimized(Z_R1_scratch, AddressLiteral(SharedRuntime::get_ic_miss_stub()));
-  z_br(Z_R1_scratch);
-  align(CodeEntryAlignment);
-  bind(ic_hit);
-}
-
 void C1_MacroAssembler::explicit_null_check(Register base) {
   ShouldNotCallThis(); // unused
 }
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
-  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
-  generate_stack_overflow_check(bang_size_in_bytes);
+// Private helper: builds the actual frame without the stack-overflow check or
+// nmethod entry barrier.  Called from both build_frame() and scalarized_entry()
+// so that scalarized_entry can re-use the same sequence without duplicating
+// the overflow check / barrier.
+void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc,
+                                           bool reset_orig_pc) {
   save_return_pc();
   push_frame(frame_size_in_bytes);
 
+  if (reset_orig_pc) {
+    // Zero orig_pc slot so that deoptimisation during arg buffering is
+    // detected correctly.
+    //
+    // TODO (s390x): validate sp_offset_for_orig_pc against the s390x frame
+    // layout (z_abi_160 + compiler frame) once the feature is enabled.
+    ShouldNotCallThis(); // poison: remove once validated on s390x
+    z_mvghi(sp_offset_for_orig_pc, Z_SP, 0);
+  }
+}
+
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
+                                    int sp_offset_for_orig_pc,
+                                    bool has_scalarized_args,
+                                    Label* verified_value_entry_label) {
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
+  generate_stack_overflow_check(bang_size_in_bytes);
+
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, has_scalarized_args);
+
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this);
+
+  if (verified_value_entry_label != nullptr) {
+    // Jump here from the scalarized entry points that already created the frame.
+    bind(*verified_value_entry_label);
+  }
 }
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   if (breakAtEntry) z_illtrap(0xC1);
 }
 
-void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
+// Scalarized entry point: buffers value-type arguments, shuffles them into
+// the normal ABI layout, then falls through into the verified entry.
+//
+// NOTE: the entire body is guarded by ShouldNotCallThis() because
+// ValueTypePassFieldsAsArgs is forced off for s390x
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes,
+                                        int sp_offset_for_orig_pc, Label& verified_value_entry_label, bool is_value_ro_entry) {
+  assert(ValueTypePassFieldsAsArgs, "sanity");
+  // Make sure there is enough stack space for this method's activation.
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
+  ShouldNotCallThis(); // poison: remove once validated on s390x
+  untested("scalarized_entry s390x");
 
+  generate_stack_overflow_check(bang_size_in_bytes);
+
+  GrowableArray<SigEntry>* sig    = ces->sig();
+  GrowableArray<SigEntry>* sig_cc = is_value_ro_entry ? ces->sig_cc_ro() : ces->sig_cc();
+  VMRegPair* regs      = ces->regs();
+  VMRegPair* regs_cc   = is_value_ro_entry ? ces->regs_cc_ro() : ces->regs_cc();
+  int args_on_stack    = ces->args_on_stack();
+  int args_on_stack_cc = is_value_ro_entry ? ces->args_on_stack_cc_ro() : ces->args_on_stack_cc();
+
+  assert(sig->length() <= sig_cc->length(), "Zero-sized value class not allowed!");
+  BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sig_cc->length());
+  int args_passed    = sig->length();
+  int args_passed_cc = SigEntry::fill_sig_bt(sig_cc, sig_bt);
+
+  // Build a temp frame so we can call into the runtime.  Must be properly set
+  // up to accommodate GC (nmethod entry barrier runs inside).
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, true);
+
+  // The runtime call might safepoint; make sure the nmethod entry barrier fires.
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(this);
+
+  // Z_R13 is the method register expected by c1_buffer_value_args (see
+  // c1_Runtime1_s390.cpp, StubId::c1_buffer_value_args_id handler).
+  load_const_optimized(Z_R13, (intptr_t)(ces->method()));
+  if (is_value_ro_entry) {
+    call_c_opt(Runtime1::entry_for(StubId::c1_buffer_value_args_no_receiver_id));
+  } else {
+    call_c_opt(Runtime1::entry_for(StubId::c1_buffer_value_args_id));
+  }
+  int rt_call_offset = offset();
+
+  // Remove the temp frame.
+  // pop_frame() restores Z_SP from the saved callers_sp slot; then we
+  // restore the return address that save_return_pc() had stored.
+  pop_frame();
+  restore_return_pc();
+
+  assert(args_on_stack <= args_on_stack_cc, "Sanity check");
+
+  // Z_R2 holds the buffered value array returned by buffer_inline_args[_no_receiver].
+  z_lgr(Z_R11, Z_R2);
+  shuffle_value_args(true, is_value_ro_entry, sig_cc,
+                     args_passed_cc, args_on_stack_cc, regs_cc, // from
+                     args_passed,    args_on_stack,    regs,    // to
+                     0, Z_R11);
+
+  // Build the real frame.  The jump below skips the stack-bang and frame-setup
+  // in verified_value_entry (which uses a different real_frame_size).
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, false);
+
+  z_brul(verified_value_entry_label);
+  return rt_call_offset;
+}
+
+void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
   const Register tmp   = Z_R1_scratch;
 
   assert_different_registers(Rmark, Roop, Rbox, tmp);
 
   verify_oop(Roop, FILE_AND_LINE);
 
-  // Load object header.
-  z_lg(Rmark, Address(Roop, hdr_offset));
-
   // Save object being locked into the BasicObjectLock...
   z_stg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, Roop);
-    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
-    branch_optimized(Assembler::bcondAllOne, slow_case);
-  }
-
-  assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Roop, Rmark, tmp, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-    NearLabel done;
-    // and mark it as unlocked.
-    z_oill(Rmark, markWord::unlocked_value);
-    // Save unlocked object header into the displaced header location on the stack.
-    z_stg(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-    // Test if object header is still the same (i.e. unlocked), and if so, store the
-    // displaced header address in the object header. If it is not the same, get the
-    // object header instead.
-    z_csg(Rmark, Rbox, hdr_offset, Roop);
-    // If the object header was the same, we're done.
-    branch_optimized(Assembler::bcondEqual, done);
-    // If the object header was not the same, it is now in the Rmark register.
-    // => Test if it is a stack pointer into the same stack (recursive locking), i.e.:
-    //
-    // 1) (Rmark & markWord::lock_mask_in_place) == 0
-    // 2) rsp <= Rmark
-    // 3) Rmark <= rsp + page_size
-    //
-    // These 3 tests can be done by evaluating the following expression:
-    //
-    // (Rmark - Z_SP) & (~(page_size-1) | markWord::lock_mask_in_place)
-    //
-    // assuming both the stack pointer and page_size have their least
-    // significant 2 bits cleared and page_size is a power of 2
-    z_sgr(Rmark, Z_SP);
-
-    load_const_optimized(Z_R0_scratch, (~(os::vm_page_size() - 1) | markWord::lock_mask_in_place));
-    z_ngr(Rmark, Z_R0_scratch); // AND sets CC (result eq/ne 0).
-    // For recursive locking, the result is zero. => Save it in the displaced header
-    // location (null in the displaced Rmark location indicates recursive locking).
-    z_stg(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-    // Otherwise we don't care about the result and handle locking via runtime call.
-    branch_optimized(Assembler::bcondNotZero, slow_case);
-    // done
-    bind(done);
-  }
+  fast_lock(Rbox, Roop, Rmark, tmp, slow_case);
 }
 
 void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
   assert_different_registers(Rmark, Roop, Rbox);
-
-  NearLabel done;
-
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // Load displaced header.
-    z_ltg(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-    // If the loaded Rmark is null we had recursive locking, and we are done.
-    z_bre(done);
-  }
 
   // Load object.
   z_lg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
   verify_oop(Roop, FILE_AND_LINE);
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    const Register tmp = Z_R1_scratch;
-    z_lg(Rmark, Address(Roop, hdr_offset));
-    z_lgr(tmp, Rmark);
-    z_nill(tmp, markWord::monitor_value);
-    branch_optimized(Assembler::bcondNotZero, slow_case);
-    lightweight_unlock(Roop, Rmark, tmp, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-    // Test if object header is pointing to the displaced header, and if so, restore
-    // the displaced header in the object. If the object header is not pointing to
-    // the displaced header, get the object header instead.
-    z_csg(Rbox, Rmark, hdr_offset, Roop);
-    // If the object header was not pointing to the displaced header,
-    // we do unlocking via runtime call.
-    branch_optimized(Assembler::bcondNotEqual, slow_case);
-  }
-  // done
-  bind(done);
+  fast_unlock(Roop, Rmark, Z_R1_scratch, slow_case);
 }
 
 void C1_MacroAssembler::try_allocate(
   Register obj,                        // result: Pointer to object after successful allocation.
   Register var_size_in_bytes,          // Object size in bytes if unknown at compile time; invalid otherwise.
   int      con_size_in_bytes,          // Object size in bytes if   known at compile time.
-  Register t1,                         // Temp register: Must be global register for incr_allocated_bytes.
+  Register t1,                         // Temp register.
   Label&   slow_case                   // Continuation point if fast allocation fails.
 ) {
   if (UseTLAB) {
@@ -202,21 +195,33 @@ void C1_MacroAssembler::try_allocate(
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register Rzero, Register t1) {
   assert_different_registers(obj, klass, len, t1, Rzero);
-  // This assumes that all prototype bits fit in an int32_t.
-  load_const_optimized(t1, (intx)markWord::prototype().value());
-  z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+  if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
+    // COH: Markword contains class pointer which is only known at runtime.
+    // Valhalla: Could have value class which has a different prototype header to a normal object.
+    // In both cases, we need to fetch dynamically.
+    z_lg(t1, Address(klass, in_bytes(Klass::prototype_header_offset())));
+    z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+  } else {
+    // Otherwise: Can use the statically computed prototype header which is the same for every object.
+    load_const_optimized(t1, (intx)markWord::prototype().value());
+    z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+  }
+
+  if (!UseCompactObjectHeaders) {
+    // COH: Markword already contains class pointer. Nothing else to do.
+    // Otherwise: Fetch klass pointer following the markword
+    store_klass(klass, obj, t1); // Take care not to kill klass
+  }
 
   if (len->is_valid()) {
-    // Length will be in the klass gap, if one exists.
+    // Length will be in the klass gap.
     z_st(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers) {
-    store_klass_gap(Rzero, obj);  // Zero klass gap for compressed oops.
+  } else if (!UseCompactObjectHeaders) {
+    store_klass_gap(Rzero, obj);  // Zero klass gap.
   }
-  store_klass(klass, obj, t1);
 }
 
 void C1_MacroAssembler::initialize_body(Register objectFields, Register len_in_bytes, Register Rzero) {
-  Label done;
   assert_different_registers(objectFields, len_in_bytes, Rzero);
 
   // Initialize object fields.
@@ -228,7 +233,6 @@ void C1_MacroAssembler::initialize_body(Register objectFields, Register len_in_b
   // Use Rzero as src length, then mvcle will copy nothing
   // and fill the object with the padding value 0.
   move_long_ext(objectFields, as_Register(Rzero->encoding()-1), 0);
-  bind(done);
 }
 
 void C1_MacroAssembler::allocate_object(
@@ -285,7 +289,7 @@ void C1_MacroAssembler::initialize_object(
   // Dtrace support is unimplemented.
   //  if (CURRENT_ENV->dtrace_alloc_probes()) {
   //    assert(obj == rax, "must be");
-  //    call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //    call(RuntimeAddress(Runtime1::entry_for (StubId::c1_dtrace_object_alloc_id)));
   //  }
 
   verify_oop(obj, FILE_AND_LINE);
@@ -296,10 +300,11 @@ void C1_MacroAssembler::allocate_array(
   Register len,                        // array length
   Register t1,                         // temp register
   Register t2,                         // temp register
-  int      hdr_size,                   // object header size in words
+  int      base_offset_in_bytes,       // elements offset in bytes
   int      elt_size,                   // element size in bytes
   Register klass,                      // object klass
-  Label&   slow_case                   // Continuation point if fast allocation fails.
+  Label&   slow_case,                  // Continuation point if fast allocation fails.
+  bool     zero_array                  // zero the allocated array or not
 ) {
   assert_different_registers(obj, len, t1, t2, klass);
 
@@ -322,32 +327,35 @@ void C1_MacroAssembler::allocate_array(
     case  8: z_sllg(arr_size, len, 3); break;
     default: ShouldNotReachHere();
   }
-  add2reg(arr_size, hdr_size * wordSize + MinObjAlignmentInBytesMask); // Add space for header & alignment.
-  z_nill(arr_size, (~MinObjAlignmentInBytesMask) & 0xffff);            // Align array size.
+  add2reg(arr_size, base_offset_in_bytes + MinObjAlignmentInBytesMask); // Add space for header & alignment.
+  z_nill(arr_size, (~MinObjAlignmentInBytesMask) & 0xffff);             // Align array size.
 
   try_allocate(obj, arr_size, 0, t1, slow_case);
 
   initialize_header(obj, klass, len, noreg, t1);
 
   // Clear rest of allocated space.
-  Label done;
-  Register object_fields = t1;
-  Register Rzero = Z_R1_scratch;
-  z_aghi(arr_size, -(hdr_size * BytesPerWord));
-  z_bre(done); // Jump if size of fields is zero.
-  z_la(object_fields, hdr_size * BytesPerWord, obj);
-  z_xgr(Rzero, Rzero);
-  initialize_body(object_fields, arr_size, Rzero);
-  bind(done);
+  if (zero_array) {
+    Label done;
+    Register object_fields = t1;
+    Register Rzero = Z_R1_scratch;
+    z_aghi(arr_size, -base_offset_in_bytes);
+    z_bre(done); // Jump if size of fields is zero.
+    z_la(object_fields, base_offset_in_bytes, obj);
+    z_xgr(Rzero, Rzero);
+    initialize_body(object_fields, arr_size, Rzero);
+    bind(done);
+  }
 
   // Dtrace support is unimplemented.
   // if (CURRENT_ENV->dtrace_alloc_probes()) {
   //   assert(obj == rax, "must be");
-  //   call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //   call(RuntimeAddress(Runtime1::entry_for (StubId::c1_dtrace_object_alloc_id)));
   // }
 
   verify_oop(obj, FILE_AND_LINE);
 }
+
 
 
 #ifndef PRODUCT

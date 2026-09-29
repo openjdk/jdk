@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class DoubleAgentTest {
         String jdwpOption = "-agentlib:jdwp=transport=dt_socket"
                          + ",server=y" + ",suspend=n" + ",address=*:0";
 
-        OutputAnalyzer output = ProcessTools.executeTestJvm("-classpath",
+        OutputAnalyzer output = ProcessTools.executeTestJava("-classpath",
                 TEST_CLASSES,
                 jdwpOption, // Notice jdwpOption specified twice
                 jdwpOption,

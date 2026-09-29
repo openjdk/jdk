@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialization methods
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- * @run testng ProhibitedMethods
+ * @run junit ProhibitedMethods
  */
 
 import java.io.ByteArrayInputStream;
@@ -41,33 +40,37 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
-import java.util.function.Function;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.ByteCodeLoader;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
-import static jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
-import static org.testng.Assert.fail;
+import static java.lang.classfile.ClassFile.ACC_PRIVATE;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_String;
+import static java.lang.constant.ConstantDescs.CD_void;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Checks that the various prohibited Serialization magic methods, and
  * Externalizable methods, are not invoked ( effectively ignored ) for
  * record objects.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ProhibitedMethods {
 
     public interface ThrowingExternalizable extends Externalizable {
@@ -101,7 +104,7 @@ public class ProhibitedMethods {
      *           fail("readObjectNoData should not be invoked");          }
      *   }
      */
-    @BeforeTest
+    @BeforeAll
     public void setup() {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("Foo",
@@ -166,7 +169,6 @@ public class ProhibitedMethods {
         }
     }
 
-    @DataProvider(name = "recordInstances")
     public Object[][] recordInstances() {
         return new Object[][] {
             new Object[] { newFoo()                                           },
@@ -178,7 +180,8 @@ public class ProhibitedMethods {
         };
     }
 
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void roundTrip(Object objToSerialize) throws Exception {
         out.println("\n---");
         out.println("serializing : " + objToSerialize);
@@ -219,103 +222,38 @@ public class ProhibitedMethods {
 
     // -- machinery for augmenting record classes with prohibited serial methods --
 
+    static final String WRITE_OBJECT_NAME = "writeObject";
+    static final MethodTypeDesc WRITE_OBJECT_DESC = MethodTypeDesc.ofDescriptor("(Ljava/io/ObjectOutputStream;)V");
+
     static byte[] addWriteObject(byte[] classBytes) {
-        return addMethod(classBytes, cv -> new WriteObjectVisitor(cv));
+        return addMethod(classBytes, WRITE_OBJECT_NAME, WRITE_OBJECT_DESC);
     }
+
+    static final String READ_OBJECT_NAME = "readObject";
+    static final MethodTypeDesc READ_OBJECT_DESC = MethodTypeDesc.ofDescriptor("(Ljava/io/ObjectInputStream;)V");
 
     static byte[] addReadObject(byte[] classBytes) {
-        return addMethod(classBytes, cv -> new ReadObjectVisitor(cv));
+        return addMethod(classBytes, READ_OBJECT_NAME, READ_OBJECT_DESC);
     }
 
+    static final String READ_OBJECT_NO_DATA_NAME = "readObjectNoData";
+    static final MethodTypeDesc READ_OBJECT_NO_DATA_DESC = MethodTypeDesc.of(CD_void);
+
     static byte[] addReadObjectNoData(byte[] classBytes) {
-        return addMethod(classBytes, cv -> new ReadObjectNoDataVisitor(cv));
+        return addMethod(classBytes, READ_OBJECT_NO_DATA_NAME, READ_OBJECT_NO_DATA_DESC);
     }
 
     static byte[] addMethod(byte[] classBytes,
-                            Function<ClassVisitor,ClassVisitor> classVisitorCreator) {
-        ClassReader reader = new ClassReader(classBytes);
-        ClassWriter writer = new ClassWriter(reader, COMPUTE_MAXS | COMPUTE_FRAMES);
-        reader.accept(classVisitorCreator.apply(writer), 0);
-        return writer.toByteArray();
-    }
-
-    static abstract class AbstractVisitor extends ClassVisitor {
-        final String nameOfMethodToAdd;
-        AbstractVisitor(ClassVisitor cv, String nameOfMethodToAdd) {
-            super(ASM8, cv);
-            this.nameOfMethodToAdd = nameOfMethodToAdd;
-        }
-        @Override
-        public MethodVisitor visitMethod(final int access,
-                                         final String name,
-                                         final String descriptor,
-                                         final String signature,
-                                         final String[] exceptions) {
-            // the method-to-be-added should not already exist
-            assert !name.equals(nameOfMethodToAdd) : "Unexpected " + name + " method";
-            return cv.visitMethod(access, name, descriptor, signature, exceptions);
-        }
-        @Override
-        public void visitEnd() {
-            throw new UnsupportedOperationException("implement me");
-        }
-    }
-
-    /** A visitor that generates and adds a writeObject method. */
-    static final class WriteObjectVisitor extends AbstractVisitor {
-        static final String WRITE_OBJECT_NAME = "writeObject";
-        static final String WRITE_OBJECT_DESC = "(Ljava/io/ObjectOutputStream;)V";
-        WriteObjectVisitor(ClassVisitor cv) { super(cv, WRITE_OBJECT_NAME); }
-        @Override
-        public void visitEnd() {
-            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE, WRITE_OBJECT_NAME, WRITE_OBJECT_DESC, null, null);
-            mv.visitCode();
-            mv.visitLdcInsn(WRITE_OBJECT_NAME + " should not be invoked");
-            mv.visitMethodInsn(INVOKESTATIC, "org/testng/Assert", "fail", "(Ljava/lang/String;)V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-
-            cv.visitEnd();
-        }
-    }
-
-    /** A visitor that generates and adds a readObject method. */
-    static final class ReadObjectVisitor extends AbstractVisitor {
-        static final String READ_OBJECT_NAME = "readObject";
-        static final String READ_OBJECT_DESC = "(Ljava/io/ObjectInputStream;)V";
-        ReadObjectVisitor(ClassVisitor cv) { super(cv, READ_OBJECT_NAME); }
-        @Override
-        public void visitEnd() {
-            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE, READ_OBJECT_NAME, READ_OBJECT_DESC, null, null);
-            mv.visitCode();
-            mv.visitLdcInsn(READ_OBJECT_NAME + " should not be invoked");
-            mv.visitMethodInsn(INVOKESTATIC, "org/testng/Assert", "fail", "(Ljava/lang/String;)V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-
-            cv.visitEnd();
-        }
-    }
-
-    /** A visitor that generates and adds a readObjectNoData method. */
-    static final class ReadObjectNoDataVisitor extends AbstractVisitor {
-        static final String READ_OBJECT_NO_DATA_NAME = "readObjectNoData";
-        static final String READ_OBJECT_NO_DATA_DESC = "()V";
-        ReadObjectNoDataVisitor(ClassVisitor cv) { super(cv, READ_OBJECT_NO_DATA_NAME); }
-        @Override
-        public void visitEnd() {
-            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE, READ_OBJECT_NO_DATA_NAME, READ_OBJECT_NO_DATA_DESC, null, null);
-            mv.visitCode();
-            mv.visitLdcInsn(READ_OBJECT_NO_DATA_NAME + " should not be invoked");
-            mv.visitMethodInsn(INVOKESTATIC, "org/testng/Assert", "fail", "(Ljava/lang/String;)V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-
-            cv.visitEnd();
-        }
+                            String name, MethodTypeDesc desc) {
+        var cf = ClassFile.of();
+        return cf.transformClass(cf.parse(classBytes), ClassTransform.endHandler(clb -> {
+            clb.withMethodBody(name, desc, ACC_PRIVATE, cob -> {
+                cob.loadConstant(name + " should not be invoked");
+                cob.invokestatic(Assertions.class.describeConstable().orElseThrow(), "fail",
+                        MethodTypeDesc.of(CD_Object, CD_String));
+                cob.return_();
+            });
+        }));
     }
 
     // -- infra sanity --
@@ -332,37 +270,37 @@ public class ProhibitedMethods {
                 Method m = obj.getClass().getDeclaredMethod("writeObject", ObjectOutputStream.class);
                 assertTrue((m.getModifiers() & Modifier.PRIVATE) != 0);
                 m.setAccessible(true);
-                ReflectiveOperationException t = expectThrows(ROE, () ->
+                ReflectiveOperationException t = Assertions.assertThrows(ROE, () ->
                         m.invoke(obj, new ObjectOutputStream(OutputStream.nullOutputStream())));
                 Throwable assertionError = t.getCause();
                 out.println("caught expected AssertionError: " + assertionError);
                 assertTrue(assertionError instanceof AssertionError,
                            "Expected AssertionError, got:" + assertionError);
-                assertEquals(assertionError.getMessage(), "writeObject should not be invoked");
+                assertEquals("writeObject should not be invoked", assertionError.getMessage());
             }
             {   // readObject
                 Method m = obj.getClass().getDeclaredMethod("readObject", ObjectInputStream.class);
                 assertTrue((m.getModifiers() & Modifier.PRIVATE) != 0);
                 m.setAccessible(true);
-                ReflectiveOperationException t = expectThrows(ROE, () ->
+                ReflectiveOperationException t = Assertions.assertThrows(ROE, () ->
                         m.invoke(obj, new ObjectInputStream() {
                         }));
                 Throwable assertionError = t.getCause();
                 out.println("caught expected AssertionError: " + assertionError);
                 assertTrue(assertionError instanceof AssertionError,
                            "Expected AssertionError, got:" + assertionError);
-                assertEquals(assertionError.getMessage(), "readObject should not be invoked");
+                assertEquals("readObject should not be invoked", assertionError.getMessage());
             }
             {   // readObjectNoData
                 Method m = obj.getClass().getDeclaredMethod("readObjectNoData");
                 assertTrue((m.getModifiers() & Modifier.PRIVATE) != 0);
                 m.setAccessible(true);
-                ReflectiveOperationException t = expectThrows(ROE, () -> m.invoke(obj));
+                ReflectiveOperationException t = Assertions.assertThrows(ROE, () -> m.invoke(obj));
                 Throwable assertionError = t.getCause();
                 out.println("caught expected AssertionError: " + assertionError);
                 assertTrue(assertionError instanceof AssertionError,
                            "Expected AssertionError, got:" + assertionError);
-                assertEquals(assertionError.getMessage(), "readObjectNoData should not be invoked");
+                assertEquals("readObjectNoData should not be invoked", assertionError.getMessage());
             }
         }
     }

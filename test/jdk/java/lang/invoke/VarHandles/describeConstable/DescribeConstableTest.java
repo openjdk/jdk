@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,16 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8302260
+ * @bug 8302260 8372002
  * @build p.C p.D p.I p.q.Q
  * @run junit DescribeConstableTest
  * @summary Test VarHandle::describeConstable on static fields
  */
 
-import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.VarHandle;
 import java.lang.invoke.VarHandle.VarHandleDesc;
 import java.util.stream.Stream;
 
@@ -43,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DescribeConstableTest {
     private static final Lookup LOOKUP = MethodHandles.lookup();
-    private static Stream<Arguments> testCases() {
+    private static Stream<Arguments> staticTestCases() {
         return Stream.of(
                 // static field defined in p.C only
                 Arguments.of(p.C.class, "cString", String.class, p.C.class, "CClass"),
@@ -68,8 +66,8 @@ public class DescribeConstableTest {
     }
 
     @ParameterizedTest
-    @MethodSource("testCases")
-    void test(Class<?> refc, String name, Class<?> type, Class<?> declaringClass, Object value) throws Throwable {
+    @MethodSource("staticTestCases")
+    void testStatic(Class<?> refc, String name, Class<?> type, Class<?> declaringClass, Object value) throws Throwable {
         var vh = LOOKUP.findStaticVarHandle(refc, name, type);
         assertEquals(value, vh.get());
 
@@ -82,6 +80,37 @@ public class DescribeConstableTest {
         assertEquals(value, vhd2.resolveConstantDesc(LOOKUP).get());
 
         assertEquals(vhd.toString(), varHandleDescString(declaringClass, name, type, true));
+    }
+
+    private static Arguments[] instanceTestCases() {
+        return new Arguments[] {
+                // Basic instance field in p.q.Q
+                Arguments.of(p.q.Q.class, "instanceIntField", int.class, new p.q.Q(), 42),
+                // p.C.instanceIntField hides the superclass instanceIntField, but it still exists
+                Arguments.of(p.C.class, "instanceIntField", int.class, new p.C(), 76),
+                Arguments.of(p.q.Q.class, "instanceIntField", int.class, new p.C(), 42),
+                // p.D.instanceIntField points to that of p.q.Q
+                Arguments.of(p.D.class, "instanceIntField", int.class, new p.D(), 42),
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("instanceTestCases")
+    void testInstance(Class<?> refc, String name, Class<?> type, Object instance, Object value) throws Throwable {
+        var vh = LOOKUP.findVarHandle(refc, name, type).withInvokeBehavior();
+        assertEquals(value, vh.get(instance));
+
+        var refcDesc = refc.describeConstable().orElseThrow();
+        var typeDesc = type.describeConstable().orElseThrow();
+        var vhd = vh.describeConstable().orElseThrow();
+        var vhd2 = VarHandleDesc.ofField(refcDesc, name, typeDesc);
+
+        assertEquals(value, vhd.resolveConstantDesc(LOOKUP).get(instance));
+        assertEquals(value, vhd2.resolveConstantDesc(LOOKUP).get(instance));
+
+        // The string does not use the declaring class because
+        // receiver is restricted on the handle
+        assertEquals(vhd.toString(), varHandleDescString(refc, name, type, false));
     }
 
     static String varHandleDescString(Class<?> declaringClass, String name, Class<?> type, boolean staticField) {

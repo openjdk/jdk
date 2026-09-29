@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public class JaasModularDefaultHandlerTest {
             }
             return !s.isEmpty();
         }).toArray(String[]::new);
-        OutputAnalyzer out = ProcessTools.executeTestJvm(safeArgs);
+        OutputAnalyzer out = ProcessTools.executeTestJava(safeArgs);
         // Handle response.
         if (out.getExitValue() != 0) {
             System.out.printf("OUTPUT: %s", out.getOutput());

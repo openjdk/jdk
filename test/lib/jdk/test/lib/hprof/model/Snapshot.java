@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,12 @@
 
 package jdk.test.lib.hprof.model;
 
+import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.*;
 
 import jdk.test.lib.hprof.parser.ReadBuffer;
 import jdk.test.lib.hprof.util.Misc;
-
-/**
- *
- * @author      Bill Foote
- */
 
 /**
  * Represents a snapshot of the Java objects in the VM at one instant.
@@ -597,13 +593,17 @@ public class Snapshot implements AutoCloseable {
 
     private void putInClassesMap(JavaClass c) {
         String name = c.getName();
-        if (classes.containsKey(name)) {
+        JavaClass originClass = classes.get(name);
+        if (originClass != null) {
+            if (originClass.getId() == c.getId()) {
+                throw new IllegalStateException(String.format("%s (id=0x%x) already exists", c.getName(), c.getId()));
+            }
             // more than one class can have the same name
             // if so, create a unique name by appending
             // - and id string to it.
             name += "-" + c.getIdString();
         }
-        classes.put(c.getName(), c);
+        classes.put(name, c);
     }
 
     private void addFakeClass(JavaClass c) {
@@ -637,7 +637,7 @@ public class Snapshot implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         readBuf.close();
     }
 

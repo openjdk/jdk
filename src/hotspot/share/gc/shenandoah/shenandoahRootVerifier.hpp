@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +28,30 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahGCStateResetter : public StackObj {
 private:
+  static Atomic<int> _active_count;
+
   ShenandoahHeap* const _heap;
-  const char _gc_state;
+  const char _saved_gc_state;
+  const bool _saved_gc_state_changed;
 
 public:
   ShenandoahGCStateResetter();
   ~ShenandoahGCStateResetter();
+
+  static bool is_active() { return _active_count.load_relaxed() > 0; }
 };
 
 class ShenandoahRootVerifier : public AllStatic {
 public:
   // Used to seed ShenandoahVerifier, do not honor root type filter
-  static void roots_do(OopClosure* cl);
-  static void strong_roots_do(OopClosure* cl);
+  // The generation parameter here may be young or global. If it is young,
+  // then the roots will include the remembered set.
+  static void roots_do(OopIterateClosure* cl, ShenandoahGeneration* generation);
+  static void strong_roots_do(OopIterateClosure* cl, ShenandoahGeneration* generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP

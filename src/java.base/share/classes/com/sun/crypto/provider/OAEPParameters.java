@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,11 +225,9 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
     }
 
     protected String engineToString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MD: " + mdName + "\n");
-        sb.append("MGF: MGF1" + mgfSpec.getDigestAlgorithm() + "\n");
-        sb.append("PSource: PSpecified " +
-            (p.length==0? "":Debug.toHexString(new BigInteger(p))) + "\n");
-        return sb.toString();
+        return "MD: " + mdName + "\n" +
+                "MGF: MGF1" + mgfSpec.getDigestAlgorithm() + "\n" +
+                "PSource: PSpecified " +
+                (p.length == 0 ? "" : Debug.toHexString(new BigInteger(p))) + "\n";
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -42,6 +41,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -49,11 +49,17 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/rotate_bits.hpp"
 #include "utilities/stack.inline.hpp"
+
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
@@ -62,24 +68,70 @@ void Klass::set_java_mirror(Handle m) {
 }
 
 bool Klass::is_cloneable() const {
-  return _access_flags.is_cloneable_fast() ||
+  return _misc_flags.is_cloneable_fast() ||
          is_subtype_of(vmClasses::Cloneable_klass());
 }
 
-void Klass::set_is_cloneable() {
-  if (name() == vmSymbols::java_lang_invoke_MemberName()) {
-    assert(is_final(), "no subclasses allowed");
-    // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
-  } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
-    // Reference cloning should not be intrinsified and always happen in JVM_Clone.
+uint8_t Klass::compute_hash_slot(Symbol* n) {
+  uint hash_code;
+  // Special cases for the two superclasses of all Array instances.
+  // Code elsewhere assumes, for all instances of ArrayKlass, that
+  // these two interfaces will be in this order.
+
+  // We ensure there are some empty slots in the hash table between
+  // these two very common interfaces because if they were adjacent
+  // (e.g. Slots 0 and 1), then any other class which hashed to 0 or 1
+  // would result in a probe length of 3.
+  if (n == vmSymbols::java_lang_Cloneable()) {
+    hash_code = 0;
+  } else if (n == vmSymbols::java_io_Serializable()) {
+    hash_code = SECONDARY_SUPERS_TABLE_SIZE / 2;
   } else {
-    _access_flags.set_is_cloneable_fast();
+    auto s = (const jbyte*) n->bytes();
+    hash_code = java_lang_String::hash_code(s, n->utf8_length());
+    // We use String::hash_code here (rather than e.g.
+    // Symbol::identity_hash()) in order to have a hash code that
+    // does not change from run to run. We want that because the
+    // hash value for a secondary superclass appears in generated
+    // code as a constant.
+
+    // This constant is magic: see Knuth, "Fibonacci Hashing".
+    constexpr uint multiplier
+      = 2654435769; // (uint)(((u8)1 << 32) / ((1 + sqrt(5)) / 2 ))
+    constexpr uint hash_shift = sizeof(hash_code) * 8 - 6;
+    // The leading bits of the least significant half of the product.
+    hash_code = (hash_code * multiplier) >> hash_shift;
+
+    if (StressSecondarySupers) {
+      // Generate many hash collisions in order to stress-test the
+      // linear search fallback.
+      hash_code = hash_code % 3;
+      hash_code = hash_code * (SECONDARY_SUPERS_TABLE_SIZE / 3);
+    }
   }
+
+  return (hash_code & SECONDARY_SUPERS_TABLE_MASK);
 }
 
 void Klass::set_name(Symbol* n) {
   _name = n;
-  if (_name != nullptr) _name->increment_refcount();
+
+  if (_name != nullptr) {
+    _name->increment_refcount();
+  }
+
+  {
+    elapsedTimer selftime;
+    selftime.start();
+
+    _hash_slot = compute_hash_slot(n);
+    assert(_hash_slot < SECONDARY_SUPERS_TABLE_SIZE, "required");
+
+    selftime.stop();
+    if (UsePerfData) {
+      ClassLoader::perf_secondary_hash_time()->inc(selftime.ticks());
+    }
+  }
 
   if (CDSConfig::is_dumping_archive() && is_instance_klass()) {
     SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
@@ -103,20 +155,47 @@ void Klass::release_C_heap_structures(bool release_constant_pool) {
   if (_name != nullptr) _name->decrement_refcount();
 }
 
-bool Klass::search_secondary_supers(Klass* k) const {
-  // Put some extra logic here out-of-line, before the search proper.
-  // This cuts down the size of the inline method.
-
-  // This is necessary, since I am never in my own secondary_super list.
-  if (this == k)
-    return true;
+bool Klass::linear_search_secondary_supers(const Klass* k) const {
   // Scan the array-of-objects for a match
+  // FIXME: We could do something smarter here, maybe a vectorized
+  // comparison or a binary search, but is that worth any added
+  // complexity?
   int cnt = secondary_supers()->length();
   for (int i = 0; i < cnt; i++) {
     if (secondary_supers()->at(i) == k) {
-      ((Klass*)this)->set_secondary_super_cache(k);
       return true;
     }
+  }
+  return false;
+}
+
+// Given a secondary superklass k, an initial array index, and an
+// occupancy bitmap rotated such that Bit 1 is the next bit to test,
+// search for k.
+bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const {
+  // Once the occupancy bitmap is almost full, it's faster to use a
+  // linear search.
+  if (secondary_supers()->length() > SECONDARY_SUPERS_TABLE_SIZE - 2) {
+    return linear_search_secondary_supers(k);
+  }
+
+  // This is conventional linear probing, but instead of terminating
+  // when a null entry is found in the table, we maintain a bitmap
+  // in which a 0 indicates missing entries.
+
+  precond((int)population_count(rotated_bitmap) == secondary_supers()->length());
+
+  // The check for secondary_supers()->length() <= SECONDARY_SUPERS_TABLE_SIZE - 2
+  // at the start of this function guarantees there are 0s in the
+  // bitmap, so this loop eventually terminates.
+  while ((rotated_bitmap & 2) != 0) {
+    if (++index == secondary_supers()->length()) {
+      index = 0;
+    }
+    if (secondary_supers()->at(index) == k) {
+      return true;
+    }
+    rotated_bitmap = rotate_right(rotated_bitmap, 1);
   }
   return false;
 }
@@ -165,6 +244,10 @@ void Klass::initialize(TRAPS) {
   ShouldNotReachHere();
 }
 
+void Klass::initialize_preemptable(TRAPS) {
+  ShouldNotReachHere();
+}
+
 Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
 #ifdef ASSERT
   tty->print_cr("Error: find_field called on a klass oop."
@@ -192,16 +275,17 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 }
 
 Klass::Klass() : _kind(UnknownKlassKind) {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for cds");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for cds");
 }
 
 // "Normal" instantiation is preceded by a MetaspaceObj allocation
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
-Klass::Klass(KlassKind kind) : _kind(kind),
-                           _shared_class_path_index(-1) {
-  CDS_ONLY(_shared_class_flags = 0;)
+Klass::Klass(KlassKind kind, markWord prototype_header) : _kind(kind),
+                               _shared_class_path_index(-1) {
+  set_prototype_header(make_prototype_header(this, prototype_header));
+  CDS_ONLY(_aot_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
@@ -213,18 +297,24 @@ jint Klass::array_layout_helper(BasicType etype) {
   int  hsize = arrayOopDesc::base_offset_in_bytes(etype);
   int  esize = type2aelembytes(etype);
   bool isobj = (etype == T_OBJECT);
-  int  tag   =  isobj ? _lh_array_tag_obj_value : _lh_array_tag_type_value;
-  int lh = array_layout_helper(tag, hsize, etype, exact_log2(esize));
+  int  tag   =  isobj ? _lh_array_tag_ref_value : _lh_array_tag_type_value;
+  int lh = array_layout_helper(tag, false, hsize, etype, exact_log2(esize));
 
   assert(lh < (int)_lh_neutral_value, "must look like an array layout");
   assert(layout_helper_is_array(lh), "correct kind");
-  assert(layout_helper_is_objArray(lh) == isobj, "correct kind");
+  assert(layout_helper_is_refArray(lh) == isobj, "correct kind");
   assert(layout_helper_is_typeArray(lh) == !isobj, "correct kind");
   assert(layout_helper_header_size(lh) == hsize, "correct decode");
   assert(layout_helper_element_type(lh) == etype, "correct decode");
   assert(1 << layout_helper_log2_element_size(lh) == esize, "correct decode");
 
   return lh;
+}
+
+int Klass::modifier_flags() const {
+  int mods = java_lang_Class::modifiers(java_mirror());
+  assert(mods == compute_modifier_flags(), "should be same");
+  return mods;
 }
 
 bool Klass::can_be_primary_super_slow() const {
@@ -235,6 +325,169 @@ bool Klass::can_be_primary_super_slow() const {
   else
     return true;
 }
+
+void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
+#ifdef ASSERT
+  if (secondaries != nullptr) {
+    uintx real_bitmap = compute_secondary_supers_bitmap(secondaries);
+    assert(bitmap == real_bitmap, "must be");
+    assert(secondaries->length() >= (int)population_count(bitmap), "must be");
+  }
+#endif
+  _secondary_supers_bitmap = bitmap;
+  _secondary_supers = secondaries;
+
+  if (secondaries != nullptr) {
+    LogMessage(class, load) msg;
+    NonInterleavingLogStream log {LogLevel::Debug, msg};
+    if (log.is_enabled()) {
+      ResourceMark rm;
+      log.print_cr("set_secondary_supers: hash_slot: %d; klass: %s", hash_slot(), external_name());
+      print_secondary_supers_on(&log);
+    }
+  }
+}
+
+// Hashed secondary superclasses
+//
+// We use a compressed 64-entry hash table with linear probing. We
+// start by creating a hash table in the usual way, followed by a pass
+// that removes all the null entries. To indicate which entries would
+// have been null we use a bitmap that contains a 1 in each position
+// where an entry is present, 0 otherwise. This bitmap also serves as
+// a kind of Bloom filter, which in many cases allows us quickly to
+// eliminate the possibility that something is a member of a set of
+// secondaries.
+uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
+  const int length = secondaries->length();
+
+  if (length == 0) {
+    return SECONDARY_SUPERS_BITMAP_EMPTY;
+  }
+
+  if (length == 1) {
+    int hash_slot = secondaries->at(0)->hash_slot();
+    return uintx(1) << hash_slot;
+  }
+
+  // Invariant: _secondary_supers.length >= population_count(_secondary_supers_bitmap)
+
+  // Don't attempt to hash a table that's completely full, because in
+  // the case of an absent interface linear probing would not
+  // terminate.
+  if (length >= SECONDARY_SUPERS_TABLE_SIZE) {
+    return SECONDARY_SUPERS_BITMAP_FULL;
+  }
+
+  {
+    PerfTraceTime ptt(ClassLoader::perf_secondary_hash_time());
+
+    ResourceMark rm;
+    uintx bitmap = SECONDARY_SUPERS_BITMAP_EMPTY;
+    auto hashed_secondaries = new GrowableArray<Klass*>(SECONDARY_SUPERS_TABLE_SIZE,
+                                                        SECONDARY_SUPERS_TABLE_SIZE, nullptr);
+
+    for (int j = 0; j < length; j++) {
+      Klass* k = secondaries->at(j);
+      hash_insert(k, hashed_secondaries, bitmap);
+    }
+
+    // Pack the hashed secondaries array by copying it into the
+    // secondaries array, sans nulls, if modification is allowed.
+    // Otherwise, validate the order.
+    int i = 0;
+    for (int slot = 0; slot < SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+      bool has_element = ((bitmap >> slot) & 1) != 0;
+      assert(has_element == (hashed_secondaries->at(slot) != nullptr), "");
+      if (has_element) {
+        Klass* k = hashed_secondaries->at(slot);
+        if (rewrite) {
+          secondaries->at_put(i, k);
+        } else if (secondaries->at(i) != k) {
+          assert(false, "broken secondary supers hash table");
+          return SECONDARY_SUPERS_BITMAP_FULL;
+        }
+        i++;
+      }
+    }
+    assert(i == secondaries->length(), "mismatch");
+    postcond((int)population_count(bitmap) == secondaries->length());
+
+    return bitmap;
+  }
+}
+
+void Klass::hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap) {
+  assert(bitmap != SECONDARY_SUPERS_BITMAP_FULL, "");
+
+  int dist = 0;
+  for (int slot = klass->hash_slot(); true; slot = (slot + 1) & SECONDARY_SUPERS_TABLE_MASK) {
+    Klass* existing = secondaries->at(slot);
+    assert(((bitmap >> slot) & 1) == (existing != nullptr), "mismatch");
+    if (existing == nullptr) { // no conflict
+      secondaries->at_put(slot, klass);
+      bitmap |= uintx(1) << slot;
+      assert(bitmap != SECONDARY_SUPERS_BITMAP_FULL, "");
+      return;
+    } else {
+      // Use Robin Hood hashing to minimize the worst case search.
+      // Also, every permutation of the insertion sequence produces
+      // the same final Robin Hood hash table, provided that a
+      // consistent tie breaker is used.
+      int existing_dist = (slot - existing->hash_slot()) & SECONDARY_SUPERS_TABLE_MASK;
+      if (existing_dist < dist
+          // This tie breaker ensures that the hash order is maintained.
+          || ((existing_dist == dist)
+              && (uintptr_t(existing) < uintptr_t(klass)))) {
+        Klass* tmp = secondaries->at(slot);
+        secondaries->at_put(slot, klass);
+        klass = tmp;
+        dist = existing_dist;
+      }
+      ++dist;
+    }
+  }
+}
+
+Array<Klass*>* Klass::pack_secondary_supers(ClassLoaderData* loader_data,
+                                            GrowableArray<Klass*>* primaries,
+                                            GrowableArray<Klass*>* secondaries,
+                                            uintx& bitmap, TRAPS) {
+  int new_length = primaries->length() + secondaries->length();
+  Array<Klass*>* secondary_supers = MetadataFactory::new_array<Klass*>(loader_data, new_length, CHECK_NULL);
+
+  // Combine the two arrays into a metadata object to pack the array.
+  // The primaries are added in the reverse order, then the secondaries.
+  int fill_p = primaries->length();
+  for (int j = 0; j < fill_p; j++) {
+    secondary_supers->at_put(j, primaries->pop());  // add primaries in reverse order.
+  }
+  for( int j = 0; j < secondaries->length(); j++ ) {
+    secondary_supers->at_put(j+fill_p, secondaries->at(j));  // add secondaries on the end.
+  }
+#ifdef ASSERT
+  // We must not copy any null placeholders left over from bootstrap.
+  for (int j = 0; j < secondary_supers->length(); j++) {
+    assert(secondary_supers->at(j) != nullptr, "correct bootstrapping order");
+  }
+#endif
+
+  bitmap = hash_secondary_supers(secondary_supers, /*rewrite=*/true); // rewrites freshly allocated array
+  return secondary_supers;
+}
+
+uintx Klass::compute_secondary_supers_bitmap(Array<Klass*>* secondary_supers) {
+  return hash_secondary_supers(secondary_supers, /*rewrite=*/false); // no rewrites allowed
+}
+
+uint8_t Klass::compute_home_slot(Klass* k, uintx bitmap) {
+  uint8_t hash = k->hash_slot();
+  if (hash > 0) {
+    return population_count(bitmap << (SECONDARY_SUPERS_TABLE_SIZE - hash));
+  }
+  return 0;
+}
+
 
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
   if (k == nullptr) {
@@ -326,26 +579,9 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
       primaries->push(p);
     }
     // Combine the two arrays into a metadata object to pack the array.
-    // The primaries are added in the reverse order, then the secondaries.
-    int new_length = primaries->length() + secondaries->length();
-    Array<Klass*>* s2 = MetadataFactory::new_array<Klass*>(
-                                       class_loader_data(), new_length, CHECK);
-    int fill_p = primaries->length();
-    for (int j = 0; j < fill_p; j++) {
-      s2->at_put(j, primaries->pop());  // add primaries in reverse order.
-    }
-    for( int j = 0; j < secondaries->length(); j++ ) {
-      s2->at_put(j+fill_p, secondaries->at(j));  // add secondaries on the end.
-    }
-
-  #ifdef ASSERT
-      // We must not copy any null placeholders left over from bootstrap.
-    for (int j = 0; j < s2->length(); j++) {
-      assert(s2->at(j) != nullptr, "correct bootstrapping order");
-    }
-  #endif
-
-    set_secondary_supers(s2);
+    uintx bitmap = 0;
+    Array<Klass*>* s2 = pack_secondary_supers(class_loader_data(), primaries, secondaries, bitmap, CHECK);
+    set_secondary_supers(s2, bitmap);
   }
 }
 
@@ -353,36 +589,24 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
                                                        Array<InstanceKlass*>* transitive_interfaces) {
   assert(num_extra_slots == 0, "override for complex klasses");
   assert(transitive_interfaces == nullptr, "sanity");
-  set_secondary_supers(Universe::the_empty_klass_array());
+  set_secondary_supers(Universe::the_empty_klass_array(), Universe::the_empty_klass_bitmap());
   return nullptr;
 }
 
 
-// superklass links
-InstanceKlass* Klass::superklass() const {
-  assert(super() == nullptr || super()->is_instance_klass(), "must be instance klass");
-  return _super == nullptr ? nullptr : InstanceKlass::cast(_super);
-}
-
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.
-// The log parameter is for clean_weak_klass_links to report unlinked classes.
-Klass* Klass::subklass(bool log) const {
+Klass* Klass::subklass() const {
   // Need load_acquire on the _subklass, because it races with inserts that
   // publishes freshly initialized data.
-  for (Klass* chain = Atomic::load_acquire(&_subklass);
+  for (Klass* chain = AtomicAccess::load_acquire(&_subklass);
        chain != nullptr;
        // Do not need load_acquire on _next_sibling, because inserts never
        // create _next_sibling edges to dead data.
-       chain = Atomic::load(&chain->_next_sibling))
+       chain = AtomicAccess::load(&chain->_next_sibling))
   {
     if (chain->is_loader_alive()) {
       return chain;
-    } else if (log) {
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("unlinking class (subclass): %s", chain->external_name());
-      }
     }
   }
   return nullptr;
@@ -391,9 +615,9 @@ Klass* Klass::subklass(bool log) const {
 Klass* Klass::next_sibling(bool log) const {
   // Do not need load_acquire on _next_sibling, because inserts never
   // create _next_sibling edges to dead data.
-  for (Klass* chain = Atomic::load(&_next_sibling);
+  for (Klass* chain = AtomicAccess::load(&_next_sibling);
        chain != nullptr;
-       chain = Atomic::load(&chain->_next_sibling)) {
+       chain = AtomicAccess::load(&chain->_next_sibling)) {
     // Only return alive klass, there may be stale klass
     // in this chain if cleaned concurrently.
     if (chain->is_loader_alive()) {
@@ -410,7 +634,7 @@ Klass* Klass::next_sibling(bool log) const {
 
 void Klass::set_subklass(Klass* s) {
   assert(s != this, "sanity check");
-  Atomic::release_store(&_subklass, s);
+  AtomicAccess::release_store(&_subklass, s);
 }
 
 void Klass::set_next_sibling(Klass* s) {
@@ -418,50 +642,55 @@ void Klass::set_next_sibling(Klass* s) {
   // Does not need release semantics. If used by cleanup, it will link to
   // already safely published data, and if used by inserts, will be published
   // safely using cmpxchg.
-  Atomic::store(&_next_sibling, s);
+  AtomicAccess::store(&_next_sibling, s);
 }
 
 void Klass::append_to_sibling_list() {
   if (Universe::is_fully_initialized()) {
     assert_locked_or_safepoint(Compile_lock);
   }
-  debug_only(verify();)
-  // add ourselves to superklass' subklass list
-  InstanceKlass* super = superklass();
+  DEBUG_ONLY(verify();)
+  // add ourselves to super' subklass list
+  InstanceKlass* super = java_super();
   if (super == nullptr) return;     // special case: class Object
   assert((!super->is_interface()    // interfaces cannot be supers
-          && (super->superklass() == nullptr || !is_interface())),
+          && (super->java_super() == nullptr || !is_interface())),
          "an interface can only be a subklass of Object");
 
   // Make sure there is no stale subklass head
   super->clean_subklass();
 
   for (;;) {
-    Klass* prev_first_subklass = Atomic::load_acquire(&_super->_subklass);
+    Klass* prev_first_subklass = AtomicAccess::load_acquire(&_super->_subklass);
     if (prev_first_subklass != nullptr) {
-      // set our sibling to be the superklass' previous first subklass
+      // set our sibling to be the super' previous first subklass
       assert(prev_first_subklass->is_loader_alive(), "May not attach not alive klasses");
       set_next_sibling(prev_first_subklass);
     }
     // Note that the prev_first_subklass is always alive, meaning no sibling_next links
     // are ever created to not alive klasses. This is an important invariant of the lock-free
     // cleaning protocol, that allows us to safely unlink dead klasses from the sibling list.
-    if (Atomic::cmpxchg(&super->_subklass, prev_first_subklass, this) == prev_first_subklass) {
+    if (AtomicAccess::cmpxchg(&super->_subklass, prev_first_subklass, this) == prev_first_subklass) {
       return;
     }
   }
-  debug_only(verify();)
+  DEBUG_ONLY(verify();)
 }
 
-void Klass::clean_subklass() {
+// The log parameter is for clean_weak_klass_links to report unlinked classes.
+Klass* Klass::clean_subklass(bool log) {
   for (;;) {
     // Need load_acquire, due to contending with concurrent inserts
-    Klass* subklass = Atomic::load_acquire(&_subklass);
+    Klass* subklass = AtomicAccess::load_acquire(&_subklass);
     if (subklass == nullptr || subklass->is_loader_alive()) {
-      return;
+      return subklass;
+    }
+    if (log && log_is_enabled(Trace, class, unload)) {
+      ResourceMark rm;
+      log_trace(class, unload)("unlinking class (subclass): %s", subklass->external_name());
     }
     // Try to fix _subklass until it points at something not dead.
-    Atomic::cmpxchg(&_subklass, subklass, subklass->next_sibling());
+    AtomicAccess::cmpxchg(&_subklass, subklass, subklass->next_sibling(log));
   }
 }
 
@@ -480,8 +709,7 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     assert(current->is_loader_alive(), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass(true);
-    current->clean_subklass();
+    Klass* sub = current->clean_subklass(true);
     if (sub != nullptr) {
       stack.push(sub);
     }
@@ -496,25 +724,27 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     // Clean the implementors list and method data.
     if (clean_alive_klasses && current->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
-      ik->clean_weak_instanceklass_links();
-
-      // JVMTI RedefineClasses creates previous versions that are not in
-      // the class hierarchy, so process them here.
-      while ((ik = ik->previous_versions()) != nullptr) {
-        ik->clean_weak_instanceklass_links();
-      }
+      clean_weak_instanceklass_links(ik);
     }
   }
 }
 
+void Klass::clean_weak_instanceklass_links(InstanceKlass* ik) {
+  ik->clean_weak_instanceklass_links();
+  // JVMTI RedefineClasses creates previous versions that are not in
+  // the class hierarchy, so process them here.
+  while ((ik = ik->previous_versions()) != nullptr) {
+    ik->clean_weak_instanceklass_links();
+  }
+}
+
 void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
-  if (log_is_enabled(Trace, cds)) {
+  if (log_is_enabled(Trace, aot)) {
     ResourceMark rm;
-    log_trace(cds)("Iter(Klass): %p (%s)", this, external_name());
+    log_trace(aot)("Iter(Klass): %p (%s)", this, external_name());
   }
 
   it->push(&_name);
-  it->push(&_secondary_super_cache);
   it->push(&_secondary_supers);
   for (int i = 0; i < _primary_super_limit; i++) {
     it->push(&_primary_supers[i]);
@@ -540,10 +770,15 @@ void Klass::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_archive(),
           "only called during CDS dump time");
   JFR_ONLY(REMOVE_ID(this);)
-  if (log_is_enabled(Trace, cds, unshareable)) {
+  if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm;
-    log_trace(cds, unshareable)("remove: %s", external_name());
+    log_trace(aot, unshareable)("remove: %s", external_name());
   }
+
+  // _secondary_super_cache may be updated by an is_subtype_of() call
+  // while ArchiveBuilder is copying metaspace objects. Let's reset it to
+  // null and let it be repopulated at runtime.
+  set_secondary_super_cache(nullptr);
 
   set_subklass(nullptr);
   set_next_sibling(nullptr);
@@ -551,27 +786,66 @@ void Klass::remove_unshareable_info() {
 
   // Null out class_loader_data because we don't share that yet.
   set_class_loader_data(nullptr);
-  set_is_shared();
+  set_in_aot_cache();
+
+  if (CDSConfig::is_dumping_classic_static_archive()) {
+    // "Classic" static archives are required to have deterministic contents.
+    // The elements in _secondary_supers are addresses in the ArchiveBuilder
+    // output buffer, so they should have deterministic values. If we rehash
+    // _secondary_supers, its elements will appear in a deterministic order.
+    //
+    // Note that the bitmap is guaranteed to be deterministic, regardless of the
+    // actual addresses of the elements in _secondary_supers. So rehashing shouldn't
+    // change it.
+    uintx bitmap = hash_secondary_supers(secondary_supers(), true);
+    assert(bitmap == _secondary_supers_bitmap, "bitmap should not be changed due to rehashing");
+  }
 }
 
 void Klass::remove_java_mirror() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  if (log_is_enabled(Trace, cds, unshareable)) {
+  if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm;
-    log_trace(cds, unshareable)("remove java_mirror: %s", external_name());
+    log_trace(aot, unshareable)("remove java_mirror: %s", external_name());
   }
+
+#if INCLUDE_CDS_JAVA_HEAP
+  _archived_mirror_index = -1;
+  if (CDSConfig::is_dumping_heap()) {
+    Klass* src_k = ArchiveBuilder::current()->get_source_addr(this);
+    oop orig_mirror = src_k->java_mirror();
+    if (orig_mirror == nullptr) {
+      assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
+      if (is_instance_klass()) {
+        assert(InstanceKlass::cast(this)->defined_by_other_loaders(), "sanity");
+      } else {
+        precond(is_objArray_klass());
+        Klass *k = ObjArrayKlass::cast(this)->bottom_klass();
+        precond(k->is_instance_klass());
+        assert(InstanceKlass::cast(k)->defined_by_other_loaders(), "sanity");
+      }
+    } else {
+      oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
+      if (scratch_mirror != nullptr) {
+        _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+      }
+    }
+  }
+#endif
+
   // Just null out the mirror.  The class_loader_data() no longer exists.
   clear_java_mirror_handle();
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
-  assert(is_shared(), "must be set");
-  JFR_ONLY(RESTORE_ID(this);)
-  if (log_is_enabled(Trace, cds, unshareable)) {
+  assert(in_aot_cache(), "must be set");
+  assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
+  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
+  if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();
-    log_trace(cds, unshareable)("restore: %s with class loader: %s", external_name(),
+    log_trace(aot, unshareable)("restore: %s with class loader: %s", external_name(),
       class_loader != nullptr ? class_loader->klass()->external_name() : "boot");
   }
 
@@ -580,11 +854,11 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // modify the CLD list outside a safepoint.
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
-
-    // Add to class loader list first before creating the mirror
-    // (same order as class file parsing)
-    loader_data->add_class(this);
   }
+
+  // Add to class loader list first before creating the mirror
+  // (same order as class file parsing)
+  loader_data->add_class(this);
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
@@ -600,12 +874,12 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     module_entry = ModuleEntryTable::javabase_moduleEntry();
   }
   // Obtain java.lang.Module, if available
-  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module() : (oop)nullptr));
+  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module_oop() : (oop)nullptr));
 
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
-    log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (ArchiveHeapLoader::is_in_use()) {
+    log_debug(aot, mirror)("%s has raw archived mirror", external_name());
+    if (HeapShared::is_archived_heap_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -615,7 +889,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     }
 
     // No archived mirror data
-    log_debug(cds, mirror)("No archived mirror data for %s", external_name());
+    log_debug(aot, mirror)("No archived mirror data for %s", external_name());
     clear_java_mirror_handle();
     this->clear_archived_mirror_index();
   }
@@ -624,7 +898,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == nullptr) {
     ResourceMark rm(THREAD);
-    log_trace(cds, mirror)("Recreate mirror for %s", external_name());
+    log_trace(aot, mirror)("Recreate mirror for %s", external_name());
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, Handle(), CHECK);
   }
 }
@@ -642,22 +916,16 @@ void Klass::clear_archived_mirror_index() {
   }
   _archived_mirror_index = -1;
 }
-
-// No GC barrier
-void Klass::set_archived_java_mirror(int mirror_index) {
-  assert(CDSConfig::is_dumping_heap(), "sanity");
-  _archived_mirror_index = mirror_index;
-}
 #endif // INCLUDE_CDS_JAVA_HEAP
 
 void Klass::check_array_allocation_length(int length, int max_length, TRAPS) {
   if (length > max_length) {
-    if (!THREAD->in_retryable_allocation()) {
+    if (!THREAD->is_in_internal_oome_mark()) {
       report_java_out_of_memory("Requested array size exceeds VM limit");
       JvmtiExport::post_array_size_exhausted();
       THROW_OOP(Universe::out_of_memory_error_array_size());
     } else {
-      THROW_OOP(Universe::out_of_memory_error_retry());
+      THROW_OOP(Universe::out_of_memory_error_java_heap_without_backtrace());
     }
   } else if (length < 0) {
     THROW_MSG(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
@@ -734,8 +1002,6 @@ void Klass::print_on(outputStream* st) const {
   st->cr();
 }
 
-#define BULLET  " - "
-
 // Caller needs ResourceMark
 void Klass::oop_print_on(oop obj, outputStream* st) {
   // print title
@@ -746,11 +1012,14 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
      // print header
      obj->mark().print_on(st);
      st->cr();
+     st->print(" - prototype_header: " INTPTR_FORMAT, _prototype_header.value());
+     st->cr();
   }
 
   // print class
-  st->print(BULLET"klass: ");
+  st->print(" - klass: ");
   obj->klass()->print_value_on(st);
+  st->print(" - flags: "); _misc_flags.print_on(st); st->cr();
   st->cr();
 }
 
@@ -767,7 +1036,8 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-  assert(Metaspace::contains((address)this), "Should be");
+  // Stricter checks for both correct alignment and placement
+  DEBUG_ONLY(CompressedKlassPointers::check_encodable(this));
 
   guarantee(this->is_klass(),"should be klass");
 
@@ -795,6 +1065,42 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
+#ifdef ASSERT
+void Klass::validate_array_description(const ArrayDescription& ad) {
+  if (is_identity_class() || is_array_klass() || is_interface() ||
+      (is_instance_klass() && InstanceKlass::cast(this)->access_flags().is_abstract())) {
+    assert(ad._layout_kind == LayoutKind::REFERENCE, "Cannot support flattening");
+    assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
+  } else {
+    assert(is_value_klass(), "Must be");
+    ValueKlass* vk = ValueKlass::cast(this);
+    switch(ad._layout_kind) {
+      case LayoutKind::BUFFERED:
+        fatal("Invalid layout for an array");
+        break;
+      case LayoutKind::NULL_FREE_ATOMIC_FLAT:
+        assert(vk->has_null_free_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
+        assert(vk->has_null_free_non_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULLABLE_ATOMIC_FLAT:
+        assert(vk->has_nullable_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
+        assert(vk->has_nullable_non_atomic_layout(), "Sanity check)");
+        break;
+      case LayoutKind::REFERENCE:
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  }
+}
+#endif // ASSERT
+
+// Note: this function is called with an address that may or may not be a Klass.
+// The point is not to assert it is but to check if it could be.
 bool Klass::is_valid(Klass* k) {
   if (!is_aligned(k, sizeof(MetaWord))) return false;
   if ((size_t)k < os::min_page_size()) return false;
@@ -956,4 +1262,99 @@ const char* Klass::class_in_module_of_loader(bool use_are, bool include_parent_l
                parent_loader_name_and_id);
 
   return class_description;
+}
+
+class LookupStats : StackObj {
+ private:
+  uint _no_of_samples;
+  uint _worst;
+  uint _worst_count;
+  uint _average;
+  uint _best;
+  uint _best_count;
+ public:
+  LookupStats() : _no_of_samples(0), _worst(0), _worst_count(0), _average(0), _best(INT_MAX), _best_count(0) {}
+
+  ~LookupStats() {
+    assert(_best <= _worst || _no_of_samples == 0, "sanity");
+  }
+
+  void sample(uint value) {
+    ++_no_of_samples;
+    _average += value;
+
+    if (_worst < value) {
+      _worst = value;
+      _worst_count = 1;
+    } else if (_worst == value) {
+      ++_worst_count;
+    }
+
+    if (_best > value) {
+      _best = value;
+      _best_count = 1;
+    } else if (_best == value) {
+      ++_best_count;
+    }
+  }
+
+  void print_on(outputStream* st) const {
+    st->print("best: %2d (%4.1f%%)", _best, (100.0 * _best_count) / _no_of_samples);
+    if (_best_count < _no_of_samples) {
+      st->print("; average: %4.1f; worst: %2d (%4.1f%%)",
+                (1.0 * _average) / _no_of_samples,
+                _worst, (100.0 * _worst_count) / _no_of_samples);
+    }
+  }
+};
+
+static void print_positive_lookup_stats(Array<Klass*>* secondary_supers, uintx bitmap, outputStream* st) {
+  int num_of_supers = secondary_supers->length();
+
+  LookupStats s;
+  for (int i = 0; i < num_of_supers; i++) {
+    Klass* secondary_super = secondary_supers->at(i);
+    int home_slot = Klass::compute_home_slot(secondary_super, bitmap);
+    uint score = 1 + ((i - home_slot) & Klass::SECONDARY_SUPERS_TABLE_MASK);
+    s.sample(score);
+  }
+  st->print("positive_lookup: "); s.print_on(st);
+}
+
+static uint compute_distance_to_nearest_zero(int slot, uintx bitmap) {
+  assert(~bitmap != 0, "no zeroes");
+  uintx start = rotate_right(bitmap, slot);
+  return count_trailing_zeros(~start);
+}
+
+static void print_negative_lookup_stats(uintx bitmap, outputStream* st) {
+  LookupStats s;
+  for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+    uint score = compute_distance_to_nearest_zero(slot, bitmap);
+    s.sample(score);
+  }
+  st->print("negative_lookup: "); s.print_on(st);
+}
+
+void Klass::print_secondary_supers_on(outputStream* st) const {
+  if (secondary_supers() != nullptr) {
+    st->print("  - "); st->print("%d elements;", _secondary_supers->length());
+    st->print_cr(" bitmap: " UINTX_FORMAT_X_0, _secondary_supers_bitmap);
+    if (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
+        _secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
+      st->print("  - "); print_positive_lookup_stats(secondary_supers(),
+                                                     _secondary_supers_bitmap, st); st->cr();
+      st->print("  - "); print_negative_lookup_stats(_secondary_supers_bitmap, st); st->cr();
+    }
+  } else {
+    st->print("null");
+  }
+}
+
+void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg) {
+  ResourceMark rm;
+  super->print();
+  sub->print();
+  fatal("%s: %s implements %s: linear_search: %d; table_lookup: %d",
+        msg, sub->external_name(), super->external_name(), linear_result, table_result);
 }

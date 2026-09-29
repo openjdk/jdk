@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,12 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.MembershipKey;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static jdk.internal.util.Exceptions.formatMsg;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 
 /**
  * A multicast datagram socket based on a datagram channel.
@@ -167,30 +165,19 @@ public class DatagramSocketAdaptor
 
     @Override
     public SocketAddress getLocalSocketAddress() {
-        InetSocketAddress local = dc.localAddress();
-        if (local == null || isClosed())
+        if (isClosed()) {
             return null;
-
-        InetAddress addr = local.getAddress();
-        if (addr.isAnyLocalAddress())
-            return local;
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkConnect(addr.getHostAddress(), -1);
-            } catch (SecurityException x) {
-                return new InetSocketAddress(local.getPort());
-            }
+        } else {
+            return dc.localAddress();
         }
-        return local;
     }
 
     @Override
     public void send(DatagramPacket p) throws IOException {
         try {
-            dc.blockingSend(p);
+            synchronized (p) {
+                dc.blockingSend(p);
+            }
         } catch (AlreadyConnectedException e) {
             throw new IllegalArgumentException("Connected and packet address differ");
         } catch (ClosedChannelException e) {
@@ -201,7 +188,9 @@ public class DatagramSocketAdaptor
     @Override
     public void receive(DatagramPacket p) throws IOException {
         try {
-            dc.blockingReceive(p, MILLISECONDS.toNanos(timeout));
+            synchronized (p) {
+                dc.blockingReceive(p, MILLISECONDS.toNanos(timeout));
+            }
         } catch (SocketTimeoutException | ClosedByInterruptException e) {
             throw e;
         } catch (InterruptedIOException e) {
@@ -223,17 +212,7 @@ public class DatagramSocketAdaptor
         InetSocketAddress local = dc.localAddress();
         if (local == null)
             local = new InetSocketAddress(0);
-        InetAddress result = local.getAddress();
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkConnect(result.getHostAddress(), -1);
-            } catch (SecurityException x) {
-                return new InetSocketAddress(0).getAddress();
-            }
-        }
-        return result;
+        return local.getAddress();
     }
 
     @Override
@@ -392,44 +371,19 @@ public class DatagramSocketAdaptor
 
     // -- java.net.MulticastSocket --
 
-    // used to coordinate changing TTL with the deprecated send method
-    private final ReentrantLock sendLock = new ReentrantLock();
-
     // cached outgoing interface (for use by setInterface/getInterface)
     private final Object outgoingInterfaceLock = new Object();
     private NetworkInterface outgoingNetworkInterface;
     private InetAddress outgoingInetAddress;
 
     @Override
-    @Deprecated
-    public void setTTL(byte ttl) throws IOException {
-        setTimeToLive(Byte.toUnsignedInt(ttl));
-    }
-
-    @Override
     public void setTimeToLive(int ttl) throws IOException {
-        sendLock.lock();
-        try {
-            setIntOption(StandardSocketOptions.IP_MULTICAST_TTL, ttl);
-        } finally {
-            sendLock.unlock();
-        }
-    }
-
-    @Override
-    @Deprecated
-    public byte getTTL() throws IOException {
-        return (byte) getTimeToLive();
+        setIntOption(StandardSocketOptions.IP_MULTICAST_TTL, ttl);
     }
 
     @Override
     public int getTimeToLive() throws IOException {
-        sendLock.lock();
-        try {
-            return getIntOption(StandardSocketOptions.IP_MULTICAST_TTL);
-        } finally {
-            sendLock.unlock();
-        }
+        return getIntOption(StandardSocketOptions.IP_MULTICAST_TTL);
     }
 
     @Override
@@ -484,11 +438,6 @@ public class DatagramSocketAdaptor
         synchronized (this) {
             MembershipKey key = dc.findMembership(group, ni);
             if (key != null) {
-                // already a member but need to check permission anyway
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null)
-                    sm.checkMulticast(group);
                 throw new SocketException("Already a member of group");
             }
             dc.join(group, ni);  // checks permission
@@ -501,10 +450,6 @@ public class DatagramSocketAdaptor
         NetworkInterface ni = (netIf != null) ? netIf : defaultNetworkInterface();
         if (isClosed())
             throw new SocketException("Socket is closed");
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkMulticast(group);
         synchronized (this) {
             MembershipKey key = dc.findMembership(group, ni);
             if (key == null)
@@ -521,7 +466,8 @@ public class DatagramSocketAdaptor
         NetworkInterface ni = NetworkInterface.getByInetAddress(inf);
         if (ni == null) {
             String address = inf.getHostAddress();
-            throw new SocketException("No network interface with address " + address);
+            throw new SocketException(formatMsg("No network interface found with address %s",
+                                                filterNonSocketInfo(address)));
         }
         synchronized (outgoingInterfaceLock) {
             // set interface and update cached values
@@ -541,12 +487,7 @@ public class DatagramSocketAdaptor
                     return outgoingInetAddress;
                 } else {
                     // network interface has changed so update cached values
-                    PrivilegedAction<InetAddress> pa;
-                    pa = () -> ni.inetAddresses().findFirst().orElse(null);
-                    @SuppressWarnings("removal")
-                    InetAddress ia = AccessController.doPrivileged(pa);
-                    if (ia == null)
-                        throw new SocketException("Network interface has no IP address");
+                    InetAddress ia = ni.inetAddresses().findFirst().orElse(null);
                     outgoingNetworkInterface = ni;
                     outgoingInetAddress = ia;
                     return ia;
@@ -589,23 +530,6 @@ public class DatagramSocketAdaptor
     public boolean getLoopbackMode() throws SocketException {
         boolean enabled = getBooleanOption(StandardSocketOptions.IP_MULTICAST_LOOP);
         return !enabled;
-    }
-
-    @Override
-    @Deprecated
-    public void send(DatagramPacket p, byte ttl) throws IOException {
-        sendLock.lock();
-        try {
-            int oldValue = getTimeToLive();
-            try {
-                setTTL(ttl);
-                send(p);
-            } finally {
-                setTimeToLive(oldValue);
-            }
-        } finally {
-            sendLock.unlock();
-        }
     }
 
     /**
@@ -660,10 +584,7 @@ public class DatagramSocketAdaptor
         static final MethodHandle CONSTRUCTOR;
         static {
             try {
-                PrivilegedExceptionAction<Lookup> pa = () ->
-                    MethodHandles.privateLookupIn(NetworkInterface.class, MethodHandles.lookup());
-                @SuppressWarnings("removal")
-                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
+                Lookup l = MethodHandles.privateLookupIn(NetworkInterface.class, MethodHandles.lookup());
                 MethodType methodType = MethodType.methodType(NetworkInterface.class);
                 GET_DEFAULT = l.findStatic(NetworkInterface.class, "getDefault", methodType);
                 methodType = MethodType.methodType(void.class, String.class, int.class, InetAddress[].class);
@@ -703,10 +624,7 @@ public class DatagramSocketAdaptor
         private static final SocketAddress NO_DELEGATE;
         static {
             try {
-                PrivilegedExceptionAction<Lookup> pa = () ->
-                    MethodHandles.privateLookupIn(DatagramSocket.class, MethodHandles.lookup());
-                @SuppressWarnings("removal")
-                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
+                Lookup l = MethodHandles.privateLookupIn(DatagramSocket.class, MethodHandles.lookup());
                 var handle = l.findStaticVarHandle(DatagramSocket.class, "NO_DELEGATE", SocketAddress.class);
                 NO_DELEGATE = (SocketAddress) handle.get();
             } catch (Exception e) {

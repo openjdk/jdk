@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,11 @@
  * @summary Test primitive box caches integrity in various scenarios (IntegerCache etc)
  * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @compile CheckIntegerCacheApp.java
+ * @compile --add-exports java.base/jdk.internal.misc=ALL-UNNAMED CheckIntegerCacheApp.java
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boxCache.jar CheckIntegerCacheApp
- * @run driver ArchivedIntegerCacheTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar ArchivedIntegerCacheTest
  */
 
 import java.nio.file.Files;
@@ -38,8 +40,18 @@ import java.nio.file.Paths;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.whitebox.WhiteBox;
 
 public class ArchivedIntegerCacheTest {
+    private static WhiteBox WB = WhiteBox.getWhiteBox();
+
+    public static String[] mixArgs(String... args) {
+        String[] newArgs = new String[args.length + 2];
+        newArgs[0] = "--add-exports";
+        newArgs[1] = "java.base/jdk.internal.misc=ALL-UNNAMED";
+        System.arraycopy(args, 0, newArgs, 2, args.length);
+        return newArgs;
+    }
 
     public static void main(String[] args) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("boxCache.jar");
@@ -51,15 +63,15 @@ public class ArchivedIntegerCacheTest {
         // Dump default archive
         //
         OutputAnalyzer output = TestCommon.dump(appJar,
-                TestCommon.list("CheckIntegerCacheApp"));
+                TestCommon.list("CheckIntegerCacheApp"),
+                mixArgs());
         TestCommon.checkDump(output);
 
         // Test case 1)
         // - Default options
         System.out.println("----------------------- Test case 1 ----------------------");
         output = TestCommon.exec(appJar,
-                "CheckIntegerCacheApp",
-                "127");
+                mixArgs("CheckIntegerCacheApp", "127"));
         TestCommon.checkExec(output);
 
         // Test case 2)
@@ -67,9 +79,8 @@ public class ArchivedIntegerCacheTest {
         // - Larger -XX:AutoBoxCacheMax
         System.out.println("----------------------- Test case 2 ----------------------");
         output = TestCommon.exec(appJar,
-                "-XX:AutoBoxCacheMax=20000",
-                "CheckIntegerCacheApp",
-                "20000");
+                mixArgs("-XX:AutoBoxCacheMax=20000",
+                        "CheckIntegerCacheApp", "20000"));
         TestCommon.checkExec(output);
 
         //
@@ -77,7 +88,7 @@ public class ArchivedIntegerCacheTest {
         //
         output = TestCommon.dump(appJar,
                 TestCommon.list("CheckIntegerCacheApp"),
-                "-XX:AutoBoxCacheMax=20000");
+                mixArgs("-XX:AutoBoxCacheMax=20000"));
         TestCommon.checkDump(output);
 
         // Test case 3)
@@ -85,10 +96,8 @@ public class ArchivedIntegerCacheTest {
         // - Default options
         System.out.println("----------------------- Test case 3 ----------------------");
         output = TestCommon.exec(appJar,
-                "--module-path",
-                moduleDir.toString(),
-                "CheckIntegerCacheApp",
-                "127");
+                mixArgs("--module-path", moduleDir.toString(),
+                        "CheckIntegerCacheApp", "127"));
         TestCommon.checkExec(output);
 
 
@@ -97,11 +106,9 @@ public class ArchivedIntegerCacheTest {
         // - Matching options
         System.out.println("----------------------- Test case 4 ----------------------");
         output = TestCommon.exec(appJar,
-                "--module-path",
-                moduleDir.toString(),
-                "-XX:AutoBoxCacheMax=20000",
-                "CheckIntegerCacheApp",
-                "20000");
+                mixArgs("--module-path", moduleDir.toString(),
+                        "-XX:AutoBoxCacheMax=20000",
+                        "CheckIntegerCacheApp", "20000"));
         TestCommon.checkExec(output);
 
         // Test case 5)
@@ -109,24 +116,24 @@ public class ArchivedIntegerCacheTest {
         // - Larger requested cache
         System.out.println("----------------------- Test case 5 ----------------------");
         output = TestCommon.exec(appJar,
-                "--module-path",
-                moduleDir.toString(),
-                "-XX:AutoBoxCacheMax=30000",
-                "CheckIntegerCacheApp",
-                "30000");
+                mixArgs("--module-path", moduleDir.toString(),
+                        "-XX:AutoBoxCacheMax=30000",
+                        "CheckIntegerCacheApp", "30000"));
         TestCommon.checkExec(output);
 
         // Test case 6)
         // - Cache is too large to archive
         output = TestCommon.dump(appJar,
                 TestCommon.list("CheckIntegerCacheApp"),
-                "-XX:AutoBoxCacheMax=2000000",
-                "-Xmx1g",
-                "-XX:NewSize=1g",
-                "-Xlog:cds+heap=info",
-                "-Xlog:gc+region+cds",
-                "-Xlog:gc+region=trace");
-        TestCommon.checkDump(output,
-            "Cannot archive the sub-graph referenced from [Ljava.lang.Integer; object");
+                mixArgs("-XX:AutoBoxCacheMax=2000000",
+                        "-Xmx1g",
+                        "-XX:NewSize=1g",
+                        "-Xlog:cds+heap=info",
+                        "-Xlog:gc+region+cds",
+                        "-Xlog:gc+region=trace"));
+        if (WB.canWriteMappedJavaHeapArchive()) {
+            // The mapping AOT heap archiving mechanism is unable to cache larger objects.
+            TestCommon.checkDump(output, "Cannot archive the sub-graph referenced from [Ljava.lang.Integer; object");
+        }
     }
 }

@@ -52,7 +52,7 @@ public class TestHeuristicsUnlock {
 
     private static void testWith(String h, Mode mode) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
@@ -60,7 +60,6 @@ public class TestHeuristicsUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                     output.shouldHaveExitValue(0);
@@ -73,7 +72,7 @@ public class TestHeuristicsUnlock {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
@@ -81,7 +80,6 @@ public class TestHeuristicsUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                 case DIAGNOSTIC:
@@ -94,7 +92,7 @@ public class TestHeuristicsUnlock {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -102,7 +100,6 @@ public class TestHeuristicsUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                 case EXPERIMENTAL:

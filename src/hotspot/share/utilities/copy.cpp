@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "utilities/copy.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/byteswap.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 
 
 // Copy bytes; larger units are filled atomically if everything is aligned.
@@ -54,6 +53,76 @@ void Copy::conjoint_memory_atomic(const void* from, void* to, size_t size) {
   }
 }
 
+#define COPY_ALIGNED_SEGMENT(t)                                                \
+  if (bits % sizeof(t) == 0) {                                                 \
+    size_t segment = remaining_bytes / sizeof(t);                              \
+    if (segment > 0) {                                                         \
+      Copy::conjoint_##t##s_atomic((const t*)cursor_from, (t*)cursor_to,       \
+                                   segment);                                   \
+      remaining_bytes -= segment * sizeof(t);                                  \
+      cursor_from = (void*)(((char*)cursor_from) + segment * sizeof(t));       \
+      cursor_to = (void*)(((char*)cursor_to) + segment * sizeof(t));           \
+    }                                                                          \
+  }
+
+void Copy::copy_value_content(const void* from, void* to, size_t size) {
+  // The alignment of the containing object must satisfy the alignment of all
+  // its fields, as such we can safely copy atomically starting at the largest
+  // atomic size which the payloads are aligned to. Any trailing payload smaller
+  // than this atomic size must have a lower alignment requirement. This
+  // property holds recursively down to the smallest atomic size.
+  const uintptr_t bits = (uintptr_t)from | (uintptr_t)to;
+  const void* cursor_from = from;
+  void* cursor_to = to;
+  size_t remaining_bytes = size;
+  COPY_ALIGNED_SEGMENT(jlong)
+  COPY_ALIGNED_SEGMENT(jint)
+  COPY_ALIGNED_SEGMENT(jshort)
+  if (remaining_bytes > 0) {
+    Copy::conjoint_jbytes(cursor_from, cursor_to, remaining_bytes);
+  }
+}
+
+#undef COPY_ALIGNED_SEGMENT
+
+template <typename T>
+static void clear_value_content_helper(uintptr_t* to_cursor_addr, size_t* remaining_bytes_addr) {
+  uintptr_t& to_cursor = *to_cursor_addr;
+  size_t& remaining_bytes = *remaining_bytes_addr;
+
+  if (to_cursor % sizeof(T) == 0 && remaining_bytes >= sizeof(T)) {
+    const size_t copy_bytes = align_down(remaining_bytes, sizeof(T));
+    Copy::fill_to_memory_atomic((void*)to_cursor, copy_bytes);
+    to_cursor += copy_bytes;
+    remaining_bytes -= copy_bytes;
+  }
+}
+
+void Copy::clear_value_content(void* to, size_t size) {
+  // The alignment of the containing object must satisfy the alignment of all
+  // its fields, as such we can safely copy atomically starting at the largest
+  // atomic size which the payloads are aligned to. Any trailing payload smaller
+  // than this atomic size must have a lower alignment requirement. This
+  // property holds recursively down to the smallest atomic size.
+  uintptr_t to_cursor = uintptr_t(to);
+  size_t remaining_bytes = size;
+
+  // Clear jlong alignend segments
+  clear_value_content_helper<jlong>(&to_cursor, &remaining_bytes);
+
+  // Clear jint alignend segments
+  clear_value_content_helper<jint>(&to_cursor, &remaining_bytes);
+
+  // Clear jshort alignend segments
+  clear_value_content_helper<jshort>(&to_cursor, &remaining_bytes);
+
+  // Clear remaining bytes
+  clear_value_content_helper<jbyte>(&to_cursor, &remaining_bytes);
+
+  postcond(remaining_bytes == 0);
+  postcond(to_cursor - size == uintptr_t(to));
+}
+
 class CopySwap : AllStatic {
 public:
   /**
@@ -71,9 +140,9 @@ public:
     assert(src != nullptr, "address must not be null");
     assert(dst != nullptr, "address must not be null");
     assert(elem_size == 2 || elem_size == 4 || elem_size == 8,
-           "incorrect element size: " SIZE_FORMAT, elem_size);
+           "incorrect element size: %zu", elem_size);
     assert(is_aligned(byte_count, elem_size),
-           "byte_count " SIZE_FORMAT " must be multiple of element size " SIZE_FORMAT, byte_count, elem_size);
+           "byte_count %zu must be multiple of element size %zu", byte_count, elem_size);
 
     address src_end = (address)src + byte_count;
 
@@ -196,7 +265,7 @@ private:
     case 2: do_conjoint_swap<uint16_t,D,swap>(src, dst, byte_count); break;
     case 4: do_conjoint_swap<uint32_t,D,swap>(src, dst, byte_count); break;
     case 8: do_conjoint_swap<uint64_t,D,swap>(src, dst, byte_count); break;
-    default: guarantee(false, "do_conjoint_swap: Invalid elem_size " SIZE_FORMAT "\n", elem_size);
+    default: guarantee(false, "do_conjoint_swap: Invalid elem_size %zu\n", elem_size);
     }
   }
 };
@@ -211,38 +280,49 @@ void Copy::conjoint_swap(const void* src, void* dst, size_t byte_count, size_t e
 
 // Fill bytes; larger units are filled atomically if everything is aligned.
 void Copy::fill_to_memory_atomic(void* to, size_t size, jubyte value) {
-  address dst = (address) to;
-  uintptr_t bits = (uintptr_t) to | (uintptr_t) size;
+  address dst = (address)to;
+  uintptr_t bits = (uintptr_t)to | (uintptr_t)size;
   if (bits % sizeof(jlong) == 0) {
-    jlong fill = (julong)( (jubyte)value ); // zero-extend
+    jlong fill = (julong)((jubyte)value);  // zero-extend
     if (fill != 0) {
       fill += fill << 8;
       fill += fill << 16;
       fill += fill << 32;
     }
-    //Copy::fill_to_jlongs_atomic((jlong*) dst, size / sizeof(jlong));
+    // Copy::fill_to_jlongs_atomic((jlong*) dst, size / sizeof(jlong));
     for (uintptr_t off = 0; off < size; off += sizeof(jlong)) {
       *(jlong*)(dst + off) = fill;
     }
   } else if (bits % sizeof(jint) == 0) {
-    jint fill = (juint)( (jubyte)value ); // zero-extend
+    jint fill = (juint)((jubyte)value);  // zero-extend
     if (fill != 0) {
       fill += fill << 8;
       fill += fill << 16;
     }
-    //Copy::fill_to_jints_atomic((jint*) dst, size / sizeof(jint));
+    // Copy::fill_to_jints_atomic((jint*) dst, size / sizeof(jint));
     for (uintptr_t off = 0; off < size; off += sizeof(jint)) {
       *(jint*)(dst + off) = fill;
     }
   } else if (bits % sizeof(jshort) == 0) {
-    jshort fill = (jushort)( (jubyte)value ); // zero-extend
+    jshort fill = (jushort)((jubyte)value);  // zero-extend
     fill += (jshort)(fill << 8);
-    //Copy::fill_to_jshorts_atomic((jshort*) dst, size / sizeof(jshort));
+    // Copy::fill_to_jshorts_atomic((jshort*) dst, size / sizeof(jshort));
     for (uintptr_t off = 0; off < size; off += sizeof(jshort)) {
       *(jshort*)(dst + off) = fill;
     }
   } else {
     // Not aligned, so no need to be atomic.
+#ifdef MUSL_LIBC
+    // This code is used by Unsafe and may hit the next page after truncation
+    // of mapped memory. Therefore, we use volatile to prevent compilers from
+    // replacing the loop by memset which may not trigger SIGBUS as needed
+    // (observed on Alpine Linux x86_64)
+    jbyte fill = value;
+    for (uintptr_t off = 0; off < size; off += sizeof(jbyte)) {
+      *(volatile jbyte*)(dst + off) = fill;
+    }
+#else
     Copy::fill_to_bytes(dst, size, value);
+#endif
   }
 }

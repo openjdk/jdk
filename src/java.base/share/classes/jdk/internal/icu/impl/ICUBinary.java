@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import jdk.internal.icu.util.VersionInfo;
 
@@ -81,11 +79,7 @@ public final class ICUBinary {
     public static ByteBuffer getRequiredData(String itemPath) {
         final Class<ICUBinary> root = ICUBinary.class;
 
-        try (@SuppressWarnings("removal") InputStream is = AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
-                public InputStream run() {
-                    return root.getResourceAsStream(itemPath);
-                }
-            })) {
+        try (InputStream is = root.getResourceAsStream(itemPath)) {
 
             // is.available() may return 0, or 1, or the total number of bytes in the stream,
             // or some other number.

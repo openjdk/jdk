@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class SimpleScopeDesc : public StackObj {
   int _bci;
 
  public:
-  SimpleScopeDesc(CompiledMethod* code, address pc) {
+  SimpleScopeDesc(nmethod* code, address pc) {
     PcDesc* pc_desc = code->pc_desc_at(pc);
     assert(pc_desc != nullptr, "Must be able to find matching PcDesc");
     // save this here so we only have to look up the PcDesc once
@@ -61,7 +61,7 @@ class SimpleScopeDesc : public StackObj {
 class ScopeDesc : public ResourceObj {
  public:
   // Constructor
-  ScopeDesc(const CompiledMethod* code, PcDesc* pd, bool ignore_objects = false);
+  ScopeDesc(const nmethod* code, PcDesc* pd, bool ignore_objects = false);
 
   // Direct access to scope
   ScopeDesc* at_offset(int decode_offset) { return new ScopeDesc(this, decode_offset); }
@@ -72,6 +72,7 @@ class ScopeDesc : public ResourceObj {
   bool should_reexecute() const { return _reexecute; }
   bool rethrow_exception() const { return _rethrow_exception; }
   bool return_oop()       const { return _return_oop; }
+  bool return_scalarized() const { return _return_scalarized; }
   // Returns true if one or more NoEscape or ArgEscape objects exist in
   // any of the scopes at compiled pc.
   bool has_ea_local_in_scope() const { return _has_ea_local_in_scope; }
@@ -105,11 +106,12 @@ class ScopeDesc : public ResourceObj {
   bool          _reexecute;
   bool          _rethrow_exception;
   bool          _return_oop;
+  bool          _return_scalarized;
   bool          _has_ea_local_in_scope;       // One or more NoEscape or ArgEscape objects exist in
                                               // any of the scopes at compiled pc.
   bool          _arg_escape;                  // Compiled Java call in youngest scope passes ArgEscape
 
-  // Decoding offsets
+ // Decoding offsets
   int _decode_offset;
   int _sender_decode_offset;
   int _locals_decode_offset;
@@ -120,7 +122,7 @@ class ScopeDesc : public ResourceObj {
   GrowableArray<ScopeValue*>* _objects;
 
   // Nmethod information
-  const CompiledMethod* _code;
+  const nmethod* _code;
 
   // Decoding operations
   void decode_body();

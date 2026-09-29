@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Alphabet LLC. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,6 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask
- * @enablePreview
  * @run main BadMethodParameter
  */
 
@@ -98,9 +98,7 @@ public class BadMethodParameter extends TestRunner {
         Path classDir = getClassDir();
         new JavacTask(tb)
                 .classpath(classes, classDir)
-                .options("--enable-preview",
-                         "-source", String.valueOf(Runtime.version().feature()),
-                         "-verbose", "-parameters", "-processor", P.class.getName())
+                .options("-verbose", "-parameters", "-processor", P.class.getName())
                 .classes(P.class.getName())
                 .outdir(classes)
                 .run(Task.Expect.SUCCESS);
@@ -148,7 +146,7 @@ public class BadMethodParameter extends TestRunner {
                 };
 
         ClassTransform classTransform = ClassTransform.transformingMethods(methodTransform);
-        bytes = cf.transform(classModel, classTransform);
+        bytes = cf.transformClass(classModel, classTransform);
         Files.write(path, bytes);
     }
 }

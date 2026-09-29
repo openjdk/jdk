@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.cpu.features ~= ".*aes.*" & !vm.graal.enabled
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=600 -Xbootclasspath/a:.
@@ -72,11 +71,11 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      * @throws Throwable
      */
     private void testUseAES() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                 prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
                         .USE_AES, true)));
         final String errorMessage = "Case testUseAES failed";
-        if (Platform.isServer() && !Platform.isEmulatedClient() && isTieredLevelGreaterThan(3)) {
+        if (Platform.isServer() && isTieredLevelGreaterThan(3)) {
             verifyOutput(new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
                     AESIntrinsicsBase.AES_INTRINSIC}, null, errorMessage,
                     outputAnalyzer);
@@ -103,7 +102,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      */
     private void testUseAESUseSSE2() throws Throwable {
         if (Platform.isX86() || Platform.isX64()) {
-            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                     prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
                                     .USE_AES_INTRINSICS, true),
                             prepareNumericFlag(AESIntrinsicsBase.USE_SSE, 2)));
@@ -132,7 +131,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      */
     private void testNoUseAESUseSSE2() throws Throwable {
         if (Platform.isX86() || Platform.isX64()) {
-            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                     prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
                                     .USE_AES, false),
                             prepareNumericFlag(AESIntrinsicsBase.USE_SSE, 2)));
@@ -158,7 +157,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      * @throws Throwable
      */
     private void testNoUseAES() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                 prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
                         .USE_AES, false)));
         final String errorMessage = "Case testNoUseAES failed";
@@ -180,7 +179,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      * @throws Throwable
      */
     private void testNoUseAESIntrinsic() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                 prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
                         .USE_AES_INTRINSICS, false)));
         final String errorMessage = "Case testNoUseAESIntrinsic failed";

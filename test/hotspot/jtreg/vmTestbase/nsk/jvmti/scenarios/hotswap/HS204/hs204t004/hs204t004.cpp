@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 #include <stdio.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <jni.h>
 #include <string.h>
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
 
 /*
 1. Enable event ClassPrepare.
@@ -55,11 +55,11 @@ callbackClassLoad(jvmtiEnv *jvmti_env,
     redefineNumber=0;
     jvmti->GetClassSignature(klass, &className, &generic);
     if (strcmp(className, CLASS_LOADER_CLASS_NAME) == 0) {
-        if (klass != NULL) {
+        if (klass != nullptr) {
             jmethodID method;
             cloader = klass;
             method = jni->GetMethodID(klass,METHOD_NAME,SIGNATURE);
-            if (method != NULL) {
+            if (method != nullptr) {
                 jlocation start;
                 jlocation end;
                 jvmtiError err ;
@@ -158,8 +158,8 @@ jint   Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
               nsk_printf(" Agent:: Error occured while setting event call back \n");
               return JNI_ERR;
           }
-          nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_LOAD, NULL);
-          nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_BREAKPOINT, NULL);
+          nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_LOAD, nullptr);
+          nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_BREAKPOINT, nullptr);
       }
       return JNI_OK;
   }

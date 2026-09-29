@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,29 @@
 //
 // Declare Bsd specific flags. They are not available on other platforms.
 //
+#ifdef AARCH64
 #define RUNTIME_OS_FLAGS(develop,                                       \
                          develop_pd,                                    \
                          product,                                       \
                          product_pd,                                    \
-                         notproduct,                                    \
                          range,                                         \
                          constraint)                                    \
                                                                         \
-  AARCH64_ONLY(develop(bool, AssertWXAtThreadSync, false,                \
-          "Conservatively check W^X thread state at possible safepoint" \
-          "or handshake"))
+  develop(bool, TraceWXHealing, false,                                  \
+          "track occurrences of W^X mode healing")                      \
+  develop(bool, UseOldWX, false,                                        \
+          "Choose old W^X implementation.")                             \
+  product(bool, StressWXHealing, false, DIAGNOSTIC,                     \
+          "Stress W xor X healing on MacOS")
+
+#else
+#define RUNTIME_OS_FLAGS(develop,                                       \
+                         develop_pd,                                    \
+                         product,                                       \
+                         product_pd,                                    \
+                         range,                                         \
+                         constraint)
+#endif
 
 // end of RUNTIME_OS_FLAGS
 

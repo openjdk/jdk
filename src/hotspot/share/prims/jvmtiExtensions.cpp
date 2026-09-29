@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiExtensions.hpp"
@@ -30,6 +29,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 
 // the list of extension functions
 GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
@@ -78,7 +78,7 @@ static jvmtiError JNICALL GetVirtualThread(const jvmtiEnv* env, ...) {
   va_end(ap);
 
   ThreadInVMfromNative tiv(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
   ThreadsListHandle tlh(current_thread);
 
   jvmtiError err;
@@ -130,8 +130,13 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   thread_ptr = va_arg(ap, jthread*);
   va_end(ap);
 
+  if (thread_ptr == nullptr) {
+    return JVMTI_ERROR_NULL_POINTER;
+  }
+
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
   ThreadInVMfromNative tiv(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
 
   ThreadsListHandle tlh(current_thread);
   JavaThread* java_thread;
@@ -155,12 +160,11 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   if (!java_lang_VirtualThread::is_instance(vthread_oop)) {
     return JVMTI_ERROR_INVALID_THREAD;
   }
-  if (thread_ptr == nullptr) {
-    return JVMTI_ERROR_NULL_POINTER;
-  }
-  VirtualThreadGetThreadClosure op(Handle(current_thread, vthread_oop), thread_ptr);
-  Handshake::execute(&op, &tlh, current_thread);
-  return op.result();
+
+  oop carrier_thread = java_lang_VirtualThread::carrier_thread(vthread_oop);
+  *thread_ptr = (jthread)JNIHandles::make_local(current_thread, carrier_thread);
+
+  return JVMTI_ERROR_NONE;
 }
 
 // register extension functions and events. In this implementation we
@@ -194,7 +198,7 @@ void JvmtiExtensions::register_extensions() {
   static jvmtiExtensionFunctionInfo ext_func0 = {
     (jvmtiExtensionFunction)IsClassUnloadingEnabled,
     (char*)"com.sun.hotspot.functions.IsClassUnloadingEnabled",
-    (char*)"Tell if class unloading is enabled (-noclassgc)",
+    (char*)"Tell if class unloading is enabled (-Xnoclassgc)",
     sizeof(func_params0)/sizeof(func_params0[0]),
     func_params0,
     0,              // no non-universal errors

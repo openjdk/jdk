@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.jfr.internal.RemoveFields;
+import jdk.jfr.internal.util.Bytecode.FieldDesc;
 /**
  * Class that describes fields that was not directly named
  * in the event definition.
@@ -37,15 +38,17 @@ public final class ImplicitFields {
     public static final String DURATION = "duration";
     public static final String EVENT_THREAD = "eventThread";
     public static final String STACK_TRACE = "stackTrace";
+    public static final FieldDesc FIELD_DURATION = FieldDesc.of(long.class, DURATION);
+    public static final FieldDesc FIELD_START_TIME = FieldDesc.of(long.class, START_TIME);
 
     private final List<String> fields = new ArrayList<>(4);
 
     public ImplicitFields(Class<?> eventClass) {
-        fields.add(START_TIME); // for completeness, not really needed
+        fields.add(START_TIME);
         fields.add(DURATION);
         fields.add(STACK_TRACE);
         fields.add(EVENT_THREAD);
-        for (Class<?> c = eventClass; jdk.internal.event.Event.class != c; c = c.getSuperclass()) {
+        for (Class<?> c = eventClass; !Utils.isEventBaseClass(c); c = c.getSuperclass()) {
             RemoveFields rf = c.getAnnotation(RemoveFields.class);
             if (rf != null) {
                 for (String value : rf.value()) {

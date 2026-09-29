@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,27 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import java.lang.classfile.*;
-import java.lang.classfile.constantpool.Utf8Entry;
-
 public final class FieldImpl
         extends AbstractElement
-        implements FieldModel {
+        implements FieldModel, WritableField {
 
-    private final ClassReader reader;
+    private final ClassReaderImpl reader;
     private final int startPos, endPos, attributesPos;
     private List<Attribute<?>> attributes;
 
-    public FieldImpl(ClassReader reader, int startPos, int endPos, int attributesPos) {
+    public FieldImpl(ClassReaderImpl reader, int startPos, int endPos, int attributesPos) {
         this.reader = reader;
         this.startPos = startPos;
         this.endPos = endPos;
@@ -48,7 +53,7 @@ public final class FieldImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofField(reader.readU2(startPos));
+        return new AccessFlagsImpl(AccessFlag.Location.FIELD, fieldFlags(), reader.classFileVersion());
     }
 
     @Override
@@ -61,12 +66,17 @@ public final class FieldImpl
 
     @Override
     public Utf8Entry fieldName() {
-        return reader.readUtf8Entry(startPos + 2);
+        return reader.readEntry(startPos + 2, Utf8Entry.class);
     }
 
     @Override
     public Utf8Entry fieldType() {
-        return reader.readUtf8Entry(startPos + 4);
+        return reader.readEntry(startPos + 4, Utf8Entry.class);
+    }
+
+    @Override
+    public int fieldFlags() {
+        return reader.readU2(startPos);
     }
 
     @Override
@@ -78,15 +88,15 @@ public final class FieldImpl
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         if (buf.canWriteDirect(reader)) {
             reader.copyBytesTo(buf, startPos, endPos - startPos);
         }
         else {
-            buf.writeU2(flags().flagsMask());
-            buf.writeIndex(fieldName());
-            buf.writeIndex(fieldType());
-            buf.writeList(attributes());
+            buf.writeU2U2U2(flags().flagsMask(),
+                    buf.cpIndex(fieldName()),
+                    buf.cpIndex(fieldType()));
+            Util.writeAttributes(buf, attributes());
         }
     }
 
@@ -98,17 +108,12 @@ public final class FieldImpl
             builder.withField(this);
         }
         else {
-            builder.withField(fieldName(), fieldType(), new Consumer<>() {
-                @Override
-                public void accept(FieldBuilder fb) {
-                    FieldImpl.this.forEachElement(fb);
-                }
-            });
+            builder.withField(fieldName(), fieldType(), Util.writingAll(this));
         }
     }
 
     @Override
-    public void forEachElement(Consumer<FieldElement> consumer) {
+    public void forEach(Consumer<? super FieldElement> consumer) {
         consumer.accept(flags());
         for (Attribute<?> attr : attributes()) {
             if (attr instanceof FieldElement e)

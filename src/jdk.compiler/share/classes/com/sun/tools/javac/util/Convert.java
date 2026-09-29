@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,10 +224,8 @@ public class Convert {
     public static int utfNumChars(byte[] buf, int off, int len) {
         int numChars = 0;
         while (len-- > 0) {
-            int byte1 = buf[off++];
-            if (byte1 < 0)
-                len -= ((byte1 & 0xe0) == 0xc0) ? 1 : 2;
-            numChars++;
+            if ((buf[off++] & 0xc0) != 0x80)
+                numChars++;
         }
         return numChars;
     }
@@ -298,7 +296,7 @@ public class Convert {
     public static String quote(String s) {
         StringBuilder buf = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
-            buf.append(quote(s.charAt(i)));
+            buf.append(quote(s.charAt(i), false));
         }
         return buf.toString();
     }
@@ -307,15 +305,21 @@ public class Convert {
      * Escapes a character if it has an escape sequence or is
      * non-printable ASCII.  Leaves non-ASCII characters alone.
      */
-    public static String quote(char ch) {
+    public static String quote(char ch, boolean charContext) {
+        /*
+         * In a char context, single quote (') must be escaped and
+         * double quote (") need not be escaped. In a non-char
+         * context, in other words a string context, the reverse is
+         * true.
+         */
         switch (ch) {
         case '\b':  return "\\b";
         case '\f':  return "\\f";
         case '\n':  return "\\n";
         case '\r':  return "\\r";
         case '\t':  return "\\t";
-        case '\'':  return "\\'";
-        case '\"':  return "\\\"";
+        case '\'':  return (charContext ? "\\'" : "'");
+        case '\"':  return (charContext ? "\""  : "\\\"");
         case '\\':  return "\\\\";
         default:
             return (isPrintableAscii(ch))

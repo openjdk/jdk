@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public class getvalue002a {
 
     //====================================================== test program
 
+    static getvalue002aThread test_thread = null;
     static getvalue002aTestClass obj = new getvalue002aTestClass();
 
     //----------------------------------------------------   main method
@@ -97,8 +98,7 @@ public class getvalue002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         getvalue002aThread test_thread =
-                             new getvalue002aThread("testedThread");
+                         test_thread = new getvalue002aThread("testedThread");
                          log1("       thread2 is created");
 
                          label:

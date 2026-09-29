@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,11 +113,6 @@ public interface WindowPeer extends ContainerPeer {
      * @see Window#setBackground(Color)
      */
     void updateWindow();
-
-    /**
-     * Instructs the peer to update the position of the security warning.
-     */
-    void repositionSecurityWarning();
 
     /**
      * Requests a GC that best suits this Window. The returned GC may differ

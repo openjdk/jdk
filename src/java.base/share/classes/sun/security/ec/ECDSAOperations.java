@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class ECDSAOperations {
 
     public ECDSAOperations(ECOperations ecOps, ECPoint basePoint) {
         this.ecOps = ecOps;
-        this.basePoint = toAffinePoint(basePoint, ecOps.getField());
+        this.basePoint = AffinePoint.fromECPoint(basePoint, ecOps.getField());
     }
 
     public ECOperations getEcOperations() {
@@ -77,14 +77,6 @@ public class ECDSAOperations {
 
     public AffinePoint basePointMultiply(byte[] scalar) {
         return ecOps.multiply(basePoint, scalar).asAffine();
-    }
-
-    public static AffinePoint toAffinePoint(ECPoint point,
-        IntegerFieldModuloP field) {
-
-        ImmutableIntegerModuloP affineX = field.getElement(point.getAffineX());
-        ImmutableIntegerModuloP affineY = field.getElement(point.getAffineY());
-        return new AffinePoint(affineX, affineY);
     }
 
     public static
@@ -252,7 +244,7 @@ public class ECDSAOperations {
         MutablePoint p1 = ecOps.multiply(basePoint, temp1);
         MutablePoint p2 = ecOps.multiply(pp, temp2);
 
-        ecOps.setSum(p1, p2.asAffine());
+        ecOps.setSum(p1, p2);
         IntegerModuloP result = p1.asAffine().getX();
         b2a(result, orderField, temp1);
         return MessageDigest.isEqual(temp1, r);

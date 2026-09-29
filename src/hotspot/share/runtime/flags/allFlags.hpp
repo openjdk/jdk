@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "runtime/flags/debug_globals.hpp"
 #include "runtime/globals.hpp"
 
-// Put LP64/ARCH/JVMCI/COMPILER1/COMPILER2 at the top,
+// Put LP64/ARCH/COMPILER1/COMPILER2 at the top,
 // as they are processed by jvmFlag.cpp in that order.
 
 #define ALL_FLAGS(            \
@@ -40,7 +40,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -49,41 +48,20 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
   ARCH_FLAGS(                 \
     develop,                  \
     product,                  \
-    notproduct,               \
     range,                    \
     constraint)               \
-                              \
-  CDS_FLAGS(                  \
-    develop,                  \
-    develop_pd,               \
-    product,                  \
-    product_pd,               \
-    notproduct,               \
-    range,                    \
-    constraint)               \
-                              \
-  JVMCI_ONLY(JVMCI_FLAGS(     \
-    develop,                  \
-    develop_pd,               \
-    product,                  \
-    product_pd,               \
-    notproduct,               \
-    range,                    \
-    constraint))              \
                               \
   COMPILER1_PRESENT(C1_FLAGS( \
     develop,                  \
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint))              \
                               \
@@ -92,7 +70,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint))              \
                               \
@@ -101,7 +78,14 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  CDS_FLAGS(                  \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
     range,                    \
     constraint)               \
                               \
@@ -110,7 +94,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -119,7 +102,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -128,7 +110,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -137,7 +118,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)               \
                               \
@@ -146,7 +126,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    notproduct,               \
     range,                    \
     constraint)
 

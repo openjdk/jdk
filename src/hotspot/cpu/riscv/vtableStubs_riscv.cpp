@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,13 +24,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_riscv.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -48,10 +47,10 @@
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index);
 #endif
 
-VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
-  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -63,6 +62,10 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address   start_pc = nullptr;
   int       slop_bytes = 0;
   int       slop_delta = 0;
+
+  ByteSize  entry_offset = caller_is_c1
+                           ? Method::from_compiled_value_offset()
+                           : Method::from_compiled_value_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -77,7 +80,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #endif
 
   // get receiver (need to skip return address on top of stack)
-  assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
+  assert(SharedRuntime::name_for_receiver() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // get receiver klass
   address npe_addr = __ pc();
@@ -120,7 +123,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     __ beqz(xmethod, L);
-    __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
+    __ ld(t0, Address(xmethod, entry_offset));
     __ bnez(t0, L);
     __ stop("Vtable entry is null");
     __ bind(L);
@@ -131,19 +134,19 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // xmethod: Method*
   // x12: receiver
   address ame_addr = __ pc();
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, entry_offset));
+  __ jr(t1);
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
 }
 
-VtableStub* VtableStubs::create_itable_stub(int itable_index) {
+VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
-  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -155,10 +158,21 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   int       slop_bytes = 0;
   int       slop_delta = 0;
 
+  ByteSize  entry_offset = caller_is_c1
+                           ? Method::from_compiled_value_offset()
+                           : Method::from_compiled_value_ro_offset();
+
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
   assert_cond(masm != nullptr);
+
+  // Real entry arguments:
+  //  t0: CompiledICData
+  //  j_rarg0: Receiver
+  // Make sure the move of CompiledICData from t0 to t1 is the frist thing that happens.
+  // Otherwise we risk clobber t0 as it is used as scratch.
+  __ mv(t1, t0);
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
@@ -168,25 +182,25 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #endif
 
   // get receiver (need to skip return address on top of stack)
-  assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
+  assert(SharedRuntime::name_for_receiver() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
-  // Entry arguments:
-  //  t1: CompiledICHolder
+  // Arguments from this point:
+  //  t1 (moved from t0): CompiledICData
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = x18;
-  const Register holder_klass_reg   = x19; // declaring interface klass (DECC)
+  const Register holder_klass_reg   = x19; // declaring interface klass (DEFC)
   const Register resolved_klass_reg = x30; // resolved interface klass (REFC)
   const Register temp_reg           = x28;
   const Register temp_reg2          = x29;
-  const Register icholder_reg       = t1;
+  const Register icdata_reg         = t1;
 
   Label L_no_such_interface;
 
-  __ ld(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
-  __ ld(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
+  __ ld(resolved_klass_reg, Address(icdata_reg, CompiledICData::itable_refc_klass_offset()));
+  __ ld(holder_klass_reg,   Address(icdata_reg, CompiledICData::itable_defc_klass_offset()));
 
   start_pc = __ pc();
 
@@ -210,7 +224,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (DebugVtables) {
     Label L2;
     __ beqz(xmethod, L2);
-    __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
+    __ ld(t0, Address(xmethod, entry_offset));
     __ bnez(t0, L2);
     __ stop("compiler entrypoint is null");
     __ bind(L2);
@@ -220,8 +234,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // xmethod: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, entry_offset));
+  __ jr(t1);
 
   __ bind(L_no_such_interface);
   // Handle IncompatibleClassChangeError in itable stubs.
@@ -232,7 +246,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(SharedRuntime::get_handle_wrong_method_stub() != nullptr, "check initialization order");
   __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestKeyFactory
- * @run main/othervm -Djava.security.manager=allow TestKeyFactory sm
  */
+
+import jtreg.SkippedException;
 
 import java.security.Key;
 import java.security.KeyFactory;
@@ -127,8 +128,7 @@ public class TestKeyFactory extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (p.getService("KeyFactory", "EC") == null) {
-            System.out.println("Provider does not support EC, skipping");
-            return;
+            throw new SkippedException("Provider does not support EC, skipping");
         }
         int[] keyLengths = {256, 521};
         KeyFactory kf = KeyFactory.getInstance("EC", p);

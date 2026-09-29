@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,29 @@
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
+
+struct NameAndSig {
+  Symbol* _name;
+  Symbol* _signature;
+
+  NameAndSig(Symbol* n, Symbol* s) : _name(n), _signature(s) {}
+};
+
+inline unsigned int nameandsig_hash(NameAndSig const& field) {
+  Symbol* name = field._name;
+  return (unsigned int) name->identity_hash();
+}
+
+inline bool nameandsig_equals(NameAndSig const& f1, NameAndSig const& f2) {
+  return f1._name == f2._name &&
+          f1._signature == f2._signature;
+}
+
+// List of unset strict fields. The boolean value is a dummy so this acts as a set
+typedef HashTable<NameAndSig, bool, 17,
+                  AnyObj::RESOURCE_AREA, mtInternal,
+                  nameandsig_hash, nameandsig_equals> AssertUnsetFieldTable;
 
 // The verifier class
 class Verifier : AllStatic {
@@ -40,7 +62,9 @@ class Verifier : AllStatic {
     STACKMAP_ATTRIBUTE_MAJOR_VERSION    = 50,
     INVOKEDYNAMIC_MAJOR_VERSION         = 51,
     NO_RELAX_ACCESS_CTRL_CHECK_VERSION  = 52,
-    DYNAMICCONSTANT_MAJOR_VERSION       = 55
+    DYNAMICCONSTANT_MAJOR_VERSION       = 55,
+    VALUE_TYPES_MAJOR_VERSION           = 70,
+    JAVA_PREVIEW_MINOR_VERSION          = 65535,
   };
 
   // Verify the bytecodes for a class.
@@ -52,7 +76,7 @@ class Verifier : AllStatic {
   // Return false if the class is loaded by the bootstrap loader,
   // or if defineClass was called requesting skipping verification
   // -Xverify:all overrides this value
-  static bool should_verify_for(oop class_loader, bool should_verify_class);
+  static bool should_verify_for(oop class_loader);
 
   // Relax certain access checks to enable some broken 1.1 apps to run on 1.2.
   static bool relax_access_for(oop class_loader);
@@ -60,8 +84,9 @@ class Verifier : AllStatic {
   // Print output for class+resolve
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
 
+  static bool supports_strict_fields(InstanceKlass* klass);
+
  private:
-  static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class);
   static Symbol* inference_verify(
     InstanceKlass* klass, char* msg, size_t msg_len, TRAPS);
 };
@@ -149,12 +174,15 @@ class ErrorContext {
     FLAGS_MISMATCH,       // Frame flags are not assignable
     BAD_CP_INDEX,         // Invalid constant pool index
     BAD_LOCAL_INDEX,      // Invalid local index
+    BAD_STRICT_FIELDS,    // Strict instance fields must be initialized before super constructor
     LOCALS_SIZE_MISMATCH, // Frames have differing local counts
     STACK_SIZE_MISMATCH,  // Frames have different stack sizes
+    STRICT_FIELDS_MISMATCH, // Frames have incompatible uninitialized strict instance fields
     STACK_OVERFLOW,       // Attempt to push onto a full expression stack
     STACK_UNDERFLOW,      // Attempt to pop and empty expression stack
     MISSING_STACKMAP,     // No stackmap for this location and there should be
     BAD_STACKMAP,         // Format error in stackmap
+    WRONG_VALUE_TYPE,     // Mismatched value type
     NO_FAULT,             // No error
     UNKNOWN
   } FaultType;
@@ -196,6 +224,9 @@ class ErrorContext {
   static ErrorContext bad_local_index(int bci, int index) {
     return ErrorContext(bci, BAD_LOCAL_INDEX, TypeOrigin::bad_index(index));
   }
+  static ErrorContext bad_strict_fields(int bci, StackMapFrame* cur) {
+    return ErrorContext(bci, BAD_STRICT_FIELDS, TypeOrigin::frame(cur));
+  }
   static ErrorContext locals_size_mismatch(
       int bci, StackMapFrame* frame0, StackMapFrame* frame1) {
     return ErrorContext(bci, LOCALS_SIZE_MISMATCH,
@@ -205,6 +236,11 @@ class ErrorContext {
       int bci, StackMapFrame* frame0, StackMapFrame* frame1) {
     return ErrorContext(bci, STACK_SIZE_MISMATCH,
         TypeOrigin::frame(frame0), TypeOrigin::frame(frame1));
+  }
+  static ErrorContext strict_fields_mismatch(
+      int bci, StackMapFrame* frame0, StackMapFrame* frame1) {
+        return ErrorContext(bci, STRICT_FIELDS_MISMATCH,
+          TypeOrigin::frame(frame0), TypeOrigin::frame(frame1));
   }
   static ErrorContext stack_overflow(int bci, StackMapFrame* frame) {
     return ErrorContext(bci, STACK_OVERFLOW, TypeOrigin::frame(frame));
@@ -217,6 +253,9 @@ class ErrorContext {
   }
   static ErrorContext bad_stackmap(int index, StackMapFrame* frame) {
     return ErrorContext(0, BAD_STACKMAP, TypeOrigin::frame(frame));
+  }
+  static ErrorContext bad_value_type(int bci, TypeOrigin type, TypeOrigin exp) {
+    return ErrorContext(bci, WRONG_VALUE_TYPE, type, exp);
   }
 
   bool is_valid() const { return _fault != NO_FAULT; }
@@ -271,7 +310,7 @@ class sig_as_verification_types : public ResourceObj {
 
 // This hashtable is indexed by the Utf8 constant pool indexes pointed to
 // by constant pool (Interface)Method_refs' NameAndType signature entries.
-typedef ResourceHashtable<int, sig_as_verification_types*, 1007>
+typedef HashTable<int, sig_as_verification_types*, 1007>
                           method_signatures_table_type;
 
 // A new instance of this class is created for each class being verified
@@ -335,20 +374,9 @@ class ClassVerifier : public StackObj {
     bool* this_uninit, const constantPoolHandle& cp, StackMapTable* stackmap_table,
     TRAPS);
 
-  // Used by ends_in_athrow() to push all handlers that contain bci onto the
-  // handler_stack, if the handler has not already been pushed on the stack.
-  void push_handlers(ExceptionTable* exhandlers,
-                     GrowableArray<u4>* handler_list,
-                     GrowableArray<u4>* handler_stack,
-                     u4 bci);
-
-  // Returns true if all paths starting with start_bc_offset end in athrow
-  // bytecode or loop.
-  bool ends_in_athrow(u4 start_bc_offset);
-
   void verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
-    bool in_try_block, bool* this_uninit, VerificationType return_type,
+    bool in_try_block, bool* this_uninit,
     const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS);
 
   VerificationType get_newarray_type(u2 index, int bci, TRAPS);
@@ -445,7 +473,8 @@ class ClassVerifier : public StackObj {
     SignatureStream* sig_type, VerificationType* inference_type);
 
   VerificationType cp_index_to_type(int index, const constantPoolHandle& cp, TRAPS) {
-    return VerificationType::reference_type(cp->klass_name_at(index));
+    Symbol* name = cp->klass_name_at(index);
+    return VerificationType::reference_type(name);
   }
 
   // Keep a list of temporary symbols created during verification because
@@ -483,8 +512,7 @@ inline int ClassVerifier::change_sig_to_verificationType(
         // Create another symbol to save as signature stream unreferences this symbol.
         Symbol* name_copy = create_temporary_symbol(name);
         assert(name_copy == name, "symbols don't match");
-        *inference_type =
-          VerificationType::reference_type(name_copy);
+        *inference_type = VerificationType::reference_type(name_copy);
         return 1;
       }
     case T_LONG:

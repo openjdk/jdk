@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -993,9 +993,6 @@ void ADLParser::frame_parse(void) {
       if (strcmp(token,"frame_pointer")==0) {
         frame_pointer_parse(frame, false);
       }
-      if (strcmp(token,"interpreter_frame_pointer")==0) {
-        interpreter_frame_pointer_parse(frame, false);
-      }
       if (strcmp(token,"inline_cache_reg")==0) {
         inline_cache_parse(frame, false);
       }
@@ -1117,11 +1114,6 @@ void ADLParser::frame_pointer_parse(FrameForm *frame, bool native) {
   // Assign value into frame form
   if (native) { frame->_c_frame_pointer = frame_pointer; }
   else        { frame->_frame_pointer   = frame_pointer; }
-}
-
-//------------------------------interpreter_frame_pointer_parse----------------------------
-void ADLParser::interpreter_frame_pointer_parse(FrameForm *frame, bool native) {
-  frame->_interpreter_frame_pointer_reg = parse_one_arg("interpreter frame pointer entry");
 }
 
 //------------------------------inline_cache_parse-----------------------------
@@ -1389,13 +1381,8 @@ void ADLParser::pipe_parse(void) {
         }
 
         if (!strcmp(ident, "branch_has_delay_slot")) {
-          skipws();
-          if (_curchar == ';') {
-            next_char(); skipws();
-          }
-
-          pipeline->_branchHasDelaySlot = true;
-          continue;
+          parse_err(SYNERR, "Using obsolete token, branch_has_delay_slot");
+          break;
         }
 
         if (!strcmp(ident, "max_instructions_per_bundle")) {
@@ -1507,36 +1494,8 @@ void ADLParser::pipe_parse(void) {
         }
 
         if (!strcmp(ident, "nops")) {
+          parse_err(WARN, "Using obsolete token, nops");
           skipws();
-          if (_curchar != '(') {
-            parse_err(SYNERR, "expected `(`, found '%c'\n", _curchar);
-            break;
-            }
-
-          next_char(); skipws();
-
-          while (_curchar != ')') {
-            ident = get_ident();
-            if (ident == nullptr) {
-              parse_err(SYNERR, "expected identifier for nop instruction, found '%c'\n", _curchar);
-              break;
-            }
-
-            pipeline->_noplist.addName(ident);
-            pipeline->_nopcnt++;
-            skipws();
-
-            if (_curchar == ',') {
-              next_char(); skipws();
-            }
-          }
-
-          next_char(); skipws();
-
-          if (_curchar == ';') {
-            next_char(); skipws();
-          }
-
           continue;
         }
 
@@ -1790,16 +1749,8 @@ void ADLParser::pipe_class_parse(PipelineForm &pipeline) {
 
     if (!strcmp(ident, "one_instruction_with_delay_slot") ||
         !strcmp(ident, "single_instruction_with_delay_slot")) {
-      skipws();
-      if (_curchar != ';') {
-        parse_err(SYNERR, "missing \";\" in latency definition\n");
-        return;
-      }
-
-      pipe_class->setInstructionCount(1);
-      pipe_class->setBranchDelay(true);
-      next_char(); skipws();
-      continue;
+      parse_err(SYNERR, "Using obsolete token, %s", ident);
+      return;
     }
 
     if (!strcmp(ident, "one_instruction") ||
@@ -1859,15 +1810,8 @@ void ADLParser::pipe_class_parse(PipelineForm &pipeline) {
     }
 
     if (!strcmp(ident, "has_delay_slot")) {
-      skipws();
-      if (_curchar != ';') {
-        parse_err(SYNERR, "missing \";\" after \"has_delay_slot\"\n");
-        return;
-      }
-
-      pipe_class->setBranchDelay(true);
-      next_char(); skipws();
-      continue;
+      parse_err(SYNERR, "Using obsolete token, %s", ident);
+      return;
     }
 
     if (!strcmp(ident, "force_serialization")) {
@@ -2894,14 +2838,6 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
     OpClassForm* opForm = inst._localNames[param]->is_opclass();
     assert(opForm != nullptr, "sanity");
     encoding->add_parameter(opForm->_ident, param);
-  }
-
-  if (!inst._is_postalloc_expand) {
-    // Define a MacroAssembler instance for use by the encoding.  The
-    // name is chosen to match the __ idiom used for assembly in other
-    // parts of hotspot and assumes the existence of the standard
-    // #define __ _masm.
-    encoding->add_code("    C2_MacroAssembler _masm(&cbuf);\n");
   }
 
   // Parse the following %{ }% block
@@ -5233,7 +5169,7 @@ void ADLParser::skipws_common(bool do_preproc) {
     if (*_ptr == '\n') {                   // keep proper track of new lines
       if (!do_preproc)  break;             // let caller handle the newline
       next_line();
-      _ptr = _curline; next = _ptr + 1;
+      _ptr = _curline; if (_ptr != nullptr) next = _ptr + 1;
     }
     else if ((*_ptr == '/') && (*next == '/'))      // C++ comment
       do { _ptr++; next++; } while(*_ptr != '\n');  // So go to end of line

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8139688
+ * @bug 8139688 8362376
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
@@ -79,6 +79,18 @@ public class ExpTests {
             {Math.nextUp(EXP_OVERFLOW_THRESH),    Double.POSITIVE_INFINITY},
             {Math.nextDown(EXP_UNDERFLOW_THRESH), +0.0},
             {EXP_UNDERFLOW_THRESH,                +Double.MIN_VALUE},
+
+            // FDLIBM exp(1.0) does *not* return Math.E
+            {1.0,                                  Math.nextUp(Math.E)},
+            // Cases observed to differ between FDLIBM and other implementations.
+            {+0x1.2e8f20cf3cbe7p+8,                0x1.6a2a59cc78bf8p436},
+            {-0x1.49f33ad2c1c58p+9,                0x1.f3ccc815431b6p-953},
+            {+0x1.fce66609f7428p+5,                0x1.b59724cb0bc4cp91},
+            {-0x1.49f33ad2c1c58p+9,                0x1.f3ccc815431b6p-953},
+
+            // Test values near 0.5*ln*(2) and 1.5*ln(2) to check refactoring
+            {0.34657359027997275,                  1.4142135623730951},
+            {1.0397207708399183,                   2.828427124746191},
         };
 
         for(double[] testCase: testCases)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static com.sun.tools.javac.code.Kinds.Kind.TYP;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
@@ -94,13 +96,15 @@ public class PoolWriter {
     /** The inner classes to be written, as an ordered set (enclosing first). */
     LinkedHashSet<ClassSymbol> innerClasses = new LinkedHashSet<>();
 
+    Set<Symbol> loadableDescriptors = new LinkedHashSet<>();
+
     /** The list of entries in the BootstrapMethods attribute. */
     Map<BsmKey, Integer> bootstrapMethods = new LinkedHashMap<>();
 
     public PoolWriter(Types types, Names names) {
         this.types = types;
         this.names = names;
-        this.signatureGen = new SharedSignatureGenerator(types);
+        this.signatureGen = new SharedSignatureGenerator();
         this.pool = new WriteablePoolHelper();
     }
 
@@ -232,6 +236,16 @@ public class PoolWriter {
         }
     }
 
+    /** Enter a value class into the `loadableDescriptorsClasses' set.
+     */
+    void enterLoadableDescriptorsClass(Symbol c) {
+        if (c.type.isCompound()) {
+            throw new AssertionError("Unexpected intersection type: " + c.type);
+        }
+        c.complete();
+        loadableDescriptors.add(c);
+    }
+
     /**
      * Create a new Utf8 entry representing a descriptor for given (member) symbol.
      */
@@ -278,8 +292,8 @@ public class PoolWriter {
          */
         ByteBuffer sigbuf = new ByteBuffer();
 
-        SharedSignatureGenerator(Types types) {
-            super(types);
+        SharedSignatureGenerator() {
+            types.super();
         }
 
         /**
@@ -512,6 +526,7 @@ public class PoolWriter {
 
     void reset() {
         innerClasses.clear();
+        loadableDescriptors.clear();
         bootstrapMethods.clear();
         pool.reset();
     }

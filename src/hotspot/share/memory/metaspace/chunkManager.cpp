@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspace/chunkManager.hpp"
@@ -118,10 +117,6 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
     c = get_chunk_locked(preferred_level, max_level, min_committed_words);
   }
 
-  if (c != nullptr) {
-    ASAN_UNPOISON_MEMORY_REGION(c->base(), c->word_size() * BytesPerWord);
-  }
-
   return c;
 }
 
@@ -141,7 +136,7 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
   DEBUG_ONLY(chunklevel::check_valid_level(preferred_level);)
 
   UL2(debug, "requested chunk: pref_level: " CHKLVL_FORMAT
-     ", max_level: " CHKLVL_FORMAT ", min committed size: " SIZE_FORMAT ".",
+     ", max_level: " CHKLVL_FORMAT ", min committed size: %zu.",
      preferred_level, max_level, min_committed_words);
 
   // First, optimistically look for a chunk which is already committed far enough to hold min_word_size.
@@ -212,7 +207,7 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
     const size_t to_commit = min_committed_words;
     if (c->committed_words() < to_commit) {
       if (c->ensure_committed_locked(to_commit) == false) {
-        UL2(info, "failed to commit " SIZE_FORMAT " words on chunk " METACHUNK_FORMAT ".",
+        UL2(info, "failed to commit %zu words on chunk " METACHUNK_FORMAT ".",
             to_commit,  METACHUNK_FORMAT_ARGS(c));
         return_chunk_locked(c);
         c = nullptr;
@@ -244,9 +239,6 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
 // !! Note: this may invalidate the chunk. Do not access the chunk after
 //    this function returns !!
 void ChunkManager::return_chunk(Metachunk* c) {
-  // It is valid to poison the chunk payload area at this point since its physically separated from
-  // the chunk meta info.
-  ASAN_POISON_MEMORY_REGION(c->base(), c->word_size() * BytesPerWord);
   MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   return_chunk_locked(c);
 }
@@ -304,9 +296,6 @@ bool ChunkManager::attempt_enlarge_chunk(Metachunk* c) {
     enlarged = c->vsnode()->attempt_enlarge_chunk(c, &_chunks);
   }
 
-  if (enlarged) {
-    ASAN_UNPOISON_MEMORY_REGION(c->base() + old_word_size, (c->word_size() - old_word_size) * BytesPerWord);
-  }
 
   return enlarged;
 }
@@ -434,7 +423,7 @@ void ChunkManager::print_on(outputStream* st) const {
 
 void ChunkManager::print_on_locked(outputStream* st) const {
   assert_lock_strong(Metaspace_lock);
-  st->print_cr("cm %s: %d chunks, total word size: " SIZE_FORMAT ".", _name,
+  st->print_cr("cm %s: %d chunks, total word size: %zu.", _name,
                total_num_chunks(), total_word_size());
   _chunks.print_on(st);
 }

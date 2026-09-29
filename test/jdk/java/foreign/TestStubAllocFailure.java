@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @library ../ /test/lib
  * @requires jdk.foreign.linker != "FALLBACK"
- * @run testng/othervm/native
+ * @requires vm.compMode != "Xcomp"
+ * @run junit/othervm/native/timeout=480
  *   --enable-native-access=ALL-UNNAMED
  *   TestStubAllocFailure
  */
@@ -38,9 +39,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 public class TestStubAllocFailure extends UpcallTestHelper {
 

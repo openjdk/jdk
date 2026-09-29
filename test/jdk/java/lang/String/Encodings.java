@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4085160 4139951 5005831
+ * @bug 4085160 4139951 5005831 8372353
  * @summary Test that required character encodings are supported
  */
 
@@ -105,6 +105,10 @@ public class Encodings {
         bs = str.getBytes(charset);
         if (!equals(bs, bytes))
             throw new Exception(charset + ": String.getBytes failed");
+
+        /* String.encodedLength(Charset charset) */
+        if (bs.length != str.encodedLength(charset))
+            throw new Exception(charset + ": String.encodedLength failed");
 
         // Calls to String.getBytes(Charset) shouldn't automatically
         // use the cached thread-local encoder.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,15 @@
  * @bug 8228604
  *
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @library /test/lib
  *
  * @run main/othervm/native -agentlib:MissedStackMapFrames MissedStackMapFrames
  */
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
 
 public class MissedStackMapFrames {
     static {
@@ -58,30 +56,19 @@ public class MissedStackMapFrames {
     private static native byte[] retransformBytes(int idx);
 
     private static int getStackMapFrameCount(byte[] classfileBuffer) {
-        ClassReader reader = new ClassReader(classfileBuffer);
-        final int[] frameCount = {0};
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM9) {
-            @Override
-            public MethodVisitor visitMethod(int access, String name,
-                                             String descriptor, String signature,
-                                             String[] exceptions) {
-                return new MethodVisitor(Opcodes.ASM9) {
-                    private int methodFrames = 0;
-                    @Override
-                    public void visitFrame(int type, int numLocal, Object[] local,
-                                           int numStack, Object[] stack) {
-                        methodFrames++;
-                    }
-                    @Override
-                    public void visitEnd() {
-                        log("  method " + name + " - " + methodFrames + " frames");
-                        frameCount[0] += methodFrames;
-                    }
-                };
+        ClassModel clazz = ClassFile.of().parse(classfileBuffer);
+        int count = 0;
+        for (MethodModel method : clazz.methods()) {
+            var foundStackMapTable = method.code().flatMap(code -> code.findAttribute(Attributes.stackMapTable()));
+            if (foundStackMapTable.isPresent()) {
+                int methodFrames = foundStackMapTable.get().entries().size();
+                log("  method " + method.methodName() + " - " + methodFrames + " frames");
+                count += methodFrames;
+            } else {
+                log("  method " + method.methodName() + " - No StackMapTable");
             }
-        };
-        reader.accept(cv, 0);
-        return frameCount[0];
+        }
+        return count;
     }
 
     private static int checkStackMapFrames(String mode, byte[] classfileBuffer) {

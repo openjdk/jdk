@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4733558 6471539
  * @summary Tests Date encoding
- * @run main/othervm -Djava.security.manager=allow java_sql_Date
+ * @run main/othervm java_sql_Date
  * @author Sergey Malenkov
  * @modules java.desktop
  *          java.sql
@@ -35,7 +35,7 @@ import java.sql.Date;
 
 public final class java_sql_Date extends AbstractTest<Date> {
     public static void main(String[] args) {
-        new java_sql_Date().test(true);
+        new java_sql_Date().test();
     }
 
     protected Date getObject() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @author Adrian Colley
  *
  * @build TestIface TestImpl TestImpl_Stub
- * @run main/othervm/policy=security.policy/timeout=60
+ * @run main/othervm/timeout=60
  *     -Dsun.rmi.transport.tcp.readTimeout=5000 ReadTimeoutTest
  */
 
@@ -54,10 +54,6 @@ public class ReadTimeoutTest
     public static void main(String[] args)
         throws Exception
     {
-        // Make trouble for ourselves
-        if (System.getSecurityManager() == null)
-            System.setSecurityManager(new RMISecurityManager());
-
         // Flaky code alert - hope this is executed before TCPTransport.<clinit>
         System.setProperty("sun.rmi.transport.tcp.readTimeout", Integer.toString(DELAY));
 

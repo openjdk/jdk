@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
  * @test id=default
  * @requires vm.jvmti
  * @requires vm.continuations
+ * @requires test.thread.factory == null
  * @run main/othervm/native
- *      -Djdk.virtualThreadScheduler.parallelism=1
+ *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:VThreadStackRefTest
  *      VThreadStackRefTest
  */
@@ -34,6 +35,7 @@
 /**
  * @test id=no-vmcontinuations
  * @requires vm.jvmti
+ * @requires test.thread.factory == null
  * @run main/othervm/native
  *      -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *      -agentlib:VThreadStackRefTest

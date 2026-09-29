@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,42 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
-import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.classfile.impl.BytecodeHelpers;
 
 /**
- * Models a {@code multianewarray} invocation instruction in the {@code code}
+ * Models a {@link Opcode#MULTIANEWARRAY multianewarray} instruction in the {@code code}
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * A new multi-dimensional array instruction is composite:
+ * {@snippet lang=text :
+ * // @link substring="NewMultiArrayInstruction" target="#of" :
+ * NewMultiArrayInstruction(
+ *     ClassEntry arrayType, // @link substring="arrayType" target="#arrayType"
+ *     int dimensions // @link substring="dimensions" target="#dimensions"
+ * )
+ * }
+ * where the {@code arrayType} is an array class.
  *
- * @since 22
+ * @see Opcode.Kind#NEW_MULTI_ARRAY
+ * @see CodeBuilder#multianewarray CodeBuilder::multianewarray
+ * @jvms 6.5.multianewarray <em>multianewarray</em>
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface NewMultiArrayInstruction extends Instruction
         permits AbstractInstruction.BoundNewMultidimensionalArrayInstruction,
                 AbstractInstruction.UnboundNewMultidimensionalArrayInstruction {
 
     /**
-     * {@return the type of the array, as a symbolic descriptor}
+     * {@return the type of the array}
      */
     ClassEntry arrayType();
 
@@ -58,9 +73,11 @@ public sealed interface NewMultiArrayInstruction extends Instruction
      *
      * @param arrayTypeEntry the type of the array
      * @param dimensions the number of dimensions of the array
+     * @throws IllegalArgumentException if {@code dimensions} is out of range
      */
     static NewMultiArrayInstruction of(ClassEntry arrayTypeEntry,
                                        int dimensions) {
+        BytecodeHelpers.validateMultiArrayDimensions(dimensions);
         return new AbstractInstruction.UnboundNewMultidimensionalArrayInstruction(arrayTypeEntry, dimensions);
     }
 }

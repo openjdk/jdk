@@ -1,4 +1,4 @@
-Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ Signal handlers don't do anything, so the only fact that signal handler was call
 Also 2 different ways of setting signal handlers are tested: sigaction, sigset.
 
 For 'postpre' and 'postpro' libjsig.so is used to chain signal handlers behind VM installed ones.
+
+When libjsig.so is used, the warning for deprecated usage of signal/sigset is checked. For this
+purpose, all scenarios are also run once with libjsig preloaded.
 
 => Current tests cover the following cases (don't count 'nojvm' scenario):
 1. Support for pre-installed signal handlers when the HotSpot VM is created.

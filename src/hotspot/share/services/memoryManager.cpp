@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,31 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
-#include "services/gcNotifier.hpp"
 #include "utilities/dtrace.hpp"
 
-MemoryManager::MemoryManager(const char* name) :
-  _num_pools(0), _name(name) {}
+MemoryManager::MemoryManager(const char* name)
+  : _pools(),
+    _num_pools(0),
+    _name(name),
+    _memory_mgr_obj(),
+    _memory_mgr_obj_initialized(false)
+{}
 
 int MemoryManager::add_pool(MemoryPool* pool) {
   int index = _num_pools;
@@ -56,7 +60,11 @@ int MemoryManager::add_pool(MemoryPool* pool) {
 }
 
 bool MemoryManager::is_manager(instanceHandle mh) const {
-  return mh() == Atomic::load(&_memory_mgr_obj).resolve();
+  if (AtomicAccess::load_acquire(&_memory_mgr_obj_initialized)) {
+    return mh() == _memory_mgr_obj.resolve();
+  } else {
+    return false;
+  }
 }
 
 MemoryManager* MemoryManager::get_code_cache_memory_manager() {
@@ -68,10 +76,10 @@ MemoryManager* MemoryManager::get_metaspace_memory_manager() {
 }
 
 instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
+  // Lazily create the manager object.
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_mgr_obj points to or implies.
-  oop mgr_obj = Atomic::load_acquire(&_memory_mgr_obj).resolve();
-  if (mgr_obj == nullptr) {
+  if (!AtomicAccess::load_acquire(&_memory_mgr_obj_initialized)) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra manager instances will just be gc'ed.
     Klass* k = Management::sun_management_ManagementFactoryHelper_klass(CHECK_NULL);
@@ -114,47 +122,49 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
                            &args,
                            CHECK_NULL);
 
-    instanceOop m = (instanceOop) result.get_oop();
-    instanceHandle mgr(THREAD, m);
+    // Verify we didn't get a null manager.  If that could happen then we'd
+    // need to return immediately rather than continuing on and recording the
+    // manager has been created.
+    oop m = result.get_oop();
+    guarantee(m != nullptr, "Manager creation returned null");
+    instanceHandle mgr(THREAD, (instanceOop)m);
 
-    {
-      // Get lock before setting _memory_mgr_obj
-      // since another thread may have created the instance
-      MutexLocker ml(THREAD, Management_lock);
+    // Allocate global handle outside lock, to avoid any lock nesting issues
+    // with the Management_lock.
+    OopHandle mgr_handle(Universe::vm_global(), mgr());
 
-      // Check if another thread has created the management object.  We reload
-      // _memory_mgr_obj here because some other thread may have initialized
-      // it while we were executing the code before the lock.
-      mgr_obj = Atomic::load(&_memory_mgr_obj).resolve();
-      if (mgr_obj != nullptr) {
-         return (instanceOop)mgr_obj;
-      }
+    // Get lock since another thread may have created and installed the instance.
+    MutexLocker ml(THREAD, Management_lock);
 
-      // Get the address of the object we created via call_special.
-      mgr_obj = mgr();
-
-      // Use store barrier to make sure the memory accesses associated
-      // with creating the management object are visible before publishing
-      // its address.  The unlock will publish the store to _memory_mgr_obj
-      // because it does a release first.
-      Atomic::release_store(&_memory_mgr_obj, OopHandle(Universe::vm_global(), mgr_obj));
+    if (AtomicAccess::load(&_memory_mgr_obj_initialized)) {
+      // Some other thread won the race.  Release the handle we allocated and
+      // use the other one.  Relaxed load is sufficient because flag update is
+      // under the lock.
+      mgr_handle.release(Universe::vm_global());
+    } else {
+      // Record the object we created via call_special.
+      assert(_memory_mgr_obj.is_empty(), "already set manager obj");
+      _memory_mgr_obj = mgr_handle;
+      // Record manager has been created.  Release matching unlocked acquire,
+      // to safely publish the manager object.
+      AtomicAccess::release_store(&_memory_mgr_obj_initialized, true);
     }
   }
 
-  return (instanceOop)mgr_obj;
+  return (instanceOop)_memory_mgr_obj.resolve();
 }
 
 GCStatInfo::GCStatInfo(int num_pools) {
   // initialize the arrays for memory usage
-  _before_gc_usage_array = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtInternal);
-  _after_gc_usage_array  = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtInternal);
+  _before_gc_usage_array = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtServiceability);
+  _after_gc_usage_array  = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtServiceability);
   _usage_array_size = num_pools;
   clear();
 }
 
 GCStatInfo::~GCStatInfo() {
-  FREE_C_HEAP_ARRAY(MemoryUsage*, _before_gc_usage_array);
-  FREE_C_HEAP_ARRAY(MemoryUsage*, _after_gc_usage_array);
+  FREE_C_HEAP_ARRAY(_before_gc_usage_array);
+  FREE_C_HEAP_ARRAY(_after_gc_usage_array);
 }
 
 void GCStatInfo::set_gc_usage(int pool_index, MemoryUsage usage, bool before_gc) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,5 +107,9 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
 
     public boolean canEncode(char c) {
         return ! Character.isSurrogate(c);
+    }
+
+    public boolean canEncode(CharSequence cs) {
+        return Unicode.isValidUnicode(cs);
     }
 }

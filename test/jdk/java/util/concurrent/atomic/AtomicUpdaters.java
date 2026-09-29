@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,11 @@
  * @bug 7103570 8189291
  * @author David Holmes
  * @run main/othervm AtomicUpdaters
- * @run main/othervm -Djava.security.manager=allow AtomicUpdaters UseSM
  * @summary Checks the (in)ability to create field updaters for differently
- *          accessible fields in different locations with/without a security
- *          manager
+ *          accessible fields in different locations
  */
 
 import java.lang.reflect.Field;
-import java.security.AccessControlException;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,25 +39,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class  AtomicUpdaters {
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
     enum TYPE { INT, LONG, REF }
 
     static class Config {
         final Class<?> clazz;
         final String field;
         final String access;
-        final boolean reflectOk;
         final boolean updaterOk;
         final String desc;
         final TYPE type;
 
         Config(Class<?> clazz, String field, String access,
-               boolean reflectOk, boolean updaterOk, String desc, TYPE type) {
+               boolean updaterOk, String desc, TYPE type) {
             this.clazz = clazz;
             this.field = field;
             this.access = access;
-            this.reflectOk = reflectOk;
             this.updaterOk = updaterOk;
             this.desc = desc;
             this.type =type;
@@ -78,20 +66,20 @@ public class  AtomicUpdaters {
 
     static Config[] tests;
 
-    static void initTests(boolean hasSM) {
+    static void initTests() {
         tests = new Config[] {
-            new Config(AtomicUpdaters.class, "pub_int", "public", true, true, "public int field of current class", TYPE.INT),
-            new Config(AtomicUpdaters.class, "priv_int", "private", true, true, "private int field of current class", TYPE.INT),
-            new Config(AtomicUpdaters.class, "pub_long", "public", true, true, "public long field of current class", TYPE.LONG),
-            new Config(AtomicUpdaters.class, "priv_long", "private", true, true, "private long field of current class", TYPE.LONG),
-            new Config(AtomicUpdaters.class, "pub_ref", "public", true, true, "public ref field of current class", TYPE.REF),
-            new Config(AtomicUpdaters.class, "priv_ref", "private", true, true, "private ref field of current class", TYPE.REF),
+            new Config(AtomicUpdaters.class, "pub_int", "public", true, "public int field of current class", TYPE.INT),
+            new Config(AtomicUpdaters.class, "priv_int", "private", true, "private int field of current class", TYPE.INT),
+            new Config(AtomicUpdaters.class, "pub_long", "public", true, "public long field of current class", TYPE.LONG),
+            new Config(AtomicUpdaters.class, "priv_long", "private", true, "private long field of current class", TYPE.LONG),
+            new Config(AtomicUpdaters.class, "pub_ref", "public", true, "public ref field of current class", TYPE.REF),
+            new Config(AtomicUpdaters.class, "priv_ref", "private", true, "private ref field of current class", TYPE.REF),
 
             // Would like to test a public volatile in a class in another
             // package - but of course there aren't any
-            new Config(AtomicInteger.class, "value", "private", !hasSM, false, "private int field of class in different package", TYPE.INT),
-            new Config(AtomicLong.class, "value", "private", !hasSM, false, "private long field of class in different package", TYPE.LONG),
-            new Config(AtomicReference.class, "value", "private", !hasSM, false, "private reference field of class in different package", TYPE.REF),
+            new Config(AtomicInteger.class, "value", "private", false, "private int field of class in different package", TYPE.INT),
+            new Config(AtomicLong.class, "value", "private", false, "private long field of class in different package", TYPE.LONG),
+            new Config(AtomicReference.class, "value", "private", false, "private reference field of class in different package", TYPE.REF),
         };
     }
 
@@ -103,59 +91,31 @@ public class  AtomicUpdaters {
     private volatile Object priv_ref;
 
 
-    // This should be set dynamically at runtime using a System property, but
-    // ironically we get a SecurityException if we try to do that with a
-    // SecurityManager installed
+    // run with -v
     static boolean verbose;
 
     public static void main(String[] args) throws Throwable {
-        boolean hasSM = false;
         for (String arg : args) {
             if ("-v".equals(arg)) {
                 verbose = true;
-            }
-            else if ("UseSM".equals(arg)) {
-                // Ensure that the test is not influenced by the default users policy.
-                Policy.setPolicy(new NoPermissionsPolicy());
-                SecurityManager m = System.getSecurityManager();
-                if (m != null)
-                    throw new RuntimeException("No security manager should initially be installed");
-                System.setSecurityManager(new java.lang.SecurityManager());
-                hasSM = true;
             }
             else {
                 throw new IllegalArgumentException("Unexpected option: " + arg);
             }
         }
-        initTests(hasSM);
+        initTests();
 
         int failures = 0;
 
-        System.out.printf("Testing with%s a SecurityManager present\n", hasSM ? "" : "out");
+
         for (Config c : tests) {
             System.out.println("Testing: " + c);
-            Error reflectionFailure = null;
             Error updaterFailure = null;
             Class<?> clazz = c.clazz;
             // See if we can reflectively access the field
             System.out.println(" - testing getDeclaredField");
-            try {
-                Field f = clazz.getDeclaredField(c.field);
-                if (!c.reflectOk)
-                    reflectionFailure = new Error("Unexpected reflective access: " + c);
-            }
-            catch (AccessControlException e) {
-                if (c.reflectOk)
-                    reflectionFailure = new Error("Unexpected reflective access failure: " + c, e);
-                else if (verbose) {
-                    System.out.println("Got expected reflection exception: " + e);
-                    e.printStackTrace(System.out);
-                }
-            }
 
-            if (reflectionFailure != null) {
-                reflectionFailure.printStackTrace(System.out);
-            }
+            Field f = clazz.getDeclaredField(c.field);
 
             // see if we can create an atomic updater for the field
             Object u = null;
@@ -189,37 +149,12 @@ public class  AtomicUpdaters {
 
             if (updaterFailure != null) {
                 updaterFailure.printStackTrace(System.out);
-            }
-
-            if (updaterFailure != null || reflectionFailure != null) {
                 failures++;
-
             }
         }
 
         if (failures > 0) {
             throw new Error("Some tests failed - see previous stacktraces");
-        }
-    }
-
-    /**
-     * Policy with no permissions.
-     */
-    private static class NoPermissionsPolicy extends Policy {
-        @Override
-        public PermissionCollection getPermissions(CodeSource cs) {
-            return Policy.UNSUPPORTED_EMPTY_COLLECTION;
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain pd) {
-            return Policy.UNSUPPORTED_EMPTY_COLLECTION;
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain pd, Permission p) {
-            return Policy.UNSUPPORTED_EMPTY_COLLECTION.implies(p) ||
-                    DEFAULT_POLICY.implies(pd, p);
         }
     }
 }

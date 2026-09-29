@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import java.util.function.Predicate;
  * added to classpath. One can replace @notest by @test in jtreg test
  * description above to run this class with jtreg.
  *
- * @see <a href=https://wiki.openjdk.org/display/CodeTools/jcstress>jcstress</a>
+ * @see <a href="https://github.com/openjdk/jcstress">jcstress</a>
  */
 public class TestGenerator {
     private static final String COPYRIGHT;
@@ -96,6 +96,7 @@ public class TestGenerator {
     public static String DESC_FORMAT = "\n"
             + "/**\n"
             + " * @test %1$s\n"
+            + " * @key external-dep\n"
             + " * @library /test/lib /\n"
             + " * @run driver/timeout=21600 " + JcstressRunner.class.getName()
                     // verbose output

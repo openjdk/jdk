@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.io.*;
  * of the JDI interface <code>Accessible</code> works fine with
  * the <code>ArrayType</code> sub-interface.
  */
-public class accipp001 extends Log {
+public class accipp001 {
     final static boolean MODE_VERBOSE = false;
 
     /** The main class names of the debugger & debugee applications. */
@@ -80,13 +80,12 @@ public class accipp001 extends Log {
         {debugeeName+"$P", "package private"}
     };
 
-    /**
-     * Re-call to <code>run(args,out)</code>, and exit with
-     * either status 95 or 97 (JCK-like exit status).
-     */
-    public static void main (String args[]) {
-        int exitCode = run(args,System.out);
-        System.exit(exitCode + 95);
+
+    public static void main (String argv[]) {
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     /**
@@ -109,8 +108,7 @@ public class accipp001 extends Log {
         logHandler      = new Log(out, argsHandler);
         Binder binder   = new Binder(argsHandler, logHandler);
 
-        debugee = Debugee.prepareDebugee(argsHandler, logHandler,
-                debugeeName + (argsHandler.verbose() ? " -vbs" : ""));
+        debugee = Debugee.prepareDebugee(argsHandler, logHandler, debugeeName);
 
 //        ReferenceType classes[] = debugee.classes();
 //        for (int i=0; i<classes.length; i++) {

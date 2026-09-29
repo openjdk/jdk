@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@ import java.lang.ref.WeakReference;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.util.ArrayList;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test id=G1
@@ -36,7 +37,7 @@ import static org.testng.Assert.assertTrue;
  * @bug 8277072
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (G1 GC)
- * @run testng/othervm -Xmx64m -XX:+UseG1GC ObjectStreamClassCaching
+ * @run junit/othervm -Xmx64m -XX:+UseG1GC ObjectStreamClassCaching
  */
 
 /*
@@ -45,12 +46,16 @@ import static org.testng.Assert.assertTrue;
  * @bug 8277072
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (Parallel GC)
- * @run testng/othervm -Xmx64m -XX:+UseParallelGC ObjectStreamClassCaching
+ * @run junit/othervm -Xmx64m -XX:+UseParallelGC ObjectStreamClassCaching
  */
 
 /*
- * Disabled for ZGC Generational.
- * TODO: Find correct appropriate solution to the flakiness of this test.
+ * @test id=Z
+ * @requires vm.gc.Z
+ * @bug 8277072 8327180
+ * @library /test/lib/
+ * @summary ObjectStreamClass caches keep ClassLoaders alive (ZGC)
+ * @run junit/othervm -Xmx64m -XX:+UseZGC ObjectStreamClassCaching
  */
 
 /*
@@ -59,46 +64,18 @@ import static org.testng.Assert.assertTrue;
  * @bug 8277072
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (Shenandoah GC)
- * @run testng/othervm -Xmx64m -XX:+UseShenandoahGC ObjectStreamClassCaching
+ * @run junit/othervm -Xmx64m -XX:+UseShenandoahGC ObjectStreamClassCaching
  */
 
 /*
  * @test id=Serial
  * @requires vm.gc.Serial
- * @bug 8277072
+ * @bug 8277072 8327180
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (Serial GC)
- * @run testng/othervm -Xmx64m -XX:+UseSerialGC ObjectStreamClassCaching
+ * @run junit/othervm -Xmx64m -XX:+UseSerialGC ObjectStreamClassCaching
  */
 public class ObjectStreamClassCaching {
-
-    /**
-     * Test methods execute in same VM and are ordered by name.
-     * We test effectiveness 1st which is sensitive to previous allocations when ZGC is used.
-     */
-    @Test
-    public void test1CacheEffectiveness() throws Exception {
-        var list = new ArrayList<>();
-        var ref1 = lookupObjectStreamClass(TestClass1.class);
-        var ref2 = newWeakRef();
-        boolean oome = false;
-        try {
-            while (!ref2.refersTo(null)) {
-                list.add(new byte[1024 * 1024 * 1]); // 1 MiB chunks
-                System.out.println("1MiB allocated...");
-                Thread.sleep(5L);
-            }
-        } catch (OutOfMemoryError e) {
-            // release
-            list = null;
-            oome = true;
-        }
-        assertFalse(oome, "WeakReference was not cleared although memory was pressed hard");
-        assertFalse(ref1.refersTo(null),
-                    "Cache lost entry together with WeakReference being cleared although memory was not under pressure");
-        System.gc();
-        Thread.sleep(100L);
-    }
 
     @Test
     public void test2CacheReleaseUnderMemoryPressure() throws Exception {

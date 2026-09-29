@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * Copyright (c) 2023 Red Hat Inc. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -69,11 +68,6 @@ class NativeHeapTrimmerThread : public NamedThread {
     assert(_lock->is_locked(), "Must be");
     assert(_suspend_count != 0, "Sanity");
     return --_suspend_count;
-  }
-
-  bool is_stopped() const {
-    assert(_lock->is_locked(), "Must be");
-    return _stop;
   }
 
   bool at_or_nearing_safepoint() const {
@@ -169,7 +163,7 @@ class NativeHeapTrimmerThread : public NamedThread {
 public:
 
   NativeHeapTrimmerThread() :
-    _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeHeapTrimmer_lock")),
+    _lock(new PaddedMonitor(Mutex::nosafepoint, "NativeHeapTrimmer_lock")),
     _stop(false),
     _suspend_count(0),
     _num_trims_performed(0)
@@ -215,13 +209,12 @@ public:
   }
 
   void print_state(outputStream* st) const {
-    // Don't pull lock during error reporting
-    Mutex* const lock = VMError::is_error_reported() ? nullptr : _lock;
     int64_t num_trims = 0;
     bool stopped = false;
     uint16_t suspenders = 0;
     {
-      MutexLocker ml(lock, Mutex::_no_safepoint_check_flag);
+      // Don't pull lock during error reporting
+      ConditionalMutexLocker ml(_lock, !VMError::is_error_reported(), Mutex::_no_safepoint_check_flag);
       num_trims = _num_trims_performed;
       stopped = _stop;
       suspenders = _suspend_count;

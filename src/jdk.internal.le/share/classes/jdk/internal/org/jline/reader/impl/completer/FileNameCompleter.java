@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -9,6 +9,7 @@
 package jdk.internal.org.jline.reader.impl.completer;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,11 +42,10 @@ import jdk.internal.org.jline.utils.AttributedStyle;
  * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
- * @deprecated use <code>jdk.internal.org.jline.builtins.Completers$FileNameCompleter</code> instead
+ * @deprecated use <code>org.jline.builtins.Completers$FileNameCompleter</code> instead
  */
 @Deprecated
-public class FileNameCompleter implements Completer
-{
+public class FileNameCompleter implements Completer {
 
     public void complete(LineReader reader, ParsedLine commandLine, final List<Candidate> candidates) {
         assert commandLine != null;
@@ -72,20 +72,21 @@ public class FileNameCompleter implements Completer
             curBuf = "";
             current = getUserDir();
         }
-        try {
-            Files.newDirectoryStream(current, this::accept).forEach(p -> {
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(current, this::accept)) {
+            directoryStream.forEach(p -> {
                 String value = curBuf + p.getFileName().toString();
                 if (Files.isDirectory(p)) {
                     candidates.add(new Candidate(
                             value + (reader.isSet(Option.AUTO_PARAM_SLASH) ? sep : ""),
                             getDisplay(reader.getTerminal(), p),
-                            null, null,
+                            null,
+                            null,
                             reader.isSet(Option.AUTO_REMOVE_SLASH) ? sep : null,
                             null,
                             false));
                 } else {
-                    candidates.add(new Candidate(value, getDisplay(reader.getTerminal(), p),
-                            null, null, null, null, true));
+                    candidates.add(
+                            new Candidate(value, getDisplay(reader.getTerminal(), p), null, null, null, null, true));
                 }
             });
         } catch (IOException e) {
@@ -125,5 +126,4 @@ public class FileNameCompleter implements Completer
         }
         return name;
     }
-
 }

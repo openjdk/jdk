@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA512Intrinsics option processing on supported CPU.
- * @requires os.arch!="x86" & os.arch!="i386"
  * @library /test/lib /
  * @requires vm.flagless
  *

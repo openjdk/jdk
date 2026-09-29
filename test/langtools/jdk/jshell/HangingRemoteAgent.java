@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@ import jdk.jshell.spi.ExecutionControlProvider;
  */
 class HangingRemoteAgent extends RemoteExecutionControl {
 
-    private static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-
-    private static final int TIMEOUT = (int)(2000 * timeoutFactor);
+    private static final int TIMEOUT = (int)(2000 * Double.parseDouble(System.getProperty("test.timeout.factor", "1.0")));
     private static final long DELAY = TIMEOUT * 2L;
     private static final boolean INFRA_VERIFY = false;
 

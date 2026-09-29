@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 5013984
+  @bug 5013984 8360647
   @summary Tests KEY_PRESSED has the same KeyChar as KEY_RELEASED
   @key headful
   @run main KeyCharTest
@@ -37,7 +37,7 @@ import java.awt.event.MouseEvent;
 import java.util.HashMap;
 
 public class KeyCharTest extends Frame implements KeyListener {
-    HashMap<Integer, Character> transMap = new HashMap();
+    HashMap<Integer, Character> transMap = new HashMap<>();
 
     public void keyTyped(KeyEvent e){
     }
@@ -47,22 +47,35 @@ public class KeyCharTest extends Frame implements KeyListener {
     }
 
     public void keyReleased(KeyEvent e){
-        Object value = transMap.get(e.getKeyCode());
-        if (value != null && e.getKeyChar() != ((Character)value).charValue()) {
+        Character value = transMap.get(e.getKeyCode());
+        if (value != null && e.getKeyChar() != value) {
             throw new RuntimeException("Wrong KeyChar on KEY_RELEASED "+
                 KeyEvent.getKeyText(e.getKeyCode()));
         }
     }
 
-    public void start () {
+    private void testKeyRange(Robot robot, int start, int end) {
+        System.out.printf("\nTesting range on %d to %d\n", start, end);
+        for(int vkey = start; vkey <= end; vkey++) {
+            try {
+                robot.keyPress(vkey);
+                robot.keyRelease(vkey);
+                System.out.println(KeyEvent.getKeyText(vkey) + " " + vkey);
+            } catch (RuntimeException ignored) {}
+        }
+        robot.delay(100);
+    }
+
+    public void start() throws Exception {
+        Robot robot = new Robot();
         addKeyListener(this);
         setLocationRelativeTo(null);
         setSize(200, 200);
         setVisible(true);
         requestFocus();
 
+        boolean wasNumlockPressed = false;
         try {
-            Robot robot = new Robot();
             robot.setAutoDelay(10);
             robot.setAutoWaitForIdle(true);
             robot.delay(100);
@@ -72,22 +85,25 @@ public class KeyCharTest extends Frame implements KeyListener {
             robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
 
-            for(int vkey = 0x20; vkey < 0x7F; vkey++) {
-                try {
-                    robot.keyPress(vkey);
-                    robot.keyRelease(vkey);
-                    System.out.println(KeyEvent.getKeyText(vkey) + " " + vkey);
-                } catch (RuntimeException e) {
-                }
-            }
-            robot.delay(100);
+            testKeyRange(robot, 0x20, 0x7E);
+
+            // Try again with a different numpad state.
+            robot.keyPress(KeyEvent.VK_NUM_LOCK);
+            robot.keyRelease(KeyEvent.VK_NUM_LOCK);
+            wasNumlockPressed = true;
+
+            testKeyRange(robot, KeyEvent.VK_NUMPAD0, KeyEvent.VK_DIVIDE);
         } catch(Exception e){
-            e.printStackTrace();
             throw new RuntimeException("Exception while performing Robot actions.");
+        } finally {
+            if (wasNumlockPressed) {
+                robot.keyPress(KeyEvent.VK_NUM_LOCK);
+                robot.keyRelease(KeyEvent.VK_NUM_LOCK);
+            }
         }
    }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         KeyCharTest test = new KeyCharTest();
         try {
             test.start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,9 @@ public class value001 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -340,9 +342,6 @@ public class value001 {
 
             StackFrame      stackFrame   = null;
 
-            List            allThreads   = null;
-            ListIterator    listIterator = null;
-
 
             int expresult = returnCode0;
 
@@ -351,7 +350,6 @@ public class value001 {
                 log2("getting ThreadReference object");
 
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedclass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -360,19 +358,7 @@ public class value001 {
                     break label0;
                 }
 
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        thread2 = (ThreadReference) listIterator.next();
-                        if (thread2.name().equals(threadName))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO THREAD2 ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, "thread2", threadName);
 
                 log2("setting up a breakpoint");
 

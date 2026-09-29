@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  * returned by {@link BaseOptions#getSupportedOptions()}.
  *
  * <p>Some of the methods used to access the values of options
- * have names that begin with a verb, such as {@link #copyDocfileSubdirs}
- * or {@link #showVersion}. Unless otherwise stated,
+ * have names that begin with a verb, such as {@link #linkSource()}
+ * or {@link #showVersion()}. Unless otherwise stated,
  * these methods should all be taken as just accessing the value
  * of the associated option.
  */
@@ -71,12 +71,6 @@ public abstract class BaseOptions {
      * Allow JavaScript in doc comments.
      */
     private boolean allowScriptInComments = false;
-
-    /**
-     * Argument for command-line option {@code -docfilessubdirs}.
-     * True if we should recursively copy the doc-file subdirectories
-     */
-    private boolean copyDocfileSubdirs = false;
 
     /**
      * Argument for command-line option {@code --date}.
@@ -209,6 +203,13 @@ public abstract class BaseOptions {
     private boolean noDeprecated = false;
 
     /**
+     * Argument for command-line option {@code --no-fonts}.
+     * True if command-line option {@code --no-fonts} is used and font files
+     * should not be included in generated documentation. Default value is false.
+     */
+    private boolean noFonts = false;
+
+    /**
      * Argument for command-line option {@code --no-platform-links}.
      * True if command-line option "--no-platform-links" is used. Default value is
      * false.
@@ -228,6 +229,22 @@ public abstract class BaseOptions {
      * Default is false.
      */
     private boolean noTimestamp = false;
+
+
+    /**
+     * Argument for command-line option {@code --preview-note-tag}.
+     * If set, the JavaDoc tag with the given name can be used to add
+     * preview-related notes to permanent APIs or override the default
+     * preview note for preview APIs.
+     */
+    private String previewNoteTag = null;
+
+    /**
+     * Argument for command-line option {@code --preview-feature-tag}.
+     * If set, the JavaDoc inline tag with the given name is used to
+     * add mark an API element as preview feature in non-JDK contexts.
+     */
+    private String previewFeatureTag = null;
 
     /**
      * Argument for command-line option {@code -quiet}.
@@ -371,7 +388,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-docfilessubdirs") {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        copyDocfileSubdirs = true;
+                        messages.notice("doclet.docfilessubdirs_specified");
                         return true;
                     }
                 },
@@ -481,6 +498,14 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new Option(resources, "--no-fonts") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        noFonts = true;
+                        return true;
+                    }
+                },
+
                 new Option(resources, "-nosince") {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -530,6 +555,22 @@ public abstract class BaseOptions {
                                 return false;
                             }
                         }
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--preview-note-tag", 1) {
+                    @Override
+                    public boolean process(String option, List<String> args) {
+                        previewNoteTag = args.getFirst();
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--preview-feature-tag", 1) {
+                    @Override
+                    public boolean process(String option, List<String> args) {
+                        previewFeatureTag = args.getFirst();
                         return true;
                     }
                 },
@@ -716,14 +757,6 @@ public abstract class BaseOptions {
     }
 
     /**
-     * Argument for command-line option {@code -docfilessubdirs}.
-     * True if we should recursively copy the doc-file subdirectories
-     */
-    public boolean copyDocfileSubdirs() {
-        return copyDocfileSubdirs;
-    }
-
-    /**
      * Argument for command-line option {@code --date}.
      */
     public ZonedDateTime date() {
@@ -890,6 +923,15 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --no-fonts}.
+     * True if command-line option {@code --no-fonts"} is used.
+     * Default value is false.
+     */
+    public boolean noFonts() {
+        return noFonts;
+    }
+
+    /**
      * Argument for command-line option {@code --no-platform-links}.
      * True if command-line option {@code --no-platform-links"} is used.
      * Default value is false.
@@ -915,6 +957,18 @@ public abstract class BaseOptions {
     public boolean noTimestamp() {
         return noTimestamp;
     }
+
+    /**
+     * Argument for command-line option {@code --preview-note-tag}.
+     * Name of inline tag for preview notes on permanent APIs.
+     */
+    public String previewNoteTag() { return previewNoteTag; }
+
+    /**
+     * Argument for command-line option {@code --preview-feature-tag}.
+     * Name of inline tag for marking APIs as preview feature.
+     */
+    public String previewFeatureTag() { return previewFeatureTag; }
 
     /**
      * Argument for command-line option {@code -quiet}.

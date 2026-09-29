@@ -83,19 +83,44 @@ on where and how to check out the source code.
   for the source code, see below for suggestions on how to keep the build
   artifacts on a local disk.
 
-* On Windows, if using [Cygwin](#cygwin), extra care must be taken to make sure
-  the environment is consistent. It is recommended that you follow this
-  procedure:
+* UTF-8 support is needed to compile the JDK. On Unix systems, this typically
+  means that the `C.UTF-8` or `en_US.UTF-8` locale needs to be available. For
+  Windows users, please see the section on [Locale
+  Requirements](#locale-requirements) below.
 
-  * Create the directory that is going to contain the top directory of the JDK
-    clone by using the `mkdir` command in the Cygwin bash shell. That is, do
-    *not* create it using Windows Explorer. This will ensure that it will have
-    proper Cygwin attributes, and that it's children will inherit those
-    attributes.
+* On Windows, extra care must be taken to have a smooth building experience:
 
-  * Do not put the JDK clone in a path under your Cygwin home directory. This
-    is especially important if your user name contains spaces and/or mixed
-    upper and lower case letters.
+  * Make sure that all relevant paths have short names. Short names are used by
+    the build system to create space-free alternative paths. Short name
+    creation is enabled per volume. The default setting can be checked with the
+    command: `fsutil 8dot3name query`. If short name creation was turned off
+    when a directory was created, it will not have a short name. Whether a
+    short name exists can be checked by running `dir /X` in the containing
+    directory (in cmd.exe). If a short path is present you should see something
+    like 'ASDF~1' being displayed in one of the columns of the ouput. If a
+    directory is missing a short name, the safest way to get one is to enable
+    short names for that particular volume with `fsutil 8dot3name set <drive
+    letter>: 0` (note that you need to run as administrator for this), and then
+    re-create the particular directory. A short name should be generated
+    automatically then. Another option is to manually assign a short name to
+    the directory using `fsutil file setShortName <path> <short name>`.
+
+  * If using [Cygwin](#cygwin), you must make sure the file permissions and
+    attributes between Windows and Cygwin are consistent. It is recommended
+    that you follow this procedure:
+
+    * Create the directory that is going to contain the top directory of the
+      JDK clone by using the `mkdir` command in the Cygwin bash shell. That is,
+      do *not* create it using Windows Explorer. This will ensure that it will
+      have proper Cygwin attributes, and that it's children will inherit those
+      attributes.
+
+    * Do not put the JDK clone in a path under your Cygwin home directory. This
+      is especially important if your user name contains spaces and/or mixed
+      upper and lower case letters.
+
+    Failure to follow these procedures might result in hard-to-debug build
+    problems.
 
   * You need to install a git client. You have two choices, Cygwin git or Git
     for Windows. Unfortunately there are pros and cons with each choice.
@@ -112,9 +137,6 @@ on where and how to check out the source code.
       the Skara CLI tooling, however. To alleviate the line ending problems,
       make sure you set `core.autocrlf` to `false` (this is asked during
       installation).
-
-  Failure to follow this procedure might result in hard-to-debug build
-  problems.
 
 ## Build Hardware Requirements
 
@@ -134,8 +156,7 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
-Note: The Windows 32-bit x86 port is deprecated and may be removed in a future
-release.
+Note: The 32-bit x86 port is deprecated and may be removed in a future release.
 
 ### Building on aarch64
 
@@ -150,9 +171,11 @@ possible to use [cross-compiling](#cross-compiling).
 
 In order to use Branch Protection features in the VM,
 `--enable-branch-protection` must be used. This option requires C++ compiler
-support (GCC 9.1.0+ or Clang 10+). The resulting build can be run on both
-machines with and without support for branch protection in hardware. Branch
-Protection is only supported for Linux targets.
+support for `-mbranch-protection=standard` in GCC 9.1.0+ or Clang 10+ on
+Linux/AArch64 or for `/guard:signret` in Visual Studio 2019+ on Windows/ARM64.
+The resulting build can be run on both machines with and without support for
+branch protection in hardware. Branch Protection is fully supported for the
+Linux/AArch64 target and only partially supported for the Windows/ARM64 target.
 
 ### Building on 32-bit ARM
 
@@ -174,9 +197,9 @@ time of writing.
 
 | Operating system  | Vendor/version used                |
 | ----------------- | ---------------------------------- |
-| Linux/x64         | Oracle Enterprise Linux 6.4 / 8.x  |
-| Linux/aarch64     | Oracle Enterprise Linux 7.6 / 8.x  |
-| macOS             | macOS 13.x (Ventura)               |
+| Linux/x64         | Oracle Linux 6.4 / 8.x             |
+| Linux/aarch64     | Oracle Linux 7.6 / 8.x             |
+| macOS             | macOS 14.x                         |
 | Windows           | Windows Server 2016                |
 
 The double version numbers for Linux are due to the hybrid model used at
@@ -191,8 +214,7 @@ on different platforms.
 ### Windows
 
 Windows XP is not a supported platform, but all newer Windows should be able to
-build the JDK. (Note: The Windows 32-bit x86 port is deprecated and may be
-removed in a future release.)
+build the JDK.
 
 On Windows, it is important that you pay attention to the instructions in the
 [Special Considerations](#special-considerations).
@@ -329,8 +351,13 @@ difficult for a project such as the JDK to keep pace with a continuously
 updated machine running macOS. See the section on [Apple Xcode](#apple-xcode)
 on some strategies to deal with this.
 
-It is recommended that you use at least macOS 13 (Ventura) and Xcode 14, but
+It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.
+
+Starting with Xcode 26, introduced in macOS 26, the Metal toolchain no longer
+comes bundled with Xcode, so it needs to be installed separately. This can
+either be done via the Xcode's Settings/Components UI, or in the command line
+calling `xcodebuild -downloadComponent MetalToolchain`.
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
@@ -349,7 +376,7 @@ will most likely need to install developer packages.
 For apt-based distributions (Debian, Ubuntu, etc), try this:
 
 ```
-sudo apt-get install build-essential
+sudo apt-get install build-essential autoconf
 ```
 
 For rpm-based distributions (Fedora, Red Hat, etc), try this:
@@ -382,7 +409,7 @@ one-to-one correlation between target operating system and toolchain.
 | ------------------ | ------------------------- |
 | Linux              | gcc, clang                |
 | macOS              | Apple Xcode (using clang) |
-| AIX                | IBM XL C/C++              |
+| AIX                | IBM Open XL C/C++         |
 | Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
@@ -392,43 +419,39 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
-| Operating system   | Toolchain version                           |
-| ------------------ | ------------------------------------------- |
-| Linux              | gcc 13.2.0                                  |
-| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
-| Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
+| Operating system   | Toolchain version                            |
+| ------------------ | -------------------------------------------- |
+| Linux              | gcc 14.2.0                                   |
+| macOS              | Apple Xcode 15.4 (using clang 15.0.0)       |
+| Windows            | Microsoft Visual Studio 2022 version 17.13.2 |
 
 All compilers are expected to be able to handle the C11 language standard for
 C, and C++14 for C++.
 
 ### gcc
 
-The minimum accepted version of gcc is 6.0. Older versions will not be accepted
+The minimum accepted version of gcc is 10.0. Older versions will not be accepted
 by `configure`.
 
-The JDK is currently known to compile successfully with gcc version 13.2 or
+The JDK is currently known to compile successfully with gcc version 14.2 or
 newer.
 
 In general, any version between these two should be usable.
 
 ### clang
 
-The minimum accepted version of clang is 3.5. Older versions will not be
+The minimum accepted version of clang is 13. Older versions will not be
 accepted by `configure`.
 
 To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 ### Apple Xcode
 
-The oldest supported version of Xcode is 8.
+The oldest supported version of Xcode is 13.0.
 
-You will need the Xcode command line developer tools to be able to build the
-JDK. (Actually, *only* the command line tools are needed, not the IDE.) The
-simplest way to install these is to run:
-
-```
-xcode-select --install
-```
+You will need to download Xcode either from the App Store or specific versions
+can be easily located via the [Xcode Releases](https://xcodereleases.com)
+website.
 
 When updating Xcode, it is advisable to keep an older version for building the
 JDK. To use a specific version of Xcode you have multiple options:
@@ -452,7 +475,7 @@ available for this update.
 The minimum accepted version is Visual Studio 2019 version 16.8. (Note that
 this version is often presented as "MSVC 14.28", and reported by cl.exe as
 19.28.) Older versions will not be accepted by `configure` and will not work.
-The maximum accepted version of Visual Studio is 2022.
+The maximum accepted version of Visual Studio is 2026.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
@@ -487,11 +510,10 @@ that the " characters are essential)
 accordingly. If you have not installed the `BuildTools`, but e.g.
 `Professional`, adjust the product ID accordingly.
 
-### IBM XL C/C++
+### IBM Open XL C/C++
 
-Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK Build
-Wiki page for details about which versions of XLC are supported.
+The minimum accepted version of Open XL is 17.1.1.4. This is in essence clang
+15, and will be treated as such by the OpenJDK build system.
 
 ## Boot JDK Requirements
 
@@ -572,6 +594,7 @@ required on all platforms except Windows and macOS.
 libfontconfig-dev`.
 * To install on an rpm-based Linux, try running `sudo yum install
 fontconfig-devel`.
+* To install on Alpine Linux, try running `sudo apk add fontconfig-dev`.
 
 Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>` if
 `configure` does not automatically locate the platform Fontconfig files.
@@ -683,6 +706,14 @@ The JDK build requires [GNU Bash](https://www.gnu.org/software/bash). No other
 shells are supported.
 
 At least version 3.2 of GNU Bash must be used.
+
+### Graphviz and Pandoc
+
+In order to build man pages and the full docs (see the `--enable-full-docs`
+configure option) [Pandoc](https://pandoc.org) is required. For full docs also
+[Graphviz](https://www.graphviz.org) is required. Any recent versions should
+work. For reference, and subject to change, Oracle builds use Graphviz
+9.0.0 and Pandoc 2.19.2.
 
 ## Running Configure
 
@@ -1149,10 +1180,8 @@ Note that alsa is needed even if you only want to build a headless JDK.
 
 #### X11
 
-You will need X11 libraries suitable for your *target* system. In most cases,
-using Debian's pre-built libraries work fine.
-
-Note that X11 is needed even if you only want to build a headless JDK.
+When not building a headless JDK, you will need X11 libraries suitable for your
+*target* system. In most cases, using Debian's pre-built libraries work fine.
 
 * Go to [Debian Package Search](https://www.debian.org/distrib/packages),
   search for the following packages for your *target* system, and download them
@@ -1234,11 +1263,11 @@ toolchain and a sysroot environment which can easily be used together with the
 following command:
 
 ```
-bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64-linux-gnu && make
+bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64le-linux-gnu && make
 ```
 
-will configure and build the JDK for Linux/ppc64 assuming that `<devkit-path>`
-points to a Linux/x86_64 to Linux/ppc64 devkit.
+will configure and build the JDK for Linux/ppc64le assuming that `<devkit-path>`
+points to a Linux/x86_64 to Linux/ppc64le devkit.
 
 Devkits can be created from the `make/devkit` directory by executing:
 
@@ -1257,33 +1286,30 @@ at least the following targets are known to work:
 | x86_64-linux-gnu         |
 | aarch64-linux-gnu        |
 | arm-linux-gnueabihf      |
-| ppc64-linux-gnu          |
 | ppc64le-linux-gnu        |
+| riscv64-linux-gnu        |
 | s390x-linux-gnu          |
 
-`BASE_OS` must be one of "OEL6" for Oracle Enterprise Linux 6 or "Fedora" (if
-not specified "OEL6" will be the default). If the base OS is "Fedora" the
-corresponding Fedora release can be specified with the help of the
-`BASE_OS_VERSION` option (with "27" as default version). If the build is
-successful, the new devkits can be found in the `build/devkit/result`
+`BASE_OS` must be one of `OL` for Oracle Linux or `Fedora`. The release/version
+of the base OS can be specified using the `BASE_OS_VERSION` option. If the build
+is successful, the new devkits can be found in the `build/devkit/result`
 subdirectory:
 
 ```
 cd make/devkit
-make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=21
+make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora
 ls -1 ../../build/devkit/result/
 x86_64-linux-gnu-to-aarch64-linux-gnu
 x86_64-linux-gnu-to-ppc64le-linux-gnu
 ```
 
 Notice that devkits are not only useful for targeting different build
-platforms. Because they contain the full build dependencies for a system (i.e.
-compiler and root file system), they can easily be used to build well-known,
-reliable and reproducible build environments. You can for example create and
-use a devkit with GCC 7.3 and a Fedora 12 sysroot environment (with glibc 2.11)
-on Ubuntu 14.04 (which doesn't have GCC 7.3 by default) to produce JDK binaries
-which will run on all Linux systems with runtime libraries newer than the ones
-from Fedora 12 (e.g. Ubuntu 16.04, SLES 11 or RHEL 6).
+platforms. Because they contain the full build dependencies for a system (i.e.,
+compiler and root file system/sysroot), they can easily be used to build
+well-known, reliable, and reproducible build environments. You can, for example,
+create and use a devkit with a version of the GCC compiler not provided by the
+host OS, using a sysroot from an older Linux distribution to produce JDK
+binaries which will run on all Linux systems with newer runtime libraries.
 
 #### Using Debian debootstrap
 
@@ -1315,9 +1341,6 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     ~/sysroot-arm64 \
     https://httpredir.debian.org/debian/
   ```
-
-  If the target architecture is `riscv64`, the path should be `debian-ports`
-  instead of `debian`.
 
 * To create an Ubuntu-based chroot:
 
@@ -1458,6 +1481,24 @@ sh ./configure --with-jvm-variants=server \
 
 and run `make` normally.
 
+#### Building for Windows AArch64
+The Visual Studio Build Tools can be used for building the JDK without a full
+Visual Studio installation. To set up the Visual Studio 2022 Build Tools on a
+Windows AArch64 machine for a native build, launch the installer as follows
+in a Windows command prompt:
+
+```
+vs_buildtools.exe --quiet --wait --norestart --nocache ^
+--installPath "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools" ^
+--add Microsoft.VisualStudio.Component.VC.CoreBuildTools ^
+--add Microsoft.VisualStudio.Component.VC.Tools.ARM64 ^
+--add Microsoft.VisualStudio.Component.Windows11SDK.22621
+```
+
+To generate Windows AArch64 builds using Cygwin on a Windows x64 machine,
+you must set the proper target platform by adding
+`--openjdk-target=aarch64-unknown-cygwin` to your configure command line.
+
 ## Build Performance
 
 Building the JDK requires a lot of horsepower. Some of the build tools can be
@@ -1515,6 +1556,15 @@ ccache can radically speed up compilation of native code if you often rebuild
 the same sources. Your mileage may vary however, so we recommend evaluating it
 for yourself. To enable it, make sure it's on the path and configure with
 `--enable-ccache`.
+
+### Sccache
+
+The JDK build supports building with sccache when using gcc, clang, or Microsoft
+toolchains.  To enable it, make sure the sccache binary is on the path (or
+specify the path to the binary using the `SCCACHE` argument to the configure
+script) and configure with `--enable-sccache`.  To optionally specify where
+sccache stores its cache files, use `--with-sccache-dir`.  Precompiled headers
+are disabled when sccache is enabled.
 
 ### Precompiled Headers
 
@@ -1799,9 +1849,17 @@ temporarily.
 On Windows, when configuring, `fixpath.sh` may report that some directory names
 have spaces. Usually, it assumes those directories have [short
 paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
-You can run `fsutil file setshortname` in `cmd` on certain directories, such as
-`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
-`configure` can access them.
+You can run `fsutil file setshortname` in `cmd` on directories to assign
+arbitrary short paths so `configure` can access them. If the result says "Access
+denied", it may be that there are processes running in that directory; in this
+case, you can reboot Windows in safe mode and run the command on those directories
+again.
+
+The only directories required to have short paths are `Microsoft Visual Studio`
+and `Windows Kits`; the rest of the "contains space" warnings from `configure`,
+such as `IntelliJ IDEA`, can be ignored. You can choose any short name; once it
+is set, `configure`'s tools like `cygpath` can convert the directory with spaces
+to your chosen short name and pass it to the build system.
 
 ### Getting Help
 
@@ -1946,12 +2004,25 @@ configuration with the name `<name>`. Alternatively, you can create a directory
 under `build` and run `configure` from there, e.g. `mkdir build/<name> && cd
 build/<name> && bash ../../configure`.
 
-Then you can build that configuration using `make CONF_NAME=<name>` or `make
-CONF=<pattern>`, where `<pattern>` is a substring matching one or several
-configurations, e.g. `CONF=debug`. The special empty pattern (`CONF=`) will
-match *all* available configuration, so `make CONF= hotspot` will build the
-`hotspot` target for all configurations. Alternatively, you can execute `make`
-in the configuration directory, e.g. `cd build/<name> && make`.
+Then you can build that configuration using `make CONF=<selector>`, where
+`<selector>` is interpreted as follows:
+
+* If `<selector>` exacly matches the name of a configuration, this and only
+  this configuration will be selected.
+* If `<selector>` matches (i.e. is a substring of) the names of several
+  configurations, then all these configurations will be selected.
+* If `<selector>` is empty (i.e. `CONF=`), then all configurations will be
+  selected.
+* If `<selector>` begins with `!`, then all configurations **not** matching the
+  string following `!` will be selected.
+
+A more specialized version, `CONF_NAME=<name>` also exists, which will only
+match if the given `<name>` exactly matches a single configuration.
+
+Alternatively, you can execute `make` in the configuration directory, e.g. `cd
+build/<name> && make`.
+
+`make CONF_NAME=<name>` or
 
 ### Handling Reconfigurations
 

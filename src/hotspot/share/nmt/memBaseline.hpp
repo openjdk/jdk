@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,9 @@
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/nmtHashTable.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutex.hpp"
-#include "utilities/linkedlist.hpp"
-
-typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
-typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
-typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
 
 /*
  * Baseline a memory snapshot
@@ -50,10 +46,12 @@ class MemBaseline {
   };
 
   enum SortingOrder {
-    by_address,      // by memory address
-    by_size,         // by memory size
-    by_site,         // by call site where the memory is allocated from
-    by_site_and_type // by call site and memory type
+    by_address,       // by memory address
+    by_size,          // by memory size
+    by_site,          // by call site where the memory is allocated from
+    by_site_and_tag,  // by call site and memory tag
+    _count,
+    invalid = _count
   };
 
  private:
@@ -68,14 +66,16 @@ class MemBaseline {
 
   // Allocation sites information
   // Malloc allocation sites
-  LinkedListImpl<MallocSite>                  _malloc_sites;
+  MallocSite* _malloc_sites;
+  int         _malloc_sites_length;
 
   // All virtual memory allocations
-  LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
+  RegionsTree* _vma_allocations;
 
-  // Virtual memory allocations by allocation sites, always in by_address
+  // Virtual memory allocations by allocation sites, always in by_site
   // order
-  LinkedListImpl<VirtualMemoryAllocationSite> _virtual_memory_sites;
+  VirtualMemoryAllocationSite* _virtual_memory_sites;
+  int                          _virtual_memory_sites_length;
 
   SortingOrder         _malloc_sites_order;
   SortingOrder         _virtual_memory_sites_order;
@@ -86,7 +86,16 @@ class MemBaseline {
   // create a memory baseline
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
+    _malloc_sites(nullptr), _malloc_sites_length(0),
+    _vma_allocations(nullptr),
+    _virtual_memory_sites(nullptr), _virtual_memory_sites_length(0),
+    _malloc_sites_order(invalid),
+    _virtual_memory_sites_order(invalid),
     _baseline_type(Not_baselined) {
+  }
+
+  ~MemBaseline() {
+    reset();
   }
 
   void baseline(bool summaryOnly = true);
@@ -105,14 +114,20 @@ class MemBaseline {
     return _metaspace_stats;
   }
 
-  MallocSiteIterator malloc_sites(SortingOrder order);
-  VirtualMemorySiteIterator virtual_memory_sites(SortingOrder order);
+  void sort_malloc_sites(SortingOrder order);
+  void sort_virtual_memory_sites(SortingOrder order);
+
+  MallocSite* malloc_sites() { return _malloc_sites; }
+  int malloc_sites_length()  { return _malloc_sites_length; }
+
+  VirtualMemoryAllocationSite* virtual_memory_sites()        { return _virtual_memory_sites; }
+  int                          virtual_memory_sites_length() { return _virtual_memory_sites_length; }
 
   // Virtual memory allocation iterator always returns in virtual memory
   // base address order.
-  VirtualMemoryAllocationIterator virtual_memory_allocations() {
-    assert(!_virtual_memory_allocations.is_empty(), "Not detail baseline");
-    return VirtualMemoryAllocationIterator(_virtual_memory_allocations.head());
+  RegionsTree* virtual_memory_allocations() {
+    assert(_vma_allocations != nullptr, "Not detail baseline");
+    return _vma_allocations;
   }
 
   // Total reserved memory = total malloc'd memory + total reserved virtual
@@ -144,14 +159,14 @@ class MemBaseline {
     return bl->_malloc_memory_snapshot.malloc_overhead();
   }
 
-  MallocMemory* malloc_memory(MEMFLAGS flag) {
+  MallocMemory* malloc_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot.by_type(flag);
+    return _malloc_memory_snapshot.by_tag(mem_tag);
   }
 
-  VirtualMemory* virtual_memory(MEMFLAGS flag) {
+  VirtualMemory* virtual_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _virtual_memory_snapshot.by_type(flag);
+    return _virtual_memory_snapshot.by_tag(mem_tag);
   }
 
 
@@ -183,9 +198,16 @@ class MemBaseline {
     _array_class_count = 0;
     _thread_count = 0;
 
-    _malloc_sites.clear();
-    _virtual_memory_sites.clear();
-    _virtual_memory_allocations.clear();
+    os::free(_malloc_sites);
+    _malloc_sites_length = 0;
+    _malloc_sites = nullptr;
+    _malloc_sites_order = invalid;
+    os::free(_virtual_memory_sites);
+    _virtual_memory_sites_length = 0;
+    _virtual_memory_sites = nullptr;
+    _virtual_memory_sites_order = invalid;
+    delete _vma_allocations;
+    _vma_allocations = nullptr;
   }
 
  private:
@@ -197,19 +219,6 @@ class MemBaseline {
 
   // Aggregate virtual memory allocation by allocation sites
   bool aggregate_virtual_memory_allocation_sites();
-
-  // Sorting allocation sites in different orders
-  // Sort allocation sites in size order
-  void malloc_sites_to_size_order();
-  // Sort allocation sites in call site address order
-  void malloc_sites_to_allocation_site_order();
-  // Sort allocation sites in call site address and memory type order
-  void malloc_sites_to_allocation_site_and_type_order();
-
-  // Sort allocation sites in reserved size order
-  void virtual_memory_sites_to_size_order();
-  // Sort allocation sites in call site address order
-  void virtual_memory_sites_to_reservation_site_order();
 };
 
 #endif // SHARE_NMT_MEMBASELINE_HPP

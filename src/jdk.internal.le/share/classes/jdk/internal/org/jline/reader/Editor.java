@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author or authors.
+ * Copyright (c) 2002-2019, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -13,6 +13,8 @@ import java.util.List;
 
 public interface Editor {
     public void open(List<String> files) throws IOException;
+
     public void run() throws IOException;
+
     public void setRestricted(boolean restricted);
 }

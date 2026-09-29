@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.tools.javac.tree;
 
 import java.io.*;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
@@ -74,6 +74,10 @@ public class Pretty extends JCTree.Visitor {
     /** The enclosing class name.
      */
     Name enclClassName;
+
+    /** The enclosing class flags.
+     */
+    long enclClassFlags;
 
     /** A table mapping trees to their documentation comments
      *  (can be null)
@@ -314,6 +318,22 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
+    /** Print record components.
+     */
+    public void printRecordComponents(List<JCTree> stats) throws IOException {
+        print('(');
+        boolean first = true;
+        for (List<JCTree> l = stats; l.nonEmpty(); l = l.tail) {
+            if (isRecordComponent(l.head)) {
+                if (!first) {
+                    print(", ");
+                }
+                printStat(l.head);
+                first = false;
+            }
+        }
+        print(')');
+    }
     /** Print a block.
      */
     public void printBlock(List<? extends JCTree> stats) throws IOException {
@@ -347,7 +367,25 @@ public class Pretty extends JCTree.Visitor {
         print(';');
         println();
         for (List<JCTree> l = stats; l.nonEmpty(); l = l.tail) {
-            if (!isEnumerator(l.head)) {
+            if (!isEnumerator(l.head) && (!sourceOutput || !isGeneratedDefaultConstructor(l.head))) {
+                align();
+                printStat(l.head);
+                println();
+            }
+        }
+        undent();
+        align();
+        print('}');
+    }
+
+    /** Print a block.
+     */
+    public void printRecordBody(List<JCTree> stats) throws IOException {
+        print('{');
+        println();
+        indent();
+        for (List<JCTree> l = stats; l.nonEmpty(); l = l.tail) {
+            if (!isRecordComponent(l.head) && (!sourceOutput || !isGeneratedDefaultConstructor(l.head))) {
                 align();
                 printStat(l.head);
                 println();
@@ -361,6 +399,21 @@ public class Pretty extends JCTree.Visitor {
     /** Is the given tree an enumerator definition? */
     boolean isEnumerator(JCTree t) {
         return t.hasTag(VARDEF) && (((JCVariableDecl) t).mods.flags & ENUM) != 0;
+    }
+
+    /** Is the given tree a record component? */
+    boolean isRecordComponent(JCTree t) {
+        return t.hasTag(VARDEF) && (((JCVariableDecl) t).mods.flags & RECORD) != 0;
+    }
+
+    /** Is the given tree a compact record constructor? */
+    boolean isCompactRecordConstructor(JCTree t) {
+        return t.hasTag(METHODDEF) && (((JCMethodDecl) t).mods.flags & COMPACT_RECORD_CONSTRUCTOR) != 0;
+    }
+
+    /** Is the given tree a generated default constructor? */
+    boolean isGeneratedDefaultConstructor(JCTree t) {
+        return t.hasTag(METHODDEF) && (((JCMethodDecl) t).mods.flags & GENERATEDCONSTR) != 0;
     }
 
     /** Print unit consisting of package clause and import statements in toplevel,
@@ -380,12 +433,12 @@ public class Pretty extends JCTree.Visitor {
                  (cdef == null ||
                   l.head.hasTag(IMPORT) || l.head.hasTag(PACKAGEDEF));
              l = l.tail) {
-            if (l.head.hasTag(IMPORT)) {
-                JCImport imp = (JCImport)l.head;
-                Name name = TreeInfo.name(imp.qualid);
+            if (l.head instanceof JCImportBase imp) {
+                Name name = TreeInfo.name(imp.getQualifiedIdentifier());
                 if (name == name.table.names.asterisk ||
                         cdef == null ||
-                        isUsed(TreeInfo.symbol(imp.qualid), cdef)) {
+                        imp instanceof JCModuleImport ||
+                        isUsed(TreeInfo.symbol(imp.getQualifiedIdentifier()), cdef)) {
                     if (firstImport) {
                         firstImport = false;
                         println();
@@ -417,7 +470,7 @@ public class Pretty extends JCTree.Visitor {
         return v.result;
     }
 
-    /**************************************************************************
+    /* ************************************************************************
      * Visitor methods
      *************************************************************************/
 
@@ -547,6 +600,17 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
+    public void visitModuleImport(JCModuleImport tree) {
+        try {
+            print("import module ");
+            printExpr(tree.module);
+            print(';');
+            println();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public void visitClassDef(JCClassDecl tree) {
         try {
             println(); align();
@@ -555,6 +619,8 @@ public class Pretty extends JCTree.Visitor {
             printFlags(tree.mods.flags & ~INTERFACE);
             Name enclClassNamePrev = enclClassName;
             enclClassName = tree.name;
+            long enclClassFlagsPrev = enclClassFlags;
+            enclClassFlags = tree.mods.flags;
             if ((tree.mods.flags & INTERFACE) != 0) {
                 print("interface ");
                 print(tree.name);
@@ -570,10 +636,15 @@ public class Pretty extends JCTree.Visitor {
             } else {
                 if ((tree.mods.flags & ENUM) != 0)
                     print("enum ");
+                else if ((tree.mods.flags & RECORD) != 0)
+                    print("record ");
                 else
                     print("class ");
                 print(tree.name);
                 printTypeParameters(tree.typarams);
+                if ((tree.mods.flags & RECORD) != 0) {
+                    printRecordComponents(tree.defs);
+                }
                 if (tree.extending != null) {
                     print(" extends ");
                     printExpr(tree.extending);
@@ -590,10 +661,13 @@ public class Pretty extends JCTree.Visitor {
             print(' ');
             if ((tree.mods.flags & ENUM) != 0) {
                 printEnumBody(tree.defs);
+            } else if ((tree.mods.flags & RECORD) != 0) {
+                printRecordBody(tree.defs);
             } else {
                 printBlock(tree.defs);
             }
             enclClassName = enclClassNamePrev;
+            enclClassFlags = enclClassFlagsPrev;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -616,26 +690,41 @@ public class Pretty extends JCTree.Visitor {
                 print(' ');
                 print(tree.name);
             }
-            print('(');
-            if (tree.recvparam!=null) {
-                printExpr(tree.recvparam);
-                if (tree.params.size() > 0) {
-                    print(", ");
+            if (!isCompactRecordConstructor(tree)) {
+                print('(');
+                if (tree.recvparam!=null) {
+                    printExpr(tree.recvparam);
+                    if (tree.params.size() > 0) {
+                        print(", ");
+                    }
                 }
-            }
-            printExprs(tree.params);
-            print(')');
-            if (tree.thrown.nonEmpty()) {
-                print(" throws ");
-                printExprs(tree.thrown);
-            }
-            if (tree.defaultValue != null) {
-                print(" default ");
-                printExpr(tree.defaultValue);
+                printExprs(tree.params);
+                print(')');
+                if (tree.thrown.nonEmpty()) {
+                    print(" throws ");
+                    printExprs(tree.thrown);
+                }
+                if (tree.defaultValue != null) {
+                    print(" default ");
+                    printExpr(tree.defaultValue);
+                }
             }
             if (tree.body != null) {
                 print(' ');
-                printStat(tree.body);
+                if (tree.name == tree.name.table.names.init &&
+                        ((enclClassFlags & ENUM) != 0 ||
+                        (enclClassFlags & RECORD) != 0)) {
+                    ListBuffer<JCStatement> buf = new ListBuffer<>();
+                    for (List<JCStatement> l = tree.body.stats; l.nonEmpty(); l = l.tail) {
+                        // Filter out super constructor calls
+                        if (!TreeInfo.isSuperCall(l.head)) {
+                            buf.append(l.head);
+                        }
+                    }
+                    printBlock(buf.toList());
+                } else {
+                    printStat(tree.body);
+                }
             } else {
                 print(';');
             }
@@ -651,6 +740,7 @@ public class Pretty extends JCTree.Visitor {
             }
             printDocComment(tree);
             if ((tree.mods.flags & ENUM) != 0) {
+                printAnnotations(tree.mods.annotations);
                 print("/*public static final*/ ");
                 print(tree.name);
                 if (tree.init != null) {
@@ -665,7 +755,13 @@ public class Pretty extends JCTree.Visitor {
                             }
                             if (init.def != null && init.def.defs != null) {
                                 print(' ');
-                                printBlock(init.def.defs);
+                                ListBuffer<JCTree> buf = new ListBuffer<>();
+                                for (List<JCTree> l = init.def.defs; l.nonEmpty(); l = l.tail) {
+                                    if (!isGeneratedDefaultConstructor(l.head)) {
+                                        buf.append(l.head);
+                                    }
+                                }
+                                printBlock(buf.toList());
                             }
                             return;
                         }else {
@@ -696,6 +792,11 @@ public class Pretty extends JCTree.Visitor {
                     printExpr(tree.init);
                     print(" */");
                 }
+            } else if ((tree.mods.flags & RECORD) != 0) {
+                printTypeAnnotations(tree.mods.annotations);
+                printExpr(tree.vartype);
+                print(' ');
+                print(tree.name);
             } else {
                 printExpr(tree.mods);
                 if ((tree.mods.flags & VARARGS) != 0) {
@@ -713,7 +814,10 @@ public class Pretty extends JCTree.Visitor {
                     print("... ");
                     print(tree.name);
                 } else {
-                    printExpr(tree.vartype);
+                    if (tree.vartype == null && tree.declaredUsingVar())
+                        print("var");
+                    else
+                        printExpr(tree.vartype);
                     print(' ');
                     if (tree.name.isEmpty()) {
                         print('_');
@@ -1456,7 +1560,7 @@ public class Pretty extends JCTree.Visitor {
                     break;
                 case CHAR:
                     print('\'');
-                    print(Convert.quote(String.valueOf((char)((Number)tree.value).intValue())));
+                    print(Convert.quote((char)((Number)tree.value).intValue(), true));
                     print('\'');
                     break;
                 case BOOLEAN:
@@ -1471,21 +1575,6 @@ public class Pretty extends JCTree.Visitor {
                     print('"');
                     break;
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public void visitStringTemplate(JCStringTemplate tree) {
-        try {
-            JCExpression processor = tree.processor;
-            print("[");
-            printExpr(processor);
-            print("]");
-            print("\"" + tree.fragments.stream().collect(Collectors.joining("\\{}")) + "\"");
-            print("(");
-            printExprs(tree.expressions);
-            print(")");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -1525,6 +1614,15 @@ public class Pretty extends JCTree.Visitor {
                     print("error");
                     break;
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitVarType(JCVarType that) {
+        try {
+            print("var");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

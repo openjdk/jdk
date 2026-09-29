@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package jdk.internal.event;
  * Event recording that a virtual thread has been started.
  */
 public class VirtualThreadStartEvent extends Event {
-    private final static VirtualThreadStartEvent EVENT = new VirtualThreadStartEvent();
+    private static final VirtualThreadStartEvent EVENT = new VirtualThreadStartEvent();
 
     /**
      * Returns {@code true} if event is enabled, {@code false} otherwise.

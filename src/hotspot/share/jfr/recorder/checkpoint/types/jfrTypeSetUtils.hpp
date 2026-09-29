@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ /*
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,9 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrSymbolTable.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrSet.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
-
-template <typename T>
-class GrowableArray;
 
 // Composite callback/functor building block
 template <typename T, typename Func1, typename Func2>
@@ -80,6 +78,7 @@ class KlassToFieldEnvelope {
  public:
   KlassToFieldEnvelope(Letter* letter) : _letter(letter) {}
   bool operator()(const Klass* klass) {
+    assert(IS_SERIALIZED(klass), "invariant");
     typename FieldSelector::TypePtr t = FieldSelector::select(klass);
     return t != nullptr ? (*_letter)(t) : true;
   }
@@ -95,6 +94,8 @@ class ClearArtifact {
     assert(IS_NOT_TRANSIENT(value), "invariant");
     SET_PREVIOUS_EPOCH_CLEARED_BIT(value);
     CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(value);
+    assert(IS_THIS_EPOCH_CLEARED_BIT_SET(value), "invariant");
+    assert(IS_PREVIOUS_EPOCH_CLEARED_BIT_SET(value), "invariant");
     return true;
   }
 };
@@ -109,30 +110,12 @@ class ClearArtifact<const Method*> {
     assert(METHOD_IS_NOT_LEAKP(method), "invariant");
     assert(METHOD_IS_NOT_TRANSIENT(method), "invariant");
     SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
-    CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
+    if (METHOD_FLAG_USED_PREVIOUS_EPOCH_BIT(method)) {
+      CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
+    }
+    assert(IS_THIS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
+    assert(IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
     return true;
-  }
-};
-
-template <typename T>
-class SerializePredicate {
-  bool _class_unload;
- public:
-  SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
-  bool operator()(T const& value) {
-    assert(value != nullptr, "invariant");
-    return _class_unload ? true : IS_NOT_SERIALIZED(value);
-  }
-};
-
-template <>
-class SerializePredicate<const Method*> {
-  bool _class_unload;
- public:
-  SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
-  bool operator()(const Method* method) {
-    assert(method != nullptr, "invariant");
-    return _class_unload ? true : METHOD_IS_NOT_SERIALIZED(method);
   }
 };
 
@@ -150,25 +133,24 @@ class SymbolPredicate {
   }
 };
 
-class MethodUsedPredicate {
-  bool _current_epoch;
-public:
-  MethodUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
-  bool operator()(const Klass* klass) {
-    return _current_epoch ? METHOD_USED_THIS_EPOCH(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
-  }
-};
-
 template <bool leakp>
 class MethodFlagPredicate {
-  bool _current_epoch;
+  const bool _previous_epoch;
+  const bool _class_unload;
  public:
-  MethodFlagPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
+  MethodFlagPredicate(bool previous_epoch, bool class_unload) : _previous_epoch(previous_epoch), _class_unload(class_unload)  {}
   bool operator()(const Method* method) {
-    if (_current_epoch) {
-      return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
+    if (leakp) {
+      return METHOD_IS_LEAKP(method);
     }
-    return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    if (_previous_epoch) {
+      assert(!_class_unload, "invariant");
+      return METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    }
+    if (_class_unload) {
+      return METHOD_FLAG_USED_THIS_EPOCH(method) || METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    }
+    return METHOD_FLAG_USED_THIS_EPOCH(method);
   }
 };
 
@@ -206,62 +188,84 @@ class LeakPredicate<const Method*> {
  * in the respective VM subsystems.
  */
 class JfrArtifactSet : public JfrCHeapObj {
+ public:
+  class JfrArtifactSetConfig : public AllStatic {
+   public:
+    typedef const Klass* KEY_TYPE;
+
+    constexpr static AnyObj::allocation_type alloc_type() {
+      return AnyObj::RESOURCE_AREA;
+    }
+
+    constexpr static MemTag memory_tag() {
+      return mtInternal;
+    }
+
+    // Knuth multiplicative hashing.
+    static uint32_t hash(const KEY_TYPE& k) {
+      const uint32_t v = static_cast<uint32_t>(JfrTraceId::load_raw(k));
+      return v * UINT32_C(2654435761);
+    }
+
+    static bool cmp(const KEY_TYPE& lhs, const KEY_TYPE& rhs) {
+      return lhs == rhs;
+    }
+  };
+
+  typedef JfrSet<JfrArtifactSetConfig> JfrKlassSet;
+
  private:
-  JfrSymbolTable* _symbol_table;
-  GrowableArray<const Klass*>* _klass_list;
-  GrowableArray<const Klass*>* _klass_loader_set;
+  JfrKlassSet* _klass_set;
+  JfrKlassSet* _klass_loader_set;
+  JfrKlassSet* _klass_loader_leakp_set;
   size_t _total_count;
+  bool _class_unload;
+  bool _previous_epoch;
 
  public:
-  JfrArtifactSet(bool class_unload);
+  JfrArtifactSet(bool class_unload, bool previous_epoch);
   ~JfrArtifactSet();
 
   // caller needs ResourceMark
-  void initialize(bool class_unload);
+  void initialize(bool class_unload, bool previous_epoch);
   void clear();
 
-  traceid mark(uintptr_t hash, const Symbol* sym, bool leakp);
   traceid mark(const Klass* klass, bool leakp);
   traceid mark(const Symbol* symbol, bool leakp);
-  traceid mark(uintptr_t hash, const char* const str, bool leakp);
-  traceid mark_hidden_klass_name(const Klass* klass, bool leakp);
   traceid bootstrap_name(bool leakp);
 
-  const JfrSymbolTable::SymbolEntry* map_symbol(const Symbol* symbol) const;
-  const JfrSymbolTable::SymbolEntry* map_symbol(uintptr_t hash) const;
-  const JfrSymbolTable::StringEntry* map_string(uintptr_t hash) const;
-
   bool has_klass_entries() const;
-  int entries() const;
   size_t total_count() const;
   void register_klass(const Klass* k);
-  bool should_do_loader_klass(const Klass* k);
-  void increment_checkpoint_id();
-
-  template <typename Functor>
-  void iterate_klasses(Functor& functor) const {
-    for (int i = 0; i < _klass_list->length(); ++i) {
-      if (!functor(_klass_list->at(i))) {
-        break;
-      }
-    }
-  }
+  bool should_do_cld_klass(const Klass* k, bool leakp);
 
   template <typename T>
-  void iterate_symbols(T& functor) {
-    _symbol_table->iterate_symbols(functor);
-  }
+  void iterate_symbols(T& functor);
 
   template <typename T>
-  void iterate_strings(T& functor) {
-    _symbol_table->iterate_strings(functor);
-  }
+  void iterate_strings(T& functor);
 
   template <typename Writer>
   void tally(Writer& writer) {
     _total_count += writer.count();
   }
 
+  template <typename Functor>
+  void iterate_klasses(Functor& functor) const {
+    if (iterate(functor, _klass_set)) {
+      iterate(functor, _klass_loader_set);
+    }
+  }
+
+ private:
+  template <typename Functor>
+  bool iterate(Functor& functor, JfrKlassSet* set) const {
+    assert(set != nullptr, "invariant");
+    if (set->is_nonempty()) {
+      set->iterate(functor);
+    }
+    return true;
+  }
 };
 
 class KlassArtifactRegistrator {

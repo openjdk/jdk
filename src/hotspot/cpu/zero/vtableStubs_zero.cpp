@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,16 +23,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vtableStubs.hpp"
 #include "utilities/debug.hpp"
 
-VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1) {
   ShouldNotCallThis();
   return nullptr;
 }
 
-VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_itable_stub(int vtable_index, bool caller_is_c1) {
   ShouldNotCallThis();
   return nullptr;
 }

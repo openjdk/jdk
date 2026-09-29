@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/spinYield.hpp"
@@ -66,7 +65,7 @@ void SpinYield::report(outputStream* s) const {
   if (_sleep_time.value() != 0) { // Report sleep duration, if slept.
     separator = print_separator(s, separator);
     s->print("sleep = " UINT64_FORMAT " usecs",
-             _sleep_time.milliseconds());
+             _sleep_time.microseconds());
   }
   if (separator == initial_separator) {
     s->print("no waiting");

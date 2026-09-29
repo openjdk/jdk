@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,16 @@
 
 class G1RemSet;
 
-// A G1RemSetSummary manages statistical information about the G1RemSet
-
+// A G1RemSetSummary manages statistical information about the remembered set.
 class G1RemSetSummary {
-  size_t _num_vtimes;
-  double* _rs_threads_vtimes;
+  size_t _num_worker_threads;
+  jlong* _worker_threads_cpu_times;
+  jlong _control_thread_cpu_time;
 
-  void set_rs_thread_vtime(uint thread, double value);
+  void set_worker_thread_cpu_time(uint thread, jlong value);
+  void set_control_thread_cpu_time(jlong value);
 
-  // update this summary with current data from various places
+  // Update this summary with current data from various places.
   void update();
 
 public:
@@ -47,14 +48,15 @@ public:
 
   ~G1RemSetSummary();
 
-  // set the counters in this summary to the values of the others
+  // Set the counters in this summary to the values of the others.
   void set(G1RemSetSummary* other);
-  // subtract all counters from the other summary, and set them in the current
+  // Subtract all counters from the other summary, and set them in the current.
   void subtract_from(G1RemSetSummary* other);
 
   void print_on(outputStream* out, bool show_thread_times);
 
-  double rs_thread_vtime(uint thread) const;
+  jlong worker_thread_cpu_time(uint thread) const;
+  jlong control_thread_cpu_time() const;
 };
 
 #endif // SHARE_GC_G1_G1REMSETSUMMARY_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,8 +135,6 @@ public interface Mixer extends Line {
      *         to resource restrictions
      * @throws IllegalArgumentException if this mixer does not support any lines
      *         matching the description
-     * @throws SecurityException if a matching line is not available due to
-     *         security restrictions
      */
     Line getLine(Line.Info info) throws LineUnavailableException;
 
@@ -171,8 +169,6 @@ public interface Mixer extends Line {
      * @return the source lines currently open to the mixer. If no source lines
      *         are currently open to this mixer, an array of length 0 is
      *         returned.
-     * @throws SecurityException if the matching lines are not available due to
-     *         security restrictions
      */
     Line[] getSourceLines();
 
@@ -182,8 +178,6 @@ public interface Mixer extends Line {
      * @return target lines currently open from the mixer. If no target lines
      *         are currently open from this mixer, an array of length 0 is
      *         returned.
-     * @throws SecurityException if the matching lines are not available due to
-     *         security restrictions
      */
     Line[] getTargetLines();
 

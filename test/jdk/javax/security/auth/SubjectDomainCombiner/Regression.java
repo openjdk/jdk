@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @summary     performance regression and other bugs in
  *              SubjectDomainCombiner.combine
  *
- * @run main/othervm/policy=Regression.policy -Djava.security.auth.debug=combiner Regression
+ * @run main/othervm -Djava.security.auth.debug=combiner Regression
  */
 
 import java.security.ProtectionDomain;
@@ -101,8 +101,7 @@ public class Regression {
 
         if (domains1.length != 4 ||
             domains1[0] == d1 || domains1[1] == d2 || domains1[2] == d3 ||
-            domains1[3] != d4 ||
-            !domains1[0].implies(new RuntimePermission("queuePrintJob"))) {
+            domains1[3] != d4) {
             throw new SecurityException("Test failed: combine test 1 failed");
         }
 
@@ -117,8 +116,7 @@ public class Regression {
         if (domains2.length != 4 ||
             domains2[0] != domains1[0] || domains2[1] != domains1[1] ||
             domains2[2] != domains1[2] ||
-            domains2[3] != domains1[3] ||
-            !domains2[0].implies(new RuntimePermission("queuePrintJob"))) {
+            domains2[3] != domains1[3]) {
             throw new SecurityException("Test failed: combine test 2 failed");
         }
 
@@ -135,9 +133,7 @@ public class Regression {
         if (domains3.length != 4 ||
             domains3[0] == domains1[0] || domains3[1] == domains1[1] ||
             domains3[2] == domains1[2] ||
-            domains3[3] != domains1[3] ||
-            !domains3[0].implies(new RuntimePermission("createClassLoader")) ||
-            domains3[0].implies(new RuntimePermission("queuePrintJob"))) {
+            domains3[3] != domains1[3]) {
             throw new SecurityException("Test failed: combine test 3 failed");
         }
 

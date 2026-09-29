@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
  */
 public class PropertyUtils {
 
+    final BaseConfiguration configuration;
+
     final TypeMirror jbObservableType;
 
     final Pattern fxMethodPatterns;
@@ -62,7 +64,10 @@ public class PropertyUtils {
 
     final Types typeUtils;
 
+    final Map<TypeElement, PropertyHelper> propertyHelpers = new HashMap<>();
+
     PropertyUtils(BaseConfiguration configuration) {
+        this.configuration = configuration;
         BaseOptions options = configuration.getOptions();
         javafx = options.javafx();
 
@@ -83,29 +88,36 @@ public class PropertyUtils {
     }
 
     /**
+     * Returns a property helper for the given type element.
+     * @param typeElement a type element
+     * @return the property helper
+     */
+    public PropertyHelper getPropertyHelper(TypeElement typeElement) {
+        return propertyHelpers.computeIfAbsent(typeElement, te -> new PropertyHelper(configuration, te));
+    }
+
+    /**
      * Returns a base name for a property method. Supposing we
      * have {@code BooleanProperty acmeProperty()}, then "acme"
      * will be returned.
-     * @param propertyMethod
+     * @param propertyMethod a property method
      * @return the base name of a property method.
      */
     public String getBaseName(ExecutableElement propertyMethod) {
         String name = propertyMethod.getSimpleName().toString();
-        String baseName = name.substring(0, name.indexOf("Property"));
-        return baseName;
+        return name.substring(0, name.indexOf("Property"));
     }
 
     /**
      * Returns a property getter's name. Supposing we have a property
      * method {@code DoubleProperty acmeProperty()}, then "getAcme"
      * will be returned.
-     * @param propertyMethod
+     * @param propertyMethod a property method
      * @return the property getter's name.
      */
     public String getGetName(ExecutableElement propertyMethod) {
         String baseName = getBaseName(propertyMethod);
-        String fnUppercased = "" +
-                Character.toUpperCase(baseName.charAt(0)) + baseName.substring(1);
+        String fnUppercased = Character.toUpperCase(baseName.charAt(0)) + baseName.substring(1);
         return "get" + fnUppercased;
     }
 
@@ -113,20 +125,19 @@ public class PropertyUtils {
      * Returns an "is" method's name for a property method. Supposing
      * we have a property method {@code BooleanProperty acmeProperty()},
      * then "isAcme" will be returned.
-     * @param propertyMethod
+     * @param propertyMethod a property method
      * @return the property is getter's name.
      */
     public String getIsName(ExecutableElement propertyMethod) {
         String baseName = getBaseName(propertyMethod);
-        String fnUppercased = "" +
-                Character.toUpperCase(baseName.charAt(0)) + baseName.substring(1);
+        String fnUppercased = Character.toUpperCase(baseName.charAt(0)) + baseName.substring(1);
         return "is" + fnUppercased;
     }
 
     /**
      * Returns true if a property method could have an "is" method, meaning
      * {@code isAcme} could exist for a property method.
-     * @param propertyMethod
+     * @param propertyMethod a property method
      * @return true if the property could have an "is" method, false otherwise.
      */
     public boolean hasIsMethod(ExecutableElement propertyMethod) {
@@ -139,20 +150,19 @@ public class PropertyUtils {
      * Returns a property setter's name. Supposing we have a property
      * method {@code DoubleProperty acmeProperty()}, then "setAcme"
      * will be returned.
-     * @param propertyMethod
+     * @param propertyMethod a property method
      * @return the property setter's method name.
      */
     public String getSetName(ExecutableElement propertyMethod) {
         String baseName = getBaseName(propertyMethod);
-        String fnUppercased = "" +
-                Character.toUpperCase(baseName.charAt(0)) + baseName.substring(1);
+        String fnUppercased = Character.toUpperCase(baseName.charAt(0)) + baseName.substring(1);
         return "set" + fnUppercased;
     }
 
     /**
      * Returns true if the given setter method is a valid property setter
      * method.
-     * @param setterMethod
+     * @param setterMethod a setter method
      * @return true if setter method, false otherwise.
      */
     public boolean isValidSetterMethod(ExecutableElement setterMethod) {
@@ -161,28 +171,28 @@ public class PropertyUtils {
 
     /**
      * Returns true if the method is a property method.
-     * @param propertyMethod
+     * @param method a method
      * @return true if the method is a property method, false otherwise.
      */
-    public boolean isPropertyMethod(ExecutableElement propertyMethod) {
+    public boolean isPropertyMethod(ExecutableElement method) {
         if (!javafx ||
-                !propertyMethod.getParameters().isEmpty() ||
-                !propertyMethod.getTypeParameters().isEmpty()) {
+                !method.getParameters().isEmpty() ||
+                !method.getTypeParameters().isEmpty()) {
             return false;
         }
-        String methodName = propertyMethod.getSimpleName().toString();
+        String methodName = method.getSimpleName().toString();
         if (!methodName.endsWith("Property") ||
                 fxMethodPatterns.matcher(methodName).matches()) {
             return false;
         }
 
-        TypeMirror returnType = propertyMethod.getReturnType();
+        TypeMirror returnType = method.getReturnType();
         if (jbObservableType == null) {
             // JavaFX references missing, make a lazy backward compatible check.
             return returnType.getKind() != TypeKind.VOID;
         } else {
             // Apply strict checks since JavaFX references are available
-            returnType = typeUtils.erasure(propertyMethod.getReturnType());
+            returnType = typeUtils.erasure(method.getReturnType());
             return typeUtils.isAssignable(returnType, jbObservableType);
         }
     }
@@ -202,20 +212,13 @@ public class PropertyUtils {
      * method. If any method does not have a comment, one will be provided.
      */
     public static class PropertyHelper {
-        private final BaseConfiguration configuration;
-        private final Utils utils;
-        private final TypeElement typeElement;
+        private Map<Element, Element> classPropertiesMap = null;
 
-        private final Map<Element, Element> classPropertiesMap = new HashMap<>();
-
-        public PropertyHelper(BaseConfiguration configuration, TypeElement typeElement) {
-            this.configuration = configuration;
-            this.utils = configuration.utils;
-            this.typeElement = typeElement;
-            computeProperties();
+        private PropertyHelper(BaseConfiguration configuration, TypeElement typeElement) {
+            computeProperties(configuration, typeElement);
         }
 
-        private void computeProperties() {
+        private void computeProperties(BaseConfiguration configuration, TypeElement typeElement) {
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
             List<ExecutableElement> props = ElementFilter.methodsIn(vmt.getVisibleMembers(PROPERTIES));
             for (ExecutableElement propertyMethod : props) {
@@ -223,37 +226,42 @@ public class PropertyUtils {
                 ExecutableElement setter = vmt.getPropertySetter(propertyMethod);
                 VariableElement field = vmt.getPropertyField(propertyMethod);
 
-                addToPropertiesMap(propertyMethod, field, getter, setter);
+                addToPropertiesMap(configuration, propertyMethod, field, getter, setter);
             }
         }
 
-        private void addToPropertiesMap(ExecutableElement propertyMethod,
+        private void addToPropertiesMap(BaseConfiguration configuration,
+                                        ExecutableElement propertyMethod,
                                         VariableElement field,
                                         ExecutableElement getter,
                                         ExecutableElement setter) {
             // determine the preferred element from which to derive the property description
-            Element e = field == null || !utils.hasDocCommentTree(field)
+            Element e = field == null || !configuration.utils.hasDocCommentTree(field)
                     ? propertyMethod : field;
 
-            if (e == field && utils.hasDocCommentTree(propertyMethod)) {
+            if (e == field && configuration.utils.hasDocCommentTree(propertyMethod)) {
                 configuration.getReporter().print(Diagnostic.Kind.WARNING,
                         propertyMethod, configuration.getDocResources().getText("doclet.duplicate.comment.for.property"));
             }
 
-            addToPropertiesMap(propertyMethod, e);
-            addToPropertiesMap(getter, e);
-            addToPropertiesMap(setter, e);
+            if (classPropertiesMap == null) {
+                classPropertiesMap = new HashMap<>();
+            }
+            addToPropertiesMap(configuration, propertyMethod, e);
+            addToPropertiesMap(configuration, getter, e);
+            addToPropertiesMap(configuration, setter, e);
         }
 
-        private void addToPropertiesMap(Element propertyMethod,
+        private void addToPropertiesMap(BaseConfiguration configuration,
+                                        Element propertyMethod,
                                         Element commentSource) {
             Objects.requireNonNull(commentSource);
             if (propertyMethod == null) {
                 return;
             }
 
-            DocCommentTree docTree = utils.hasDocCommentTree(propertyMethod)
-                    ? utils.getDocCommentTree(propertyMethod)
+            DocCommentTree docTree = configuration.utils.hasDocCommentTree(propertyMethod)
+                    ? configuration.utils.getDocCommentTree(propertyMethod)
                     : null;
 
             /* The second condition is required for the property buckets. In
@@ -271,7 +279,7 @@ public class PropertyUtils {
          * @return the element for the property documentation, null if there is none.
          */
         public Element getPropertyElement(Element element) {
-            return classPropertiesMap.get(element);
+            return classPropertiesMap == null ? null : classPropertiesMap.get(element);
         }
     }
 }

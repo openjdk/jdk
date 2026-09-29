@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,40 +29,33 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.RecordComponent;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
+
+import jdk.internal.event.SerializationMisdeclarationEvent;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.JavaSecurityAccess;
 import jdk.internal.util.ByteArray;
-import sun.reflect.misc.ReflectUtil;
+import jdk.internal.value.Deserializer;
+import jdk.internal.value.ValueClass;
 
 /**
  * Serialization's descriptor for classes.  It contains the name and
@@ -95,12 +88,6 @@ public final class ObjectStreamClass implements Serializable {
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
         NO_FIELDS;
-
-    /** reflection factory for obtaining serialization constructors */
-    @SuppressWarnings("removal")
-    private static final ReflectionFactory reflFactory =
-        AccessController.doPrivileged(
-            new ReflectionFactory.GetReflectionFactoryAction());
 
     private static class Caches {
         /** cache mapping local classes -> descriptors */
@@ -135,6 +122,11 @@ public final class ObjectStreamClass implements Serializable {
     private boolean isEnum;
     /** true if represents record type */
     private boolean isRecord;
+    /** true if represented class cannot use allocate-and-fill deserialization,
+     * due to value class or strict field initialization restrictions.
+     * Such a class either has a deserializer or has both serialize/deserialize
+     * exceptions once initialized. */
+    private boolean requiresDeserializer;
     /** true if represented class implements Serializable */
     private boolean serializable;
     /** true if represented class implements Externalizable */
@@ -200,12 +192,14 @@ public final class ObjectStreamClass implements Serializable {
     private MethodHandle canonicalCtr;
     /** cache of record deserialization constructors per unique set of stream fields
      * (shared among OSCs for same class), or null */
-    private DeserializationConstructorsCache deserializationCtrs;
-    /** session-cache of record deserialization constructor
+    private RecordConstructorsCache cachedRecordConstructors;
+    /** session-cache of deserialization factory
      * (in de-serialized OSC only), or null */
-    private MethodHandle deserializationCtr;
-    /** protection domains that need to be checked when calling the constructor */
-    private ProtectionDomain[] domains;
+    private MethodHandle cachedAlternativeFactory;
+    /** value deserialization factory method or constructor identified by
+     * {@link Deserializer}, used when regular deserialization is
+     * illegal but deserialization support is required. */
+    private Executable deserializer;
 
     /** class-defined writeObject method, or null if none */
     private Method writeObjectMethod;
@@ -278,20 +272,13 @@ public final class ObjectStreamClass implements Serializable {
      *
      * @return  the SUID of the class described by this descriptor
      */
-    @SuppressWarnings("removal")
     public long getSerialVersionUID() {
         // REMIND: synchronize instead of relying on volatile?
         if (suid == null) {
             if (isRecord)
                 return 0L;
 
-            suid = AccessController.doPrivileged(
-                new PrivilegedAction<Long>() {
-                    public Long run() {
-                        return computeDefaultSUID(cl);
-                    }
-                }
-            );
+            suid = computeDefaultSUID(cl);
         }
         return suid.longValue();
     }
@@ -302,19 +289,11 @@ public final class ObjectStreamClass implements Serializable {
      *
      * @return  the {@code Class} instance that this descriptor represents
      */
-    @SuppressWarnings("removal")
-    @CallerSensitive
     public Class<?> forClass() {
         if (cl == null) {
             return null;
         }
         requireInitialized();
-        if (System.getSecurityManager() != null) {
-            Class<?> caller = Reflection.getCallerClass();
-            if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), cl.getClassLoader())) {
-                ReflectUtil.checkPackageAccess(cl);
-            }
-        }
         return cl;
     }
 
@@ -367,7 +346,6 @@ public final class ObjectStreamClass implements Serializable {
     /**
      * Creates local class descriptor representing given class.
      */
-    @SuppressWarnings("removal")
     private ObjectStreamClass(final Class<?> cl) {
         this.cl = cl;
         name = cl.getName();
@@ -377,58 +355,73 @@ public final class ObjectStreamClass implements Serializable {
         serializable = Serializable.class.isAssignableFrom(cl);
         externalizable = Externalizable.class.isAssignableFrom(cl);
 
+        // Non-serializable superclasses may declare strictly-initialized instance
+        // fields while their subclasses remain serializable through default
+        // serialization, because the superclass constructors that initialize
+        // those fields are called by default serialization.
+        // Abstract value classes that do not declare any strictly-initialized
+        // instance field, like java.lang.Number, are allowed because no field
+        // initialization is skipped by default serialization.
+        requiresDeserializer = serializable && (ValueClass.isConcreteValueClass(cl) || ValueClass.hasStrictInstanceField(cl));
+
         Class<?> superCl = cl.getSuperclass();
         superDesc = (superCl != null) ? lookup(superCl, false) : null;
         localDesc = this;
 
+        if (superDesc != null) {
+            requiresDeserializer |= superDesc.requiresDeserializer;
+        }
+
         if (serializable) {
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Void run() {
-                    if (isEnum) {
-                        suid = 0L;
-                        fields = NO_FIELDS;
-                        return null;
-                    }
-                    if (cl.isArray()) {
-                        fields = NO_FIELDS;
-                        return null;
-                    }
-
-                    suid = getDeclaredSUID(cl);
-                    try {
-                        fields = getSerialFields(cl);
-                        computeFieldOffsets();
-                    } catch (InvalidClassException e) {
-                        serializeEx = deserializeEx =
+            if (isEnum) {
+                suid = 0L;
+                fields = NO_FIELDS;
+            } else if (cl.isArray()) {
+                fields = NO_FIELDS;
+            } else {
+                suid = getDeclaredSUID(cl);
+                try {
+                    fields = getSerialFields(cl);
+                    computeFieldOffsets();
+                } catch (InvalidClassException e) {
+                    serializeEx = deserializeEx =
                             new ExceptionInfo(e.classname, e.getMessage());
-                        fields = NO_FIELDS;
-                    }
-
-                    if (isRecord) {
-                        canonicalCtr = canonicalRecordCtr(cl);
-                        deserializationCtrs = new DeserializationConstructorsCache();
-                    } else if (externalizable) {
-                        cons = getExternalizableConstructor(cl);
-                    } else {
-                        cons = getSerializableConstructor(cl);
-                        writeObjectMethod = getPrivateMethod(cl, "writeObject",
-                            new Class<?>[] { ObjectOutputStream.class },
-                            Void.TYPE);
-                        readObjectMethod = getPrivateMethod(cl, "readObject",
-                            new Class<?>[] { ObjectInputStream.class },
-                            Void.TYPE);
-                        readObjectNoDataMethod = getPrivateMethod(
-                            cl, "readObjectNoData", null, Void.TYPE);
-                        hasWriteObjectData = (writeObjectMethod != null);
-                    }
-                    domains = getProtectionDomains(cons, cl);
-                    writeReplaceMethod = getInheritableMethod(
-                        cl, "writeReplace", null, Object.class);
-                    readResolveMethod = getInheritableMethod(
-                        cl, "readResolve", null, Object.class);
-                    return null;
+                    fields = NO_FIELDS;
                 }
-            });
+
+                if (isRecord) {
+                    canonicalCtr = canonicalRecordCtr(cl);
+                    cachedRecordConstructors = new RecordConstructorsCache();
+                } else if (requiresDeserializer) {
+                    // Concrete value classes and classes with strict instance
+                    // fields must not breach their integrity with the serializable
+                    // constructor. Make sure they fail also upon serialization
+                    // in addition to deserialization if they don't have a
+                    // correct internal @Deserializer
+                    deserializer = findDeserializer(cl, fields);
+                    if (deserializer == null) {
+                        serializeEx = deserializeEx = new ExceptionInfo(cl.getName(),
+                                "cannot serialize due to final value class or strictly-initialized instance fields");
+                    }
+                } else if (externalizable) {
+                    cons = getExternalizableConstructor(cl);
+                } else {
+                    cons = getSerializableConstructor(cl);
+                    writeObjectMethod = getPrivateMethod(cl, "writeObject",
+                            new Class<?>[]{ObjectOutputStream.class},
+                            Void.TYPE);
+                    readObjectMethod = getPrivateMethod(cl, "readObject",
+                            new Class<?>[]{ObjectInputStream.class},
+                            Void.TYPE);
+                    readObjectNoDataMethod = getPrivateMethod(
+                            cl, "readObjectNoData", null, Void.TYPE);
+                    hasWriteObjectData = (writeObjectMethod != null);
+                }
+                writeReplaceMethod = getInheritableMethod(
+                        cl, "writeReplace", null, Object.class);
+                readResolveMethod = getInheritableMethod(
+                        cl, "readResolve", null, Object.class);
+            }
         } else {
             suid = 0L;
             fields = NO_FIELDS;
@@ -444,7 +437,7 @@ public final class ObjectStreamClass implements Serializable {
         if (deserializeEx == null) {
             if (isEnum) {
                 deserializeEx = new ExceptionInfo(name, "enum type");
-            } else if (cons == null && !isRecord) {
+            } else if (cons == null && !isRecord && deserializer == null) {
                 deserializeEx = new ExceptionInfo(name, "no valid constructor");
             }
         }
@@ -459,6 +452,10 @@ public final class ObjectStreamClass implements Serializable {
             }
         }
         initialized = true;
+
+        if (SerializationMisdeclarationEvent.enabled() && serializable) {
+            SerializationMisdeclarationChecker.checkMisdeclarations(cl);
+        }
     }
 
     /**
@@ -466,66 +463,6 @@ public final class ObjectStreamClass implements Serializable {
      * subsequent call to initProxy(), initNonProxy() or readNonProxy().
      */
     ObjectStreamClass() {
-    }
-
-    /**
-     * Creates a PermissionDomain that grants no permission.
-     */
-    private ProtectionDomain noPermissionsDomain() {
-        PermissionCollection perms = new Permissions();
-        perms.setReadOnly();
-        return new ProtectionDomain(null, perms);
-    }
-
-    /**
-     * Aggregate the ProtectionDomains of all the classes that separate
-     * a concrete class {@code cl} from its ancestor's class declaring
-     * a constructor {@code cons}.
-     *
-     * If {@code cl} is defined by the boot loader, or the constructor
-     * {@code cons} is declared by {@code cl}, or if there is no security
-     * manager, then this method does nothing and {@code null} is returned.
-     *
-     * @param cons A constructor declared by {@code cl} or one of its
-     *             ancestors.
-     * @param cl A concrete class, which is either the class declaring
-     *           the constructor {@code cons}, or a serializable subclass
-     *           of that class.
-     * @return An array of ProtectionDomain representing the set of
-     *         ProtectionDomain that separate the concrete class {@code cl}
-     *         from its ancestor's declaring {@code cons}, or {@code null}.
-     */
-    @SuppressWarnings("removal")
-    private ProtectionDomain[] getProtectionDomains(Constructor<?> cons,
-                                                    Class<?> cl) {
-        ProtectionDomain[] domains = null;
-        if (cons != null && cl.getClassLoader() != null
-                && System.getSecurityManager() != null) {
-            Class<?> cls = cl;
-            Class<?> fnscl = cons.getDeclaringClass();
-            Set<ProtectionDomain> pds = null;
-            while (cls != fnscl) {
-                ProtectionDomain pd = cls.getProtectionDomain();
-                if (pd != null) {
-                    if (pds == null) pds = new HashSet<>();
-                    pds.add(pd);
-                }
-                cls = cls.getSuperclass();
-                if (cls == null) {
-                    // that's not supposed to happen
-                    // make a ProtectionDomain with no permission.
-                    // should we throw instead?
-                    if (pds == null) pds = new HashSet<>();
-                    else pds.clear();
-                    pds.add(noPermissionsDomain());
-                    break;
-                }
-            }
-            if (pds != null) {
-                domains = pds.toArray(new ProtectionDomain[0]);
-            }
-        }
-        return domains;
     }
 
     /**
@@ -558,7 +495,6 @@ public final class ObjectStreamClass implements Serializable {
             writeReplaceMethod = localDesc.writeReplaceMethod;
             readResolveMethod = localDesc.readResolveMethod;
             deserializeEx = localDesc.deserializeEx;
-            domains = localDesc.domains;
             cons = localDesc.cons;
         }
         fieldRefl = getReflector(fields, localDesc);
@@ -638,10 +574,11 @@ public final class ObjectStreamClass implements Serializable {
         if (osc != null) {
             localDesc = osc;
             isRecord = localDesc.isRecord;
+            requiresDeserializer = localDesc.requiresDeserializer;
             // canonical record constructor is shared
             canonicalCtr = localDesc.canonicalCtr;
             // cache of deserialization constructors is shared
-            deserializationCtrs = localDesc.deserializationCtrs;
+            cachedRecordConstructors = localDesc.cachedRecordConstructors;
             writeObjectMethod = localDesc.writeObjectMethod;
             readObjectMethod = localDesc.readObjectMethod;
             readObjectNoDataMethod = localDesc.readObjectNoDataMethod;
@@ -650,9 +587,9 @@ public final class ObjectStreamClass implements Serializable {
             if (deserializeEx == null) {
                 deserializeEx = localDesc.deserializeEx;
             }
-            domains = localDesc.domains;
             assert cl.isRecord() ? localDesc.cons == null : true;
             cons = localDesc.cons;
+            deserializer = localDesc.deserializer;
         }
 
         fieldRefl = getReflector(fields, localDesc);
@@ -920,6 +857,24 @@ public final class ObjectStreamClass implements Serializable {
     }
 
     /**
+     * {@return whether this class must use a deserialize factory}
+     * Concrete value classes and classes declaring strict fields cannot use the
+     * standard allocate-and-fill deserialization process.
+     */
+    boolean requiresDeserializer() {
+        requireInitialized();
+        return requiresDeserializer;
+    }
+
+    /**
+     * {@return whether this class declares a deserialize factory}
+     */
+    boolean hasDeserializer() {
+        requireInitialized();
+        return deserializer != null;
+    }
+
+    /**
      * Returns true if class descriptor represents externalizable class that
      * has written its data in 1.2 (block data) format, false otherwise.
      */
@@ -1007,7 +962,6 @@ public final class ObjectStreamClass implements Serializable {
      * class is non-serializable or if the appropriate no-arg constructor is
      * inaccessible/unavailable.
      */
-    @SuppressWarnings("removal")
     Object newInstance()
         throws InstantiationException, InvocationTargetException,
                UnsupportedOperationException
@@ -1015,35 +969,7 @@ public final class ObjectStreamClass implements Serializable {
         requireInitialized();
         if (cons != null) {
             try {
-                if (domains == null || domains.length == 0) {
-                    return cons.newInstance();
-                } else {
-                    JavaSecurityAccess jsa = SharedSecrets.getJavaSecurityAccess();
-                    PrivilegedAction<?> pea = () -> {
-                        try {
-                            return cons.newInstance();
-                        } catch (InstantiationException
-                                 | InvocationTargetException
-                                 | IllegalAccessException x) {
-                            throw new UndeclaredThrowableException(x);
-                        }
-                    }; // Can't use PrivilegedExceptionAction with jsa
-                    try {
-                        return jsa.doIntersectionPrivilege(pea,
-                                   AccessController.getContext(),
-                                   new AccessControlContext(domains));
-                    } catch (UndeclaredThrowableException x) {
-                        Throwable cause = x.getCause();
-                        if (cause instanceof InstantiationException ie)
-                            throw ie;
-                        if (cause instanceof InvocationTargetException ite)
-                            throw ite;
-                        if (cause instanceof IllegalAccessException iae)
-                            throw iae;
-                        // not supposed to happen
-                        throw x;
-                    }
-                }
+                return cons.newInstance();
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
                 throw new InternalError(ex);
@@ -1427,6 +1353,76 @@ public final class ObjectStreamClass implements Serializable {
     }
 
     /**
+     * Return an Executable for the static method or constructor(s) that matches the
+     * serializable fields and annotated with {@link Deserializer}.
+     * The descriptor for the class is still being initialized, so is passed the fields needed.
+     * @param clazz The class to query
+     * @param fields the serializable fields of the class
+     * @return an Executable, null if none found
+     */
+    private static Executable findDeserializer(Class<?> clazz,
+                                               ObjectStreamField[] fields) {
+        if (clazz.getClassLoader() != null) {
+            // Only for boot loader classes
+            return null;
+        }
+        return Stream.concat(
+                Arrays.stream(clazz.getDeclaredMethods()).filter(m -> Modifier.isStatic(m.getModifiers())),
+                Arrays.stream(clazz.getDeclaredConstructors()))
+                .<Executable>mapMulti((exec, sink) -> {
+                    if (!isDeserializer(exec, fields))
+                        return;
+                    exec.setAccessible(true);
+                    sink.accept(exec);
+                })
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Check that an executable is a valid deserializer declaration for
+     * this class. This checks parameters types of the executable and the
+     * names identified by the deserializer annotation against the fields
+     * of this class.
+     *
+     * @return true if exec is a valid deserializer
+     */
+    private static boolean isDeserializer(Executable exec,
+                                          ObjectStreamField[] fields) {
+        if (exec.getParameterCount() != fields.length) {
+            return false;
+        }
+
+        var deserializer = exec.getDeclaredAnnotation(Deserializer.class);
+        if (deserializer == null) {
+            return false;
+        }
+
+        String[] names = deserializer.value();
+        if (names.length != fields.length) {
+            return false;
+        }
+
+        Map<String, Integer> map = HashMap.newHashMap(names.length);
+        for (int i = 0; i < names.length; i++) {
+            if (map.put(names[i], i) != null) {
+                return false; // Duplicate names in the factory
+            }
+        }
+
+        var params = exec.getParameterTypes();
+        for (ObjectStreamField field : fields) {
+            Integer i = map.get(field.getName());
+            if (i == null) {
+                return false; // Name not accounted by the factory
+            }
+            if (!field.getType().equals(params[i])) {
+                return false; // Name match, type mismatch
+            }
+        }
+        return true;
+    }
+
+    /**
      * Returns public no-arg constructor of given class, or null if none found.
      * Access checks are disabled on the returned constructor (if any), since
      * the defining class may still be non-public.
@@ -1448,7 +1444,7 @@ public final class ObjectStreamClass implements Serializable {
      * returned constructor (if any).
      */
     private static Constructor<?> getSerializableConstructor(Class<?> cl) {
-        return reflFactory.newConstructorForSerialization(cl);
+        return ReflectionFactory.getReflectionFactory().newConstructorForSerialization(cl);
     }
 
     /**
@@ -1456,22 +1452,18 @@ public final class ObjectStreamClass implements Serializable {
      * the not found ( which should never happen for correctly generated record
      * classes ).
      */
-    @SuppressWarnings("removal")
     private static MethodHandle canonicalRecordCtr(Class<?> cls) {
         assert cls.isRecord() : "Expected record, got: " + cls;
-        PrivilegedAction<MethodHandle> pa = () -> {
-            Class<?>[] paramTypes = Arrays.stream(cls.getRecordComponents())
-                                          .map(RecordComponent::getType)
-                                          .toArray(Class<?>[]::new);
-            try {
-                Constructor<?> ctr = cls.getDeclaredConstructor(paramTypes);
-                ctr.setAccessible(true);
-                return MethodHandles.lookup().unreflectConstructor(ctr);
-            } catch (IllegalAccessException | NoSuchMethodException e) {
-                return null;
-            }
-        };
-        return AccessController.doPrivileged(pa);
+        Class<?>[] paramTypes = Arrays.stream(cls.getRecordComponents())
+                                      .map(RecordComponent::getType)
+                                      .toArray(Class<?>[]::new);
+        try {
+            Constructor<?> ctr = cls.getDeclaredConstructor(paramTypes);
+            ctr.setAccessible(true);
+            return MethodHandles.lookup().unreflectConstructor(ctr);
+        } catch (IllegalAccessException | NoSuchMethodException e) {
+            return null;
+        }
     }
 
     /**
@@ -1925,9 +1917,11 @@ public final class ObjectStreamClass implements Serializable {
         private final long[] writeKeys;
         /** field data offsets */
         private final int[] offsets;
+        /** field layouts, only used by reference fields */
+        private final int[] layouts;
         /** field type codes */
         private final char[] typeCodes;
-        /** field types */
+        /** reference field types, only fields.length - numPrimFields items */
         private final Class<?>[] types;
 
         /**
@@ -1943,6 +1937,7 @@ public final class ObjectStreamClass implements Serializable {
             readKeys = new long[nfields];
             writeKeys = new long[nfields];
             offsets = new int[nfields];
+            layouts = new int[nfields];
             typeCodes = new char[nfields];
             ArrayList<Class<?>> typeList = new ArrayList<>();
             Set<Long> usedKeys = new HashSet<>();
@@ -1957,6 +1952,7 @@ public final class ObjectStreamClass implements Serializable {
                 writeKeys[i] = usedKeys.add(key) ?
                     key : Unsafe.INVALID_FIELD_OFFSET;
                 offsets[i] = f.getOffset();
+                layouts[i] = rf != null && !f.isPrimitive() ? UNSAFE.fieldLayout(rf) : Unsafe.NON_FLAT_LAYOUT;
                 typeCodes[i] = f.getTypeCode();
                 if (!f.isPrimitive()) {
                     typeList.add((rf != null) ? rf.getType() : null);
@@ -2051,7 +2047,10 @@ public final class ObjectStreamClass implements Serializable {
              */
             for (int i = numPrimFields; i < fields.length; i++) {
                 vals[offsets[i]] = switch (typeCodes[i]) {
-                    case 'L', '[' -> UNSAFE.getReference(obj, readKeys[i]);
+                    case 'L', '[' ->
+                            layouts[i] == Unsafe.NON_FLAT_LAYOUT
+                                    ? UNSAFE.getReference(obj, readKeys[i])
+                                    : UNSAFE.getFlatValue(obj, readKeys[i], layouts[i], types[i - numPrimFields]);
                     default       -> throw new InternalError();
                 };
             }
@@ -2101,8 +2100,13 @@ public final class ObjectStreamClass implements Serializable {
                                 f.getType().getName() + " in instance of " +
                                 obj.getClass().getName());
                         }
-                        if (!dryRun)
-                            UNSAFE.putReference(obj, key, val);
+                        if (!dryRun) {
+                            if (layouts[i] == Unsafe.NON_FLAT_LAYOUT) {
+                                UNSAFE.putReference(obj, key, val);
+                            } else {
+                                UNSAFE.putFlatValue(obj, key, layouts[i], types[i - numPrimFields], val);
+                            }
+                        }
                     }
                     default -> throw new InternalError();
                 }
@@ -2235,8 +2239,8 @@ public final class ObjectStreamClass implements Serializable {
      * A LRA cache of record deserialization constructors.
      */
     @SuppressWarnings("serial")
-    private static final class DeserializationConstructorsCache
-        extends ConcurrentHashMap<DeserializationConstructorsCache.Key, MethodHandle>  {
+    private static final class RecordConstructorsCache
+        extends ConcurrentHashMap<RecordConstructorsCache.Key, MethodHandle>  {
 
         // keep max. 10 cached entries - when the 11th element is inserted the oldest
         // is removed and 10 remains - 11 is the biggest map size where internal
@@ -2244,7 +2248,7 @@ public final class ObjectStreamClass implements Serializable {
         private static final int MAX_SIZE = 10;
         private Key.Impl first, last; // first and last in FIFO queue
 
-        DeserializationConstructorsCache() {
+        RecordConstructorsCache() {
             // start small - if there is more than one shape of ObjectStreamClass
             // deserialized, there will typically be two (current version and previous version)
             super(2);
@@ -2344,36 +2348,72 @@ public final class ObjectStreamClass implements Serializable {
         }
     }
 
-    /** Record specific support for retrieving and binding stream field values. */
-    static final class RecordSupport {
+    /** Support for retrieving and binding stream field values for alternative
+     * deserialization of record and factory-based value classes. */
+    static final class AlternativeDeserialization {
         /**
-         * Returns canonical record constructor adapted to take two arguments:
+         * Returns factory method handle adapted to take two arguments:
          * {@code (byte[] primValues, Object[] objValues)}
          * and return
          * {@code Object}
          */
-        @SuppressWarnings("removal")
-        static MethodHandle deserializationCtr(ObjectStreamClass desc) {
+        static MethodHandle getFactory(ObjectStreamClass desc) {
             // check the cached value 1st
-            MethodHandle mh = desc.deserializationCtr;
+            MethodHandle mh = desc.cachedAlternativeFactory;
             if (mh != null) return mh;
-            mh = desc.deserializationCtrs.get(desc.getFields(false));
-            if (mh != null) return desc.deserializationCtr = mh;
+
+            mh = desc.isRecord() ? recordConstructor(desc) : deserializer(desc);
+
+            // store into cache
+            return desc.cachedAlternativeFactory = mh;
+        }
+
+        private static MethodHandle recordConstructor(ObjectStreamClass desc) {
+            // check the cached value 1st
+            MethodHandle mh = desc.cachedRecordConstructors.get(desc.getFields(false));
+            if (mh != null) return mh;
 
             // retrieve record components
-            RecordComponent[] recordComponents;
-            try {
-                Class<?> cls = desc.forClass();
-                PrivilegedExceptionAction<RecordComponent[]> pa = cls::getRecordComponents;
-                recordComponents = AccessController.doPrivileged(pa);
-            } catch (PrivilegedActionException e) {
-                throw new InternalError(e.getCause());
-            }
+            RecordComponent[] recordComponents = desc.forClass().getRecordComponents();
 
+            var types = Arrays.stream(recordComponents).map(RecordComponent::getType).toArray(Class<?>[]::new);
+            var names = Arrays.stream(recordComponents).map(RecordComponent::getName).toArray(String[]::new);
+            int count = recordComponents.length;
             // retrieve the canonical constructor
             // (T1, T2, ..., Tn):TR
             mh = desc.getRecordConstructor();
 
+            mh = buildMethodHandle(desc, mh, types, names, count);
+
+            // store it into cache and return the 1st value stored
+            mh = desc.cachedRecordConstructors.putIfAbsentAndGet(desc.getFields(false), mh);
+
+            return mh;
+        }
+
+        private static MethodHandle deserializer(ObjectStreamClass desc) {
+            Executable deserializer = desc.deserializer;
+            var types = deserializer.getParameterTypes();
+            String[] names = deserializer.getDeclaredAnnotation(Deserializer.class).value();
+            int count = types.length;
+
+            MethodHandle mh;
+            var lookup = MethodHandles.publicLookup();
+            try {
+                mh = deserializer instanceof Method m ? lookup.unreflect(m)
+                        : lookup.unreflectConstructor((Constructor<?>) deserializer);
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError(e);
+            }
+
+            return buildMethodHandle(desc, mh, types, names, count);
+        }
+
+        private static MethodHandle buildMethodHandle(ObjectStreamClass desc,
+                                                      MethodHandle mh,
+                                                      Class<?>[] types,
+                                                      String[] names,
+                                                      int count) {
             // change return type to Object
             // (T1, T2, ..., Tn):TR -> (T1, T2, ..., Tn):Object
             mh = mh.asType(mh.type().changeReturnType(Object.class));
@@ -2382,9 +2422,9 @@ public final class ObjectStreamClass implements Serializable {
             // (T1, T2, ..., Tn):Object -> (T1, T2, ..., Tn, byte[], Object[]):Object
             mh = MethodHandles.dropArguments(mh, mh.type().parameterCount(), byte[].class, Object[].class);
 
-            for (int i = recordComponents.length-1; i >= 0; i--) {
-                String name = recordComponents[i].getName();
-                Class<?> type = recordComponents[i].getType();
+            for (int i = count-1; i >= 0; i--) {
+                String name = names[i];
+                Class<?> type = types[i];
                 // obtain stream field extractor that extracts argument at
                 // position i (Ti+1) from primValues and objValues arrays
                 // (byte[], Object[]):Ti+1
@@ -2396,10 +2436,7 @@ public final class ObjectStreamClass implements Serializable {
             // what we are left with is a MethodHandle taking just the primValues
             // and objValues arrays and returning the constructed record instance
             // (byte[], Object[]):Object
-
-            // store it into cache and return the 1st value stored
-            return desc.deserializationCtr =
-                desc.deserializationCtrs.putIfAbsentAndGet(desc.getFields(false), mh);
+            return mh;
         }
 
         /** Returns the number of primitive fields for the given descriptor. */

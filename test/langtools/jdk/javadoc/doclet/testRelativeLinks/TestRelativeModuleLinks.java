@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,26 +90,26 @@ public class TestRelativeModuleLinks extends JavadocTester {
         checkOutput("index.html", true,
                 """
                 <div class="block"><a href="./ma/doc-files/file.html">relative module link</a>,
-                 <a href="./ma/module-summary.html#module-fragment">fragment module link</a>.</div>""");
+                <a href="./ma/module-summary.html#module-fragment">fragment module link</a>.</div>""");
 
         // Index page
         checkOutput("index-all.html", true,
                 """
                 <div class="block"><a href="./ma/doc-files/file.html">relative module link</a>,
-                 <a href="./ma/module-summary.html#module-fragment">fragment module link</a>.</div>""");
+                <a href="./ma/module-summary.html#module-fragment">fragment module link</a>.</div>""");
 
         // Own module page
         checkOutput("ma/module-summary.html", true,
                 """
                 <div class="block"><a href="doc-files/file.html">relative module link</a>,
-                 <a href="#module-fragment">fragment module link</a>.
-                 <a id="module-fragment">Module fragment</a>.</div>""");
+                <a href="#module-fragment">fragment module link</a>.
+                <a id="module-fragment">Module fragment</a>.</div>""");
 
         // Other module page
         checkOutput("mb/module-summary.html", true,
                 """
                 <div class="block"><a href="../ma/doc-files/file.html">relative module link</a>,
-                 <a href="../ma/module-summary.html#module-fragment">fragment module link</a>.</div>""");
+                <a href="../ma/module-summary.html#module-fragment">fragment module link</a>.</div>""");
     }
 }
 

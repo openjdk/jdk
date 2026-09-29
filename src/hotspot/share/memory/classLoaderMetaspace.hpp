@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,17 @@ class outputStream;
 
 namespace metaspace {
   struct ClmsStats;
+  class ClmsTester;
   class MetaspaceArena;
+  class MetaspaceContext;
 }
 
 // A ClassLoaderMetaspace manages MetaspaceArena(s) for a CLD.
 //
-// A CLD owns one MetaspaceArena if UseCompressedClassPointers is false. Otherwise
-// it owns two - one for the Klass* objects from the class space, one for the other
-// types of MetaspaceObjs from the non-class space.
+// 64-bit:
+//
+// A CLD owns two MetaspaceArenas - one for the Klass* objects from the class space,
+// one for the other types of MetaspaceObjs from the non-class space.
 //
 // +------+       +----------------------+       +-------------------+
 // | CLD  | --->  | ClassLoaderMetaspace | ----> | (non class) Arena |
@@ -56,7 +59,13 @@ namespace metaspace {
 //                                                               ^
 //                                                               alloc top
 //
+// 32-bit:
+//
+// A CLD owns just one MetaspaceArena. In that arena all metadata - Klass and other -
+// are placed.
+
 class ClassLoaderMetaspace : public CHeapObj<mtClass> {
+  friend class metaspace::ClmsTester; // for gtests
 
   // A reference to an outside lock, held by the CLD.
   Mutex* const _lock;
@@ -64,19 +73,24 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   const Metaspace::MetaspaceType _space_type;
 
   // Arena for allocations from non-class  metaspace
-  //  (resp. for all allocations if -XX:-UseCompressedClassPointers).
   metaspace::MetaspaceArena* _non_class_space_arena;
 
   // Arena for allocations from class space
-  //  (null if -XX:-UseCompressedClassPointers).
+  //  (null for 32-bit).
   metaspace::MetaspaceArena* _class_space_arena;
 
   Mutex* lock() const                             { return _lock; }
   metaspace::MetaspaceArena* non_class_space_arena() const   { return _non_class_space_arena; }
   metaspace::MetaspaceArena* class_space_arena() const       { return _class_space_arena; }
 
-public:
+  bool have_class_space_arena() const { return _class_space_arena != nullptr; }
 
+  ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type,
+                       metaspace::MetaspaceContext* non_class_context,
+                       metaspace::MetaspaceContext* class_context,
+                       size_t klass_alignment_words);
+
+public:
   ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type);
 
   ~ClassLoaderMetaspace();
@@ -92,7 +106,7 @@ public:
 
   // Prematurely returns a metaspace allocation to the _block_freelists
   // because it is not needed anymore.
-  void deallocate(MetaWord* ptr, size_t word_size, bool is_class);
+  void deallocate(MetaWord* ptr, size_t word_size);
 
   // Update statistics. This walks all in-use chunks.
   void add_to_statistics(metaspace::ClmsStats* out) const;

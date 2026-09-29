@@ -47,7 +47,7 @@ public class DekkerTest {
     /*
       Read After Write Test (basically a simple Dekker test with volatile variables)
       Derived from the original jcstress test, available at:
-        hhttps://git.openjdk.org/jcstress/commit/15acd86
+        https://git.openjdk.org/jcstress/commit/15acd86
         tests-custom/src/main/java/org/openjdk/jcstress/tests/volatiles/DekkerTest.java
      */
 

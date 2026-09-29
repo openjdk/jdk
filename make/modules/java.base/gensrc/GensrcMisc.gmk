@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 ################################################################################
 # Install the launcher name, release version string, full version
@@ -67,7 +72,7 @@ else
   OPENJDK_TARGET_OS_CANONICAL := $(OPENJDK_TARGET_OS)
 endif
 
-$(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
+$(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU), \
     SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/util/PlatformProps.java.template, \
     OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/PlatformProps.java, \
     REPLACEMENTS := \
@@ -77,7 +82,8 @@ $(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
         @@OPENJDK_TARGET_CPU_BITS@@ => $(OPENJDK_TARGET_CPU_BITS), \
 ))
 
-TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_PLATFORMPROPERTIES_JAVA)
+TARGETS += $(BUILD_VERSION_JAVA) \
+    $(BUILD_PLATFORMPROPERTIES_JAVA_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU))
 ################################################################################
 
 ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
@@ -87,7 +93,7 @@ ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
 else ifeq ($(TOOLCHAIN_TYPE), microsoft)
   CPP_FLAGS += -nologo
 
-  ifeq ($(OPENJDK_TARGET_CPU),aarch64)
+  ifeq ($(OPENJDK_TARGET_CPU), aarch64)
     # cl.exe does only recognize few file extensions as valid (ex: .c, .h, .cpp), so
     # make sure *.java.template files are recognized as valid input files
     CPP_FILEPREFIX = -Tc
@@ -154,3 +160,8 @@ ifneq ($(wildcard $(TOPDIR)/src/java.base/share/classes/javax/crypto/JceSecurity
 
   TARGETS += $(BUILD_JCESECURITY_JAVA)
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

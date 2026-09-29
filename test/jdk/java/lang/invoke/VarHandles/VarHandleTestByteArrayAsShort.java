@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,27 @@
 /*
  * @test
  * @bug 8154556
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsShort
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestByteArrayAsShort
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestByteArrayAsShort
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsShort
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestByteArrayAsShort
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestByteArrayAsShort
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
     static final int SIZE = Short.BYTES;
 
@@ -59,9 +59,9 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
     public List<VarHandleSource> setupVarHandleSources(boolean same) {
         // Combinations of VarHandle byte[] or ByteBuffer
         List<VarHandleSource> vhss = new ArrayList<>();
-        for (MemoryMode endianess : List.of(MemoryMode.BIG_ENDIAN, MemoryMode.LITTLE_ENDIAN)) {
+        for (MemoryMode endianness : List.of(MemoryMode.BIG_ENDIAN, MemoryMode.LITTLE_ENDIAN)) {
 
-            ByteOrder bo = endianess == MemoryMode.BIG_ENDIAN
+            ByteOrder bo = endianness == MemoryMode.BIG_ENDIAN
                     ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
 
             Class<?> arrayType;
@@ -72,13 +72,13 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                 arrayType = int[].class;
             }
             VarHandleSource aeh = new VarHandleSource(
-                    MethodHandles.byteArrayViewVarHandle(arrayType, bo),
-                    endianess, MemoryMode.READ_WRITE);
+                    MethodHandles.byteArrayViewVarHandle(arrayType, bo), false,
+                    endianness, MemoryMode.READ_WRITE);
             vhss.add(aeh);
 
             VarHandleSource bbh = new VarHandleSource(
-                    MethodHandles.byteBufferViewVarHandle(arrayType, bo),
-                    endianess, MemoryMode.READ_WRITE);
+                    MethodHandles.byteBufferViewVarHandle(arrayType, bo), true,
+                    endianness, MemoryMode.READ_WRITE);
             vhss.add(bbh);
         }
         return vhss;
@@ -107,58 +107,68 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         }
     }
 
-    @Test(dataProvider = "varHandlesProvider")
+    @ParameterizedTest
+    @MethodSource("VarHandleBaseByteArrayTest#varHandlesProvider")
     public void testIsAccessModeSupported(VarHandleSource vhs) {
         VarHandle vh = vhs.s;
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
 
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
+        if (vhs.supportsAtomicAccess) {
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
+            assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
+        } else {
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_VOLATILE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.SET_VOLATILE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.SET_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_OPAQUE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
+        }
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
 
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
+
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+            assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
-    @Test(dataProvider = "typesProvider")
+    @ParameterizedTest
+    @MethodSource("typesProvider")
     public void testTypes(VarHandle vh, List<java.lang.Class<?>> pts) {
-        assertEquals(vh.varType(), short.class);
+        assertEquals(short.class, vh.varType());
 
-        assertEquals(vh.coordinateTypes(), pts);
+        assertEquals(pts, vh.coordinateTypes());
 
         testTypes(vh);
     }
 
-
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -179,9 +189,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                                 false));
                         cases.add(new VarHandleSourceAccessTestCase(
                                 "index out of bounds", bav, vh, h -> testArrayIndexOutOfBounds(bas, h),
-                                false));
-                        cases.add(new VarHandleSourceAccessTestCase(
-                                "misaligned access", bav, vh, h -> testArrayMisalignedAccess(bas, h),
                                 false));
                     }
                     else {
@@ -207,9 +214,11 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                         cases.add(new VarHandleSourceAccessTestCase(
                                 "index out of bounds", bav, vh, h -> testArrayIndexOutOfBounds(bbs, h),
                                 false));
-                        cases.add(new VarHandleSourceAccessTestCase(
-                                "misaligned access", bav, vh, h -> testArrayMisalignedAccess(bbs, h),
-                                false));
+                        if (bbs.s.isDirect()) {
+                            cases.add(new VarHandleSourceAccessTestCase(
+                                    "misaligned access", bav, vh, h -> testArrayMisalignedAccess(bbs, h),
+                                    false));
+                        }
                     }
                 }
             }
@@ -221,7 +230,8 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -229,7 +239,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             atc.testAccess(t);
         }
     }
-
 
     static void testArrayNPE(ByteArraySource bs, VarHandleSource vhs) {
         VarHandle vh = vhs.s;
@@ -243,33 +252,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         checkNPE(() -> {
             vh.set(array, ci, VALUE_1);
         });
-
-        checkNPE(() -> {
-            short x = (short) vh.getVolatile(array, ci);
-        });
-
-        checkNPE(() -> {
-            short x = (short) vh.getAcquire(array, ci);
-        });
-
-        checkNPE(() -> {
-            short x = (short) vh.getOpaque(array, ci);
-        });
-
-        checkNPE(() -> {
-            vh.setVolatile(array, ci, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            vh.setRelease(array, ci, VALUE_1);
-        });
-
-        checkNPE(() -> {
-            vh.setOpaque(array, ci, VALUE_1);
-        });
-
-
-
     }
 
     static void testArrayNPE(ByteBufferSource bs, VarHandleSource vhs) {
@@ -423,7 +405,7 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             });
         }
 
-        if (readOnly) {
+        if (readOnly && array.isDirect()) {
             checkROBE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
@@ -435,6 +417,11 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkROBE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
+
+
+        }
+
+        if (array.isDirect()) {
             checkUOE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
@@ -478,7 +465,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 short o = (short) vh.getAndSetRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 short o = (short) vh.getAndAdd(array, ci, VALUE_1);
             });
@@ -490,7 +476,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 short o = (short) vh.getAndAddRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 short o = (short) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });
@@ -526,8 +511,18 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 short o = (short) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
-        }
-        else {
+        } else {
+            checkISE(() -> {
+                vh.setVolatile(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                vh.setRelease(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                vh.setOpaque(array, ci, VALUE_1);
+            });
             checkUOE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
@@ -636,33 +631,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkAIOOBE(() -> {
                 vh.set(array, ci, VALUE_1);
             });
-
-            checkAIOOBE(() -> {
-                short x = (short) vh.getVolatile(array, ci);
-            });
-
-            checkAIOOBE(() -> {
-                short x = (short) vh.getAcquire(array, ci);
-            });
-
-            checkAIOOBE(() -> {
-                short x = (short) vh.getOpaque(array, ci);
-            });
-
-            checkAIOOBE(() -> {
-                vh.setVolatile(array, ci, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                vh.setRelease(array, ci, VALUE_1);
-            });
-
-            checkAIOOBE(() -> {
-                vh.setOpaque(array, ci, VALUE_1);
-            });
-
-
-
         }
     }
 
@@ -686,74 +654,35 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                 });
             }
 
-            checkIOOBE(() -> {
-                short x = (short) vh.getVolatile(array, ci);
-            });
-
-            checkIOOBE(() -> {
-                short x = (short) vh.getAcquire(array, ci);
-            });
-
-            checkIOOBE(() -> {
-                short x = (short) vh.getOpaque(array, ci);
-            });
-
-            if (!readOnly) {
+            if (array.isDirect()) {
                 checkIOOBE(() -> {
-                    vh.setVolatile(array, ci, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    vh.setRelease(array, ci, VALUE_1);
-                });
-
-                checkIOOBE(() -> {
-                    vh.setOpaque(array, ci, VALUE_1);
-                });
-
-
-
-            }
-        }
-    }
-
-    static void testArrayMisalignedAccess(ByteArraySource bs, VarHandleSource vhs) throws Throwable {
-        VarHandle vh = vhs.s;
-        byte[] array = bs.s;
-
-        int misalignmentAtZero = ByteBuffer.wrap(array).alignmentOffset(0, SIZE);
-
-        int length = array.length - SIZE + 1;
-        for (int i = 0; i < length; i++) {
-            boolean iAligned = ((i + misalignmentAtZero) & (SIZE - 1)) == 0;
-            final int ci = i;
-
-            if (!iAligned) {
-                checkISE(() -> {
                     short x = (short) vh.getVolatile(array, ci);
                 });
 
-                checkISE(() -> {
+                checkIOOBE(() -> {
                     short x = (short) vh.getAcquire(array, ci);
                 });
 
-                checkISE(() -> {
+                checkIOOBE(() -> {
                     short x = (short) vh.getOpaque(array, ci);
                 });
 
-                checkISE(() -> {
-                    vh.setVolatile(array, ci, VALUE_1);
-                });
+                if (!readOnly) {
+                    checkIOOBE(() -> {
+                        vh.setVolatile(array, ci, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    vh.setRelease(array, ci, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        vh.setRelease(array, ci, VALUE_1);
+                    });
 
-                checkISE(() -> {
-                    vh.setOpaque(array, ci, VALUE_1);
-                });
+                    checkIOOBE(() -> {
+                        vh.setOpaque(array, ci, VALUE_1);
+                    });
 
 
+
+                }
             }
         }
     }
@@ -795,9 +724,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                     checkISE(() -> {
                         vh.setOpaque(array, ci, VALUE_1);
                     });
-
-
-
                 }
             }
         }
@@ -807,44 +733,14 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         VarHandle vh = vhs.s;
         byte[] array = bs.s;
 
-        int misalignmentAtZero = ByteBuffer.wrap(array).alignmentOffset(0, SIZE);
-
         bs.fill((byte) 0xff);
         int length = array.length - SIZE + 1;
         for (int i = 0; i < length; i++) {
-            boolean iAligned = ((i + misalignmentAtZero) & (SIZE - 1)) == 0;
-
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 short x = (short) vh.get(array, i);
-                assertEquals(x, VALUE_1, "get short value");
-            }
-
-
-            if (iAligned) {
-                // Volatile
-                {
-                    vh.setVolatile(array, i, VALUE_2);
-                    short x = (short) vh.getVolatile(array, i);
-                    assertEquals(x, VALUE_2, "setVolatile short value");
-                }
-
-                // Lazy
-                {
-                    vh.setRelease(array, i, VALUE_1);
-                    short x = (short) vh.getAcquire(array, i);
-                    assertEquals(x, VALUE_1, "setRelease short value");
-                }
-
-                // Opaque
-                {
-                    vh.setOpaque(array, i, VALUE_2);
-                    short x = (short) vh.getOpaque(array, i);
-                    assertEquals(x, VALUE_2, "setOpaque short value");
-                }
-
-
+                assertEquals(VALUE_1, x, "get short value");
             }
         }
     }
@@ -854,18 +750,16 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         VarHandle vh = vhs.s;
         ByteBuffer array = bs.s;
 
-        int misalignmentAtZero = array.alignmentOffset(0, SIZE);
-
         bs.fill((byte) 0xff);
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
-            boolean iAligned = ((i + misalignmentAtZero) & (SIZE - 1)) == 0;
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
 
             // Plain
             {
                 vh.set(array, i, VALUE_1);
                 short x = (short) vh.get(array, i);
-                assertEquals(x, VALUE_1, "get short value");
+                assertEquals(VALUE_1, x, "get short value");
             }
 
             if (iAligned) {
@@ -873,21 +767,21 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                 {
                     vh.setVolatile(array, i, VALUE_2);
                     short x = (short) vh.getVolatile(array, i);
-                    assertEquals(x, VALUE_2, "setVolatile short value");
+                    assertEquals(VALUE_2, x, "setVolatile short value");
                 }
 
                 // Lazy
                 {
                     vh.setRelease(array, i, VALUE_1);
                     short x = (short) vh.getAcquire(array, i);
-                    assertEquals(x, VALUE_1, "setRelease short value");
+                    assertEquals(VALUE_1, x, "setRelease short value");
                 }
 
                 // Opaque
                 {
                     vh.setOpaque(array, i, VALUE_2);
                     short x = (short) vh.getOpaque(array, i);
-                    assertEquals(x, VALUE_2, "setOpaque short value");
+                    assertEquals(VALUE_2, x, "setOpaque short value");
                 }
 
 
@@ -899,15 +793,13 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
         VarHandle vh = vhs.s;
         ByteBuffer array = bs.s;
 
-        int misalignmentAtZero = array.alignmentOffset(0, SIZE);
-
         ByteBuffer bb = ByteBuffer.allocate(SIZE);
         bb.order(MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes) ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
         bs.fill(bb.putShort(0, VALUE_2).array());
 
         int length = array.limit() - SIZE + 1;
         for (int i = 0; i < length; i++) {
-            boolean iAligned = ((i + misalignmentAtZero) & (SIZE - 1)) == 0;
+            boolean iAligned = array.isDirect() ? ((i + array.alignmentOffset(0, SIZE)) & (SIZE - 1)) == 0 : false;
 
             short v = MemoryMode.BIG_ENDIAN.isSet(vhs.memoryModes)
                     ? rotateLeft(VALUE_2, (i % SIZE) << 3)
@@ -915,26 +807,26 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             // Plain
             {
                 short x = (short) vh.get(array, i);
-                assertEquals(x, v, "get short value");
+                assertEquals(v, x, "get short value");
             }
 
             if (iAligned) {
                 // Volatile
                 {
                     short x = (short) vh.getVolatile(array, i);
-                    assertEquals(x, v, "getVolatile short value");
+                    assertEquals(v, x, "getVolatile short value");
                 }
 
                 // Lazy
                 {
                     short x = (short) vh.getAcquire(array, i);
-                    assertEquals(x, v, "getRelease short value");
+                    assertEquals(v, x, "getAcquire short value");
                 }
 
                 // Opaque
                 {
                     short x = (short) vh.getOpaque(array, i);
-                    assertEquals(x, v, "getOpaque short value");
+                    assertEquals(v, x, "getOpaque short value");
                 }
             }
         }

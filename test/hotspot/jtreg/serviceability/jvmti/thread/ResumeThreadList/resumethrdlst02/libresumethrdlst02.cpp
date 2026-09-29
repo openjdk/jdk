@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
-#include "jvmti_thread.h"
+#include "jvmti_common.hpp"
+#include "jvmti_thread.hpp"
 
 
 
@@ -47,7 +47,7 @@ static jvmtiEvent eventsList[EVENTS_COUNT] = {
 };
 
 static const int THREADS_COUNT = 10;
-static jthread* threads = NULL;
+static jthread* threads = nullptr;
 
 static volatile int eventsReceived = 0;
 static jrawMonitorID eventsReceivedMtx = 0;
@@ -65,7 +65,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
   /* perform testing */
   {
-    jvmtiError* results = NULL;
+    jvmtiError* results = nullptr;
     LOG("Allocate threads array: %d threads\n", THREADS_COUNT);
     check_jvmti_status(jni, jvmti->Allocate((THREADS_COUNT * sizeof(jthread)),
                                             (unsigned char**)&threads), "");
@@ -98,7 +98,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     eventsReceived = 0;
     LOG("Enable event: %s\n", "THREAD_END");
-    enable_events_notifications(jvmti, jni,JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL);
+    enable_events_notifications(jvmti, jni,JVMTI_ENABLE, EVENTS_COUNT, eventsList, nullptr);
 
     LOG("Let threads to run and finish\n");
     if (!agent_resume_sync())
@@ -136,7 +136,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     LOG("Disable event: %s\n", "THREAD_END");
-    enable_events_notifications(jvmti, jni, JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL);
+    enable_events_notifications(jvmti, jni, JVMTI_DISABLE, EVENTS_COUNT, eventsList, nullptr);
 
     LOG("Wait for thread to finish\n");
     if (!agent_wait_for_sync(timeout))
@@ -144,7 +144,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     LOG("Delete threads references\n");
     for (int i = 0; i < THREADS_COUNT; i++) {
-      if (threads[i] != NULL)
+      if (threads[i] != nullptr)
         jni->DeleteGlobalRef(threads[i]);
     }
 
@@ -164,13 +164,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
                             const char name[], int foundCount, jthread foundThreads[]) {
   jint count = 0;
-  jthread* threads = NULL;
+  jthread* threads = nullptr;
 
   size_t len = strlen(name);
   int found = 0;
 
   for (int i = 0; i < foundCount; i++) {
-    foundThreads[i] = NULL;
+    foundThreads[i] = nullptr;
   }
 
   check_jvmti_status(jni, jvmti->GetAllThreads(&count, &threads), "Error in GetAllThreads");
@@ -180,7 +180,7 @@ static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
     jvmtiThreadInfo info;
 
     check_jvmti_status(jni, jvmti->GetThreadInfo(threads[i], &info), "");
-    if (info.name != NULL && strncmp(name, info.name, len) == 0) {
+    if (info.name != nullptr && strncmp(name, info.name, len) == 0) {
       LOG("  ... found thread #%d: %p (%s)\n", found, threads[i], info.name);
       if (found < foundCount)
         foundThreads[found] = threads[i];
@@ -203,7 +203,7 @@ static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
   LOG("Make global references for threads: %d threads\n", foundCount);
   for (int i = 0; i < foundCount; i++) {
     foundThreads[i] = (jthread) jni->NewGlobalRef(foundThreads[i]);
-    if ( foundThreads[i] == NULL) {
+    if ( foundThreads[i] == nullptr) {
       set_agent_fail_status();
       return JNI_FALSE;
     }
@@ -221,7 +221,7 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
   /* check if event is for tested thread */
   for (int i = 0; i < THREADS_COUNT; i++) {
-    if (thread != NULL && jni->IsSameObject(threads[i], thread)) {
+    if (thread != nullptr && jni->IsSameObject(threads[i], thread)) {
       LOG("  ... received THREAD_END event for thread #%d: %p\n", i, (void*)thread);
       eventsReceived++;
       jvmti->RawMonitorExit(eventsReceivedMtx);
@@ -234,12 +234,12 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv* jvmti = NULL;
+  jvmtiEnv* jvmti = nullptr;
 
   timeout =  60 * 1000;
 
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -273,7 +273,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   }
 
   /* register agent proc and arg */
-  if (!set_agent_proc(agentProc, NULL)) {
+  if (!set_agent_proc(agentProc, nullptr)) {
     return JNI_ERR;
   }
 

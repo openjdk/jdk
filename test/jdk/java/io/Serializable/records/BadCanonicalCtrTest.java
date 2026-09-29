@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
  * @summary InvalidClassException is thrown when the canonical constructor
  *          cannot be found during deserialization.
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- * @run testng BadCanonicalCtrTest
+ * @run junit BadCanonicalCtrTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -38,26 +37,30 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeKind;
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.ByteCodeLoader;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
-import static jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Checks that an InvalidClassException is thrown when the canonical
  * constructor cannot be found during deserialization.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BadCanonicalCtrTest {
 
     // ClassLoader for creating instances of the records to test with.
@@ -74,7 +77,7 @@ public class BadCanonicalCtrTest {
      * the initial bytecode for the record classes using javac, then removes or
      * modifies the generated canonical constructor.
      */
-    @BeforeTest
+    @BeforeAll
     public void setup() {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("R1",
@@ -131,7 +134,6 @@ public class BadCanonicalCtrTest {
         return c.getConstructor(long.class).newInstance(l);
     }
 
-    @DataProvider(name = "recordInstances")
     public Object[][] recordInstances() throws Exception {
         return new Object[][] {
                 new Object[] { newR1()        },
@@ -146,13 +148,14 @@ public class BadCanonicalCtrTest {
      * Tests that InvalidClassException is thrown when no constructor is
      * present.
      */
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void missingConstructorTest(Object objToSerialize) throws Exception {
         out.println("\n---");
         out.println("serializing : " + objToSerialize);
         byte[] bytes = serialize(objToSerialize);
         out.println("deserializing");
-        InvalidClassException ice = expectThrows(ICE, () -> deserialize(bytes, missingCtrClassLoader));
+        InvalidClassException ice = Assertions.assertThrows(ICE, () -> deserialize(bytes, missingCtrClassLoader));
         out.println("caught expected ICE: " + ice);
         assertTrue(ice.getMessage().contains("record canonical constructor not found"));
     }
@@ -162,13 +165,14 @@ public class BadCanonicalCtrTest {
      * constructor is not present. ( a non-canonical constructor is
      * present ).
      */
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void nonCanonicalConstructorTest(Object objToSerialize) throws Exception {
         out.println("\n---");
         out.println("serializing : " + objToSerialize);
         byte[] bytes = serialize(objToSerialize);
         out.println("deserializing");
-        InvalidClassException ice = expectThrows(ICE, () -> deserialize(bytes, nonCanonicalCtrClassLoader));
+        InvalidClassException ice = Assertions.assertThrows(ICE, () -> deserialize(bytes, nonCanonicalCtrClassLoader));
         out.println("caught expected ICE: " + ice);
         assertTrue(ice.getMessage().contains("record canonical constructor not found"));
     }
@@ -203,33 +207,9 @@ public class BadCanonicalCtrTest {
      * Assumes just a single, canonical, constructor.
      */
     static byte[] removeConstructor(byte[] classBytes) {
-        ClassReader reader = new ClassReader(classBytes);
-        ClassWriter writer = new ClassWriter(reader, COMPUTE_MAXS | COMPUTE_FRAMES);
-        reader.accept(new RemoveCanonicalCtrVisitor(writer), 0);
-        return writer.toByteArray();
-    }
-
-    /** Removes the <init> method. */
-    static class RemoveCanonicalCtrVisitor extends ClassVisitor {
-        static final String CTR_NAME = "<init>";
-        RemoveCanonicalCtrVisitor(ClassVisitor cv) {
-            super(ASM8, cv);
-        }
-        volatile boolean foundCanonicalCtr;
-        @Override
-        public MethodVisitor visitMethod(final int access,
-                                         final String name,
-                                         final String descriptor,
-                                         final String signature,
-                                         final String[] exceptions) {
-            if (name.equals(CTR_NAME)) {  // assume just a single constructor
-                assert foundCanonicalCtr == false;
-                foundCanonicalCtr = true;
-                return null;
-            } else {
-                return cv.visitMethod(access, name, descriptor, signature, exceptions);
-            }
-        }
+        var cf = ClassFile.of();
+        return cf.transformClass(cf.parse(classBytes), ClassTransform.dropping(ce ->
+                ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)));
     }
 
     /**
@@ -237,55 +217,34 @@ public class BadCanonicalCtrTest {
      * Assumes just a single, canonical, constructor.
      */
     static byte[] modifyConstructor(byte[] classBytes) {
-        ClassReader reader = new ClassReader(classBytes);
-        ClassWriter writer = new ClassWriter(reader, COMPUTE_MAXS | COMPUTE_FRAMES);
-        reader.accept(new ModifyCanonicalCtrVisitor(writer), 0);
-        return writer.toByteArray();
-    }
-
-    /** Replaces whatever <init> method it finds with <init>(Ljava/lang/Object;)V. */
-    static class ModifyCanonicalCtrVisitor extends ClassVisitor {
-        ModifyCanonicalCtrVisitor(ClassVisitor cv) {
-            super(ASM8, cv);
-        }
-        boolean foundCanonicalCtr;
-        String className;
-        @Override
-        public void visit(final int version,
-                          final int access,
-                          final String name,
-                          final String signature,
-                          final String superName,
-                          final String[] interfaces) {
-            this.className = name;
-            cv.visit(version, access, name, signature, superName, interfaces);
-        }
-        @Override
-        public MethodVisitor visitMethod(final int access,
-                                         final String name,
-                                         final String descriptor,
-                                         final String signature,
-                                         final String[] exceptions) {
-            if (name.equals("<init>")) {  // assume just a single constructor
-                assert foundCanonicalCtr == false;
-                foundCanonicalCtr = true;
-                return null;
-            } else {
-                return cv.visitMethod(access, name, descriptor, signature, exceptions);
-            }
-        }
-        @Override
-        public void visitEnd() {
-            // must have a signature that is not the same as the test record constructor
-            MethodVisitor mv = cv.visitMethod(ACC_PUBLIC, "<init>", "(Ljava/lang/Object;)V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Record", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-
-            cv.visitEnd();
-        }
+        var cf = ClassFile.of();
+        var classModel = cf.parse(classBytes);
+        return cf.transformClass(cf.parse(classBytes), ClassTransform.dropping(ce ->
+                        ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
+                .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(INIT_NAME,
+                        MethodTypeDesc.of(CD_void, CD_Object), ACC_PUBLIC, cob -> {
+                            // Initialize strict fields, if any
+                            for (var field : classModel.fields()) {
+                                if ((field.flags().flagsMask() & (ACC_STRICT_INIT | ACC_STATIC)) != ACC_STRICT_INIT) {
+                                    continue;
+                                }
+                                var fieldType = field.fieldTypeSymbol();
+                                cob.aload(0);
+                                switch (TypeKind.from(fieldType).asLoadable()) {
+                                    case INT -> cob.iconst_0();
+                                    case LONG -> cob.lconst_0();
+                                    case FLOAT -> cob.fconst_0();
+                                    case DOUBLE -> cob.dconst_0();
+                                    case REFERENCE -> cob.aconst_null();
+                                    default -> throw new IllegalArgumentException(fieldType.descriptorString());
+                                }
+                                var cp = cob.constantPool();
+                                cob.putfield(cp.fieldRefEntry(classModel.thisClass(), cp.nameAndTypeEntry(field.fieldName(), field.fieldType())));
+                            }
+                            cob.aload(0);
+                            cob.invokespecial(Record.class.describeConstable().orElseThrow(),
+                                    INIT_NAME, MTD_void);
+                            cob.return_();
+                        }))));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import com.sun.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryManagerMXBean;
 import java.lang.management.OperatingSystemMXBean;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,10 +39,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.management.DynamicMBean;
+import jdk.management.HotSpotAOTCacheMXBean;
+import jdk.management.VirtualThreadSchedulerMXBean;
 import sun.management.ManagementFactoryHelper;
 import sun.management.spi.PlatformMBeanProvider;
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
     static final String DIAGNOSTIC_COMMAND_MBEAN_NAME =
         "com.sun.management:type=DiagnosticCommand";
@@ -54,10 +54,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
     private static OperatingSystemMXBean osMBean = null;
 
     static {
-       AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-           System.loadLibrary("management_ext");
-           return null;
-       });
+       System.loadLibrary("management_ext");
     }
 
     public PlatformMBeanProviderImpl() {
@@ -160,6 +157,76 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
                 return Collections.singletonMap(
                         ManagementFactory.THREAD_MXBEAN_NAME,
                         threadMBean);
+            }
+        });
+
+        /**
+        * HotSpotAOTCacheMXBean.
+        */
+        initMBeanList.add(new PlatformComponent<HotSpotAOTCacheMXBean>() {
+            private final Set<Class<? extends HotSpotAOTCacheMXBean>> mbeanInterfaces =
+                    Set.of(HotSpotAOTCacheMXBean.class);
+            private final Set<String> mbeanInterfaceNames =
+                    Set.of(HotSpotAOTCacheMXBean.class.getName());
+            private HotSpotAOTCacheMXBean impl;
+
+            @Override
+            public Set<Class<? extends HotSpotAOTCacheMXBean>> mbeanInterfaces() {
+                return mbeanInterfaces;
+            }
+
+            @Override
+            public Set<String> mbeanInterfaceNames() {
+                return mbeanInterfaceNames;
+            }
+
+            @Override
+            public String getObjectNamePattern() {
+                return "jdk.management:type=HotSpotAOTCache";
+            }
+
+            @Override
+            public Map<String, HotSpotAOTCacheMXBean> nameToMBeanMap() {
+                HotSpotAOTCacheMXBean impl = this.impl;
+                if (impl == null) {
+                    this.impl = impl = new HotSpotAOTCacheImpl(ManagementFactoryHelper.getVMManagement());
+                }
+                return Map.of("jdk.management:type=HotSpotAOTCache", impl);
+            }
+        });
+
+        /**
+         * VirtualThreadSchedulerMXBean.
+         */
+        initMBeanList.add(new PlatformComponent<VirtualThreadSchedulerMXBean>() {
+            private final Set<Class<? extends VirtualThreadSchedulerMXBean>> mbeanInterfaces =
+                    Set.of(VirtualThreadSchedulerMXBean.class);
+            private final Set<String> mbeanInterfaceNames =
+                    Set.of(VirtualThreadSchedulerMXBean.class.getName());
+            private VirtualThreadSchedulerMXBean impl;
+
+            @Override
+            public Set<Class<? extends VirtualThreadSchedulerMXBean>> mbeanInterfaces() {
+                return mbeanInterfaces;
+            }
+
+            @Override
+            public Set<String> mbeanInterfaceNames() {
+                return mbeanInterfaceNames;
+            }
+
+            @Override
+            public String getObjectNamePattern() {
+                return "jdk.management:type=VirtualThreadScheduler";
+            }
+
+            @Override
+            public Map<String, VirtualThreadSchedulerMXBean> nameToMBeanMap() {
+                VirtualThreadSchedulerMXBean impl = this.impl;
+                if (impl == null) {
+                    this.impl = impl = VirtualThreadSchedulerImpls.create();
+                }
+                return Map.of("jdk.management:type=VirtualThreadScheduler", impl);
             }
         });
 

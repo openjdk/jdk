@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@
 #include "utilities/macros.hpp"
 
 class CodeEmitInfo;
-
+class CompiledEntrySignature;
 class C1_MacroAssembler: public MacroAssembler {
+ private:
+  int scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label, bool is_value_ro_entry);
+  void build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc);
  public:
   // creation
   C1_MacroAssembler(CodeBuffer* code) : MacroAssembler(code) { pd_init(); }
@@ -38,10 +41,14 @@ class C1_MacroAssembler: public MacroAssembler {
   //----------------------------------------------------
   void explicit_null_check(Register base);
 
-  void inline_cache_check(Register receiver, Register iCache);
-  void build_frame(int frame_size_in_bytes, int bang_size_in_bytes);
-  void remove_frame(int frame_size_in_bytes);
+  void build_frame(int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc = 0, bool has_scalarized_args = false, Label* verified_value_entry_label = nullptr);
 
+  int verified_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label) {
+    return scalarized_entry(ces, frame_size_in_bytes, bang_size_in_bytes, sp_offset_for_orig_pc, verified_value_entry_label, false);
+  }
+  int verified_value_ro_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label) {
+    return scalarized_entry(ces, frame_size_in_bytes, bang_size_in_bytes, sp_offset_for_orig_pc, verified_value_entry_label, true);
+  }
   void verified_entry(bool breakAtEntry);
   void verify_stack_oop(int offset) PRODUCT_RETURN;
   void verify_not_null_oop(Register r)  PRODUCT_RETURN;
@@ -90,7 +97,7 @@ class StubAssembler: public C1_MacroAssembler {
   int call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2, Register arg3);
 
   void prologue(const char* name, bool must_gc_arguments);
-  void epilogue();
+  void epilogue(bool use_pop = false);
 };
 
 #endif // SHARE_C1_C1_MACROASSEMBLER_HPP

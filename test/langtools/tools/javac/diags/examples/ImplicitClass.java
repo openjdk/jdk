@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
- // key: compiler.misc.feature.implicit.classes
- // key: compiler.warn.preview.feature.use.plural
- // options: -source ${jdk.version} --enable-preview -Xlint:preview
+// key: compiler.misc.feature.implicit.classes
+// key: compiler.err.feature.not.supported.in.source.plural
+// options: --release 24
 
 public static void main(String... args) {
 }

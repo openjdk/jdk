@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 6372500
  * @summary Test that KeyInfo.marshal works correctly
  * @modules java.xml.crypto/org.jcp.xml.dsig.internal.dom
- * @compile -XDignore.symbol.file Marshal.java
- * @run main/othervm/java.security.policy==test.policy Marshal
  * @author Sean Mullan
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -539,7 +538,7 @@ void TemplateTable::condy_helper(Label& Done)
 
   __ mov(rtmp, (int) bytecode());
   __ call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rtmp);
-  __ get_vm_result_2(flags, rtmp);
+  __ get_vm_result_metadata(flags, rtmp);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -889,6 +888,7 @@ void TemplateTable::aaload() {
 
   index_check(Rarray, Rindex);
   do_oop_load(_masm, R0_tos, get_array_elem_addr_same_base(T_OBJECT, Rarray, Rindex, Rtemp), IS_ARRAY);
+  __ profile_array_load(Rarray);
 }
 
 
@@ -1230,6 +1230,8 @@ void TemplateTable::aastore() {
 
   index_check_without_pop(Rarray_3, Rindex_4);
 
+  __ profile_array_store(R0_tmp);
+
   // Compute the array base
   __ add(Raddr_1, Rarray_3, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
 
@@ -1242,7 +1244,8 @@ void TemplateTable::aastore() {
   __ load_klass(Rtemp, Rarray_3);
   __ ldr(Rsuper_LR, Address(Rtemp, ObjArrayKlass::element_klass_offset()));
 
-  __ gen_subtype_check(Rsub_5, Rsuper_LR, throw_array_store, R0_tmp, R3_tmp);
+  // Already called profile_array_store above, no profiling required.
+  __ gen_subtype_check(Rsub_5, Rsuper_LR, throw_array_store, R0_tmp, R3_tmp, /* profile = */ false);
   // Come here on success
 
   // Store value
@@ -1255,14 +1258,11 @@ void TemplateTable::aastore() {
   __ bind(throw_array_store);
 
   // Come here on failure of subtype check
-  __ profile_typecheck_failed(R0_tmp);
-
   // object is at TOS
   __ b(Interpreter::_throw_ArrayStoreException_entry);
 
   // Have a null in Rvalue_2, store null at array[index].
   __ bind(is_null);
-  __ profile_null_seen(R0_tmp);
 
   // Store a null
   do_oop_store(_masm, Address::indexed_oop(Raddr_1, Rindex_4), Rvalue_2, Rtemp, R0_tmp, R3_tmp, true, IS_ARRAY);
@@ -2214,7 +2214,7 @@ void TemplateTable::if_acmp(Condition cc) {
   __ b(not_taken, convNegCond(cc));
   branch(false, false);
   __ bind(not_taken);
-  __ profile_not_taken_branch(R0_tmp);
+  __ profile_not_taken_branch(R0_tmp, /* acmp = */ true);
 }
 
 
@@ -2494,8 +2494,8 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ ldr(R1, aaddress(0));
     __ load_klass(Rtemp, R1);
-    __ ldr_u32(Rtemp, Address(Rtemp, Klass::access_flags_offset()));
-    __ tbz(Rtemp, exact_log2(JVM_ACC_HAS_FINALIZER), skip_register_finalizer);
+    __ ldrb(Rtemp, Address(Rtemp, Klass::misc_flags_offset()));
+    __ tbz(Rtemp, exact_log2(KlassFlags::_misc_has_finalizer), skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), R1);
 
@@ -3469,6 +3469,10 @@ void TemplateTable::fast_storefield(TosState state) {
   Address addr = Address(Robj, Roffset);
   // access field
   switch (bytecode()) {
+    case Bytecodes::_fast_vputfield:
+      // field is flat
+      __ stop("Should not reach here");
+      break;
     case Bytecodes::_fast_zputfield:
       __ access_store_at(T_BOOLEAN, IN_HEAP, addr, R0_tos, noreg, noreg, noreg, false);
       break;
@@ -3554,6 +3558,10 @@ void TemplateTable::fast_accessfield(TosState state) {
   Address addr = Address(Robj, Roffset);
   // access field
   switch (bytecode()) {
+    case Bytecodes::_fast_vgetfield:
+      // field is flat
+      __ stop("Should not reach here");
+      break;
     case Bytecodes::_fast_bgetfield:
       __ access_load_at(T_BYTE, IN_HEAP, addr, R0_tos, noreg, noreg, noreg);
       break;
@@ -3971,16 +3979,17 @@ void TemplateTable::_new() {
   __ b(slow_case, ne);
   __ load_resolved_klass_at_offset(Rcpool, Rindex, Rklass);
 
-  // make sure klass is initialized & doesn't have finalizer
+  // make sure klass is initialized
   // make sure klass is fully initialized
   __ ldrb(Rtemp, Address(Rklass, InstanceKlass::init_state_offset()));
+  __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
   __ cmp(Rtemp, InstanceKlass::fully_initialized);
   __ b(slow_case, ne);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ ldr_u32(Rsize, Address(Rklass, Klass::layout_helper_offset()));
 
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if it is malformed in some way
   // Klass::_lh_instance_slow_path_bit is really a bit mask, not bit number
   __ tbnz(Rsize, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 
@@ -4143,8 +4152,7 @@ void TemplateTable::checkcast() {
 
   __ push(atos);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(Rsuper, Robj);
+  __ get_vm_result_metadata(Rsuper, Robj);
   __ pop_ptr(Robj);
   __ b(resolved);
 
@@ -4214,8 +4222,7 @@ void TemplateTable::instanceof() {
 
   __ push(atos);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(Rsuper, Robj);
+  __ get_vm_result_metadata(Rsuper, Robj);
   __ pop_ptr(Robj);
   __ b(resolved);
 

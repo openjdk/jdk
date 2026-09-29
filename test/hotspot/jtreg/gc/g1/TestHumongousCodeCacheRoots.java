@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,8 +106,7 @@ public class TestHumongousCodeCacheRoots {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava(finalargs);
     output.shouldHaveExitValue(0);
     return output;
   }
@@ -116,7 +115,7 @@ public class TestHumongousCodeCacheRoots {
     final String[] baseArguments = new String[] {
       "-XX:+UseG1GC", "-XX:G1HeapRegionSize=1M", "-Xmx100M", // make sure we get a humongous region
       "-XX:+UnlockDiagnosticVMOptions",
-      "-XX:InitiatingHeapOccupancyPercent=1", // strong code root marking
+      "-XX:G1IHOP=1", // strong code root marking
       "-XX:+G1VerifyHeapRegionCodeRoots", "-XX:+VerifyAfterGC", // make sure that verification is run
     };
 

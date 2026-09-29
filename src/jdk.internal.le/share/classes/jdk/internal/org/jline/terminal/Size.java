@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -13,9 +13,9 @@ public class Size {
     private int rows;
     private int cols;
 
-    public Size() {
-    }
+    public Size() {}
 
+    @SuppressWarnings("this-escape")
     public Size(int columns, int rows) {
         this();
         setColumns(columns);
@@ -50,7 +50,7 @@ public class Size {
      * @return the cursor position
      */
     public int cursorPos(int row, int col) {
-        return row * (cols+1) + col;
+        return row * (cols + 1) + col;
     }
 
     public void copy(Size size) {

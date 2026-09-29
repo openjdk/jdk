@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 
-import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 
@@ -61,7 +60,7 @@ public class Test4520754 {
         // AWT classes (com.sun.beans.infos.ComponentBeanInfo)
         test(null, Button.class, Component.class, List.class, Menu.class, Panel.class);
         // Swing classes (dt.jar)
-        test(null, JApplet.class, JButton.class, JCheckBox.class);
+        test(null, JButton.class, JCheckBox.class);
         // user defined classes
         test(Boolean.TRUE, Wombat.class, Foo.class, FooBar.class);
     }

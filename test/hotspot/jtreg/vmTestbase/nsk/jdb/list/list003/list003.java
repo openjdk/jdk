@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.list.list003.list003a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.list.list003.list003
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -47,6 +47,7 @@
  *      -jdb.option="-J-Duser.language=en -J-Duser.country=US"
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
+ *      -jdb.option="-sourcepath ${test.src}/../../../.."
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
@@ -98,13 +99,9 @@ public class list003 extends JdbTest {
     }
 
     public static void main(String[] args) {
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String[] args, PrintStream out) {
         debuggeeClass = DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
-        return new list003().runTest(args, out);
+        new list003().runTest(args);
     }
 
     @Override

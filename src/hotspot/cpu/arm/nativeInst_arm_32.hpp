@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,6 @@ class RawNativeInstruction {
     instr_ldrh_strh  = 0x10,
     instr_fld_fst    = 0xd0
   };
-
-  // illegal instruction used by NativeJump::patch_verified_entry
-  // permanently undefined (UDF): 0xe << 28 | 0b1111111 << 20 | 0b1111 << 4
-  static const int not_entrant_illegal_instruction = 0xe7f000f0;
 
   static int decode_rotated_imm12(int encoding) {
     int base = encoding & 0xff;
@@ -274,10 +270,6 @@ class RawNativeJump: public NativeInstruction {
     }
   }
 
-  static void check_verified_entry_alignment(address entry, address verified_entry);
-
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
-
 };
 
 inline RawNativeJump* rawNativeJump_at(address address) {
@@ -379,13 +371,13 @@ class NativeMovConstReg: public NativeInstruction {
  public:
 
   intptr_t data() const;
-  void set_data(intptr_t x, address pc = 0);
+  void set_data(intptr_t x, address pc = nullptr);
   bool is_pc_relative() {
     return !is_movw();
   }
   void set_pc_relative_offset(address addr, address pc);
   address next_instruction_address() const {
-    // NOTE: CompiledStaticCall::set_to_interpreted() calls this but
+    // NOTE: CompiledDirectCall::set_to_interpreted() calls this but
     // are restricted to single-instruction ldr. No need to jump over
     // several instructions.
     assert(is_ldr_literal(), "Should only use single-instructions load");
@@ -396,7 +388,7 @@ class NativeMovConstReg: public NativeInstruction {
 inline NativeMovConstReg* nativeMovConstReg_at(address address) {
   NativeInstruction* ni = nativeInstruction_at(address);
   assert(ni->is_ldr_literal() || ni->is_pc_rel() ||
-         ni->is_movw() && VM_Version::supports_movw(), "must be");
+         (ni->is_movw() && VM_Version::supports_movw()), "must be");
   return (NativeMovConstReg*)address;
 }
 
@@ -415,6 +407,7 @@ inline NativeJump* nativeJump_at(address address) {
 
 class NativeCall: public RawNativeCall {
 public:
+  static int byte_size() { return instruction_size; }
   // NativeCall::next_instruction_address() is used only to define the
   // range where to look for the relocation information. We need not
   // walk over composed instructions (as long as the relocation information
@@ -437,9 +430,16 @@ inline NativeCall* nativeCall_before(address return_address) {
 
 class NativePostCallNop: public NativeInstruction {
 public:
+  enum arm_specific_constants {
+    // If the check is adjusted to read beyond size of the instruction sequence at the deopt
+    // handler stub code entry point, it has to happen in two stages - to prevent out of bounds
+    // access in case the return address points to the entry point which could be at
+    // the end of page.
+    first_check_size = instruction_size
+  };
   bool check() const { return is_nop(); }
-  int displacement() const { return 0; }
-  void patch(jint diff);
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset) { return false; }
   void make_deopt();
 };
 

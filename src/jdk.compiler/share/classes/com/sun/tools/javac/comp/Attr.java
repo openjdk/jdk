@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.LintMapper;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
@@ -58,6 +59,7 @@ import static com.sun.tools.javac.resources.CompilerProperties.Fragments.Diamond
 
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -78,7 +80,6 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 
 /** This is the main context-dependent analysis phase in GJC. It
  *  encompasses name resolution, type checking and constant folding as
@@ -98,6 +99,7 @@ public class Attr extends JCTree.Visitor {
 
     final Names names;
     final Log log;
+    final LintMapper lintMapper;
     final Symtab syms;
     final Resolve rs;
     final Operators operators;
@@ -116,13 +118,13 @@ public class Attr extends JCTree.Visitor {
     final Preview preview;
     final JCDiagnostic.Factory diags;
     final TypeAnnotations typeAnnotations;
-    final DeferredLintHandler deferredLintHandler;
     final TypeEnvs typeEnvs;
     final Dependencies dependencies;
     final Annotate annotate;
     final ArgumentAttr argumentAttr;
     final MatchBindingsComputer matchBindingsComputer;
     final AttrRecover attrRecover;
+    final boolean captureMRefReturnType;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -137,6 +139,7 @@ public class Attr extends JCTree.Visitor {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        lintMapper = LintMapper.instance(context);
         syms = Symtab.instance(context);
         rs = Resolve.instance(context);
         operators = Operators.instance(context);
@@ -156,7 +159,6 @@ public class Attr extends JCTree.Visitor {
         diags = JCDiagnostic.Factory.instance(context);
         annotate = Annotate.instance(context);
         typeAnnotations = TypeAnnotations.instance(context);
-        deferredLintHandler = DeferredLintHandler.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
         argumentAttr = ArgumentAttr.instance(context);
@@ -174,14 +176,18 @@ public class Attr extends JCTree.Visitor {
                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
+        captureMRefReturnType = Source.Feature.CAPTURE_MREF_RETURN_TYPE.allowedInSource(source);
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
+        varAssignmentOpInfo = new ResultInfo(KindSelector.ASG_OP, Type.noType);
         unknownExprInfo = new ResultInfo(KindSelector.VAL, Type.noType);
         methodAttrInfo = new MethodAttrInfo();
         unknownTypeInfo = new ResultInfo(KindSelector.TYP, Type.noType);
         unknownTypeExprInfo = new ResultInfo(KindSelector.VAL_TYP, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
+        initBlockType = new MethodType(List.nil(), syms.voidType, List.nil(), syms.methodClass);
+        allowValueClasses = preview.isEnabled() && Feature.VALUE_CLASSES.allowedInSource(source);
     }
 
     /** Switch: reifiable types in instanceof enabled?
@@ -199,6 +205,10 @@ public class Attr extends JCTree.Visitor {
     /** Are unconditional patterns in instanceof allowed
      */
     private final boolean allowUnconditionalPatternsInstanceOf;
+
+    /** Are value classes allowed
+     */
+    private final boolean allowValueClasses;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -293,7 +303,9 @@ public class Attr extends JCTree.Visitor {
     void checkAssignable(DiagnosticPosition pos, VarSymbol v, JCTree base, Env<AttrContext> env) {
         if (v.name == names._this) {
             log.error(pos, Errors.CantAssignValToThis);
-        } else if ((v.flags() & FINAL) != 0 &&
+            return;
+        }
+        if ((v.flags() & FINAL) != 0 &&
             ((v.flags() & HASINIT) != 0
              ||
              !((base == null ||
@@ -304,6 +316,7 @@ public class Attr extends JCTree.Visitor {
             } else {
                 log.error(pos, Errors.CantAssignValToVar(Flags.toSource(v.flags() & (STATIC | FINAL)), v));
             }
+            return;
         }
     }
 
@@ -326,13 +339,6 @@ public class Attr extends JCTree.Visitor {
      */
     static boolean isType(Symbol sym) {
         return sym != null && sym.kind == TYP;
-    }
-
-    /** The current `this' symbol.
-     *  @param env    The current environment.
-     */
-    Symbol thisSym(DiagnosticPosition pos, Env<AttrContext> env) {
-        return rs.resolveSelf(pos, env, env.enclClass.sym, names._this);
     }
 
     /** Attribute a parsed identifier.
@@ -361,7 +367,7 @@ public class Attr extends JCTree.Visitor {
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Symbol visitMemberSelect(MemberSelectTree node, Env<AttrContext> env) {
                 Symbol site = visit(node.getExpression(), env);
-                if (site.kind == ERR || site.kind == ABSENT_TYP || site.kind == HIDDEN)
+                if (site == null || site.kind == ERR || site.kind == ABSENT_TYP || site.kind == HIDDEN)
                     return site;
                 Name name = (Name)node.getIdentifier();
                 if (site.kind == PCK) {
@@ -611,11 +617,13 @@ public class Attr extends JCTree.Visitor {
 
     final ResultInfo statInfo;
     final ResultInfo varAssignmentInfo;
+    final ResultInfo varAssignmentOpInfo;
     final ResultInfo methodAttrInfo;
     final ResultInfo unknownExprInfo;
     final ResultInfo unknownTypeInfo;
     final ResultInfo unknownTypeExprInfo;
     final ResultInfo recoveryInfo;
+    final MethodType initBlockType;
 
     Type pt() {
         return resultInfo.pt;
@@ -663,10 +671,7 @@ public class Attr extends JCTree.Visitor {
             }
             matchBindings = matchBindingsComputer.finishBindings(tree,
                                                                  matchBindings);
-            if (tree == breakTree &&
-                    resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
-                breakTreeFound(copyEnv(env));
-            }
+            checkBreakTree(tree, env);
             return result;
         } catch (CompletionFailure ex) {
             tree.type = syms.errType;
@@ -674,6 +679,13 @@ public class Attr extends JCTree.Visitor {
         } finally {
             this.env = prevEnv;
             this.resultInfo = prevResult;
+        }
+    }
+
+    private void checkBreakTree(JCTree tree, Env<AttrContext> env) {
+        if (tree == breakTree &&
+                resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
+            breakTreeFound(copyEnv(env));
         }
     }
 
@@ -802,7 +814,16 @@ public class Attr extends JCTree.Visitor {
                 List<Type> bounds = List.of(attribType(tvar.bounds.head, env));
                 for (JCExpression bound : tvar.bounds.tail)
                     bounds = bounds.prepend(attribType(bound, env));
-                types.setBounds(a, bounds.reverse());
+                bounds = bounds.reverse();
+                if (bounds.head.hasTag(ARRAY)) {
+                    /* A single bound that is an array type may structurally reference
+                     * this same type variable, as in `<T extends T[]>`, setting the bound to
+                     * Object as a recovery strategy
+                     */
+                    types.setBounds(a, List.of(syms.objectType));
+                } else {
+                    types.setBounds(a, bounds);
+                }
             } else {
                 // if no bounds are given, assume a single bound of
                 // java.lang.Object.
@@ -836,14 +857,12 @@ public class Attr extends JCTree.Visitor {
      *  @see VarSymbol#setLazyConstValue
      */
     public Object attribLazyConstantValue(Env<AttrContext> env,
+                                      Env<AttrContext> enclosingEnv,
                                       JCVariableDecl variable,
                                       Type type) {
-
-        DiagnosticPosition prevLintPos
-                = deferredLintHandler.setPos(variable.pos());
-
         final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
+            doQueueScanTreeAndTypeAnnotateForVarInit(variable, enclosingEnv);
             Type itype = attribExpr(variable.init, env, type);
             if (variable.isImplicitlyTyped()) {
                 //fixup local variable type
@@ -856,11 +875,10 @@ public class Attr extends JCTree.Visitor {
             }
         } finally {
             log.useSource(prevSource);
-            deferredLintHandler.setPos(prevLintPos);
         }
     }
 
-    /** Attribute type reference in an `extends' or `implements' clause.
+    /** Attribute type reference in an `extends', `implements', or 'permits' clause.
      *  Supertypes of anonymous inner classes are usually already attributed.
      *
      *  @param tree              The tree making up the type reference.
@@ -877,7 +895,7 @@ public class Attr extends JCTree.Visitor {
             tree.type :
             attribType(tree, env);
         try {
-            return checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
+            return tree.type = checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
         } catch (CompletionFailure ex) {
             chk.completionError(tree.pos(), ex);
             return t;
@@ -937,9 +955,9 @@ public class Attr extends JCTree.Visitor {
         Optional<ArgumentAttr.LocalCacheContext> localCacheContext =
                 Optional.ofNullable(env.info.attributionMode.isSpeculative ?
                         argumentAttr.withLocalCacheContext() : null);
-        boolean ctorProloguePrev = env.info.ctorPrologue;
-        env.info.ctorPrologue = false;
+        EarlyConstructionContext earlyConstructionPrev = env.info.earlyContext;
         try {
+            env.info.earlyContext = earlyConstructionPrev.nested(true);
             // Local and anonymous classes have not been entered yet, so we need to
             // do it now.
             if (env.info.scope.owner.kind.matches(KindSelector.VAL_MTH)) {
@@ -961,10 +979,10 @@ public class Attr extends JCTree.Visitor {
                 // make sure class has been completed:
                 c.complete();
 
-                // If this class appears as an anonymous class in a constructor
-                // prologue, disable implicit outer instance from being passed.
-                // (This would be an illegal access to "this before super").
-                if (ctorProloguePrev && env.tree.hasTag(NEWCLASS)) {
+                // If a class declaration appears in a constructor prologue,
+                // that means it's either a local class or an anonymous class.
+                // Either way, there is no immediately enclosing instance.
+                if (earlyConstructionPrev.ctorPrologue()) {
                     c.flags_field |= NOOUTERTHIS;
                 }
                 attribClass(tree.pos(), c);
@@ -972,7 +990,7 @@ public class Attr extends JCTree.Visitor {
             }
         } finally {
             localCacheContext.ifPresent(LocalCacheContext::leave);
-            env.info.ctorPrologue = ctorProloguePrev;
+            env.info.earlyContext = earlyConstructionPrev;
         }
     }
 
@@ -982,11 +1000,10 @@ public class Attr extends JCTree.Visitor {
 
         Lint lint = env.info.lint.augment(m);
         Lint prevLint = chk.setLint(lint);
-        boolean ctorProloguePrev = env.info.ctorPrologue;
-        env.info.ctorPrologue = false;
+        EarlyConstructionContext earlyConstructionPrev = env.info.earlyContext;
+        Assert.check(!earlyConstructionPrev.ctorPrologue());
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
-            deferredLintHandler.flush(tree.pos());
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
 
@@ -1034,8 +1051,10 @@ public class Attr extends JCTree.Visitor {
             chk.validate(tree.typarams, localEnv);
 
             // Check that result type is well-formed.
-            if (tree.restype != null && !tree.restype.type.hasTag(VOID))
+            if (tree.restype != null && !tree.restype.type.hasTag(VOID)) {
                 chk.validate(tree.restype, localEnv);
+            }
+            chk.checkRequiresIdentity(tree, env.info.lint);
 
             // Check that receiver type is well-formed.
             if (tree.recvparam != null) {
@@ -1107,7 +1126,8 @@ public class Attr extends JCTree.Visitor {
                                 );
                             }
 
-                            if (TreeInfo.hasAnyConstructorCall(tree)) {
+                            if ((!allowValueClasses || TreeInfo.isCompactConstructor(tree)) &&
+                                    TreeInfo.hasAnyConstructorCall(tree)) {
                                 log.error(tree, Errors.InvalidCanonicalConstructorInRecord(
                                         Fragments.Canonical, env.enclClass.sym.name,
                                         Fragments.CanonicalMustNotContainExplicitConstructorInvocation));
@@ -1159,7 +1179,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             for (List<JCExpression> l = tree.thrown; l.nonEmpty(); l = l.tail)
-                chk.checkType(l.head.pos(), l.head.type, syms.throwableType);
+                chk.checkType(l.head.pos(), l.head.type, syms.throwableType, chk.subtypeHandler);
 
             if (tree.body == null) {
                 // Empty bodies are only allowed for
@@ -1171,7 +1191,7 @@ public class Attr extends JCTree.Visitor {
                                   Errors.DefaultAllowedInIntfAnnotationMember);
                 }
                 if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0)
-                    log.error(tree.pos(), Errors.MissingMethBodyOrDeclAbstract);
+                    log.error(tree.pos(), Errors.MissingMethBodyOrDeclAbstract(tree.sym, owner));
             } else {
                 if ((tree.sym.flags() & (ABSTRACT|DEFAULT|PRIVATE)) == ABSTRACT) {
                     if ((owner.flags() & INTERFACE) != 0) {
@@ -1189,7 +1209,11 @@ public class Attr extends JCTree.Visitor {
                     if (!TreeInfo.hasAnyConstructorCall(tree)) {
                         JCStatement supCall = make.at(tree.body.pos).Exec(make.Apply(List.nil(),
                                 make.Ident(names._super), make.Idents(List.nil())));
-                        tree.body.stats = tree.body.stats.prepend(supCall);
+                        if (allowValueClasses && (owner.isValueClass() || owner.isRecord())) {
+                            tree.body.stats = tree.body.stats.append(supCall);
+                        } else {
+                            tree.body.stats = tree.body.stats.prepend(supCall);
+                        }
                     } else if ((env.enclClass.sym.flags() & ENUM) != 0 &&
                             (tree.mods.flags & GENERATEDCONSTR) == 0 &&
                             TreeInfo.hasConstructorCall(tree, names._super)) {
@@ -1219,11 +1243,15 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 // Attribute all type annotations in the body
-                annotate.queueScanTreeAndTypeAnnotate(tree.body, localEnv, m, null);
+                annotate.queueScanTreeAndTypeAnnotate(tree.body, localEnv, m);
                 annotate.flush();
 
-                // Start of constructor prologue
-                localEnv.info.ctorPrologue = isConstructor;
+                // Start of constructor prologue (if not in java.lang.Object constructor)
+                if (isConstructor && owner.type != syms.objectType) {
+                    boolean hasThisConstructorCall = TreeInfo.hasConstructorCall(tree, names._this);
+                    localEnv.info.earlyContext = EarlyConstructionContext.of(owner,
+                            hasThisConstructorCall && allowValueClasses);
+                }
 
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
@@ -1234,7 +1262,7 @@ public class Attr extends JCTree.Visitor {
         } finally {
             chk.setLint(prevLint);
             chk.setMethod(prevMethod);
-            env.info.ctorPrologue = ctorProloguePrev;
+            env.info.earlyContext = earlyConstructionPrev;
         }
     }
 
@@ -1245,34 +1273,31 @@ public class Attr extends JCTree.Visitor {
                 // parameters have already been entered
                 env.info.scope.enter(tree.sym);
             } else {
-                if (tree.isImplicitlyTyped() && (tree.getModifiers().flags & PARAMETER) == 0) {
+                if (tree.isImplicitlyTyped() && (tree.getModifiers().flags & PARAMETER) == 0 && tree.type == null) {
                     if (tree.init == null) {
                         //cannot use 'var' without initializer
                         log.error(tree, Errors.CantInferLocalVarType(tree.name, Fragments.LocalMissingInit));
-                        tree.vartype = make.Erroneous();
+                        tree.type = syms.errType;
                     } else {
                         Fragment msg = canInferLocalVarType(tree);
                         if (msg != null) {
                             //cannot use 'var' with initializer which require an explicit target
                             //(e.g. lambda, method reference, array initializer).
                             log.error(tree, Errors.CantInferLocalVarType(tree.name, msg));
-                            tree.vartype = make.Erroneous();
+                            tree.type = syms.errType;
                         }
                     }
                 }
                 try {
                     annotate.blockAnnotations();
                     memberEnter.memberEnter(tree, env);
+                    typeAnnotations.organizeTypeAnnotationsSignaturesForLocalVarType(env, tree);
                 } finally {
                     annotate.unblockAnnotations();
                 }
             }
         } else {
-            if (tree.init != null) {
-                // Field initializer expression need to be entered.
-                annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym, tree.pos());
-                annotate.flush();
-            }
+            doQueueScanTreeAndTypeAnnotateForVarInit(tree, env);
         }
 
         VarSymbol v = tree.sym;
@@ -1287,7 +1312,6 @@ public class Attr extends JCTree.Visitor {
 
         try {
             v.getConstValue(); // ensure compile-time constant initializer is evaluated
-            deferredLintHandler.flush(tree.pos());
             chk.checkDeprecatedAnnotation(tree.pos(), v);
 
             if (tree.init != null) {
@@ -1303,14 +1327,23 @@ public class Attr extends JCTree.Visitor {
                     // declaration position to maximal possible value, effectively
                     // marking the variable as undefined.
                     initEnv.info.enclVar = v;
-                    attribExpr(tree.init, initEnv, v.type);
-                    if (tree.isImplicitlyTyped()) {
-                        //fixup local variable type
-                        v.type = chk.checkLocalVarType(tree, tree.init.type, tree.name);
+                    EarlyConstructionContext previousEarlyConstruction = initEnv.info.earlyContext;
+                    try {
+                        if (v.isStrictInstance() && allowValueClasses) {
+                            // instance strict field init occur in early construction context
+                            initEnv.info.earlyContext = EarlyConstructionContext.of((ClassSymbol)v.owner, false);
+                        }
+                        attribExpr(tree.init, initEnv, v.type);
+                        if (tree.isImplicitlyTyped()) {
+                            //fixup local variable type
+                            v.type = chk.checkLocalVarType(tree, tree.init.type, tree.name);
+                        }
+                    } finally {
+                        initEnv.info.earlyContext = previousEarlyConstruction;
                     }
                 }
                 if (tree.isImplicitlyTyped()) {
-                    setSyntheticVariableType(tree, v.type);
+                    setupImplicitlyTypedVariable(tree, v.type);
                 }
             }
             result = tree.type = v.type;
@@ -1319,9 +1352,21 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree, Errors.IllegalRecordComponentName(v));
                 }
             }
+            chk.checkRequiresIdentity(tree, env.info.lint);
         }
         finally {
             chk.setLint(prevLint);
+        }
+    }
+
+    private void doQueueScanTreeAndTypeAnnotateForVarInit(JCVariableDecl tree, Env<AttrContext> env) {
+        if (tree.init != null &&
+            (tree.sym.flags_field & Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED) == 0 &&
+            env.info.scope.owner.kind != MTH && env.info.scope.owner.kind != VAR) {
+            tree.sym.flags_field |= Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED;
+            // Field initializer expression need to be entered.
+            annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym);
+            annotate.flush();
         }
     }
 
@@ -1410,14 +1455,14 @@ public class Attr extends JCTree.Visitor {
             // created BLOCK-method.
             Symbol fakeOwner =
                 new MethodSymbol(tree.flags | BLOCK |
-                    env.info.scope.owner.flags() & STRICTFP, names.empty, null,
+                    env.info.scope.owner.flags() & STRICTFP, names.empty, initBlockType,
                     env.info.scope.owner);
             final Env<AttrContext> localEnv =
                 env.dup(tree, env.info.dup(env.info.scope.dupUnshared(fakeOwner)));
 
             if ((tree.flags & STATIC) != 0) localEnv.info.staticLevel++;
             // Attribute all type annotations in the block
-            annotate.queueScanTreeAndTypeAnnotate(tree, localEnv, localEnv.info.scope.owner, null);
+            annotate.queueScanTreeAndTypeAnnotate(tree, localEnv, localEnv.info.scope.owner);
             annotate.flush();
             attribStats(tree.stats, localEnv);
 
@@ -1572,7 +1617,8 @@ public class Attr extends JCTree.Visitor {
             }
             if (tree.var.isImplicitlyTyped()) {
                 Type inferredType = chk.checkLocalVarType(tree.var, elemtype, tree.var.name);
-                setSyntheticVariableType(tree.var, inferredType);
+                tree.var.type = inferredType;
+                setupImplicitlyTypedVariable(tree.var, inferredType);
             }
             attribStat(tree.var, loopEnv);
             chk.checkType(tree.expr.pos(), elemtype, tree.var.sym.type);
@@ -1610,14 +1656,16 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitSwitchExpression(JCSwitchExpression tree) {
+        boolean wrongContext = false;
+
         tree.polyKind = (pt().hasTag(NONE) && pt() != Type.recoveryType && pt() != Infer.anyPoly) ?
                 PolyKind.STANDALONE : PolyKind.POLY;
 
         if (tree.polyKind == PolyKind.POLY && resultInfo.pt.hasTag(VOID)) {
             //this means we are returning a poly conditional from void-compatible lambda expression
             resultInfo.checkContext.report(tree, diags.fragment(Fragments.SwitchExpressionTargetCantBeVoid));
-            result = tree.type = types.createErrorType(resultInfo.pt);
-            return;
+            resultInfo = recoveryInfo;
+            wrongContext = true;
         }
 
         ResultInfo condInfo = tree.polyKind == PolyKind.STANDALONE ?
@@ -1655,7 +1703,7 @@ public class Attr extends JCTree.Visitor {
 
         Type owntype = (tree.polyKind == PolyKind.STANDALONE) ? condType(caseTypePositions.toList(), caseTypes.toList()) : pt();
 
-        result = tree.type = check(tree, owntype, KindSelector.VAL, resultInfo);
+        result = tree.type = wrongContext? types.createErrorType(pt()) : check(tree, owntype, KindSelector.VAL, resultInfo);
     }
     //where:
         CheckContext switchExpressionContext(CheckContext checkContext) {
@@ -1675,6 +1723,7 @@ public class Attr extends JCTree.Visitor {
                               List<JCCase> cases,
                               BiConsumer<JCCase, Env<AttrContext>> attribCase) {
         Type seltype = attribExpr(selector, env);
+        Type seltypeUnboxed = types.unboxedTypeOrType(seltype);
 
         Env<AttrContext> switchEnv =
             env.dup(switchTree, env.info.dup(env.info.scope.dup()));
@@ -1682,18 +1731,19 @@ public class Attr extends JCTree.Visitor {
         try {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
+            boolean booleanSwitch = types.isSameType(seltypeUnboxed, syms.booleanType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
             boolean intSwitch = types.isAssignable(seltype, syms.intType);
-            boolean errorPrimitiveSwitch = seltype.isPrimitive() && !intSwitch;
             boolean patternSwitch;
+            if (seltype.isPrimitive() && !intSwitch) {
+                preview.checkSourceLevel(selector.pos(), Feature.PRIMITIVE_PATTERNS);
+                patternSwitch = true;
+            }
             if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
-                !intSwitch && !errorPrimitiveSwitch) {
+                !intSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
-                if (errorPrimitiveSwitch) {
-                    log.error(selector.pos(), Errors.SelectorTypeNotAllowed(seltype));
-                }
                 patternSwitch = cases.stream()
                                      .flatMap(c -> c.labels.stream())
                                      .anyMatch(l -> l.hasTag(PATTERNCASELABEL) ||
@@ -1709,6 +1759,7 @@ public class Attr extends JCTree.Visitor {
             boolean hasNullPattern = false;       // Is there a null pattern?
             CaseTree.CaseKind caseKind = null;
             boolean wasError = false;
+            JCCaseLabel unconditionalCaseLabel = null;
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
                 if (caseKind == null) {
@@ -1776,10 +1827,18 @@ public class Attr extends JCTree.Visitor {
                                     } else if (!constants.add(s)) {
                                         log.error(label.pos(), Errors.DuplicateCaseLabel);
                                     }
-                                } else if (!stringSwitch && !intSwitch && !errorPrimitiveSwitch) {
-                                    log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
-                                } else if (!constants.add(pattype.constValue())) {
-                                    log.error(c.pos(), Errors.DuplicateCaseLabel);
+                                }
+                                else {
+                                    boolean isLongFloatDoubleOrBooleanConstant =
+                                            pattype.getTag().isInSuperClassesOf(LONG) || pattype.getTag().equals(BOOLEAN);
+                                    if (isLongFloatDoubleOrBooleanConstant) {
+                                        preview.checkSourceLevel(label.pos(), Feature.PRIMITIVE_PATTERNS);
+                                    }
+                                    if (!stringSwitch && !intSwitch && !(isLongFloatDoubleOrBooleanConstant && types.isSameType(seltypeUnboxed, pattype))) {
+                                        log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
+                                    } else if (!constants.add(pattype.constValue())) {
+                                        log.error(c.pos(), Errors.DuplicateCaseLabel);
+                                    }
                                 }
                             }
                         }
@@ -1788,6 +1847,8 @@ public class Attr extends JCTree.Visitor {
                             log.error(label.pos(), Errors.DuplicateDefaultLabel);
                         } else if (hasUnconditionalPattern) {
                             log.error(label.pos(), Errors.UnconditionalPatternAndDefault);
+                        }  else if (booleanSwitch && constants.containsAll(Set.of(0, 1))) {
+                            log.error(label.pos(), Errors.DefaultAndBothBooleanValues);
                         }
                         hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
@@ -1796,12 +1857,13 @@ public class Attr extends JCTree.Visitor {
                         JCPattern pat = patternlabel.pat;
                         attribExpr(pat, switchEnv, seltype);
                         Type primaryType = TreeInfo.primaryPatternType(pat);
-                        if (!primaryType.hasTag(TYPEVAR)) {
+
+                        if (primaryType.isPrimitive()) {
+                            preview.checkSourceLevel(pat.pos(), Feature.PRIMITIVE_PATTERNS);
+                        } else if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
                         }
-                        if (!errorPrimitiveSwitch) {
-                            checkCastablePattern(pat.pos(), seltype, primaryType);
-                        }
+                        checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
                         JCExpression guard = c.guard;
                         if (guardBindings == null && guard != null) {
@@ -1824,15 +1886,17 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
-                                types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
-                                                patternType);
+                                types.isUnconditionallyExactTypeBased(seltype, patternType);
                         if (unconditional) {
                             if (hasUnconditionalPattern) {
                                 log.error(pat.pos(), Errors.DuplicateUnconditionalPattern);
                             } else if (hasDefault) {
                                 log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
+                            } else if (booleanSwitch && constants.containsAll(Set.of(0, 1))) {
+                                log.error(pat.pos(), Errors.UnconditionalPatternAndBothBooleanValues);
                             }
                             hasUnconditionalPattern = true;
+                            unconditionalCaseLabel = label;
                         }
                         lastPatternErroneous = patternType.isErroneous();
                     } else {
@@ -1859,7 +1923,7 @@ public class Attr extends JCTree.Visitor {
             }
             if (patternSwitch) {
                 chk.checkSwitchCaseStructure(cases);
-                chk.checkSwitchCaseLabelDominated(cases);
+                chk.checkSwitchCaseLabelDominated(unconditionalCaseLabel, cases);
             }
             if (switchTree.hasTag(SWITCH)) {
                 ((JCSwitch) switchTree).hasUnconditionalPattern =
@@ -1910,18 +1974,13 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitSynchronized(JCSynchronized tree) {
-        chk.checkRefType(tree.pos(), attribExpr(tree.lock, env));
-        if (env.info.lint.isEnabled(LintCategory.SYNCHRONIZATION) && isValueBased(tree.lock.type)) {
-            log.warning(LintCategory.SYNCHRONIZATION, tree.pos(), Warnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
+        boolean identityType = chk.checkIdentityRefType(tree.pos(), attribExpr(tree.lock, env));
+        if (identityType && tree.lock.type != null && tree.lock.type.isValueBased()) {
+            log.warning(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
         }
         attribStat(tree.body, env);
         result = null;
     }
-        // where
-        private boolean isValueBased(Type t) {
-            return t != null && t.tsym != null && (t.tsym.flags() & VALUE_BASED) != 0;
-        }
-
 
     public void visitTry(JCTry tree) {
         // Create a new local environment with a local
@@ -1935,7 +1994,7 @@ public class Attr extends JCTree.Visitor {
             try {
                 // Attribute resource declarations
                 for (JCTree resource : tree.resources) {
-                    CheckContext twrContext = new Check.NestedCheckContext(resultInfo.checkContext) {
+                    CheckContext twrContext = new Check.NestedCheckContext(chk.subtypeHandler) {
                         @Override
                         public void report(DiagnosticPosition pos, JCDiagnostic details) {
                             chk.basicHandler.report(pos, diags.fragment(Fragments.TryNotApplicableToType(details)));
@@ -1950,7 +2009,7 @@ public class Attr extends JCTree.Visitor {
                         twrResult.check(resource, resource.type);
 
                         //check that resource type cannot throw InterruptedException
-                        checkAutoCloseable(resource.pos(), localEnv, resource.type);
+                        checkAutoCloseable(localEnv, resource, true);
 
                         VarSymbol var = ((JCVariableDecl) resource).sym;
 
@@ -1983,7 +2042,8 @@ public class Attr extends JCTree.Visitor {
                     }
                     chk.checkType(c.param.vartype.pos(),
                                   chk.checkClassType(c.param.vartype.pos(), ctype),
-                                  syms.throwableType);
+                                  syms.throwableType,
+                                  chk.subtypeHandler);
                     attribStat(c.body, catchEnv);
                 } finally {
                     catchEnv.info.scope.leave();
@@ -1999,12 +2059,14 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
-    void checkAutoCloseable(DiagnosticPosition pos, Env<AttrContext> env, Type resource) {
+    void checkAutoCloseable(Env<AttrContext> env, JCTree tree, boolean useSite) {
+        DiagnosticPosition pos = tree.pos();
+        Type resource = tree.type;
         if (!resource.isErroneous() &&
             types.asSuper(resource, syms.autoCloseableType.tsym) != null &&
             !types.isSameType(resource, syms.autoCloseableType)) { // Don't emit warning for AutoCloseable itself
             Symbol close = syms.noSymbol;
-            Log.DiagnosticHandler discardHandler = new Log.DiscardDiagnosticHandler(log);
+            Log.DiagnosticHandler discardHandler = log.new DiscardDiagnosticHandler();
             try {
                 close = rs.resolveQualifiedMethod(pos,
                         env,
@@ -2017,10 +2079,15 @@ public class Attr extends JCTree.Visitor {
                 log.popDiagnosticHandler(discardHandler);
             }
             if (close.kind == MTH &&
-                    close.overrides(syms.autoCloseableClose, resource.tsym, types, true) &&
-                    chk.isHandled(syms.interruptedExceptionType, types.memberType(resource, close).getThrownTypes()) &&
-                    env.info.lint.isEnabled(LintCategory.TRY)) {
-                log.warning(LintCategory.TRY, pos, Warnings.TryResourceThrowsInterruptedExc(resource));
+                    (useSite || close.owner != syms.autoCloseableType.tsym) &&
+                    ((MethodSymbol)close).binaryOverrides(syms.autoCloseableClose, resource.tsym, types) &&
+                    chk.isHandled(syms.interruptedExceptionType, types.memberType(resource, close).getThrownTypes())) {
+                if (!useSite && close.owner == resource.tsym) {
+                    log.warning(TreeInfo.diagnosticPositionFor(close, tree),
+                        LintWarnings.TryResourceCanThrowInterruptedExc(resource));
+                } else {
+                    log.warning(pos, LintWarnings.TryResourceThrowsInterruptedExc(resource));
+                }
             }
         }
     }
@@ -2196,7 +2263,7 @@ public class Attr extends JCTree.Visitor {
                                  .collect(List.collector());
 
             for (Type type : condTypes) {
-                if (condTypes.stream().filter(t -> t != type).allMatch(t -> types.isAssignable(t, type)))
+                if (condTypes.stream().filter(t -> t != type).allMatch(t -> types.isSubtype(t, type)))
                     return type.baseType();
             }
 
@@ -2459,8 +2526,10 @@ public class Attr extends JCTree.Visitor {
             log.error(tree.pos(), Errors.RetOutsideMeth);
         } else if (env.info.yieldResult != null) {
             log.error(tree.pos(), Errors.ReturnOutsideSwitchExpression);
+            if (tree.expr != null) {
+                attribExpr(tree.expr, env, env.info.yieldResult.pt);
+            }
         } else if (!env.info.isLambda &&
-                !env.info.isNewClass &&
                 env.enclMethod != null &&
                 TreeInfo.isCompactConstructor(env.enclMethod)) {
             log.error(env.enclMethod,
@@ -2525,8 +2594,8 @@ public class Attr extends JCTree.Visitor {
             argtypes = argtypesBuf.toList();
             typeargtypes = attribTypes(tree.typeargs, localEnv);
 
-            // Done with this()/super() parameters. End of constructor prologue.
-            env.info.ctorPrologue = false;
+            // End of constructor prologue. Done with this()/super() parameters.
+            env.info.earlyContext = EarlyConstructionContext.NONE;
 
             // Variable `site' points to the class in which the called
             // constructor is defined.
@@ -2555,18 +2624,24 @@ public class Attr extends JCTree.Visitor {
                         // Check that the prefix expression conforms
                         // to the outer instance type of the class.
                         chk.checkRefType(qualifier.pos(),
-                                         attribExpr(qualifier, localEnv,
-                                                    encl));
-                    } else if (methName == names._super) {
-                        // qualifier omitted; check for existence
-                        // of an appropriate implicit qualifier.
-                        rs.resolveImplicitThis(tree.meth.pos(),
-                                               localEnv, site, true);
+                                attribTree(qualifier, localEnv,
+                                           new ResultInfo(KindSelector.VAL,
+                                                          encl,
+                                                          chk.subtypeHandler)));
                     }
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
                               Errors.IllegalQualNotIcls(site.tsym));
                     attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
+                }
+
+                if (tree.meth.hasTag(IDENT)) {
+                    // non-qualified super(...) call; check whether explicit constructor
+                    // invocation is well-formed. If the super class is an inner class,
+                    // make sure that an appropriate implicit qualifier exists. If the super
+                    // class is a local class, make sure that the current class is defined
+                    // in the same context as the local class.
+                    checkNewInnerClass(tree.meth.pos(), localEnv, site, true);
                 }
 
                 // if we're calling a java.lang.Enum constructor,
@@ -2629,6 +2704,7 @@ public class Attr extends JCTree.Visitor {
             Type capturedRes = resultInfo.checkContext.inferenceContext().cachedCapture(tree, restype, true);
             result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
         }
+        chk.checkRequiresIdentity(tree, env.info.lint);
         chk.validate(tree.typeargs, localEnv);
     }
     //where
@@ -2714,8 +2790,7 @@ public class Attr extends JCTree.Visitor {
             clazzid1 = make.at(clazz.pos).Select(make.Type(encltype),
                                                  ((JCIdent) clazzid).name);
 
-            EndPosTable endPosTable = this.env.toplevel.endPositions;
-            endPosTable.storeEnd(clazzid1, clazzid.getEndPosition(endPosTable));
+            clazzid1.endpos = clazzid.getEndPosition();
             if (clazz.hasTag(ANNOTATED_TYPE)) {
                 JCAnnotatedType annoType = (JCAnnotatedType) clazz;
                 List<JCAnnotation> annos = annoType.annotations;
@@ -2739,16 +2814,9 @@ public class Attr extends JCTree.Visitor {
 
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
-        Type clazztype;
-
-        try {
-            env.info.isNewClass = true;
-            clazztype = TreeInfo.isEnumInit(env.tree) ?
-                attribIdentAsEnumType(env, (JCIdent)clazz) :
-                attribType(clazz, env);
-        } finally {
-            env.info.isNewClass = false;
-        }
+        Type clazztype = TreeInfo.isEnumInit(env.tree) ?
+            attribIdentAsEnumType(env, (JCIdent)clazz) :
+            attribType(clazz, env);
 
         clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
@@ -2768,11 +2836,12 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree.encl.pos(), Errors.QualifiedNewOfStaticClass(clazztype.tsym));
                 }
             }
-        } else if (!clazztype.tsym.isInterface() &&
-                   clazztype.getEnclosingType().hasTag(CLASS)) {
+        } else {
             // Check for the existence of an apropos outer instance
-            rs.resolveImplicitThis(tree.pos(), env, clazztype);
+            checkNewInnerClass(tree.pos(), env, clazztype, false);
         }
+
+        checkBreakTree(tree.clazz, localEnv);
 
         // Attribute constructor arguments.
         ListBuffer<Type> argtypesBuf = new ListBuffer<>();
@@ -2793,7 +2862,7 @@ public class Attr extends JCTree.Visitor {
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
             boolean skipNonDiamondPath = false;
             // Check that class is not abstract
-            if (cdef == null && !isSpeculativeDiamondInferenceRound && // class body may be nulled out in speculative tree copy
+            if (cdef == null && !tree.classDeclRemoved() && !isSpeculativeDiamondInferenceRound && // class body may be nulled out in speculative tree copy
                 (clazztype.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
                 log.error(tree.pos(),
                           Errors.AbstractCantBeInstantiated(clazztype.tsym));
@@ -2871,6 +2940,8 @@ public class Attr extends JCTree.Visitor {
                         Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
                 }
             }
+
+            chk.checkRequiresIdentity(tree, env.info.lint);
 
             if (cdef != null) {
                 visitAnonymousClassDefinition(tree, clazz, clazztype, cdef, localEnv, argtypes, typeargtypes, pkind);
@@ -3036,6 +3107,24 @@ public class Attr extends JCTree.Visitor {
             };
         }
 
+        void checkNewInnerClass(DiagnosticPosition pos, Env<AttrContext> env, Type type, boolean isSuper) {
+            boolean isLocal = type.tsym.owner.kind == VAR || type.tsym.owner.kind == MTH;
+            if ((type.tsym.flags() & (INTERFACE | ENUM | RECORD)) != 0 ||
+                    (!isLocal && !type.tsym.isInner()) ||
+                    (isSuper && env.enclClass.sym.isAnonymous())) {
+                // nothing to check
+                return;
+            }
+            Symbol res = isLocal ?
+                    rs.findLocalClassOwner(env, type.tsym) :
+                    rs.findSelfContaining(pos, env, type.getEnclosingType().tsym, isSuper);
+            if (res.exists()) {
+                rs.accessBase(res, pos, env.enclClass.sym.type, names._this, true);
+            } else {
+                log.error(pos, Errors.EnclClassRequired(type.tsym));
+            }
+        }
+
     /** Make an attributed null check tree.
      */
     public JCExpression makeNullCheck(JCExpression arg) {
@@ -3158,8 +3247,10 @@ public class Attr extends JCTree.Visitor {
                     Type argType = arityMismatch ?
                             syms.errType :
                             actuals.head;
-                    if (params.head.isImplicitlyTyped()) {
-                        setSyntheticVariableType(params.head, argType);
+                    if (params.head.type == null &&
+                        params.head.isImplicitlyTyped()) { //error recovery
+                        params.head.type = argType;
+                        setupImplicitlyTypedVariable(params.head, argType);
                     }
                     params.head.sym = null;
                     actuals = actuals.isEmpty() ?
@@ -3172,7 +3263,7 @@ public class Attr extends JCTree.Visitor {
                 attribStats(that.params, localEnv);
 
                 if (arityMismatch) {
-                    resultInfo.checkContext.report(that, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
+                    resultInfo.checkContext.report(that, diags.fragment(Fragments.WrongNumberArgsInLambda(currentTarget.tsym)));
                         result = that.type = types.createErrorType(currentTarget);
                         return;
                 }
@@ -3191,10 +3282,8 @@ public class Attr extends JCTree.Visitor {
                 attribTree(that.getBody(), localEnv, bodyResultInfo);
             } else {
                 JCBlock body = (JCBlock)that.body;
-                if (body == breakTree &&
-                        resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
-                    breakTreeFound(copyEnv(localEnv));
-                }
+
+                checkBreakTree(body, localEnv);
                 attribStats(body.stats, localEnv);
             }
 
@@ -3207,7 +3296,7 @@ public class Attr extends JCTree.Visitor {
             flow.analyzeLambda(env, that, make, isSpeculativeRound);
 
             that.type = currentTarget; //avoids recovery at this stage
-            checkLambdaCompatible(that, lambdaType, resultInfo.checkContext);
+            checkLambdaCompatible(that, lambdaType, currentTarget.tsym, resultInfo.checkContext);
 
             if (!isSpeculativeRound) {
                 //add thrown types as bounds to the thrown types free variables if needed:
@@ -3287,6 +3376,10 @@ public class Attr extends JCTree.Visitor {
                                 // do nothing
                             }
                         }
+                        if (bound.tsym != syms.objectType.tsym && (!bound.isInterface() || (bound.tsym.flags() & ANNOTATION) != 0)) {
+                            // bound must be j.l.Object or an interface, but not an annotation
+                            reportIntersectionError(that, "not.an.intf.component", bound);
+                        }
                         bound = types.removeWildcards(bound);
                         components.add(bound);
                     }
@@ -3308,6 +3401,11 @@ public class Attr extends JCTree.Visitor {
                 currentTarget = types.createErrorType(pt());
             }
             return new TargetInfo(currentTarget, lambdaType);
+        }
+
+        private void reportIntersectionError(DiagnosticPosition pos, String key, Object... args) {
+             resultInfo.checkContext.report(pos,
+                 diags.fragment(Fragments.BadIntersectionTargetForFunctionalExpr(diags.fragment(key, args))));
         }
 
         void preFlow(JCLambda tree) {
@@ -3370,7 +3468,7 @@ public class Attr extends JCTree.Visitor {
                     JCLambda lambda = (JCLambda)tree;
                     List<Type> argtypes = List.nil();
                     for (JCVariableDecl param : lambda.params) {
-                        argtypes = param.vartype != null && param.vartype.type != null ?
+                        argtypes = !param.isImplicitlyTyped() && param.vartype.type != null ?
                                 argtypes.append(param.vartype.type) :
                                 argtypes.append(syms.errType);
                     }
@@ -3474,7 +3572,7 @@ public class Attr extends JCTree.Visitor {
         * (i) parameter types must be identical to those of the target descriptor; (ii) return
         * types must be compatible with the return type of the expected descriptor.
         */
-        void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext) {
+        void checkLambdaCompatible(JCLambda tree, Type descriptor, TypeSymbol target, CheckContext checkContext) {
             Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
 
             //return values have already been checked - but if lambda has no return
@@ -3491,71 +3589,38 @@ public class Attr extends JCTree.Visitor {
 
             List<Type> argTypes = checkContext.inferenceContext().asUndetVars(descriptor.getParameterTypes());
             if (!types.isSameTypes(argTypes, TreeInfo.types(tree.params))) {
-                checkContext.report(tree, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
+                checkContext.report(tree, diags.fragment(argTypes.size() != tree.params.size()
+                        ? Fragments.WrongNumberArgsInLambda(target)
+                        : Fragments.IncompatibleArgTypesInLambda(argTypes, TreeInfo.types(tree.params))));
             }
-        }
-
-        /* Map to hold 'fake' clinit methods. If a lambda is used to initialize a
-         * static field and that lambda has type annotations, these annotations will
-         * also be stored at these fake clinit methods.
-         *
-         * LambdaToMethod also use fake clinit methods so they can be reused.
-         * Also as LTM is a phase subsequent to attribution, the methods from
-         * clinits can be safely removed by LTM to save memory.
-         */
-        private Map<ClassSymbol, MethodSymbol> clinits = new HashMap<>();
-
-        public MethodSymbol removeClinit(ClassSymbol sym) {
-            return clinits.remove(sym);
         }
 
         /* This method returns an environment to be used to attribute a lambda
          * expression.
          *
          * The owner of this environment is a method symbol. If the current owner
-         * is not a method, for example if the lambda is used to initialize
-         * a field, then if the field is:
-         *
-         * - an instance field, we use the first constructor.
-         * - a static field, we create a fake clinit method.
+         * is not a method (e.g. if the lambda occurs in a field initializer), then
+         * a synthetic method symbol owner is created.
          */
         public Env<AttrContext> lambdaEnv(JCLambda that, Env<AttrContext> env) {
             Env<AttrContext> lambdaEnv;
             Symbol owner = env.info.scope.owner;
             if (owner.kind == VAR && owner.owner.kind == TYP) {
-                //field initializer
+                // If the lambda is nested in a field initializer, we need to create a fake init method.
+                // Uniqueness of this symbol is not important (as e.g. annotations will be added on the
+                // init symbol's owner).
                 ClassSymbol enclClass = owner.enclClass();
-                Symbol newScopeOwner = env.info.scope.owner;
-                /* if the field isn't static, then we can get the first constructor
-                 * and use it as the owner of the environment. This is what
-                 * LTM code is doing to look for type annotations so we are fine.
-                 */
-                if ((owner.flags() & STATIC) == 0) {
-                    for (Symbol s : enclClass.members_field.getSymbolsByName(names.init)) {
-                        newScopeOwner = s;
-                        break;
-                    }
-                } else {
-                    /* if the field is static then we need to create a fake clinit
-                     * method, this method can later be reused by LTM.
-                     */
-                    MethodSymbol clinit = clinits.get(enclClass);
-                    if (clinit == null) {
-                        Type clinitType = new MethodType(List.nil(),
-                                syms.voidType, List.nil(), syms.methodClass);
-                        clinit = new MethodSymbol(STATIC | SYNTHETIC | PRIVATE,
-                                names.clinit, clinitType, enclClass);
-                        clinit.params = List.nil();
-                        clinits.put(enclClass, clinit);
-                    }
-                    newScopeOwner = clinit;
-                }
-                lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared(newScopeOwner)));
+                Name initName = owner.isStatic() ? names.clinit : names.init;
+                MethodSymbol initSym = new MethodSymbol(BLOCK | (owner.isStatic() ? STATIC : 0) | SYNTHETIC | PRIVATE,
+                        initName, initBlockType, enclClass);
+                initSym.params = List.nil();
+                lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared(initSym)));
             } else {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
             }
             lambdaEnv.info.yieldResult = null;
             lambdaEnv.info.isLambda = true;
+            lambdaEnv.info.earlyContext = lambdaEnv.info.earlyContext.nested(false);
             return lambdaEnv;
         }
 
@@ -3644,7 +3709,6 @@ public class Attr extends JCTree.Visitor {
                 boolean targetError;
                 switch (refSym.kind) {
                     case ABSENT_MTH:
-                    case MISSING_ENCL:
                         targetError = false;
                         break;
                     case WRONG_MTH:
@@ -3695,11 +3759,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (!env.info.attributionMode.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
-                Type enclosingType = exprType.getEnclosingType();
-                if (enclosingType != null && enclosingType.hasTag(CLASS)) {
-                    // Check for the existence of an appropriate outer instance
-                    rs.resolveImplicitThis(that.pos(), env, exprType);
-                }
+                checkNewInnerClass(that.pos(), env, exprType, false);
             }
 
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
@@ -3765,6 +3825,7 @@ public class Attr extends JCTree.Visitor {
             if (!isSpeculativeRound) {
                 checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), desc, currentTarget);
             }
+            chk.checkRequiresIdentity(that, localEnv.info.lint);
             result = check(that, currentTarget, KindSelector.VAL, resultInfo);
         } catch (Types.FunctionDescriptorLookupError ex) {
             JCDiagnostic cause = ex.getDiagnostic();
@@ -3805,9 +3866,10 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
+            Type capturedResType = captureMRefReturnType ? types.capture(resType) : resType;
             if (resType.isErroneous() ||
-                    new FunctionalReturnContext(checkContext).compatible(resType, returnType,
-                            checkContext.checkWarner(tree, resType, returnType))) {
+                    new FunctionalReturnContext(checkContext).compatible(capturedResType, returnType,
+                            checkContext.checkWarner(tree, capturedResType, returnType))) {
                 incompatibleReturnType = null;
             }
         }
@@ -3907,6 +3969,7 @@ public class Attr extends JCTree.Visitor {
                     inferenceContext -> setFunctionalInfo(env, fExpr, pt, inferenceContext.asInstType(descriptorType),
                     inferenceContext.asInstType(primaryTarget), checkContext));
         } else {
+            fExpr.owner = env.info.scope.owner;
             if (pt.hasTag(CLASS)) {
                 fExpr.target = primaryTarget;
             }
@@ -3958,7 +4021,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAssignop(JCAssignOp tree) {
         // Attribute arguments.
-        Type owntype = attribTree(tree.lhs, env, varAssignmentInfo);
+        Type owntype = attribTree(tree.lhs, env, varAssignmentOpInfo);
         Type operand = attribExpr(tree.rhs, env);
         // Find operator.
         Symbol operator = tree.operator = operators.resolveBinary(tree, tree.getTag().noAssignOp(), owntype, operand);
@@ -3969,7 +4032,11 @@ public class Attr extends JCTree.Visitor {
             chk.checkCastable(tree.rhs.pos(),
                               operator.type.getReturnType(),
                               owntype);
-            chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            switch (tree.getTag()) {
+            case SL_ASG, SR_ASG, USR_ASG -> { }     // we only use (at most) the lower 6 bits, so any integral type is OK
+            default -> chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            }
+            chk.checkOutOfRangeShift(tree.rhs.pos(), operator, operand);
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
@@ -3977,7 +4044,7 @@ public class Attr extends JCTree.Visitor {
     public void visitUnary(JCUnary tree) {
         // Attribute arguments.
         Type argtype = (tree.getTag().isIncOrDecUnaryOp())
-            ? attribTree(tree.arg, env, varAssignmentInfo)
+            ? attribTree(tree.arg, env, varAssignmentOpInfo)
             : chk.checkNonVoid(tree.arg.pos(), attribExpr(tree.arg, env));
 
         // Find operator.
@@ -4060,6 +4127,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             chk.checkDivZero(tree.rhs.pos(), operator, right);
+            chk.checkOutOfRangeShift(tree.rhs.pos(), operator, right);
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
@@ -4067,6 +4135,7 @@ public class Attr extends JCTree.Visitor {
     public void visitTypeCast(final JCTypeCast tree) {
         Type clazztype = attribType(tree.clazz, env);
         chk.validate(tree.clazz, env, false);
+        chk.checkRequiresIdentity(tree, env.info.lint);
         //a fresh environment is required for 292 inference to work properly ---
         //see Infer.instantiatePolymorphicSignatureInstance()
         Env<AttrContext> localEnv = env.dup(tree);
@@ -4097,8 +4166,13 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        Type exprtype = chk.checkNullOrRefType(
-                tree.expr.pos(), attribExpr(tree.expr, env));
+        Type exprtype = attribExpr(tree.expr, env);
+        if (exprtype.isPrimitive()) {
+            preview.checkSourceLevel(tree.expr.pos(), Feature.PRIMITIVE_PATTERNS);
+        } else {
+            exprtype = chk.checkNullOrRefType(
+                    tree.expr.pos(), exprtype);
+        }
         Type clazztype;
         JCTree typeTree;
         if (tree.pattern.getTag() == BINDINGPATTERN ||
@@ -4109,8 +4183,7 @@ public class Attr extends JCTree.Visitor {
                 !exprtype.isErroneous() && !clazztype.isErroneous() &&
                 tree.pattern.getTag() != RECORDPATTERN) {
                 if (!allowUnconditionalPatternsInstanceOf) {
-                    log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
-                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.error(this.sourceName));
+                    log.error(tree.pos(), Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.error(this.sourceName));
                 }
             }
             typeTree = TreeInfo.primaryPatternTypeTree((JCPattern) tree.pattern);
@@ -4119,20 +4192,23 @@ public class Attr extends JCTree.Visitor {
             typeTree = tree.pattern;
             chk.validate(typeTree, env, false);
         }
-        if (!clazztype.hasTag(TYPEVAR)) {
-            clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
-        }
-        if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
-            boolean valid = false;
-            if (allowReifiableTypesInInstanceof) {
-                valid = checkCastablePattern(tree.expr.pos(), exprtype, clazztype);
-            } else {
-                log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
-                          Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
-                allowReifiableTypesInInstanceof = true;
+        if (clazztype.isPrimitive()) {
+            preview.checkSourceLevel(tree.pattern.pos(), Feature.PRIMITIVE_PATTERNS);
+        } else {
+            if (!clazztype.hasTag(TYPEVAR)) {
+                clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
             }
-            if (!valid) {
-                clazztype = types.createErrorType(clazztype);
+            if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
+                boolean valid = false;
+                if (allowReifiableTypesInInstanceof) {
+                    valid = checkCastablePattern(tree.expr.pos(), exprtype, clazztype);
+                } else {
+                    log.error(tree.pos(), Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
+                    allowReifiableTypesInInstanceof = true;
+                }
+                if (!valid) {
+                    clazztype = types.createErrorType(clazztype);
+                }
             }
         }
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
@@ -4152,12 +4228,9 @@ public class Attr extends JCTree.Visitor {
                     diags.fragment(Fragments.InconvertibleTypes(exprType, pattType)));
             return false;
         } else if ((exprType.isPrimitive() || pattType.isPrimitive()) &&
-                   (!exprType.isPrimitive() ||
-                    !pattType.isPrimitive() ||
-                    !types.isSameType(exprType, pattType))) {
-            chk.basicHandler.report(pos,
-                    diags.fragment(Fragments.NotApplicableTypes(exprType, pattType)));
-            return false;
+                (!exprType.isPrimitive() || !pattType.isPrimitive() || !types.isSameType(exprType, pattType))) {
+            preview.checkSourceLevel(pos, Feature.PRIMITIVE_PATTERNS);
+            return true;
         } else if (warner.hasLint(LintCategory.UNCHECKED)) {
             log.error(pos,
                     Errors.InstanceofReifiableNotSafe(exprType, pattType));
@@ -4174,37 +4247,43 @@ public class Attr extends JCTree.Visitor {
 
     public void visitBindingPattern(JCBindingPattern tree) {
         Type type;
-        if (tree.var.vartype != null) {
+        if (!tree.var.isImplicitlyTyped()) {
             type = attribType(tree.var.vartype, env);
         } else {
             type = resultInfo.pt;
         }
-        tree.type = tree.var.type = type;
-        BindingSymbol v = new BindingSymbol(tree.var.mods.flags, tree.var.name, type, env.info.scope.owner);
+        BindingSymbol v = new BindingSymbol(tree.var.mods.flags | tree.var.declKind.additionalSymbolFlags,
+                                            tree.var.name, type, env.info.scope.owner);
         v.pos = tree.pos;
         tree.var.sym = v;
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
-        annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
+        if (tree.var.isImplicitlyTyped()) {
+            setupImplicitlyTypedVariable(tree.var, type == Type.noType ? syms.errType
+                                                      : type);
+        }
+        chk.validate(tree.var.vartype, env, true);
+        annotate.annotateLater(tree.var.mods.annotations, env, v);
         if (!tree.var.isImplicitlyTyped()) {
-            annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
+            annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v);
         }
         annotate.flush();
-        chk.validate(tree.var.vartype, env, true);
-        result = tree.type;
+        typeAnnotations.organizeTypeAnnotationsSignaturesForLocalVarType(env, tree.var);
+        result = tree.type = tree.var.type = v.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;
         } else {
             matchBindings = new MatchBindings(List.of(v), List.nil());
         }
+        chk.checkRequiresIdentity(tree, env.info.lint);
     }
 
     @Override
     public void visitRecordPattern(JCRecordPattern tree) {
         Type site;
 
-        if (tree.deconstructor == null) {
+        if (tree.deconstructor.hasTag(VARTYPE)) {
             log.error(tree.pos(), Errors.DeconstructionPatternVarNotAllowed);
             tree.record = syms.errSymbol;
             site = tree.type = types.createErrorType(tree.record.type);
@@ -4220,10 +4299,11 @@ public class Attr extends JCTree.Visitor {
             }
             tree.type = tree.deconstructor.type = type;
             site = types.capture(tree.type);
+            chk.validate(tree.deconstructor, env, true);
         }
 
         List<Type> expectedRecordTypes;
-        if (site.tsym.kind == Kind.TYP && ((ClassSymbol) site.tsym).isRecord()) {
+        if (site.tsym instanceof ClassSymbol clazz && clazz.isRecord()) {
             ClassSymbol record = (ClassSymbol) site.tsym;
             expectedRecordTypes = record.getRecordComponents()
                                         .stream()
@@ -4265,7 +4345,6 @@ public class Attr extends JCTree.Visitor {
         } finally {
             localEnv.info.scope.leave();
         }
-        chk.validate(tree.deconstructor, env, true);
         result = tree.type;
         matchBindings = new MatchBindings(outBindings.toList(), List.nil());
     }
@@ -4362,7 +4441,21 @@ public class Attr extends JCTree.Visitor {
         }
 
         // Attribute the qualifier expression, and determine its symbol (if any).
-        Type site = attribTree(tree.selected, env, new ResultInfo(skind, Type.noType));
+        Type site;
+        EarlyConstructionContext earlyConstructionPrev = env.info.earlyContext;
+        JCTree earlyFieldQualifier = earlyFieldQualifier(tree);
+        try {
+            if (earlyFieldQualifier != null) {
+                // if we're seeing a likely field access, and qualifier is this/super,
+                // pretend we're not in early construction context. This allows Resolve
+                // to skip premature checks against this/super
+                env.info.earlyContext = EarlyConstructionContext.NONE;
+            }
+            site = attribTree(tree.selected, env, new ResultInfo(skind, Type.noType));
+        } finally {
+            env.info.earlyContext = earlyConstructionPrev;
+        }
+        Assert.check(site == tree.selected.type);
         if (!pkind().contains(KindSelector.TYP_PCK))
             site = capture(site); // Capture field access
 
@@ -4390,14 +4483,17 @@ public class Attr extends JCTree.Visitor {
 
         // Determine the symbol represented by the selection.
         env.info.pendingResolutionPhase = null;
-        Symbol sym = selectSym(tree, sitesym, site, env, resultInfo);
+        Symbol sym;
+        sym = selectSym(tree, sitesym, site, env, resultInfo, earlyFieldQualifier);
         if (sym.kind == VAR && sym.name != names._super && env.info.defaultSuperCallSite != null) {
             log.error(tree.selected.pos(), Errors.NotEnclClass(site.tsym));
             sym = syms.errSymbol;
         }
-        if (sym.exists() && !isType(sym) && pkind().contains(KindSelector.TYP_PCK)) {
+        if (sym.exists() && !isType(sym) &&
+                tree.name != names._this && tree.name != names._super &&
+                pkind().contains(KindSelector.TYP_PCK)) {
             site = capture(site);
-            sym = selectSym(tree, sitesym, site, env, resultInfo);
+            sym = selectSym(tree, sitesym, site, env, resultInfo, earlyFieldQualifier);
         }
         boolean varArgs = env.info.lastResolveVarargs();
         tree.sym = sym;
@@ -4425,9 +4521,8 @@ public class Attr extends JCTree.Visitor {
                 ((VarSymbol)sitesym).isResourceVariable() &&
                 sym.kind == MTH &&
                 sym.name.equals(names.close) &&
-                sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true) &&
-                env.info.lint.isEnabled(LintCategory.TRY)) {
-            log.warning(LintCategory.TRY, tree, Warnings.TryExplicitCloseCall);
+                sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true)) {
+            log.warning(tree, LintWarnings.TryExplicitCloseCall);
         }
 
         // Disallow selecting a type from an expression
@@ -4454,9 +4549,9 @@ public class Attr extends JCTree.Visitor {
             // If the qualified item is not a type and the selected item is static, report
             // a warning. Make allowance for the class of an array type e.g. Object[].class)
             if (!sym.owner.isAnonymous()) {
-                chk.warnStatic(tree, Warnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
+                log.warning(tree, LintWarnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
             } else {
-                chk.warnStatic(tree, Warnings.StaticNotQualifiedByType2(sym.kind.kindName()));
+                log.warning(tree, LintWarnings.StaticNotQualifiedByType2(sym.kind.kindName()));
             }
         }
 
@@ -4480,6 +4575,17 @@ public class Attr extends JCTree.Visitor {
         env.info.selectSuper = selectSuperPrev;
         result = checkId(tree, site, sym, env, resultInfo);
     }
+
+    private JCTree earlyFieldQualifier(JCFieldAccess tree) {
+        boolean methodSelect = resultInfo.pt.hasTag(METHOD) || resultInfo.pt.hasTag(FORALL);
+        if (!methodSelect &&
+                (TreeInfo.isThisOrSelectorDotThis(tree.selected) ||
+                TreeInfo.isSuperOrSelectorDotSuper(tree.selected))) {
+            return tree.selected;
+        }
+        return null;
+    }
+
     //where
         /** Determine symbol referenced by a Select expression,
          *
@@ -4492,7 +4598,8 @@ public class Attr extends JCTree.Visitor {
                                  Symbol location,
                                  Type site,
                                  Env<AttrContext> env,
-                                 ResultInfo resultInfo) {
+                                 ResultInfo resultInfo,
+                                 JCTree earlyFieldQualifier) {
             DiagnosticPosition pos = tree.pos();
             Name name = tree.name;
             switch (site.getTag()) {
@@ -4506,14 +4613,15 @@ public class Attr extends JCTree.Visitor {
                     return rs.resolveQualifiedMethod(
                         pos, env, location, site, name, resultInfo.pt.getParameterTypes(), resultInfo.pt.getTypeArguments());
                 } else if (name == names._this || name == names._super) {
-                    return rs.resolveSelf(pos, env, site.tsym, name);
+                    Symbol sym = rs.resolveSelf(pos, env, site.tsym, tree);
+                    return rs.accessBase(sym, pos, env.enclClass.sym.type, name, true);
                 } else if (name == names._class) {
                     // In this case, we have already made sure in
                     // visitSelect that qualifier expression is a type.
                     return syms.getClassField(site, types);
                 } else {
                     // We are seeing a plain identifier as selector.
-                    Symbol sym = rs.findIdentInType(pos, env, site, name, resultInfo.pkind);
+                    Symbol sym = rs.findIdentInType(pos, env, site, name, resultInfo.pkind, earlyFieldQualifier);
                         sym = rs.accessBase(sym, pos, location, site, name, true);
                     return sym;
                 }
@@ -4527,15 +4635,25 @@ public class Attr extends JCTree.Visitor {
                 // other words, we are seeing this illegal program:
                 // class B<T> extends A<T.foo> {}
                 Symbol sym = (site.getUpperBound() != null)
-                    ? selectSym(tree, location, capture(site.getUpperBound()), env, resultInfo)
+                    ? selectSym(tree, location, capture(site.getUpperBound()), env, resultInfo, earlyFieldQualifier)
                     : null;
                 if (sym == null) {
                     log.error(pos, Errors.TypeVarCantBeDeref);
                     return syms.errSymbol;
                 } else {
-                    Symbol sym2 = (sym.flags() & Flags.PRIVATE) != 0 ?
-                        rs.new AccessError(env, site, sym) :
-                                sym;
+                    // JLS 4.9 specifies the members are derived by inheritance.
+                    // We skip inducing a whole class by filtering members that
+                    // can never be inherited:
+                    Symbol sym2;
+                    if (sym.isPrivate()) {
+                        // Private members
+                        sym2 = rs.new AccessError(env, site, sym);
+                    } else if (sym.owner.isInterface() && sym.kind == MTH && (sym.flags() & STATIC) != 0) {
+                        // Interface static methods
+                        sym2 = rs.new SymbolNotFoundError(ABSENT_MTH);
+                    } else {
+                        sym2 = sym;
+                    }
                     rs.accessBase(sym2, pos, location, site, name, true);
                     return sym;
                 }
@@ -4607,9 +4725,6 @@ public class Attr extends JCTree.Visitor {
                      Type pt,
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
-            if (pt.isErroneous()) {
-                return types.createErrorType(site);
-            }
             Type owntype; // The computed type of this identifier occurrence.
             switch (sym.kind) {
             case TYP:
@@ -4637,11 +4752,8 @@ public class Attr extends JCTree.Visitor {
                     //
                     // Then the type of the last expression above is
                     // Tree<Point>.Visitor.
-                    else if (ownOuter.hasTag(CLASS) && site != ownOuter) {
-                        Type normOuter = site;
-                        if (normOuter.hasTag(CLASS)) {
-                            normOuter = types.asEnclosingSuper(site, ownOuter.tsym);
-                        }
+                    else if ((ownOuter.hasTag(CLASS) || ownOuter.hasTag(TYPEVAR)) && site != ownOuter) {
+                        Type normOuter = types.asEnclosingSuper(site, ownOuter.tsym);
                         if (normOuter == null) // perhaps from an import
                             normOuter = types.erasure(ownOuter);
                         if (normOuter != ownOuter)
@@ -4672,7 +4784,7 @@ public class Attr extends JCTree.Visitor {
                     if (s != null &&
                         s.isRaw() &&
                         !types.isSameType(v.type, v.erasure(types))) {
-                        chk.warnUnchecked(tree.pos(), Warnings.UncheckedAssignToVar(v, s));
+                        chk.warnUnchecked(tree.pos(), LintWarnings.UncheckedAssignToVar(v, s));
                     }
                 }
                 // The computed type of a variable is the type of the
@@ -4715,7 +4827,11 @@ public class Attr extends JCTree.Visitor {
                 chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
-                chk.checkPreview(tree.pos(), env.info.scope.owner, sym);
+                chk.checkPreview(tree.pos(), env.info.scope.owner, site, sym);
+            }
+
+            if (pt.isErroneous()) {
+                owntype = types.createErrorType(owntype);
             }
 
             // If symbol is a variable, check that its type and
@@ -4866,7 +4982,7 @@ public class Attr extends JCTree.Visitor {
             if (s != null && s.isRaw() &&
                 !types.isSameTypes(sym.type.getParameterTypes(),
                                    sym.erasure(types).getParameterTypes())) {
-                chk.warnUnchecked(env.tree.pos(), Warnings.UncheckedCallMbrOfRawType(sym, s));
+                chk.warnUnchecked(env.tree.pos(), LintWarnings.UncheckedCallMbrOfRawType(sym, s));
             }
         }
 
@@ -4916,7 +5032,7 @@ public class Attr extends JCTree.Visitor {
             argtypes = argtypes.map(checkDeferredMap);
 
             if (noteWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
-                chk.warnUnchecked(env.tree.pos(), Warnings.UncheckedMethInvocationApplied(kindName(sym),
+                chk.warnUnchecked(env.tree.pos(), LintWarnings.UncheckedMethInvocationApplied(kindName(sym),
                         sym.name,
                         rs.methodArguments(sym.type.getParameterTypes()),
                         rs.methodArguments(argtypes.map(checkDeferredMap)),
@@ -4976,32 +5092,6 @@ public class Attr extends JCTree.Visitor {
         return (tag == CLASS) ? syms.stringType : syms.typeOfTag[tag.ordinal()];
     }
 
-    public void visitStringTemplate(JCStringTemplate tree) {
-        JCExpression processor = tree.processor;
-        Type processorType = attribTree(processor, env, new ResultInfo(KindSelector.VAL, Type.noType));
-        chk.checkProcessorType(processor, processorType, env);
-        Type processMethodType = getProcessMethodType(tree, processorType);
-        tree.processMethodType = processMethodType;
-        Type resultType = processMethodType.getReturnType();
-
-        Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
-
-        for (JCExpression arg : tree.expressions) {
-            chk.checkNonVoid(arg.pos(), attribExpr(arg, localEnv));
-        }
-
-        tree.type = resultType;
-        result = resultType;
-        check(tree, resultType, KindSelector.VAL, resultInfo);
-    }
-
-    private Type getProcessMethodType(JCStringTemplate tree, Type processorType) {
-        MethodSymbol processSymbol = rs.resolveInternalMethod(tree.pos(),
-                env, types.skipTypeVars(processorType, false),
-                names.process, List.of(syms.stringTemplateType), List.nil());
-        return types.memberType(processorType, processSymbol);
-    }
-
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
         result = check(tree, syms.typeOfTag[tree.typetag.ordinal()], KindSelector.TYP, resultInfo);
     }
@@ -5049,8 +5139,8 @@ public class Attr extends JCTree.Visitor {
                         site = ((JCFieldAccess) clazz).selected.type;
                     } else throw new AssertionError(""+tree);
                     if (clazzOuter.hasTag(CLASS) && site != clazzOuter) {
-                        if (site.hasTag(CLASS))
-                            site = types.asOuterSuper(site, clazzOuter.tsym);
+                        if (site.hasTag(CLASS) || site.hasTag(TYPEVAR))
+                            site = types.asEnclosingSuper(site, clazzOuter.tsym);
                         if (site == null)
                             site = types.erasure(clazzOuter);
                         clazzOuter = site;
@@ -5067,6 +5157,14 @@ public class Attr extends JCTree.Visitor {
                 }
                 owntype = types.createErrorType(tree.type);
             }
+        } else if (clazztype.hasTag(ERROR)) {
+            ErrorType parameterizedErroneous =
+                    new ErrorType(clazztype.getOriginalType(),
+                                  clazztype.tsym,
+                                  clazztype.getMetadata());
+
+            parameterizedErroneous.typarams_field = actuals;
+            owntype = parameterizedErroneous;
         }
         result = check(tree, owntype, KindSelector.TYP, resultInfo);
     }
@@ -5078,7 +5176,8 @@ public class Attr extends JCTree.Visitor {
             Type ctype = attribType(typeTree, env);
             ctype = chk.checkType(typeTree.pos(),
                           chk.checkClassType(typeTree.pos(), ctype),
-                          syms.throwableType);
+                          syms.throwableType,
+                          chk.subtypeHandler);
             if (!ctype.isErroneous()) {
                 //check that alternatives of a union type are pairwise
                 //unrelated w.r.t. subtyping
@@ -5227,17 +5326,31 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
-        Type underlyingType = attribType(tree.underlyingType, env);
-        Type annotatedType = underlyingType.preannotatedType();
+        Type underlyingType = attribTree(tree.underlyingType, env, resultInfo);
+        if (underlyingType.getTag() == PACKAGE || underlyingType.getTag() == VOID) {
+            result = tree.type = underlyingType;
+        } else {
+            Type annotatedType = underlyingType.preannotatedType();
 
-        if (!env.info.isNewClass)
             annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);
-        result = tree.type = annotatedType;
+            result = tree.type = annotatedType;
+        }
     }
 
     public void visitErroneous(JCErroneous tree) {
         if (tree.errs != null) {
-            Env<AttrContext> errEnv = env.dup(env.tree, env.info.dup());
+            WriteableScope newScope = env.info.scope;
+
+            if (env.tree instanceof JCClassDecl) {
+                Symbol fakeOwner =
+                    new MethodSymbol(BLOCK, names.empty, null,
+                        env.info.scope.owner);
+                newScope = newScope.dupUnshared(fakeOwner);
+            }
+
+            Env<AttrContext> errEnv =
+                    env.dup(env.tree,
+                            env.info.dup(newScope));
             errEnv.info.returnResult = unknownExprInfo;
             for (JCTree err : tree.errs)
                 attribTree(err, errEnv, new ResultInfo(KindSelector.ERR, pt()));
@@ -5265,6 +5378,11 @@ public class Attr extends JCTree.Visitor {
             default:
                 attribClass(env.tree.pos(), env.enclClass.sym);
         }
+
+        annotate.flush();
+
+        // Now that this tree is attributed, we can calculate the Lint configuration everywhere within it
+        lintMapper.calculateLints(env.toplevel.sourcefile, env.tree);
     }
 
     public void attribPackage(DiagnosticPosition pos, PackageSymbol p) {
@@ -5307,7 +5425,6 @@ public class Attr extends JCTree.Visitor {
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
 
         try {
-            deferredLintHandler.flush(env.tree.pos());
             attrib.accept(env);
         } finally {
             log.useSource(prev);
@@ -5342,7 +5459,8 @@ public class Attr extends JCTree.Visitor {
 
         Type st = types.supertype(c.type);
         if ((c.flags_field & Flags.COMPOUND) == 0 &&
-            (c.flags_field & Flags.SUPER_OWNER_ATTRIBUTED) == 0) {
+            (c.flags_field & Flags.SUPER_OWNER_ATTRIBUTED) == 0 &&
+            breakTree == null) {
             // First, attribute superclass.
             if (st.hasTag(CLASS))
                 attribClass((ClassSymbol)st.tsym);
@@ -5383,58 +5501,67 @@ public class Attr extends JCTree.Visitor {
                 if (c.isSealed() &&
                         !c.isEnum() &&
                         !c.isPermittedExplicit &&
-                        c.permitted.isEmpty()) {
+                        c.getPermittedSubclasses().isEmpty()) {
                     log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.SealedClassMustHaveSubclasses);
                 }
 
                 if (c.isSealed()) {
                     Set<Symbol> permittedTypes = new HashSet<>();
                     boolean sealedInUnnamed = c.packge().modle == syms.unnamedModule || c.packge().modle == syms.noModule;
-                    for (Symbol subTypeSym : c.permitted) {
+                    for (Type subType : c.getPermittedSubclasses()) {
+                        if (subType.isErroneous()) {
+                            // the type already caused errors, don't produce more potentially misleading errors
+                            continue;
+                        }
                         boolean isTypeVar = false;
-                        if (subTypeSym.type.getTag() == TYPEVAR) {
+                        if (subType.getTag() == TYPEVAR) {
                             isTypeVar = true; //error recovery
-                            log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree),
-                                    Errors.InvalidPermitsClause(Fragments.IsATypeVariable(subTypeSym.type)));
+                            log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
+                                    Errors.InvalidPermitsClause(Fragments.IsATypeVariable(subType)));
                         }
-                        if (subTypeSym.isAnonymous() && !c.isEnum()) {
-                            log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree),  Errors.LocalClassesCantExtendSealed(Fragments.Anonymous));
+                        if (subType.tsym.isAnonymous() && !c.isEnum()) {
+                            log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),  Errors.LocalClassesCantExtendSealed(Fragments.Anonymous));
                         }
-                        if (permittedTypes.contains(subTypeSym)) {
+                        if (permittedTypes.contains(subType.tsym)) {
                             DiagnosticPosition pos =
                                     env.enclClass.permitting.stream()
-                                            .filter(permittedExpr -> TreeInfo.diagnosticPositionFor(subTypeSym, permittedExpr, true) != null)
+                                            .filter(permittedExpr -> TreeInfo.diagnosticPositionFor(subType.tsym, permittedExpr, true) != null)
                                             .limit(2).collect(List.collector()).get(1);
-                            log.error(pos, Errors.InvalidPermitsClause(Fragments.IsDuplicated(subTypeSym.type)));
+                            log.error(pos, Errors.InvalidPermitsClause(Fragments.IsDuplicated(subType)));
                         } else {
-                            permittedTypes.add(subTypeSym);
+                            permittedTypes.add(subType.tsym);
                         }
                         if (sealedInUnnamed) {
-                            if (subTypeSym.packge() != c.packge()) {
-                                log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree),
+                            if (subType.tsym.packge() != c.packge()) {
+                                log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
                                         Errors.ClassInUnnamedModuleCantExtendSealedInDiffPackage(c)
                                 );
                             }
-                        } else if (subTypeSym.packge().modle != c.packge().modle) {
-                            log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree),
+                        } else if (subType.tsym.packge().modle != c.packge().modle) {
+                            log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
                                     Errors.ClassInModuleCantExtendSealedInDiffModule(c, c.packge().modle)
                             );
                         }
-                        if (subTypeSym == c.type.tsym || types.isSuperType(subTypeSym.type, c.type)) {
-                            log.error(TreeInfo.diagnosticPositionFor(subTypeSym, ((JCClassDecl)env.tree).permitting),
+                        if (subType.tsym == c.type.tsym || types.isSuperType(subType, c.type)) {
+                            log.error(TreeInfo.diagnosticPositionFor(subType.tsym, ((JCClassDecl)env.tree).permitting),
                                     Errors.InvalidPermitsClause(
-                                            subTypeSym == c.type.tsym ?
+                                            subType.tsym == c.type.tsym ?
                                                     Fragments.MustNotBeSameClass :
-                                                    Fragments.MustNotBeSupertype(subTypeSym.type)
+                                                    Fragments.MustNotBeSupertype(subType)
                                     )
                             );
                         } else if (!isTypeVar) {
-                            boolean thisIsASuper = types.directSupertypes(subTypeSym.type)
+                            boolean thisIsASuper = types.directSupertypes(subType)
                                                         .stream()
                                                         .anyMatch(d -> d.tsym == c);
                             if (!thisIsASuper) {
-                                log.error(TreeInfo.diagnosticPositionFor(subTypeSym, env.tree),
-                                        Errors.InvalidPermitsClause(Fragments.DoesntExtendSealed(subTypeSym.type)));
+                                if(c.isInterface()) {
+                                    log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
+                                            Errors.InvalidPermitsClause(Fragments.DoesntImplementSealed(kindName(subType.tsym), subType)));
+                                } else {
+                                    log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
+                                            Errors.InvalidPermitsClause(Fragments.DoesntExtendSealed(subType)));
+                                }
                             }
                         }
                     }
@@ -5469,7 +5596,7 @@ public class Attr extends JCTree.Visitor {
 
                     if (!c.type.isCompound()) {
                         for (ClassSymbol supertypeSym : sealedSupers) {
-                            if (!supertypeSym.permitted.contains(c.type.tsym)) {
+                            if (!supertypeSym.isPermittedSubclass(c.type.tsym)) {
                                 log.error(TreeInfo.diagnosticPositionFor(c.type.tsym, env.tree), Errors.CantInheritFromSealed(supertypeSym));
                             }
                         }
@@ -5482,7 +5609,6 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
 
-                deferredLintHandler.flush(env.tree);
                 env.info.returnResult = null;
                 // java.lang.Enum may not be subclassed by a non-enum
                 if (st.tsym == syms.enumSym &&
@@ -5528,11 +5654,9 @@ public class Attr extends JCTree.Visitor {
         ModuleSymbol msym = tree.sym;
         Lint lint = env.outer.info.lint = env.outer.info.lint.augment(msym);
         Lint prevLint = chk.setLint(lint);
-        chk.checkModuleName(tree);
-        chk.checkDeprecatedAnnotation(tree, msym);
-
         try {
-            deferredLintHandler.flush(tree.pos());
+            chk.checkModuleName(tree);
+            chk.checkDeprecatedAnnotation(tree, msym);
         } finally {
             chk.setLint(prevLint);
         }
@@ -5551,6 +5675,8 @@ public class Attr extends JCTree.Visitor {
             chk.validate(tree.extending, env);
             chk.validate(tree.implementing, env);
         }
+
+        chk.checkRequiresIdentity(tree, env.info.lint);
 
         c.markAbstractIfNeeded(types);
 
@@ -5580,12 +5706,16 @@ public class Attr extends JCTree.Visitor {
                 chk.validateRepeatable(c, repeatable, cbPos);
             }
         } else {
-            // Check that all extended classes and interfaces
-            // are compatible (i.e. no two define methods with same arguments
-            // yet different return types).  (JLS 8.4.8.3)
-            chk.checkCompatibleSupertypes(tree.pos(), c.type);
-            chk.checkDefaultMethodClashes(tree.pos(), c.type);
-            chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
+            try {
+                // Check that all extended classes and interfaces
+                // are compatible (i.e. no two define methods with same arguments
+                // yet different return types).  (JLS 8.4.8.3)
+                chk.checkCompatibleSupertypes(tree.pos(), c.type);
+                chk.checkDefaultMethodClashes(tree.pos(), c.type);
+                chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
+            } catch (CompletionFailure cf) {
+                chk.completionError(tree.pos(), cf);
+            }
         }
 
         // Check that class does not import the same parameterized interface
@@ -5608,7 +5738,7 @@ public class Attr extends JCTree.Visitor {
         chk.checkImplementations(tree);
 
         //check that a resource implementing AutoCloseable cannot throw InterruptedException
-        checkAutoCloseable(tree.pos(), env, c.type);
+        checkAutoCloseable(env, tree, false);
 
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
             // Attribute declaration
@@ -5642,7 +5772,7 @@ public class Attr extends JCTree.Visitor {
         if (env.info.lint.isEnabled(LintCategory.SERIAL)
                 && rs.isSerializable(c.type)
                 && !c.isAnonymous()) {
-            chk.checkSerialStructure(tree, c);
+            chk.checkSerialStructure(env, tree, c);
         }
         // Correctly organize the positions of the type annotations
         typeAnnotations.organizeTypeAnnotationsBodies(tree);
@@ -5665,12 +5795,20 @@ public class Attr extends JCTree.Visitor {
         return types.capture(type);
     }
 
-    private void setSyntheticVariableType(JCVariableDecl tree, Type type) {
-        if (type.isErroneous()) {
-            tree.vartype = make.at(Position.NOPOS).Erroneous();
-        } else {
-            tree.vartype = make.at(Position.NOPOS).Type(type);
+    private void setupImplicitlyTypedVariable(JCVariableDecl tree, Type type) {
+        Assert.check(tree.isImplicitlyTyped());
+
+        type.complete();
+
+        if (tree.vartype == null) {
+            return ;
         }
+
+        Assert.check(tree.vartype.hasTag(VARTYPE));
+
+        JCVarType vartype = (JCVarType) tree.vartype;
+
+        vartype.type = type;
     }
 
     public void validateTypeAnnotations(JCTree tree, boolean sigOnly) {
@@ -5834,14 +5972,21 @@ public class Attr extends JCTree.Visitor {
                 } else if (enclTr.hasTag(ANNOTATED_TYPE)) {
                     JCAnnotatedType at = (JCTree.JCAnnotatedType) enclTr;
                     if (enclTy == null || enclTy.hasTag(NONE)) {
-                        if (at.getAnnotations().size() == 1) {
-                            log.error(at.underlyingType.pos(), Errors.CantTypeAnnotateScoping1(at.getAnnotations().head.attribute));
-                        } else {
-                            ListBuffer<Attribute.Compound> comps = new ListBuffer<>();
-                            for (JCAnnotation an : at.getAnnotations()) {
-                                comps.add(an.attribute);
+                        ListBuffer<Attribute.TypeCompound> onlyTypeAnnotationsBuf = new ListBuffer<>();
+                        for (JCAnnotation an : at.getAnnotations()) {
+                            if (chk.isTypeAnnotation(an, false)) {
+                                onlyTypeAnnotationsBuf.add((Attribute.TypeCompound) an.attribute);
                             }
-                            log.error(at.underlyingType.pos(), Errors.CantTypeAnnotateScoping(comps.toList()));
+                        }
+                        List<Attribute.TypeCompound> onlyTypeAnnotations = onlyTypeAnnotationsBuf.toList();
+                        if (!onlyTypeAnnotations.isEmpty()) {
+                            Fragment annotationFragment = onlyTypeAnnotations.size() == 1 ?
+                                    Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
+                                    Fragments.TypeAnnotation(onlyTypeAnnotations);
+                            JCDiagnostic.AnnotatedType annotatedType = new JCDiagnostic.AnnotatedType(
+                                    type.stripMetadata().annotatedType(onlyTypeAnnotations));
+                            log.error(at.underlyingType.pos(), Errors.TypeAnnotationInadmissible(annotationFragment,
+                                    type.tsym.owner, annotatedType));
                         }
                         repeat = false;
                     }
@@ -5992,9 +6137,6 @@ public class Attr extends JCTree.Visitor {
                 that.sym = new VarSymbol(0, that.name, that.type, syms.noSymbol);
                 that.sym.adr = 0;
             }
-            if (that.vartype == null) {
-                that.vartype = make.at(Position.NOPOS).Erroneous();
-            }
             super.visitVarDef(that);
         }
 
@@ -6007,6 +6149,19 @@ public class Attr extends JCTree.Visitor {
                 that.var.sym.adr = 0;
             }
             super.visitBindingPattern(that);
+        }
+
+        @Override
+        public void visitRecordPattern(JCRecordPattern that) {
+            initTypeIfNeeded(that);
+            if (that.record == null) {
+                that.record = new ClassSymbol(0, TreeInfo.name(that.deconstructor),
+                                              that.type, syms.noSymbol);
+            }
+            if (that.fullComponentTypes == null) {
+                that.fullComponentTypes = List.nil();
+            }
+            super.visitRecordPattern(that);
         }
 
         @Override
@@ -6055,6 +6210,11 @@ public class Attr extends JCTree.Visitor {
                 that.sym = new MethodSymbol(0, names.empty, dummyMethodType(),
                         syms.noSymbol);
             }
+        }
+
+        @Override
+        public void visitVarType(JCVarType that) {
+            initTypeIfNeeded(that);
         }
     }
     // </editor-fold>

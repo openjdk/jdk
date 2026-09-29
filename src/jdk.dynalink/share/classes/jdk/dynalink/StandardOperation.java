@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ package jdk.dynalink;
  * disappears from their type signature.
  * {@link NamedOperation} can also be used to decorate {@link #CALL} and {@link #NEW} operations with a
  * diagnostic name, and as such it does not affect their type signature.
+ * @since 9
  */
 public enum StandardOperation implements Operation {
     /**
@@ -94,6 +95,8 @@ public enum StandardOperation implements Operation {
      * <code>(receiver)&rarr;void</code> when used with {@link NamedOperation},
      * with all parameters being of any type (either primitive
      * or reference). This operation must always be used as part of a {@link NamespaceOperation}.
+     *
+     * @since 10
      */
     REMOVE,
     /**

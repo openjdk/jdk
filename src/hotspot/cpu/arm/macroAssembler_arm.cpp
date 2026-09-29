@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,11 +23,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/compiledIC.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -297,11 +297,13 @@ Address MacroAssembler::receiver_argument_address(Register params_base, Register
   return Address(tmp, -Interpreter::stackElementSize);
 }
 
+void MacroAssembler::align(int modulus, int target) {
+  int delta = target - offset();
+  while ((offset() + delta) % modulus != 0) nop();
+}
 
 void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) {
-    nop();
-  }
+  align(modulus, offset());
 }
 
 int MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -422,7 +424,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result, tmp);
+    get_vm_result_oop(oop_result, tmp);
   }
 }
 
@@ -526,17 +528,17 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register 
   call_VM_leaf_helper(entry_point, 4);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result, Register tmp) {
+void MacroAssembler::get_vm_result_oop(Register oop_result, Register tmp) {
   assert_different_registers(oop_result, tmp);
-  ldr(oop_result, Address(Rthread, JavaThread::vm_result_offset()));
-  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_offset()));
+  ldr(oop_result, Address(Rthread, JavaThread::vm_result_oop_offset()));
+  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_oop_offset()));
   verify_oop(oop_result);
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result, Register tmp) {
+void MacroAssembler::get_vm_result_metadata(Register metadata_result, Register tmp) {
   assert_different_registers(metadata_result, tmp);
-  ldr(metadata_result, Address(Rthread, JavaThread::vm_result_2_offset()));
-  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_2_offset()));
+  ldr(metadata_result, Address(Rthread, JavaThread::vm_result_metadata_offset()));
+  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_metadata_offset()));
 }
 
 void MacroAssembler::add_rc(Register dst, Register arg1, RegisterOrConstant arg2) {
@@ -837,7 +839,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   char buffer[64];
 #ifdef COMPILER1
   if (CommentedAssembly) {
-    snprintf(buffer, sizeof(buffer), "verify_oop at %d", offset());
+    os::snprintf_checked(buffer, sizeof(buffer), "verify_oop at %d", offset());
     block_comment(buffer);
   }
 #endif
@@ -1704,8 +1706,8 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
 
 void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
   ldr_u32(tmp1, Address(Rthread, JavaThread::polling_word_offset()));
-  tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
-  b(slow_path, eq);
+  tst(tmp1, SafepointMechanism::poll_bit());
+  b(slow_path, ne);
 }
 
 void MacroAssembler::get_polling_page(Register dest) {
@@ -1748,15 +1750,14 @@ void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype
   POISON_REG(mask, 1, R2, poison)               \
   POISON_REG(mask, 2, R3, poison)
 
-// Attempt to lightweight-lock an object
+// Attempt to fast-lock an object
 // Registers:
 //  - obj: the object to be locked
 //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
 // Result:
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
-void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+void MacroAssembler::fast_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
   assert_different_registers(obj, t1, t2, t3);
 
 #ifdef ASSERT
@@ -1779,7 +1780,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
   Register new_hdr = t2;
   ldr(new_hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
   bic(new_hdr, new_hdr, markWord::lock_mask_in_place);  // new header (00)
-  orr(old_hdr, new_hdr, markWord::unlocked_value);      // old header (01)
+  orr(old_hdr, new_hdr, markWord::lock_neutral_value);  // old header (01)
 
   Label dummy;
 
@@ -1806,15 +1807,14 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
   // Success: fall through
 }
 
-// Attempt to lightweight-unlock an object
+// Attempt to fast-unlock an object
 // Registers:
 //  - obj: the object to be unlocked
 //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
 // Result:
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
-void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
   assert_different_registers(obj, t1, t2, t3);
 
 #ifdef ASSERT
@@ -1829,7 +1829,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
   Register new_hdr = t2;
   ldr(old_hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
   bic(old_hdr, old_hdr, markWord::lock_mask_in_place);    // old header (00)
-  orr(new_hdr, old_hdr, markWord::unlocked_value);        // new header (01)
+  orr(new_hdr, old_hdr, markWord::lock_neutral_value);    // new header (01)
 
   // Try to swing header from locked to unlocked
   Label dummy;
@@ -1859,4 +1859,66 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
 #endif
 
   // Fallthrough: success
+}
+
+int MacroAssembler::ic_check_size() {
+  return NativeInstruction::instruction_size * 7;
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = j_rarg0;
+  Register tmp1 = R4;
+  Register tmp2 = R5;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+  ldr(tmp2, Address(Ricklass, CompiledICData::speculated_klass_offset()));
+  cmp(tmp1, tmp2);
+
+  Label dont;
+  b(dont, eq);
+  jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type);
+  bind(dont);
+  return uep_offset;
+}
+
+void MacroAssembler::remove_frame(int frame_size_in_bytes) {
+  add_slow(SP, SP, frame_size_in_bytes);
+  raw_pop(FP, LR);
+}
+
+// Unimplemented methods for value types.
+int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
+   Unimplemented();
+}
+
+bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  Unimplemented();
+}
+
+bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                            VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                            RegState reg_state[]) {
+  Unimplemented();
+}
+
+bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                          VMRegPair* from, int from_count, int& from_index, VMReg to,
+                          RegState reg_state[], Register val_array) {
+  Unimplemented();
+}
+
+int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
+  Unimplemented();
+}
+
+VMReg MacroAssembler::spill_reg_for(VMReg reg) {
+  Unimplemented();
 }

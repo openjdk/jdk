@@ -41,18 +41,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Provides default implementations of {@link ExecutorService}
- * execution methods. This class implements the {@code submit},
- * {@code invokeAny} and {@code invokeAll} methods using a
- * {@link RunnableFuture} returned by {@code newTaskFor}, which defaults
- * to the {@link FutureTask} class provided in this package.  For example,
- * the implementation of {@code submit(Runnable)} creates an
- * associated {@code RunnableFuture} that is executed and
- * returned. Subclasses may override the {@code newTaskFor} methods
- * to return {@code RunnableFuture} implementations other than
- * {@code FutureTask}.
+ * Provides default implementations of {@link ExecutorService} methods
+ * other than {@link Executor#execute}. This class implements the {@code
+ * submit}, {@code invokeAny} and {@code invokeAll} methods using a
+ * {@link RunnableFuture} returned by {@code newTaskFor}, which
+ * defaults to the {@link FutureTask} class provided in this package.
+ * For example, the implementation of {@code submit(Runnable)} creates
+ * an associated {@code RunnableFuture} that is executed and
+ * returned. Subclasses may override the {@code newTaskFor} methods to
+ * return {@code RunnableFuture} implementations other than {@code
+ * FutureTask}.
  *
  * <p><b>Extension example.</b> Here is a sketch of a class
  * that customizes {@link ThreadPoolExecutor} to use
@@ -117,8 +118,9 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
      */
+    @Override
     public Future<?> submit(Runnable task) {
-        if (task == null) throw new NullPointerException();
+        Objects.requireNonNull(task, "task");
         RunnableFuture<Void> ftask = newTaskFor(task, null);
         execute(ftask);
         return ftask;
@@ -128,8 +130,9 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
      */
+    @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        if (task == null) throw new NullPointerException();
+        Objects.requireNonNull(task, "task");
         RunnableFuture<T> ftask = newTaskFor(task, result);
         execute(ftask);
         return ftask;
@@ -139,8 +142,9 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
      */
+    @Override
     public <T> Future<T> submit(Callable<T> task) {
-        if (task == null) throw new NullPointerException();
+        Objects.requireNonNull(task, "task");
         RunnableFuture<T> ftask = newTaskFor(task);
         execute(ftask);
         return ftask;
@@ -152,11 +156,10 @@ public abstract class AbstractExecutorService implements ExecutorService {
     private <T> T doInvokeAny(Collection<? extends Callable<T>> tasks,
                               boolean timed, long nanos)
         throws InterruptedException, ExecutionException, TimeoutException {
-        if (tasks == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(tasks, "tasks");
         int ntasks = tasks.size();
         if (ntasks == 0)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("tasks is empty");
         ArrayList<Future<T>> futures = new ArrayList<>(ntasks);
         ExecutorCompletionService<T> ecs =
             new ExecutorCompletionService<T>(this);
@@ -219,6 +222,14 @@ public abstract class AbstractExecutorService implements ExecutorService {
         }
     }
 
+    /**
+     * @throws InterruptedException       {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     * @throws IllegalArgumentException   {@inheritDoc}
+     * @throws ExecutionException         {@inheritDoc}
+     * @throws RejectedExecutionException {@inheritDoc}
+     */
+    @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
         throws InterruptedException, ExecutionException {
         try {
@@ -229,16 +240,29 @@ public abstract class AbstractExecutorService implements ExecutorService {
         }
     }
 
+    /**
+     * @throws InterruptedException       {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     * @throws TimeoutException           {@inheritDoc}
+     * @throws ExecutionException         {@inheritDoc}
+     * @throws RejectedExecutionException {@inheritDoc}
+     */
+    @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
                            long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
         return doInvokeAny(tasks, true, unit.toNanos(timeout));
     }
 
+    /**
+     * @throws InterruptedException       {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     * @throws RejectedExecutionException {@inheritDoc}
+     */
+    @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
         throws InterruptedException {
-        if (tasks == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(tasks, "tasks");
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
         try {
             for (Callable<T> t : tasks) {
@@ -260,11 +284,17 @@ public abstract class AbstractExecutorService implements ExecutorService {
         }
     }
 
+    /**
+     * @throws InterruptedException       {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     * @throws RejectedExecutionException {@inheritDoc}
+     */
+    @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
                                          long timeout, TimeUnit unit)
         throws InterruptedException {
-        if (tasks == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(tasks, "tasks");
+        Objects.requireNonNull(unit, "unit");
         final long nanos = unit.toNanos(timeout);
         final long deadline = System.nanoTime() + nanos;
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());

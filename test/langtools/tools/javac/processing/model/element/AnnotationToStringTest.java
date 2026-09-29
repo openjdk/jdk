@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8164819
+ * @bug 8164819 8325078
  * @summary Test of toString on normal annotations
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor AnnotationToStringTest
@@ -281,8 +281,8 @@ public class AnnotationToStringTest extends JavacTestingAbstractProcessor {
         public short[]     f4;
 
         @ExpectedString(
-       "@CharArray({'a', 'b', 'c', '\\''})")
-        @CharArray({'a', 'b', 'c', '\''})
+       "@CharArray({'a', 'b', 'c', '\\'', '\"'})")
+        @CharArray({'a', 'b', 'c', '\'', '"'})
         public char[]      f5;
 
         @ExpectedString(
@@ -298,8 +298,8 @@ public class AnnotationToStringTest extends JavacTestingAbstractProcessor {
         public long[]      f7;
 
         @ExpectedString(
-       "@StringArray({\"A\", \"B\", \"C\", \"\\\"Quote\\\"\"})")
-        @StringArray({"A", "B", "C", "\"Quote\""})
+       "@StringArray({\"A\", \"B\", \"C\", \"\\\"Quote\\\"\", \"'\", \"\\\"\"})")
+        @StringArray({"A", "B", "C", "\"Quote\"", "'", "\""})
         public String[]    f8;
 
         @ExpectedString(

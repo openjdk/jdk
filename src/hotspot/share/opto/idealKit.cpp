@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -48,9 +47,8 @@ IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarati
   _cvstate = nullptr;
   // We can go memory state free or else we need the entire memory state
   assert(_initial_memory == nullptr || _initial_memory->Opcode() == Op_MergeMem, "memory must be pre-split");
-  assert(!_gvn.is_IterGVN(), "IdealKit can't be used during Optimize phase");
   int init_size = 5;
-  _pending_cvstates = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, 0);
+  _pending_cvstates = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, nullptr);
   DEBUG_ONLY(_state = new (C->node_arena()) GrowableArray<int>(C->node_arena(), init_size, 0, 0));
   if (!has_declarations) {
      declarations_done();
@@ -80,10 +78,13 @@ void IdealKit::if_then(Node* left, BoolTest::mask relop,
       assert(left->bottom_type()->isa_long() != nullptr, "what else?");
       bol = Bool(CmpL(left, right), relop);
     }
-
   } else {
     bol = Bool(CmpP(left, right), relop);
   }
+  if_then(bol, prob, cnt, push_new_state);
+}
+
+void IdealKit::if_then(Node* bol, float prob, float cnt, bool push_new_state) {
   // Delay gvn.transform on if-nodes until construction is finished
   // to prevent a constant bool input from discarding a control output.
   IfNode* iff = delay_transform(new IfNode(ctrl(), bol, prob, cnt))->as_If();
@@ -164,14 +165,12 @@ void IdealKit::end_if() {
 // onto the stack.
 void IdealKit::loop(GraphKit* gkit, int nargs, IdealVariable& iv, Node* init, BoolTest::mask relop, Node* limit, float prob, float cnt) {
   assert((state() & (BlockS|LoopS|IfThenS|ElseS)), "bad state for new loop");
-  if (UseLoopPredicate) {
-    // Sync IdealKit and graphKit.
-    gkit->sync_kit(*this);
-    // Add Parse Predicates.
-    gkit->add_parse_predicates(nargs);
-    // Update IdealKit memory.
-    sync_kit(gkit);
-  }
+  // Sync IdealKit and graphKit.
+  gkit->sync_kit(*this);
+  // Add Parse Predicates.
+  gkit->add_parse_predicates(nargs);
+  // Update IdealKit memory.
+  sync_kit(gkit);
   set(iv, init);
   Node* head = make_label(1);
   bind(head);
@@ -296,7 +295,7 @@ Node* IdealKit::transform(Node* n) {
     return delay_transform(n);
   } else {
     n = gvn().transform(n);
-    C->record_for_igvn(n);
+    gvn().record_for_igvn(n);
     return n;
   }
 }
@@ -305,14 +304,16 @@ Node* IdealKit::transform(Node* n) {
 Node* IdealKit::delay_transform(Node* n) {
   // Delay transform until IterativeGVN
   gvn().set_type(n, n->bottom_type());
-  C->record_for_igvn(n);
+  gvn().record_for_igvn(n);
   return n;
 }
 
 //-----------------------------new_cvstate-----------------------------------
 Node* IdealKit::new_cvstate() {
   uint sz = _var_ct + first_var;
-  return new Node(sz);
+  Node* state = new Node(sz);
+  C->record_for_igvn(state);
+  return state;
 }
 
 //-----------------------------copy_cvstate-----------------------------------
@@ -357,9 +358,20 @@ Node* IdealKit::load(Node* ctl,
 
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = nullptr; // debug-mode-only argument
-  debug_only(adr_type = C->get_adr_type(adr_idx));
+  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
   Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access);
+  return transform(ld);
+}
+
+// Load AOT runtime constant
+Node* IdealKit::load_aot_const(Node* adr, const Type* t) {
+  BasicType bt = t->basic_type();
+  const TypePtr* adr_type = nullptr; // debug-mode-only argument
+  DEBUG_ONLY(adr_type = C->get_adr_type(Compile::AliasIdxRaw));
+  Node* ctl = (Node*)C->root(); // Raw memory access needs control
+  Node* ld = LoadNode::make(_gvn, ctl, C->immutable_memory(), adr, adr_type, t, bt, MemNode::unordered,
+                            LoadNode::DependsOnlyOnTest, false, false, false, false, 0);
   return transform(ld);
 }
 
@@ -369,32 +381,12 @@ Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
                       bool mismatched) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory");
   const TypePtr* adr_type = nullptr;
-  debug_only(adr_type = C->get_adr_type(adr_idx));
+  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
   Node* st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo, require_atomic_access);
   if (mismatched) {
     st->as_Store()->set_mismatched_access();
   }
-  st = transform(st);
-  set_memory(st, adr_idx);
-
-  return st;
-}
-
-// Card mark store. Must be ordered so that it will come after the store of
-// the oop.
-Node* IdealKit::storeCM(Node* ctl, Node* adr, Node *val, Node* oop_store, int oop_adr_idx,
-                        BasicType bt,
-                        int adr_idx) {
-  assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
-  const TypePtr* adr_type = nullptr;
-  debug_only(adr_type = C->get_adr_type(adr_idx));
-  Node *mem = memory(adr_idx);
-
-  // Add required edge to oop_store, optimizer does not support precedence edges.
-  // Convert required edge to precedence edge before allocation.
-  Node* st = new StoreCMNode(ctl, mem, adr, adr_type, val, oop_store, oop_adr_idx);
-
   st = transform(st);
   set_memory(st, adr_idx);
 
@@ -525,8 +517,8 @@ Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   assert(C->alias_type(call->adr_type()) == C->alias_type(adr_type),
          "call node must be constructed correctly");
   Node* res = nullptr;
-  if (slow_call_type->range()->cnt() > TypeFunc::Parms) {
-    assert(slow_call_type->range()->cnt() == TypeFunc::Parms+1, "only one return value");
+  if (slow_call_type->range_sig()->cnt() > TypeFunc::Parms) {
+    assert(slow_call_type->range_sig()->cnt() == TypeFunc::Parms+1, "only one return value");
     res = transform(new ProjNode(call, TypeFunc::Parms));
   }
   return res;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class CheckedTestExample {
     }
 
     @Test
-    @Arguments(Argument.DEFAULT) // As with normal tests, you need to tell the framework what the argument is.
+    @Arguments(values = Argument.DEFAULT) // As with normal tests, you need to tell the framework what the argument is.
     @Warmup(100) // As with normal tests, you can specify the warmup iterations.
     public int test(int x) {
         return 42;

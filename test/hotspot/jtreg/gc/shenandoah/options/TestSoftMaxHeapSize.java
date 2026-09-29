@@ -38,35 +38,32 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestSoftMaxHeapSize {
     public static void main(String[] args) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xms4m",
                     "-Xmx128m",
                     "-XX:SoftMaxHeapSize=4m",
                     "-version");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xms4m",
                     "-Xmx128m",
                     "-XX:SoftMaxHeapSize=128m",
                     "-version");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xms4m",
                     "-Xmx128m",
                     "-XX:SoftMaxHeapSize=129m",
                     "-version");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(1);
             output.shouldContain("SoftMaxHeapSize must be less than or equal to the maximum heap size");
         }

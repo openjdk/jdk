@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 package nsk.share.jdb;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 
 import java.io.*;
-import java.util.*;
 
 public abstract class JdbTest {
     public static final int PASSED = 0;            // Exit code for passed test
@@ -76,6 +74,51 @@ public abstract class JdbTest {
 
     protected void display(String message) {
         log.display(message);
+    }
+
+    /**
+     * Sets a breakpoint in the given method and then repeatedly continues the
+     * debuggee until the lastBreak breakpoint is reached, counting how many
+     * times threadStartedMethod is hit on the way. Each tested thread is
+     * expected to hit that method once at startup: receiving the event is
+     * what makes a virtual thread visible to jdb with the default debug
+     * agent behavior, so the tests do not need the -trackallthreads option.
+     * Fails if the number of hits differs from expectedThreads.
+     *
+     * The stop location is matched as one fully qualified token because
+     * debuggee output can interleave with jdb's "Breakpoint hit:" output and
+     * split the surrounding text across reply fragments. The "(" suffix
+     * avoids matching jdb's "Set deferred breakpoint" messages.
+     */
+    protected void waitForTestedThreadStarts(String threadStartedMethod, int expectedThreads) {
+        if (lastBreak.length() == 0) {
+            throw new Failure("waitForTestedThreadStarts requires lastBreak to be set");
+        }
+
+        jdb.setBreakpointInMethod(threadStartedMethod);
+
+        int started = 0;
+        while (true) {
+            String[] contReply = jdb.receiveReplyFor(JdbCommand.cont);
+            Paragrep contGrep = new Paragrep(contReply);
+            if (contGrep.find(lastBreak + "(") > 0) {
+                break;
+            }
+            if (contGrep.find(threadStartedMethod + "(") > 0) {
+                started++;
+                continue;
+            }
+            failure("Stopped at unexpected location, expected " + lastBreak
+                    + " or " + threadStartedMethod);
+            for (String line : contReply) {
+                log.complain("reply: " + line);
+            }
+            break;
+        }
+        if (started != expectedThreads) {
+            failure("Expected " + expectedThreads + " " + threadStartedMethod
+                    + " hits, got: " + started);
+        }
     }
 
     protected void launchJdbAndDebuggee(String debuggeeClass) throws Exception {
@@ -127,14 +170,15 @@ public abstract class JdbTest {
     protected void afterJdbExit() {
     }
 
-    protected int runTest(String argv[], PrintStream out) {
+    protected void runTest(String argv[]) {
+        PrintStream out = System.out;
         try {
             argumentHandler = new JdbArgumentHandler(argv);
             log = new Log(out, argumentHandler);
 
             if (shouldPass()) {
-                log.println("TEST PASSED");
-                return PASSED;
+                log.display("TEST PASSED");
+                return;
             }
 
             try {
@@ -174,6 +218,14 @@ public abstract class JdbTest {
                     } else {
                         failure("jdb abnormally exited with code: " + code);
                     }
+
+                    try {
+                        jdb.close();
+                    } catch (Throwable ex) {
+                        failure("Caught exception/error while closing jdb streams:\n\t" + ex);
+                        ex.printStackTrace(log.getOutStream());
+                    }
+
                     jdb = null;
 
                     if (debuggee != null
@@ -198,41 +250,36 @@ public abstract class JdbTest {
                     }
                 }
 
-            } catch (Exception e) {
-                failure("Caught unexpected exception: " + e);
-                e.printStackTrace(out);
-
+            } catch (Throwable t) {
+                failure("Caught unexpected exception: " + t);
+                t.printStackTrace(out);
+            } finally {
                 if (jdb != null) {
+                    log.complain("jdb reference is not null, check for exception in the logs.");
                     try {
-                        jdb.finalize();
+                        jdb.close();
                     } catch (Throwable ex) {
-                        failure("Caught exception/error while finalization of jdb:\n\t" + ex);
+                        failure("Caught exception/error while closing jdb streams:\n\t" + ex);
                         ex.printStackTrace(log.getOutStream());
                     }
-                } else {
-                    log.complain("jdb reference is null, cannot run jdb.finalize() method");
                 }
 
-                if (debuggee != null) {
+                if (debuggee != null && !debuggee.terminated()) {
+                    log.complain("debuggee is still running, check for exception in the logs.");
                     debuggee.killDebuggee();
-                } else {
-                    log.complain("debuggee reference is null, cannot run debuggee.finalize() method");
                 }
-
             }
 
             if (!success) {
                 log.complain("TEST FAILED");
-                return FAILED;
+                throw new RuntimeException("TEST FAILED");
             }
 
-        } catch (Exception e) {
-            out.println("Caught unexpected exception while starting the test: " + e);
-            e.printStackTrace(out);
-            out.println("TEST FAILED");
-            return FAILED;
+        } catch (Throwable t) {
+            out.println("Caught unexpected exception while starting the test: " + t);
+            t.printStackTrace(out);
+            throw new RuntimeException("TEST FAILED", t);
         }
         out.println("TEST PASSED");
-        return PASSED;
     }
 }

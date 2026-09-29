@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.graph;
 
 import java.awt.Point;
+import java.util.Objects;
 
 /**
  *
@@ -54,7 +55,7 @@ public class OutputSlot extends Slot {
         }
         double gapRatio = (double)gap / (double)(getFigure().getOutputSlots().size() + 1);
         int gapAmount = (int)((getPosition() + 1)*gapRatio);
-        return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getOutputSlots(), this)) + getWidth()/2, Figure.SLOT_START);
+        return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getOutputSlots(), this)) + getWidth()/2, 0);
     }
 
     @Override

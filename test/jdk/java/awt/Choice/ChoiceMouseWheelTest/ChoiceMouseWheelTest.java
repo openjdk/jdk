@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,58 +22,66 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 7050935
-  @summary closed/java/awt/Choice/WheelEventsConsumed/WheelEventsConsumed.html fails on win32
-  @library ../../regtesthelpers
-  @author Oleg Pekhovskiy: area=awt-choice
-  @build Util
-  @run main ChoiceMouseWheelTest
-*/
+ * @test
+ * @key headful
+ * @bug 7050935
+ * @summary closed/java/awt/Choice/WheelEventsConsumed/WheelEventsConsumed.html fails on win32
+ * @library /java/awt/regtesthelpers
+ * @build Util
+ * @run main ChoiceMouseWheelTest
+ */
 
 import test.java.awt.regtesthelpers.Util;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Choice;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class ChoiceMouseWheelTest extends Frame {
 
     private volatile boolean itemChanged = false;
     private volatile boolean wheelMoved = false;
     private volatile boolean frameExited = false;
+    private final Choice choice;
 
-    public static void main(String[] args) {
-        new ChoiceMouseWheelTest();
+    public static void main(String[] args) throws Exception {
+        ChoiceMouseWheelTest test = Util.invokeOnEDT(ChoiceMouseWheelTest::new);
+        try {
+            test.test();
+        } finally {
+            EventQueue.invokeAndWait(test::dispose);
+        }
     }
 
     ChoiceMouseWheelTest() {
         super("ChoiceMouseWheelTest");
         setLayout(new FlowLayout());
 
-        Choice choice = new Choice();
-
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                System.exit(0);
+                e.getWindow().dispose();
             }
         });
 
-        for(Integer i = 0; i < 50; i++) {
-            choice.add(i.toString());
+        choice = new Choice();
+        for(int i = 0; i < 50; i++) {
+            choice.add(Integer.toString(i));
         }
 
-        choice.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                itemChanged = true;
-            }
-        });
-        choice.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                wheelMoved = true;
-            }
-        });
+        choice.addItemListener(e -> itemChanged = true);
+        choice.addMouseWheelListener(e -> wheelMoved = true);
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -84,71 +92,79 @@ public class ChoiceMouseWheelTest extends Frame {
 
         add(choice);
         setSize(200, 300);
+        setLocationRelativeTo(null);
         setVisible(true);
         toFront();
+    }
 
-        try {
-            Robot robot = new Robot();
-            robot.setAutoDelay(20);
-            Util.waitForIdle(robot);
+    private void test() throws Exception {
+        Robot robot = new Robot();
+        robot.setAutoDelay(20);
+        robot.waitForIdle();
+        robot.delay(500);
 
+        Rectangle choiceBounds = Util.invokeOnEDT(() -> {
             Point pt = choice.getLocationOnScreen();
             Dimension size = choice.getSize();
-            int x = pt.x + size.width / 3;
-            robot.mouseMove(x, pt.y + size.height / 2);
+            return new Rectangle(pt, size);
+        });
 
-            // Test mouse wheel over the choice
-            String name = Toolkit.getDefaultToolkit().getClass().getName();
+        int x = choiceBounds.x + choiceBounds.width / 3;
+        robot.mouseMove(x, choiceBounds.y + choiceBounds.height / 2);
 
-            // mouse wheel doesn't work for the choice on X11 and Mac, so skip it
-            if(!name.equals("sun.awt.X11.XToolkit")
-               && !name.equals("sun.lwawt.macosx.LWCToolkit")) {
-                robot.mouseWheel(1);
-                Util.waitForIdle(robot);
+        // Test mouse wheel over the choice
+        String name = Toolkit.getDefaultToolkit().getClass().getName();
+        boolean isXtoolkit = name.equals("sun.awt.X11.XToolkit");
+        boolean isLWCToolkit = name.equals("sun.lwawt.macosx.LWCToolkit");
 
-                if(!wheelMoved || !itemChanged) {
-                    throw new RuntimeException("Mouse Wheel over the choice failed!");
-                }
+        // mouse wheel doesn't work for the choice on X11 and Mac, so skip it
+        if (!isXtoolkit && !isLWCToolkit) {
+            robot.mouseWheel(1);
+            robot.waitForIdle();
+
+            if (!wheelMoved || !itemChanged) {
+                throw new RuntimeException("Mouse Wheel over the choice failed!");
             }
+        }
 
-            // Test mouse wheel over the drop-down list
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            Util.waitForIdle(robot);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            Util.waitForIdle(robot);
+        // Test mouse wheel over the drop-down list
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
 
-            int y = getLocationOnScreen().y + getSize().height;
-            while(!frameExited && y >= 0) { // move to the bottom of drop-down list
-                robot.mouseMove(x, --y);
-                Util.waitForIdle(robot);
-            }
+        frameExited = false;
 
-            if(x < 0) {
-                throw new RuntimeException("Could not enter drop-down list!");
-            }
+        Rectangle frameBounds = Util.invokeOnEDT(this::getBounds);
 
-            y -= choice.getHeight() / 2;
-            robot.mouseMove(x, y); // move to the last visible item in the drop-down list
-            Util.waitForIdle(robot);
+        int y = frameBounds.y + frameBounds.height;
+        while (!frameExited && y >= frameBounds.y) { // move to the bottom of drop-down list
+            robot.mouseMove(x, --y);
+            robot.waitForIdle();
+        }
 
-            robot.mouseWheel(choice.getItemCount()); // wheel to the last item
-            Util.waitForIdle(robot);
+        if (y < frameBounds.y) {
+            throw new RuntimeException("Could not enter drop-down list!");
+        }
 
-            // click the last item
-            itemChanged = false;
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            Util.waitForIdle(robot);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            Util.waitForIdle(robot);
+        y -= choiceBounds.height / 2;
+        robot.mouseMove(x, y); // move to the last visible item in the drop-down list
+        robot.waitForIdle();
 
-            if(!itemChanged || choice.getSelectedIndex() != choice.getItemCount() - 1) {
-                throw new RuntimeException("Mouse Wheel scroll position error!");
-            }
+        int scrollDirection = isLWCToolkit ? -1 : 1;
+        // wheel to the last item
+        robot.mouseWheel(scrollDirection * choice.getItemCount());
+        robot.waitForIdle();
 
-            dispose();
-        } catch (AWTException e) {
-            throw new RuntimeException("AWTException occurred - problem creating robot!");
+        // click the last item
+        itemChanged = false;
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+
+        if (!itemChanged || choice.getSelectedIndex() != choice.getItemCount() - 1) {
+            throw new RuntimeException("Mouse Wheel scroll position error!");
         }
     }
 }
-

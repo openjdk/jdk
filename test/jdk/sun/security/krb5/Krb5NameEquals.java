@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,57 +22,65 @@
  */
 
 /*
+ * @test
  * @bug 4634392
- * @summary JDK code doesn't respect contract for equals and hashCode
+ * @summary Ensure the GSSName has the correct impl which respects
+ * the contract for equals and hashCode across different configurations.
+ * @library /test/lib
  * @author Andrew Fan
+ *
+ * @run main/othervm -Djava.security.krb5.realm=R -Djava.security.krb5.kdc=127.0.0.1 Krb5NameEquals
+ * @run main/othervm -Dsun.security.jgss.native=true Krb5NameEquals
  */
 
-import org.ietf.jgss.*;
+import jtreg.SkippedException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
 
 public class Krb5NameEquals {
 
-    private static String NAME_STR1 = "service@localhost";
-    private static String NAME_STR2 = "service2@localhost";
+    private static final String NAME_STR1 = "service@localhost";
+    private static final String NAME_STR2 = "service2@localhost";
     private static final Oid MECH;
 
     static {
-        Oid temp = null;
         try {
-            temp = new Oid("1.2.840.113554.1.2.2"); // KRB5
+            MECH = new Oid("1.2.840.113554.1.2.2"); // KRB5
         } catch (Exception e) {
             // should never happen
+            throw new RuntimeException("Exception initialising Oid", e);
         }
-        MECH = temp;
     }
 
     public static void main(String[] argv) throws Exception {
-        GSSManager mgr = GSSManager.getInstance();
+        final GSSManager mgr = GSSManager.getInstance();
 
-        boolean result = true;
+        // Checking if native GSS is installed, throwing skip exception if it's not.
+        if (Boolean.getBoolean("sun.security.jgss.native")) {
+            final var mechs = mgr.getMechs();
+            if (mechs == null || mechs.length == 0) {
+                throw new SkippedException("NativeGSS not supported");
+            }
+        }
+
         // Create GSSName and check their equals(), hashCode() impl
-        GSSName name1 = mgr.createName(NAME_STR1,
-            GSSName.NT_HOSTBASED_SERVICE, MECH);
-        GSSName name2 = mgr.createName(NAME_STR2,
-            GSSName.NT_HOSTBASED_SERVICE, MECH);
-        GSSName name3 = mgr.createName(NAME_STR1,
-            GSSName.NT_HOSTBASED_SERVICE, MECH);
+        final GSSName name1 = mgr.createName(NAME_STR1,
+                GSSName.NT_HOSTBASED_SERVICE, MECH);
+        final GSSName name2 = mgr.createName(NAME_STR2,
+                GSSName.NT_HOSTBASED_SERVICE, MECH);
+        final GSSName name3 = mgr.createName(NAME_STR1,
+                GSSName.NT_HOSTBASED_SERVICE, MECH);
 
-        if (!name1.equals(name1) || !name1.equals(name3) ||
-            !name1.equals((Object) name1) ||
-            !name1.equals((Object) name3)) {
-            System.out.println("Error: should be the same name");
-            result = false;
+        if (!name1.equals(name3) || !name1.equals((Object) name3)) {
+            throw new RuntimeException("Error: should be the same name");
         } else if (name1.hashCode() != name3.hashCode()) {
-            System.out.println("Error: should have same hash");
-            result = false;
+            throw new RuntimeException("Error: should have same hash");
         }
 
         if (name1.equals(name2) || name1.equals((Object) name2)) {
-            System.out.println("Error: should be different names");
-            result = false;
+            throw new RuntimeException("Error: should be different names");
         }
-        if (result) {
-            System.out.println("Done");
-        } else System.exit(1);
+        System.out.println("Done");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
@@ -32,10 +32,11 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
 
 class RiscvHwprobe;
+class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
@@ -43,121 +44,434 @@ class VM_Version : public Abstract_VM_Version {
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
   enum VendorId {
-    RIVOS = 0x6cf, // JEDEC: 0x4f, Bank: 14
+    RIVOS   = 0x6cf, // JEDEC: 0x4f, Bank: 14
+    XUANTIE = 0x5b7, // JEDEC: 0x37, Bank: 12
   };
+
+  enum XuantieArchitectureId : uint64_t {
+    C925_MARCHID = 0x80000000091c1600ULL,
+    C930_MARCHID = 0x8000000009201600ULL,
+    C950_MARCHID = 0x8000000009241600ULL,
+  };
+
+  class RVExtFeatures;
 
   class RVFeatureValue {
     const char* const _pretty;
     const bool        _feature_string;
-    const uint64_t    _feature_bit;
-    bool              _enabled;
-    int64_t           _value;
+    const uint64_t    _linux_feature_bit;
+
    public:
-    RVFeatureValue(const char* pretty, int bit_num, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _feature_bit(nth_bit(bit_num)),
-      _enabled(false), _value(-1) {
+    RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
+      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit<uint64_t>(linux_bit_num)) {
     }
-    void enable_feature(int64_t value = 0) {
-      _enabled = true;
-      _value = value;
-    }
+    virtual void enable_feature(int64_t value = 0) = 0;
+    virtual void disable_feature() = 0;
     const char* pretty()         { return _pretty; }
-    uint64_t feature_bit()       { return _feature_bit; }
+    uint64_t feature_bit()       { return _linux_feature_bit; }
     bool feature_string()        { return _feature_string; }
-    bool enabled()               { return _enabled; }
-    int64_t value()              { return _value; }
+    virtual bool enabled() = 0;
     virtual void update_flag() = 0;
+    virtual void log_enabled() = 0;
   };
 
-  #define UPDATE_DEFAULT(flag)        \
-  void update_flag() {                \
-      assert(enabled(), "Must be.");  \
-      if (FLAG_IS_DEFAULT(flag)) {    \
-        FLAG_SET_DEFAULT(flag, true); \
-      }                               \
-  }                                   \
+  #define UPDATE_DEFAULT(flag)           \
+  void update_flag() {                   \
+    assert(enabled(), "Must be.");       \
+    if (FLAG_IS_DEFAULT(flag)) {         \
+      FLAG_SET_DEFAULT(flag, true);      \
+    } else {                             \
+      /* Sync CPU features with flags */ \
+      if (!flag) {                       \
+        disable_feature();               \
+      }                                  \
+    }                                    \
+  }                                      \
 
-  #define NO_UPDATE_DEFAULT           \
-  void update_flag() {}               \
+  #define UPDATE_DEFAULT_DEP(flag, dep0, ...)                                                               \
+  void update_flag() {                                                                                      \
+      assert(enabled(), "Must be.");                                                                        \
+      DEBUG_ONLY(verify_deps(dep0, ##__VA_ARGS__));                                                         \
+      if (FLAG_IS_DEFAULT(flag)) {                                                                          \
+        if (deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                        \
+          FLAG_SET_DEFAULT(flag, true);                                                                     \
+        } else {                                                                                            \
+          FLAG_SET_DEFAULT(flag, false);                                                                    \
+          /* Sync CPU features with flags */                                                                \
+          disable_feature();                                                                                \
+          stringStream ss;                                                                                  \
+          ss.print("missing dependent extension(s): ");                                                     \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          log_disabled(ss.as_string(true));                                                                 \
+        }                                                                                                   \
+      } else {                                                                                              \
+        /* Sync CPU features with flags */                                                                  \
+        if (!flag) {                                                                                        \
+          disable_feature();                                                                                \
+        } else if (!deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                \
+          FLAG_SET_DEFAULT(flag, false);                                                                    \
+          /* Sync CPU features with flags */                                                                \
+          disable_feature();                                                                                \
+          stringStream ss;                                                                                  \
+          ss.print("missing dependent extension(s): ");                                                     \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          log_disabled(ss.as_string(true));                                                                 \
+        }                                                                                                   \
+      }                                                                                                     \
+  }                                                                                                         \
 
-  // Frozen standard extensions
-  // I RV64I
-  // M Integer Multiplication and Division
-  // A Atomic Instructions
-  // F Single-Precision Floating-Point
-  // D Single-Precision Floating-Point
-  // (G = M + A + F + D)
-  // Q Quad-Precision Floating-Point
-  // C Compressed Instructions
-  // H Hypervisor
-  //
-  // Others, open and non-standard
-  // V Vector
-  //
-  // Cache Management Operations
-  // Zicbom Cache Block Management Operations
-  // Zicboz Cache Block Zero Operations
-  // Zicbop Cache Block Prefetch Operations
-  //
-  // Bit-manipulation
-  // Zba Address generation instructions
-  // Zbb Basic bit-manipulation
-  // Zbc Carry-less multiplication
-  // Zbs Single-bit instructions
-  //
-  // Zicsr Control and Status Register (CSR) Instructions
-  // Zifencei Instruction-Fetch Fence
-  // Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space.
-  // Zihintpause Pause instruction HINT
-  //
-  // Other features and settings
-  // mvendorid Manufactory JEDEC id encoded, ISA vol 2 3.1.2..
-  // marchid   Id for microarch. Mvendorid plus marchid uniquely identify the microarch.
-  // mimpid    A unique encoding of the version of the processor implementation.
-  // unaligned_access Unaligned memory accesses (unknown, unspported, emulated, slow, firmware, fast)
-  // satp mode SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64
+  #define NO_UPDATE_DEFAULT                \
+  void update_flag() {}                    \
+
+
+  class RVExtFeatureValue : public RVFeatureValue {
+    const uint32_t _cpu_feature_index;
+
+   public:
+    RVExtFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
+      RVFeatureValue(pretty, linux_bit_num, fstring),
+      _cpu_feature_index(cpu_feature_index) {
+    }
+    int cpu_feature_index() {
+      // Can be used to check, for example, v is declared before Zvfh in RV_EXT_FEATURE_FLAGS.
+      return _cpu_feature_index;
+    }
+    bool enabled() {
+      return RVExtFeatures::current()->support_feature(_cpu_feature_index);
+    }
+    void enable_feature(int64_t value = 0) {
+      RVExtFeatures::current()->set_feature(_cpu_feature_index);
+    }
+    void disable_feature() {
+      RVExtFeatures::current()->clear_feature(_cpu_feature_index);
+    }
+    void log_enabled();
+    void log_disabled(const char* reason);
+
+   protected:
+    bool deps_all_enabled(RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = dep0;
+      bool enabled = true;
+      while (next != nullptr && enabled) {
+        enabled = next->enabled();
+        next = va_arg(va, RVExtFeatureValue*);
+      }
+      va_end(va);
+      return enabled;
+    }
+
+    void deps_string(stringStream& ss, RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+      ss.print("%s (%s)", dep0->pretty(), dep0->enabled() ? "enabled" : "disabled");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = nullptr;
+      while ((next = va_arg(va, RVExtFeatureValue*)) != nullptr) {
+        ss.print(", %s (%s)", next->pretty(), next->enabled() ? "enabled" : "disabled");
+      }
+      va_end(va);
+    }
+
+#ifdef ASSERT
+    void verify_deps(RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+      assert(cpu_feature_index() >= 0, "must");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = dep0;
+      while (next != nullptr) {
+        assert(next->cpu_feature_index() >= 0, "must");
+        // We only need to check depenency relationship for extension flags.
+        // The dependant ones must be declared before this, for example, v must be declared
+        // before Zvfh in RV_EXT_FEATURE_FLAGS. The reason is in setup_cpu_available_features
+        // we need to make sure v is `update_flag`ed before Zvfh, so Zvfh is `update_flag`ed
+        // based on v.
+        assert(cpu_feature_index() > next->cpu_feature_index(), "Invalid");
+        next = va_arg(va, RVExtFeatureValue*);
+      }
+      va_end(va);
+    }
+#endif // ASSERT
+  };
+
+  class RVNonExtFeatureValue : public RVFeatureValue {
+    static const int64_t DEFAULT_VALUE = -1;
+    int64_t _value;
+
+   public:
+    RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
+      RVFeatureValue(pretty, linux_bit_num, fstring),
+      _value(DEFAULT_VALUE) {
+    }
+    bool enabled() { return _value != DEFAULT_VALUE; }
+    void enable_feature(int64_t value) {
+      assert(value != DEFAULT_VALUE, "Sanity");
+      _value = value;
+    }
+    void disable_feature() { _value = DEFAULT_VALUE; }
+    int64_t value() { return _value; }
+    void log_enabled();
+  };
+
+ public:
 
   #define RV_NO_FLAG_BIT (BitsPerWord+1) // nth_bit will return 0 on values larger than BitsPerWord
 
-  // declaration name  , extension name,    bit pos ,in str, mapped flag)
-  #define RV_FEATURE_FLAGS(decl)                                                                \
-  decl(ext_I           , "i"           ,    ('I' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_M           , "m"           ,    ('M' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_A           , "a"           ,    ('A' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_F           , "f"           ,    ('F' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_D           , "d"           ,    ('D' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_C           , "c"           ,    ('C' - 'A'), true , UPDATE_DEFAULT(UseRVC))         \
-  decl(ext_Q           , "q"           ,    ('Q' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_H           , "h"           ,    ('H' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_V           , "v"           ,    ('V' - 'A'), true , UPDATE_DEFAULT(UseRVV))         \
-  decl(ext_Zicbom      , "Zicbom"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicbom))      \
-  decl(ext_Zicboz      , "Zicboz"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicboz))      \
-  decl(ext_Zicbop      , "Zicbop"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicbop))      \
-  decl(ext_Zba         , "Zba"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZba))         \
-  decl(ext_Zbb         , "Zbb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbb))         \
-  decl(ext_Zbc         , "Zbc"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zbs         , "Zbs"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbs))         \
-  decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zic64b      , "Zic64b"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZic64b))      \
-  decl(ext_Ztso        , "Ztso"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZtso))        \
-  decl(ext_Zihintpause , "Zihintpause" , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZihintpause)) \
-  decl(mvendorid       , "VendorId"    , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
-  decl(marchid         , "ArchId"      , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
-  decl(mimpid          , "ImpId"       , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
-  decl(unaligned_access, "Unaligned"   , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
-  decl(satp_mode       , "SATP"        , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
+  // Note: the order matters, depender should be after their dependee. E.g. ext_V before ext_Zvbb.
+  //
+  // Fields description in `decl`:
+  //    declaration name, extension name, bit value from linux, feature string?, mapped flag)
+  #define RV_EXT_FEATURE_FLAGS(decl)                                                                      \
+  /* A Atomic Instructions */                                                                             \
+  decl(a           ,     ('A' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* C Compressed Instructions */                                                                         \
+  decl(c           ,     ('C' - 'A'),  true ,  UPDATE_DEFAULT(UseRVC))                                    \
+  /* D Single-Precision Floating-Point */                                                                 \
+  decl(d           ,     ('D' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* F Single-Precision Floating-Point */                                                                 \
+  decl(f           ,     ('F' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* H Hypervisor */                                                                                      \
+  decl(h           ,     ('H' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* I RV64I */                                                                                           \
+  decl(i           ,     ('I' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* M Integer Multiplication and Division */                                                             \
+  decl(m           ,     ('M' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Q Quad-Precision Floating-Point */                                                                   \
+  decl(q           ,     ('Q' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* V Vector */                                                                                          \
+  decl(v           ,     ('V' - 'A'),  true ,  UPDATE_DEFAULT(UseRVV))                                    \
+                                                                                                          \
+  /* ----------------------- Other extensions ----------------------- */                                  \
+                                                                                                          \
+  /* Atomic compare-and-swap (CAS) instructions */                                                        \
+  decl(Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                                  \
+  /* Byte and Halfword Atomic Memory instructions */                                                      \
+  decl(Zabha       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZabha))                                  \
+  /* Load-acquire and store-release instructions */                                                       \
+  decl(Zalasr      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZalasr))                                 \
+  /* Wait-on-Reservation-Set instructions */                                                              \
+  decl(Zawrs       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZawrs))                                  \
+  /* Zba Address generation instructions */                                                               \
+  decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
+  /* Zbb Basic bit-manipulation */                                                                        \
+  decl(Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                    \
+  /* Zbc Carry-less multiplication */                                                                     \
+  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbc))                                    \
+  /* Bitmanip instructions for Cryptography */                                                            \
+  decl(Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                   \
+  /* Zbs Single-bit instructions */                                                                       \
+  decl(Zbs         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbs))                                    \
+  /* Zcb Simple code-size saving instructions */                                                          \
+  decl(Zcb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZcb))                                    \
+  /* Additional Floating-Point instructions */                                                            \
+  decl(Zfa         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfa))                                    \
+  /* Zfh Half-Precision Floating-Point instructions */                                                    \
+  decl(Zfh         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfh))                                    \
+  /* Zfhmin Minimal Half-Precision Floating-Point instructions */                                         \
+  decl(Zfhmin      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfhmin))                                 \
+  /* Zicbom Cache Block Management Operations */                                                          \
+  decl(Zicbom      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbom))                                 \
+  /* Zicbop Cache Block Prefetch Operations */                                                            \
+  decl(Zicbop      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbop))                                 \
+  /* Zicboz Cache Block Zero Operations */                                                                \
+  decl(Zicboz      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicboz))                                 \
+  /* Base Counters and Timers */                                                                          \
+  decl(Zicntr      ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Zicond Conditional operations */                                                                     \
+  decl(Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                                 \
+  /* Zicsr Control and Status Register (CSR) Instructions */                                              \
+  decl(Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space. */             \
+  decl(Zic64b      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZic64b))                                 \
+  /* Zifencei Instruction-Fetch Fence */                                                                  \
+  decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Zihintpause Pause instruction HINT */                                                                \
+  decl(Zihintpause ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZihintpause))                            \
+  /* Total Store Ordering */                                                                              \
+  decl(Ztso        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZtso))                                   \
+  /* Vector Basic Bit-manipulation */                                                                     \
+  decl(Zvbb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbb, &ext_v, nullptr))              \
+  /* Vector Carryless Multiplication */                                                                   \
+  decl(Zvbc        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbc, &ext_v, nullptr))              \
+  /* Vector Extension for Half-Precision Floating-Point */                                                \
+  decl(Zvfh        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, &ext_v, &ext_Zfhmin, nullptr)) \
+  /* Vector Extension for Minimal Half-Precision Floating-Point */                                        \
+  decl(Zvfhmin     ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfhmin, &ext_v, nullptr))           \
+  /* Shorthand for Zvkned + Zvknhb + Zvkb + Zvkt */                                                       \
+  decl(Zvkn        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, &ext_v, nullptr))              \
+  /* Zvkg crypto extension for ghash and gcm */                                                           \
+  decl(Zvkg        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkg, &ext_v, nullptr))              \
 
-  #define DECLARE_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)        \
-  struct NAME##RVFeatureValue : public RVFeatureValue {                \
-    NAME##RVFeatureValue(const char* pretty, int bit, bool fstring) :  \
-      RVFeatureValue(pretty, bit, fstring) {}                          \
-    FLAGF;                                                             \
-  };                                                                   \
-  static NAME##RVFeatureValue NAME;                                    \
+  #define DECLARE_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)                             \
+  struct ext_##PRETTY##RVExtFeatureValue : public RVExtFeatureValue {                           \
+    ext_##PRETTY##RVExtFeatureValue() :                                                         \
+      RVExtFeatureValue(#PRETTY, LINUX_BIT, RVExtFeatures::CPU_##ext_##PRETTY, FSTRING) {}      \
+    FLAGF;                                                                                      \
+  };                                                                                            \
+  static ext_##PRETTY##RVExtFeatureValue ext_##PRETTY;                                          \
 
-  RV_FEATURE_FLAGS(DECLARE_RV_FEATURE)
-  #undef DECLARE_RV_FEATURE
+  RV_EXT_FEATURE_FLAGS(DECLARE_RV_EXT_FEATURE)
+  #undef DECLARE_RV_EXT_FEATURE
+
+  // Non-extension features
+  //
+  #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                       \
+  /* Id for microarch. Mvendorid plus marchid uniquely identify the microarch. */              \
+  decl(marchid           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
+  /* A unique encoding of the version of the processor implementation. */                      \
+  decl(mimpid            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
+  /* Manufactory JEDEC id encoded, ISA vol 2 3.1.2.. */                                        \
+  decl(mvendorid         ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
+  /* SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64 */                  \
+  decl(satp_mode         ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
+  /* Performance of misaligned scalar accesses (unknown, emulated, slow, fast, unsupported) */ \
+  decl(unaligned_scalar  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
+  /* Performance of misaligned vector accesses (unknown, unspported, slow, fast) */            \
+  decl(unaligned_vector  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
+  decl(zicboz_block_size ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
+
+  #define DECLARE_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)            \
+  struct PRETTY##RVNonExtFeatureValue : public RVNonExtFeatureValue {              \
+    PRETTY##RVNonExtFeatureValue() :                                               \
+      RVNonExtFeatureValue(#PRETTY, LINUX_BIT, FSTRING) {}                         \
+    FLAGF;                                                                         \
+  };                                                                               \
+  static PRETTY##RVNonExtFeatureValue PRETTY;                                      \
+
+  RV_NON_EXT_FEATURE_FLAGS(DECLARE_RV_NON_EXT_FEATURE)
+  #undef DECLARE_RV_NON_EXT_FEATURE
+
+private:
+  // Utility for AOT CPU feature store/check.
+  class RVExtFeatures : public CHeapObj<mtCode> {
+   public:
+    enum RVFeatureIndex {
+      #define DECLARE_RV_FEATURE_ENUM(PRETTY, LINUX_BIT, FSTRING, FLAGF) CPU_##ext_##PRETTY,
+
+      RV_EXT_FEATURE_FLAGS(DECLARE_RV_FEATURE_ENUM)
+      MAX_CPU_FEATURE_INDEX
+      #undef DECLARE_RV_FEATURE_ENUM
+    };
+   private:
+    uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
+
+    // Number of 8-byte elements in _features_bitmap.
+    constexpr static int element_count() {
+      return sizeof(_features_bitmap) / sizeof(uint64_t);
+    }
+
+    static int element_index(RVFeatureIndex feature) {
+      int idx = feature / BitsPerLong;
+      assert(idx < element_count(), "Features array index out of bounds");
+      return idx;
+    }
+
+    static uint64_t feature_bit(RVFeatureIndex feature) {
+      return (1ULL << (feature % BitsPerLong));
+    }
+
+    static RVFeatureIndex convert(uint32_t index) {
+      assert(index < MAX_CPU_FEATURE_INDEX, "must");
+      return (RVFeatureIndex)index;
+    }
+
+   public:
+    static RVExtFeatures* current() {
+      return _rv_ext_features;
+    }
+
+    RVExtFeatures() {
+      for (int i = 0; i < element_count(); i++) {
+        _features_bitmap[i] = 0;
+      }
+    }
+
+    void set_feature(uint32_t feature) {
+      RVFeatureIndex f = convert(feature);
+      int idx = element_index(f);
+      _features_bitmap[idx] |= feature_bit(f);
+    }
+
+    void clear_feature(uint32_t feature) {
+      RVFeatureIndex f = convert(feature);
+      int idx = element_index(f);
+      _features_bitmap[idx] &= ~feature_bit(f);
+    }
+
+    bool support_feature(uint32_t feature) {
+      RVFeatureIndex f = convert(feature);
+      int idx = element_index(f);
+      return (_features_bitmap[idx] & feature_bit(f)) != 0;
+    }
+
+    bool verify_aot_code_cache_features(RVExtFeatures* features_to_test) const {
+      for (int i = 0; i < element_count(); i++) {
+        if (_features_bitmap[i] != features_to_test->_features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+  };
+
+  // enable extensions based on profile, current supported profiles:
+  //  RVA20U64
+  //  RVA22U64
+  //  RVA23U64
+  // NOTE: we only enable the mandatory extensions, not optional extension.
+  #define RV_ENABLE_EXTENSION(UseExtension)     \
+    if (FLAG_IS_DEFAULT(UseExtension)) {        \
+      FLAG_SET_DEFAULT(UseExtension, true);     \
+    }                                           \
+
+  // https://github.com/riscv/riscv-profiles/blob/main/src/profiles.adoc#rva20-profiles
+  #define RV_USE_RVA20U64                            \
+    RV_ENABLE_EXTENSION(UseRVC)                      \
+
+  static void useRVA20U64Profile();
+
+  // https://github.com/riscv/riscv-profiles/blob/main/src/profiles.adoc#rva22-profiles
+  #define RV_USE_RVA22U64                            \
+    RV_ENABLE_EXTENSION(UseRVC)                      \
+    RV_ENABLE_EXTENSION(UseZba)                      \
+    RV_ENABLE_EXTENSION(UseZbb)                      \
+    RV_ENABLE_EXTENSION(UseZbs)                      \
+    RV_ENABLE_EXTENSION(UseZic64b)                   \
+    RV_ENABLE_EXTENSION(UseZicbom)                   \
+    RV_ENABLE_EXTENSION(UseZicbop)                   \
+    RV_ENABLE_EXTENSION(UseZicboz)                   \
+    RV_ENABLE_EXTENSION(UseZihintpause)              \
+
+  static void useRVA22U64Profile();
+
+  // https://github.com/riscv/riscv-profiles/blob/main/src/rva23-profile.adoc#rva23u64-profile
+  #define RV_USE_RVA23U64                           \
+    RV_ENABLE_EXTENSION(UseRVC)                     \
+    RV_ENABLE_EXTENSION(UseRVV)                     \
+    RV_ENABLE_EXTENSION(UseZawrs)                   \
+    RV_ENABLE_EXTENSION(UseZba)                     \
+    RV_ENABLE_EXTENSION(UseZbb)                     \
+    RV_ENABLE_EXTENSION(UseZbs)                     \
+    RV_ENABLE_EXTENSION(UseZcb)                     \
+    RV_ENABLE_EXTENSION(UseZfa)                     \
+    RV_ENABLE_EXTENSION(UseZfhmin)                  \
+    RV_ENABLE_EXTENSION(UseZic64b)                  \
+    RV_ENABLE_EXTENSION(UseZicbom)                  \
+    RV_ENABLE_EXTENSION(UseZicbop)                  \
+    RV_ENABLE_EXTENSION(UseZicboz)                  \
+    RV_ENABLE_EXTENSION(UseZicond)                  \
+    RV_ENABLE_EXTENSION(UseZihintpause)             \
+    RV_ENABLE_EXTENSION(UseZvfhmin)                 \
+    RV_ENABLE_EXTENSION(UseZvbb)                    \
+
+  static void useRVA23U64Profile();
 
   // VM modes (satp.mode) privileged ISA 1.10
   enum VM_MODE : int {
@@ -172,16 +486,24 @@ class VM_Version : public Abstract_VM_Version {
   static VM_MODE parse_satp_mode(const char* vm_mode);
 
   // Values from riscv_hwprobe()
-  enum UNALIGNED_ACCESS : int {
-    MISALIGNED_UNKNOWN     = 0,
-    MISALIGNED_EMULATED    = 1,
-    MISALIGNED_SLOW        = 2,
-    MISALIGNED_FAST        = 3,
-    MISALIGNED_UNSUPPORTED = 4
+  enum UNALIGNED_SCALAR_ACCESS : int {
+    MISALIGNED_SCALAR_UNKNOWN     = 0,
+    MISALIGNED_SCALAR_EMULATED    = 1,
+    MISALIGNED_SCALAR_SLOW        = 2,
+    MISALIGNED_SCALAR_FAST        = 3,
+    MISALIGNED_SCALAR_UNSUPPORTED = 4
+  };
+
+  enum UNALIGNED_VECTOR_ACCESS : int {
+    MISALIGNED_VECTOR_UNKNOWN     = 0,
+    MISALIGNED_VECTOR_SLOW        = 2,
+    MISALIGNED_VECTOR_FAST        = 3,
+    MISALIGNED_VECTOR_UNSUPPORTED = 4
   };
 
   // Null terminated list
   static RVFeatureValue* _feature_list[];
+  static RVExtFeatures* _rv_ext_features;
 
   // Enables features in _feature_list
   static void setup_cpu_available_features();
@@ -191,10 +513,26 @@ class VM_Version : public Abstract_VM_Version {
   static void vendor_features();
   // Vendors specific features
   static void rivos_features();
+  static void xuantie_features();
 
   // Determine vector length iff ext_V/UseRVV
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
+
+  // Native AtomicAccess dispatches on this instead of UseZalasr. UseZalasr is
+  // set from command-line and extension detection before VM_Version::initialize()
+  // runs the toolchain-psABI and UseZtso mutual-exclusion checks, so during
+  // startup UseZalasr may be transiently true even on configurations where those
+  // checks would later disable it. AtomicAccess is invoked from os::init_2,
+  // vm_init_globals, ObjectSynchronizer::initialize and other subsystems that
+  // run before init_globals() calls VM_Version_init(), so dispatching on
+  // UseZalasr directly can either SIGILL (CPU lacks the extension) or emit
+  // Zalasr sequences that later get paired with the incompatible pre-psABI
+  // atomics mapping. This flag is false by default and is latched to the final
+  // UseZalasr value after all validation completes.
+  static bool _use_zalasr_atomics;
+
+  static void common_initialize();
 
 #ifdef COMPILER2
   static void c2_initialize();
@@ -205,9 +543,37 @@ class VM_Version : public Abstract_VM_Version {
   static void initialize();
   static void initialize_cpu_information();
 
+  static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
+
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
+  constexpr static bool supports_recursive_fast_locking() { return true; }
+
+  constexpr static bool supports_secondary_supers_table() { return true; }
+
   static bool supports_on_spin_wait() { return UseZihintpause; }
+
+  // RISCV64 supports fast class initialization checks
+  static bool supports_fast_class_init_checks() { return true; }
+  static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
+
+  static bool supports_float16_float_conversion() {
+    return UseZfh || UseZfhmin;
+  }
+
+  // Check intrinsic support
+  static bool is_intrinsic_supported(vmIntrinsicID id);
+
+  // AOT Code Cache support
+  static int  cpu_features_size();
+  static void store_cpu_features(void* buf);
+  static bool verify_aot_code_cache_features(void* features_buffer);
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss);
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+
+ private:
+  static void print_feature_name(stringStream& ss, RVFeatureValue* feature);
+  static void insert_features_names(RVExtFeatures* features, stringStream& ss);
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

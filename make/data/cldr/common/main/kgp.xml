@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1089,16 +1089,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Vẽnhrá mág to kuprãg</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Vẽnhrá mág mré ũn kẽsir tỹ ũn’ũn mỹ kuprẽg</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Vẽnhrá mág mré ũn kẽsir tỹ ũn’ũn kỹ kuprẽg</type>
-			<type key="collation" type="big5han">Sĩnẽj Vỹsa ke to ke pẽ - Big5</type>
 			<type key="collation" type="compat" draft="contributed">Ẽgno tá jẽnẽ já kỹ ta ki já</type>
 			<type key="collation" type="dictionary">Vẽnhrá Nỹtĩj-fẽ nỹtĩ há</type>
 			<type key="collation" type="ducet">Unicode to ke pẽ</type>
 			<type key="collation" type="eor" draft="contributed">Orópa tá vẽnhvin han to ke</type>
-			<type key="collation" type="gb2312han">Sĩnẽj ke to ke (sĩmpri há) - GB2312</type>
 			<type key="collation" type="phonebook">Terefonĩ Risita to ke</type>
 			<type key="collation" type="phonetic" draft="contributed">Fonẽtika to ke kuprãg</type>
 			<type key="collation" type="pinyin">Pin-yin to nỹtĩ</type>
-			<type key="collation" type="reformed">Hár tãg nỹtĩ</type>
 			<type key="collation" type="search">Jẽnfĩn to ke Kar</type>
 			<type key="collation" type="searchjl" draft="contributed">Hangul kãsonỹte ve jãnfĩn</type>
 			<type key="collation" type="standard">to ke pẽ</type>
@@ -1214,7 +1211,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2262,8 +2259,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Óra kar {0}</regionFormat>
 			<regionFormat type="daylight">Prỹg kã óra kar {0}</regionFormat>
 			<regionFormat type="standard">Óra pẽ {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Sỹta Isamé</exemplarCity>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honãruru</exemplarCity>
 			</zone>
 			<zone type="Etc/UTC">
 				<long>
@@ -2380,9 +2377,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Mẽrmurnĩ</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kurije</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Homarti</exemplarCity>
@@ -2537,9 +2531,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Krésitãn</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Rógro Mỹrér</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Enimãntã</exemplarCity>
 			</zone>
@@ -2558,29 +2549,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Rijorute</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Tamumã Goj</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Rỹgkĩg Ĩrén</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Atikokỹn</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Tũnner Mej</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Nĩpigãn</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>Torãto</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ikarujin</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pỹgnĩrtũg</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Mãgtãn</exemplarCity>
@@ -2873,9 +2852,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Fynãg Pẽj</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Ẽnnermuri</exemplarCity>
-			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimỹti</exemplarCity>
 			</zone>
@@ -2989,9 +2965,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Uran Mator</exemplarCity>
-			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Sojmarsỹ</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Mỹkau</exemplarCity>
@@ -3365,17 +3338,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Nar Enh Sarỹm</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ungoron</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijévi</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Sĩgfiripor</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Japorisija</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>Kãmpara</exemplarCity>
@@ -3391,12 +3358,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Jyjy</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honãruru</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Nhionhtãn</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ỹkoragi</exemplarCity>
@@ -3558,9 +3519,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Afrika Rãpur tá óra</generic>
-					<standard>Óra Pã Afrika Rãpur tá</standard>
-					<daylight>Rỹ Kã óra Afrika Rãpur tá</daylight>
+					<standard>Afrika Rãpur tá óra</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3789,13 +3748,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Rỹ Kã óra Sĩnỹ tá</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Óra Sojmarsỹ tá</generic>
-					<standard>Óra Pã Sojmarsỹ tá</standard>
-					<daylight>Rỹ Kã óra Sojmarsỹ tá</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Óra Krĩtimỹnh Goj-vẽso tá</standard>
@@ -3960,6 +3912,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Óra Gijỹnỹ tá</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Óra Pã Hava’i kar Arevta Goj-vẽso tá</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Óra Hava’i kar Arevta Goj-vẽso tá</generic>
@@ -4104,11 +4061,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Rỹ kã óra Mỹkav tá</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Óra Mỹkikuari Goj-vẽso tá</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Óra Mỹganan tá</generic>
@@ -4146,13 +4098,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Óra Mỹusãn tá</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Óra Mẽsiku Nãrti-Rãpur tá</generic>
-					<standard>Óra Pã Mẽsiku Nãrti-Rãpur tá</standard>
-					<daylight>Rỹ Kã óra Mẽsiku Nãrti-Rãpur tá</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -6201,7 +6146,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mĩrimol ritru ki</unitPattern>
 				<unitPattern count="other">{0} mĩrimol ag ritru ki</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>milhão ki kupar ‘e</displayName>
 				<unitPattern count="one">{0} kupar milhão ki</unitPattern>
 				<unitPattern count="other">{0} kupar 'e milhão ki</unitPattern>
@@ -6970,7 +6915,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mĩrimol/ritru</displayName>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>kupar ‘e/milhão ki</displayName>
 			</unit>
 			<unit type="concentr-percent">

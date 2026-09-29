@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import sun.security.util.ConsoleCallbackHandler;
  * This can be used by a JAAS application to instantiate a
  * CallbackHandler
  * @see javax.security.auth.callback
+ *
+ * @since 1.4
  */
 
 public class TextCallbackHandler implements CallbackHandler {

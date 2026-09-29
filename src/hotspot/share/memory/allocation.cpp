@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,23 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
 // allocate using malloc; will fail if no memory available
 char* AllocateHeap(size_t size,
-                   MEMFLAGS flags,
+                   MemTag mem_tag,
                    const NativeCallStack& stack,
                    AllocFailType alloc_failmode /* = AllocFailStrategy::EXIT_OOM*/) {
-  char* p = (char*) os::malloc(size, flags, stack);
+  char* p = (char*) os::malloc(size, mem_tag, stack);
   if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "AllocateHeap");
   }
@@ -47,16 +46,16 @@ char* AllocateHeap(size_t size,
 }
 
 char* AllocateHeap(size_t size,
-                   MEMFLAGS flags,
+                   MemTag mem_tag,
                    AllocFailType alloc_failmode /* = AllocFailStrategy::EXIT_OOM*/) {
-  return AllocateHeap(size, flags, CALLER_PC, alloc_failmode);
+  return AllocateHeap(size, mem_tag, CALLER_PC, alloc_failmode);
 }
 
 char* ReallocateHeap(char *old,
                      size_t size,
-                     MEMFLAGS flag,
+                     MemTag mem_tag,
                      AllocFailType alloc_failmode) {
-  char* p = (char*) os::realloc(old, size, flag, CALLER_PC);
+  char* p = (char*) os::realloc(old, size, mem_tag, CALLER_PC);
   if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "ReallocateHeap");
   }
@@ -68,13 +67,29 @@ void FreeHeap(void* p) {
   os::free(p);
 }
 
-void* MetaspaceObj::_shared_metaspace_base = nullptr;
-void* MetaspaceObj::_shared_metaspace_top  = nullptr;
+// These are used by the Serviceability Agent even if CDS is disabled
+void* MetaspaceObj::_aot_metaspace_base = nullptr;
+void* MetaspaceObj::_aot_metaspace_top  = nullptr;
+
+#if INCLUDE_CDS
+volatile bool MetaspaceObj::_aot_metaspace_range_initialized = false;
+
+void MetaspaceObj::set_aot_metaspace_range(void* base, void* top) {
+  _aot_metaspace_base = base;
+  _aot_metaspace_top = top;
+  AtomicAccess::release_store(&_aot_metaspace_range_initialized, true);
+}
+
+bool MetaspaceObj::aot_metaspace_range_initialized() {
+  return AtomicAccess::load_acquire(&_aot_metaspace_range_initialized);
+}
+#endif
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has its own operator new
+  assert(type != ClassType, "class has its own operator new");
   return Metaspace::allocate(loader_data, word_size, type, THREAD);
 }
 
@@ -82,7 +97,15 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type) throw() {
   assert(!Thread::current()->is_Java_thread(), "only allowed by non-Java thread");
+  assert(type != ClassType, "class has its own operator new");
   return Metaspace::allocate(loader_data, word_size, type);
+}
+
+// This is used for allocating training data. We are allocating training data in many cases where a GC cannot be triggered.
+void* MetaspaceObj::operator new(size_t size, MemTag flags) {
+  void* p = AllocateHeap(size, flags, CALLER_PC);
+  memset(p, 0, size);
+  return p;
 }
 
 bool MetaspaceObj::is_valid(const MetaspaceObj* p) {
@@ -117,16 +140,16 @@ void* AnyObj::operator new(size_t size, Arena *arena) {
   return res;
 }
 
-void* AnyObj::operator new(size_t size, MEMFLAGS flags) throw() {
-  address res = (address)AllocateHeap(size, flags, CALLER_PC);
+void* AnyObj::operator new(size_t size, MemTag mem_tag) throw() {
+  address res = (address)AllocateHeap(size, mem_tag, CALLER_PC);
   DEBUG_ONLY(set_allocation_type(res, C_HEAP);)
   return res;
 }
 
 void* AnyObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
-    MEMFLAGS flags) throw() {
+    MemTag mem_tag) throw() {
   // should only call this with std::nothrow, use other operator new() otherwise
-    address res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
+    address res = (address)AllocateHeap(size, mem_tag, CALLER_PC, AllocFailStrategy::RETURN_NULL);
     DEBUG_ONLY(if (res!= nullptr) set_allocation_type(res, C_HEAP);)
   return res;
 }
@@ -155,12 +178,34 @@ void AnyObj::set_allocation_type(address res, allocation_type type) {
   }
 }
 
+void AnyObj::set_in_aot_cache() {
+  _allocation_t[0] = 0;
+  _allocation_t[1] = 0;
+}
+
+bool AnyObj::in_aot_cache() const {
+  if (MetaspaceObj::is_pointer_in_aot_cache(this)) {
+    // "this" can be AOT space only if aot_metaspace_range_initialized()
+    precond(_allocation_t[0] == 0);
+    precond(_allocation_t[1] == 0);
+    return true;
+  } else {
+    return false;
+  }
+}
+
 AnyObj::allocation_type AnyObj::get_allocation_type() const {
+  if (in_aot_cache()) {
+    return STACK_OR_EMBEDDED;
+  }
   assert(~(_allocation_t[0] | allocation_mask) == (uintptr_t)this, "lost resource object");
   return (allocation_type)((~_allocation_t[0]) & allocation_mask);
 }
 
 bool AnyObj::is_type_set() const {
+  if (in_aot_cache()) {
+    return true;
+  }
   allocation_type type = (allocation_type)(_allocation_t[1] & allocation_mask);
   return get_allocation_type()  == type &&
          (_allocation_t[1] - type) == (uintptr_t)(&_allocation_t[1]);
@@ -237,9 +282,10 @@ ReallocMark::ReallocMark() {
 #endif
 }
 
-void ReallocMark::check() {
+void ReallocMark::check(Arena* arena) {
 #ifdef ASSERT
-  if (_nesting != Thread::current()->resource_area()->nesting()) {
+  if ((arena == nullptr || arena == Thread::current()->resource_area()) &&
+      _nesting != Thread::current()->resource_area()->nesting()) {
     fatal("allocation bug: array could grow within nested ResourceMark");
   }
 #endif

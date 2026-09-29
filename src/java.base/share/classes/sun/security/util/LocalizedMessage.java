@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.security.util;
 
+import java.util.ListResourceBundle;
+
 /**
  * This class produces formatted and localized messages describing security
  * issues. Some messages may be required when the VM is not fully booted. In
@@ -42,15 +44,16 @@ package sun.security.util;
 
 public class LocalizedMessage {
 
-    private static final Resources RESOURCES = new Resources();
+    private static final ListResourceBundle RESOURCES =
+            new sun.security.util.resources.security();
 
     private final String key;
 
     /**
      * A LocalizedMessage can be instantiated with a key and formatted with
      * arguments later in the style of MessageFormat. This organization
-     * allows the actual formatting (and associated permission checks) to be
-     * avoided unless the resulting string is needed.
+     * allows the actual formatting to be avoided unless the resulting string
+     * is needed.
      * @param key
      */
     public LocalizedMessage(String key) {
@@ -73,7 +76,7 @@ public class LocalizedMessage {
     /**
      * Return a non-localized string corresponding to the key stored in this
      * object, formatted with the provided arguments. All strings are obtained
-     * from sun.security.util.Resources, and the formatting only supports
+     * from sun.security.util.resources, and the formatting only supports
      * simple positional argument replacement (e.g. {1}).
      *
      * @param arguments The arguments that should be placed in the message
@@ -86,10 +89,10 @@ public class LocalizedMessage {
     /**
      * Return a non-localized string corresponding to the provided key, and
      * formatted with the provided arguments. All strings are obtained from
-     * sun.security.util.Resources, and the formatting only supports
+     * sun.security.util.resources, and the formatting only supports
      * simple positional argument replacement (e.g. {1}).
      *
-     * @param key The key of the desired string in Resources
+     * @param key The key of the desired string in resources
      * @param arguments The arguments that should be placed in the message
      * @return A formatted message string
      */
@@ -103,32 +106,33 @@ public class LocalizedMessage {
         // Classes like StringTokenizer may not be loaded, so parsing
         //   is performed with String methods
         StringBuilder sb = new StringBuilder();
-        int nextBraceIndex;
-        while ((nextBraceIndex = value.indexOf('{')) >= 0) {
+        int pos = 0;
+        int leftBraceIndex;
+        while ((leftBraceIndex = value.indexOf('{', pos)) >= 0) {
 
-            String firstPart = value.substring(0, nextBraceIndex);
-            sb.append(firstPart);
-            value = value.substring(nextBraceIndex + 1);
+            sb.append(value, pos, leftBraceIndex);
 
             // look for closing brace and argument index
-            nextBraceIndex = value.indexOf('}');
-            if (nextBraceIndex < 0) {
+            int rightBraceIndex = value.indexOf('}', leftBraceIndex + 1);
+            if (rightBraceIndex < 0) {
                 // no closing brace
                 // MessageFormat would throw IllegalArgumentException, but
                 //   that exception class may not be loaded yet
                 throw new RuntimeException("Unmatched braces");
             }
-            String indexStr = value.substring(0, nextBraceIndex);
             try {
-                int index = Integer.parseInt(indexStr);
+                int index = Integer.parseInt(value, leftBraceIndex + 1,
+                        rightBraceIndex, 10);
                 sb.append(arguments[index]);
             } catch (NumberFormatException e) {
                 // argument index is not an integer
-                throw new RuntimeException("not an integer: " + indexStr);
+                throw new RuntimeException("not an integer: " +
+                        value.substring(leftBraceIndex + 1, rightBraceIndex));
             }
-            value = value.substring(nextBraceIndex + 1);
+
+            pos = rightBraceIndex + 1;
         }
-        sb.append(value);
+        sb.append(value, pos, value.length());
         return sb.toString();
     }
 

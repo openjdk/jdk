@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,19 +72,11 @@ public final class AnnotationConstruct {
     }
 
     public String getLabel() {
-        Label label = getAnnotation(Label.class);
-        if (label == null) {
-            return null;
-        }
-        return label.value();
+        return getAnnotationValue(Label.class, null);
     }
 
     public String getDescription() {
-        Description description = getAnnotation(Description.class);
-        if (description == null) {
-            return null;
-        }
-        return description.value();
+        return getAnnotationValue(Description.class, null);
     }
 
     @SuppressWarnings("unchecked")
@@ -100,7 +92,20 @@ public final class AnnotationConstruct {
         return annotationElements;
     }
 
-    private AnnotationElement getAnnotationElement(Class<? extends Annotation> clazz) {
+    /**
+     * Convenience method that returns the annotation value, or a default value
+     * if the type lacks the annotation.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getAnnotationValue(Class<? extends java.lang.annotation.Annotation> clazz, T defaultValue) {
+        AnnotationElement ae = getAnnotationElement(clazz);
+        if (ae == null) {
+            return defaultValue;
+        }
+        return (T) ae.getValues().get(0);
+    }
+
+    AnnotationElement getAnnotationElement(Class<? extends Annotation> clazz) {
         // if multiple annotation elements with the same name exists, prioritize
         // the one with the same id. Note, id alone is not a guarantee, since it
         // may differ between JVM instances.
@@ -123,8 +128,8 @@ public final class AnnotationConstruct {
         // Must be initialized lazily since some annotation elements
         // are added after construction
         if (unsignedFlag < 0) {
-            Unsigned unsigned = getAnnotation(Unsigned.class);
-            unsignedFlag = (byte) (unsigned == null ? 0 :1);
+            AnnotationElement ae = getAnnotationElement(Unsigned.class);
+            unsignedFlag = (byte) (ae == null ? 0 :1);
         }
         return unsignedFlag == (byte)1 ? true : false;
     }

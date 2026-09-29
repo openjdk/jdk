@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,8 @@ import java.io.Writer;
  * for setting and getting all times and for doing whatever
  * analysis is interesting; this class is merely a central container
  * for those timing values.
- * Note that, due to the variables in this class being static,
- * use of particular time values by multiple applets will cause
- * confusing results.  For example, if plugin runs two applets
- * simultaneously, the initTime for those applets will collide
- * and the results may be undefined.
  * <P>
- * To automatically track startup performance in an app or applet,
+ * To automatically track startup performance in an app
  * use the command-line parameter sun.perflog as follows:<BR>
  * <pre>{@code
  *     -Dsun.perflog[=file:<filename>]
@@ -72,7 +67,6 @@ import java.io.Writer;
  * exist once those APIs are in place.
  * @author Chet Haase
  */
-@SuppressWarnings("removal")
 public class PerformanceLogger {
 
     // Timing values of global interest
@@ -87,16 +81,12 @@ public class PerformanceLogger {
     private static long baseTime;
 
     static {
-        String perfLoggingProp =
-            java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.perflog"));
+        String perfLoggingProp = System.getProperty("sun.perflog");
         if (perfLoggingProp != null) {
             perfLoggingOn = true;
 
             // Check if we should use nanoTime
-            String perfNanoProp =
-                java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("sun.perflog.nano"));
+            String perfNanoProp = System.getProperty("sun.perflog.nano");
             if (perfNanoProp != null) {
                 useNanoTime = true;
             }
@@ -107,21 +97,15 @@ public class PerformanceLogger {
             }
             if (logFileName != null) {
                 if (logWriter == null) {
-                    java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                            try {
-                                File logFile = new File(logFileName);
-                                logFile.createNewFile();
-                                logWriter = new FileWriter(logFile);
-                            } catch (Exception e) {
-                                System.out.println(e + ": Creating logfile " +
-                                                   logFileName +
-                                                   ".  Log to console");
-                            }
-                            return null;
-                        }
-                    });
+                    try {
+                        File logFile = new File(logFileName);
+                        logFile.createNewFile();
+                        logWriter = new FileWriter(logFile);
+                    } catch (Exception e) {
+                        System.out.println(e + ": Creating logfile " +
+                                           logFileName +
+                                           ".  Log to console");
+                    }
                 }
             }
             if (logWriter == null) {
@@ -137,9 +121,7 @@ public class PerformanceLogger {
 
     /**
      * Returns status of whether logging is enabled or not.  This is
-     * provided as a convenience method so that users do not have to
-     * perform the same GetPropertyAction check as above to determine whether
-     * to enable performance logging.
+     * provided as a convenience method.
      */
     public static boolean loggingEnabled() {
         return perfLoggingOn;
@@ -180,9 +162,9 @@ public class PerformanceLogger {
 
     /**
      * Sets the start time.  Ideally, this is the earliest time available
-     * during the startup of a Java applet or application.  This time is
+     * during the startup of an application.  This time is
      * later used to analyze the difference between the initial startup
-     * time and other events in the system (such as an applet's init time).
+     * time and other events in the system.
      */
     public static void setStartTime(String message) {
         if (loggingEnabled()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,21 +29,27 @@
  *          when run inside Docker container, such as available CPU and memory.
  *          Also make sure that PIDs are based on value provided by container,
  *          not by the host system.
- * @requires (docker.support & os.maxMemory >= 2g)
+ * @requires (container.support & os.maxMemory >= 2g)
+ * @requires !vm.asan
+ * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build JfrReporter
- * @run driver TestJFREvents
+ * @build JfrReporter jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:whitebox.jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestJFREvents
  */
 import java.util.List;
+import jdk.internal.platform.Metrics;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
+import jdk.test.whitebox.WhiteBox;
 
 
 public class TestJFREvents {
@@ -51,13 +57,20 @@ public class TestJFREvents {
     private static final String TEST_ENV_VARIABLE = "UNIQUE_VARIABLE_ABC592903XYZ";
     private static final String TEST_ENV_VALUE = "unique_value_abc592903xyz";
     private static final int availableCPUs = Runtime.getRuntime().availableProcessors();
-    private static final int UNKNOWN = -100;
+    private static boolean isCgroupV1 = false;
+    private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
-        if (!DockerTestUtils.canTestDocker()) {
+        DockerTestUtils.checkCanTestDocker();
+
+        // If cgroups is not configured, report success.
+        Metrics metrics = Metrics.systemMetrics();
+        if (metrics == null) {
+            System.out.println("TEST PASSED!!!");
             return;
         }
+        isCgroupV1 = "cgroupv1".equals(metrics.getProvider());
 
         DockerTestUtils.buildJdkContainerImage(imageName);
 
@@ -67,6 +80,10 @@ public class TestJFREvents {
             testMemory("200m", "" + 200*MB);
             testMemory("500m", "" + 500*MB);
             testMemory("1g", "" + 1024*MB);
+
+            // see https://docs.docker.com/config/containers/resource_constraints/
+            testSwapMemory("200m", "200m", "" + 0*MB, "" + 0*MB);
+            testSwapMemory("200m", "300m", "" + 100*MB, "" + 100*MB);
 
             testProcessInfo();
 
@@ -83,7 +100,7 @@ public class TestJFREvents {
     }
 
     private static void containerInfoTestCase() throws Exception {
-        long hostTotalMemory = getHostTotalMemory();
+        long hostTotalMemory = wb.hostPhysicalMemory();
         System.out.println("Debug: Host total memory is " + hostTotalMemory);
         // Leave one CPU for system and tools, otherwise this test may be unstable.
         // Try the memory sizes that were verified by testMemory tests before.
@@ -92,18 +109,6 @@ public class TestJFREvents {
             for (int mem : new int[]{ 200, 500, 1024 }) {
                 testContainerInfo(cpus, mem, hostTotalMemory);
             }
-        }
-    }
-
-    private static long getHostTotalMemory() throws Exception {
-        DockerRunOptions opts = Common.newOpts(imageName);
-
-        String hostMem = Common.run(opts).firstMatch("total physical memory: (\\d+)", 1);
-        try {
-            return Long.parseLong(hostMem);
-        } catch (NumberFormatException e) {
-            System.out.println("Could not parse total physical memory '" + hostMem + "' returning " + UNKNOWN);
-            return UNKNOWN;
         }
     }
 
@@ -129,7 +134,8 @@ public class TestJFREvents {
             .shouldContain(cpuSlicePeriodFld + " = " + expectedSlicePeriod)
             .shouldContain(cpuQuotaFld + " = " + expectedCPUs * expectedSlicePeriod)
             .shouldContain(memoryLimitFld + " = " + expectedMemoryLimit)
-            .shouldContain(totalMem + " = " + hostTotalMemory);
+            .shouldContain(totalMem + " = " + hostTotalMemory)
+            .shouldContain("hostTotalSwapMemory");
     }
 
     private static void testCpuUsage() throws Exception {
@@ -156,6 +162,7 @@ public class TestJFREvents {
         String memoryFailCountFld = "memoryFailCount";
         String memoryUsageFld = "memoryUsage";
         String swapMemoryUsageFld = "swapMemoryUsage";
+        String hostMemoryUsageFld = "hostMemoryUsage";
 
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
@@ -163,7 +170,8 @@ public class TestJFREvents {
             .shouldHaveExitValue(0)
             .shouldContain(memoryFailCountFld)
             .shouldContain(memoryUsageFld)
-            .shouldContain(swapMemoryUsageFld);
+            .shouldContain(swapMemoryUsageFld)
+            .shouldContain(hostMemoryUsageFld);
     }
 
     private static void testIOUsage() throws Exception {
@@ -210,6 +218,41 @@ public class TestJFREvents {
     }
 
 
+    private static void testSwapMemory(String memValueToSet, String swapValueToSet, String expectedTotalValue, String expectedFreeValue) throws Exception {
+        Common.logNewTestCase("Memory: --memory = " + memValueToSet + " --memory-swap = " + swapValueToSet);
+        DockerRunOptions opts = commonDockerOpts();
+        opts.addDockerOpts("--memory=" + memValueToSet)
+            .addDockerOpts("--memory-swap=" + swapValueToSet)
+            .addClassOptions("jdk.SwapSpace");
+        if (isCgroupV1) {
+            // With Cgroupv1, The default memory-swappiness vaule is inherited from the host machine, which maybe 0
+            opts.addDockerOpts("--memory-swappiness=60");
+        }
+        OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
+        out.shouldHaveExitValue(0)
+            .shouldContain("totalSize = " + expectedTotalValue)
+            .shouldContain("freeSize = ");
+        List<String> ls = out.asLinesWithoutVMWarnings();
+        for (String cur : ls) {
+            int idx = cur.indexOf("freeSize = ");
+            if (idx != -1) {
+                int startNbr = idx+11;
+                int endNbr = cur.indexOf(' ', startNbr);
+                if (endNbr == -1) endNbr = cur.length();
+                String freeSizeStr = cur.substring(startNbr, endNbr);
+                long freeval = Long.parseLong(freeSizeStr);
+                long totalval = Long.parseLong(expectedTotalValue);
+                if (0 <= freeval && freeval <= totalval) {
+                    System.out.println("Found freeSize value " + freeval + " is fine");
+                } else {
+                    System.out.println("Found freeSize value " + freeval + " is bad");
+                    throw new Exception("Found free size value is bad");
+                }
+            }
+        }
+    }
+
+
     private static void testProcessInfo() throws Exception {
         Common.logNewTestCase("ProcessInfo");
         DockerTestUtils.dockerRunJava(
@@ -221,7 +264,7 @@ public class TestJFREvents {
 
     private static DockerRunOptions commonDockerOpts() {
         return new DockerRunOptions(imageName, "/jdk/bin/java", "JfrReporter")
-            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addJavaOpts("-cp", "/test-classes/");
     }
 

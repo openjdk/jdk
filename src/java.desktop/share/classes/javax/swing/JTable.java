@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -113,7 +112,6 @@ import javax.swing.table.TableRowSorter;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.PrintingStatus;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
@@ -455,6 +453,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * needed.
      */
     private boolean columnSelectionAdjusting;
+
+    /*
+     * True after column widths have been initialized/synchronized by layout.
+     * Used to distinguish the first preferred-width layout from later normal
+     * AUTO_RESIZE_LAST_COLUMN layouts.
+     */
+    private boolean columnWidthsInitialized;
+
     /**
      * The last value of getValueIsAdjusting from the row selection models
      * valueChanged notification. Used to test if a repaint is needed.
@@ -1166,7 +1172,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see     #setShowHorizontalLines
      */
     @BeanProperty(description
-            = "The color used to draw the grid lines.")
+            = "Whether grid lines are drawn around the cells.")
     public void setShowGrid(boolean showGrid) {
         setShowHorizontalLines(showGrid);
         setShowVerticalLines(showGrid);
@@ -2141,42 +2147,54 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         return getRowSelectionAllowed() && getColumnSelectionAllowed();
     }
 
+    private void selectRows(int rowCount) {
+        ListSelectionModel selModel = selectionModel;
+        selModel.setValueIsAdjusting(true);
+        int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
+        int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
+
+        setRowSelectionInterval(0, rowCount - 1);
+
+        // this is done to restore the anchor and lead
+        SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
+
+        selModel.setValueIsAdjusting(false);
+    }
+
+    private void selectColumns(int columnCount) {
+        ListSelectionModel selModel = columnModel.getSelectionModel();
+        selModel.setValueIsAdjusting(true);
+        int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
+        int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
+
+        setColumnSelectionInterval(0, columnCount - 1);
+
+        // this is done to restore the anchor and lead
+        SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
+
+        selModel.setValueIsAdjusting(false);
+    }
+
     /**
      *  Selects all rows, columns, and cells in the table.
      */
     public void selectAll() {
+        int rowCount = getRowCount();
+        int columnCount = getColumnCount();
+
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
         }
-        if (getRowCount() > 0 && getColumnCount() > 0) {
-            int oldLead;
-            int oldAnchor;
-            ListSelectionModel selModel;
-
-            selModel = selectionModel;
-            selModel.setValueIsAdjusting(true);
-            oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
-            oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
-
-            setRowSelectionInterval(0, getRowCount()-1);
-
-            // this is done to restore the anchor and lead
-            SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
-
-            selModel.setValueIsAdjusting(false);
-
-            selModel = columnModel.getSelectionModel();
-            selModel.setValueIsAdjusting(true);
-            oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
-            oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
-
-            setColumnSelectionInterval(0, getColumnCount()-1);
-
-            // this is done to restore the anchor and lead
-            SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
-
-            selModel.setValueIsAdjusting(false);
+        if (rowCount > 0 && columnCount > 0) {
+            selectRows(rowCount);
+            selectColumns(columnCount);
+        } else if (rowCount > 0 && columnCount == 0
+                   && getRowSelectionAllowed()) {
+            selectRows(rowCount);
+        } else if (columnCount > 0  && rowCount == 0
+                   && getColumnSelectionAllowed()) {
+            selectColumns(columnCount);
         }
     }
 
@@ -3175,6 +3193,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * (maximum or minimum).
      *
      */
+
     public void doLayout() {
         TableColumn resizingColumn = getResizingColumn();
         if (resizingColumn == null) {
@@ -3264,7 +3283,42 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
     }
 
+    private void accommodateLastColumnOnly() {
+        int columnCount = getColumnCount();
+        if (columnCount == 0) {
+            return;
+        }
+
+        int delta = getWidth() - getColumnModel().getTotalColumnWidth();
+        if (delta != 0) {
+            accommodateDelta(columnCount - 1, delta);
+        }
+    }
+
+    private void setWidthsFromPreferredWidthsLastColumnOnly() {
+        int columnCount = getColumnCount();
+        if (columnCount == 0) {
+            return;
+        }
+
+        for (int i = 0; i < columnCount - 1; i++) {
+            TableColumn column = columnModel.getColumn(i);
+            column.setWidth(column.getPreferredWidth());
+        }
+
+        accommodateLastColumnOnly();
+    }
+
     private void setWidthsFromPreferredWidths(final boolean inverse) {
+        if (!inverse && autoResizeMode == AUTO_RESIZE_LAST_COLUMN) {
+            if (!columnWidthsInitialized) {
+                setWidthsFromPreferredWidthsLastColumnOnly();
+            } else {
+                accommodateLastColumnOnly();
+            }
+            columnWidthsInitialized = true;
+            return;
+        }
         int totalWidth     = getWidth();
         int totalPreferred = getPreferredSize().width;
         int target = !inverse ? totalWidth : totalPreferred;
@@ -3293,6 +3347,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         };
 
         adjustSizes(target, r, inverse);
+        columnWidthsInitialized = true;
     }
 
 
@@ -3791,6 +3846,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         if (columnModel == null) {
             throw new IllegalArgumentException("Cannot set a null ColumnModel");
         }
+        columnWidthsInitialized = false;
         TableColumnModel old = this.columnModel;
         if (columnModel != old) {
             if (old != null) {
@@ -4438,8 +4494,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             // The whole thing changed
             clearSelectionAndLeadAnchor();
 
-            rowModel = null;
-
             if (sortManager != null) {
                 try {
                     ignoreSortChange = true;
@@ -4606,6 +4660,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see TableColumnModelListener
      */
     public void columnAdded(TableColumnModelEvent e) {
+        if (columnWidthsInitialized) {
+            TableColumn column = columnModel.getColumn(e.getToIndex());
+            column.setWidth(column.getPreferredWidth());
+        }
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
@@ -5555,7 +5613,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                     return super.stopCellEditing();
                 }
 
-                SwingUtilities2.checkAccess(constructor.getModifiers());
                 value = constructor.newInstance(new Object[]{s});
             }
             catch (Exception e) {
@@ -5579,8 +5636,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (type == Object.class) {
                     type = String.class;
                 }
-                ReflectUtil.checkPackageAccess(type);
-                SwingUtilities2.checkAccess(type.getModifiers());
                 constructor = type.getConstructor(argTypes);
             }
             catch (Exception e) {
@@ -5996,6 +6051,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
         surrendersFocusOnKeystroke = f.get("surrendersFocusOnKeystroke", false);
         editorRemover = (PropertyChangeListener) f.get("editorRemover", null);
+        editingColumn = -1;
+        editingRow = -1;
         columnSelectionAdjusting = f.get("columnSelectionAdjusting", false);
         rowSelectionAdjusting = f.get("rowSelectionAdjusting", false);
         printError = (Throwable) f.get("printError", null);
@@ -6028,6 +6085,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * do any Swing-specific pre-serialization configuration.
      */
     void compWriteObjectNotify() {
+        if (isEditing() && !getCellEditor().stopCellEditing()) {
+            getCellEditor().cancelCellEditing();
+        }
         super.compWriteObjectNotify();
         // If ToolTipText != null, then the tooltip has already been
         // unregistered by JComponent.compWriteObjectNotify()
@@ -6108,7 +6168,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             this.focusManager = fm;
         }
 
-        @SuppressWarnings("removal")
         public void propertyChange(PropertyChangeEvent ev) {
             if (!isEditing() || getClientProperty("terminateEditOnFocusLost") != Boolean.TRUE) {
                 return;
@@ -6119,8 +6178,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (c == JTable.this) {
                     // focus remains inside the table
                     return;
-                } else if ((c instanceof Window) ||
-                           (c instanceof Applet && c.getParent() == null)) {
+                } else if (c instanceof Window) {
                     if (c == SwingUtilities.getRoot(JTable.this)) {
                         if (!getCellEditor().stopCellEditing()) {
                             getCellEditor().cancelCellEditing();
@@ -6147,8 +6205,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * occurs on the default printer.
      *
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6173,8 +6229,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param  printMode        the printing mode that the printable should use
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6205,8 +6259,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                          to be used in printing a footer,
      *                          or null for none
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6247,8 +6299,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                           dialog or run interactively, and
      *                           <code>GraphicsEnvironment.isHeadless</code>
      *                           returns <code>true</code>
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6342,9 +6392,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                           dialog or run interactively, and
      *                           <code>GraphicsEnvironment.isHeadless</code>
      *                           returns <code>true</code>
-     * @throws  SecurityException if a security manager exists and its
-     *          {@link java.lang.SecurityManager#checkPrintJobAccess}
-     *          method disallows this thread from creating a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #getPrintable
@@ -6373,9 +6420,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             }
         }
 
-        // Get a PrinterJob.
-        // Do this before anything with side-effects since it may throw a
-        // security exception - in which case we don't want to do anything else.
         final PrinterJob job = PrinterJob.getPrinterJob();
 
         if (isEditing()) {

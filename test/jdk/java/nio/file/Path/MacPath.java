@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,30 @@
  * questions.
  */
 
+/* @test
+ * @bug 7130915 8289689 8366911
+ * @summary Tests file path names with standard encoding on macOS
+ * @requires (os.family == "mac")
+ * @library /test/lib ..
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
+ *        TestUtil MacPath
+ * @run main MacPath
+ */
+
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 public class MacPath {
-    private static final String PROPERTY_NORMALIZE_FILE_PATHS =
-        "jdk.nio.path.useNormalizationFormD";
-
     public static void main(String args[]) throws Throwable {
         System.out.printf("sun.jnu.encoding=%s, file.encoding=%s%n",
                           System.getProperty("file.encoding"),
@@ -83,11 +93,8 @@ public class MacPath {
     private static void test(String testdir, String dname, String fname_nfc)
         throws Throwable
     {
-        String fname = null;
-        Normalizer.Form form = Boolean.getBoolean(PROPERTY_NORMALIZE_FILE_PATHS)
-            ? Normalizer.Form.NFD : Normalizer.Form.NFC;
-        String dname_nfd = Normalizer.normalize(dname, form);
-        String fname_nfd = Normalizer.normalize(fname_nfc, form);
+        String dname_nfd = dname;
+        String fname_nfd = fname_nfc;
 
         System.out.printf("%n%n--------Testing...----------%n");
         Path bpath = Paths.get(testdir);
@@ -100,7 +107,7 @@ public class MacPath {
             TestUtil.removeAll(bpath);
         Files.createDirectories(dpath);
 
-        fname = dpath.toString();
+        String fname = dpath.toString();
         System.out.printf(":Directory [%s][len=%d] created%n", fname, fname.length());
 
         //////////////////////////////////////////////////////////////
@@ -142,9 +149,9 @@ public class MacPath {
                 found_file_nfd |= match(fpath_nfd, path);
             }
         }
-        if (!found_dir || !found_file_nfc || !found_file_nfd) {
+        if (!found_dir || !found_file_nfc || !found_file_nfd)
             throw new RuntimeException("File.equal() failed");
-        }
+
         // glob
         String glob = "*" + fname_nfd.substring(2);  // remove leading "FI" from "FILE..."
         System.out.println("glob=" + glob);

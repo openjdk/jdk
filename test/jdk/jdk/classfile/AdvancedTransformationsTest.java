@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Testing ClassFile advanced transformations.
+ * @bug 8332505
  * @run junit AdvancedTransformationsTest
  */
 import helpers.ByteArrayClassLoader;
@@ -36,8 +37,8 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.StackMapGenerator;
-import java.lang.classfile.components.ClassRemapper;
-import java.lang.classfile.components.CodeLocalsShifter;
+import jdk.internal.classfile.components.ClassRemapper;
+import jdk.internal.classfile.components.CodeLocalsShifter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
@@ -58,13 +59,14 @@ import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.classfile.instruction.ReturnInstruction;
 import java.lang.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
-import java.lang.classfile.components.CodeRelabeler;
+import jdk.internal.classfile.components.CodeRelabeler;
 import java.lang.constant.ModuleDesc;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.runtime.ObjectMethods;
 import java.util.ArrayDeque;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 
@@ -75,7 +77,7 @@ class AdvancedTransformationsTest {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
             var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
-            cc.verify(cc.transform(clm, (clb, cle) -> {
+            cc.verify(cc.transformClass(clm, (clb, cle) -> {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
@@ -83,10 +85,10 @@ class AdvancedTransformationsTest {
                             mb.transformCode(com, new CodeTransform() {
                                 @Override
                                 public void atStart(CodeBuilder builder) {
-                                    builder.allocateLocal(TypeKind.ReferenceType);
-                                    builder.allocateLocal(TypeKind.LongType);
-                                    builder.allocateLocal(TypeKind.IntType);
-                                    builder.allocateLocal(TypeKind.DoubleType);
+                                    builder.allocateLocal(TypeKind.REFERENCE);
+                                    builder.allocateLocal(TypeKind.LONG);
+                                    builder.allocateLocal(TypeKind.INT);
+                                    builder.allocateLocal(TypeKind.DOUBLE);
                                 }
                                 @Override
                                 public void accept(CodeBuilder builder, CodeElement element) {
@@ -120,9 +122,9 @@ class AdvancedTransformationsTest {
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
                                           .orElse(ClassHierarchyResolver.defaultResolver())
                     )).verify(remapped));
-            remapped.fields().forEach(f -> f.findAttribute(Attributes.SIGNATURE).ifPresent(sa ->
+            remapped.fields().forEach(f -> f.findAttribute(Attributes.signature()).ifPresent(sa ->
                     verifySignature(f.fieldTypeSymbol(), sa.asTypeSignature())));
-            remapped.methods().forEach(m -> m.findAttribute(Attributes.SIGNATURE).ifPresent(sa -> {
+            remapped.methods().forEach(m -> m.findAttribute(Attributes.signature()).ifPresent(sa -> {
                     var md = m.methodTypeSymbol();
                     var ms = sa.asMethodSignature();
                     verifySignature(md.returnType(), ms.result());
@@ -173,7 +175,7 @@ class AdvancedTransformationsTest {
                         cc.parse(
                                 cc.buildModule(
                                         ModuleAttribute.of(ModuleDesc.of("MyModule"), mab ->
-                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.MODULE).get();
+                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.module()).get();
         assertEquals(ma.uses().get(0).asSymbol(), bar);
         var provides = ma.provides().get(0);
         assertEquals(provides.provides().asSymbol(), bar);
@@ -187,9 +189,10 @@ class AdvancedTransformationsTest {
         var fooAnno = ClassDesc.ofDescriptor(FooAnno.class.descriptorString());
         var barAnno = ClassDesc.ofDescriptor(BarAnno.class.descriptorString());
         var rec = ClassDesc.ofDescriptor(Rec.class.descriptorString());
+        var objectMethods = ClassDesc.ofDescriptor(ObjectMethods.class.descriptorString());
         var cc = ClassFile.of();
         var remapped = cc.parse(
-                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno)).remapClass(
+                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno, objectMethods, bar)).remapClass(
                         cc,
                         cc.parse(
                                 Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
@@ -211,7 +214,8 @@ class AdvancedTransformationsTest {
                 "PUTSTATIC, owner: AdvancedTransformationsTest$Bar, field name: fooField, field type: LAdvancedTransformationsTest$Bar;",
                 "INVOKESTATIC, owner: AdvancedTransformationsTest$Bar, method name: fooMethod, method type: (LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar",
                 "method type: ()LAdvancedTransformationsTest$Bar;",
-                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;");
+                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;",
+                "bootstrap method: STATIC AdvancedTransformationsTest$Bar::bootstrap");
         assertFalse(out.contains("bootstrap method arguments indexes: []"), "bootstrap arguments lost");
     }
 
@@ -299,7 +303,7 @@ class AdvancedTransformationsTest {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return ClassFile.of().transform(target,
+        return ClassFile.of().transformClass(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -320,7 +324,7 @@ class AdvancedTransformationsTest {
                                                 var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.REFERENCE, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));
@@ -330,7 +334,7 @@ class AdvancedTransformationsTest {
 
                                                 //inlined target locals must be shifted based on the actual instrumentor locals
                                                 codeBuilder.block(inlinedBlockBuilder -> inlinedBlockBuilder
-                                                        .transform(targetCodeModel, CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol())
+                                                    .transform(targetCodeModel, CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol())
                                                         .andThen(CodeRelabeler.of())
                                                         .andThen((innerBuilder, shiftedTargetCode) -> {
                                                             //returns must be replaced with jump to the end of the inlined method

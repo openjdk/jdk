@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,20 @@
  * questions.
  */
 
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
+import jtreg.SkippedException;
+
+import java.security.AlgorithmParameters;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import java.security.Signature;
+import java.security.spec.PSSParameterSpec;
 
 /*
  * @test
- * @bug 8080462 8226651 8242332
+ * @bug 8080462 8226651 8242332 8325164
  * @summary testing interoperability of PSS signatures of PKCS11 provider
  *         against SunRsaSign provider
  * @library /test/lib ..
@@ -51,9 +58,13 @@ public class SigInteropPSS2 extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
 
+        String providerName = System.getProperty("test.provider.name", "SunRsaSign");
+        Provider sunRsaSign = Security.getProvider(providerName);
+        Security.removeProvider(providerName);
+
         Signature sigPkcs11;
         Signature sigSunRsaSign =
-                Signature.getInstance("RSASSA-PSS", "SunRsaSign");
+                Signature.getInstance("RSASSA-PSS", sunRsaSign);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
             kpg.initialize(3072);
@@ -63,9 +74,7 @@ public class SigInteropPSS2 extends PKCS11Test {
             try {
                 sigPkcs11 = Signature.getInstance(digest + "withRSASSA-PSS", p);
             } catch (NoSuchAlgorithmException e) {
-                System.out.println("Skip testing " + digest + "withRSASSA-PSS" +
-                    " due to no support");
-                continue;
+                throw new SkippedException("No support for " + digest + "withRSASSA-PSS");
             }
 
             runTest(sigPkcs11, sigSunRsaSign, kp);

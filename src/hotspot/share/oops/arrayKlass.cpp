@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -38,12 +38,14 @@
 #include "oops/arrayOop.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "runtime/handles.inline.hpp"
 
-ArrayKlass::ArrayKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+ArrayKlass::ArrayKlass() : _properties() {
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 int ArrayKlass::static_size(int header_size) {
@@ -89,18 +91,41 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
   return super()->uncached_lookup_method(name, signature, OverpassLookupMode::skip, private_mode);
 }
 
-ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
-  Klass(kind),
-  _dimension(1),
+static markWord calc_prototype_header(Klass::KlassKind kind, ArrayProperties props) {
+  switch (kind) {
+  case Klass::KlassKind::TypeArrayKlassKind:
+    return markWord::prototype();
+
+  case Klass::KlassKind::FlatArrayKlassKind:
+    return markWord::flat_array_prototype(props.is_null_restricted());
+
+  case Klass::KlassKind::ObjArrayKlassKind:
+  case Klass::KlassKind::RefArrayKlassKind:
+    if (props.is_null_restricted()) {
+      return markWord::null_free_array_prototype();
+    } else {
+      return markWord::prototype();
+    }
+
+  default:
+    ShouldNotReachHere();
+  };
+}
+
+ArrayKlass::ArrayKlass(int n, Symbol* name, KlassKind kind, ArrayProperties props)
+    : Klass(kind, calc_prototype_header(kind, props)),
+  _dimension(n),
   _higher_dimension(nullptr),
-  _lower_dimension(nullptr) {
+  _lower_dimension(nullptr),
+  _properties(props) {
   // Arrays don't add any new methods, so their vtable is the same size as
   // the vtable of klass Object.
   set_vtable_length(Universe::base_vtable_size());
   set_name(name);
   set_super(Universe::is_bootstrapping() ? nullptr : vmClasses::Object_klass());
   set_layout_helper(Klass::_lh_neutral_value);
-  set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
+  // All arrays are considered to be cloneable (See JLS 20.1.5)
+  set_is_cloneable_fast();
   JFR_ONLY(INIT_ID(this);)
   log_array_class_load(this);
 }
@@ -117,8 +142,17 @@ void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, 
   // java.base is defined.
   assert((module_entry != nullptr) || ((module_entry == nullptr) && !ModuleEntryTable::javabase_defined()),
          "module entry not available post " JAVA_BASE_NAME " definition");
-  oop module = (module_entry != nullptr) ? module_entry->module() : (oop)nullptr;
-  java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(), Handle(), CHECK);
+  oop module_oop = (module_entry != nullptr) ? module_entry->module_oop() : (oop)nullptr;
+
+  if (k->is_refined_objArray_klass()) {
+    assert(super_klass != nullptr, "Must be");
+    assert(k->super() != nullptr, "Must be");
+    assert(k->super() == super_klass, "Must be");
+    Handle mirror(THREAD, super_klass->java_mirror());
+    k->set_java_mirror(mirror);
+  } else {
+    java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module_oop), Handle(), Handle(), CHECK);
+  }
 }
 
 ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
@@ -130,26 +164,21 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == nullptr) {
 
-    ResourceMark rm(THREAD);
-    {
-      // Ensure atomic creation of higher dimensions
-      MutexLocker mu(THREAD, MultiArray_lock);
+    // Ensure atomic creation of higher dimensions
+    RecursiveLocker rl(MultiArray_lock, THREAD);
 
-      // Check if another thread beat us
-      if (higher_dimension() == nullptr) {
-
-        // Create multi-dim klass object and link them together
-        ObjArrayKlass* ak =
+    if (higher_dimension() == nullptr) {
+      // Create multi-dim klass object and link them together
+      ObjArrayKlass* ak =
           ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
-        ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(ak);
-        assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
-      }
+      // use 'release' to pair with lock-free load
+      release_set_higher_dimension(ak);
+      assert(ak->lower_dimension() == this, "lower dimension mismatch");
     }
   }
 
-  ObjArrayKlass *ak = higher_dimension();
+  ObjArrayKlass* ak = higher_dimension();
+  assert(ak != nullptr, "should be set");
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }
@@ -184,22 +213,27 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
   assert(num_extra_slots == 0, "sanity of primitive array type");
   assert(transitive_interfaces == nullptr, "sanity");
   // Must share this for correct bootstrapping!
-  set_secondary_supers(Universe::the_array_interfaces_array());
+  set_secondary_supers(Universe::the_array_interfaces_array(),
+                       Universe::the_array_interfaces_bitmap());
   return nullptr;
 }
 
-objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_ARRAY), CHECK_NULL);
-  size_t size = objArrayOopDesc::object_size(length);
-  ArrayKlass* ak = array_klass(n + dimension(), CHECK_NULL);
-  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
-                                                                /* do_zero */ true, CHECK_NULL);
-  // initialization to null not necessary, area already cleared
-  return o;
+oop ArrayKlass::component_mirror() const {
+  return java_lang_Class::component_mirror(java_mirror());
 }
 
-jint ArrayKlass::compute_modifier_flags() const {
-  return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
+ArrayProperties ArrayKlass::array_properties_from_layout(LayoutKind lk) {
+  switch(lk) {
+    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
+      return ArrayProperties::Default().with_null_restricted();
+    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
+      return ArrayProperties::Default().with_null_restricted().with_non_atomic();
+    case LayoutKind::NULLABLE_ATOMIC_FLAT:
+      return ArrayProperties::Default();
+    default:
+      ShouldNotReachHere();
+      return ArrayProperties::Default();
+  }
 }
 
 // JVMTI support
@@ -212,7 +246,7 @@ void ArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   Klass::metaspace_pointers_do(it);
 
   ResourceMark rm;
-  log_trace(cds)("Iter(ArrayKlass): %p (%s)", this, external_name());
+  log_trace(aot)("Iter(ArrayKlass): %p (%s)", this, external_name());
 
   // need to cast away volatile
   it->push((Klass**)&_higher_dimension);
@@ -241,7 +275,7 @@ void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle p
   // Klass recreates the component mirror also
 
   if (_higher_dimension != nullptr) {
-    ArrayKlass *ak = higher_dimension();
+    ObjArrayKlass *ak = higher_dimension();
     log_array_class_load(ak);
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }
@@ -264,9 +298,9 @@ void ArrayKlass::log_array_class_load(Klass* k) {
     LogStream ls(lt);
     ResourceMark rm;
     ls.print("%s", k->name()->as_klass_external_name());
-    if (MetaspaceShared::is_shared_dynamic((void*)k)) {
+    if (AOTMetaspace::in_aot_cache_dynamic_region((void*)k)) {
       ls.print(" source: shared objects file (top)");
-    } else if (MetaspaceShared::is_shared_static((void*)k)) {
+    } else if (AOTMetaspace::in_aot_cache_static_region((void*)k)) {
       ls.print(" source: shared objects file");
     }
     ls.cr();
@@ -301,6 +335,7 @@ void ArrayKlass::verify_on(outputStream* st) {
 }
 
 void ArrayKlass::oop_verify_on(oop obj, outputStream* st) {
+  Klass::oop_verify_on(obj, st);
   guarantee(obj->is_array(), "must be array");
   arrayOop a = arrayOop(obj);
   guarantee(a->length() >= 0, "array with negative length?");

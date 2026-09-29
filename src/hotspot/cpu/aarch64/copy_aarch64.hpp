@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -64,28 +64,34 @@ static void pd_zero_to_bytes(void* to, size_t count) {
 "       br      %[t0];\n"                                               \
 "       .align  5;\n"                                                   \
 "0:"                                                                    \
+"       hint    #0x24; // bti j\n"                                      \
 "       b       1f;\n"                                                  \
 "       .align  5;\n"                                                   \
+"       hint    #0x24; // bti j\n"                                      \
 "       ldr     %[t0], [%[s], #0];\n"                                   \
 "       str     %[t0], [%[d], #0];\n"                                   \
 "       b       1f;\n"                                                  \
 "       .align  5;\n"                                                   \
+"       hint    #0x24; // bti j\n"                                      \
 "       ldp     %[t0], %[t1], [%[s], #0];\n"                            \
 "       stp     %[t0], %[t1], [%[d], #0];\n"                            \
 "       b       1f;\n"                                                  \
 "       .align  5;\n"                                                   \
+"       hint    #0x24; // bti j\n"                                      \
 "       ldp     %[t0], %[t1], [%[s], #0];\n"                            \
 "       ldr     %[t2], [%[s], #16];\n"                                  \
 "       stp     %[t0], %[t1], [%[d], #0];\n"                            \
 "       str     %[t2], [%[d], #16];\n"                                  \
 "       b       1f;\n"                                                  \
 "       .align  5;\n"                                                   \
+"       hint    #0x24; // bti j\n"                                      \
 "       ldp     %[t0], %[t1], [%[s], #0];\n"                            \
 "       ldp     %[t2], %[t3], [%[s], #16];\n"                           \
 "       stp     %[t0], %[t1], [%[d], #0];\n"                            \
 "       stp     %[t2], %[t3], [%[d], #16];\n"                           \
 "       b       1f;\n"                                                  \
 "       .align  5;\n"                                                   \
+"       hint    #0x24; // bti j\n"                                      \
 "       ldp     %[t0], %[t1], [%[s], #0];\n"                            \
 "       ldp     %[t2], %[t3], [%[s], #16];\n"                           \
 "       ldr     %[t4], [%[s], #32];\n"                                  \
@@ -94,6 +100,7 @@ static void pd_zero_to_bytes(void* to, size_t count) {
 "       str     %[t4], [%[d], #32];\n"                                  \
 "       b       1f;\n"                                                  \
 "       .align  5;\n"                                                   \
+"       hint    #0x24; // bti j\n"                                      \
 "       ldp     %[t0], %[t1], [%[s], #0];\n"                            \
 "       ldp     %[t2], %[t3], [%[s], #16];\n"                           \
 "       ldp     %[t4], %[t5], [%[s], #32];\n"                           \
@@ -103,6 +110,7 @@ static void pd_zero_to_bytes(void* to, size_t count) {
 "       stp     %[t4], %[t5], [%[d], #32];\n"                           \
 "       b       1f;\n"                                                  \
 "       .align  5;\n"                                                   \
+"       hint    #0x24; // bti j\n"                                      \
 "       ldr     %[t6], [%[s], #0];\n"                                   \
 "       ldp     %[t0], %[t1], [%[s], #8];\n"                            \
 "       ldp     %[t2], %[t3], [%[s], #24];\n"                           \
@@ -110,6 +118,7 @@ static void pd_zero_to_bytes(void* to, size_t count) {
 "       str     %[t6], [%[d]], #8;\n"                                   \
 "       b       2b;\n"                                                  \
 "       .align  5;\n"                                                   \
+"       hint    #0x24; // bti j\n"                                      \
 "       ldp     %[t0], %[t1], [%[s], #0];\n"                            \
 "       ldp     %[t2], %[t3], [%[s], #16];\n"                           \
 "       ldp     %[t4], %[t5], [%[s], #32];\n"                           \

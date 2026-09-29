@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8275788 8276964
+ * @bug 8266666 8275788 8276964 8299080 8276966 8385738
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -108,27 +109,27 @@ public class TestSnippetTag extends SnippetTester {
                     {@snippet id="foo1" :
                         Hello, Snippet!
                     }
-                    """, "foo1", null),
+                    """, "foo1", "java"),
                 new SnippetAttributes("""
                     {@snippet id="foo2":
                         Hello, Snippet!
                     }
-                    """, "foo2", null),
+                    """, "foo2", "java"),
                 new SnippetAttributes("""
                     {@snippet id='foo3' :
                         Hello, Snippet!
                     }
-                    """, "foo3", null),
+                    """, "foo3", "java"),
                 new SnippetAttributes("""
                     {@snippet id='foo4':
                         Hello, Snippet!
                     }
-                    """, "foo4", null),
+                    """, "foo4", "java"),
                 new SnippetAttributes("""
                     {@snippet id=foo5 :
                         Hello, Snippet!
                     }
-                    """, "foo5", null),
+                    """, "foo5", "java"),
 // (1) Haven't yet decided on this one. It's a consistency issue. On the one
 // hand, `:` is considered a part of a javadoc tag's name (e.g. JDK-4750173);
 // on the other hand, snippet markup treats `:` (next-line modifier) as a value
@@ -137,28 +138,28 @@ public class TestSnippetTag extends SnippetTester {
 //                    {@snippet id=foo6:
 //                        Hello, Snippet!
 //                    }
-//                    """, "foo6", null),
+//                    """, "foo6", "java"),
 
                 new SnippetAttributes("""
                     {@snippet id="" :
                         Hello, Snippet!
                     }
-                    """, null, null),
+                    """, null, "java"),
                 new SnippetAttributes("""
                     {@snippet id="":
                         Hello, Snippet!
                     }
-                    """, null, null),
+                    """, null, "java"),
                 new SnippetAttributes("""
                     {@snippet id='':
                         Hello, Snippet!
                     }
-                    """, null, null),
+                    """, null, "java"),
                 new SnippetAttributes("""
                     {@snippet id=:
                         Hello, Snippet!
                     }
-                    """, null, null),
+                    """, null, "java"),
                 new SnippetAttributes("""
                     {@snippet lang="java" :
                         Hello, Snippet!
@@ -220,8 +221,9 @@ public class TestSnippetTag extends SnippetTester {
         checkLinks();
         for (int j = 0; j < snippets.size(); j++) {
             var attr = snippets.get(j);
+            Optional<String> id = (attr.id() != null ? Optional.of(attr.id()) : Optional.of("snippet-case" + j + "()1"));
             var snippetHtml = getSnippetHtmlRepresentation("pkg/A.html", "    Hello, Snippet!\n",
-                    Optional.ofNullable(attr.lang()), Optional.ofNullable(attr.id()));
+                    Optional.ofNullable(attr.lang()), id);
             checkOutput("pkg/A.html", true,
                         """
                         <span class="element-name">case%s</span>()</div>
@@ -879,7 +881,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(id, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
+                        %s""".formatted(id, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput(), Optional.of("java"),
+                                Optional.of("snippet-case" + id + "()2"))));
         });
     }
 
@@ -971,7 +974,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", expectedOutput)));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", expectedOutput, Optional.of("txt"),
+                                Optional.of("snippet-case" + index + "()2"))));
         });
     }
 
@@ -1549,7 +1553,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput(), Optional.of("java"),
+                                Optional.of("snippet-case" + index + "()2"))));
         });
     }
 
@@ -1662,12 +1667,14 @@ public class TestSnippetTag extends SnippetTester {
                     """
                     <span class="element-name">case0</span>()</div>
                     <div class="block">
-                    """ + getSnippetHtmlRepresentation("pkg/A.html", ""));
+                    """ + getSnippetHtmlRepresentation("pkg/A.html", "", Optional.of("txt"),
+                            Optional.of("snippet-case0()2")));
         checkOutput("pkg/A.html", true,
                     """
                     <span class="element-name">case1</span>()</div>
                     <div class="block">
-                    """ + getSnippetHtmlRepresentation("pkg/A.html", ""));
+                    """ + getSnippetHtmlRepresentation("pkg/A.html", "", Optional.of("txt"),
+                            Optional.of("snippet-case1()2")));
     }
 
     @Test // TODO: use combinatorial methods
@@ -1765,7 +1772,8 @@ public class TestSnippetTag extends SnippetTester {
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
                         %s
-                        """.formatted(j, getSnippetHtmlRepresentation("pkg/A.html", "2")));
+                        """.formatted(j, getSnippetHtmlRepresentation("pkg/A.html", "2", Optional.empty(),
+                                Optional.of("snippet-case" + j + "()2"))));
         }
     }
 
@@ -1844,11 +1852,126 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput(), Optional.of("java"),
+                                Optional.of("snippet-case" + index + "()2"))));
         });
     }
 
     @Test
+    public void testPositiveExternalHybridLangAttribute(Path base) throws Exception {
+
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+
+        record TestCase(String tag, String expectedContent, String expectedLang) { }
+
+        final var testCases = List.of(
+                // -------------------- external snippets --------------------
+                // if there's no file extension and no lang attribute, then
+                // markup is that of "java" and the class="language-" attribute
+                // is absent
+                new TestCase("""
+                        {@snippet file=".file"}
+                        """, """
+                        # @highlight substring=hi:
+                        hi <span class="bold">there</span>
+                        """, null),
+                new TestCase("""
+                        {@snippet file="file"}
+                        """, """
+                        # @highlight substring=hi:
+                        hi <span class="bold">there</span>
+                        """, null),
+                // if the file extension differs from the value of the lang
+                // attribute, which is set to "java", "properties" or other,
+                // then the class="language-" attribute is that of lang and
+                // markup is that of "properties" for lang=properties and
+                // markup is that of "java" for anything else
+                new TestCase("""
+                        {@snippet file="File.java" lang=properties}
+                        """, """
+                        <span class="bold">hi</span> there // @<span class="bold">hi</span>ghlight substring=there
+                        """, "properties"),
+                new TestCase("""
+                        {@snippet file="file.properties" lang=java}
+                        """, """
+                        # @highlight substring=hi:
+                        hi <span class="bold">there</span>
+                        """, "java"),
+                new TestCase("""
+                        {@snippet file="File.java" lang=txt}
+                        """, """
+                        # @highlight substring=hi:
+                        hi <span class="bold">there</span>
+                        """, "txt"),
+                // if there's no file extension, but the lang attribute is set
+                // to "java", "properties", or other, then the class="language-"
+                // attribute is that of lang and markup is that of "properties"
+                // for lang=properties and markup is that of "java" for
+                // anything else
+                new TestCase("""
+                        {@snippet file="file" lang=properties}
+                        """, """
+                        <span class="bold">hi</span> there // @<span class="bold">hi</span>ghlight substring=there
+                        """, "properties"),
+                new TestCase("""
+                        {@snippet file="file" lang=java}
+                        """, """
+                        # @highlight substring=hi:
+                        hi <span class="bold">there</span>
+                        """, "java"),
+                new TestCase("""
+                        {@snippet file="file" lang=txt}
+                        """, """
+                        # @highlight substring=hi:
+                        hi <span class="bold">there</span>
+                        """, "txt"),
+                // --------------------- hybrid snippets ---------------------
+                // the lang attribute "overrides" file extension
+                new TestCase("""
+                        {@snippet file="File.java" lang=properties:
+                        # @highlight substring=hi:
+                        hi there // @highlight substring=there
+                        }
+                        """, """
+                        <span class="bold">hi</span> there // @<span class="bold">hi</span>ghlight substring=there
+                        """, "properties"),
+                // if the lang attribute is absent, file extension determines
+                // markup and the the class="language-" attribute
+                new TestCase("""
+                        {@snippet file="file.properties":
+                        # @highlight substring=hi:
+                        hi there // @highlight substring=there
+                        }
+                        """, """
+                        <span class="bold">hi</span> there // @<span class="bold">hi</span>ghlight substring=there
+                        """, "properties")
+        );
+
+        for (var f : List.of(".file", "file", "File.java", "file.properties"))
+            addSnippetFile(srcDir, "pkg", f, """
+                    # @highlight substring=hi:
+                    hi there // @highlight substring=there
+                    """);
+
+        ClassBuilder classBuilder = new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class");
+        forEachNumbered(testCases, (s, i) -> classBuilder.addMembers(
+                MethodBuilder.parse("public void case%s() { }".formatted(i)).setComments(s.tag)));
+        classBuilder.write(srcDir);
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+        checkExit(Exit.OK);
+        forEachNumbered(testCases, (t, i) -> checkOutput("pkg/A.html", true, """
+                        <span class="element-name">case%s</span>()</div>
+                        <div class="block">
+                        %s
+                        """.formatted(i, getSnippetHtmlRepresentation("pkg/A.html", t.expectedContent, Optional.ofNullable(t.expectedLang),
+                Optional.of("snippet-case" + i + "()2")))));
+    }
+
+    //@Test
     public void testNegativeHybridTag_FileNotFound(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
@@ -2044,6 +2167,7 @@ public class TestSnippetTag extends SnippetTester {
                         Hello, Snippet!
                         ----------------- external -----------------
                         Hello, Snippet!...more
+                        --------------------------------------------
                         </pre>
                         </details>
                         """);
@@ -2085,8 +2209,16 @@ public class TestSnippetTag extends SnippetTester {
                 "pkg");
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
-                    """
-                    A.java:4: error: contents mismatch""");
+                """
+                    A.java:4: error: contents mismatch""",
+                """
+                      ----------------- inline -------------------
+                      Hello, Snippet! ...more
+                    \s\s
+                      ----------------- external -----------------
+                      Hello, Snippet!
+                    \s\s
+                      --------------------------------------------""");
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
                         <summary>invalid @snippet</summary>
@@ -2097,6 +2229,7 @@ public class TestSnippetTag extends SnippetTester {
                         ----------------- external -----------------
                         Hello, Snippet!
 
+                        --------------------------------------------
                         </pre>
                         </details>
                         """);
@@ -2302,7 +2435,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput(), Optional.of("txt"),
+                                Optional.of("snippet-case" + index + "()2"))));
         });
     }
 
@@ -2551,5 +2685,95 @@ public class TestSnippetTag extends SnippetTester {
                         </details>
                         """);
         checkNoCrashes();
+    }
+
+    @Test
+    public void testSnippetIdCounterResetsPerPage(Path base) throws IOException {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                """
+                package p;
+                import java.lang.annotation.Target;
+                import java.lang.annotation.ElementType;
+                @Target({ElementType.TYPE, ElementType.METHOD})
+                public @interface ACustomAnnotation {
+                }
+                """,
+                """
+                package p;
+                import java.lang.annotation.Target;
+                import java.lang.annotation.ElementType;
+                @Target({ElementType.TYPE, ElementType.METHOD})
+                public @interface ZCustomAnnotation {
+                }
+                """,
+                """
+                package p;
+                /** Class A. */
+                public class A {
+                    /**
+                     * First snippet on A.foo:
+                     * {@snippet :
+                     *     int x = 1; // first
+                     * }
+                     * Second snippet on A.foo:
+                     * {@snippet :
+                     *     int y = 2; // second
+                     * }
+                     */
+                    @ACustomAnnotation
+                    @ZCustomAnnotation
+                    public void foo() {}
+                }
+                """,
+                """
+                package p;
+                /** Class B. */
+                public class B {
+                    /**
+                     * First snippet on B.foo:
+                     * {@snippet :
+                     *     int x = 1; // first
+                     * }
+                     * Second snippet on B.foo:
+                     * {@snippet :
+                     *     int y = 2; // second
+                     * }
+                     */
+                    @ACustomAnnotation
+                    @ZCustomAnnotation
+                    public void foo() {}
+                }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-use",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+        for (String cls : new String[] {
+                "A.html",
+                "B.html",
+                "class-use/ACustomAnnotation.html",
+                "class-use/ZCustomAnnotation.html"}) {
+            var file = base
+                .resolve("out")
+                .resolve("p")
+                .resolve(cls);
+            String content = Files.readString(file);
+            for (var snippetId : new String[] {"snippet-foo()1", "snippet-foo()2"}) {
+                checking("id \"" + snippetId + "\" present in " + cls);
+                if (content.contains("id=\"" + snippetId + "\"")) {
+                    passed("found");
+                } else {
+                    failed("" + snippetId + " not found in " +
+                        String.join("\n", Arrays.asList(content.split("\n"))
+                            .stream()
+                            .filter(l -> l.contains("pre class=\"snippet\""))
+                            .toList()));
+                }
+            }
+        }
     }
 }

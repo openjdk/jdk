@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,23 @@
 
 /*
  * @test NotifBufferSizePropertyNameTest
- * @bug 6174229
+ * @bug 6174229 8345045 8392788
  * @summary Verify the property name specifying server notification buffer size.
  * @author Shanliang JIANG
  *
  * @run clean NotifBufferSizePropertyNameTest
  * @run build NotifBufferSizePropertyNameTest
  * @run main NotifBufferSizePropertyNameTest
+ */
+
+/*
+ * @test NotifBufferSizePropertyNameTest
+ * @bug 6174229 8345045 8392788
+ * @summary Verify the property name specifying server notification buffer size.
+ *
+ * @run clean NotifBufferSizePropertyNameTest
+ * @run build NotifBufferSizePropertyNameTest
+ * @run main/othervm -Djmx.remote.x.notification.buffer.size=2147483647 NotifBufferSizePropertyNameTest
  */
 
 import java.io.IOException;
@@ -52,35 +62,51 @@ public class NotifBufferSizePropertyNameTest {
             };
 
     public static void main(String[] args) throws Exception {
-        System.out.println(
-           "Verify the property name specifying the server notification buffer size.");
+        System.out.println("Verify the property name specifying the server notification buffer size.");
 
         oname = new ObjectName ("Default:name=NotificationEmitter");
         url = new JMXServiceURL("rmi", null, 0);
         Map env = new HashMap(2);
 
-        System.out.println("Test the new property name.");
+        // Test too-large buffer size with either System Prop or env:
+        boolean seenIAE = false;
+        try {
+            if (System.getProperty("jmx.remote.x.notification.buffer.size") != null) {
+                System.out.println("Test huge buffer size (System Property)");
+                test(null);
+            } else {
+                System.out.println("Test huge buffer size (env)");
+                env.put("jmx.remote.x.notification.buffer.size", String.valueOf(Integer.MAX_VALUE));
+                test(env);
+            }
+        } catch (java.lang.IllegalArgumentException iae) {
+            System.out.println("Expected Exception seen: " + iae);
+            seenIAE = true;
+        }
+
+        // NegativeArraySizeException would have caused test failure if buffer size limit checking is not correct,
+        // but also check we saw the expected Exception:
+        if (!seenIAE) {
+            throw new RuntimeException("No Exception when runnng with huge buffer size: failed.");
+        }
+        // If System Property is set, we are only testing the System Property, so return.
+        if (System.getProperty("jmx.remote.x.notification.buffer.size") != null) {
+            return;
+        }
+
+        System.out.println("Test the property name.");
         env.put("jmx.remote.x.notification.buffer.size", String.valueOf(bufferSize));
         test(env);
 
-        System.out.println("Test the old property name.");
-        env.remove("jmx.remote.x.notification.buffer.size");
-        env.put("jmx.remote.x.buffer.size", String.valueOf(bufferSize));
-        test(env);
-
+        // Recognition of the old, incorrect property "jmx.remote.x.buffer.size" has been dropped.
+        // Do not test old name is recognised, but do test it does not interfere with correct name:
         System.out.println("Test that the new property name overwrite the old one.");
         env.put("jmx.remote.x.notification.buffer.size", String.valueOf(bufferSize));
         env.put("jmx.remote.x.buffer.size", String.valueOf(bufferSize*6));
         test(env);
 
-        System.out.println("Test the old property name on system.");
-        System.setProperty("jmx.remote.x.buffer.size", String.valueOf(bufferSize));
-        test(null);
-
-        System.out.println(
-             "Test that the new property name overwrite the old one on system.");
-        System.setProperty("jmx.remote.x.notification.buffer.size",
-                           String.valueOf(bufferSize));
+        System.out.println("Test that the new property name overwrite the old one on system.");
+        System.setProperty("jmx.remote.x.notification.buffer.size", String.valueOf(bufferSize));
         System.setProperty("jmx.remote.x.buffer.size", String.valueOf(bufferSize*6));
         test(null);
     }

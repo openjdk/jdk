@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,10 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6270015
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
- * @run main/othervm Test13
- * @run main/othervm -Djava.net.preferIPv6Addresses=true Test13
- * @summary Light weight HTTP server
- */
-
 import com.sun.net.httpserver.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.util.logging.*;
 import java.io.*;
@@ -41,43 +33,66 @@ import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
+import static jdk.test.lib.Utils.createTempFileOfSize;
+
 /* basic http/s connectivity test
  * Tests:
  *      - same as Test12, but with 64 threads
  */
 
+/*
+ * @test
+ * @bug 6270015
+ * @summary Light weight HTTP server
+ * @library /test/lib
+ * @build jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.net.URIBuilder
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ */
 public class Test13 extends Test {
 
-    static SSLContext ctx;
+    private static final String TEMP_FILE_PREFIX =
+            HttpServer.class.getPackageName() + '-' + Test13.class.getSimpleName() + '-';
+
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
+
+    private static final Logger logger = Logger.getLogger ("com.sun.net.httpserver");
 
     final static int NUM = 32; // was 32
 
     static boolean fail = false;
 
+    private static void setupLogging() {
+        final Handler handler = new ConsoleHandler();
+        handler.setLevel(Level.ALL);
+        logger.setLevel(Level.ALL);
+        logger.addHandler(handler);
+    }
+
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
-        Logger l = Logger.getLogger ("com.sun.net.httpserver");
-        Handler ha = new ConsoleHandler();
-        ha.setLevel(Level.ALL);
-        l.setLevel(Level.ALL);
-        l.addHandler(ha);
+        Path filePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
+        setupLogging(); // merely for debugging
         InetAddress loopback = InetAddress.getLoopbackAddress();
-
         try {
-            String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("Test13: ");
             InetSocketAddress addr = new InetSocketAddress(loopback, 0);
             s1 = HttpServer.create (addr, 0);
             s2 = HttpsServer.create (addr, 0);
-            HttpHandler h = new FileServerHandler (root);
-            HttpContext c1 = s1.createContext ("/test1", h);
-            HttpContext c2 = s2.createContext ("/test1", h);
+            HttpHandler h = new FileServerHandler (filePath.getParent().toString());
+            HttpContext c1 = s1.createContext ("/", h);
+            HttpContext c2 = s2.createContext ("/", h);
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
-            ctx = new SimpleSSLContext().get();
             s2.setHttpsConfigurator(new HttpsConfigurator (ctx));
             s1.start();
             s2.start();
@@ -86,8 +101,8 @@ public class Test13 extends Test {
             int httpsport = s2.getAddress().getPort();
             Runner r[] = new Runner[NUM*2];
             for (int i=0; i<NUM; i++) {
-                r[i] = new Runner (true, "http", root+"/test1", port, "smallfile.txt", 23);
-                r[i+NUM] = new Runner (true, "https", root+"/test1", httpsport, "smallfile.txt", 23);
+                r[i] = new Runner (true, "http", port, filePath);
+                r[i+NUM] = new Runner (true, "https", httpsport, filePath);
             }
             start (r);
             join (r);
@@ -99,6 +114,7 @@ public class Test13 extends Test {
                 s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
+            Files.delete(filePath);
         }
     }
 
@@ -123,18 +139,14 @@ public class Test13 extends Test {
 
         boolean fixedLen;
         String protocol;
-        String root;
         int port;
-        String f;
-        int size;
+        private final Path filePath;
 
-        Runner (boolean fixedLen, String protocol, String root, int port, String f, int size) {
+        Runner (boolean fixedLen, String protocol, int port, Path filePath) {
             this.fixedLen=fixedLen;
             this.protocol=protocol;
-            this.root=root;
             this.port=port;
-            this.f=f;
-            this.size = size;
+            this.filePath = filePath;
         }
 
         public void run () {
@@ -143,7 +155,7 @@ public class Test13 extends Test {
                           .scheme(protocol)
                           .loopback()
                           .port(port)
-                          .path("/test1/"+f)
+                          .path("/" + filePath.getFileName())
                           .toURL();
                 HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
                 if (urlc instanceof HttpsURLConnection) {
@@ -172,11 +184,10 @@ public class Test13 extends Test {
                 is.close();
                 fout.close();
 
-                if (count != size) {
+                if (count != filePath.toFile().length()) {
                     throw new RuntimeException ("wrong amount of data returned");
                 }
-                String orig = root + "/" + f;
-                compare (new File(orig), temp);
+                assertFileContentsEqual(filePath, temp.toPath());
                 temp.delete();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -185,26 +196,4 @@ public class Test13 extends Test {
         }
     }
 
-    /* compare the contents of the two files */
-
-    static void compare (File f1, File f2) throws IOException {
-        InputStream i1 = new BufferedInputStream (new FileInputStream(f1));
-        InputStream i2 = new BufferedInputStream (new FileInputStream(f2));
-
-        int c1,c2;
-        try {
-            while ((c1=i1.read()) != -1) {
-                c2 = i2.read();
-                if (c1 != c2) {
-                    throw new RuntimeException ("file compare failed 1");
-                }
-            }
-            if (i2.read() != -1) {
-                throw new RuntimeException ("file compare failed 2");
-            }
-        } finally {
-            i1.close();
-            i2.close();
-        }
-    }
 }

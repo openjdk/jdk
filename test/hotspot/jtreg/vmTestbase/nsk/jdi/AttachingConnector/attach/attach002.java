@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import nsk.share.jdi.*;
  * a target VM via <code>com.sun.jdi.SharedMemoryAttach</code> connector.<br>
  * The test also analyzes exit code of debugee's process.
  */
-public class attach002 extends Log {
+public class attach002 {
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int JCK_STATUS_BASE = 95;
@@ -62,7 +62,10 @@ public class attach002 extends Log {
     IORedirector errRedirector;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -107,7 +110,7 @@ public class attach002 extends Log {
 
         Binder binder = new Binder(argHandler, log);
         log.display("command: " + cmd);
-        Debugee debugee = binder.startLocalDebugee(cmd);
+        Debugee debugee = binder.startDebugee(cmd);
         debugee.redirectOutput(log);
 
         if ((vm = attachTarget(name)) == null) {

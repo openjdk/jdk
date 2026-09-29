@@ -1,5 +1,0 @@
-keystore "file:${user.dir}/epkeystore";
-
-grant {
-	permission TVJar.TVPermission "channel:5", "watch", SignedBy "duke2";
-};

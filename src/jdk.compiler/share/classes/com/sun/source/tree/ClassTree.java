@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,10 @@ import javax.lang.model.element.Name;
  * </pre>
  *
  * @jls 8.1 Class Declarations
- * @jls 8.9 Enum Types
- * @jls 8.10 Record Types
+ * @jls 8.9 Enum Classes
+ * @jls 8.10 Record Classes
  * @jls 9.1 Interface Declarations
- * @jls 9.6 Annotation Types
+ * @jls 9.6 Annotation Interfaces
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

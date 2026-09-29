@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,9 @@
 package tck.java.time.chrono;
 
 import static java.time.temporal.ChronoField.ERA;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
@@ -64,16 +65,17 @@ import java.time.chrono.IsoEra;
 import java.time.temporal.ValueRange;
 import java.util.List;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKIsoEra {
 
-    @DataProvider(name = "IsoEras")
     Object[][] data_of_eras() {
         return new Object[][] {
                     {IsoEra.BCE, "BCE", 0},
@@ -81,11 +83,12 @@ public class TCKIsoEra {
         };
     }
 
-    @Test(dataProvider="IsoEras")
+    @ParameterizedTest
+    @MethodSource("data_of_eras")
     public void test_valueOf(IsoEra era , String eraName, int eraValue) {
-        assertEquals(era.getValue(), eraValue);
-        assertEquals(IsoEra.of(eraValue), era);
-        assertEquals(IsoEra.valueOf(eraName), era);
+        assertEquals(eraValue, era.getValue());
+        assertEquals(era, IsoEra.of(eraValue));
+        assertEquals(era, IsoEra.valueOf(eraName));
     }
 
     //-----------------------------------------------------------------------
@@ -95,7 +98,7 @@ public class TCKIsoEra {
     public void test_values() {
         List<Era> eraList = IsoChronology.INSTANCE.eras();
         IsoEra[] eras = IsoEra.values();
-        assertEquals(eraList.size(), eras.length);
+        assertEquals(eras.length, eraList.size());
         for (IsoEra era : eras) {
             assertTrue(eraList.contains(era));
         }
@@ -107,7 +110,7 @@ public class TCKIsoEra {
     @Test
     public void test_range() {
         for (IsoEra era : IsoEra.values()) {
-            assertEquals(era.range(ERA), ValueRange.of(0, 1));
+            assertEquals(ValueRange.of(0, 1), era.range(ERA));
         }
     }
 

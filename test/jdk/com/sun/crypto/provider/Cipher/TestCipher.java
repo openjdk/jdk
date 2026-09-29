@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public abstract class TestCipher {
 
-    private final String SUNJCE = "SunJCE";
+    private final String PROVIDER_NAME = System.getProperty("test.provider.name", "SunJCE");
     private final String ALGORITHM;
     private final String[] MODES;
     private final String[] PADDINGS;
@@ -138,8 +138,8 @@ public abstract class TestCipher {
         out.println("Testing: " + TRANSFORMATION);
 
         // Initialization
-        Cipher ci = Cipher.getInstance(TRANSFORMATION, SUNJCE);
-        KeyGenerator kg = KeyGenerator.getInstance(ALGORITHM, SUNJCE);
+        Cipher ci = Cipher.getInstance(TRANSFORMATION, PROVIDER_NAME);
+        KeyGenerator kg = KeyGenerator.getInstance(ALGORITHM, PROVIDER_NAME);
         if (keySize != 0) {
             kg.init(keySize);
         }

@@ -22,63 +22,135 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahMark.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "logging/log.hpp"
 #include "memory/universe.hpp"
 
+bool VM_ShenandoahOperation::doit_prologue() {
+  log_active_generation("Prologue");
+  assert(!ShenandoahHeap::heap()->has_gc_state_changed(), "GC State can only be changed on a safepoint.");
+  return true;
+}
+
+void VM_ShenandoahOperation::doit_epilogue() {
+  log_active_generation("Epilogue");
+  assert(!ShenandoahHeap::heap()->has_gc_state_changed(), "GC State was not synchronized to java threads.");
+  // GC thread root traversal likely used OopMapCache a lot, which
+  // might have created lots of old entries. Trigger the cleanup now.
+  OopMapCache::try_trigger_cleanup();
+}
+
+void VM_ShenandoahOperation::log_active_generation(const char* prefix) {
+  ShenandoahGeneration* agen = ShenandoahHeap::heap()->active_generation();
+  log_debug(gc, heap)("%s: active_generation is %s", prefix,
+                      agen == nullptr ? "nullptr" : shenandoah_generation_name(agen->type()));
+}
+
+void VM_ShenandoahOperation::set_active_generation() {
+  if (evaluate_at_safepoint()) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Error??");
+    ShenandoahHeap::heap()->set_active_generation(_generation);
+  }
+}
+
 bool VM_ShenandoahReferenceOperation::doit_prologue() {
+  VM_ShenandoahOperation::doit_prologue();
   Heap_lock->lock();
   return true;
 }
 
 void VM_ShenandoahReferenceOperation::doit_epilogue() {
-  OopMapCache::cleanup_old_entries();
+  VM_ShenandoahOperation::doit_epilogue();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
   Heap_lock->unlock();
 }
 
+VM_ShenandoahInitMark::VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc)
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
+}
+
 void VM_ShenandoahInitMark::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Init Mark", SvcGCMarker::CONCURRENT);
+  set_active_generation();
   _gc->entry_init_mark();
+}
+
+VM_ShenandoahFinalMarkStartEvac::VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc)
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahFinalMarkStartEvac::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Mark", SvcGCMarker::CONCURRENT);
+  set_active_generation();
   _gc->entry_final_mark();
+}
+
+VM_ShenandoahFullGC::VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahFullGC* full_gc)
+  : VM_ShenandoahReferenceOperation(full_gc->generation()), _gc_cause(gc_cause), _full_gc(full_gc) {
 }
 
 void VM_ShenandoahFullGC::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Full GC", SvcGCMarker::FULL);
+  set_active_generation();
   _full_gc->entry_full(_gc_cause);
+}
+
+VM_ShenandoahDegeneratedGC::VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc)
+  : VM_ShenandoahReferenceOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahDegeneratedGC::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Degenerated GC", SvcGCMarker::CONCURRENT);
+  set_active_generation();
   _gc->entry_degenerated();
+}
+
+VM_ShenandoahInitUpdateRefs::VM_ShenandoahInitUpdateRefs(ShenandoahConcurrentGC* gc)
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahInitUpdateRefs::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Init Update Refs", SvcGCMarker::CONCURRENT);
-  _gc->entry_init_updaterefs();
+  set_active_generation();
+  _gc->entry_init_update_refs();
+}
+
+VM_ShenandoahFinalUpdateRefs::VM_ShenandoahFinalUpdateRefs(ShenandoahConcurrentGC* gc)
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahFinalUpdateRefs::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Update Refs", SvcGCMarker::CONCURRENT);
-  _gc->entry_final_updaterefs();
+  set_active_generation();
+  _gc->entry_final_update_refs();
+}
+
+VM_ShenandoahFinalRoots::VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc)
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahFinalRoots::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Roots", SvcGCMarker::CONCURRENT);
+  set_active_generation();
   _gc->entry_final_roots();
+}
+
+VM_ShenandoahFinalVerify::VM_ShenandoahFinalVerify(ShenandoahConcurrentGC* gc)
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
+}
+
+void VM_ShenandoahFinalVerify::doit() {
+  ShenandoahGCPauseMark mark(_gc_id, "Final Verify", SvcGCMarker::CONCURRENT);
+  set_active_generation();
+  _gc->entry_final_verify();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,24 @@ package jdk.test.lib.classloader;
 import jdk.test.whitebox.WhiteBox;
 
 import java.io.File;
+import java.io.Serial;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 public class ClassUnloadCommon {
     public static class TestFailure extends RuntimeException {
+        @Serial
+        private static final long serialVersionUID = -8108935949624559549L;
+
         TestFailure(String msg) {
             super(msg);
         }
@@ -65,6 +73,53 @@ public class ClassUnloadCommon {
     public static void triggerUnloading() {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.fullGC();  // will do class unloading
+    }
+
+    /**
+     * Calls triggerUnloading() in a retry loop for 2 seconds or until WhiteBox.isClassAlive
+     * determines that no classes named in classNames are alive.
+     *
+     * This variant of triggerUnloading() accommodates the inherent raciness
+     * of class unloading. For example, it's possible for a JIT compilation to hold
+     * strong roots to types (e.g. in virtual call or instanceof profiles) that
+     * are not released or converted to weak roots until the compilation completes.
+     *
+     * @param classNames the set of classes that are expected to be unloaded
+     * @return the set of classes that have not been unloaded after exiting the retry loop
+     */
+    public static Set<String> triggerUnloading(List<String> classNames) {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        Set<String> aliveClasses = new HashSet<>(classNames);
+        triggerUnloadingUntil(() -> {
+            aliveClasses.removeIf(className -> !wb.isClassAlive(className));
+            return aliveClasses.isEmpty();
+        }, 2000);
+        return aliveClasses;
+    }
+
+    /**
+     * Calls triggerUnloading() and checks {@code unloaded}, sleeping 100ms
+     * between attempts, until it returns true or the timeout expires.
+     *
+     * @param unloaded the condition that holds once the expected unloading happened
+     * @param timeoutMs how long to keep trying, in milliseconds
+     * @return whether {@code unloaded} returned true
+     */
+    public static boolean triggerUnloadingUntil(BooleanSupplier unloaded, long timeoutMs) {
+        long deadline = System.nanoTime() + timeoutMs * 1_000_000L;
+        while (true) {
+            triggerUnloading();
+            if (unloaded.getAsBoolean()) {
+                return true;
+            }
+            if (System.nanoTime() >= deadline) {
+                return false;
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+            }
+        }
     }
 
     /**

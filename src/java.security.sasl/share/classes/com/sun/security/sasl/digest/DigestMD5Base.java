@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.Random;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidKeyException;
+import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.InvalidAlgorithmParameterException;
@@ -59,6 +59,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.*;
 
 import com.sun.security.sasl.util.AbstractSaslImpl;
+import sun.security.jca.JCAUtil;
 
 /**
  * Utility class for DIGEST-MD5 mechanism. Provides utility methods
@@ -131,6 +132,9 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
         ":00000000000000000000000000000000";
 
     protected static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
+    /* SecureRandom instance to generate nonce */
+    private static final SecureRandom SECURE_RANDOM = JCAUtil.getDefSecureRandom();
 
     /* ------------------- Variable Fields ----------------------- */
 
@@ -269,7 +273,6 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
      * is slightly faster and a more compact representation of the same info.
      * @return A non-null byte array containing the nonce value for the
      * digest challenge or response.
-     * Could use SecureRandom to be more secure but it is very slow.
      */
 
     /** This array maps the characters to their 6 bit values */
@@ -293,10 +296,8 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
 
     protected static final byte[] generateNonce() {
 
-        // SecureRandom random = new SecureRandom();
-        Random random = new Random();
         byte[] randomData = new byte[RAW_NONCE_SIZE];
-        random.nextBytes(randomData);
+        SECURE_RANDOM.nextBytes(randomData);
 
         byte[] nonce = new byte[ENCODED_NONCE_SIZE];
 

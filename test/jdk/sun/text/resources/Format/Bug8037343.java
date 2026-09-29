@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8008577 8037343
+ * @bug 8008577 8037343 8174269
  * @modules jdk.localedata
  * @summary updating dateformat for es_DO
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug8037343
+ * @run main Bug8037343
  */
 
 import java.text.DateFormat;
@@ -39,8 +39,8 @@ public class Bug8037343
     public static void main(String[] arg)
     {
         final Locale esDO = Locale.of("es", "DO");
-        final String expectedShort = "31/03/12";
-        final String expectedMedium = "31/03/2012";
+        final String expectedShort = "31/3/12";
+        final String expectedMedium = "31 mar 2012";
 
         int errors = 0;
         DateFormat format;

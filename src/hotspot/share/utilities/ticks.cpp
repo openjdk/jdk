@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ticks.hpp"
 
@@ -62,7 +61,7 @@ uint64_t ElapsedCounterSource::nanoseconds(Type value) {
 
 uint64_t FastUnorderedElapsedCounterSource::frequency() {
 #if defined(X86) && !defined(ZERO)
-  static bool valid_rdtsc = Rdtsc::initialize();
+  static bool valid_rdtsc = Rdtsc::enabled();
   if (valid_rdtsc) {
     static const uint64_t freq = (uint64_t)Rdtsc::frequency();
     return freq;
@@ -74,7 +73,7 @@ uint64_t FastUnorderedElapsedCounterSource::frequency() {
 
 FastUnorderedElapsedCounterSource::Type FastUnorderedElapsedCounterSource::now() {
 #if defined(X86) && !defined(ZERO)
-  static bool valid_rdtsc = Rdtsc::initialize();
+  static bool valid_rdtsc = Rdtsc::enabled();
   if (valid_rdtsc) {
     return Rdtsc::elapsed_counter();
   }
@@ -106,12 +105,7 @@ CompositeElapsedCounterSource::Type CompositeElapsedCounterSource::now() {
   CompositeTime ct;
   ct.val1 = ElapsedCounterSource::now();
 #if defined(X86) && !defined(ZERO)
-  static bool initialized = false;
-  static bool valid_rdtsc = false;
-  if (!initialized) {
-    valid_rdtsc = Rdtsc::initialize();
-    initialized = true;
-  }
+  static bool valid_rdtsc = Rdtsc::enabled();
   if (valid_rdtsc) {
     ct.val2 = Rdtsc::elapsed_counter();
   }

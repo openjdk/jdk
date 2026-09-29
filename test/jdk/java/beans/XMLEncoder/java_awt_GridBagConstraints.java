@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6402062
  * @summary Tests GridBagConstraints encoding
- * @run main/othervm -Djava.security.manager=allow java_awt_GridBagConstraints
+ * @run main/othervm java_awt_GridBagConstraints
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.awt.GridBagConstraints;
 
 public final class java_awt_GridBagConstraints extends AbstractTest<GridBagConstraints> {
     public static void main(String[] args) {
-        new java_awt_GridBagConstraints().test(true);
+        new java_awt_GridBagConstraints().test();
     }
 
     protected GridBagConstraints getObject() {

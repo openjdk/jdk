@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,17 +85,13 @@
  */
 
 /*
- * @test id=iu
+ * @test id=generational
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestPauseNotifications
- *
- * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      TestPauseNotifications
  */
 
@@ -112,6 +109,8 @@ public class TestPauseNotifications {
 
     static final long HEAP_MB = 128;                           // adjust for test configuration above
     static final long TARGET_MB = Long.getLong("target", 2_000); // 2 Gb allocation
+    static final long STEP_MS = 1000;
+    static final int  SIZE = 100_000;
 
     static volatile Object sink;
 
@@ -163,24 +162,21 @@ public class TestPauseNotifications {
             ((NotificationEmitter) bean).addNotificationListener(listener, null, null);
         }
 
-        final int size = 100_000;
-        long count = TARGET_MB * 1024 * 1024 / (16 + 4 * size);
-
+        final long count = TARGET_MB * 1024 * 1024 / (16 + 4 * SIZE);
         for (int c = 0; c < count; c++) {
-            sink = new int[size];
+            sink = new int[SIZE];
         }
 
         // Look at test timeout to figure out how long we can wait without breaking into timeout.
         // Default to 1/4 of the remaining time in 1s steps.
-        final long STEP_MS = 1000;
-        long spentTimeNanos = System.nanoTime() - startTimeNanos;
-        long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - (spentTimeNanos / 1_000_000L)) / STEP_MS / 4;
+        final long spentTimeNanos = System.nanoTime() - startTimeNanos;
+        final long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - (spentTimeNanos / 1_000_000L)) / STEP_MS / 4;
 
         long actualPauses = 0;
         long actualCycles = 0;
 
         // Wait until enough notifications are accrued to match minimum boundary.
-        long minExpected = 10;
+        final long minExpected = 10;
 
         long tries = 0;
         while (tries++ < maxTries) {
@@ -189,12 +185,19 @@ public class TestPauseNotifications {
             if (minExpected <= actualPauses && minExpected <= actualCycles) {
                 // Wait a little bit to catch the lingering notifications.
                 Thread.sleep(5000);
-                actualPauses = pausesCount.get();
-                actualCycles = cyclesCount.get();
                 break;
             }
             Thread.sleep(STEP_MS);
         }
+
+        for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+            ((NotificationEmitter) bean).removeNotificationListener(listener);
+        }
+
+        actualPauses = pausesCount.get();
+        actualCycles = cyclesCount.get();
+        long actualPauseDuration = pausesDuration.get();
+        long actualCycleDuration = cyclesDuration.get();
 
         {
             String msg = "Pauses expected = [" + minExpected + "; +inf], actual = " + actualPauses;
@@ -215,11 +218,7 @@ public class TestPauseNotifications {
         }
 
         {
-            long actualPauseDuration = pausesDuration.get();
-            long actualCycleDuration = cyclesDuration.get();
-
             String msg = "Pauses duration (" + actualPauseDuration + ") is expected to be not larger than cycles duration (" + actualCycleDuration + ")";
-
             if (actualPauseDuration <= actualCycleDuration) {
                 System.out.println(msg);
             } else {

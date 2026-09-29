@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 
 package sun.jvm.hotspot.tools.jcore;
 
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.interpreter.*;
-import sun.jvm.hotspot.utilities.*;
-import sun.jvm.hotspot.runtime.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import sun.jvm.hotspot.interpreter.Bytecodes;
+import sun.jvm.hotspot.oops.ConstantPool;
+import sun.jvm.hotspot.oops.ConstantPoolCache;
+import sun.jvm.hotspot.oops.Method;
+import sun.jvm.hotspot.runtime.Bytes;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.utilities.Assert;
 
 public class ByteCodeRewriter
 {
@@ -40,19 +41,7 @@ public class ByteCodeRewriter
     private Bytes  bytes;
 
     private static final int jintSize = 4;
-    public static final boolean DEBUG;
-
-    static {
-        @SuppressWarnings("removal")
-        String debug = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public String run() {
-                    return System.getProperty("sun.jvm.hotspot.tools.jcore.ByteCodeRewriter.DEBUG");
-                }
-            }
-        );
-        DEBUG = (debug != null ? debug.equalsIgnoreCase("true") : false);
-    }
+    public static final boolean DEBUG = Boolean.getBoolean("sun.jvm.hotspot.tools.jcore.ByteCodeRewriter.DEBUG");
 
 
     protected void debugMessage(String message) {
@@ -133,8 +122,8 @@ public class ByteCodeRewriter
                 }
 
                 case Bytecodes._invokedynamic: {
-                    int cpci = method.getNativeIntArg(bci + 1);
-                    cpoolIndex = (short) cpCache.getIndyEntryAt(~cpci).getConstantPoolIndex();
+                    int indy_index = method.getNativeIntArg(bci + 1);
+                    cpoolIndex = (short) cpCache.getIndyEntryAt(indy_index).getConstantPoolIndex();
                     writeShort(code, bci + 1, cpoolIndex);
                     writeShort(code, bci + 3, (short)0);  // clear out trailing bytes
                     break;

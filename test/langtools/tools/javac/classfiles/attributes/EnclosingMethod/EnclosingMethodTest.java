@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8042931 8215470
  * @summary Checking EnclosingMethod attribute of anonymous/local class.
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          java.base/jdk.internal.classfile.impl
@@ -163,13 +162,13 @@ public class EnclosingMethodTest extends TestResult {
                 checkEquals(countEnclosingMethodAttributes(classFile), 1l,
                         "number of the EnclosingMethod attribute in the class is one : "
                                 + clazz);
-                EnclosingMethodAttribute attr = classFile.findAttribute(Attributes.ENCLOSING_METHOD).orElse(null);
+                EnclosingMethodAttribute attr = classFile.findAttribute(Attributes.enclosingMethod()).orElse(null);
 
                 if (!checkNotNull(attr, "the EnclosingMethod attribute is not null : " + className)) {
                     // stop checking, attr is null. test case failed
                     return;
                 }
-                checkEquals(attr.attributeName(),
+                checkEquals(attr.attributeName().stringValue(),
                         "EnclosingMethod",
                         "attribute_name_index of EnclosingMethod attribute in the class : " + className);
                 checkEquals(((BoundAttribute<?>)attr).payloadLen(), 4,
@@ -245,7 +244,6 @@ public class EnclosingMethodTest extends TestResult {
         // anonymous and local classes in lambda
         @ExpectedEnclosingMethod(
                 info = "EnclosingLambda in EnclosingMethodTest",
-                enclosingMethod = "<init>",
                 enclosingClazz = EnclosingMethodTest.class
         )
         class EnclosingLambda {
@@ -325,7 +323,6 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing01",
-                    enclosingMethod = "<init>",
                     enclosingClazz = notEnclosing01.class
             )
             class EnclosingLambda {
@@ -382,7 +379,6 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing02",
-                    enclosingMethod = "<clinit>",
                     enclosingClazz = notEnclosing02.class
             )
             class EnclosingLambda {
@@ -460,7 +456,6 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing03",
-                    enclosingMethod = "<init>",
                     enclosingClazz = notEnclosing03.class
             )
             class EnclosingLambda {
@@ -517,7 +512,6 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing04",
-                    enclosingMethod = "<clinit>",
                     enclosingClazz = notEnclosing04.class
             )
             class EnclosingLambda {

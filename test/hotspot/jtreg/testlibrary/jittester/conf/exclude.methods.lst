@@ -31,3 +31,6 @@ java/lang/System::nanoTime()
 java/lang/annotation/IncompleteAnnotationException::IncompleteAnnotationException(Ljava/lang/Class;Ljava/lang/String;)
 java/util/AbstractSet::toString()
 java/util/HashSet::toString()
+
+#Unstable methods
+*::hashCode

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,15 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 6218794
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.BOMTest
  * @run testng/othervm stream.XMLStreamReaderTest.BOMTest
  * @summary Test XMLStreamReader parses BOM UTF-8 and BOM UTF-16 big endian stream.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class BOMTest {
     // UTF-8 BOM test file
     private static final String INPUT_FILE1 = "UTF8-BOM.xml.data";

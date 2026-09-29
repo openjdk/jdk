@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCResetMetadataTask.hpp"
 #include "utilities/ticks.hpp"
@@ -31,12 +30,21 @@ G1FullGCResetMetadataTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1Full
   _g1h(G1CollectedHeap::heap()),
   _collector(collector) { }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(HeapRegion* hr) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1HeapRegion* hr) {
+  if (hr->rem_set()->has_card_set_group()) {
+    assert(hr->is_starts_humongous(), "Only humongous start regions can retain a card set group");
+    assert(hr->rem_set()->card_set_group()->num_regions() == 1,
+           "Humongous region card set group must contain exactly one region");
+
+    hr->rem_set()->card_set_group()->clear_card_set();
+  }
+
   hr->rem_set()->clear();
-  hr->clear_cardtable();
+  hr->clear_both_card_tables();
+  _g1h->concurrent_mark()->reset_region_marking_state(hr);
 }
 
-bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr) {
+bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(G1HeapRegion* hr) {
   uint const region_idx = hr->hrm_index();
   if (!_collector->is_compaction_target(region_idx)) {
     assert(!hr->is_free(), "all free regions should be compaction targets");
@@ -54,7 +62,7 @@ bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(HeapRegio
   return false;
 }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_region(HeapRegion* hr, bool update_bot_for_live) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_region(G1HeapRegion* hr, bool update_bot_for_live) {
   assert(hr->needs_scrubbing_during_full_gc(), "must be");
 
   HeapWord* limit = hr->top();
@@ -82,7 +90,7 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_re
   }
 }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_skip_compacting(HeapRegion* hr) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_skip_compacting(G1HeapRegion* hr) {
 #ifdef ASSERT
   uint region_index = hr->hrm_index();
   assert(_collector->is_skip_compacting(region_index), "Only call on is_skip_compacting regions");

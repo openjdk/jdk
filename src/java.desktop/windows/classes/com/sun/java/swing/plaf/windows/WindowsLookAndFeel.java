@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
 import java.awt.image.ImageProducer;
 import java.awt.image.RGBImageFilter;
-import java.security.AccessController;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -90,9 +89,9 @@ import sun.awt.OSInfo;
 import sun.awt.SunToolkit;
 import sun.awt.shell.ShellFolder;
 import sun.font.FontUtilities;
-import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.ImageIconUIResource;
+import sun.swing.MnemonicHandler;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
@@ -146,46 +145,41 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      */
     private int baseUnitY;
 
+    @Override
     public String getName() {
         return "Windows";
     }
 
+    @Override
     public String getDescription() {
         return "The Microsoft Windows Look and Feel";
     }
 
+    @Override
     public String getID() {
         return "Windows";
     }
 
+    @Override
     public boolean isNativeLookAndFeel() {
         return OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
     }
 
+    @Override
     public boolean isSupportedLookAndFeel() {
         return isNativeLookAndFeel();
     }
 
+    @Override
     public void initialize() {
         super.initialize();
-
-        // Set the flag which determines which version of Windows should
-        // be rendered. This flag only need to be set once.
-        // if version <= 4.0 then the classic LAF should be loaded.
-        if (OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_95) <= 0) {
-            isClassicWindows = true;
-        } else {
-            isClassicWindows = false;
-            XPStyle.invalidateStyle();
-        }
+        XPStyle.invalidateStyle();
 
         // Using the fonts set by the user can potentially cause
         // performance and compatibility issues, so allow this feature
         // to be switched off either at runtime or programmatically
         //
-        @SuppressWarnings("removal")
-        String systemFonts = java.security.AccessController.doPrivileged(
-               new GetPropertyAction("swing.useSystemFontSettings"));
+        String systemFonts = System.getProperty("swing.useSystemFontSettings");
         useSystemFontSettings = systemFonts == null || Boolean.parseBoolean(systemFonts);
 
         if (useSystemFontSettings) {
@@ -196,6 +190,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
         KeyboardFocusManager.getCurrentKeyboardFocusManager().
             addKeyEventPostProcessor(WindowsRootPaneUI.altProcessor);
+        MnemonicHandler.setMnemonicHidden(true);
 
     }
 
@@ -208,6 +203,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      *
      * @see BasicLookAndFeel#getDefaults
      */
+    @Override
     protected void initClassDefaults(UIDefaults table)
     {
         super.initClassDefaults(table);
@@ -262,6 +258,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * values, otherwise we create color objects whose values match
      * the defaults Windows95 colors.
      */
+    @Override
     protected void initSystemColorDefaults(UIDefaults table)
     {
         String[] defaultSystemColors = {
@@ -312,6 +309,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     // XXX - there are probably a lot of redundant values that could be removed.
     // ie. Take a look at RadioButtonBorder, etc...
+    @Override
     protected void initComponentDefaults(UIDefaults table)
     {
         super.initComponentDefaults( table );
@@ -333,11 +331,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         ColorUIResource gray = new ColorUIResource(Color.gray);
         ColorUIResource darkGray = new ColorUIResource(Color.darkGray);
         ColorUIResource scrollBarTrackHighlight = darkGray;
-
-        // Set the flag which determines which version of Windows should
-        // be rendered. This flag only need to be set once.
-        // if version <= 4.0 then the classic LAF should be loaded.
-        isClassicWindows = OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_95) <= 0;
 
         // *** Tree
         Object treeExpandedIcon = WindowsTreeUI.ExpandedIcon.createExpandedIcon();
@@ -592,10 +585,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
 
         if (!(this instanceof WindowsClassicLookAndFeel) &&
-                (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-                OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0)) {
-            @SuppressWarnings("removal")
-            String prop = AccessController.doPrivileged(new GetPropertyAction("swing.noxp"));
+                (OSInfo.getOSType() == OSInfo.OSType.WINDOWS)) {
+            String prop = System.getProperty("swing.noxp");
             if (prop == null) {
 
                 // These desktop properties are not used directly, but are needed to
@@ -1344,7 +1335,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                               "KP_DOWN", "selectNextRow",
                            "shift DOWN", "selectNextRowExtendSelection",
                         "shift KP_DOWN", "selectNextRowExtendSelection",
-                      "ctrl shift DOWN", "selectNextRowExtendSelection",
+                      "ctrl shift DOWN", "selectLastRowExtendSelection",
                    "ctrl shift KP_DOWN", "selectNextRowExtendSelection",
                             "ctrl DOWN", "selectNextRowChangeLead",
                          "ctrl KP_DOWN", "selectNextRowChangeLead",
@@ -1352,7 +1343,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                                 "KP_UP", "selectPreviousRow",
                              "shift UP", "selectPreviousRowExtendSelection",
                           "shift KP_UP", "selectPreviousRowExtendSelection",
-                        "ctrl shift UP", "selectPreviousRowExtendSelection",
+                        "ctrl shift UP", "selectFirstRowExtendSelection",
                      "ctrl shift KP_UP", "selectPreviousRowExtendSelection",
                               "ctrl UP", "selectPreviousRowChangeLead",
                            "ctrl KP_UP", "selectPreviousRowChangeLead",
@@ -1588,20 +1579,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         initVistaComponentDefaults(table);
     }
 
-    static boolean isOnVista() {
-        return OSInfo.getOSType() == OSInfo.OSType.WINDOWS
-                && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_VISTA) >= 0;
-    }
-
-    static boolean isOnWindows7() {
-        return OSInfo.getOSType() == OSInfo.OSType.WINDOWS
-                && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_7) >= 0;
-    }
-
     private void initVistaComponentDefaults(UIDefaults table) {
-        if (! isOnVista()) {
-            return;
-        }
         /* START handling menus for Vista */
         String[] menuClasses = { "MenuItem", "Menu",
                 "CheckBoxMenuItem", "RadioButtonMenuItem",
@@ -1668,29 +1646,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         table.putDefaults(menuDefaults);
 
         /*For Windows7 margin and checkIconOffset should be greater than 0 */
-        if (!isOnWindows7()) {
-            /* no margins */
-            InsetsUIResource insets = new InsetsUIResource(0, 0, 0, 0);
-            for (int i = 0, j = 0; i < menuClasses.length; i++) {
-                String key = menuClasses[i] + ".margin";
-                Object oldValue = table.get(key);
-                menuDefaults[j++] = key;
-                menuDefaults[j++] = new XPValue(insets, oldValue);
-            }
-            table.putDefaults(menuDefaults);
-
-            /* set checkIcon offset */
-            Integer checkIconOffsetInteger =
-                Integer.valueOf(0);
-            for (int i = 0, j = 0; i < menuClasses.length; i++) {
-                String key = menuClasses[i] + ".checkIconOffset";
-                Object oldValue = table.get(key);
-                menuDefaults[j++] = key;
-                menuDefaults[j++] =
-                    new XPValue(checkIconOffsetInteger, oldValue);
-            }
-            table.putDefaults(menuDefaults);
-        }
         /* set width of the gap after check icon */
         Integer afterCheckIconGap = WindowsPopupMenuUI.getSpanBeforeGutter()
                 + WindowsPopupMenuUI.getGutterWidth()
@@ -1896,6 +1851,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         return lazyDefaults;
     }
 
+    @Override
     public void uninitialize() {
         super.uninitialize();
 
@@ -1906,62 +1862,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         KeyboardFocusManager.getCurrentKeyboardFocusManager().
             removeKeyEventPostProcessor(WindowsRootPaneUI.altProcessor);
         WindowsDesktopProperty.flushUnreferencedProperties();
-    }
-
-
-    // Toggle flag for drawing the mnemonic state
-    private static boolean isMnemonicHidden = true;
-
-    // Flag which indicates that the Win98/Win2k/WinME features
-    // should be disabled.
-    private static boolean isClassicWindows = false;
-
-    /**
-     * Sets the state of the hide mnemonic flag. This flag is used by the
-     * component UI delegates to determine if the mnemonic should be rendered.
-     * This method is a non operation if the underlying operating system
-     * does not support the mnemonic hiding feature.
-     *
-     * @param hide true if mnemonics should be hidden
-     * @since 1.4
-     */
-    public static void setMnemonicHidden(boolean hide) {
-        if (UIManager.getBoolean("Button.showMnemonics") == true) {
-            // Do not hide mnemonics if the UI defaults do not support this
-            isMnemonicHidden = false;
-        } else {
-            isMnemonicHidden = hide;
-        }
-    }
-
-    /**
-     * Gets the state of the hide mnemonic flag. This only has meaning
-     * if this feature is supported by the underlying OS.
-     *
-     * @return true if mnemonics are hidden, otherwise, false
-     * @see #setMnemonicHidden
-     * @since 1.4
-     */
-    public static boolean isMnemonicHidden() {
-        if (UIManager.getBoolean("Button.showMnemonics") == true) {
-            // Do not hide mnemonics if the UI defaults do not support this
-            isMnemonicHidden = false;
-        }
-        return isMnemonicHidden;
-    }
-
-    /**
-     * Gets the state of the flag which indicates if the old Windows
-     * look and feel should be rendered. This flag is used by the
-     * component UI delegates as a hint to determine which style the component
-     * should be rendered.
-     *
-     * @return true if Windows 95 and Windows NT 4 look and feel should
-     *         be rendered
-     * @since 1.4
-     */
-    public static boolean isClassicWindows() {
-        return isClassicWindows;
     }
 
     /**
@@ -1985,6 +1885,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      *
      * @see javax.swing.LookAndFeel#provideErrorFeedback
      */
+     @Override
      public void provideErrorFeedback(Component component) {
          super.provideErrorFeedback(component);
      }
@@ -1992,6 +1893,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     /**
      * {@inheritDoc}
      */
+    @Override
     public LayoutStyle getLayoutStyle() {
         LayoutStyle style = this.style;
         if (style == null) {
@@ -2022,6 +1924,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * @see #playSound(Action)
      * @since 1.4
      */
+    @Override
     protected Action createAudioAction(Object key) {
         if (key != null) {
             String audioKey = (String)key;
@@ -2059,7 +1962,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class AudioAction extends AbstractAction {
+    private static final class AudioAction extends AbstractAction {
         private Runnable audioRunnable;
         private String audioResource;
         /**
@@ -2070,6 +1973,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             super(name);
             audioResource = resource;
         }
+        @Override
         public void actionPerformed(ActionEvent e) {
             if (audioRunnable == null) {
                 audioRunnable = (Runnable)Toolkit.getDefaultToolkit().getDesktopProperty(audioResource);
@@ -2086,7 +1990,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * Gets an <code>Icon</code> from the native libraries if available,
      * otherwise gets it from an image resource file.
      */
-    private static class LazyWindowsIcon implements UIDefaults.LazyValue {
+    private static final class LazyWindowsIcon implements UIDefaults.LazyValue {
         private String nativeImage;
         private String resource;
 
@@ -2095,6 +1999,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.resource = resource;
         }
 
+        @Override
         public Object createValue(UIDefaults table) {
             if (nativeImage != null) {
                 Image image = (Image)ShellFolder.get(nativeImage);
@@ -2113,28 +2018,15 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * Gets an <code>Icon</code> from the native libraries if available.
      * A desktop property is used to trigger reloading the icon when needed.
      */
-    private static class ActiveWindowsIcon implements UIDefaults.ActiveValue {
+    private static final class ActiveWindowsIcon implements UIDefaults.ActiveValue {
         private Icon icon;
         private String nativeImageName;
         private String fallbackName;
-        private WindowsDesktopProperty desktopProperty;
 
         ActiveWindowsIcon(String desktopPropertyName,
                             String nativeImageName, String fallbackName) {
             this.nativeImageName = nativeImageName;
             this.fallbackName = fallbackName;
-
-            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-                    OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) < 0) {
-                // This desktop property is needed to trigger reloading the icon.
-                // It is kept in member variable to avoid GC.
-                this.desktopProperty = new TriggerDesktopProperty(desktopPropertyName) {
-                    @Override protected void updateUI() {
-                        icon = null;
-                        super.updateUI();
-                    }
-                };
-            }
         }
 
         @Override
@@ -2158,7 +2050,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     /**
      * Icon backed-up by XP Skin.
      */
-    private static class SkinIcon implements Icon, UIResource {
+    private static final class SkinIcon implements Icon, UIResource {
         private final Part part;
         private final State state;
         SkinIcon(Part part, State state) {
@@ -2171,6 +2063,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
          * may use the Component argument to get properties useful for
          * painting, e.g. the foreground or background color.
          */
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             XPStyle xp = XPStyle.getXP();
             assert xp != null;
@@ -2185,6 +2078,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
          *
          * @return an int specifying the fixed width of the icon.
          */
+        @Override
         public int getIconWidth() {
             int width = 0;
             XPStyle xp = XPStyle.getXP();
@@ -2201,6 +2095,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
          *
          * @return an int specifying the fixed height of the icon.
          */
+        @Override
         public int getIconHeight() {
             int height = 0;
             XPStyle xp = XPStyle.getXP();
@@ -2217,11 +2112,12 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * WindowsDesktopProperty for fonts. If a font with the name 'MS Sans Serif'
      * is returned, it is mapped to 'Microsoft Sans Serif'.
      */
-    private static class WindowsFontProperty extends WindowsDesktopProperty {
+    private static final class WindowsFontProperty extends WindowsDesktopProperty {
         WindowsFontProperty(String key, Object backup) {
             super(key, backup);
         }
 
+        @Override
         public void invalidate(LookAndFeel laf) {
             if ("win.defaultGUI.font.height".equals(getKey())) {
                 ((WindowsLookAndFeel)laf).style = null;
@@ -2229,6 +2125,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             super.invalidate(laf);
         }
 
+        @Override
         protected Object configureValue(Object value) {
             if (value instanceof Font) {
                 Font font = (Font)value;
@@ -2277,7 +2174,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * WindowsDesktopProperty for fonts that only gets sizes from the desktop,
      * font name and style are passed into the constructor
      */
-    private static class WindowsFontSizeProperty extends
+    private static final class WindowsFontSizeProperty extends
                                                  WindowsDesktopProperty {
         private String fontName;
         private int fontSize;
@@ -2291,6 +2188,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.fontStyle = fontStyle;
         }
 
+        @Override
         protected Object configureValue(Object value) {
             if (value == null) {
                 value = new FontUIResource(fontName, fontStyle, fontSize);
@@ -2319,6 +2217,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.classicValue = classicValue;
         }
 
+        @Override
         public Object createValue(UIDefaults table) {
             Object value = null;
             if (XPStyle.getXP() != null) {
@@ -2354,7 +2253,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private static class XPBorderValue extends XPValue {
+    private static final class XPBorderValue extends XPValue {
         private final Border extraMargin;
 
         XPBorderValue(Part xpValue, Object classicValue) {
@@ -2366,6 +2265,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.extraMargin = extraMargin;
         }
 
+        @Override
         public Object getXPValue(UIDefaults table) {
             XPStyle xp = XPStyle.getXP();
             Border xpBorder = xp != null ? xp.getBorder(null, (Part)xpValue) : null;
@@ -2378,18 +2278,19 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private static class XPColorValue extends XPValue {
+    private static final class XPColorValue extends XPValue {
         XPColorValue(Part part, State state, Prop prop, Object classicValue) {
             super(new XPColorValueKey(part, state, prop), classicValue);
         }
 
+        @Override
         public Object getXPValue(UIDefaults table) {
             XPColorValueKey key = (XPColorValueKey)xpValue;
             XPStyle xp = XPStyle.getXP();
             return xp != null ? xp.getColor(key.skin, key.prop, null) : null;
         }
 
-        private static class XPColorValueKey {
+        private static final class XPColorValueKey {
             Skin skin;
             Prop prop;
 
@@ -2400,7 +2301,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private class XPDLUValue extends XPValue {
+    private final class XPDLUValue extends XPValue {
         private int direction;
 
         XPDLUValue(int xpdlu, int classicdlu, int direction) {
@@ -2408,11 +2309,13 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.direction = direction;
         }
 
+        @Override
         public Object getXPValue(UIDefaults table) {
             int px = dluToPixels(((Integer)xpValue).intValue(), direction);
             return Integer.valueOf(px);
         }
 
+        @Override
         public Object getClassicValue(UIDefaults table) {
             int px = dluToPixels(((Integer)classicValue).intValue(), direction);
             return Integer.valueOf(px);
@@ -2428,6 +2331,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             getValueFromDesktop();
         }
 
+        @Override
         protected void updateUI() {
             super.updateUI();
 
@@ -2436,11 +2340,12 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private static class FontDesktopProperty extends TriggerDesktopProperty {
+    private static final class FontDesktopProperty extends TriggerDesktopProperty {
         FontDesktopProperty(String key) {
             super(key);
         }
 
+        @Override
         protected void updateUI() {
             UIDefaults defaults = UIManager.getLookAndFeelDefaults();
             SwingUtilities2.putAATextInfo(true, defaults);
@@ -2451,7 +2356,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     // Windows LayoutStyle.  From:
     // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnwue/html/ch14e.asp
     @SuppressWarnings("fallthrough")
-    private class WindowsLayoutStyle extends DefaultLayoutStyle {
+    private final class WindowsLayoutStyle extends DefaultLayoutStyle {
         @Override
         public int getPreferredGap(JComponent component1,
                 JComponent component2, ComponentPlacement type, int position,
@@ -2545,6 +2450,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      *
      * @since 1.6
      */
+    @Override
     public Icon getDisabledIcon(JComponent component, Icon icon) {
         // if the component has a HI_RES_DISABLED_ICON_CLIENT_KEY
         // client property set to Boolean.TRUE, then use the new
@@ -2566,10 +2472,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         return super.getDisabledIcon(component, icon);
     }
 
-    private static class RGBGrayFilter extends RGBImageFilter {
+    private static final class RGBGrayFilter extends RGBImageFilter {
         public RGBGrayFilter() {
             canFilterIndexColorModel = true;
         }
+        @Override
         public int filterRGB(int x, int y, int rgb) {
             // find the average of red, green, and blue
             float avg = (((rgb >> 16) & 0xff) / 255f +
@@ -2588,7 +2495,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private static class FocusColorProperty extends WindowsDesktopProperty {
+    private static final class FocusColorProperty extends WindowsDesktopProperty {
         public FocusColorProperty () {
             // Fallback value is never used because of the configureValue method doesn't return null
             super("win.3d.backgroundColor", Color.BLACK);

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
 *
 */
 
-#include "precompiled.hpp"
-#include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/support/jfrDeprecationEventWriter.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 #include "runtime/thread.inline.hpp"
 
 // This dual state machine for the level setting is because when multiple recordings are running,
@@ -49,7 +48,7 @@ void JfrDeprecatedEventWriterState::on_level_setting_update(int64_t new_level) {
   _current_level_setting = new_level;
 }
 
-static inline bool level() {
+static inline bool previous_epoch_level() {
   assert(_current_level_setting != uninitialized, "invariant");
   return _previous_level_setting == uninitialized ? _current_level_setting : _previous_level_setting;
 }
@@ -57,7 +56,7 @@ static inline bool level() {
 static inline bool only_for_removal() {
   assert(JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent), "invariant");
   // level 0: forRemoval, level 1: = all
-  return level() == 0;
+  return previous_epoch_level() == 0;
 }
 
 void JfrDeprecatedStackTraceWriter::install_stacktrace_blob(JfrDeprecatedEdge* edge, JfrCheckpointWriter& writer, JavaThread* jt) {
@@ -116,8 +115,8 @@ bool JfrDeprecatedStackTraceWriter::process(const JfrDeprecatedEdge* edge) {
   return true;
 }
 
-JfrDeprecatedEventWriter::JfrDeprecatedEventWriter(JfrChunkWriter& cw, bool stacktrace) :
-  _now(JfrTicks::now()),_cw(cw), _for_removal(only_for_removal()), _stacktrace(stacktrace), _did_write(false) {}
+JfrDeprecatedEventWriter::JfrDeprecatedEventWriter(JfrChunkWriter& cw, JfrCheckpointWriter& tsw, bool stacktrace) :
+  _now(JfrTicks::now()),_cw(cw), _tsw(tsw), _for_removal(only_for_removal()), _stacktrace(stacktrace) {}
 
 static size_t calculate_event_size(const JfrDeprecatedEdge* edge, JfrChunkWriter& cw, const JfrTicks& now, bool stacktrace) {
   assert(edge != nullptr, "invariant");
@@ -141,14 +140,31 @@ static void write_event(const JfrDeprecatedEdge* edge, JfrChunkWriter& cw, const
   cw.write(edge->for_removal());
 }
 
+static void write_type_set(const JfrDeprecatedEdge* edge, JfrCheckpointWriter& tsw) {
+  if (!edge->has_type_set()) {
+    return;
+  }
+  edge->type_set()->exclusive_write(tsw);
+}
+
 bool JfrDeprecatedEventWriter::process(const JfrDeprecatedEdge* edge) {
   assert(edge != nullptr, "invariant");
   if (_for_removal && !edge->for_removal()) {
     return true;
   }
-  write_event(edge, _cw,_now, _stacktrace);
-  if (!_did_write) {
-    _did_write = true;
-  }
+  write_event(edge, _cw, _now, _stacktrace);
+  write_type_set(edge, _tsw);
   return true;
 }
+
+JfrDeprecatedEventClear::JfrDeprecatedEventClear() {}
+
+bool JfrDeprecatedEventClear::process(const JfrDeprecatedEdge* edge) {
+  assert(edge != nullptr, "invariant");
+  if (!edge->has_type_set()) {
+    return true;
+  }
+  edge->type_set()->reset_write_state();
+  return true;
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,19 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
- * @run testng/othervm -Diters=10   -Xint                                                   VarHandleTestAccessString
+ * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessString
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
- * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessString
- * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessString
- * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestAccessString
+ * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessString
+ * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessString
+ * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestAccessString
  */
-
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -43,22 +41,28 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestAccessString extends VarHandleBaseTest {
     static final String static_final_v = "foo";
 
-    static String static_v;
+    static String static_v = "foo";
 
-    final String final_v = "foo";
+    final String final_v;
 
     String v;
 
     static final String static_final_v2 = "foo";
 
-    static String static_v2;
+    static String static_v2 = "foo";
 
-    final String final_v2 = "foo";
+    final String final_v2;
 
     String v2;
 
@@ -73,6 +77,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
     VarHandle vhArray;
 
     VarHandle vhArrayObject;
+
+    public VarHandleTestAccessString() {
+        final_v = "foo";
+        v = "foo";
+        final_v2 = "foo";
+        v2 = "foo";
+        super();
+    }
 
     VarHandle[] allocate(boolean same) {
         List<VarHandle> vhs = new ArrayList<>();
@@ -109,7 +121,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         return vhs.toArray(new VarHandle[0]);
     }
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         vhFinalField = MethodHandles.lookup().findVarHandle(
                 VarHandleTestAccessString.class, "final_v", String.class);
@@ -127,8 +139,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         vhArrayObject = MethodHandles.arrayElementVarHandle(Object[].class);
     }
 
-
-    @DataProvider
     public Object[][] varHandlesProvider() throws Exception {
         List<VarHandle> vhs = new ArrayList<>();
         vhs.add(vhField);
@@ -158,7 +168,8 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         }
     }
 
-    @Test(dataProvider = "varHandlesProvider")
+    @ParameterizedTest
+    @MethodSource("varHandlesProvider")
     public void testIsAccessModeSupported(VarHandle vh) {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
@@ -196,8 +207,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
-
-    @DataProvider
     public Object[][] typesProvider() throws Exception {
         List<Object[]> types = new ArrayList<>();
         types.add(new Object[] {vhField, Arrays.asList(VarHandleTestAccessString.class)});
@@ -207,15 +216,15 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         return types.stream().toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "typesProvider")
+    @ParameterizedTest
+    @MethodSource("typesProvider")
     public void testTypes(VarHandle vh, List<Class<?>> pts) {
-        assertEquals(vh.varType(), String.class);
+        assertEquals(String.class, vh.varType());
 
-        assertEquals(vh.coordinateTypes(), pts);
+        assertEquals(pts, vh.coordinateTypes());
 
         testTypes(vh);
     }
-
 
     @Test
     public void testLookupInstanceToStatic() {
@@ -243,8 +252,6 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
     }
 
-
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -291,7 +298,8 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -304,26 +312,26 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         // Plain
         {
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "get String value");
+            assertEquals("foo", x, "get String value");
         }
 
 
         // Volatile
         {
             String x = (String) vh.getVolatile(recv);
-            assertEquals(x, "foo", "getVolatile String value");
+            assertEquals("foo", x, "getVolatile String value");
         }
 
         // Lazy
         {
             String x = (String) vh.getAcquire(recv);
-            assertEquals(x, "foo", "getRelease String value");
+            assertEquals("foo", x, "getAcquire String value");
         }
 
         // Opaque
         {
             String x = (String) vh.getOpaque(recv);
-            assertEquals(x, "foo", "getOpaque String value");
+            assertEquals("foo", x, "getOpaque String value");
         }
     }
 
@@ -399,26 +407,26 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         // Plain
         {
             String x = (String) vh.get();
-            assertEquals(x, "foo", "get String value");
+            assertEquals("foo", x, "get String value");
         }
 
 
         // Volatile
         {
             String x = (String) vh.getVolatile();
-            assertEquals(x, "foo", "getVolatile String value");
+            assertEquals("foo", x, "getVolatile String value");
         }
 
         // Lazy
         {
             String x = (String) vh.getAcquire();
-            assertEquals(x, "foo", "getRelease String value");
+            assertEquals("foo", x, "getAcquire String value");
         }
 
         // Opaque
         {
             String x = (String) vh.getOpaque();
-            assertEquals(x, "foo", "getOpaque String value");
+            assertEquals("foo", x, "getOpaque String value");
         }
     }
 
@@ -495,7 +503,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         {
             vh.set(recv, "foo");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "set String value");
+            assertEquals("foo", x, "set String value");
         }
 
 
@@ -503,21 +511,21 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         {
             vh.setVolatile(recv, "bar");
             String x = (String) vh.getVolatile(recv);
-            assertEquals(x, "bar", "setVolatile String value");
+            assertEquals("bar", x, "setVolatile String value");
         }
 
         // Lazy
         {
             vh.setRelease(recv, "foo");
             String x = (String) vh.getAcquire(recv);
-            assertEquals(x, "foo", "setRelease String value");
+            assertEquals("foo", x, "setRelease String value");
         }
 
         // Opaque
         {
             vh.setOpaque(recv, "bar");
             String x = (String) vh.getOpaque(recv);
-            assertEquals(x, "bar", "setOpaque String value");
+            assertEquals("bar", x, "setOpaque String value");
         }
 
         vh.set(recv, "foo");
@@ -527,56 +535,56 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             boolean r = vh.compareAndSet(recv, "foo", "bar");
             assertEquals(r, true, "success compareAndSet String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "success compareAndSet String value");
+            assertEquals("bar", x, "success compareAndSet String value");
         }
 
         {
             boolean r = vh.compareAndSet(recv, "foo", "baz");
             assertEquals(r, false, "failing compareAndSet String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "failing compareAndSet String value");
+            assertEquals("bar", x, "failing compareAndSet String value");
         }
 
         {
             String r = (String) vh.compareAndExchange(recv, "bar", "foo");
             assertEquals(r, "bar", "success compareAndExchange String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "success compareAndExchange String value");
+            assertEquals("foo", x, "success compareAndExchange String value");
         }
 
         {
             String r = (String) vh.compareAndExchange(recv, "bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchange String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "failing compareAndExchange String value");
+            assertEquals("foo", x, "failing compareAndExchange String value");
         }
 
         {
             String r = (String) vh.compareAndExchangeAcquire(recv, "foo", "bar");
             assertEquals(r, "foo", "success compareAndExchangeAcquire String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "success compareAndExchangeAcquire String value");
+            assertEquals("bar", x, "success compareAndExchangeAcquire String value");
         }
 
         {
             String r = (String) vh.compareAndExchangeAcquire(recv, "foo", "baz");
             assertEquals(r, "bar", "failing compareAndExchangeAcquire String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "failing compareAndExchangeAcquire String value");
+            assertEquals("bar", x, "failing compareAndExchangeAcquire String value");
         }
 
         {
             String r = (String) vh.compareAndExchangeRelease(recv, "bar", "foo");
             assertEquals(r, "bar", "success compareAndExchangeRelease String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "success compareAndExchangeRelease String value");
+            assertEquals("foo", x, "success compareAndExchangeRelease String value");
         }
 
         {
             String r = (String) vh.compareAndExchangeRelease(recv, "bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchangeRelease String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "failing compareAndExchangeRelease String value");
+            assertEquals("foo", x, "failing compareAndExchangeRelease String value");
         }
 
         {
@@ -587,14 +595,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetPlain String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "success weakCompareAndSetPlain String value");
+            assertEquals("bar", x, "success weakCompareAndSetPlain String value");
         }
 
         {
             boolean success = vh.weakCompareAndSetPlain(recv, "foo", "baz");
             assertEquals(success, false, "failing weakCompareAndSetPlain String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "failing weakCompareAndSetPlain String value");
+            assertEquals("bar", x, "failing weakCompareAndSetPlain String value");
         }
 
         {
@@ -605,14 +613,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "success weakCompareAndSetAcquire String");
+            assertEquals("foo", x, "success weakCompareAndSetAcquire String");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire(recv, "bar", "baz");
             assertEquals(success, false, "failing weakCompareAndSetAcquire String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "failing weakCompareAndSetAcquire String value");
+            assertEquals("foo", x, "failing weakCompareAndSetAcquire String value");
         }
 
         {
@@ -623,14 +631,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetRelease String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "success weakCompareAndSetRelease String");
+            assertEquals("bar", x, "success weakCompareAndSetRelease String");
         }
 
         {
             boolean success = vh.weakCompareAndSetRelease(recv, "foo", "baz");
             assertEquals(success, false, "failing weakCompareAndSetRelease String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "failing weakCompareAndSetRelease String value");
+            assertEquals("bar", x, "failing weakCompareAndSetRelease String value");
         }
 
         {
@@ -641,14 +649,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "success weakCompareAndSet String value");
+            assertEquals("foo", x, "success weakCompareAndSet String value");
         }
 
         {
             boolean success = vh.weakCompareAndSet(recv, "bar", "baz");
             assertEquals(success, false, "failing weakCompareAndSet String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "foo", "failing weakCompareAndSet String value");
+            assertEquals("foo", x, "failing weakCompareAndSet String value");
         }
 
         // Compare set and get
@@ -656,27 +664,27 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             vh.set(recv, "foo");
 
             String o = (String) vh.getAndSet(recv, "bar");
-            assertEquals(o, "foo", "getAndSet String");
+            assertEquals("foo", o, "getAndSet String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "getAndSet String value");
+            assertEquals("bar", x, "getAndSet String value");
         }
 
         {
             vh.set(recv, "foo");
 
             String o = (String) vh.getAndSetAcquire(recv, "bar");
-            assertEquals(o, "foo", "getAndSetAcquire String");
+            assertEquals("foo", o, "getAndSetAcquire String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "getAndSetAcquire String value");
+            assertEquals("bar", x, "getAndSetAcquire String value");
         }
 
         {
             vh.set(recv, "foo");
 
             String o = (String) vh.getAndSetRelease(recv, "bar");
-            assertEquals(o, "foo", "getAndSetRelease String");
+            assertEquals("foo", o, "getAndSetRelease String");
             String x = (String) vh.get(recv);
-            assertEquals(x, "bar", "getAndSetRelease String value");
+            assertEquals("bar", x, "getAndSetRelease String value");
         }
 
 
@@ -739,7 +747,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         {
             vh.set("foo");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "set String value");
+            assertEquals("foo", x, "set String value");
         }
 
 
@@ -747,21 +755,21 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         {
             vh.setVolatile("bar");
             String x = (String) vh.getVolatile();
-            assertEquals(x, "bar", "setVolatile String value");
+            assertEquals("bar", x, "setVolatile String value");
         }
 
         // Lazy
         {
             vh.setRelease("foo");
             String x = (String) vh.getAcquire();
-            assertEquals(x, "foo", "setRelease String value");
+            assertEquals("foo", x, "setRelease String value");
         }
 
         // Opaque
         {
             vh.setOpaque("bar");
             String x = (String) vh.getOpaque();
-            assertEquals(x, "bar", "setOpaque String value");
+            assertEquals("bar", x, "setOpaque String value");
         }
 
         vh.set("foo");
@@ -771,56 +779,56 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             boolean r = vh.compareAndSet("foo", "bar");
             assertEquals(r, true, "success compareAndSet String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "success compareAndSet String value");
+            assertEquals("bar", x, "success compareAndSet String value");
         }
 
         {
             boolean r = vh.compareAndSet("foo", "baz");
             assertEquals(r, false, "failing compareAndSet String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "failing compareAndSet String value");
+            assertEquals("bar", x, "failing compareAndSet String value");
         }
 
         {
             String r = (String) vh.compareAndExchange("bar", "foo");
             assertEquals(r, "bar", "success compareAndExchange String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "success compareAndExchange String value");
+            assertEquals("foo", x, "success compareAndExchange String value");
         }
 
         {
             String r = (String) vh.compareAndExchange("bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchange String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "failing compareAndExchange String value");
+            assertEquals("foo", x, "failing compareAndExchange String value");
         }
 
         {
             String r = (String) vh.compareAndExchangeAcquire("foo", "bar");
             assertEquals(r, "foo", "success compareAndExchangeAcquire String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "success compareAndExchangeAcquire String value");
+            assertEquals("bar", x, "success compareAndExchangeAcquire String value");
         }
 
         {
             String r = (String) vh.compareAndExchangeAcquire("foo", "baz");
             assertEquals(r, "bar", "failing compareAndExchangeAcquire String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "failing compareAndExchangeAcquire String value");
+            assertEquals("bar", x, "failing compareAndExchangeAcquire String value");
         }
 
         {
             String r = (String) vh.compareAndExchangeRelease("bar", "foo");
             assertEquals(r, "bar", "success compareAndExchangeRelease String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "success compareAndExchangeRelease String value");
+            assertEquals("foo", x, "success compareAndExchangeRelease String value");
         }
 
         {
             String r = (String) vh.compareAndExchangeRelease("bar", "baz");
             assertEquals(r, "foo", "failing compareAndExchangeRelease String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "failing compareAndExchangeRelease String value");
+            assertEquals("foo", x, "failing compareAndExchangeRelease String value");
         }
 
         {
@@ -831,14 +839,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetPlain String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "success weakCompareAndSetPlain String value");
+            assertEquals("bar", x, "success weakCompareAndSetPlain String value");
         }
 
         {
             boolean success = vh.weakCompareAndSetPlain("foo", "baz");
             assertEquals(success, false, "failing weakCompareAndSetPlain String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "failing weakCompareAndSetPlain String value");
+            assertEquals("bar", x, "failing weakCompareAndSetPlain String value");
         }
 
         {
@@ -849,14 +857,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "success weakCompareAndSetAcquire String");
+            assertEquals("foo", x, "success weakCompareAndSetAcquire String");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire("bar", "baz");
             assertEquals(success, false, "failing weakCompareAndSetAcquire String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "failing weakCompareAndSetAcquire String value");
+            assertEquals("foo", x, "failing weakCompareAndSetAcquire String value");
         }
 
         {
@@ -867,14 +875,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetRelease String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "success weakCompareAndSetRelease String");
+            assertEquals("bar", x, "success weakCompareAndSetRelease String");
         }
 
         {
             boolean success = vh.weakCompareAndSetRelease("foo", "baz");
             assertEquals(success, false, "failing weakCompareAndSetRelease String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "failing weakCompareAndSetRelease String value");
+            assertEquals("bar", x, "failing weakCompareAndSetRelease String value");
         }
 
         {
@@ -885,14 +893,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "success weakCompareAndSet String");
+            assertEquals("foo", x, "success weakCompareAndSet String");
         }
 
         {
             boolean success = vh.weakCompareAndSet("bar", "baz");
             assertEquals(success, false, "failing weakCompareAndSet String");
             String x = (String) vh.get();
-            assertEquals(x, "foo", "failing weakCompareAndSet String value");
+            assertEquals("foo", x, "failing weakCompareAndSet String value");
         }
 
         // Compare set and get
@@ -900,27 +908,27 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             vh.set("foo");
 
             String o = (String) vh.getAndSet("bar");
-            assertEquals(o, "foo", "getAndSet String");
+            assertEquals("foo", o, "getAndSet String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "getAndSet String value");
+            assertEquals("bar", x, "getAndSet String value");
         }
 
         {
             vh.set("foo");
 
             String o = (String) vh.getAndSetAcquire("bar");
-            assertEquals(o, "foo", "getAndSetAcquire String");
+            assertEquals("foo", o, "getAndSetAcquire String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "getAndSetAcquire String value");
+            assertEquals("bar", x, "getAndSetAcquire String value");
         }
 
         {
             vh.set("foo");
 
             String o = (String) vh.getAndSetRelease("bar");
-            assertEquals(o, "foo", "getAndSetRelease String");
+            assertEquals("foo", o, "getAndSetRelease String");
             String x = (String) vh.get();
-            assertEquals(x, "bar", "getAndSetRelease String value");
+            assertEquals("bar", x, "getAndSetRelease String value");
         }
 
 
@@ -986,7 +994,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             {
                 vh.set(array, i, "foo");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "get String value");
+                assertEquals("foo", x, "get String value");
             }
 
 
@@ -994,21 +1002,21 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
             {
                 vh.setVolatile(array, i, "bar");
                 String x = (String) vh.getVolatile(array, i);
-                assertEquals(x, "bar", "setVolatile String value");
+                assertEquals("bar", x, "setVolatile String value");
             }
 
             // Lazy
             {
                 vh.setRelease(array, i, "foo");
                 String x = (String) vh.getAcquire(array, i);
-                assertEquals(x, "foo", "setRelease String value");
+                assertEquals("foo", x, "setRelease String value");
             }
 
             // Opaque
             {
                 vh.setOpaque(array, i, "bar");
                 String x = (String) vh.getOpaque(array, i);
-                assertEquals(x, "bar", "setOpaque String value");
+                assertEquals("bar", x, "setOpaque String value");
             }
 
             vh.set(array, i, "foo");
@@ -1018,56 +1026,56 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
                 boolean r = vh.compareAndSet(array, i, "foo", "bar");
                 assertEquals(r, true, "success compareAndSet String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "success compareAndSet String value");
+                assertEquals("bar", x, "success compareAndSet String value");
             }
 
             {
                 boolean r = vh.compareAndSet(array, i, "foo", "baz");
                 assertEquals(r, false, "failing compareAndSet String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "failing compareAndSet String value");
+                assertEquals("bar", x, "failing compareAndSet String value");
             }
 
             {
                 String r = (String) vh.compareAndExchange(array, i, "bar", "foo");
                 assertEquals(r, "bar", "success compareAndExchange String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "success compareAndExchange String value");
+                assertEquals("foo", x, "success compareAndExchange String value");
             }
 
             {
                 String r = (String) vh.compareAndExchange(array, i, "bar", "baz");
                 assertEquals(r, "foo", "failing compareAndExchange String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "failing compareAndExchange String value");
+                assertEquals("foo", x, "failing compareAndExchange String value");
             }
 
             {
                 String r = (String) vh.compareAndExchangeAcquire(array, i, "foo", "bar");
                 assertEquals(r, "foo", "success compareAndExchangeAcquire String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "success compareAndExchangeAcquire String value");
+                assertEquals("bar", x, "success compareAndExchangeAcquire String value");
             }
 
             {
                 String r = (String) vh.compareAndExchangeAcquire(array, i, "foo", "baz");
                 assertEquals(r, "bar", "failing compareAndExchangeAcquire String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "failing compareAndExchangeAcquire String value");
+                assertEquals("bar", x, "failing compareAndExchangeAcquire String value");
             }
 
             {
                 String r = (String) vh.compareAndExchangeRelease(array, i, "bar", "foo");
                 assertEquals(r, "bar", "success compareAndExchangeRelease String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "success compareAndExchangeRelease String value");
+                assertEquals("foo", x, "success compareAndExchangeRelease String value");
             }
 
             {
                 String r = (String) vh.compareAndExchangeRelease(array, i, "bar", "baz");
                 assertEquals(r, "foo", "failing compareAndExchangeRelease String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "failing compareAndExchangeRelease String value");
+                assertEquals("foo", x, "failing compareAndExchangeRelease String value");
             }
 
             {
@@ -1078,14 +1086,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetPlain String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "success weakCompareAndSetPlain String value");
+                assertEquals("bar", x, "success weakCompareAndSetPlain String value");
             }
 
             {
                 boolean success = vh.weakCompareAndSetPlain(array, i, "foo", "baz");
                 assertEquals(success, false, "failing weakCompareAndSetPlain String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "failing weakCompareAndSetPlain String value");
+                assertEquals("bar", x, "failing weakCompareAndSetPlain String value");
             }
 
             {
@@ -1096,14 +1104,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "success weakCompareAndSetAcquire String");
+                assertEquals("foo", x, "success weakCompareAndSetAcquire String");
             }
 
             {
                 boolean success = vh.weakCompareAndSetAcquire(array, i, "bar", "baz");
                 assertEquals(success, false, "failing weakCompareAndSetAcquire String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "failing weakCompareAndSetAcquire String value");
+                assertEquals("foo", x, "failing weakCompareAndSetAcquire String value");
             }
 
             {
@@ -1114,14 +1122,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetRelease String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "success weakCompareAndSetRelease String");
+                assertEquals("bar", x, "success weakCompareAndSetRelease String");
             }
 
             {
                 boolean success = vh.weakCompareAndSetRelease(array, i, "foo", "baz");
                 assertEquals(success, false, "failing weakCompareAndSetRelease String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "failing weakCompareAndSetRelease String value");
+                assertEquals("bar", x, "failing weakCompareAndSetRelease String value");
             }
 
             {
@@ -1132,14 +1140,14 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSet String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "success weakCompareAndSet String");
+                assertEquals("foo", x, "success weakCompareAndSet String");
             }
 
             {
                 boolean success = vh.weakCompareAndSet(array, i, "bar", "baz");
                 assertEquals(success, false, "failing weakCompareAndSet String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "foo", "failing weakCompareAndSet String value");
+                assertEquals("foo", x, "failing weakCompareAndSet String value");
             }
 
             // Compare set and get
@@ -1147,27 +1155,27 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
                 vh.set(array, i, "foo");
 
                 String o = (String) vh.getAndSet(array, i, "bar");
-                assertEquals(o, "foo", "getAndSet String");
+                assertEquals("foo", o, "getAndSet String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "getAndSet String value");
+                assertEquals("bar", x, "getAndSet String value");
             }
 
             {
                 vh.set(array, i, "foo");
 
                 String o = (String) vh.getAndSetAcquire(array, i, "bar");
-                assertEquals(o, "foo", "getAndSetAcquire String");
+                assertEquals("foo", o, "getAndSetAcquire String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "getAndSetAcquire String value");
+                assertEquals("bar", x, "getAndSetAcquire String value");
             }
 
             {
                 vh.set(array, i, "foo");
 
                 String o = (String) vh.getAndSetRelease(array, i, "bar");
-                assertEquals(o, "foo", "getAndSetRelease String");
+                assertEquals("foo", o, "getAndSetRelease String");
                 String x = (String) vh.get(array, i);
-                assertEquals(x, "bar", "getAndSetRelease String value");
+                assertEquals("bar", x, "getAndSetRelease String value");
             }
 
 
@@ -1340,57 +1348,57 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.compareAndSet(array, 0, "foo", value);
         });
 
         // WeakCompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetPlain(array, 0, "foo", value);
         });
 
         // WeakCompareAndSetVolatile
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSet(array, 0, "foo", value);
         });
 
         // WeakCompareAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(array, 0, "foo", value);
         });
 
         // WeakCompareAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, 0, "foo", value);
         });
 
         // CompareAndExchange
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.compareAndExchange(array, 0, "foo", value);
         });
 
         // CompareAndExchangeAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.compareAndExchangeAcquire(array, 0, "foo", value);
         });
 
         // CompareAndExchangeRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.compareAndExchangeRelease(array, 0, "foo", value);
         });
 
         // GetAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.getAndSet(array, 0, value);
         });
 
         // GetAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.getAndSetAcquire(array, 0, value);
         });
 
         // GetAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.getAndSetRelease(array, 0, value);
         });
     }

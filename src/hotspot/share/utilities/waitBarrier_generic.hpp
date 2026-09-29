@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -38,15 +39,15 @@ private:
     // This would insulate from stalls when adjacent cells have returning
     // workers and contend over the cache line for current latency-critical
     // cell.
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
 
     Semaphore _sem;
 
     // Cell state, tracks the arming + waiters status
-    volatile int64_t _state;
+    Atomic<int64_t> _state;
 
     // Wakeups to deliver for current waiters
-    volatile int _outstanding_wakeups;
+    Atomic<int> _outstanding_wakeups;
 
     int signal_if_needed(int max);
 
@@ -81,14 +82,14 @@ private:
   Cell _cells[CELLS_COUNT];
 
   // Trailing padding to protect the last cell.
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
 
-  volatile int _barrier_tag;
+  Atomic<int> _barrier_tag;
 
   // Trailing padding to insulate the rest of the barrier from adjacent
   // data structures. The leading padding is not needed, as cell padding
   // handles this for us.
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
 
   NONCOPYABLE(GenericWaitBarrier);
 

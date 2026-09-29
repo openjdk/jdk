@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.PreviewFeatures;
+import jdk.internal.value.Deserializer;
+import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
@@ -34,13 +38,13 @@ import java.lang.constant.DynamicConstantDesc;
 import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
-import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_short;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**
- * The {@code Short} class wraps a value of primitive type {@code
- * short} in an object.  An object of type {@code Short} contains a
+ * The {@code Short} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code short}. An object of type {@code Short} contains a
  * single field whose type is {@code short}.
  *
  * <p>In addition, this class provides several methods for converting
@@ -49,18 +53,26 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * dealing with a {@code short}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
  *
- * @author  Nakul Saraiya
- * @author  Joseph D. Darcy
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Short} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
+ *
  * @see     java.lang.Number
  * @since   1.1
  */
 @jdk.internal.ValueBased
-public final class Short extends Number implements Comparable<Short>, Constable {
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Short extends Number
+        implements Comparable<Short>, Constable {
 
     /**
      * A constant holding the minimum value a {@code short} can
@@ -78,8 +90,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * The {@code Class} instance representing the primitive type
      * {@code short}.
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Short>    TYPE = (Class<Short>) Class.getPrimitiveClass("short");
+    public static final Class<Short> TYPE = Class.getPrimitiveClass("short");
 
     /**
      * Returns a new {@code String} object representing the
@@ -232,6 +243,10 @@ public final class Short extends Number implements Comparable<Short>, Constable 
         return Optional.of(DynamicConstantDesc.ofNamed(BSM_EXPLICIT_CAST, DEFAULT_NAME, CD_short, intValue()));
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
+    @AOTSafeClassInitializer
     private static final class ShortCache {
         private ShortCache() {}
 
@@ -244,8 +259,8 @@ public final class Short extends Number implements Comparable<Short>, Constable 
 
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(ShortCache.class);
-            if (archivedCache == null || archivedCache.length != size) {
-                Short[] c = new Short[size];
+            if (archivedCache == null) {
+                Short[] c = newCacheArray(size);
                 short value = -128;
                 for(int i = 0; i < size; i++) {
                     c[i] = new Short(value++);
@@ -253,20 +268,40 @@ public final class Short extends Number implements Comparable<Short>, Constable 
                 archivedCache = c;
             }
             cache = archivedCache;
+            assert cache.length == size;
+        }
+
+        private static Short[] newCacheArray(int size) {
+            // ValueClass.newReferenceArray requires a value class component.
+            if (PreviewFeatures.isEnabled()) {
+                return (Short[]) ValueClass.newReferenceArray(Short.class, size);
+            }
+            return new Short[size];
         }
     }
 
     /**
      * Returns a {@code Short} instance representing the specified
      * {@code short} value.
-     * If a new {@code Short} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Short(short)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
-     *
-     * This method will always cache values in the range -128 to 127,
-     * inclusive, and may cache other values outside of this range.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Short} is an identity class.
+     *              If a new {@code Short} instance is not required, this method
+     *              should generally be used in preference to the constructor
+     *              {@link #Short(short)}, as this method is likely to yield
+     *              significantly better space and time performance by caching
+     *              frequently requested values.
+     *              This method will always cache values in the range -128 to 127,
+     *              inclusive, and may cache other values outside of this range.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Short} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor,
+     *              whether cached or not.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  s a short value.
      * @return a {@code Short} instance representing {@code s}.
@@ -351,7 +386,8 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * {@link #valueOf(short)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
+    @Deserializer("value")
     public Short(short value) {
         this.value = value;
     }
@@ -374,7 +410,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * {@code short} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Short} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Short(String s) throws NumberFormatException {
         this.value = parseShort(s, 10);
     }
@@ -482,8 +518,8 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      *                  {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Short) {
-            return value == ((Short)obj).shortValue();
+        if (obj instanceof Short s) {
+            return value == s.shortValue();
         }
         return false;
     }

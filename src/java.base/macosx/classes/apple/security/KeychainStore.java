@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.security.spec.*;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import javax.crypto.*;
@@ -42,19 +44,79 @@ import sun.security.util.*;
 import sun.security.x509.*;
 
 /**
- * This class provides the keystore implementation referred to as "KeychainStore".
- * It uses the current user's keychain as its backing storage, and does NOT support
- * a file-based implementation.
+ * This class provides the keystore implementations referred to as
+ * "KeychainStore" and "KeychainStore-ROOT".
+ * They use the current user's and system root keychains accordingly
+ * as their backing storage, and does NOT support a file-based
+ * implementation.
  */
 
-public final class KeychainStore extends KeyStoreSpi {
+abstract sealed class KeychainStore extends KeyStoreSpi {
+
+    /**
+     * Current user's keychain
+     */
+    public static final class USER extends KeychainStore {
+        public USER() {
+            super("USER");
+        }
+
+    }
+
+    /**
+     * System root read-only keychain
+     *
+     */
+    public static final class ROOT extends KeychainStore {
+        public ROOT() {
+            super("ROOT");
+        }
+
+        /**
+         * Delete operation is not permitted for trusted anchors
+         */
+        public void engineDeleteEntry(String alias)
+                throws KeyStoreException
+        {
+            throw new KeyStoreException("Trusted entry <" + alias + "> can not be removed");
+        }
+
+        /**
+         * Changes are not permitted for trusted anchors
+         */
+        public void engineSetKeyEntry(String alias, Key key, char[] password,
+                                      Certificate[] chain)
+                throws KeyStoreException
+        {
+            throw new KeyStoreException("Trusted entry <" + alias + "> can not be modified");
+        }
+
+        /**
+         * Changes are not permitted for trusted anchors
+         */
+        public void engineSetKeyEntry(String alias, byte[] key,
+                                      Certificate[] chain)
+                throws KeyStoreException
+        {
+            throw new KeyStoreException("Trusted entry <" + alias + "> can not be modified");
+        }
+
+        /**
+         * Changes are not permitted for trusted anchors
+         */
+        public void engineStore(OutputStream stream, char[] password)
+                throws IOException, NoSuchAlgorithmException, CertificateException
+        {
+            // do nothing, no changes allowed
+        }
+    }
 
     // Private keys and their supporting certificate chains
     // If a key came from the keychain it has a SecKeyRef and one or more
     // SecCertificateRef.  When we delete the key we have to delete all of the corresponding
     // native objects.
     static class KeyEntry {
-        Date date; // the creation date of this entry
+        Instant date; // the creation instant of this entry
         byte[] protectedPrivKey;
         char[] password;
         long keyRef;  // SecKeyRef for this key
@@ -64,7 +126,7 @@ public final class KeychainStore extends KeyStoreSpi {
 
     // Trusted certificates
     static class TrustedCertEntry {
-        Date date; // the creation date of this entry
+        Instant date; // the creation instant of this entry
 
         Certificate cert;
         long certRef;  // SecCertificateRef for this key
@@ -128,15 +190,7 @@ public final class KeychainStore extends KeyStoreSpi {
         jdk.internal.loader.BootLoader.loadLibrary("osxsecurity");
     }
 
-    private static void permissionCheck() {
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-
-        if (sec != null) {
-            sec.checkPermission(new RuntimePermission("useKeychainStore"));
-        }
-    }
-
+    private final String storeName;
 
     /**
      * Verify the Apple provider in the constructor.
@@ -144,7 +198,9 @@ public final class KeychainStore extends KeyStoreSpi {
      * @exception SecurityException if fails to verify
      * its own integrity
      */
-    public KeychainStore() { }
+    private KeychainStore(String name) {
+        this.storeName = name;
+    }
 
     /**
      * Returns the key associated with the given alias, using the given
@@ -165,8 +221,6 @@ public final class KeychainStore extends KeyStoreSpi {
     public Key engineGetKey(String alias, char[] password)
         throws NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        permissionCheck();
-
         // An empty password is rejected by MacOS API, no private key data
         // is exported. If no password is passed (as is the case when
         // this implementation is used as browser keystore in various
@@ -269,8 +323,6 @@ public final class KeychainStore extends KeyStoreSpi {
      * <i>key entry</i> without a certificate chain).
      */
     public Certificate[] engineGetCertificateChain(String alias) {
-        permissionCheck();
-
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (entry instanceof KeyEntry keyEntry) {
@@ -300,8 +352,6 @@ public final class KeychainStore extends KeyStoreSpi {
      * does not contain a certificate.
      */
     public Certificate engineGetCertificate(String alias) {
-        permissionCheck();
-
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (entry != null) {
@@ -357,15 +407,32 @@ public final class KeychainStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-        permissionCheck();
+        final Instant instant = this.engineGetCreationInstant(alias);
+        if (instant == null) {
+            return null;
+        }
+        return Date.from(instant);
+    }
 
-        Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
+    /**
+     * Returns the instant that the entry identified by the given alias was
+     * created.
+     *
+     * @param alias the alias name
+     *
+     * @return the instant that the entry identified by the given alias
+     * was created, or {@code null} if the given alias does not exist
+     *
+     * @since 27
+     */
+    public Instant engineGetCreationInstant(String alias) {
+        final Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (entry != null) {
-            if (entry instanceof TrustedCertEntry) {
-                return new Date(((TrustedCertEntry)entry).date.getTime());
+            if (entry instanceof TrustedCertEntry trustedCertEntry) {
+                return trustedCertEntry.date;
             } else {
-                return new Date(((KeyEntry)entry).date.getTime());
+                return ((KeyEntry)entry).date;
             }
         } else {
             return null;
@@ -398,12 +465,10 @@ public final class KeychainStore extends KeyStoreSpi {
                                   Certificate[] chain)
         throws KeyStoreException
     {
-        permissionCheck();
-
         synchronized(entries) {
             try {
                 KeyEntry entry = new KeyEntry();
-                entry.date = new Date();
+                entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                 if (key instanceof PrivateKey) {
                     if ((key.getFormat().equals("PKCS#8")) ||
@@ -469,8 +534,6 @@ public final class KeychainStore extends KeyStoreSpi {
                                   Certificate[] chain)
         throws KeyStoreException
     {
-        permissionCheck();
-
         synchronized(entries) {
             // key must be encoded as EncryptedPrivateKeyInfo as defined in
             // PKCS#8
@@ -483,7 +546,7 @@ public final class KeychainStore extends KeyStoreSpi {
                                             + "EncryptedPrivateKeyInfo");
             }
 
-            entry.date = new Date();
+            entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
             if ((chain != null) &&
                 (chain.length != 0)) {
@@ -519,8 +582,6 @@ public final class KeychainStore extends KeyStoreSpi {
     public void engineDeleteEntry(String alias)
         throws KeyStoreException
     {
-        permissionCheck();
-
         String lowerAlias = alias.toLowerCase(Locale.ROOT);
         synchronized(entries) {
             Object entry = entries.remove(lowerAlias);
@@ -534,7 +595,6 @@ public final class KeychainStore extends KeyStoreSpi {
      * @return enumeration of the alias names
      */
     public Enumeration<String> engineAliases() {
-        permissionCheck();
         return entries.keys();
     }
 
@@ -546,7 +606,6 @@ public final class KeychainStore extends KeyStoreSpi {
      * @return true if the alias exists, false otherwise
      */
     public boolean engineContainsAlias(String alias) {
-        permissionCheck();
         return entries.containsKey(alias.toLowerCase(Locale.ROOT));
     }
 
@@ -556,7 +615,6 @@ public final class KeychainStore extends KeyStoreSpi {
      * @return the number of entries in this keystore
      */
     public int engineSize() {
-        permissionCheck();
         return entries.size();
     }
 
@@ -568,7 +626,6 @@ public final class KeychainStore extends KeyStoreSpi {
      * <i>key entry</i>, false otherwise.
      */
     public boolean engineIsKeyEntry(String alias) {
-        permissionCheck();
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
         return entry instanceof KeyEntry;
     }
@@ -581,7 +638,6 @@ public final class KeychainStore extends KeyStoreSpi {
      * <i>trusted certificate entry</i>, false otherwise.
      */
     public boolean engineIsCertificateEntry(String alias) {
-        permissionCheck();
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
         return entry instanceof TrustedCertEntry;
     }
@@ -603,7 +659,6 @@ public final class KeychainStore extends KeyStoreSpi {
      * or null if no such entry exists in this keystore.
      */
     public String engineGetCertificateAlias(Certificate cert) {
-        permissionCheck();
         Certificate certElem;
 
         for (Enumeration<String> e = entries.keys(); e.hasMoreElements(); ) {
@@ -641,8 +696,6 @@ public final class KeychainStore extends KeyStoreSpi {
     public void engineStore(OutputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        permissionCheck();
-
         // Delete items that do have a keychain item ref.
         for (Enumeration<String> e = deletedEntries.keys(); e.hasMoreElements(); ) {
             String alias = e.nextElement();
@@ -732,8 +785,6 @@ public final class KeychainStore extends KeyStoreSpi {
     public void engineLoad(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        permissionCheck();
-
         // Release any stray keychain references before clearing out the entries.
         synchronized(entries) {
             for (Enumeration<String> e = entries.keys(); e.hasMoreElements(); ) {
@@ -761,7 +812,7 @@ public final class KeychainStore extends KeyStoreSpi {
             }
 
             entries.clear();
-            _scanKeychain();
+            _scanKeychain(storeName);
             if (debug != null) {
                 debug.println("KeychainStore load entry count: " +
                         entries.size());
@@ -769,7 +820,7 @@ public final class KeychainStore extends KeyStoreSpi {
         }
     }
 
-    private native void _scanKeychain();
+    private native void _scanKeychain(String name);
 
     /**
      * Callback method from _scanKeychain.  If a trusted certificate is found,
@@ -807,7 +858,7 @@ public final class KeychainStore extends KeyStoreSpi {
             // Check whether a certificate with same alias already exists and is the same
             // If yes, we can return here - the existing entry must have the same
             // properties and trust settings
-            if (entries.contains(alias.toLowerCase(Locale.ROOT))) {
+            if (entries.containsKey(alias.toLowerCase(Locale.ROOT))) {
                 int uniqueVal = 1;
                 String originalAlias = alias;
                 var co = entries.get(alias.toLowerCase(Locale.ROOT));
@@ -897,9 +948,9 @@ public final class KeychainStore extends KeyStoreSpi {
 
             // Make a creation date.
             if (creationDate != 0)
-                tce.date = new Date(creationDate);
+                tce.date = Instant.ofEpochMilli(creationDate);
             else
-                tce.date = new Date();
+                tce.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
             entries.put(alias.toLowerCase(Locale.ROOT), tce);
         } catch (Exception e) {
@@ -922,9 +973,9 @@ public final class KeychainStore extends KeyStoreSpi {
 
         // Make a creation date.
         if (creationDate != 0)
-            ke.date = new Date(creationDate);
+            ke.date = Instant.ofEpochMilli(creationDate);
         else
-            ke.date = new Date();
+            ke.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
         // Next, create X.509 Certificate objects from the raw data.  This is complicated
         // because a certificate's public key may be too long for Java's default encryption strength.

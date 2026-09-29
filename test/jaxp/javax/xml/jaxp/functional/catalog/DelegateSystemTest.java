@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,32 @@
 
 package catalog;
 
-import static catalog.CatalogTestUtils.catalogResolver;
-import static catalog.ResolutionChecker.checkSysIdResolution;
-import static catalog.ResolutionChecker.expectExceptionOnSysId;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogResolver;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import static catalog.CatalogTestUtils.catalogResolver;
+import static catalog.ResolutionChecker.checkSysIdResolution;
+import static catalog.ResolutionChecker.expectExceptionOnSysId;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.DelegateSystemTest
- * @run testng/othervm catalog.DelegateSystemTest
+ * @run junit/othervm catalog.DelegateSystemTest
  * @summary Get matched URIs from delegateSystem entries.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class DelegateSystemTest {
 
-    @Test(dataProvider = "systemId-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnMatch")
     public void testMatch(String systemId, String matchedUri) {
         checkSysIdResolution(createResolver(), systemId, matchedUri);
     }
 
-    @DataProvider(name = "systemId-matchedUri")
-    public Object[][] dataOnMatch() {
+    public static Object[][] dataOnMatch() {
         return new Object[][] {
                 // The matched URI of the specified system id is defined in
                 // a delegate catalog file of the current catalog file.
@@ -74,15 +71,15 @@ public class DelegateSystemTest {
                         "http://local/base/dtd/carl/docCarlDS.dtd"} };
     }
 
-    @Test(dataProvider = "systemId-expectedExceptionClass")
+    @ParameterizedTest
+    @MethodSource("dataOnException")
     public void testException(String systemId,
             Class<? extends Throwable> expectedExceptionClass) {
         expectExceptionOnSysId(createResolver(), systemId,
                 expectedExceptionClass);
     }
 
-    @DataProvider(name = "systemId-expectedExceptionClass")
-    public Object[][] dataOnException() {
+    public static Object[][] dataOnException() {
         return new Object[][] {
                 // The matched delegateSystem entry of the specified system id
                 // defines a non-existing delegate catalog file. That should
@@ -96,7 +93,7 @@ public class DelegateSystemTest {
                         CatalogException.class } };
     }
 
-    private CatalogResolver createResolver() {
+    private static CatalogResolver createResolver() {
         return catalogResolver("delegateSystem.xml");
     }
 }

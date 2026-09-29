@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  *
- * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /testlibrary/asm
  * @library /vmTestbase /test/lib
  *
  * @comment build retransform.jar in current dir
@@ -45,7 +45,7 @@ import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
+import static org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
@@ -82,6 +82,8 @@ public class ConflictingDefaultsTest extends DefMethTest {
      * class C implements I, J {}
      *
      * TEST: C c = new C(); c.m() ==> ICCE
+     * TEST: I c = new C(); c.m() ==> ICCE
+     * TEST: J c = new C(); c.m() ==> ICCE
      */
     public void testConflict(TestBuilder b) {
         Interface I = b.intf("I")
@@ -95,7 +97,13 @@ public class ConflictingDefaultsTest extends DefMethTest {
         ConcreteClass C = b.clazz("C").implement(I,J).build();
 
         b.test().callSite(C, C, "m","()I")
-                .throws_(IncompatibleClassChangeError.class)
+                .throwsExact(IncompatibleClassChangeError.class)
+            .done()
+         .test().callSite(I, C, "m","()I")
+                .throwsExact(IncompatibleClassChangeError.class)
+            .done()
+         .test().callSite(J, C, "m","()I")
+                .throwsExact(IncompatibleClassChangeError.class)
             .done();
     }
 
@@ -145,7 +153,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
         ConcreteClass C = b.clazz("C").implement(J).build();
 
         b.test().callSite(C, C, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done();
     }
 
@@ -177,16 +185,16 @@ public class ConflictingDefaultsTest extends DefMethTest {
             .build();
 
         b.test().callSite(C, C, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done()
          .test().callSite(J, C, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done()
          .test().callSite(I, C, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done()
          .test().callSite(D, D, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done();
     }
 
@@ -218,7 +226,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
         ConcreteClass C = b.clazz("C").extend(A).implement(K).build();
 
         b.test().callSite(A, C, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done();
     }
 
@@ -259,13 +267,13 @@ public class ConflictingDefaultsTest extends DefMethTest {
         ConcreteClass D = b.clazz("D").extend(C).implement(L).build();
 
         b.test().callSite(I, A, "m","()I")
-                .throws_(IncompatibleClassChangeError.class)
+                .throwsExact(IncompatibleClassChangeError.class)
             .done()
          .test().callSite(K, C, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done()
          .test().callSite(L, D, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done();
     }
 
@@ -307,10 +315,10 @@ public class ConflictingDefaultsTest extends DefMethTest {
             .build();
 
         b.test().callSite(I, A, "m","()I")
-                .throws_(IncompatibleClassChangeError.class)
+                .throwsExact(IncompatibleClassChangeError.class)
             .done()
          .test().callSite(L, D, "m","()I")
-                .throws_(AbstractMethodError.class)
+                .throwsExact(AbstractMethodError.class)
             .done();
     }
 
@@ -370,22 +378,22 @@ public class ConflictingDefaultsTest extends DefMethTest {
         }
 
          b.test().callSite(A, C, "m", "()I")
-                 .throws_(expectedError2)
+                 .throwsExact(expectedError2)
              .done()
           .test().callSite(C, C, "m", "()I")
-                 .throws_(expectedError2)
+                 .throwsExact(expectedError2)
              .done()
           .test().callSite(J, C, "m", "()I")
-                 .throws_(expectedError1)
+                 .throwsExact(expectedError1)
              .done()
           .test().callSite(I, C, "m", "()I")
-                 .throws_(expectedError1)
+                 .throwsExact(expectedError1)
              .done()
           .test().callSite(C, C, "test_Cmethod_ISMR", "()V")
-                 .throws_(expectedError2)
+                 .throwsExact(expectedError2)
              .done()
           .test().callSite(A, C, "test_Amethod_ISIMR", "()V")
-                 .throws_(expectedError2)
+                 .throwsExact(expectedError2)
              .done();
     }
 
@@ -486,13 +494,13 @@ public class ConflictingDefaultsTest extends DefMethTest {
         .test()
                 .callSite(I, C, "m","(I)I")
                 .params(0)
-                .throws_(NoSuchMethodError.class)
+                .throwsExact(NoSuchMethodError.class)
             .done()
 
         // J j = new C(); ...
         .test()
                 .callSite(J, C, "m","()I")
-                .throws_(NoSuchMethodError.class)
+                .throwsExact(NoSuchMethodError.class)
             .done()
         .test()
                 .callSite(J, C, "m","(I)I")
@@ -539,19 +547,19 @@ public class ConflictingDefaultsTest extends DefMethTest {
         // I i = new C(); ...
         b.test()
                 .callSite(I, C, "m","()I")
-                .throws_(IncompatibleClassChangeError.class)
+                .throwsExact(IncompatibleClassChangeError.class)
             .done()
 
         // J j = new C(); ...
         .test()
                 .callSite(J, C, "m","()I")
-                .throws_(IncompatibleClassChangeError.class)
+                .throwsExact(IncompatibleClassChangeError.class)
             .done()
 
         // C c = new C(); ...
         .test()
                 .callSite(C, C, "m","()I")
-                .throws_(IncompatibleClassChangeError.class)
+                .throwsExact(IncompatibleClassChangeError.class)
             .done()
         .test()
                 .callSite(C, C, "m","(I)I")

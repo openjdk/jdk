@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,12 @@
 package javax.management.modelmbean;
 
 import static com.sun.jmx.defaults.JmxProperties.MODELMBEAN_LOGGER;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.lang.reflect.Constructor;
-import java.security.AccessController;
 import java.lang.System.Logger.Level;
 
 import javax.management.Descriptor;
@@ -89,63 +87,18 @@ import javax.management.RuntimeOperationsException;
  *
  * @since 1.5
  */
-
-@SuppressWarnings("serial")  // serialVersionUID is not constant
 public class ModelMBeanConstructorInfo
     extends MBeanConstructorInfo
     implements DescriptorAccess {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = -4440125391095574518L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = 3862947819818064362L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-      new ObjectStreamField("consDescriptor", Descriptor.class),
-      new ObjectStreamField("currClass", String.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-      new ObjectStreamField("consDescriptor", Descriptor.class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
-    /**
-     * @serialField consDescriptor Descriptor The {@link Descriptor} containing the metadata for this instance
-     */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK: No compat with 1.0
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-    //
-    // END Serialization compatibility stuff
+        private static final long serialVersionUID = 3862947819818064362L;
+        /**
+         * @serialField consDescriptor Descriptor The {@link Descriptor} containing the metadata for this instance
+         */
+        private static final ObjectStreamField[] serialPersistentFields =
+        {
+          new ObjectStreamField("consDescriptor", Descriptor.class)
+        };
 
         /**
          * @serial The {@link Descriptor} containing the metadata for this instance
@@ -464,21 +417,7 @@ public class ModelMBeanConstructorInfo
      */
     private void writeObject(ObjectOutputStream out)
             throws IOException {
-      if (compat)
-      {
-        // Serializes this instance in the old serial form
-        //
-        ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("consDescriptor", consDescriptor);
-        fields.put("currClass", currClass);
-        out.writeFields();
-      }
-      else
-      {
-        // Serializes this instance in the new serial form
-        //
-        out.defaultWriteObject();
-      }
+      out.defaultWriteObject();
     }
 
 }

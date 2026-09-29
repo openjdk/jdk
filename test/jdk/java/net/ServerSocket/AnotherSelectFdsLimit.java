@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8035897
  * @summary FD_SETSIZE should be set on macosx
+ * @requires os.family == "mac"
  * @run main/othervm AnotherSelectFdsLimit 1023
  * @run main/othervm AnotherSelectFdsLimit 1024
  * @run main/othervm AnotherSelectFdsLimit 1025
@@ -41,10 +42,6 @@ public class AnotherSelectFdsLimit {
     static final int DEFAULT_FDS_TO_USE = 1600;
 
     public static void main(String [] args) throws Exception {
-        if (!System.getProperty("os.name").contains("OS X")) {
-            System.out.println("Test only run on MAC. Exiting.");
-            return;
-        }
 
         int fdsToUse = DEFAULT_FDS_TO_USE;
         if (args.length == 1)

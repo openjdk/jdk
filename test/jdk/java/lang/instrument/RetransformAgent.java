@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,15 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6274264 6274241 5070281
- * @summary test retransformClasses
- * @author Robert Field, Sun Microsystems
- *
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
- * @run shell/timeout=240 MakeJAR2.sh RetransformAgent RetransformApp 'Can-Retransform-Classes: true'
- * @run main/othervm -javaagent:RetransformAgent.jar RetransformApp
- */
-
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 import java.io.*;
 import asmlib.*;
+
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.CD_void;
 
 class RetransformAgent {
 
@@ -48,6 +41,8 @@ class RetransformAgent {
                                11, 40, 20, 11, 40, 20, 11, 40, 20, 11, 40, 20};
 
     static class Tr implements ClassFileTransformer {
+        private static final ClassDesc CD_RetransformAgent = RetransformAgent.class.describeConstable().orElseThrow();
+        private static final MethodTypeDesc MTD_void_int = MethodTypeDesc.of(CD_void, CD_int);
         final String trname;
         final boolean onLoad;
         final int loadIndex;
@@ -83,9 +78,11 @@ class RetransformAgent {
                     byte[] newcf = Instrumentor.instrFor(classfileBuffer)
                                    .addMethodEntryInjection(
                                         nname,
-                                        (h)->{
-                                           h.push(fixedIndex);
-                                           h.invokeStatic("RetransformAgent", "callTracker", "(I)V", false);
+                                        cb -> {
+                                           cb.loadConstant(fixedIndex);
+                                           cb.invokestatic(
+                                                   CD_RetransformAgent,
+                                                   "callTracker", MTD_void_int);
                                         })
                                    .apply();
                     /*** debugging ...

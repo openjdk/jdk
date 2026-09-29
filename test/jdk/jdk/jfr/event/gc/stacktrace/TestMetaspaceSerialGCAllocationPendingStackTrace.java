@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,14 @@ package jdk.jfr.event.gc.stacktrace;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  *
  * @requires vm.gc == "null" | vm.gc == "Serial"
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseSerialGC -Xlog:gc* -XX:MaxMetaspaceSize=64M jdk.jfr.event.gc.stacktrace.TestMetaspaceSerialGCAllocationPendingStackTrace
+ * @run main/othervm -XX:+UseSerialGC -Xlog:gc* -XX:MaxMetaspaceSize=64M
+ *                   -XX:FlightRecorderOptions:stackdepth=256
+ *                   jdk.jfr.event.gc.stacktrace.TestMetaspaceSerialGCAllocationPendingStackTrace
  */
 public class TestMetaspaceSerialGCAllocationPendingStackTrace {
 

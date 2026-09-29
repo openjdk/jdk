@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
 #include "runtime/frame.hpp"
 
 #include "code/codeBlob.inline.hpp"
-#include "code/compiledMethod.inline.hpp"
+#include "code/nmethod.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "oops/stackChunkOop.inline.hpp"
 #include "oops/method.hpp"
+#include "oops/stackChunkOop.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -64,11 +64,37 @@ inline bool frame::is_upcall_stub_frame() const {
 
 inline bool frame::is_compiled_frame() const {
   if (_cb != nullptr &&
-      _cb->is_compiled() &&
-      ((CompiledMethod*)_cb)->is_java_method()) {
+      _cb->is_nmethod() &&
+      _cb->as_nmethod()->is_java_method()) {
     return true;
   }
   return false;
+}
+
+inline address frame::get_deopt_original_pc() const {
+  if (_cb == nullptr)  return nullptr;
+
+  nmethod* nm = _cb->as_nmethod_or_null();
+  if (nm != nullptr && nm->is_deopt_pc(_pc)) {
+    address original_pc = nm->get_original_pc(this);
+    assert(nm->insts_contains_inclusive(original_pc),
+           "original PC must be in the main code section of the compiled method (or must be immediately following it)");
+    return original_pc;
+  }
+  return nullptr;
+}
+
+inline bool frame::is_deoptimized_frame() const {
+  assert(_deopt_state != unknown, "not answerable");
+  return _deopt_state == is_deoptimized;
+}
+
+inline void frame::set_deoptimized() {
+  assert(is_compiled_frame(), "invalid operation");
+  assert(_cb == CodeCache::find_blob(_pc), "invalid _pc");
+  DEBUG_ONLY(nmethod* nm = _cb->as_nmethod();)
+  assert(!nm->is_deopt_pc(_pc) && nm->get_original_pc(this) == _pc, "wrong _pc");
+  _deopt_state = is_deoptimized;
 }
 
 template <typename RegisterMapT>
@@ -102,6 +128,19 @@ inline CodeBlob* frame::get_cb() const {
     }
   }
   return _cb;
+}
+
+inline const ImmutableOopMap* frame::get_oop_map() const {
+  if (_cb == nullptr || _cb->oop_maps() == nullptr) return nullptr;
+
+  NativePostCallNop* nop = nativePostCallNop_at(_pc);
+  int oopmap_slot;
+  int cb_offset;
+  if (nop != nullptr && nop->decode(oopmap_slot, cb_offset)) {
+    return _cb->oop_map_for_slot(oopmap_slot, _pc);
+  }
+  const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
+  return oop_map;
 }
 
 inline int frame::interpreter_frame_monitor_size_in_bytes() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package gc.arguments;
 /*
  * @test TestSurvivorRatioFlag
  * @summary Verify that actual survivor ratio is equal to specified SurvivorRatio value
- * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
+ * @requires vm.gc == "Serial" | vm.gc == "G1"
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
@@ -77,7 +77,6 @@ public class TestSurvivorRatioFlag {
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-XX:MaxNewSize=" + NEW_SIZE,
                 "-XX:NewSize=" + NEW_SIZE,
                 "-Xmx" + HEAP_SIZE,
@@ -87,8 +86,7 @@ public class TestSurvivorRatioFlag {
                 Integer.toString(ratio)
         );
 
-        ProcessBuilder procBuilder = GCArguments.createLimitedTestJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(vmOptions);
         analyzer.shouldHaveExitValue(0);
     }
 
@@ -116,18 +114,14 @@ public class TestSurvivorRatioFlag {
         /**
          * Verify that actual survivor ratio is equal to expected.
          * Depending on selected young GC we verify that:
-         * - for DefNew and ParNew: eden_size / survivor_size is close to expectedRatio;
-         * - for PSNew:             survivor_size equal to young_gen_size / expectedRatio;
-         * - for G1:                survivor_regions <= young_list_length / expectedRatio.
+         * - for DefNew: eden_size / survivor_size is close to expectedRatio;
+         * - for G1:     survivor_regions <= num_young_regions / expectedRatio.
          */
         public static Void verifySurvivorRatio(int expectedRatio) {
             GCTypes.YoungGCType type = GCTypes.YoungGCType.getYoungGCType();
             switch (type) {
                 case DefNew:
                     verifyDefNewSurvivorRatio(expectedRatio);
-                    break;
-                case PSNew:
-                    verifyPSSurvivorRatio(expectedRatio);
                     break;
                 case G1:
                     verifyG1SurvivorRatio(expectedRatio);
@@ -149,27 +143,12 @@ public class TestSurvivorRatioFlag {
             }
         }
 
-        private static void verifyPSSurvivorRatio(int expectedRatio) {
-            MemoryUsage edenUsage = HeapRegionUsageTool.getEdenUsage();
-            MemoryUsage survivorUsage = HeapRegionUsageTool.getSurvivorUsage();
-
-            long youngGenSize = edenUsage.getMax() + 2 * survivorUsage.getMax();
-            // for Paralle GC Min/InitialSurvivorRatio = SurvivorRatio + 2
-            long expectedSize = HeapRegionUsageTool.alignDown(youngGenSize / (expectedRatio + 2),
-                    wb.psHeapGenerationAlignment());
-
-            if (expectedSize != survivorUsage.getCommitted()) {
-                throw new RuntimeException("Expected survivor size is: " + expectedSize
-                        + ", but observed size is: " + survivorUsage.getCommitted());
-            }
-        }
-
         private static void verifyG1SurvivorRatio(int expectedRatio) {
             MemoryUsage survivorUsage = HeapRegionUsageTool.getSurvivorUsage();
 
             int regionSize = wb.g1RegionSize();
-            int youngListLength = (int) Math.max(NEW_SIZE / regionSize, 1);
-            int expectedSurvivorRegions = (int) Math.ceil(youngListLength / (double) expectedRatio);
+            int numYoungRegions = (int) Math.max(NEW_SIZE / regionSize, 1);
+            int expectedSurvivorRegions = (int) Math.ceil(numYoungRegions / (double) expectedRatio);
             int observedSurvivorRegions = (int) (survivorUsage.getCommitted() / regionSize);
 
             if (expectedSurvivorRegions < observedSurvivorRegions) {

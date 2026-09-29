@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,20 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import java.lang.classfile.*;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.Utf8Entry;
+import static java.util.Objects.requireNonNull;
 
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
@@ -41,19 +47,16 @@ public final class BufferedFieldBuilder
     private final Utf8Entry desc;
     private final List<FieldElement> elements = new ArrayList<>();
     private AccessFlags flags;
-    private final FieldModel original;
 
     public BufferedFieldBuilder(SplitConstantPool constantPool,
                                 ClassFileImpl context,
                                 Utf8Entry name,
-                                Utf8Entry type,
-                                FieldModel original) {
+                                Utf8Entry type) {
         this.constantPool = constantPool;
         this.context = context;
-        this.name = name;
-        this.desc = type;
-        this.flags = AccessFlags.ofField();
-        this.original = original;
+        this.name = requireNonNull(name);
+        this.desc = requireNonNull(type);
+        this.flags = new AccessFlagsImpl(AccessFlag.Location.FIELD);
     }
 
     @Override
@@ -62,13 +65,8 @@ public final class BufferedFieldBuilder
     }
 
     @Override
-    public Optional<FieldModel> original() {
-        return Optional.ofNullable(original);
-    }
-
-    @Override
     public FieldBuilder with(FieldElement element) {
-        elements.add(element);
+        elements.add(requireNonNull(element));
         if (element instanceof AccessFlags f) this.flags = f;
         return this;
     }
@@ -86,13 +84,12 @@ public final class BufferedFieldBuilder
             extends AbstractUnboundModel<FieldElement>
             implements FieldModel {
         public Model() {
-            super(elements);
+            super(BufferedFieldBuilder.this.elements);
         }
 
         @Override
         public Optional<ClassModel> parent() {
-            FieldModel fm = original().orElse(null);
-            return fm == null? Optional.empty() : fm.parent();
+            return Optional.empty();
         }
 
         @Override
@@ -112,19 +109,7 @@ public final class BufferedFieldBuilder
 
         @Override
         public void writeTo(DirectClassBuilder builder) {
-            builder.withField(name, desc, new Consumer<FieldBuilder>() {
-                @Override
-                public void accept(FieldBuilder fieldBuilder) {
-                    elements.forEach(fieldBuilder);
-                }
-            });
-        }
-
-        @Override
-        public void writeTo(BufWriter buf) {
-            DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, context, name, desc, null);
-            elements.forEach(fb);
-            fb.writeTo(buf);
+            builder.withField(name, desc, Util.writingAll(this));
         }
 
         @Override

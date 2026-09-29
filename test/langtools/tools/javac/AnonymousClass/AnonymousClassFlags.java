@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,24 @@
  */
 
 /*
- * @test
+ * @test id=NoPreview
  * @bug 8161013
  * @summary Verify that anonymous class binaries have the correct flags set
+ * @modules java.base/jdk.internal.misc
+ * @comment Ensure that that this test is skipped if the test is run on a preview enabled
+            VM as the compiled test class has not been forced into preview mode.
+            Valhalla affects the outcome.
+ * @requires !java.enablePreview
+ * @run main AnonymousClassFlags
+ */
+
+/*
+ * @test id=Preview
+ * @bug 8161013
+ * @summary Verify that anonymous class binaries have the correct flags set
+ * @modules java.base/jdk.internal.misc
  * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
+ * @compile -XDforcePreview AnonymousClassFlags.java
  * @run main AnonymousClassFlags
  */
 
@@ -38,10 +51,20 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.InnerClassInfo;
 import java.lang.classfile.attribute.InnerClassesAttribute;
 
+import jdk.internal.misc.PreviewFeatures;
+
 public class AnonymousClassFlags {
     public static void main(String[] args) throws Exception {
         new AnonymousClassFlags().test(System.getProperty("test.classes", "."));
     }
+
+    AnonymousClassFlags() {
+        System.currentTimeMillis();
+        super(); // Triggers force preview
+    }
+
+    // ACC_SUPER does not exist in InnerClasses before Value Objects
+    private static final int EXPECTED_ACCESS_FLAGS = PreviewFeatures.isEnabled() ? ClassFile.ACC_IDENTITY : 0;
 
     /** Maps names of anonymous classes to their expected inner_class_access_flags */
     private static Map<String, Integer> anonClasses = new LinkedHashMap<>();
@@ -49,12 +72,12 @@ public class AnonymousClassFlags {
     // ******* TEST CASES ********
 
     static Object o1 = new Object() {
-        { anonClasses.put(getClass().getName(), 0); }
+        { anonClasses.put(getClass().getName(), EXPECTED_ACCESS_FLAGS); }
     };
 
     static void staticMethod() {
         Object o2 = new Object() {
-            { anonClasses.put(getClass().getName(), 0); }
+            { anonClasses.put(getClass().getName(), EXPECTED_ACCESS_FLAGS); }
         };
     }
 
@@ -62,17 +85,17 @@ public class AnonymousClassFlags {
         staticMethod();
 
         Object o3 = new Object() {
-            { anonClasses.put(getClass().getName(), 0); }
+            { anonClasses.put(getClass().getName(), EXPECTED_ACCESS_FLAGS); }
         };
     }
 
     Object o4 = new Object() {
-        { anonClasses.put(getClass().getName(), 0); }
+        { anonClasses.put(getClass().getName(), EXPECTED_ACCESS_FLAGS); }
     };
 
     void instanceMethod() {
         Object o5 = new Object() {
-            { anonClasses.put(getClass().getName(), 0); }
+            { anonClasses.put(getClass().getName(), EXPECTED_ACCESS_FLAGS); }
         };
     }
 
@@ -80,7 +103,7 @@ public class AnonymousClassFlags {
         instanceMethod();
 
         Object o6 = new Object() {
-            { anonClasses.put(getClass().getName(), 0); }
+            { anonClasses.put(getClass().getName(), EXPECTED_ACCESS_FLAGS); }
         };
     }
 
@@ -105,7 +128,7 @@ public class AnonymousClassFlags {
 
     static void assertClassFlags(ClassModel classFile, String name, int expected) {
         int mask = ClassFile.ACC_PUBLIC | ClassFile.ACC_FINAL | ClassFile.ACC_INTERFACE | ClassFile.ACC_ABSTRACT |
-                   ClassFile.ACC_SYNTHETIC | ClassFile.ACC_ANNOTATION | ClassFile.ACC_ENUM;
+                   ClassFile.ACC_SYNTHETIC | ClassFile.ACC_ANNOTATION | ClassFile.ACC_ENUM | ClassFile.ACC_IDENTITY;
         int classExpected = (expected & mask) | ClassFile.ACC_SUPER;
         int classActual = classFile.flags().flagsMask();
         if (classActual != classExpected) {
@@ -125,7 +148,7 @@ public class AnonymousClassFlags {
     }
 
     private static int lookupInnerFlags(ClassModel classFile, String innerName) {
-        InnerClassesAttribute inners = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+        InnerClassesAttribute inners = classFile.findAttribute(Attributes.innerClasses()).orElse(null);
         if (inners == null) {
             throw new AssertionError("InnerClasses attribute missing in class " + classFile.thisClass().asInternalName());
         }

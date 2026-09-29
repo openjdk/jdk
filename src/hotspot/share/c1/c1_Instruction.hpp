@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ class     NewArray;
 class       NewTypeArray;
 class       NewObjectArray;
 class       NewMultiArray;
+class     Deoptimize;
 class     TypeCheck;
 class       CheckCast;
 class       InstanceOf;
@@ -91,13 +92,13 @@ class         LookupSwitch;
 class       Return;
 class       Throw;
 class       Base;
-class   RoundFP;
 class   UnsafeOp;
 class     UnsafeGet;
 class     UnsafePut;
 class     UnsafeGetAndSet;
 class   ProfileCall;
 class   ProfileReturnType;
+class   ProfileACmpTypes;
 class   ProfileInvoke;
 class   RuntimeCall;
 class   MemBar;
@@ -187,12 +188,12 @@ class InstructionVisitor: public StackObj {
   virtual void do_Base           (Base*            x) = 0;
   virtual void do_OsrEntry       (OsrEntry*        x) = 0;
   virtual void do_ExceptionObject(ExceptionObject* x) = 0;
-  virtual void do_RoundFP        (RoundFP*         x) = 0;
   virtual void do_UnsafeGet      (UnsafeGet*       x) = 0;
   virtual void do_UnsafePut      (UnsafePut*       x) = 0;
   virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
   virtual void do_ProfileReturnType (ProfileReturnType*  x) = 0;
+  virtual void do_ProfileACmpTypes(ProfileACmpTypes*  x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
   virtual void do_RuntimeCall    (RuntimeCall*     x) = 0;
   virtual void do_MemBar         (MemBar*          x) = 0;
@@ -209,9 +210,10 @@ class InstructionVisitor: public StackObj {
 //       of ValueMap - make changes carefully!
 
 #define HASH1(x1            )                    ((intx)(x1))
-#define HASH2(x1, x2        )                    ((HASH1(x1        ) << 7) ^ HASH1(x2))
-#define HASH3(x1, x2, x3    )                    ((HASH2(x1, x2    ) << 7) ^ HASH1(x3))
-#define HASH4(x1, x2, x3, x4)                    ((HASH3(x1, x2, x3) << 7) ^ HASH1(x4))
+#define HASH2(x1, x2        )                    ((HASH1(x1            ) << 7) ^ HASH1(x2))
+#define HASH3(x1, x2, x3    )                    ((HASH2(x1, x2        ) << 7) ^ HASH1(x3))
+#define HASH4(x1, x2, x3, x4)                    ((HASH3(x1, x2, x3    ) << 7) ^ HASH1(x4))
+#define HASH5(x1, x2, x3, x4, x5)                ((HASH4(x1, x2, x3, x4) << 7) ^ HASH1(x5))
 
 
 // The following macros are used to implement instruction-specific hashing.
@@ -270,6 +272,21 @@ class InstructionVisitor: public StackObj {
     return true;                                      \
   }                                                   \
 
+#define HASHING4(class_name, enabled, f1, f2, f3, f4) \
+  virtual intx hash() const {                         \
+    return (enabled) ? HASH5(name(), f1, f2, f3, f4) : 0; \
+  }                                                   \
+  virtual bool is_equal(Value v) const {              \
+    if (!(enabled)) return false;                     \
+    class_name* _v = v->as_##class_name();            \
+    if (_v == nullptr) return false;                  \
+    if (f1 != _v->f1) return false;                   \
+    if (f2 != _v->f2) return false;                   \
+    if (f3 != _v->f3) return false;                   \
+    if (f4 != _v->f4) return false;                   \
+    return true;                                      \
+  }                                                   \
+
 
 // The mother of all instructions...
 
@@ -281,17 +298,18 @@ class Instruction: public CompilationResourceObj {
 #endif
   int          _use_count;                       // the number of instructions referring to this value (w/o prev/next); only roots can have use count = 0 or > 1
   int          _pin_state;                       // set of PinReason describing the reason for pinning
+  unsigned int _flags;                           // Flag bits
   ValueType*   _type;                            // the instruction value type
   Instruction* _next;                            // the next instruction if any (null for BlockEnd instructions)
   Instruction* _subst;                           // the substitution instruction if any
   LIR_Opr      _operand;                         // LIR specific information
-  unsigned int _flags;                           // Flag bits
 
   ValueStack*  _state_before;                    // Copy of state with input operands still on stack (or null)
   ValueStack*  _exception_state;                 // Copy of state for exception handling
   XHandlers*   _exception_handlers;              // Flat list of exception handlers covering this instruction
 
   friend class UseCountComputer;
+  friend class GraphBuilder;
 
   void update_exception_state(ValueStack* state);
 
@@ -344,13 +362,11 @@ class Instruction: public CompilationResourceObj {
 
   enum InstructionFlag {
     NeedsNullCheckFlag = 0,
+    NeverNullFlag,
     CanTrapFlag,
     DirectCompareFlag,
-    IsEliminatedFlag,
     IsSafepointFlag,
     IsStaticFlag,
-    NeedsStoreCheckFlag,
-    NeedsWriteBarrierFlag,
     PreservesStateFlag,
     TargetIsFinalFlag,
     TargetIsLoadedFlag,
@@ -361,9 +377,9 @@ class Instruction: public CompilationResourceObj {
     ProfileMDOFlag,
     IsLinkedInBlockFlag,
     NeedsRangeCheckFlag,
-    InWorkListFlag,
     DeoptimizeOnException,
     KillsMemoryFlag,
+    OmitChecksFlag,
     InstructionLastFlag
   };
 
@@ -402,11 +418,11 @@ class Instruction: public CompilationResourceObj {
 #endif
     _use_count(0)
   , _pin_state(0)
+  , _flags(0)
   , _type(type)
   , _next(nullptr)
   , _subst(nullptr)
   , _operand(LIR_OprFact::illegalOpr)
-  , _flags(0)
   , _state_before(state_before)
   , _exception_handlers(nullptr)
   , _block(nullptr)
@@ -437,6 +453,8 @@ class Instruction: public CompilationResourceObj {
 
   void set_needs_null_check(bool f)              { set_flag(NeedsNullCheckFlag, f); }
   bool needs_null_check() const                  { return check_flag(NeedsNullCheckFlag); }
+  void set_null_free(bool f)                     { set_flag(NeverNullFlag, f); }
+  bool is_null_free() const                      { return check_flag(NeverNullFlag); }
   bool is_linked() const                         { return check_flag(IsLinkedInBlockFlag); }
   bool can_be_linked()                           { return as_Local() == nullptr && as_Phi() == nullptr; }
 
@@ -447,6 +465,7 @@ class Instruction: public CompilationResourceObj {
   ValueStack* exception_state() const            { return _exception_state; }
   virtual bool needs_exception_state() const     { return true; }
   XHandlers* exception_handlers() const          { return _exception_handlers; }
+  ciKlass* as_loaded_klass_or_null() const;
 
   // manipulation
   void pin(PinReason reason)                     { _pin_state |= reason; }
@@ -490,6 +509,10 @@ class Instruction: public CompilationResourceObj {
     i->set_next(n);
     return _next;
   }
+
+  bool is_loaded_flat_array() const;
+  bool maybe_flat_array() const;
+  bool maybe_null_free_array() const;
 
   Instruction *insert_after_same_bci(Instruction *i) {
 #ifndef PRODUCT
@@ -559,7 +582,6 @@ class Instruction: public CompilationResourceObj {
   virtual Return*           as_Return()          { return nullptr; }
   virtual Throw*            as_Throw()           { return nullptr; }
   virtual Base*             as_Base()            { return nullptr; }
-  virtual RoundFP*          as_RoundFP()         { return nullptr; }
   virtual ExceptionObject*  as_ExceptionObject() { return nullptr; }
   virtual UnsafeOp*         as_UnsafeOp()        { return nullptr; }
   virtual ProfileInvoke*    as_ProfileInvoke()   { return nullptr; }
@@ -819,7 +841,9 @@ LEAF(LoadField, AccessField)
   LoadField(Value obj, int offset, ciField* field, bool is_static,
             ValueStack* state_before, bool needs_patching)
   : AccessField(obj, offset, field, is_static, state_before, needs_patching)
-  {}
+  {
+    set_null_free(field->is_null_free());
+  }
 
   ciType* declared_type() const;
 
@@ -831,22 +855,26 @@ LEAF(LoadField, AccessField)
 LEAF(StoreField, AccessField)
  private:
   Value _value;
+  ciField* _enclosing_field;   // enclosing field (the flat one) for nested fields
 
  public:
   // creation
   StoreField(Value obj, int offset, ciField* field, Value value, bool is_static,
              ValueStack* state_before, bool needs_patching)
-  : AccessField(obj, offset, field, is_static, state_before, needs_patching)
-  , _value(value)
-  {
-    set_flag(NeedsWriteBarrierFlag, as_ValueType(field_type())->is_object());
-    ASSERT_VALUES
+    : AccessField(obj, offset, field, is_static, state_before, needs_patching)
+      , _value(value)
+      , _enclosing_field(nullptr) {
+  #ifdef ASSERT
+    AssertValues assert_value;
+    values_do(&assert_value);
+  #endif
     pin();
   }
 
   // accessors
   Value value() const                            { return _value; }
-  bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
+  ciField* enclosing_field() const               { return _enclosing_field; }
+  void set_enclosing_field(ciField* field)       { _enclosing_field = field; }
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessField::input_values_do(f); f->visit(&_value); }
@@ -904,6 +932,8 @@ BASE(AccessIndexed, AccessArray)
   Value     _length;
   BasicType _elt_type;
   bool      _mismatched;
+  ciMethod* _profiled_method;
+  int       _profiled_bci;
 
  public:
   // creation
@@ -913,6 +943,8 @@ BASE(AccessIndexed, AccessArray)
   , _length(length)
   , _elt_type(elt_type)
   , _mismatched(mismatched)
+  , _profiled_method(nullptr)
+  , _profiled_bci(0)
   {
     set_flag(Instruction::NeedsRangeCheckFlag, true);
     ASSERT_VALUES
@@ -928,20 +960,31 @@ BASE(AccessIndexed, AccessArray)
   // perform elimination of range checks involving constants
   bool compute_needs_range_check();
 
+  // Helpers for MethodData* profiling
+  void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
+  void set_profiled_method(ciMethod* method)         { _profiled_method = method;   }
+  void set_profiled_bci(int bci)                     { _profiled_bci = bci;         }
+  bool      should_profile() const                   { return check_flag(ProfileMDOFlag); }
+  ciMethod* profiled_method() const                  { return _profiled_method;     }
+  int       profiled_bci() const                     { return _profiled_bci;        }
+
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessArray::input_values_do(f); f->visit(&_index); if (_length != nullptr) f->visit(&_length); }
 };
 
+class DelayedLoadIndexed;
 
 LEAF(LoadIndexed, AccessIndexed)
  private:
-  NullCheck*  _explicit_null_check;              // For explicit null check elimination
+  NullCheck*  _explicit_null_check;  // For explicit null check elimination
+  Value _buffer;                     // Buffer for load from flat arrays
+  DelayedLoadIndexed* _delayed;
 
  public:
   // creation
   LoadIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* state_before, bool mismatched = false)
   : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
-  , _explicit_null_check(nullptr) {}
+  , _explicit_null_check(nullptr), _buffer(nullptr), _delayed(nullptr) {}
 
   // accessors
   NullCheck* explicit_null_check() const         { return _explicit_null_check; }
@@ -953,44 +996,82 @@ LEAF(LoadIndexed, AccessIndexed)
   ciType* exact_type() const;
   ciType* declared_type() const;
 
+  Value buffer() const { return _buffer; }
+
+  void set_buffer(Value buffer) {
+    assert(buffer == nullptr || buffer->as_NewInstance() != nullptr, "LoadIndexed flat array buffer must be a NewInstance");
+    _buffer = buffer;
+  }
+
+  DelayedLoadIndexed* delayed() const { return _delayed; }
+  void set_delayed(DelayedLoadIndexed* delayed) { _delayed = delayed; }
+
+  virtual void input_values_do(ValueVisitor* f) {
+    AccessIndexed::input_values_do(f);
+    if (_buffer != nullptr) {
+      f->visit(&_buffer);
+      assert(_buffer->as_NewInstance() != nullptr, "LoadIndexed flat array buffer must stay a NewInstance");
+    }
+  }
+
   // generic;
-  HASHING3(LoadIndexed, true, elt_type(), array()->subst(), index()->subst())
+  HASHING4(LoadIndexed, delayed() == nullptr && !should_profile(), elt_type(), array()->subst(), index()->subst(), buffer())
 };
 
+// Records a flat-array LoadIndexed while following getfield bytecodes are parsed.
+// This allows LIR generation to access the selected field directly, without first
+// buffering the enclosing flat-array element.
+class DelayedLoadIndexed : public CompilationResourceObj {
+private:
+  LoadIndexed* _load_instr;
+  ValueStack* _state_before;
+  ciField* _field;
+  size_t _offset;
+ public:
+  DelayedLoadIndexed(LoadIndexed* load, ValueStack* state_before)
+  : _load_instr(load)
+  , _state_before(state_before)
+  , _field(nullptr)
+  , _offset(0) { }
+
+  void update(ciField* field, int offset) {
+    assert(offset >= 0, "must be");
+    _field = field;
+    _offset += offset;
+  }
+
+  LoadIndexed* load_instr() const { return _load_instr; }
+  ValueStack* state_before() const { return _state_before; }
+  ciField* field() const { return _field; }
+  size_t offset() const { return _offset; }
+};
 
 LEAF(StoreIndexed, AccessIndexed)
  private:
   Value       _value;
 
-  ciMethod* _profiled_method;
-  int       _profiled_bci;
   bool      _check_boolean;
 
  public:
   // creation
-  StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value, ValueStack* state_before,
-               bool check_boolean, bool mismatched = false)
-  : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
-  , _value(value), _profiled_method(nullptr), _profiled_bci(0), _check_boolean(check_boolean)
-  {
-    set_flag(NeedsWriteBarrierFlag, (as_ValueType(elt_type)->is_object()));
-    set_flag(NeedsStoreCheckFlag, (as_ValueType(elt_type)->is_object()));
-    ASSERT_VALUES
+  StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value,
+               ValueStack* state_before, bool check_boolean, bool mismatched = false)
+    : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
+      , _value(value), _check_boolean(check_boolean) {
+  #ifdef ASSERT
+    AssertValues assert_value;
+    values_do(&assert_value);
+  #endif
     pin();
   }
 
+
   // accessors
   Value value() const                            { return _value; }
-  bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
-  bool needs_store_check() const                 { return check_flag(NeedsStoreCheckFlag); }
   bool check_boolean() const                     { return _check_boolean; }
-  // Helpers for MethodData* profiling
-  void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
-  void set_profiled_method(ciMethod* method)         { _profiled_method = method;   }
-  void set_profiled_bci(int bci)                     { _profiled_bci = bci;         }
-  bool      should_profile() const                   { return check_flag(ProfileMDOFlag); }
-  ciMethod* profiled_method() const                  { return _profiled_method;     }
-  int       profiled_bci() const                     { return _profiled_bci;        }
+
+  // Flattened array support
+  bool is_exact_flat_array_store() const;
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessIndexed::input_values_do(f); f->visit(&_value); }
 };
@@ -1101,16 +1182,19 @@ LEAF(IfOp, Op2)
  private:
   Value _tval;
   Value _fval;
+  bool _substitutability_check;
 
  public:
   // creation
-  IfOp(Value x, Condition cond, Value y, Value tval, Value fval)
+  IfOp(Value x, Condition cond, Value y, Value tval, Value fval, ValueStack* state_before, bool substitutability_check)
   : Op2(tval->type()->meet(fval->type()), (Bytecodes::Code)cond, x, y)
   , _tval(tval)
   , _fval(fval)
+  , _substitutability_check(substitutability_check)
   {
     ASSERT_VALUES
     assert(tval->type()->tag() == fval->type()->tag(), "types must match");
+    set_state_before(state_before);
   }
 
   // accessors
@@ -1119,7 +1203,7 @@ LEAF(IfOp, Op2)
   Condition cond() const                         { return (Condition)Op2::op(); }
   Value tval() const                             { return _tval; }
   Value fval() const                             { return _fval; }
-
+  bool substitutability_check() const            { return _substitutability_check; }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { Op2::input_values_do(f); f->visit(&_tval); f->visit(&_fval); }
 };
@@ -1234,10 +1318,11 @@ LEAF(Invoke, StateSplit)
   Values*         _args;
   BasicTypeList*  _signature;
   ciMethod*       _target;
+  ciType*         _return_type;
 
  public:
   // creation
-  Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values* args,
+  Invoke(Bytecodes::Code code, ciType* return_type, Value recv, Values* args,
          ciMethod* target, ValueStack* state_before);
 
   // accessors
@@ -1276,17 +1361,19 @@ LEAF(NewInstance, StateSplit)
  private:
   ciInstanceKlass* _klass;
   bool _is_unresolved;
+  bool _needs_state_before;
 
  public:
   // creation
-  NewInstance(ciInstanceKlass* klass, ValueStack* state_before, bool is_unresolved)
+  NewInstance(ciInstanceKlass* klass, ValueStack* state_before, bool is_unresolved, bool needs_state_before)
   : StateSplit(instanceType, state_before)
-  , _klass(klass), _is_unresolved(is_unresolved)
+  , _klass(klass), _is_unresolved(is_unresolved), _needs_state_before(needs_state_before)
   {}
 
   // accessors
   ciInstanceKlass* klass() const                 { return _klass; }
   bool is_unresolved() const                     { return _is_unresolved; }
+  bool needs_state_before() const                { return _needs_state_before; }
 
   virtual bool needs_exception_state() const     { return false; }
 
@@ -1295,7 +1382,6 @@ LEAF(NewInstance, StateSplit)
   ciType* exact_type() const;
   ciType* declared_type() const;
 };
-
 
 BASE(NewArray, StateSplit)
  private:
@@ -1327,16 +1413,19 @@ BASE(NewArray, StateSplit)
 LEAF(NewTypeArray, NewArray)
  private:
   BasicType _elt_type;
+  bool _zero_array;
 
  public:
   // creation
-  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before)
+  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before, bool zero_array)
   : NewArray(length, state_before)
   , _elt_type(elt_type)
+  , _zero_array(zero_array)
   {}
 
   // accessors
   BasicType elt_type() const                     { return _elt_type; }
+  bool zero_array()    const                     { return _zero_array; }
   ciType* exact_type() const;
 };
 
@@ -1347,7 +1436,8 @@ LEAF(NewObjectArray, NewArray)
 
  public:
   // creation
-  NewObjectArray(ciKlass* klass, Value length, ValueStack* state_before) : NewArray(length, state_before), _klass(klass) {}
+  NewObjectArray(ciKlass* klass, Value length, ValueStack* state_before)
+  : NewArray(length, state_before), _klass(klass) { }
 
   // accessors
   ciKlass* klass() const                         { return _klass; }
@@ -1382,6 +1472,8 @@ LEAF(NewMultiArray, NewArray)
     StateSplit::input_values_do(f);
     for (int i = 0; i < _dims->length(); i++) f->visit(_dims->adr_at(i));
   }
+
+  ciType* exact_type() const;
 };
 
 
@@ -1487,13 +1579,18 @@ BASE(AccessMonitor, StateSplit)
 
 
 LEAF(MonitorEnter, AccessMonitor)
+  bool _maybe_valuetype;
  public:
   // creation
-  MonitorEnter(Value obj, int monitor_no, ValueStack* state_before)
+  MonitorEnter(Value obj, int monitor_no, ValueStack* state_before, bool maybe_valuetype)
   : AccessMonitor(obj, monitor_no, state_before)
+  , _maybe_valuetype(maybe_valuetype)
   {
     ASSERT_VALUES
   }
+
+  // accessors
+  bool maybe_valuetype() const                   { return _maybe_valuetype; }
 
   // generic
   virtual bool can_trap() const                  { return true; }
@@ -1514,9 +1611,9 @@ LEAF(MonitorExit, AccessMonitor)
 LEAF(Intrinsic, StateSplit)
  private:
   vmIntrinsics::ID _id;
+  ArgsNonNullState _nonnull_state;
   Values*          _args;
   Value            _recv;
-  ArgsNonNullState _nonnull_state;
 
  public:
   // preserves_state can be set to true for Intrinsics
@@ -1616,7 +1713,6 @@ LEAF(BlockBegin, StateSplit)
   ResourceBitMap _live_kill;                     // set of registers defined in this block
 
   ResourceBitMap _fpu_register_usage;
-  intArray*      _fpu_stack_state;               // For x86 FPU code generation with UseLinearScan
   int            _first_lir_instruction_id;      // ID of first LIR instruction in this block
   int            _last_lir_instruction_id;       // ID of last LIR instruction in this block
 
@@ -1663,7 +1759,6 @@ LEAF(BlockBegin, StateSplit)
   , _live_gen()
   , _live_kill()
   , _fpu_register_usage()
-  , _fpu_stack_state(nullptr)
   , _first_lir_instruction_id(-1)
   , _last_lir_instruction_id(-1)
   {
@@ -1691,7 +1786,6 @@ LEAF(BlockBegin, StateSplit)
   ResourceBitMap& live_gen()                     { return _live_gen;       }
   ResourceBitMap& live_kill()                    { return _live_kill;      }
   ResourceBitMap& fpu_register_usage()           { return _fpu_register_usage; }
-  intArray* fpu_stack_state() const              { return _fpu_stack_state;    }
   int first_lir_instruction_id() const           { return _first_lir_instruction_id; }
   int last_lir_instruction_id() const            { return _last_lir_instruction_id; }
   int total_preds() const                        { return _total_preds; }
@@ -1714,7 +1808,6 @@ LEAF(BlockBegin, StateSplit)
   void set_live_gen (const ResourceBitMap& map)  { _live_gen = map;  }
   void set_live_kill(const ResourceBitMap& map)  { _live_kill = map; }
   void set_fpu_register_usage(const ResourceBitMap& map) { _fpu_register_usage = map; }
-  void set_fpu_stack_state(intArray* state)      { _fpu_stack_state = state;  }
   void set_first_lir_instruction_id(int id)      { _first_lir_instruction_id = id;  }
   void set_last_lir_instruction_id(int id)       { _last_lir_instruction_id = id;  }
   void increment_total_preds(int n = 1)          { _total_preds += n; }
@@ -1954,10 +2047,11 @@ LEAF(If, BlockEnd)
   int         _profiled_bci; // Canonicalizer may alter bci of If node
   bool        _swapped;      // Is the order reversed with respect to the original If in the
                              // bytecode stream?
+  bool        _substitutability_check;
  public:
   // creation
   // unordered_is_true is valid for float/double compares only
-  If(Value x, Condition cond, bool unordered_is_true, Value y, BlockBegin* tsux, BlockBegin* fsux, ValueStack* state_before, bool is_safepoint)
+  If(Value x, Condition cond, bool unordered_is_true, Value y, BlockBegin* tsux, BlockBegin* fsux, ValueStack* state_before, bool is_safepoint, bool substitutability_check=false)
     : BlockEnd(illegalType, state_before, is_safepoint)
   , _x(x)
   , _cond(cond)
@@ -1965,6 +2059,7 @@ LEAF(If, BlockEnd)
   , _profiled_method(nullptr)
   , _profiled_bci(0)
   , _swapped(false)
+  , _substitutability_check(substitutability_check)
   {
     ASSERT_VALUES
     set_flag(UnorderedIsTrueFlag, unordered_is_true);
@@ -1999,6 +2094,7 @@ LEAF(If, BlockEnd)
   void set_profiled_method(ciMethod* method)      { _profiled_method = method; }
   void set_profiled_bci(int bci)                  { _profiled_bci = bci;       }
   void set_swapped(bool value)                    { _swapped = value;         }
+  bool substitutability_check() const             { return _substitutability_check; }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { BlockEnd::input_values_do(f); f->visit(&_x); f->visit(&_y); }
 };
@@ -2145,30 +2241,6 @@ LEAF(ExceptionObject, Instruction)
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { }
-};
-
-
-// Models needed rounding for floating-point values on Intel.
-// Currently only used to represent rounding of double-precision
-// values stored into local variables, but could be used to model
-// intermediate rounding of single-precision values as well.
-LEAF(RoundFP, Instruction)
- private:
-  Value _input;             // floating-point value to be rounded
-
- public:
-  RoundFP(Value input)
-  : Instruction(input->type()) // Note: should not be used for constants
-  , _input(input)
-  {
-    ASSERT_VALUES
-  }
-
-  // accessors
-  Value input() const                            { return _input; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { f->visit(&_input); }
 };
 
 
@@ -2333,7 +2405,7 @@ LEAF(ProfileReturnType, Instruction)
     , _ret(ret)
   {
     set_needs_null_check(true);
-    // The ProfileType has side-effects and must occur precisely where located
+    // The ProfileReturnType has side-effects and must occur precisely where located
     pin();
   }
 
@@ -2345,6 +2417,48 @@ LEAF(ProfileReturnType, Instruction)
   virtual void input_values_do(ValueVisitor* f)   {
     if (_ret != nullptr) {
       f->visit(&_ret);
+    }
+  }
+};
+
+LEAF(ProfileACmpTypes, Instruction)
+ private:
+  ciMethod*        _method;
+  int              _bci;
+  Value            _left;
+  Value            _right;
+  bool             _left_maybe_null;
+  bool             _right_maybe_null;
+
+ public:
+  ProfileACmpTypes(ciMethod* method, int bci, Value left, Value right)
+    : Instruction(voidType)
+    , _method(method)
+    , _bci(bci)
+    , _left(left)
+    , _right(right)
+  {
+    // The ProfileACmp has side-effects and must occur precisely where located
+    pin();
+    _left_maybe_null = true;
+    _right_maybe_null = true;
+  }
+
+  ciMethod* method()             const { return _method; }
+  int bci()                      const { return _bci; }
+  Value left()                   const { return _left; }
+  Value right()                  const { return _right; }
+  bool left_maybe_null()         const { return _left_maybe_null; }
+  bool right_maybe_null()        const { return _right_maybe_null; }
+  void set_left_maybe_null(bool v)     { _left_maybe_null = v; }
+  void set_right_maybe_null(bool v)    { _right_maybe_null = v; }
+
+  virtual void input_values_do(ValueVisitor* f)   {
+    if (_left != nullptr) {
+      f->visit(&_left);
+    }
+    if (_right != nullptr) {
+      f->visit(&_right);
     }
   }
 };
@@ -2423,15 +2537,11 @@ LEAF(MemBar, Instruction)
 class BlockPair: public CompilationResourceObj {
  private:
   BlockBegin* _from;
-  BlockBegin* _to;
+  int _index; // sux index of 'to' block
  public:
-  BlockPair(BlockBegin* from, BlockBegin* to): _from(from), _to(to) {}
+  BlockPair(BlockBegin* from, int index): _from(from), _index(index) {}
   BlockBegin* from() const { return _from; }
-  BlockBegin* to() const   { return _to;   }
-  bool is_same(BlockBegin* from, BlockBegin* to) const { return  _from == from && _to == to; }
-  bool is_same(BlockPair* p) const { return  _from == p->from() && _to == p->to(); }
-  void set_to(BlockBegin* b)   { _to = b; }
-  void set_from(BlockBegin* b) { _from = b; }
+  int index() const        { return _index; }
 };
 
 typedef GrowableArray<BlockPair*> BlockPairList;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/stackMapTable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stackMapFrame.hpp"
+#include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapTableFormat.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -44,12 +44,13 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/fieldDescriptor.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -60,10 +61,14 @@
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
+#if INCLUDE_CDS
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
 #define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION       52
+#define VALUE_TYPE_MAJOR_VERSION                       56
 #define MAX_ARRAY_DIMENSIONS 255
 
 // Access to external entry for VerifyClassForMajorVersion - old byte code verifier
@@ -84,15 +89,20 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
   if (_verify_byte_codes_fn != nullptr)
     return _verify_byte_codes_fn;
 
+  void *lib_handle = nullptr;
   // Load verify dll
-  char buffer[JVM_MAXPATHLEN];
-  char ebuf[1024];
-  if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
-    return nullptr; // Caller will throw VerifyError
+  if (is_vm_statically_linked()) {
+    lib_handle = os::get_default_process_handle();
+  } else {
+    char buffer[JVM_MAXPATHLEN];
+    char ebuf[1024];
+    if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
+      return nullptr; // Caller will throw VerifyError
 
-  void *lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
-  if (lib_handle == nullptr)
-    return nullptr; // Caller will throw VerifyError
+    lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
+    if (lib_handle == nullptr)
+      return nullptr; // Caller will throw VerifyError
+  }
 
   void *fn = os::dll_lookup(lib_handle, "VerifyClassForMajorVersion");
   if (fn == nullptr)
@@ -104,11 +114,13 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
 // Methods in Verifier
 
-bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
-  return (class_loader == nullptr || !should_verify_class) ?
+// This method determines whether we run the verifier and class file format checking code.
+bool Verifier::should_verify_for(oop class_loader) {
+  return class_loader == nullptr ?
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
+// This method determines whether we allow package access in access checks in reflection.
 bool Verifier::relax_access_for(oop loader) {
   bool trusted = java_lang_ClassLoader::is_trusted_loader(loader);
   bool need_verify =
@@ -117,6 +129,21 @@ bool Verifier::relax_access_for(oop loader) {
     // verifyRemote
     (!BytecodeVerificationLocal && BytecodeVerificationRemote && !trusted);
   return !need_verify;
+}
+
+// Callers will pass should_verify_class as true, depending on the results of should_verify_for() above,
+// or pass true for redefinition of any class.
+static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
+  Symbol* name = klass->name();
+
+  return (should_verify_class &&
+    // Can not verify the bytecodes for shared classes because they have
+    // already been rewritten to contain constant pool cache indices,
+    // which the verifier can't understand.
+    // Shared classes shouldn't have stackmaps either.
+    // However, bytecodes for shared old classes can be verified because
+    // they have not been rewritten.
+    !(klass->in_aot_cache() && klass->is_rewritten()));
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
@@ -166,9 +193,8 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   // effect (sic!) for external_name(), but instead of doing that, we opt to
   // explicitly push the hashcode in here. This is signify the following block
   // is IMPORTANT:
-  if (klass->java_mirror() != nullptr) {
-    klass->java_mirror()->identity_hash();
-  }
+  assert(klass->java_mirror() != nullptr, "must be");
+  klass->java_mirror()->identity_hash();
 
   if (!is_eligible_for_verification(klass, should_verify_class)) {
     return true;
@@ -199,12 +225,9 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
 
-    // If dumping static archive then don't fall back to the old verifier on
-    // verification failure. If a class fails verification with the split verifier,
-    // it might fail the CDS runtime verifier constraint check. In that case, we
-    // don't want to share the class. We only archive classes that pass the split
-    // verifier.
-    bool can_failover = !CDSConfig::is_dumping_static_archive() &&
+    // If dumping classic static archive, don't bother to run the old verifier, as
+    // the class will be excluded from the archive anyway.
+    bool can_failover = !(CDSConfig::is_dumping_classic_static_archive()) &&
       klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
     if (can_failover && !HAS_PENDING_EXCEPTION &&  // Split verifier doesn't set PENDING_EXCEPTION for failure
@@ -212,10 +235,22 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());
       log_info(class, init)("Fail over class verification to old verifier for: %s", klass->external_name());
+#if INCLUDE_CDS
+      // Exclude any classes that are verified with the old verifier when the verification constraints
+      // cannot be preserved.
+      if (CDSConfig::is_dumping_archive() && !CDSConfig::is_preserving_verification_constraints()) {
+        SystemDictionaryShared::log_exclusion(klass, "Verified with old verifier");
+        SystemDictionaryShared::set_excluded(klass);
+      }
+#endif
       message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
       exception_message = message_buffer;
       exception_name = inference_verify(
         klass, message_buffer, message_buffer_len, THREAD);
+
+      if (exception_name == nullptr && !HAS_PENDING_EXCEPTION) {
+        klass->set_fail_over_verified();
+      }
     }
     if (exception_name != nullptr) {
       exception_message = split_verifier.exception_message();
@@ -255,7 +290,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
         // or one of it's superclasses, we're in trouble and are going
         // to infinitely recurse when we try to initialize the exception.
         // So bail out here by throwing the preallocated VM error.
-        THROW_OOP_(Universe::virtual_machine_error_instance(), false);
+        THROW_OOP_(Universe::internal_error_instance(), false);
       }
       kls = kls->super();
     }
@@ -265,36 +300,6 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     assert(exception_message != nullptr, "");
     THROW_MSG_(exception_name, exception_message, false);
   }
-}
-
-bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
-  Symbol* name = klass->name();
-  Klass* refl_serialization_ctor_klass = vmClasses::reflect_SerializationConstructorAccessorImpl_klass();
-
-  bool is_reflect_accessor = refl_serialization_ctor_klass != nullptr &&
-                                klass->is_subtype_of(refl_serialization_ctor_klass);
-
-  return (should_verify_for(klass->class_loader(), should_verify_class) &&
-    // return if the class is a bootstrapping class
-    // or defineClass specified not to verify by default (flags override passed arg)
-    // We need to skip the following four for bootstraping
-    name != vmSymbols::java_lang_Object() &&
-    name != vmSymbols::java_lang_Class() &&
-    name != vmSymbols::java_lang_String() &&
-    name != vmSymbols::java_lang_Throwable() &&
-
-    // Can not verify the bytecodes for shared classes because they have
-    // already been rewritten to contain constant pool cache indices,
-    // which the verifier can't understand.
-    // Shared classes shouldn't have stackmaps either.
-    // However, bytecodes for shared old classes can be verified because
-    // they have not been rewritten.
-    !(klass->is_shared() && klass->is_rewritten()) &&
-
-    // As of the fix for 4486457 we disable verification for all of the
-    // dynamically-generated bytecodes associated with
-    // jdk/internal/reflect/SerializationConstructorAccessor.
-    (!is_reflect_accessor));
 }
 
 Symbol* Verifier::inference_verify(
@@ -445,10 +450,10 @@ void ErrorContext::details(outputStream* ss, const Method* method) const {
 }
 
 void ErrorContext::reason_details(outputStream* ss) const {
-  streamIndentor si(ss);
-  ss->indent().print_cr("Reason:");
-  streamIndentor si2(ss);
-  ss->indent().print("%s", "");
+  StreamIndentor si(ss, 2);
+  ss->print_cr("Reason:");
+
+  StreamIndentor si2(ss, 2);
   switch (_fault) {
     case INVALID_BYTECODE:
       ss->print("Error exists in the bytecode");
@@ -478,11 +483,17 @@ void ErrorContext::reason_details(outputStream* ss) const {
     case BAD_LOCAL_INDEX:
       ss->print("Local index %d is invalid", _type.index());
       break;
+    case BAD_STRICT_FIELDS:
+      ss->print("Invalid use of strict instance fields");
+      break;
     case LOCALS_SIZE_MISMATCH:
       ss->print("Current frame's local size doesn't match stackmap.");
       break;
     case STACK_SIZE_MISMATCH:
       ss->print("Current frame's stack size doesn't match stackmap.");
+      break;
+    case STRICT_FIELDS_MISMATCH:
+      ss->print("Current frame's strict instance fields not compatible with stackmap.");
       break;
     case STACK_OVERFLOW:
       ss->print("Exceeded max stack size.");
@@ -496,6 +507,13 @@ void ErrorContext::reason_details(outputStream* ss) const {
     case BAD_STACKMAP:
       ss->print("Invalid stackmap specification.");
       break;
+    case WRONG_VALUE_TYPE:
+      ss->print("Type ");
+      _type.details(ss);
+      ss->print(" and type ");
+      _expected.details(ss);
+      ss->print(" must be identical value types.");
+      break;
     case UNKNOWN:
     default:
       ShouldNotReachHere();
@@ -506,7 +524,6 @@ void ErrorContext::reason_details(outputStream* ss) const {
 
 void ErrorContext::location_details(outputStream* ss, const Method* method) const {
   if (_bci != -1 && method != nullptr) {
-    streamIndentor si(ss);
     const char* bytecode_name = "<invalid>";
     if (method->validate_bci(_bci) != -1) {
       Bytecodes::Code code = Bytecodes::code_or_bp_at(method->bcp_from(_bci));
@@ -517,46 +534,50 @@ void ErrorContext::location_details(outputStream* ss, const Method* method) cons
       }
     }
     InstanceKlass* ik = method->method_holder();
-    ss->indent().print_cr("Location:");
-    streamIndentor si2(ss);
-    ss->indent().print_cr("%s.%s%s @%d: %s",
+
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Location:");
+
+    StreamIndentor si2(ss, 2);
+    ss->print_cr("%s.%s%s @%d: %s",
         ik->name()->as_C_string(), method->name()->as_C_string(),
         method->signature()->as_C_string(), _bci, bytecode_name);
   }
 }
 
 void ErrorContext::frame_details(outputStream* ss) const {
-  streamIndentor si(ss);
+  StreamIndentor si(ss, 2);
   if (_type.is_valid() && _type.frame() != nullptr) {
-    ss->indent().print_cr("Current Frame:");
-    streamIndentor si2(ss);
+    ss->print_cr("Current Frame:");
+    StreamIndentor si2(ss, 2);
     _type.frame()->print_on(ss);
   }
   if (_expected.is_valid() && _expected.frame() != nullptr) {
-    ss->indent().print_cr("Stackmap Frame:");
-    streamIndentor si2(ss);
+    ss->print_cr("Stackmap Frame:");
+    StreamIndentor si2(ss, 2);
     _expected.frame()->print_on(ss);
   }
 }
 
 void ErrorContext::bytecode_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    streamIndentor si(ss);
-    ss->indent().print_cr("Bytecode:");
-    streamIndentor si2(ss);
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Bytecode:");
+    StreamIndentor si2(ss, 2);
     ss->print_data(method->code_base(), method->code_size(), false);
   }
 }
 
 void ErrorContext::handler_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    streamIndentor si(ss);
+    StreamIndentor si(ss, 2);
+
     ExceptionTable table(method);
     if (table.length() > 0) {
-      ss->indent().print_cr("Exception Handler Table:");
-      streamIndentor si2(ss);
+      ss->print_cr("Exception Handler Table:");
+      StreamIndentor si2(ss, 2);
       for (int i = 0; i < table.length(); ++i) {
-        ss->indent().print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
+        ss->print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
             table.end_pc(i), table.handler_pc(i));
       }
     }
@@ -565,17 +586,16 @@ void ErrorContext::handler_details(outputStream* ss, const Method* method) const
 
 void ErrorContext::stackmap_details(outputStream* ss, const Method* method) const {
   if (method != nullptr && method->has_stackmap_table()) {
-    streamIndentor si(ss);
-    ss->indent().print_cr("Stackmap Table:");
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Stackmap Table:");
     Array<u1>* data = method->stackmap_data();
     stack_map_table* sm_table =
         stack_map_table::at((address)data->adr_at(0));
     stack_map_frame* sm_frame = sm_table->entries();
-    streamIndentor si2(ss);
+    StreamIndentor si2(ss, 2);
     int current_offset = -1;
     address end_of_sm_table = (address)sm_table + method->stackmap_data()->length();
     for (u2 i = 0; i < sm_table->number_of_entries(); ++i) {
-      ss->indent();
       if (!sm_frame->verify((address)sm_frame, end_of_sm_table)) {
         sm_frame->print_truncated(ss, current_offset);
         return;
@@ -616,12 +636,13 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
   return TypeOrigin::implicit(vt);
 }
 
+bool Verifier::supports_strict_fields(InstanceKlass* klass) {
+  int ver = klass->major_version();
+  return (ver >= Verifier::VALUE_TYPES_MAJOR_VERSION && klass->minor_version() == Verifier::JAVA_PREVIEW_MINOR_VERSION);
+}
 
 void ClassVerifier::verify_class(TRAPS) {
   log_info(verification)("Verifying class %s with new format", _klass->external_name());
-
-  // Either verifying both local and remote classes or just remote classes.
-  assert(BytecodeVerificationRemote, "Should not be here");
 
   Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();
@@ -711,8 +732,28 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   assert(SignatureVerifier::is_valid_method_signature(m->signature()),
          "Invalid method signature");
 
+  // Collect the initial strict instance fields if there are any
+  AssertUnsetFieldTable* strict_fields = nullptr;
+  if (m->is_object_constructor()) {
+    for (AllFieldStream fs(m->method_holder()); !fs.done(); fs.next()) {
+      if (fs.access_flags().is_strict() && !fs.access_flags().is_static()) {
+        if (strict_fields == nullptr) {
+          strict_fields = new AssertUnsetFieldTable();
+        }
+        NameAndSig new_field(fs.name(), fs.signature());
+        strict_fields->put(new_field, true);
+      }
+    }
+  }
+
+  // The stackmap table will receive a read-only deep copy of the initial strict fields since
+  // the "current frame" will modify this table when a putfield is encountered during verification.
+  // When parsing the StackMapTable attribute, the reader will allocate new tables for frames if
+  // they are EARLY_LARVAL, otherwise this read-only initial set will be shared.
+  AssertUnsetFieldTable* read_only_strict_fields = StackMapFrame::copy_unset_fields(strict_fields);
+
   // Initial stack map frame: offset is 0, stack is initially empty.
-  StackMapFrame current_frame(max_locals, max_stack, this);
+  StackMapFrame current_frame(max_locals, max_stack, strict_fields, this);
   // Set initial locals
   VerificationType return_type = current_frame.set_locals_from_arg( m, current_type());
 
@@ -739,13 +780,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   Array<u1>* stackmap_data = m->stackmap_data();
   StackMapStream stream(stackmap_data);
-  StackMapReader reader(this, &stream, code_data, code_length, THREAD);
-  StackMapTable stackmap_table(&reader, &current_frame, max_locals, max_stack,
-                               code_data, code_length, CHECK_VERIFY(this));
+  StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, read_only_strict_fields, THREAD);
+  StackMapTable stackmap_table(&reader, CHECK_VERIFY(this));
 
   LogTarget(Debug, verification) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
     LogStream ls(lt);
     stackmap_table.print_on(&ls);
   }
@@ -782,13 +821,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
     // Merge with the next instruction
     {
-      int target;
       VerificationType type, type2;
       VerificationType atype;
 
       LogTarget(Debug, verification) lt;
       if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         current_frame.print_on(&ls);
         lt.print("offset = %d,  opcode = %s", bci,
@@ -1608,32 +1645,28 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_ifle:
           current_frame.pop_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
-          target = bcs.dest();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_if_acmpeq :
         case Bytecodes::_if_acmpne :
           current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+            object_type(), CHECK_VERIFY(this));
           // fall through
         case Bytecodes::_ifnull :
         case Bytecodes::_ifnonnull :
           current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
-          target = bcs.dest();
+            object_type(), CHECK_VERIFY(this));
           stackmap_table.check_jump_target
-            (&current_frame, target, CHECK_VERIFY(this));
+            (&current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_goto :
-          target = bcs.dest();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_goto_w :
-          target = bcs.dest_w();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s4(), CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_tableswitch :
         case Bytecodes::_lookupswitch :
@@ -1683,7 +1716,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           }
           // Make sure "this" has been initialized if current method is an
           // <init>.
-          if (_method->name() == vmSymbols::object_initializer_name() &&
+          if (_method->is_object_constructor() &&
               current_frame.flag_this_uninit()) {
             verify_error(ErrorContext::bad_code(bci),
                          "Constructor must call super() or this() "
@@ -1706,15 +1739,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_invokevirtual :
         case Bytecodes::_invokespecial :
         case Bytecodes::_invokestatic :
-          verify_invoke_instructions(
-            &bcs, code_length, &current_frame, (bci >= ex_min && bci < ex_max),
-            &this_uninit, return_type, cp, &stackmap_table, CHECK_VERIFY(this));
-          no_control_flow = false; break;
         case Bytecodes::_invokeinterface :
         case Bytecodes::_invokedynamic :
           verify_invoke_instructions(
             &bcs, code_length, &current_frame, (bci >= ex_min && bci < ex_max),
-            &this_uninit, return_type, cp, &stackmap_table, CHECK_VERIFY(this));
+            &this_uninit, cp, &stackmap_table, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_new :
         {
@@ -1772,10 +1801,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           no_control_flow = false; break;
         }
         case Bytecodes::_monitorenter :
-        case Bytecodes::_monitorexit :
-          current_frame.pop_stack(
+        case Bytecodes::_monitorexit : {
+          VerificationType ref = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           no_control_flow = false; break;
+        }
         case Bytecodes::_multianewarray :
         {
           u2 index = bcs.get_index_u2();
@@ -2040,7 +2070,8 @@ void ClassVerifier::verify_cp_type(
 
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
-  if ((types & (1 << tag)) == 0) {
+  // tags up to JVM_CONSTANT_ExternalMax are verifiable and valid for shift op
+  if (tag > JVM_CONSTANT_ExternalMax || (types & (1 << tag)) == 0) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
       index, cp->pool_holder()->external_name());
@@ -2095,15 +2126,13 @@ void ClassVerifier::class_format_error(const char* msg, ...) {
 
 Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
   HandleMark hm(THREAD);
-  // Get current loader and protection domain first.
+  // Get current loader first.
   oop loader = current_class()->class_loader();
-  oop protection_domain = current_class()->protection_domain();
 
   assert(name_in_supers(name, current_class()), "name should be a super class");
 
   Klass* kls = SystemDictionary::resolve_or_fail(
-    name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
-    true, THREAD);
+    name, Handle(THREAD, loader), true, THREAD);
 
   if (kls != nullptr) {
     if (log_is_enabled(Debug, class, resolve)) {
@@ -2154,7 +2183,7 @@ void ClassVerifier::verify_ldc(
   if (opcode == Bytecodes::_ldc || opcode == Bytecodes::_ldc_w) {
     if (!tag.is_unresolved_klass()) {
       types = (1 << JVM_CONSTANT_Integer) | (1 << JVM_CONSTANT_Float)
-            | (1 << JVM_CONSTANT_String)  | (1 << JVM_CONSTANT_Class)
+            | (1 << JVM_CONSTANT_String) | (1 << JVM_CONSTANT_Class)
             | (1 << JVM_CONSTANT_MethodHandle) | (1 << JVM_CONSTANT_MethodType)
             | (1 << JVM_CONSTANT_Dynamic);
       // Note:  The class file parser already verified the legality of
@@ -2257,11 +2286,12 @@ void ClassVerifier::verify_switch(
           "low must be less than or equal to high in tableswitch");
       return;
     }
-    keys = high - low + 1;
-    if (keys < 0) {
+    int64_t keys64 = ((int64_t)high - low) + 1;
+    if (keys64 > 65535) {  // Max code length
       verify_error(ErrorContext::bad_code(bci), "too many keys in tableswitch");
       return;
     }
+    keys = (int)keys64;
     delta = 1;
   } else {
     keys = (int)Bytes::get_Java_u4(aligned_bcp + jintSize);
@@ -2282,15 +2312,14 @@ void ClassVerifier::verify_switch(
       }
     }
   }
-  int target = bci + default_offset;
-  stackmap_table->check_jump_target(current_frame, target, CHECK_VERIFY(this));
+  stackmap_table->check_jump_target(current_frame, bci, default_offset, CHECK_VERIFY(this));
   for (int i = 0; i < keys; i++) {
     // Because check_jump_target() may safepoint, the bytecode could have
     // moved, which means 'aligned_bcp' is no good and needs to be recalculated.
     aligned_bcp = align_up(bcs->bcp() + 1, jintSize);
-    target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
+    int offset = (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
     stackmap_table->check_jump_target(
-      current_frame, target, CHECK_VERIFY(this));
+      current_frame, bci, offset, CHECK_VERIFY(this));
   }
   NOT_PRODUCT(aligned_bcp = nullptr);  // no longer valid at this point
 }
@@ -2329,13 +2358,14 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   VerificationType ref_class_type = cp_ref_index_to_type(
     index, cp, CHECK_VERIFY(this));
   if (!ref_class_type.is_object() &&
-    (!allow_arrays || !ref_class_type.is_array())) {
+      (!allow_arrays || !ref_class_type.is_array())) {
     verify_error(ErrorContext::bad_type(bcs->bci(),
         TypeOrigin::cp(index, ref_class_type)),
         "Expecting reference to class in class %s at constant pool index %d",
         _klass->external_name(), index);
     return;
   }
+
   VerificationType target_class_type = ref_class_type;
 
   assert(sizeof(VerificationType) == sizeof(uintptr_t),
@@ -2377,13 +2407,27 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       }
       stack_object_type = current_frame->pop_stack(CHECK_VERIFY(this));
 
-      // The JVMS 2nd edition allows field initialization before the superclass
+      // Field initialization is allowed before the superclass
       // initializer, if the field is defined within the current class.
       fieldDescriptor fd;
-      if (stack_object_type == VerificationType::uninitialized_this_type() &&
-          target_class_type.equals(current_type()) &&
-          _klass->find_local_field(field_name, field_sig, &fd)) {
-        stack_object_type = current_type();
+      bool is_local_field = _klass->find_local_field(field_name, field_sig, &fd) &&
+                            target_class_type.equals(current_type());
+      if (stack_object_type == VerificationType::uninitialized_this_type()) {
+        if (is_local_field) {
+          // Set the type to the current type so the is_assignable check passes.
+          stack_object_type = current_type();
+
+          if (fd.access_flags().is_strict()) {
+            current_frame->satisfy_unset_field(fd.name(), fd.signature());
+          }
+        }
+      } else if (Verifier::supports_strict_fields(_klass)) {
+        // `strict` fields are not writable, but only local fields produce verification errors
+        if (is_local_field && fd.access_flags().is_strict() && fd.access_flags().is_final()) {
+          verify_error(ErrorContext::bad_code(bci),
+                       "Illegal use of putfield on a strict field");
+          return;
+        }
       }
       is_assignable = target_class_type.is_assignable_from(
         stack_object_type, this, false, CHECK_VERIFY(this));
@@ -2444,209 +2488,6 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   }
 }
 
-// Look at the method's handlers.  If the bci is in the handler's try block
-// then check if the handler_pc is already on the stack.  If not, push it
-// unless the handler has already been scanned.
-void ClassVerifier::push_handlers(ExceptionTable* exhandlers,
-                                  GrowableArray<u4>* handler_list,
-                                  GrowableArray<u4>* handler_stack,
-                                  u4 bci) {
-  int exlength = exhandlers->length();
-  for(int x = 0; x < exlength; x++) {
-    if (bci >= exhandlers->start_pc(x) && bci < exhandlers->end_pc(x)) {
-      u4 exhandler_pc = exhandlers->handler_pc(x);
-      if (!handler_list->contains(exhandler_pc)) {
-        handler_stack->append_if_missing(exhandler_pc);
-        handler_list->append(exhandler_pc);
-      }
-    }
-  }
-}
-
-// Return TRUE if all code paths starting with start_bc_offset end in
-// bytecode athrow or loop.
-bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
-  ResourceMark rm;
-  // Create bytecode stream.
-  RawBytecodeStream bcs(method());
-  int code_length = method()->code_size();
-  bcs.set_start(start_bc_offset);
-
-  // Create stack for storing bytecode start offsets for if* and *switch.
-  GrowableArray<u4>* bci_stack = new GrowableArray<u4>(30);
-  // Create stack for handlers for try blocks containing this handler.
-  GrowableArray<u4>* handler_stack = new GrowableArray<u4>(30);
-  // Create list of handlers that have been pushed onto the handler_stack
-  // so that handlers embedded inside of their own TRY blocks only get
-  // scanned once.
-  GrowableArray<u4>* handler_list = new GrowableArray<u4>(30);
-  // Create list of visited branch opcodes (goto* and if*).
-  GrowableArray<u4>* visited_branches = new GrowableArray<u4>(30);
-  ExceptionTable exhandlers(_method());
-
-  while (true) {
-    if (bcs.is_last_bytecode()) {
-      // if no more starting offsets to parse or if at the end of the
-      // method then return false.
-      if ((bci_stack->is_empty()) || (bcs.end_bci() == code_length))
-        return false;
-      // Pop a bytecode starting offset and scan from there.
-      bcs.set_start(bci_stack->pop());
-    }
-    Bytecodes::Code opcode = bcs.raw_next();
-    int bci = bcs.bci();
-
-    // If the bytecode is in a TRY block, push its handlers so they
-    // will get parsed.
-    push_handlers(&exhandlers, handler_list, handler_stack, bci);
-
-    switch (opcode) {
-      case Bytecodes::_if_icmpeq:
-      case Bytecodes::_if_icmpne:
-      case Bytecodes::_if_icmplt:
-      case Bytecodes::_if_icmpge:
-      case Bytecodes::_if_icmpgt:
-      case Bytecodes::_if_icmple:
-      case Bytecodes::_ifeq:
-      case Bytecodes::_ifne:
-      case Bytecodes::_iflt:
-      case Bytecodes::_ifge:
-      case Bytecodes::_ifgt:
-      case Bytecodes::_ifle:
-      case Bytecodes::_if_acmpeq:
-      case Bytecodes::_if_acmpne:
-      case Bytecodes::_ifnull:
-      case Bytecodes::_ifnonnull: {
-        int target = bcs.dest();
-        if (visited_branches->contains(bci)) {
-          if (bci_stack->is_empty()) {
-            if (handler_stack->is_empty()) {
-              return true;
-            } else {
-              // Parse the catch handlers for try blocks containing athrow.
-              bcs.set_start(handler_stack->pop());
-            }
-          } else {
-            // Pop a bytecode starting offset and scan from there.
-            bcs.set_start(bci_stack->pop());
-          }
-        } else {
-          if (target > bci) { // forward branch
-            if (target >= code_length) return false;
-            // Push the branch target onto the stack.
-            bci_stack->push(target);
-            // then, scan bytecodes starting with next.
-            bcs.set_start(bcs.next_bci());
-          } else { // backward branch
-            // Push bytecode offset following backward branch onto the stack.
-            bci_stack->push(bcs.next_bci());
-            // Check bytecodes starting with branch target.
-            bcs.set_start(target);
-          }
-          // Record target so we don't branch here again.
-          visited_branches->append(bci);
-        }
-        break;
-        }
-
-      case Bytecodes::_goto:
-      case Bytecodes::_goto_w: {
-        int target = (opcode == Bytecodes::_goto ? bcs.dest() : bcs.dest_w());
-        if (visited_branches->contains(bci)) {
-          if (bci_stack->is_empty()) {
-            if (handler_stack->is_empty()) {
-              return true;
-            } else {
-              // Parse the catch handlers for try blocks containing athrow.
-              bcs.set_start(handler_stack->pop());
-            }
-          } else {
-            // Been here before, pop new starting offset from stack.
-            bcs.set_start(bci_stack->pop());
-          }
-        } else {
-          if (target >= code_length) return false;
-          // Continue scanning from the target onward.
-          bcs.set_start(target);
-          // Record target so we don't branch here again.
-          visited_branches->append(bci);
-        }
-        break;
-        }
-
-      // Check that all switch alternatives end in 'athrow' bytecodes. Since it
-      // is  difficult to determine where each switch alternative ends, parse
-      // each switch alternative until either hit a 'return', 'athrow', or reach
-      // the end of the method's bytecodes.  This is gross but should be okay
-      // because:
-      // 1. tableswitch and lookupswitch byte codes in handlers for ctor explicit
-      //    constructor invocations should be rare.
-      // 2. if each switch alternative ends in an athrow then the parsing should be
-      //    short.  If there is no athrow then it is bogus code, anyway.
-      case Bytecodes::_lookupswitch:
-      case Bytecodes::_tableswitch:
-        {
-          address aligned_bcp = align_up(bcs.bcp() + 1, jintSize);
-          int default_offset = Bytes::get_Java_u4(aligned_bcp) + bci;
-          int keys, delta;
-          if (opcode == Bytecodes::_tableswitch) {
-            jint low = (jint)Bytes::get_Java_u4(aligned_bcp + jintSize);
-            jint high = (jint)Bytes::get_Java_u4(aligned_bcp + 2*jintSize);
-            // This is invalid, but let the regular bytecode verifier
-            // report this because the user will get a better error message.
-            if (low > high) return true;
-            keys = high - low + 1;
-            delta = 1;
-          } else {
-            keys = (int)Bytes::get_Java_u4(aligned_bcp + jintSize);
-            delta = 2;
-          }
-          // Invalid, let the regular bytecode verifier deal with it.
-          if (keys < 0) return true;
-
-          // Push the offset of the next bytecode onto the stack.
-          bci_stack->push(bcs.next_bci());
-
-          // Push the switch alternatives onto the stack.
-          for (int i = 0; i < keys; i++) {
-            int target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
-            if (target > code_length) return false;
-            bci_stack->push(target);
-          }
-
-          // Start bytecode parsing for the switch at the default alternative.
-          if (default_offset > code_length) return false;
-          bcs.set_start(default_offset);
-          break;
-        }
-
-      case Bytecodes::_return:
-        return false;
-
-      case Bytecodes::_athrow:
-        {
-          if (bci_stack->is_empty()) {
-            if (handler_stack->is_empty()) {
-              return true;
-            } else {
-              // Parse the catch handlers for try blocks containing athrow.
-              bcs.set_start(handler_stack->pop());
-            }
-          } else {
-            // Pop a bytecode offset and starting scanning from there.
-            bcs.set_start(bci_stack->pop());
-          }
-        }
-        break;
-
-      default:
-        ;
-    } // end switch
-  } // end while loop
-
-  return false;
-}
-
 void ClassVerifier::verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_class_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
@@ -2665,31 +2506,19 @@ void ClassVerifier::verify_invoke_init(
           TypeOrigin::implicit(current_type())),
           "Bad <init> method call");
       return;
+    } else if (ref_class_type.name() == superk->name()) {
+      // Strict final fields must be satisfied by this point
+      if (!current_frame->verify_unset_fields_satisfied()) {
+        log_info(verification)("Strict instance fields not initialized");
+        StackMapFrame::print_strict_fields(current_frame->assert_unset_fields());
+        current_frame->unsatisfied_strict_fields_error(current_class(), bci);
+      }
     }
 
     // If this invokespecial call is done from inside of a TRY block then make
     // sure that all catch clause paths end in a throw.  Otherwise, this can
     // result in returning an incomplete object.
     if (in_try_block) {
-      ExceptionTable exhandlers(_method());
-      int exlength = exhandlers.length();
-      for(int i = 0; i < exlength; i++) {
-        u2 start_pc = exhandlers.start_pc(i);
-        u2 end_pc = exhandlers.end_pc(i);
-
-        if (bci >= start_pc && bci < end_pc) {
-          if (!ends_in_athrow(exhandlers.handler_pc(i))) {
-            verify_error(ErrorContext::bad_code(bci),
-              "Bad <init> method call from after the start of a try block");
-            return;
-          } else if (log_is_enabled(Debug, verification)) {
-            ResourceMark rm(THREAD);
-            log_debug(verification)("Survived call to ends_in_athrow(): %s",
-                                          current_class()->name()->as_C_string());
-          }
-        }
-      }
-
       // Check the exception handler target stackmaps with the locals from the
       // incoming stackmap (before initialize_object() changes them to outgoing
       // state).
@@ -2697,6 +2526,14 @@ void ClassVerifier::verify_invoke_init(
       verify_exception_handler_targets(bci, true, current_frame,
                                        stackmap_table, CHECK_VERIFY(this));
     } // in_try_block
+
+    // At this point, all unset fields were satisfied, a delegated constructor handled
+    // the strict fields and initialization, or a VerifyError was recorded earlier.
+    // In the case of a delegated constructor, it could have handled the strict
+    // fields successfully but the current frame still may have unsatisfied debts so
+    // the unset fields list should be cleared.
+    // Exception handling is now complete so it is safe to null out the unset fields.
+    current_frame->set_assert_unset_fields(nullptr);
 
     current_frame->initialize_object(type, current_type());
     *this_uninit = true;
@@ -2788,7 +2625,7 @@ bool ClassVerifier::is_same_or_direct_interface(
 
 void ClassVerifier::verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
-    bool in_try_block, bool *this_uninit, VerificationType return_type,
+    bool in_try_block, bool *this_uninit,
     const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS) {
   // Make sure the constant pool item is the right type
   u2 index = bcs->get_index_u2();
@@ -2820,7 +2657,7 @@ void ClassVerifier::verify_invoke_instructions(
   assert(SignatureVerifier::is_valid_method_signature(method_sig),
          "Invalid method signature");
 
-  // Get referenced class type
+  // Get referenced class
   VerificationType ref_class_type;
   if (opcode == Bytecodes::_invokedynamic) {
     if (_klass->major_version() < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
@@ -2886,33 +2723,51 @@ void ClassVerifier::verify_invoke_instructions(
   }
 
   if (method_name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
-    // Make sure <init> can only be invoked by invokespecial
+    // Make sure:
+    //   <init> can only be invoked by invokespecial.
     if (opcode != Bytecodes::_invokespecial ||
-        method_name != vmSymbols::object_initializer_name()) {
+          method_name != vmSymbols::object_initializer_name()) {
       verify_error(ErrorContext::bad_code(bci),
           "Illegal call to internal method");
       return;
     }
-  } else if (opcode == Bytecodes::_invokespecial
-             && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
-             && !ref_class_type.equals(VerificationType::reference_type(
-                  current_class()->super()->name()))) {
-    bool subtype = false;
-    bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
-    subtype = ref_class_type.is_assignable_from(
-               current_type(), this, false, CHECK_VERIFY(this));
-    if (!subtype) {
-      verify_error(ErrorContext::bad_code(bci),
-          "Bad invokespecial instruction: "
-          "current class isn't assignable to reference class.");
-       return;
-    } else if (have_imr_indirect) {
-      verify_error(ErrorContext::bad_code(bci),
-          "Bad invokespecial instruction: "
-          "interface method reference is in an indirect superinterface.");
-      return;
-    }
+  }
+  // invokespecial, when not <init>, must be to a method in the current class, a direct superinterface,
+  // or any superclass (including Object).
+  else if (opcode == Bytecodes::_invokespecial
+           && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
+           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) {
 
+    // We know it is not current class, direct superinterface or immediate superclass. That means it
+    // could be:
+    // - a totally unrelated class or interface
+    // - an indirect superinterface
+    // - an indirect superclass (including Object)
+    // We use the assignability test to see if it is a superclass, or else an interface, and keep track
+    // of the latter. Note that subtype can be true if we are dealing with an interface that is not actually
+    // implemented as assignability treats all interfaces as Object.
+
+    bool is_interface = false; // This can only be set true if the assignability check will return true
+                               // and we loaded the class. For any other "true" returns (e.g. same class
+                               // or Object) we either can't get here (same class already excluded above)
+                               // or we know it is not an interface (i.e. Object).
+    bool subtype = ref_class_type.is_reference_assignable_from(current_type(), this, false,
+                                                               &is_interface, CHECK_VERIFY(this));
+    if (!subtype) {  // Totally unrelated class
+      verify_error(ErrorContext::bad_code(bci),
+                   "Bad invokespecial instruction: "
+                   "current class isn't assignable to reference class.");
+      return;
+    } else {
+      // Indirect superclass (including Object), indirect interface, or unrelated interface.
+      // Any interface use is an error.
+      if (is_interface) {
+        verify_error(ErrorContext::bad_code(bci),
+                     "Bad invokespecial instruction: "
+                     "interface method to invoke is not in a direct superinterface.");
+        return;
+      }
+    }
   }
 
   // Get the verification types for the method's arguments.
@@ -2981,9 +2836,7 @@ void ClassVerifier::verify_invoke_instructions(
   int sig_verif_types_len = sig_verif_types->length();
   if (sig_verif_types_len > nargs) {  // There's a return type
     if (method_name == vmSymbols::object_initializer_name()) {
-      // <init> method must have a void return type
-      /* Unreachable?  Class file parser verifies that methods with '<' have
-       * void return */
+      // an <init> method must have a void return type
       verify_error(ErrorContext::bad_code(bci),
           "Return type must be void in <init> method");
       return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,9 +92,9 @@ class C2AccessValuePtr: public C2AccessValue {
 
 public:
   C2AccessValuePtr(Node* node, const TypePtr* type) :
-    C2AccessValue(node, reinterpret_cast<const Type*>(type)) {}
+    C2AccessValue(node, type) {}
 
-  const TypePtr* type() const { return reinterpret_cast<const TypePtr*>(_type); }
+  const TypePtr* type() const { return _type->is_ptr(); }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the
@@ -102,10 +102,10 @@ public:
 class C2Access: public StackObj {
 protected:
   DecoratorSet      _decorators;
-  BasicType         _type;
   Node*             _base;
   C2AccessValuePtr& _addr;
   Node*             _raw_access;
+  BasicType         _type;
   uint8_t           _barrier_data;
 
   void fixup_decorators();
@@ -114,10 +114,10 @@ public:
   C2Access(DecoratorSet decorators,
            BasicType type, Node* base, C2AccessValuePtr& addr) :
     _decorators(decorators),
-    _type(type),
     _base(base),
     _addr(addr),
     _raw_access(nullptr),
+    _type(type),
     _barrier_data(0)
   {}
 
@@ -147,18 +147,25 @@ public:
 class C2ParseAccess: public C2Access {
 protected:
   GraphKit*         _kit;
+  Node* _ctl;
+  const ValueTypeNode* _vt; // For flat, atomic accesses that might require GC barriers on oop fields
 
   void* barrier_set_state() const;
 
 public:
   C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
-                BasicType type, Node* base, C2AccessValuePtr& addr) :
+                BasicType type, Node* base, C2AccessValuePtr& addr,
+                Node* ctl = nullptr, const ValueTypeNode* vt = nullptr) :
     C2Access(decorators, type, base, addr),
-    _kit(kit) {
+    _kit(kit),
+    _ctl(ctl),
+    _vt (vt) {
     fixup_decorators();
   }
 
   GraphKit* kit() const           { return _kit; }
+  Node* control() const;
+  const ValueTypeNode* vt() const { return _vt; }
 
   virtual PhaseGVN& gvn() const;
   virtual bool is_parse_access() const { return true; }
@@ -205,12 +212,76 @@ public:
   virtual bool is_opt_access() const { return true; }
 };
 
+class BarrierSetC2State : public ArenaObj {
+protected:
+  Node_Array                      _live;
+
+public:
+  BarrierSetC2State(Arena* arena) : _live(arena) {}
+
+  RegMask* live(const Node* node) {
+    if (!node->is_Mach() || !needs_liveness_data(node->as_Mach())) {
+      // Don't need liveness for non-MachNodes or if the GC doesn't request it
+      return nullptr;
+    }
+    RegMask* live = (RegMask*)_live[node->_idx];
+    if (live == nullptr) {
+      live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
+      _live.map(node->_idx, (Node*)live);
+    }
+
+    return live;
+  }
+
+  virtual bool needs_liveness_data(const MachNode* mach) const = 0;
+  virtual bool needs_livein_data() const = 0;
+};
+
+// This class represents the slow path in a C2 barrier. It is defined by a
+// memory access, an entry point, and a continuation point (typically the end of
+// the barrier). It provides a set of registers whose value is live across the
+// barrier, and hence must be preserved across runtime calls from the stub.
+class BarrierStubC2 : public ArenaObj {
+protected:
+  const MachNode* _node;
+  Label           _entry;
+  Label           _continuation;
+  RegMask         _preserve;
+
+  // Registers that are live-in/live-out of the entire memory access
+  // implementation (possibly including multiple barriers). Whether live-in or
+  // live-out registers are returned depends on
+  // BarrierSetC2State::needs_livein_data().
+  RegMask& live() const;
+
+public:
+  BarrierStubC2(const MachNode* node);
+
+  // Entry point to the stub.
+  Label* entry();
+  // Return point from the stub (typically end of barrier).
+  Label* continuation();
+  // High-level, GC-specific barrier flags.
+  uint8_t barrier_data() const;
+
+  // Preserve the value in reg across runtime calls in this barrier.
+  void preserve(Register reg);
+  // Do not preserve the value in reg across runtime calls in this barrier.
+  void dont_preserve(Register reg);
+  // Check if register is in preserved set.
+  bool is_preserved(Register reg) const;
+  // Set of registers whose value needs to be preserved across runtime calls in this barrier.
+  const RegMask& preserve_set() const;
+};
 
 // This is the top-level class for the backend of the Access API in C2.
 // The top-level class is responsible for performing raw accesses. The
 // various GC barrier sets inherit from the BarrierSetC2 class to sprinkle
 // barriers into the accesses.
 class BarrierSetC2: public CHeapObj<mtGC> {
+private:
+  static const TypeFunc* _clone_type_Type;
+
 protected:
   virtual void resolve_address(C2Access& access) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
@@ -223,6 +294,8 @@ protected:
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   virtual Node* atomic_add_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   void pin_atomic_op(C2AtomicParseAccess& access) const;
+  void clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
+                        address call_addr, const char* call_name) const;
 
 public:
   // This is the entry-point for the backend to perform accesses through the Access API.
@@ -236,14 +309,12 @@ public:
   virtual Node* atomic_xchg_at(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
   virtual Node* atomic_add_at(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
 
-  virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
+  virtual void clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const;
 
   virtual Node* obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobig_false, Node* size_in_bytes,
                              Node*& i_o, Node*& needgc_ctrl,
                              Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
                              intx prefetch_lines) const;
-
-  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return nullptr; }
 
   // These are general helper methods used by C2
   enum ArrayCopyPhase {
@@ -255,19 +326,9 @@ public:
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const { return false; }
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
 
-  // Support for GC barriers emitted during parsing
-  virtual bool has_load_barrier_nodes() const { return false; }
-  virtual bool is_gc_pre_barrier_node(Node* node) const { return false; }
-  virtual bool is_gc_barrier_node(Node* node) const { return false; }
-  virtual Node* step_over_gc_barrier(Node* c) const { return c; }
-
   // Support for macro expanded GC barriers
-  virtual void register_potential_barrier_node(Node* node) const { }
-  virtual void unregister_potential_barrier_node(Node* node) const { }
-  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
+  virtual void eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const { }
   virtual void eliminate_gc_barrier_data(Node* node) const { }
-  virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
-  virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
   // This could for example comprise macro nodes to be expanded during macro expansion.
@@ -275,9 +336,12 @@ public:
   // If the BarrierSetC2 state has barrier nodes in its compilation
   // unit state to be expanded later, then now is the time to do so.
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const { return false; }
-  virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const { return false; }
-  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
-  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
+  virtual void final_refinement(Compile* C) const { }
+  // Estimated size of the node barrier in number of C2 Ideal nodes.
+  // This is used to guide heuristics in C2, e.g. whether to unroll a loop.
+  virtual uint estimated_barrier_size(const Node* node) const { return 0; }
+  // Whether the given store can be used to initialize a newly allocated object.
+  virtual bool can_initialize_object(const StoreNode* store) const { return true; }
 
   enum CompilePhase {
     BeforeOptimize,
@@ -289,20 +353,23 @@ public:
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const {}
 #endif
 
-  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const { return false; }
-
-  virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const { return false; }
-  virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const { return false; }
-  virtual bool escape_has_out_with_unsafe_object(Node* n) const { return false; }
-
-  virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
-  virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
-
+  // Whether the given phi node joins OOPs from fast and slow allocation paths.
+  static bool is_allocation(const Node* node);
+  // Elide GC barriers from a Mach node according to elide_dominated_barriers().
+  virtual void elide_dominated_barrier(MachNode* mach, MachNode* dominator) const { }
+  // Elide GC barriers from instructions in 'accesses' if they are dominated by
+  // instructions in 'access_dominators' (according to elide_mach_barrier()) and
+  // there is no safepoint poll in between.
+  void elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const;
   virtual void late_barrier_analysis() const { }
+  virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }
   virtual void emit_stubs(CodeBuffer& cb) const { }
 
   static int arraycopy_payload_base_offset(bool is_array);
+
+  static void make_clone_type();
+  static const TypeFunc* clone_type();
 
 #ifndef PRODUCT
   virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const {

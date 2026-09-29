@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test 8173845
  * @summary test custom file managers
  * @build KullaTesting TestingInputStream
- * @run testng FileManagerTest
+ * @run junit FileManagerTest
  */
 
 
@@ -37,12 +37,10 @@ import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardJavaFileManager;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertTrue;
-
-@Test
 public class FileManagerTest extends KullaTesting {
 
     boolean encountered;
@@ -100,12 +98,13 @@ public class FileManagerTest extends KullaTesting {
 
     }
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(b -> b.fileManager(fm -> new MyFileManager(fm)));
     }
 
+    @Test
     public void testSnippetMemberAssignment() {
         assertEval("java.lang.reflect.Array.get(new String[1], 0) == null");
         assertTrue(encountered, "java.lang.reflect not encountered");

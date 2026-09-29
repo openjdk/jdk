@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import nsk.share.Log;
 import nsk.share.TestFailure;
+import nsk.share.gc.DefaultProducer;
 import nsk.share.gc.GC;
 import nsk.share.gc.ThreadedGCTest;
 import nsk.share.gc.gp.GarbageProducer;
-import nsk.share.gc.gp.array.ByteArrayProducer;
 import nsk.share.gc.gp.classload.GeneratedClassProducer;
 import nsk.monitoring.share.*;
 import nsk.share.test.ExecutionController;
@@ -58,7 +58,7 @@ public class lowmem001 extends ThreadedGCTest {
 
     @Override
     public void run() {
-        Log log = new Log(System.out, true);
+        Log log = new Log(System.out);
         // System.err is duplicated into buffer
         // it should be empty
         MyStream stream = new MyStream(System.err);
@@ -136,7 +136,7 @@ public class lowmem001 extends ThreadedGCTest {
 
         final long chunkSize = 512;
         List storage;
-        GarbageProducer gp = new ByteArrayProducer();
+        GarbageProducer gp = new DefaultProducer();
 
 
         @Override

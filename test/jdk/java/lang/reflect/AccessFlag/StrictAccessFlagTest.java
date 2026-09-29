@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,11 @@
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
+import static java.lang.reflect.AccessFlag.*;
 
 /*
  * Test expected value of ACC_STRICT access flag.
@@ -42,7 +47,7 @@ import java.lang.reflect.*;
 // Declaring the class strictfp implicitly sets ACC_STRICT on all its
 // methods and constructors.
 public strictfp class StrictAccessFlagTest {
-    @ExpectedFlags("[PUBLIC, STATIC, VARARGS, STRICT]")
+    @ExpectedFlags({PUBLIC, STATIC, VARARGS, STRICT})
     public static void main(String... args) {
         for (var ctor :
                  StrictAccessFlagTest.class.getDeclaredConstructors()) {
@@ -59,21 +64,23 @@ public strictfp class StrictAccessFlagTest {
         ExpectedFlags expected =
             method.getAnnotation(ExpectedFlags.class);
         if (expected != null) {
-            String actual = method.accessFlags().toString();
-            if (!expected.value().equals(actual)) {
+            Set<AccessFlag> base = EnumSet.noneOf(AccessFlag.class);
+            Collections.addAll(base, expected.value());
+            Set<AccessFlag> actual = method.accessFlags();
+            if (!base.equals(actual)) {
                 throw new RuntimeException("On " + method +
-                                           " expected " + expected.value() +
-                                           " got " + actual);
+                        " expected " + base +
+                        " got " + actual);
             }
         }
     }
 
     // Constructor
-    @ExpectedFlags("[PUBLIC, STRICT]")
+    @ExpectedFlags({PUBLIC, STRICT})
     public StrictAccessFlagTest() {}
 
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ExpectedFlags {
-        String value();
+        AccessFlag[] value();
     }
 }

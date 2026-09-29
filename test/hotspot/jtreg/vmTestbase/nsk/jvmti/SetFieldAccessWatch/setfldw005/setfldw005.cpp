@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -47,24 +47,24 @@ static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jfieldID actual_fid = NULL;
+static jfieldID actual_fid = nullptr;
 static field fields[] = {
-    { "fld0", "J", JNI_TRUE, NULL, "static long" },
-    { "fld1", "J", JNI_FALSE, NULL, "long" },
-    { "fld2", "F", JNI_TRUE, NULL, "static float" },
-    { "fld3", "F", JNI_FALSE, NULL, "float" },
-    { "fld4", "D", JNI_TRUE, NULL, "static double" },
-    { "fld5", "D", JNI_FALSE, NULL, "double" },
-    { "fld6", "Ljava/lang/Object;", JNI_TRUE, NULL, "static Object" },
-    { "fld7", "Ljava/lang/Object;", JNI_FALSE, NULL, "Object" },
-    { "fld8", "Z", JNI_TRUE, NULL, "static boolean" },
-    { "fld9", "Z", JNI_FALSE, NULL, "boolean" },
-    { "fld10", "B", JNI_TRUE, NULL, "static byte" },
-    { "fld11", "B", JNI_FALSE, NULL, "byte" },
-    { "fld12", "S", JNI_TRUE, NULL, "static short" },
-    { "fld13", "S", JNI_FALSE, NULL, "short" },
-    { "fld14", "C", JNI_TRUE, NULL, "static char" },
-    { "fld15", "C", JNI_FALSE, NULL, "char" }
+    { "fld0", "J", JNI_TRUE, nullptr, "static long" },
+    { "fld1", "J", JNI_FALSE, nullptr, "long" },
+    { "fld2", "F", JNI_TRUE, nullptr, "static float" },
+    { "fld3", "F", JNI_FALSE, nullptr, "float" },
+    { "fld4", "D", JNI_TRUE, nullptr, "static double" },
+    { "fld5", "D", JNI_FALSE, nullptr, "double" },
+    { "fld6", "Ljava/lang/Object;", JNI_TRUE, nullptr, "static Object" },
+    { "fld7", "Ljava/lang/Object;", JNI_FALSE, nullptr, "Object" },
+    { "fld8", "Z", JNI_TRUE, nullptr, "static boolean" },
+    { "fld9", "Z", JNI_FALSE, nullptr, "boolean" },
+    { "fld10", "B", JNI_TRUE, nullptr, "static byte" },
+    { "fld11", "B", JNI_FALSE, nullptr, "byte" },
+    { "fld12", "S", JNI_TRUE, nullptr, "static short" },
+    { "fld13", "S", JNI_FALSE, nullptr, "short" },
+    { "fld14", "C", JNI_TRUE, nullptr, "static char" },
+    { "fld15", "C", JNI_FALSE, nullptr, "char" }
 };
 
 void JNICALL FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -91,12 +91,12 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -159,7 +159,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw005_getReady(JNIEnv *env, jclass cls) 
         } else {
             fields[i].fid = env->GetFieldID(cls, fields[i].name, fields[i].sig);
         }
-        if (fields[i].fid == NULL) {
+        if (fields[i].fid == nullptr) {
             printf("Unable to set access watch on %s fld%" PRIuPTR ", fieldID=0",
                    fields[i].descr, i);
         } else {
@@ -176,7 +176,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw005_getReady(JNIEnv *env, jclass cls) 
         }
     }
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_FIELD_ACCESS, NULL);
+        JVMTI_EVENT_FIELD_ACCESS, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("(SetEventNotificationMode) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -195,7 +195,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw005_check(JNIEnv *env,
         printf("Field %s fld%d: thrown field ID expected=0x%p, actual=0x%p\n",
                fields[ind].descr, ind, fields[ind].fid, actual_fid);
     }
-    actual_fid = NULL;
+    actual_fid = nullptr;
 }
 
 JNIEXPORT jint JNICALL

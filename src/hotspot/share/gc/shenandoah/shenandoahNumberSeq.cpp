@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +24,16 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-HdrSeq::HdrSeq() {
-  _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtInternal);
+#include <cfloat>
+#include <cmath>
+
+HdrSeq::HdrSeq() : _minimum(DBL_MAX) {
+  _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
   for (int c = 0; c < MagBuckets; c++) {
     _hdr[c] = nullptr;
   }
@@ -38,10 +43,10 @@ HdrSeq::~HdrSeq() {
   for (int c = 0; c < MagBuckets; c++) {
     int* sub = _hdr[c];
     if (sub != nullptr) {
-      FREE_C_HEAP_ARRAY(int, sub);
+      FREE_C_HEAP_ARRAY(sub);
     }
   }
-  FREE_C_HEAP_ARRAY(int*, _hdr);
+  FREE_C_HEAP_ARRAY(_hdr);
 }
 
 void HdrSeq::add(double val) {
@@ -50,26 +55,25 @@ void HdrSeq::add(double val) {
     val = 0;
   }
 
-  NumberSeq::add(val);
-
-  double v = val;
-  int mag;
-  if (v > 0) {
-    mag = 0;
-    while (v >= 1) {
-      mag++;
-      v /= 10;
-    }
-    while (v < 0.1) {
-      mag--;
-      v *= 10;
-    }
-  } else {
-    mag = MagMinimum;
+  if (val < _minimum) {
+    _minimum = val;
   }
 
-  int bucket = -MagMinimum + mag;
-  int sub_bucket = (int) (v * ValBuckets);
+  NumberSeq::add(val);
+
+  // Normalize val and compute which bucket it should reside in.
+  int exponent;
+  double v;
+  if (val == 0) {
+    exponent = MagMinimum;
+    v = 0.5;
+  } else {
+    v = std::frexp(val, &exponent);
+  }
+  int bucket = exponent - MagMinimum;
+
+  // Rescale v from [0.5, 1) to [0, 1) to fit into the sub-buckets.
+  int sub_bucket = (int) ((v - 0.5) * 2.0 * ValBuckets);
 
   // Defensively saturate for product bits
   if (bucket < 0) {
@@ -94,7 +98,7 @@ void HdrSeq::add(double val) {
 
   int* b = _hdr[bucket];
   if (b == nullptr) {
-    b = NEW_C_HEAP_ARRAY(int, ValBuckets, mtInternal);
+    b = NEW_C_HEAP_ARRAY(int, ValBuckets, mtGC);
     for (int c = 0; c < ValBuckets; c++) {
       b[c] = 0;
     }
@@ -103,7 +107,19 @@ void HdrSeq::add(double val) {
   b[sub_bucket]++;
 }
 
+double HdrSeq::minimum() const {
+  return num() == 0 ? 0 : _minimum;
+}
+
 double HdrSeq::percentile(double level) const {
+  if (level == 0) {
+    return minimum();
+  }
+
+  if (level == 100) {
+    return maximum();
+  }
+
   // target should be non-zero to find the first sample
   int target = MAX2(1, (int) (level * num() / 100));
   int cnt = 0;
@@ -112,7 +128,10 @@ double HdrSeq::percentile(double level) const {
       for (int val = 0; val < ValBuckets; val++) {
         cnt += _hdr[mag][val];
         if (cnt >= target) {
-          return pow(10.0, MagMinimum + mag) * val / ValBuckets;
+          double value = std::ldexp(((double) val / ValBuckets) / 2.0 + 0.5, MagMinimum + mag);
+          // value < _minimum and value > _maximum can be possible due to precision loss when
+          // recomputing value. Clamping is done to fit value within the range.
+          return clamp(value, minimum(), maximum());
         }
       }
     }
@@ -120,39 +139,105 @@ double HdrSeq::percentile(double level) const {
   return maximum();
 }
 
+void HdrSeq::add(const HdrSeq& other) {
+  if (other.num() == 0) {
+    // Other sequence is empty, return
+    return;
+  }
+
+  for (int mag = 0; mag < MagBuckets; mag++) {
+    int* other_bucket = other._hdr[mag];
+    if (other_bucket == nullptr) {
+      // Nothing to do
+      continue;
+    }
+    int* bucket = _hdr[mag];
+    if (bucket != nullptr) {
+      // Add into our bucket
+      for (int val = 0; val < ValBuckets; val++) {
+        bucket[val] += other_bucket[val];
+      }
+    } else {
+      // Create our bucket and copy the contents over
+      bucket = NEW_C_HEAP_ARRAY(int, ValBuckets, mtGC);
+      for (int val = 0; val < ValBuckets; val++) {
+        bucket[val] = other_bucket[val];
+      }
+      _hdr[mag] = bucket;
+    }
+  }
+
+  // This is a hacky way to only update the fields we want.
+  // This inlines NumberSeq code without going into AbsSeq and
+  // dealing with decayed average/variance, which we do not
+  // know how to compute yet.
+  _last = other._last;
+  _minimum = MIN2(_minimum, other._minimum);
+  _maximum = MAX2(_maximum, other._maximum);
+  _sum += other._sum;
+  _sum_of_squares += other._sum_of_squares;
+  _num += other._num;
+
+  // Until JDK-8298902 is fixed, we taint the decaying statistics
+  _davg = NAN;
+  _dvariance = NAN;
+}
+
+void HdrSeq::clear() {
+  // Clear the storage
+  for (int mag = 0; mag < MagBuckets; mag++) {
+    int* bucket = _hdr[mag];
+    if (bucket != nullptr) {
+      for (int c = 0; c < ValBuckets; c++) {
+        bucket[c] = 0;
+      }
+    }
+  }
+
+  // Clear other fields too
+  _last = 0;
+  _minimum = DBL_MAX;
+  _maximum = 0;
+  _sum = 0;
+  _sum_of_squares = 0;
+  _num = 0;
+  _davg = 0;
+  _dvariance = 0;
+}
+
 BinaryMagnitudeSeq::BinaryMagnitudeSeq() {
-  _mags = NEW_C_HEAP_ARRAY(size_t, BitsPerSize_t, mtInternal);
+  _mags = NEW_C_HEAP_ARRAY(size_t, BitsPerSize_t, mtGC);
   clear();
 }
 
 BinaryMagnitudeSeq::~BinaryMagnitudeSeq() {
-  FREE_C_HEAP_ARRAY(size_t, _mags);
+  FREE_C_HEAP_ARRAY(_mags);
 }
 
 void BinaryMagnitudeSeq::clear() {
   for (int c = 0; c < BitsPerSize_t; c++) {
     _mags[c] = 0;
   }
-  _sum = 0;
+  _sum.store_relaxed(0);
 }
 
 void BinaryMagnitudeSeq::add(size_t val) {
-  Atomic::add(&_sum, val);
+  _sum.add_then_fetch(val);
 
   int mag = log2i_graceful(val) + 1;
 
   // Defensively saturate for product bits:
   if (mag < 0) {
-    assert (false, "bucket index (%d) underflow for value (" SIZE_FORMAT ")", mag, val);
+    assert (false, "bucket index (%d) underflow for value (%zu)", mag, val);
     mag = 0;
   }
 
   if (mag >= BitsPerSize_t) {
-    assert (false, "bucket index (%d) overflow for value (" SIZE_FORMAT ")", mag, val);
+    assert (false, "bucket index (%d) overflow for value (%zu)", mag, val);
     mag = BitsPerSize_t - 1;
   }
 
-  Atomic::add(&_mags[mag], (size_t)1);
+  AtomicAccess::add(&_mags[mag], (size_t)1);
 }
 
 size_t BinaryMagnitudeSeq::level(int level) const {
@@ -172,7 +257,7 @@ size_t BinaryMagnitudeSeq::num() const {
 }
 
 size_t BinaryMagnitudeSeq::sum() const {
-  return _sum;
+  return _sum.load_relaxed();
 }
 
 int BinaryMagnitudeSeq::min_level() const {

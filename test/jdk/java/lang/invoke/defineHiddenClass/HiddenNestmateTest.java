@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,32 @@
 /*
  * @test
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @build  HiddenNestmateTest
- * @run testng/othervm HiddenNestmateTest
+ * @run junit/othervm HiddenNestmateTest
  */
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.stream.Stream;
-import java.util.Arrays;
 
-import jdk.internal.org.objectweb.asm.*;
-import org.testng.annotations.Test;
-
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class HiddenNestmateTest {
+    private static final ClassDesc CD_HiddenNestmateTest = HiddenNestmateTest.class.describeConstable().orElseThrow();
     private static final byte[] bytes = classBytes("HiddenInjected");
 
     private static void assertNestmate(Lookup lookup) {
@@ -55,12 +59,12 @@ public class HiddenNestmateTest {
         Class<?> hiddenClass = lookup.lookupClass();
         Class<?> nestHost = hiddenClass.getNestHost();
         assertTrue(hiddenClass.isHidden());
-        assertTrue(nestHost == MethodHandles.lookup().lookupClass());
+        assertSame(MethodHandles.lookup().lookupClass(), nestHost);
 
         // hidden nestmate is not listed in the return array of getNestMembers
         assertTrue(Stream.of(nestHost.getNestMembers()).noneMatch(k -> k == hiddenClass));
         assertTrue(hiddenClass.isNestmateOf(lookup.lookupClass()));
-        assertTrue(Arrays.equals(hiddenClass.getNestMembers(), nestHost.getNestMembers()));
+        assertArrayEquals(nestHost.getNestMembers(), hiddenClass.getNestMembers());
     }
 
     /*
@@ -72,23 +76,19 @@ public class HiddenNestmateTest {
         Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, false);
         Class<?> c = lookup.lookupClass();
         assertTrue(lookup.hasFullPrivilegeAccess());
-        assertTrue((lookup.lookupModes() & ORIGINAL) == ORIGINAL);
-        assertTrue(c.getNestHost() == c);  // host of its own nest
+        assertEquals(ORIGINAL, lookup.lookupModes() & ORIGINAL);
+        assertSame(c, c.getNestHost());  // host of its own nest
         assertTrue(c.isHidden());
 
         // invoke int test(HiddenNestmateTest o) via MethodHandle
         MethodHandle ctor = lookup.findConstructor(c, MethodType.methodType(void.class));
         MethodHandle mh = lookup.findVirtual(c, "test", MethodType.methodType(int.class, HiddenNestmateTest.class));
-        try {
+        assertThrows(IllegalAccessError.class, () -> {
             int x = (int) mh.bindTo(ctor.invoke()).invokeExact(this);
-            throw new RuntimeException("should fail when accessing HiddenNestmateTest.privMethod()");
-        } catch (IllegalAccessError e) {}
+        });
 
         // invoke int test(HiddenNestmateTest o)
-        try {
-            int x1 = testInjectedClass(c);
-            throw new RuntimeException("should fail when accessing HiddenNestmateTest.privMethod()");
-        } catch (IllegalAccessError e) {}
+        assertThrows(IllegalAccessError.class, () -> testInjectedClass(c));
     }
 
     /*
@@ -105,11 +105,11 @@ public class HiddenNestmateTest {
         MethodHandle ctor = lookup.findConstructor(c, MethodType.methodType(void.class));
         MethodHandle mh = lookup.findVirtual(c, "test", MethodType.methodType(int.class, HiddenNestmateTest.class));
         int x = (int)mh.bindTo(ctor.invoke()).invokeExact( this);
-        assertTrue(x == privMethod());
+        assertEquals(privMethod(), x);
 
         // invoke int test(HiddenNestmateTest o)
         int x1 = testInjectedClass(c);
-        assertTrue(x1 == privMethod());
+        assertEquals(privMethod(), x1);
     }
 
     /*
@@ -125,10 +125,10 @@ public class HiddenNestmateTest {
     /*
      * Fail to create a hidden class if dropping PRIVATE lookup mode
      */
-    @Test(expectedExceptions = IllegalAccessException.class)
+    @Test
     public void noPrivateLookupAccess() throws Throwable {
         Lookup lookup = MethodHandles.lookup().dropLookupMode(Lookup.PRIVATE);
-        lookup.defineHiddenClass(bytes, false, NESTMATE);
+        assertThrows(IllegalAccessException.class, () -> lookup.defineHiddenClass(bytes, false, NESTMATE));
     }
 
     public void teleportToNestmate() throws Throwable {
@@ -137,8 +137,8 @@ public class HiddenNestmateTest {
 
         // Teleport to a hidden nestmate
         Lookup lc =  MethodHandles.lookup().in(lookup.lookupClass());
-        assertTrue((lc.lookupModes() & PRIVATE) != 0);
-        assertTrue((lc.lookupModes() & ORIGINAL) == 0);
+        assertNotEquals(0, lc.lookupModes() & PRIVATE);
+        assertEquals(0, lc.lookupModes() & ORIGINAL);
 
         Lookup lc2 = lc.defineHiddenClass(bytes, false, NESTMATE);
         assertNestmate(lc2);
@@ -147,9 +147,9 @@ public class HiddenNestmateTest {
     /*
      * Fail to create a hidden class in a different package from the lookup class' package
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void notSamePackage() throws Throwable {
-        MethodHandles.lookup().defineHiddenClass(classBytes("p/HiddenInjected"), false, NESTMATE);
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.lookup().defineHiddenClass(classBytes("p/HiddenInjected"), false, NESTMATE));
     }
 
     /*
@@ -165,34 +165,20 @@ public class HiddenNestmateTest {
     }
 
     private static byte[] classBytes(String classname) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        MethodVisitor mv;
-
-        cw.visit(V12, ACC_FINAL, classname, null, "java/lang/Object", null);
-
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-        }
-        {
-            // access a private member of the nest host class
-            mv = cw.visitMethod(ACC_PUBLIC, "test", "(LHiddenNestmateTest;)I", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "HiddenNestmateTest", "privMethod", "()I");
-            mv.visitInsn(IRETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-
-        return cw.toByteArray();
+        return ClassFile.of().build(ClassDesc.ofInternalName(classname), clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withFlags(AccessFlag.FINAL);
+            clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                cob.return_();
+            });
+            clb.withMethodBody("test", MethodTypeDesc.of(CD_int, CD_HiddenNestmateTest), PUBLIC, cob -> {
+                cob.aload(1);
+                cob.invokevirtual(CD_HiddenNestmateTest, "privMethod", MethodTypeDesc.of(CD_int));
+                cob.ireturn();
+            });
+        });
     }
 
     private int privMethod() { return 1234; }

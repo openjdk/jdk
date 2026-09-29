@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,15 +58,16 @@ public class EventNames {
     public static final String ThreadPark = PREFIX + "ThreadPark";
     public static final String JavaMonitorEnter = PREFIX + "JavaMonitorEnter";
     public static final String JavaMonitorWait = PREFIX + "JavaMonitorWait";
+    public static final String JavaMonitorNotify = PREFIX + "JavaMonitorNotify";
     public static final String JavaMonitorInflate = PREFIX + "JavaMonitorInflate";
+    public static final String JavaMonitorDeflate = PREFIX + "JavaMonitorDeflate";
+    public static final String JavaMonitorStatistics = PREFIX + "JavaMonitorStatistics";
     public static final String SyncOnValueBasedClass = PREFIX + "SyncOnValueBasedClass";
     public static final String ClassLoad = PREFIX + "ClassLoad";
     public static final String ClassDefine = PREFIX + "ClassDefine";
     public static final String ClassUnload = PREFIX + "ClassUnload";
     public static final String SafepointBegin = PREFIX + "SafepointBegin";
     public static final String SafepointStateSynchronization = PREFIX + "SafepointStateSynchronization";
-    public static final String SafepointCleanup = PREFIX + "SafepointCleanup";
-    public static final String SafepointCleanupTask = PREFIX + "SafepointCleanupTask";
     public static final String SafepointEnd = PREFIX + "SafepointEnd";
     public static final String ExecuteVMOperation = PREFIX + "ExecuteVMOperation";
     public static final String Shutdown = PREFIX + "Shutdown";
@@ -76,6 +77,8 @@ public class EventNames {
     public static final String ThreadAllocationStatistics = PREFIX + "ThreadAllocationStatistics";
     public static final String ExecutionSample = PREFIX + "ExecutionSample";
     public static final String NativeMethodSample = PREFIX + "NativeMethodSample";
+    public static final String CPUTimeSample = PREFIX + "CPUTimeSample";
+    public static final String CPUTimeSamplesLost = PREFIX + "CPUTimeSamplesLost";
     public static final String ThreadDump = PREFIX + "ThreadDump";
     public static final String OldObjectSample = PREFIX + "OldObjectSample";
     public static final String SymbolTableStatistics = PREFIX + "SymbolTableStatistics";
@@ -89,6 +92,9 @@ public class EventNames {
     public static final String JavaAgent = PREFIX + "JavaAgent";
     public static final String NativeAgent = PREFIX + "NativeAgent";
     public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
+    public static final String SafepointLatency = PREFIX + "SafepointLatency";
+    public static final String MethodTiming = PREFIX + "MethodTiming";
+    public static final String MethodTrace = PREFIX + "MethodTrace";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";
@@ -108,6 +114,8 @@ public class EventNames {
     public static final String G1HeapRegionTypeChange = PREFIX + "G1HeapRegionTypeChange";
     public static final String ShenandoahHeapRegionInformation = PREFIX + "ShenandoahHeapRegionInformation";
     public static final String ShenandoahHeapRegionStateChange = PREFIX + "ShenandoahHeapRegionStateChange";
+    public static final String ShenandoahEvacuationInformation = PREFIX + "ShenandoahEvacuationInformation";
+    public static final String ShenandoahPromotionInformation = PREFIX + "ShenandoahPromotionInformation";
     public static final String TenuringDistribution = PREFIX + "TenuringDistribution";
     public static final String GarbageCollection = PREFIX + "GarbageCollection";
     public static final String ParallelOldGarbageCollection = PREFIX + "ParallelOldGarbageCollection";
@@ -151,10 +159,9 @@ public class EventNames {
     public static final String ZRelocationSet = PREFIX + "ZRelocationSet";
     public static final String ZRelocationSetGroup = PREFIX + "ZRelocationSetGroup";
     public static final String ZUncommit = PREFIX + "ZUncommit";
-    public static final String ZUnmap = PREFIX + "ZUnmap";
-    public static final String GCLocker = PREFIX + "GCLocker";
     public static final String SystemGC = PREFIX + "SystemGC";
     public static final String GCCPUTime = PREFIX + "GCCPUTime";
+    public static final String StringDeduplication = PREFIX + "StringDeduplication";
 
     // Compiler
     public static final String Compilation = PREFIX + "Compilation";
@@ -186,6 +193,7 @@ public class EventNames {
     public static final String NativeLibraryLoad = PREFIX + "NativeLibraryLoad";
     public static final String NativeLibraryUnload = PREFIX + "NativeLibraryUnload";
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
+    public static final String SwapSpace = PREFIX + "SwapSpace";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
     public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
@@ -209,10 +217,12 @@ public class EventNames {
     public static final String SecurityProviderService = PREFIX + "SecurityProviderService";
     public static final String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
     public static final String Deserialization = PREFIX + "Deserialization";
+    public static final String SerializationMisdeclaration = PREFIX + "SerializationMisdeclaration";
     public static final String VirtualThreadStart = PREFIX + "VirtualThreadStart";
     public static final String VirtualThreadEnd = PREFIX + "VirtualThreadEnd";
     public static final String VirtualThreadPinned = PREFIX + "VirtualThreadPinned";
     public static final String VirtualThreadSubmitFailed = PREFIX + "VirtualThreadSubmitFailed";
+    public static final String FinalFieldMutation = PREFIX + "FinalFieldMutation";
 
     // Containers
     public static final String ContainerConfiguration = PREFIX + "ContainerConfiguration";

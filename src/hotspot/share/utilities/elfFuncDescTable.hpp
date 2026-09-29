@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,9 +35,8 @@
 
 /*
 
-On PowerPC-64 (and other architectures like for example IA64) a pointer to a
-function is not just a plain code address, but instead a pointer to a so called
-function descriptor (which is simply a structure containing 3 pointers).
+On PowerPC-64 a pointer to a function is not just a plain code address, but instead a pointer
+to a so-called function descriptor (which is simply a structure containing 3 pointers).
 This fact is also reflected in the ELF ABI for PowerPC-64.
 
 On architectures like x86 or SPARC, the ELF symbol table contains the start

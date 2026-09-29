@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -731,6 +731,11 @@ JDWP "Java(tm) Debug Wire Protocol"
         "or one of its superclasses, superinterfaces, or implemented interfaces. "
         "Access control is not enforced; for example, the values of private "
         "fields can be obtained."
+        "<p>"
+        "When preview features are enabled in the target VM, "
+        "this command does not prevent a "
+        "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>strictly-initialized field<sup>PREVIEW</sup></a> "
+        "from being read before it has been initialized."
         (Out
             (referenceType refType "The reference type ID.")
             (Repeat fields "The number of values to get"
@@ -1090,7 +1095,8 @@ JDWP "Java(tm) Debug Wire Protocol"
         "Each field must be member of the class type "
         "or one of its superclasses, superinterfaces, or implemented interfaces. "
         "Access control is not enforced; for example, the values of private "
-        "fields can be set. Final fields cannot be set."
+        "fields can be set. Setting a final static field is permitted but may "
+        "result in an unexpected exception or a fatal crash. "
         "For primitive values, the value's type must match the "
         "field's type exactly. For object values, there must exist a "
         "widening reference conversion from the value's type to the
@@ -1559,6 +1565,11 @@ JDWP "Java(tm) Debug Wire Protocol"
         "or one of its superclasses, superinterfaces, or implemented interfaces. "
         "Access control is not enforced; for example, the values of private "
         "fields can be obtained."
+        "<p>"
+        "When preview features are enabled in the target VM, "
+        "this command does not prevent a "
+        "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>strictly-initialized field<sup>PREVIEW</sup></a> "
+        "from being read before it has been initialized."
         (Out
             (object object "The object ID")
             (Repeat fields "The number of values to get"
@@ -1586,7 +1597,8 @@ JDWP "Java(tm) Debug Wire Protocol"
         "Each field must be member of the object's type "
         "or one of its superclasses, superinterfaces, or implemented interfaces. "
         "Access control is not enforced; for example, the values of private "
-        "fields can be set. "
+        "fields can be set. Setting a final instance field is permitted but may "
+        "result in an unexpected exception or a fatal crash. "
         "For primitive values, the value's type must match the "
         "field's type exactly. For object values, there must be a "
         "widening reference conversion from the value's type to the
@@ -1617,11 +1629,14 @@ JDWP "Java(tm) Debug Wire Protocol"
             (object object "The object ID")
         )
         (Reply
-            (threadObject owner "The monitor owner, or null if it is not currently owned.")
-            (int entryCount "The number of times the monitor has been entered.")
-            (Repeat waiters "The number of threads that are waiting for the monitor "
-                            "0 if there is no current owner"
-                (threadObject thread "A thread waiting for this monitor.")
+            (threadObject owner "The platform thread owning this monitor, or null "
+                                "if owned by a virtual thread or not owned.")
+            (int entryCount "The number of times the owning platform thread has entered the monitor, "
+                            "or 0 if owned by a virtual thread or not owned.")
+            (Repeat waiters "The total number of platform threads that are waiting to enter or re-enter "
+                            "the monitor, or waiting to be notified by the monitor, or 0 if "
+                            "only virtual threads are waiting or no threads are waiting."
+                (threadObject thread "A platform thread waiting for this monitor.")
             )
         )
         (ErrorSet
@@ -1980,9 +1995,9 @@ JDWP "Java(tm) Debug Wire Protocol"
     )
     (Command CurrentContendedMonitor=9
         "Returns the object, if any, for which this thread is waiting. The "
-        "thread may be waiting to enter a monitor, or it may be waiting, via "
-        "the java.lang.Object.wait method, for another thread to invoke the "
-        "notify method. "
+        "thread may be waiting to enter the object's monitor, or in "
+        "java.lang.Object.wait waiting to re-enter the monitor after being "
+        "notified, interrupted, or timed-out."
         "The thread must be suspended, and the returned information is "
         "relevant only while the thread is suspended. "
         "Requires canGetCurrentContendedMonitor capability - see "
@@ -2126,6 +2141,13 @@ JDWP "Java(tm) Debug Wire Protocol"
         "language method. Forcing return on a thread with only one "
         "frame on the stack causes the thread to exit when resumed. "
         "<p>"
+        "When preview features are enabled in the target VM, the specified "
+        "thread's current frame can not be a constructor of a class with "
+        "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
+        "strictly-initialized<sup>PREVIEW</sup></a> instance fields in the class "
+        "or any of its superclasses, or the class initializer of a class with "
+        "strictly-initialized static fields."
+        "<p>"
         "For void methods, the value must be a void value. "
         "For methods that return primitive values, the value's type must "
         "match the return type exactly.  For object values, there must be a "
@@ -2145,12 +2167,13 @@ JDWP "Java(tm) Debug Wire Protocol"
                                      "the thread is not alive.")
             (Error INVALID_OBJECT    "Thread or value is not a known ID.")
             (Error THREAD_NOT_SUSPENDED)
-            (Error OPAQUE_FRAME      "Attempted to return early from a frame "
-                                     "corresponding to a native method, "
-                                     "the thread is a suspended virtual thread and the target "
-                                     "VM is unable to force its current frame to return, "
-                                     "or the implementation is unable to provide this "
-                                     "functionality on this frame.")
+            (Error OPAQUE_FRAME      "Unable to force the current frame to return "
+                                     "(e.g. the current frame is executing a native method or, "
+                                     "if preview features are enabled in the target VM, "
+                                     "either the current frame is a constructor of a class "
+                                     "with strictly-initialized instance fields in its class "
+                                     "hierarchy or the current frame is the class initializer "
+                                     "of a class with strictly-initialized static fields).")
             (Error NO_MORE_FRAMES)
             (Error NOT_IMPLEMENTED)
             (Error TYPE_MISMATCH   "Value is not an appropriate type for the "
@@ -2508,7 +2531,8 @@ JDWP "Java(tm) Debug Wire Protocol"
                     )
                     (Alt InstanceOnly=11
                         "Restricts reported events to those whose "
-                        "active 'this' object is the given object. "
+                        "active 'this' object is the given object "
+                        "as determined by applying the Java == operator. "
                         "Match value is the null object for static methods. "
                         "This modifier can be used with any event kind "
                         "except class prepare, class unload, thread start, "
@@ -2600,6 +2624,15 @@ JDWP "Java(tm) Debug Wire Protocol"
         "determine the correct local variable index. (Typically, this "
         "index can be determined for method arguments from the method "
         "signature without access to the local variable table information.) "
+        "<p>"
+        "When preview features are enabled in the target VM, "
+        "if the local variable is the 'this' object and represents a "
+        "<a href=../../api/java.base/java/lang/Class.html#isValue()>value object<sup>PREVIEW</sup></a> "
+        "under construction, the value returned "
+        "will be for a snapshot of the value object, not a reference to the actual "
+        "value object under construction. Therefore the value returned will not reflect "
+        "changes to the value object that happen later on during construction."
+        
         (Out
             (threadObject thread "The frame's thread. ")
             (frame frame "The frame ID. ")
@@ -2622,6 +2655,8 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
             (Error INVALID_SLOT)
+            (Error OPAQUE_FRAME      "Unable to get the value of local variables in the frame "
+                                     "(e.g. the frame is executing a native method).")
             (Error VM_DEAD)
         )
     )
@@ -2659,9 +2694,9 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_THREAD)
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
-            (Error OPAQUE_FRAME      "The thread is a suspended virtual thread and the target VM "
-                                     "does not support setting the value of local "
-                                     "variables in the frame.")
+            (Error INVALID_SLOT)
+            (Error OPAQUE_FRAME      "Unable to set the value of local variables in the frame "
+                                     "(e.g. the frame is executing a native method).")
             (Error VM_DEAD)
         )
     )
@@ -2669,6 +2704,15 @@ JDWP "Java(tm) Debug Wire Protocol"
         "Returns the value of the 'this' reference for this frame. "
         "If the frame's method is static or native, the reply "
         "will contain the null object reference. "
+        "<p>"
+        "When preview features are enabled on the target VM, "
+        "if 'this' represents a "
+        "<a href=../../api/java.base/java/lang/Class.html#isValue()>value object<sup>PREVIEW</sup></a> "
+        "under construction, the value returned will be for a snapshot of the "
+        "value object, not a reference to the actual value object under "
+        "construction. Therefore the value returned will not reflect "
+        "changes to the value object that happen later on during "
+        "construction."
         (Out
             (threadObject thread "The frame's thread. ")
             (frame frame "The frame ID. ")
@@ -2710,10 +2754,9 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_FRAMEID)
             (Error THREAD_NOT_SUSPENDED)
             (Error NO_MORE_FRAMES)
-            (Error OPAQUE_FRAME      "If one or more of the frames to pop is a native "
-                                     "method or its caller is a native method, or the "
-                                     "thread is a suspended virtual thread and the implementation "
-                                     "was unable to pop the frames.")
+            (Error OPAQUE_FRAME      "Unable to pop one or more of the frames "
+                                     "(e.g. one or more of the frames to pop is a native "
+                                     "method or its caller is a native method).")
             (Error NOT_IMPLEMENTED)
             (Error VM_DEAD)
         )
@@ -2871,7 +2914,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                         "if not explicitly requested."
 
                      (int requestID
-                             "Request that generated event (or 0 if this "
+                             "Request that generated event, or 0 if this "
                              "event is automatically generated.")
                         (threadObject thread "Initial thread")
                     )

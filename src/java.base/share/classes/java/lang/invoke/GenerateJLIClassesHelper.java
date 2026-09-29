@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,17 @@
 
 package java.lang.invoke;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.Annotation;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.constant.ClassDesc;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -38,16 +43,77 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
-import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
+import static java.lang.invoke.MethodTypeForm.*;
 
-/**
- * Helper class to assist the GenerateJLIClassesPlugin to get access to
- * generate classes ahead of time.
- */
-class GenerateJLIClassesHelper {
+/// Generates bound method handle species classes, and classes with methods that
+/// hold compiled lambda form bytecode ahead of time, so certain lambda forms
+/// no longer need to spin classes because they can find existing bytecode.
+/// Bytecode pre-generation reduces static initialization costs, footprint costs,
+/// and circular dependencies that may arise if a class is generated per
+/// LambdaForm by [InvokerBytecodeGenerator].
+///
+/// Since lambda forms and bound method handle species are closely tied to
+/// method types, which have many varieties, this generator needs *traces* to
+/// detect which method types are used, so generation matches the actual usage.
+/// See the main entrypoint [#generateHolderClasses(Stream)] for more details
+/// about *traces*.
+///
+/// Note this pregeneration does not cover all lambda forms that can be created.
+/// For example, forms created by [LambdaFormEditor] are not captured.
+///
+/// Pregenerated species classes are resolved in [ClassSpecializer.Factory#loadSpecies]
+/// and behave identically to on-demand generated ones.  Pregenerated lambda
+/// forms are resolved in [InvokerBytecodeGenerator#lookupPregenerated], which
+/// looks up methods for code from the following 4 possibly-generated classes:
+///  -  [Invokers.Holder]
+///  -  [DirectMethodHandle.Holder]
+///  -  [DelegatingMethodHandle.Holder]
+///  -  [LambdaForm.Holder]
+///
+/// [VarHandle] linker forms, analogous to invoker forms in [Invokers.Holder],
+/// have a similar pre-generation system except it is done at source generation;
+/// they reside in [VarHandleGuards].
+///
+/// ## Usages of this generator
+/// Currently, `GenerateJLIClassesHelper` is invoked when creating a modular JDK
+/// image or generating an AOT cache.
+///
+/// #### Modular Image
+/// When creating a modular JDK image,
+/// `jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin` passes the
+/// *traces* in the file `jdk/tools/jlink/internal/plugins/default_jli_trace.txt`
+/// in `$JAVA_HOME/lib/modules` to this generator.  The *traces* are generated
+/// from the execution of `build.tools.classlist.HelloClasslist` in the build
+/// process of the JDK.
+///
+/// > To list all the Species classes in a JDK image:
+/// > ```
+/// > jimage list $JAVA_HOME/lib/modules | grep BoundMethodHandle.Species_
+/// > ```
+///
+/// > All these pregenerated classes can be examined by javap in the same image:
+/// > (Note to escape `$` in bash)
+/// > ```
+/// > javap -c -p -v java.lang.invoke.LambdaForm\$Holder
+/// > ```
+///
+/// #### AOT Cache
+/// When creating an AOT cache, *traces* generated from the training run are
+/// captured and stored inside the AOT configuration file, and are accessed with
+/// the C++ `FinalImageRecipes` class.  Classes regenerated from these *traces*
+/// are linked in assembly phase; see `regeneratedClasses.hpp`.
+///
+/// @see #generateHolderClasses(Stream)
+/// @see BoundMethodHandle.Specializer
+/// @see DelegatingMethodHandle.Holder
+/// @see DirectMethodHandle.Holder
+/// @see Invokers.Holder
+/// @see LambdaForm.Holder
+/// @see VarHandleGuards
+final class GenerateJLIClassesHelper {
     // Map from DirectMethodHandle method type name to index to LambdaForms
     static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
             Map.of(
@@ -66,12 +132,14 @@ class GenerateJLIClassesHelper {
     static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = INVOKERS_HOLDER.replace('/', '.');
     static final String BMH_SPECIES_PREFIX = "java.lang.invoke.BoundMethodHandle$Species_";
+    static final Annotation AOT_SAFE_ANNOTATION = Annotation.of(AOTSafeClassInitializer.class.describeConstable().orElseThrow());
 
     static class HolderClassBuilder {
 
 
         private final TreeSet<String> speciesTypes = new TreeSet<>();
         private final TreeSet<String> invokerTypes = new TreeSet<>();
+        private final TreeSet<String> linkerTypes = new TreeSet<>();
         private final TreeSet<String> callSiteTypes = new TreeSet<>();
         private final Map<String, Set<String>> dmhMethods = new TreeMap<>();
 
@@ -83,6 +151,12 @@ class GenerateJLIClassesHelper {
         HolderClassBuilder addInvokerType(String methodType) {
             validateMethodType(methodType);
             invokerTypes.add(methodType);
+            return this;
+        }
+
+        HolderClassBuilder addLinkerType(String methodType) {
+            validateMethodType(methodType);
+            linkerTypes.add(methodType);
             return this;
         }
 
@@ -129,21 +203,33 @@ class GenerateJLIClassesHelper {
                 }
             }
 
-            // The invoker type to ask for is retrieved by removing the first
+            // The linker type to ask for is retrieved by removing the first
             // and the last argument, which needs to be of Object.class
+            MethodType[] linkerMethodTypes = new MethodType[linkerTypes.size()];
+            index = 0;
+            for (String linkerType : linkerTypes) {
+                MethodType mt = asMethodType(linkerType);
+                final int lastParam = mt.parameterCount() - 1;
+                if (!checkLinkerTypeParams(mt)) {
+                    throw new RuntimeException(
+                            "Linker type parameter must start and end with Object: " + linkerType);
+                }
+                mt = mt.dropParameterTypes(lastParam, lastParam + 1);
+                linkerMethodTypes[index] = mt.dropParameterTypes(0, 1);
+                index++;
+            }
+
+            // The invoker type to ask for is retrieved by removing the first
+            // argument, which needs to be of Object.class
             MethodType[] invokerMethodTypes = new MethodType[invokerTypes.size()];
             index = 0;
             for (String invokerType : invokerTypes) {
                 MethodType mt = asMethodType(invokerType);
-                final int lastParam = mt.parameterCount() - 1;
-                if (mt.parameterCount() < 2 ||
-                        mt.parameterType(0) != Object.class ||
-                        mt.parameterType(lastParam) != Object.class) {
+                if (!checkInvokerTypeParams(mt)) {
                     throw new RuntimeException(
-                            "Invoker type parameter must start and end with Object: " + invokerType);
+                            "Invoker type parameter must start with 2 Objects: " + invokerType);
                 }
-                mt = mt.dropParameterTypes(lastParam, lastParam + 1);
-                invokerMethodTypes[index] = mt.dropParameterTypes(0, 1);
+                invokerMethodTypes[index] = mt.dropParameterTypes(0, 2);
                 index++;
             }
 
@@ -172,7 +258,7 @@ class GenerateJLIClassesHelper {
                             DELEGATING_HOLDER, directMethodTypes));
             result.put(INVOKERS_HOLDER,
                        generateInvokersHolderClassBytes(INVOKERS_HOLDER,
-                            invokerMethodTypes, callSiteMethodTypes));
+                            linkerMethodTypes, invokerMethodTypes, callSiteMethodTypes));
             result.put(BASIC_FORMS_HOLDER,
                        generateBasicFormsClassBytes(BASIC_FORMS_HOLDER));
 
@@ -190,7 +276,7 @@ class GenerateJLIClassesHelper {
             return result;
         }
 
-        private static MethodType asMethodType(String basicSignatureString) {
+        public static MethodType asMethodType(String basicSignatureString) {
             String[] parts = basicSignatureString.split("_");
             assert (parts.length == 2);
             assert (parts[1].length() == 1);
@@ -205,6 +291,19 @@ class GenerateJLIClassesHelper {
                 }
                 return MethodType.methodType(rtype, ptypes);
             }
+        }
+
+        public static boolean checkInvokerTypeParams(MethodType mt) {
+            return (mt.parameterCount() >= 2 &&
+                    mt.parameterType(0) == Object.class &&
+                    mt.parameterType(1) == Object.class);
+        }
+
+        public static boolean checkLinkerTypeParams(MethodType mt) {
+            final int lastParam = mt.parameterCount() - 1;
+            return (mt.parameterCount() >= 2 &&
+                    mt.parameterType(0) == Object.class &&
+                    mt.parameterType(lastParam) == Object.class);
         }
 
         private void addDMHMethodType(String dmh, String methodType) {
@@ -284,13 +383,23 @@ class GenerateJLIClassesHelper {
         }
     }
 
-    /*
-     * Returns a map of class name in internal form to the corresponding class bytes
-     * per the given stream of SPECIES_RESOLVE and LF_RESOLVE trace logs.
-     *
-     * Used by GenerateJLIClassesPlugin to pre-generate holder classes during
-     * jlink phase.
-     */
+    /// Returns a map from class names in internal form to the corresponding
+    /// class bytes.
+    ///
+    /// A few known lambda forms, such as field accessors, can be comprehensively
+    /// generated.  Most others lambda forms are associated with unique method
+    /// types; thus they are generated per the given stream of SPECIES_RESOLVE
+    /// and LF_RESOLVE *trace* logs, which are created according to {@link
+    /// MethodHandleStatics#TRACE_RESOLVE} configuration.
+    ///
+    /// The names of methods in the generated classes are internal tokens
+    /// recognized by [InvokerBytecodeGenerator#lookupPregenerated] and are
+    /// subject to change.
+    ///
+    /// @param traces the *traces* to determine the lambda forms and species
+    ///        to generate
+    /// @see MethodHandleStatics#traceLambdaForm
+    /// @see MethodHandleStatics#traceSpeciesType
     static Map<String, byte[]> generateHolderClasses(Stream<String> traces)  {
         Objects.requireNonNull(traces);
         HolderClassBuilder builder = new HolderClassBuilder();
@@ -314,8 +423,11 @@ class GenerateJLIClassesHelper {
                                 if ("linkToTargetMethod".equals(parts[2]) ||
                                         "linkToCallSite".equals(parts[2])) {
                                     builder.addCallSiteType(methodType);
-                                } else {
+                                } else if (parts[2].endsWith("nvoker")) {
+                                    // MH.exactInvoker exactInvoker MH.invoker invoker
                                     builder.addInvokerType(methodType);
+                                } else {
+                                    builder.addLinkerType(methodType);
                                 }
                             } else if (parts[1].contains("DirectMethodHandle")) {
                                 String dmh = parts[2];
@@ -342,13 +454,7 @@ class GenerateJLIClassesHelper {
         ArrayList<String> names = new ArrayList<>();
         HashSet<String> dedupSet = new HashSet<>();
         for (LambdaForm.BasicType type : LambdaForm.BasicType.values()) {
-            LambdaForm zero = LambdaForm.zeroForm(type);
-            String name = zero.kind.defaultLambdaName
-                   + "_" + zero.returnType().basicTypeChar();
-            if (dedupSet.add(name)) {
-                names.add(name);
-                forms.add(zero);
-            }
+            String name;
 
             LambdaForm identity = LambdaForm.identityForm(type);
             name = identity.kind.defaultLambdaName
@@ -356,6 +462,16 @@ class GenerateJLIClassesHelper {
             if (dedupSet.add(name)) {
                 names.add(name);
                 forms.add(identity);
+            }
+
+            if (type != V_TYPE) {
+                LambdaForm constant = LambdaForm.constantForm(type);
+                name = constant.kind.defaultLambdaName
+                        + "_" + constant.returnType().basicTypeChar();
+                if (dedupSet.add(name)) {
+                    names.add(name);
+                    forms.add(constant);
+                }
             }
         }
         return generateCodeBytesForLFs(className,
@@ -389,26 +505,42 @@ class GenerateJLIClassesHelper {
             forms.add(form);
             names.add(form.kind.defaultLambdaName);
         }
-        for (Wrapper wrapper : Wrapper.values()) {
-            if (wrapper == Wrapper.VOID) {
-                continue;
+        record FieldLfToken(byte formOp, int ftypeKind) {}
+        List<FieldLfToken> tokens = new ArrayList<>();
+        for (int i = 0; i <= DirectMethodHandle.FT_CHECKED_REF; i++) {
+            for (byte formOp = DirectMethodHandle.AF_GETFIELD; formOp < DirectMethodHandle.AF_LIMIT; formOp++) {
+                tokens.add(new FieldLfToken(formOp, i));
             }
-            for (byte b = DirectMethodHandle.AF_GETFIELD; b < DirectMethodHandle.AF_LIMIT; b++) {
-                int ftype = DirectMethodHandle.ftypeKind(wrapper.primitiveType());
-                LambdaForm form = DirectMethodHandle
-                        .makePreparedFieldLambdaForm(b, /*isVolatile*/false, ftype);
-                if (form.kind != LambdaForm.Kind.GENERIC) {
-                    forms.add(form);
-                    names.add(form.kind.defaultLambdaName);
-                }
-                // volatile
-                form = DirectMethodHandle
-                        .makePreparedFieldLambdaForm(b, /*isVolatile*/true, ftype);
-                if (form.kind != LambdaForm.Kind.GENERIC) {
-                    forms.add(form);
-                    names.add(form.kind.defaultLambdaName);
+        }
+        for (int i : new int[] {DirectMethodHandle.FT_UNCHECKED_NR_REF, DirectMethodHandle.FT_CHECKED_NR_REF}) {
+            for (byte formOp = DirectMethodHandle.AF_GETFIELD; formOp < DirectMethodHandle.AF_LIMIT; formOp++) {
+                boolean isGetter = (formOp & 1) == (DirectMethodHandle.AF_GETFIELD & 1);
+                if (!isGetter) {
+                    tokens.add(new FieldLfToken(formOp, i));
                 }
             }
+        }
+        // Only legal flat combinations; no static
+        tokens.add(new FieldLfToken(DirectMethodHandle.AF_GETFIELD, DirectMethodHandle.FT_NULLABLE_FLAT));
+        tokens.add(new FieldLfToken(DirectMethodHandle.AF_PUTFIELD, DirectMethodHandle.FT_NULLABLE_FLAT));
+        tokens.add(new FieldLfToken(DirectMethodHandle.AF_PUTFIELD, DirectMethodHandle.FT_NR_FLAT));
+        // Compile
+        for (var token : tokens) {
+            byte b = token.formOp;
+            int ftype = token.ftypeKind;
+            LambdaForm form = DirectMethodHandle
+                    .makePreparedFieldLambdaForm(b, /*isVolatile*/false, ftype);
+            if (form.kind == GENERIC)
+                throw new InternalError(b + " non-volatile " + ftype);
+            forms.add(form);
+            names.add(form.kind.defaultLambdaName);
+            // volatile
+            form = DirectMethodHandle
+                    .makePreparedFieldLambdaForm(b, /*isVolatile*/true, ftype);
+            if (form.kind == GENERIC)
+                throw new InternalError(b + " volatile " + ftype);
+            forms.add(form);
+            names.add(form.kind.defaultLambdaName);
         }
         return generateCodeBytesForLFs(className,
                 names.toArray(new String[0]),
@@ -452,30 +584,48 @@ class GenerateJLIClassesHelper {
 
     /**
      * Returns a {@code byte[]} representation of a class implementing
-     * the invoker forms for the set of supplied {@code invokerMethodTypes}
-     * and {@code callSiteMethodTypes}.
+     * the invoker forms for the set of supplied {@code linkerMethodTypes}
+     * {@code invokerMethodTypes}, and {@code callSiteMethodTypes}.
      */
     static byte[] generateInvokersHolderClassBytes(String className,
-            MethodType[] invokerMethodTypes, MethodType[] callSiteMethodTypes) {
+            MethodType[] linkerMethodTypes, MethodType[] invokerMethodTypes,
+            MethodType[] callSiteMethodTypes) {
 
         HashSet<MethodType> dedupSet = new HashSet<>();
         ArrayList<LambdaForm> forms = new ArrayList<>();
         ArrayList<String> names = new ArrayList<>();
-        int[] types = {
-            MethodTypeForm.LF_EX_LINKER,
+
+        int[] invokerTypes = {
             MethodTypeForm.LF_EX_INVOKER,
-            MethodTypeForm.LF_GEN_LINKER,
-            MethodTypeForm.LF_GEN_INVOKER
+            MethodTypeForm.LF_GEN_INVOKER,
         };
 
-        for (int i = 0; i < invokerMethodTypes.length; i++) {
+        for (MethodType methodType : invokerMethodTypes) {
             // generate methods representing invokers of the specified type
-            if (dedupSet.add(invokerMethodTypes[i])) {
-                for (int type : types) {
-                    LambdaForm invokerForm = Invokers.invokeHandleForm(invokerMethodTypes[i],
+            if (dedupSet.add(methodType)) {
+                for (int type : invokerTypes) {
+                    LambdaForm invokerForm = Invokers.invokeHandleForm(methodType,
                             /*customized*/false, type);
                     forms.add(invokerForm);
                     names.add(invokerForm.kind.defaultLambdaName);
+                }
+            }
+        }
+
+        int[] linkerTypes = {
+                MethodTypeForm.LF_EX_LINKER,
+                MethodTypeForm.LF_GEN_LINKER,
+        };
+
+        dedupSet = new HashSet<>();
+        for (MethodType methodType : linkerMethodTypes) {
+            // generate methods representing linkers of the specified type
+            if (dedupSet.add(methodType)) {
+                for (int type : linkerTypes) {
+                    LambdaForm linkerForm = Invokers.invokeHandleForm(methodType,
+                            /*customized*/false, type);
+                    forms.add(linkerForm);
+                    names.add(linkerForm.kind.defaultLambdaName);
                 }
             }
         }
@@ -504,19 +654,15 @@ class GenerateJLIClassesHelper {
      * a class with a specified name.
      */
     private static byte[] generateCodeBytesForLFs(String className, String[] names, LambdaForm[] forms) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(CLASSFILE_VERSION, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
-                className, null, InvokerBytecodeGenerator.INVOKER_SUPER_NAME, null);
-        cw.visitSource(className.substring(className.lastIndexOf('/') + 1), null);
-
-        for (int i = 0; i < forms.length; i++) {
-            InvokerBytecodeGenerator g
-                = new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType());
-            g.setClassWriter(cw);
-            g.addMethod();
-        }
-
-        return cw.toByteArray();
+        return ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
+            clb.withFlags(ACC_PRIVATE | ACC_FINAL | ACC_SUPER)
+               .withSuperclass(InvokerBytecodeGenerator.INVOKER_SUPER_DESC)
+               .with(RuntimeVisibleAnnotationsAttribute.of(AOT_SAFE_ANNOTATION))
+               .with(SourceFileAttribute.of(className.substring(className.lastIndexOf('/') + 1)));
+            for (int i = 0; i < forms.length; i++) {
+                new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType()).addMethod(clb, false);
+            }
+        });
     }
 
     private static LambdaForm makeReinvokerFor(MethodType type) {

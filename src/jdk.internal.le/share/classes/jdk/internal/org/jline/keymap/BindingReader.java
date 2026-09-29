@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -66,7 +66,7 @@ public class BindingReader {
         T o = null;
         int[] remaining = new int[1];
         boolean hasRead = false;
-        for (;;) {
+        for (; ; ) {
             if (local != null) {
                 o = local.getBound(opBuffer, remaining);
             }
@@ -78,8 +78,7 @@ public class BindingReader {
                 if (remaining[0] >= 0) {
                     runMacro(opBuffer.substring(opBuffer.length() - remaining[0]));
                     opBuffer.setLength(opBuffer.length() - remaining[0]);
-                }
-                else {
+                } else {
                     long ambiguousTimeout = keys.getAmbiguousTimeout();
                     if (ambiguousTimeout > 0 && peekCharacter(ambiguousTimeout) != NonBlockingReader.READ_EXPIRED) {
                         o = null;
@@ -234,5 +233,4 @@ public class BindingReader {
     public String getLastBinding() {
         return lastBinding;
     }
-
 }

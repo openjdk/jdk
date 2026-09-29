@@ -71,27 +71,15 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 
 /*
- * @test id=ZSinglegen
- * @requires vm.gc.ZSinglegen
+ * @test id=Z
+ * @requires vm.gc.Z
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Z GC)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational HeapDumpCompressedTest
- */
-
-/*
- * @test id=ZGenerational
- * @requires vm.gc.ZGenerational
- * @summary Test of diagnostic command GC.heap_dump with gzipped output (Z GC)
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational HeapDumpCompressedTest
+ * @run main/othervm -XX:+UseZGC HeapDumpCompressedTest
  */
 
 /*

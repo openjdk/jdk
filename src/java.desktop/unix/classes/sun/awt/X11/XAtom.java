@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ package sun.awt.X11;
  * Standard X Atom are defined by X11 and these atoms are defined in this class
  * for convenience. Common X Atoms like {@code XA_WM_NAME} are used to communicate with the
  * Window manager to let it know the Window name. The use and protocol for these
- * atoms are defined in the Inter client communications converntions manual.
+ * atoms are defined in the Inter client communications conventions manual.
  * User specified XAtoms are defined by specifying a name that gets Interned
  * by the XServer and an {@code XAtom} object is returned. An {@code XAtom} can also be created
- * by using a pre-exisiting atom like {@code XA_WM_CLASS}. A {@code display} has to be specified
+ * by using a pre-existing atom like {@code XA_WM_CLASS}. A {@code display} has to be specified
  * in order to create an {@code XAtom}. <p> <p>
  *
  * Once an {@code XAtom} instance is created, you can call get and set property methods to
@@ -209,6 +209,7 @@ public final class XAtom {
     void register() {
         register(this);
     }
+    @Override
     public String toString() {
         if (name != null) {
             return name + ":" + atom;
@@ -769,6 +770,7 @@ public final class XAtom {
         }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof XAtom)) {
             return false;
@@ -776,6 +778,7 @@ public final class XAtom {
         XAtom ot = (XAtom)o;
         return (atom == ot.atom && display == ot.display);
     }
+    @Override
     public int hashCode() {
         return (int)((atom ^ display)& 0xFFFFL);
     }

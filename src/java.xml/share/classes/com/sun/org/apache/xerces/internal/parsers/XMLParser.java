@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,13 +23,14 @@ package com.sun.org.apache.xerces.internal.parsers;
 import java.io.IOException;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.Utils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXNotRecognizedException;
@@ -50,7 +51,7 @@ import org.xml.sax.SAXNotRecognizedException;
  *
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
- * @LastModified: Nov 2023
+ * @LastModified: May 2025
  */
 public abstract class XMLParser {
 
@@ -80,6 +81,8 @@ public abstract class XMLParser {
 
     /** The parser configuration. */
     protected XMLParserConfiguration fConfiguration;
+
+    JdkXmlConfig config = JdkXmlConfig.getInstance(false);
 
     /** The XML Security Manager. */
     XMLSecurityManager securityManager;
@@ -142,12 +145,12 @@ public abstract class XMLParser {
      */
     void initSecurityManager(XMLSecurityPropertyManager spm, XMLSecurityManager sm) {
         if (securityManager == null) {
-            securityManager = sm != null ? sm : new XMLSecurityManager(true);
+            securityManager = sm != null ? sm : config.getXMLSecurityManager(true);
         }
         fConfiguration.setProperty(Constants.SECURITY_MANAGER, securityManager);
 
         if (securityPropertyManager == null) {
-            securityPropertyManager = spm != null ? spm : new XMLSecurityPropertyManager();
+            securityPropertyManager = spm != null ? spm : config.getXMLSecurityPropertyManager(true);
         }
         fConfiguration.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
     }

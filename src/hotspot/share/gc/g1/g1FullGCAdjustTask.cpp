@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
@@ -32,13 +31,12 @@
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
-#include "runtime/atomic.hpp"
 
 class G1AdjustLiveClosure : public StackObj {
   G1AdjustClosure* _adjust_closure;
@@ -51,17 +49,16 @@ public:
   }
 };
 
-class G1AdjustRegionClosure : public HeapRegionClosure {
+class G1AdjustRegionClosure : public G1HeapRegionClosure {
   G1FullCollector* _collector;
   G1CMBitMap* _bitmap;
-  uint _worker_id;
- public:
-  G1AdjustRegionClosure(G1FullCollector* collector, uint worker_id) :
-    _collector(collector),
-    _bitmap(collector->mark_bitmap()),
-    _worker_id(worker_id) { }
 
-  bool do_heap_region(HeapRegion* r) {
+public:
+  G1AdjustRegionClosure(G1FullCollector* collector) :
+    _collector(collector),
+    _bitmap(collector->mark_bitmap()) { }
+
+  bool do_heap_region(G1HeapRegion* r) {
     G1AdjustClosure cl(_collector);
     if (r->is_humongous()) {
       // Special handling for humongous regions to get somewhat better
@@ -91,8 +88,8 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   ResourceMark rm;
 
   // Adjust preserved marks first since they are not balanced.
-  G1FullGCMarker* marker = collector()->marker(worker_id);
-  marker->preserved_stack()->adjust_during_full_gc();
+  G1FullGCCompactionPoint* cp = collector()->compaction_point(worker_id);
+  cp->preserved_stack()->adjust_during_full_gc();
 
   {
     // Adjust the weak roots.
@@ -101,11 +98,11 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   }
 
   CLDToOopClosure adjust_cld(&_adjust, ClassLoaderData::_claim_stw_fullgc_adjust);
-  CodeBlobToOopClosure adjust_code(&_adjust, CodeBlobToOopClosure::FixRelocations);
+  NMethodToOopClosure adjust_code(&_adjust, NMethodToOopClosure::FixRelocations);
   _root_processor.process_all_roots(&_adjust, &adjust_cld, &adjust_code);
 
   // Now adjust pointers region by region
-  G1AdjustRegionClosure blk(collector(), worker_id);
+  G1AdjustRegionClosure blk(collector());
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&blk, &_hrclaimer, worker_id);
   log_task("Adjust task", worker_id, start);
 }

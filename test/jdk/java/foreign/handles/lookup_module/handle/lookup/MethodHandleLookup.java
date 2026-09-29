@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,16 +37,19 @@ import java.lang.foreign.SymbolLookup;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
-import org.testng.annotations.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MethodHandleLookup {
 
-    @Test(dataProvider = "restrictedMethods")
+    @ParameterizedTest
+    @MethodSource("restrictedMethods")
     public void testRestrictedHandles(MethodHandle handle, String testName) throws Throwable {
         new handle.invoker.MethodHandleInvoker().call(handle);
     }
 
-    @DataProvider(name = "restrictedMethods")
     static Object[][] restrictedMethods() {
         try {
             return new Object[][]{
@@ -71,6 +74,18 @@ public class MethodHandleLookup {
                     { MethodHandles.lookup().findStatic(SymbolLookup.class, "libraryLookup",
                             MethodType.methodType(SymbolLookup.class, Path.class, Arena.class)),
                             "SymbolLookup::libraryLookup(Path)" },
+                    { MethodHandles.lookup().findStatic(System.class, "load",
+                            MethodType.methodType(void.class, String.class)),
+                            "System::load" },
+                    { MethodHandles.lookup().findStatic(System.class, "loadLibrary",
+                            MethodType.methodType(void.class, String.class)),
+                            "System::loadLibrary" },
+                    { MethodHandles.lookup().findVirtual(Runtime.class, "load",
+                            MethodType.methodType(void.class, String.class)),
+                            "Runtime::load" },
+                    { MethodHandles.lookup().findVirtual(Runtime.class, "loadLibrary",
+                            MethodType.methodType(void.class, String.class)),
+                            "Runtime::loadLibrary" }
             };
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError((ex));

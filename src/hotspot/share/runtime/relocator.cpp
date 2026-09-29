@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stackMapTableFormat.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "logging/logStream.hpp"
+#include "logging/logTag.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/method.inline.hpp"
@@ -51,13 +52,13 @@ class ChangeItem : public ResourceObj {
    virtual bool is_switch_pad() { return false; }
 
    // accessors
-   int bci()    { return _bci; }
+   int bci() const { return _bci; }
    void relocate(int break_bci, int delta) { if (_bci > break_bci) { _bci += delta; } }
 
    virtual bool adjust(int bci, int delta) { return false; }
 
    // debug
-   virtual void print() = 0;
+   virtual void print_on(outputStream* st) const = 0;
 };
 
 class ChangeWiden : public ChangeItem {
@@ -72,7 +73,7 @@ class ChangeWiden : public ChangeItem {
   // Callback to do instruction
   bool handle_code_change(Relocator *r) { return r->handle_widen(bci(), _new_ilen, _inst_buffer); };
 
-  void print()                 { tty->print_cr("ChangeWiden. bci: %d   New_ilen: %d", bci(), _new_ilen); }
+  void print_on(outputStream* st) const { st->print_cr("ChangeWiden. bci: %d   New_ilen: %d", bci(), _new_ilen); }
 };
 
 class ChangeJumpWiden : public ChangeItem {
@@ -95,7 +96,7 @@ class ChangeJumpWiden : public ChangeItem {
     return false;
   }
 
-  void print()                 { tty->print_cr("ChangeJumpWiden. bci: %d   Delta: %d", bci(), _delta); }
+  void print_on(outputStream* st) const { st->print_cr("ChangeJumpWiden. bci: %d   Delta: %d", bci(), _delta); }
 };
 
 class ChangeSwitchPad : public ChangeItem {
@@ -114,7 +115,9 @@ class ChangeSwitchPad : public ChangeItem {
    int  padding()              { return _padding;  }
    bool is_lookup_switch()     { return _is_lookup_switch; }
 
-   void print()                { tty->print_cr("ChangeSwitchPad. bci: %d   Padding: %d  IsLookupSwitch: %d", bci(), _padding, _is_lookup_switch); }
+   void print_on(outputStream* st) const {
+     st->print_cr("ChangeSwitchPad. bci: %d   Padding: %d  IsLookupSwitch: %d", bci(), _padding, _is_lookup_switch);
+   }
 };
 
 //-----------------------------------------------------------------------------------------------------------
@@ -141,11 +144,10 @@ methodHandle Relocator::insert_space_at(int bci, int size, u_char inst_buffer[],
   _changes = new GrowableArray<ChangeItem*> (10);
   _changes->push(new ChangeWiden(bci, size, inst_buffer));
 
-  if (TraceRelocator) {
-    tty->print_cr("Space at: %d Size: %d", bci, size);
-    _method->print();
-    _method->print_codes();
-    tty->print_cr("-------------------------------------------------");
+  if (const LogTarget(Debug, relocator) out; out.is_enabled()) {
+    LogStream ls(out);
+    ls.print_cr("Space at: %d Size: %d", bci, size);
+    _method->print_value_on(&ls);
   }
 
   if (!handle_code_changes()) return methodHandle();
@@ -161,13 +163,7 @@ methodHandle Relocator::insert_space_at(int bci, int size, u_char inst_buffer[],
   ClassLoaderData* loader_data = method()->method_holder()->class_loader_data();
   loader_data->add_to_deallocate_list(method()());
 
-    set_method(new_method);
-
-  if (TraceRelocator) {
-    tty->print_cr("-------------------------------------------------");
-    tty->print_cr("new method");
-    _method->print_codes();
-  }
+  set_method(new_method);
 
   return new_method;
 }
@@ -180,8 +176,9 @@ bool Relocator::handle_code_changes() {
     // Inv: everything is aligned.
     ChangeItem* ci = _changes->first();
 
-    if (TraceRelocator) {
-      ci->print();
+    if (const LogTarget(Trace, relocator) out; out.is_enabled()) {
+      LogStream ls(out);
+      ci->print_on(&ls);
     }
 
     // Execute operation
@@ -200,7 +197,7 @@ bool Relocator::handle_code_changes() {
 bool Relocator::is_opcode_lookupswitch(Bytecodes::Code bc) {
   switch (bc) {
     case Bytecodes::_tableswitch:       return false;
-    case Bytecodes::_lookupswitch:                   // not rewritten on ia64
+    case Bytecodes::_lookupswitch:
     case Bytecodes::_fast_linearswitch:              // rewritten _lookupswitch
     case Bytecodes::_fast_binaryswitch: return true; // rewritten _lookupswitch
     default: ShouldNotReachHere();
@@ -408,13 +405,13 @@ void Relocator::adjust_exception_table(int bci, int delta) {
   }
 }
 
-static void print_linenumber_table(unsigned char* table) {
+static void print_linenumber_table(outputStream* ls, unsigned char* table) {
   CompressedLineNumberReadStream stream(table);
-  tty->print_cr("-------------------------------------------------");
+  ls->print_cr("-------------------------------------------------");
   while (stream.read_pair()) {
-    tty->print_cr("   - line %d: %d", stream.line(), stream.bci());
+    ls->print_cr("   - line %d: %d", stream.line(), stream.bci());
   }
-  tty->print_cr("-------------------------------------------------");
+  ls->print_cr("-------------------------------------------------");
 }
 
 // The width of instruction at "bci" is changing by "delta".  Adjust the line number table.
@@ -434,9 +431,10 @@ void Relocator::adjust_line_no_table(int bci, int delta) {
     writer.write_terminator();
     set_compressed_line_number_table(writer.buffer());
     set_compressed_line_number_table_size(writer.position());
-    if (TraceRelocator) {
-      tty->print_cr("Adjusted line number table");
-      print_linenumber_table(compressed_line_number_table());
+    if (LogMessage(relocator) out; out.is_trace()) {
+      NonInterleavingLogStream ls(LogLevelType::Trace, out);
+      ls.print_cr("Adjusted line number table");
+      print_linenumber_table(&ls, compressed_line_number_table());
     }
   }
 }

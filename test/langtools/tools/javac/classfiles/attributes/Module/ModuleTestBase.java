@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class ModuleTestBase {
 
     protected void testModuleAttribute(Path modulePath, ModuleDescriptor moduleDescriptor) throws Exception {
         ClassModel classFile = ClassFile.of().parse(modulePath.resolve("module-info.class"));
-        ModuleAttribute moduleAttribute = classFile.findAttribute(Attributes.MODULE).orElse(null);
+        ModuleAttribute moduleAttribute = classFile.findAttribute(Attributes.module()).orElse(null);
         assert moduleAttribute != null;
         testModuleName(moduleDescriptor, moduleAttribute);
         testModuleFlags(moduleDescriptor, moduleAttribute);

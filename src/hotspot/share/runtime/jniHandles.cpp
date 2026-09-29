@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -31,7 +31,9 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -51,8 +53,8 @@ OopStorage* JNIHandles::_global_handles = nullptr;
 OopStorage* JNIHandles::_weak_global_handles = nullptr;
 
 void jni_handles_init() {
-  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global", mtInternal);
-  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak", mtInternal);
+  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global", mtJNI);
+  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak", mtJNI);
 }
 
 jobject JNIHandles::make_local(oop obj) {
@@ -66,7 +68,7 @@ jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_
   } else {
     assert(oopDesc::is_oop(obj), "not an oop");
     assert(!current_thread_in_native(), "must not be in native");
-    STATIC_ASSERT(TypeTag::local == 0);
+    static_assert(TypeTag::local == 0);
     return thread->active_handles()->allocate_handle(thread, obj, alloc_failmode);
   }
 }
@@ -83,7 +85,7 @@ static void report_handle_allocation_failure(AllocFailType alloc_failmode,
 }
 
 jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(!current_thread_in_native(), "must not be in native");
   jobject res = nullptr;
   if (!obj.is_null()) {
@@ -105,7 +107,7 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
 }
 
 jweak JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(!current_thread_in_native(), "must not be in native");
   jweak res = nullptr;
   if (!obj.is_null()) {
@@ -251,7 +253,7 @@ bool JNIHandles::is_weak_global_handle(jobject handle) {
 void JNIHandles::print_on(outputStream* st) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  st->print_cr("JNI global refs: " SIZE_FORMAT ", weak refs: " SIZE_FORMAT,
+  st->print_cr("JNI global refs: %zu, weak refs: %zu",
                global_handles()->allocation_count(),
                weak_global_handles()->allocation_count());
   st->cr();
@@ -283,6 +285,39 @@ bool JNIHandles::current_thread_in_native() {
           JavaThread::cast(thread)->thread_state() == _thread_in_native);
 }
 
+bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
+  oop obj1 = resolve_no_keepalive(handle1);
+  oop obj2 = resolve_no_keepalive(handle2);
+
+  bool ret = obj1 == obj2;
+
+  if (!ret && Arguments::is_valhalla_enabled()) {
+    if (obj1 != nullptr && obj2 != nullptr &&
+        obj1->klass() == obj2->klass() && obj1->klass()->is_value_klass()) {
+      // The two references are different, they are not null and they are both value types,
+      // a full substitutability test is required, calling ValueObjectMethods.isSubstitutable()
+      // (similarly to InterpreterRuntime::is_substitutable).
+      // The jobjects must be re-resolved as the no-keepalive variants are not safe to use
+      // with the Java upcall.
+      JavaThread* THREAD = JavaThread::current();
+      Handle ha(THREAD, resolve_non_null(handle1));
+      Handle hb(THREAD, resolve_non_null(handle2));
+      JavaValue result(T_BOOLEAN);
+      JavaCallArguments args;
+      args.push_oop(ha);
+      args.push_oop(hb);
+      methodHandle method(THREAD, Universe::is_substitutable_method());
+      JavaCalls::call(&result, method, &args, THREAD);
+      Exceptions::wrap_exception_in_internal_error("Internal error in substitutability test", CHECK_false);
+
+      ret = result.get_jboolean();
+    }
+  }
+
+  return ret;
+}
+
+
 int JNIHandleBlock::_blocks_allocated = 0;
 
 static inline bool is_tagged_free_list(uintptr_t value) {
@@ -302,7 +337,7 @@ static inline uintptr_t untag_free_list(uintptr_t value) {
 // oops. The freelist handling currently relies on the size of oops
 // being the same as a native pointer. If this ever changes, then
 // this freelist handling must change too.
-STATIC_ASSERT(sizeof(oop) == sizeof(uintptr_t));
+static_assert(sizeof(oop) == sizeof(uintptr_t));
 
 #ifdef ASSERT
 void JNIHandleBlock::zap() {
@@ -336,16 +371,16 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
     } else {
       block = new JNIHandleBlock();
     }
-    Atomic::inc(&_blocks_allocated);
+    AtomicAccess::inc(&_blocks_allocated);
     block->zap();
   }
   block->_top = 0;
   block->_next = nullptr;
   block->_pop_frame_link = nullptr;
   // _last, _free_list & _allocate_before_rebuild initialized in allocate_handle
-  debug_only(block->_last = nullptr);
-  debug_only(block->_free_list = nullptr);
-  debug_only(block->_allocate_before_rebuild = -1);
+  DEBUG_ONLY(block->_last = nullptr);
+  DEBUG_ONLY(block->_free_list = nullptr);
+  DEBUG_ONLY(block->_allocate_before_rebuild = -1);
   return block;
 }
 
@@ -373,7 +408,7 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
     DEBUG_ONLY(block->set_pop_frame_link(nullptr));
     while (block != nullptr) {
       JNIHandleBlock* next = block->_next;
-      Atomic::dec(&_blocks_allocated);
+      AtomicAccess::dec(&_blocks_allocated);
       assert(block->pop_frame_link() == nullptr, "pop_frame_link should be null");
       delete block;
       block = next;

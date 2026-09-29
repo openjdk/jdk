@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,14 +62,14 @@ JAVAC="${COMPILEJAVA}"/bin/javac
 JAVA="${TESTJAVA}"/bin/java
 
 # Does this VM support the 'detail' level of NMT?
-"${JAVA}" ${TESTVMOPTS} -XX:NativeMemoryTracking=detail -version
+"${JAVA}" ${TESTVMOPTS} ${TESTJAVAOPTS} -XX:NativeMemoryTracking=detail -version
 if [ "$?" = 0 ]; then
     NMT=-XX:NativeMemoryTracking=detail
 else
     NMT=-XX:NativeMemoryTracking=summary
 fi
 
-"${JAVA}" ${TESTVMOPTS} \
+"${JAVA}" ${TESTVMOPTS} ${TESTJAVAOPTS} \
     -Xlog:redefine+class+load=debug,redefine+class+load+exceptions=info ${NMT} \
     -javaagent:RetransformBigClassAgent.jar=BigClass.class \
     -classpath "${TESTCLASSES}" RetransformBigClassApp \

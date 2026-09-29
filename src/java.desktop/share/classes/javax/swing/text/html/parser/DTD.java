@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package javax.swing.text.html.parser;
-
-import sun.awt.AppContext;
 
 import java.io.PrintStream;
 import java.io.File;
@@ -404,18 +402,13 @@ class DTD implements DTDConstants {
     }
 
     /**
-     * The hashtable key of DTDs in AppContext.
-     */
-    private static final Object DTD_HASH_KEY = new Object();
-
-    /**
      * Put a name and appropriate DTD to hashtable.
      *
      * @param name the name of the DTD
      * @param dtd the DTD
      */
     public static void putDTDHash(String name, DTD dtd) {
-        getDtdHash().put(name, dtd);
+        DTD_MAP.put(name, dtd);
     }
 
     /**
@@ -430,27 +423,14 @@ class DTD implements DTDConstants {
      */
     public static DTD getDTD(String name) throws IOException {
         name = name.toLowerCase();
-        DTD dtd = getDtdHash().get(name);
+        DTD dtd = DTD_MAP.get(name);
         if (dtd == null)
           dtd = new DTD(name);
 
         return dtd;
     }
 
-    private static Hashtable<String, DTD> getDtdHash() {
-        AppContext appContext = AppContext.getAppContext();
-
-        @SuppressWarnings("unchecked")
-        Hashtable<String, DTD> result = (Hashtable<String, DTD>) appContext.get(DTD_HASH_KEY);
-
-        if (result == null) {
-            result = new Hashtable<String, DTD>();
-
-            appContext.put(DTD_HASH_KEY, result);
-        }
-
-        return result;
-    }
+    private static final Hashtable<String, DTD> DTD_MAP = new Hashtable<String, DTD>();
 
     /**
      * Recreates a DTD from an archived format.

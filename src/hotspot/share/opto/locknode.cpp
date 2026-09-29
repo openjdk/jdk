@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/locknode.hpp"
 #include "opto/parse.hpp"
+#include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 
@@ -39,27 +39,65 @@ const RegMask &BoxLockNode::out_RegMask() const {
 
 uint BoxLockNode::size_of() const { return sizeof(*this); }
 
-BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
-                                       _slot(slot), _is_eliminated(false) {
+BoxLockNode::BoxLockNode(int slot)
+    : Node(Compile::current()->root()),
+      _slot(slot),
+      // In debug mode, signal that the register mask is constant.
+      _inmask(OptoReg::stack2reg(_slot),
+              Compile::current()->comp_arena()
+              DEBUG_ONLY(COMMA /*read_only*/ true)),
+      _kind(BoxLockNode::Regular) {
   init_class_id(Class_BoxLock);
   init_flags(Flag_rematerialize);
-  OptoReg::Name reg = OptoReg::stack2reg(_slot);
-  _inmask.Insert(reg);
+  if (_slot > BoxLockNode_SLOT_LIMIT) {
+    Compile::current()->record_method_not_compilable(
+        "reached BoxLockNode slot limit");
+    return;
+  }
 }
 
-//-----------------------------hash--------------------------------------------
 uint BoxLockNode::hash() const {
-  if (EliminateNestedLocks)
+  if (EliminateNestedLocks) {
     return NO_HASH; // Each locked region has own BoxLock node
-  return Node::hash() + _slot + (_is_eliminated ? Compile::current()->fixed_slots() : 0);
+  }
+  return Node::hash() + _slot + (is_eliminated() ? Compile::current()->fixed_slots() : 0);
 }
 
-//------------------------------cmp--------------------------------------------
 bool BoxLockNode::cmp( const Node &n ) const {
-  if (EliminateNestedLocks)
+  if (EliminateNestedLocks) {
     return (&n == this); // Always fail except on self
+  }
   const BoxLockNode &bn = (const BoxLockNode &)n;
-  return bn._slot == _slot && bn._is_eliminated == _is_eliminated;
+  return (bn._slot == _slot) && (bn.is_eliminated() == is_eliminated());
+}
+
+Node* BoxLockNode::Identity(PhaseGVN* phase) {
+  if (!EliminateNestedLocks && !this->is_eliminated()) {
+    Node* n = phase->hash_find(this);
+    if (n == nullptr || n == this) {
+      return this;
+    }
+    BoxLockNode* old_box = n->as_BoxLock();
+    // Set corresponding status (_kind) when commoning BoxLock nodes.
+    if (this->_kind != old_box->_kind) {
+      if (this->is_unbalanced()) {
+        old_box->set_unbalanced();
+      }
+      if (!old_box->is_unbalanced()) {
+        // Only Regular or Coarsened status should be here:
+        // Nested and Local are set only when EliminateNestedLocks is on.
+        if (old_box->is_regular()) {
+          assert(this->is_coarsened(),"unexpected kind: %s", _kind_name[(int)this->_kind]);
+          old_box->set_coarsened();
+        } else {
+          assert(this->is_regular(),"unexpected kind: %s", _kind_name[(int)this->_kind]);
+          assert(old_box->is_coarsened(),"unexpected kind: %s", _kind_name[(int)old_box->_kind]);
+        }
+      }
+    }
+    return old_box;
+  }
+  return this;
 }
 
 BoxLockNode* BoxLockNode::box_node(Node* box) {
@@ -86,6 +124,9 @@ OptoReg::Name BoxLockNode::reg(Node* box) {
 
 // Is BoxLock node used for one simple lock region (same box and obj)?
 bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock) {
+  if (is_unbalanced()) {
+    return false;
+  }
   LockNode* lock = nullptr;
   bool has_one_lock = false;
   for (uint i = 0; i < this->outcnt(); i++) {
@@ -116,22 +157,6 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node*
       }
     }
   }
-#ifdef ASSERT
-  // Verify that FastLock and Safepoint reference only this lock region.
-  for (uint i = 0; i < this->outcnt(); i++) {
-    Node* n = this->raw_out(i);
-    if (n->is_FastLock()) {
-      FastLockNode* flock = n->as_FastLock();
-      assert((flock->box_node() == this) && flock->obj_node()->eqv_uncast(obj),"");
-    }
-    // Don't check monitor info in safepoints since the referenced object could
-    // be different from the locked object. It could be Phi node of different
-    // cast nodes which point to this locked object.
-    // We assume that no other objects could be referenced in monitor info
-    // associated with this BoxLock node because all associated locks and
-    // unlocks are reference only this one object.
-  }
-#endif
   if (unique_lock != nullptr && has_one_lock) {
     *unique_lock = lock;
   }
@@ -139,39 +164,16 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node*
 }
 
 //=============================================================================
-//-----------------------------hash--------------------------------------------
-uint FastLockNode::hash() const { return NO_HASH; }
-
-uint FastLockNode::size_of() const { return sizeof(*this); }
-
-//------------------------------cmp--------------------------------------------
-bool FastLockNode::cmp( const Node &n ) const {
-  return (&n == this);                // Always fail except on self
-}
-
-//=============================================================================
-//-----------------------------hash--------------------------------------------
-uint FastUnlockNode::hash() const { return NO_HASH; }
-
-//------------------------------cmp--------------------------------------------
-bool FastUnlockNode::cmp( const Node &n ) const {
-  return (&n == this);                // Always fail except on self
-}
-
-void FastLockNode::create_rtm_lock_counter(JVMState* state) {
-#if INCLUDE_RTM_OPT
-  Compile* C = Compile::current();
-  if (C->profile_rtm() || (PrintPreciseRTMLockingStatistics && C->use_rtm())) {
-    RTMLockingNamedCounter* rlnc = (RTMLockingNamedCounter*)
-           OptoRuntime::new_named_counter(state, NamedCounter::RTMLockingCounter);
-    _rtm_counters = rlnc->counters();
-    if (UseRTMForStackLocks) {
-      rlnc = (RTMLockingNamedCounter*)
-           OptoRuntime::new_named_counter(state, NamedCounter::RTMLockingCounter);
-      _stack_rtm_counters = rlnc->counters();
-    }
+const Type* FastLockNode::Value(PhaseGVN* phase) const {
+  const Type* in1_t = phase->type(in(1));
+  if (in1_t == Type::TOP) {
+    return Type::TOP;
   }
-#endif
+  if (in1_t->is_valueklassptr()) {
+    // Locking on value types always fails
+    return TypeInt::CC_GT;
+  }
+  return TypeInt::CC;
 }
 
 //=============================================================================
@@ -179,17 +181,21 @@ void FastLockNode::create_rtm_lock_counter(JVMState* state) {
 void Parse::do_monitor_enter() {
   kill_dead_locals();
 
-  C->set_has_monitors(true);
-
   // Null check; get casted pointer.
   Node* obj = null_check(peek());
   // Check for locking null object
   if (stopped()) return;
 
+  {
+    // Synchronizing on a value type is not allowed
+    BuildCutout unless(this, value_type_test(obj, /* is_value = */ false), PROB_MAX);
+    uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_none);
+  }
+
   // the monitor object is not part of debug info expression stack
   pop();
 
-  // Insert a FastLockNode which takes as arguments the current thread pointer,
+  // Insert a LockNode which takes as arguments the current thread pointer,
   // the obj pointer & the address of the stack slot pair used for the lock.
   shared_lock(obj);
 }
@@ -197,10 +203,6 @@ void Parse::do_monitor_enter() {
 //------------------------------do_monitor_exit--------------------------------
 void Parse::do_monitor_exit() {
   kill_dead_locals();
-
-  // need to set it for monitor exit as well.
-  // OSR compiled methods can start with lock taken
-  C->set_has_monitors(true);
 
   pop();                        // Pop oop to unlock
   // Because monitors are guaranteed paired (else we bail out), we know

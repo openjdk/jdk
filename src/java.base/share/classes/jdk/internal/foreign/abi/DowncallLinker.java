@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.invoke.MhUtil;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
@@ -38,36 +41,22 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-
-import static java.lang.invoke.MethodHandles.collectArguments;
-import static java.lang.invoke.MethodHandles.foldArguments;
-import static java.lang.invoke.MethodHandles.identity;
-import static java.lang.invoke.MethodHandles.insertArguments;
+import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 
 public class DowncallLinker {
     private static final boolean USE_SPEC = Boolean.parseBoolean(
-        GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.DowncallLinker.USE_SPEC", "true"));
+            System.getProperty("jdk.internal.foreign.DowncallLinker.USE_SPEC", "true"));
 
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
-    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS;
-    private static final MethodHandle EMPTY_OBJECT_ARRAY_HANDLE = MethodHandles.constant(Object[].class, new Object[0]);
+    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS = MhUtil.findVirtual(
+            MethodHandles.lookup(), DowncallLinker.class, "invokeInterpBindings",
+            methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
 
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MH_INVOKE_INTERP_BINDINGS = lookup.findVirtual(DowncallLinker.class, "invokeInterpBindings",
-                    methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private static final MethodHandle EMPTY_OBJECT_ARRAY_HANDLE = MethodHandles.constant(Object[].class, new Object[0]);
 
     private final ABIDescriptor abi;
     private final CallingSequence callingSequence;
@@ -91,7 +80,8 @@ public class DowncallLinker {
             leafType,
             callingSequence.needsReturnBuffer(),
             callingSequence.capturedStateMask(),
-            callingSequence.needsTransition()
+            callingSequence.needsTransition(),
+            callingSequence.usingAddressPairs()
         );
         MethodHandle handle = JLIA.nativeMethodHandle(nep);
 

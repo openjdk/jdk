@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 
 import java.lang.ref.WeakReference;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Map;
 import javax.management.Attribute;
@@ -45,8 +46,9 @@ import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.MXBean;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.management.loading.PrivateMLet;
+import javax.management.loading.PrivateClassLoader;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeType;
@@ -59,7 +61,6 @@ public class MXBeanLoadingTest1 {
         MXBeanLoadingTest1 test = new MXBeanLoadingTest1();
         test.run((Map<String, Object>)null);
     }
-
 
     public void run(Map<String, Object> args) {
 
@@ -81,37 +82,35 @@ public class MXBeanLoadingTest1 {
                             + ".class", "");
 
             URL[] urls = new URL[]{new URL(clsLoadPath)};
-            @SuppressWarnings("removal")
-            PrivateMLet mlet = new PrivateMLet(urls, null, false);
-            Class<?> shadowClass = mlet.loadClass(TestMXBean.class.getName());
+            Loader loader = new Loader(urls);
+            Class<?> shadowClass = loader.loadClass(TestMXBean.class.getName());
 
             if (shadowClass == TestMXBean.class) {
-                String message = "(ERROR) MLet got original TestMXBean, not shadow";
+                String message = "(ERROR) Loader got original TestMXBean, not shadow";
                 System.out.println(message);
                 throw new RuntimeException(message);
             }
             shadowClass = null;
 
             MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-            ObjectName mletName = new ObjectName("x:type=mlet");
-            mbs.registerMBean(mlet, mletName);
+            ObjectName loaderName = new ObjectName("x:type=myloader");
+            mbs.registerMBean(loader, loaderName);
 
             ObjectName testName = new ObjectName("x:type=test");
-            mbs.createMBean(Test.class.getName(), testName, mletName);
+            mbs.createMBean(Test.class.getName(), testName, loaderName);
 
             // That test fails because the MXBean instance is accessed via
             // a delegate OpenMBean which has
             ClassLoader testLoader = mbs.getClassLoaderFor(testName);
 
-            if (testLoader != mlet) {
-                System.out.println("MLet " + mlet);
-                String message = "(ERROR) MXBean's class loader is not MLet: "
+            if (testLoader != loader) {
+                System.out.println("Loader " + loader);
+                String message = "(ERROR) MXBean's class loader is not Loader: "
                         + testLoader;
                 System.out.println(message);
                 throw new RuntimeException(message);
             }
             testLoader = null;
-
 
             // Cycle get/set/get of the attribute of type Luis.
             // We check the set is effective.
@@ -264,23 +263,20 @@ public class MXBeanLoadingTest1 {
                 throw new RuntimeException(message);
             }
 
+            WeakReference<Loader> loaderRef = new WeakReference<>(loader);
             mbs.unregisterMBean(testName);
-            mbs.unregisterMBean(mletName);
-
-            @SuppressWarnings("removal")
-            WeakReference<PrivateMLet> mletRef =
-                    new WeakReference<PrivateMLet>(mlet);
-            mlet = null;
+            mbs.unregisterMBean(loaderName);
+            loader = null;
 
             System.out.println("MXBean registered and unregistered, waiting for " +
                     "garbage collector to collect class loader");
 
-            for (int i = 0; i < 10000 && mletRef.get() != null; i++) {
+            for (int i = 0; i < 10000 && loaderRef.get() != null; i++) {
                 System.gc();
                 Thread.sleep(1);
             }
 
-            if (mletRef.get() == null)
+            if (loaderRef.get() == null)
                 System.out.println("(OK) class loader was GC'd");
             else {
                 String message = "(ERROR) Class loader was not GC'd";
@@ -295,6 +291,14 @@ public class MXBeanLoadingTest1 {
         System.out.println("MXBeanLoadingTest1::run: Done without any error") ;
     }
 
+    public static interface LoaderMBean {
+    }
+
+    public static class Loader extends URLClassLoader implements LoaderMBean, PrivateClassLoader {
+        public Loader(URL[] urls) {
+            super(urls, null);
+        }
+    }
 
     // I agree the use of the MXBean annotation and the MXBean suffix for the
     // interface name are redundant but however harmless.

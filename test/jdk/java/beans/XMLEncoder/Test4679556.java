@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4679556
  * @summary Tests for duplication of some kind instances
- * @run main/othervm -Djava.security.manager=allow Test4679556
+ * @run main/othervm Test4679556
  * @author Sergey Malenkov, Mark Davidson, Philip Milne
  */
 
@@ -89,7 +89,7 @@ import java.beans.XMLEncoder;
  */
 public class Test4679556 extends AbstractTest {
     public static void main(String[] args) {
-        new Test4679556().test(true);
+        new Test4679556().test();
     }
 
     protected Object getObject() {

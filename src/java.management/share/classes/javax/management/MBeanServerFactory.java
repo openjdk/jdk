@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,9 @@ package javax.management;
 import com.sun.jmx.defaults.JmxProperties;
 import static com.sun.jmx.defaults.JmxProperties.JMX_INITIAL_BUILDER;
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
-import java.security.AccessController;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.lang.System.Logger.Level;
 import javax.management.loading.ClassLoaderRepository;
-import sun.reflect.misc.ReflectUtil;
-
 
 /**
  * <p>Provides MBean server references.  There are no instances of
@@ -101,38 +96,6 @@ public class MBeanServerFactory {
     private static MBeanServerBuilder builder = null;
 
     /**
-     * Provide a new {@link javax.management.MBeanServerBuilder}.
-     * @param builder The new MBeanServerBuilder that will be used to
-     *        create {@link javax.management.MBeanServer}s.
-     * @exception IllegalArgumentException if the given builder is null.
-     *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("setMBeanServerBuilder")</code>.
-     *
-     **/
-    // public static synchronized void
-    //    setMBeanServerBuilder(MBeanServerBuilder builder) {
-    //    checkPermission("setMBeanServerBuilder");
-    //    MBeanServerFactory.builder = builder;
-    // }
-
-    /**
-     * Get the current {@link javax.management.MBeanServerBuilder}.
-     *
-     * @return the current {@link javax.management.MBeanServerBuilder}.
-     *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("getMBeanServerBuilder")</code>.
-     *
-     **/
-    // public static synchronized MBeanServerBuilder getMBeanServerBuilder() {
-    //     checkPermission("getMBeanServerBuilder");
-    //     return builder;
-    // }
-
-    /**
      * Remove internal MBeanServerFactory references to a created
      * MBeanServer. This allows the garbage collector to remove the
      * MBeanServer object.
@@ -144,13 +107,8 @@ public class MBeanServerFactory {
      * <code>createMBeanServer</code> methods, or if
      * <code>releaseMBeanServer</code> was already called on it.
      *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("releaseMBeanServer")</code>.
      */
     public static void releaseMBeanServer(MBeanServer mbeanServer) {
-        checkPermission("releaseMBeanServer");
-
         removeMBeanServer(mbeanServer);
     }
 
@@ -170,10 +128,6 @@ public class MBeanServerFactory {
      * <p>This method is equivalent to <code>createMBeanServer(null)</code>.
      *
      * @return the newly created MBeanServer.
-     *
-     * @exception SecurityException if there is a SecurityManager and the
-     * caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("createMBeanServer")</code>.
      *
      * @exception JMRuntimeException if the property
      * <code>javax.management.builder.initial</code> exists but the
@@ -208,10 +162,6 @@ public class MBeanServerFactory {
      *
      * @return the newly created MBeanServer.
      *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("createMBeanServer")</code>.
-     *
      * @exception JMRuntimeException if the property
      * <code>javax.management.builder.initial</code> exists but the
      * class it names cannot be instantiated through a public
@@ -226,8 +176,6 @@ public class MBeanServerFactory {
      * MBeanServerBuilder}.
      */
     public static MBeanServer createMBeanServer(String domain)  {
-        checkPermission("createMBeanServer");
-
         final MBeanServer mBeanServer = newMBeanServer(domain);
         addMBeanServer(mBeanServer);
         return mBeanServer;
@@ -251,10 +199,6 @@ public class MBeanServerFactory {
      * <p>This method is equivalent to <code>newMBeanServer(null)</code>.</p>
      *
      * @return the newly created MBeanServer.
-     *
-     * @exception SecurityException if there is a SecurityManager and the
-     * caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("newMBeanServer")</code>.
      *
      * @exception JMRuntimeException if the property
      * <code>javax.management.builder.initial</code> exists but the
@@ -291,10 +235,6 @@ public class MBeanServerFactory {
      *
      * @return the newly created MBeanServer.
      *
-     * @exception SecurityException if there is a SecurityManager and the
-     * caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("newMBeanServer")</code>.
-     *
      * @exception JMRuntimeException if the property
      * <code>javax.management.builder.initial</code> exists but the
      * class it names cannot be instantiated through a public
@@ -309,8 +249,6 @@ public class MBeanServerFactory {
      * MBeanServerBuilder}.
      */
     public static MBeanServer newMBeanServer(String domain)  {
-        checkPermission("newMBeanServer");
-
         // Get the builder. Creates a new one if necessary.
         //
         final MBeanServerBuilder mbsBuilder = getNewMBeanServerBuilder();
@@ -350,15 +288,9 @@ public class MBeanServerFactory {
      * <code>MBeanServerId</code> attribute of its delegate MBean.
      *
      * @return A list of MBeanServer objects.
-     *
-     * @exception SecurityException if there is a SecurityManager and the
-     * caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("findMBeanServer")</code>.
      */
     public static synchronized
             ArrayList<MBeanServer> findMBeanServer(String agentId) {
-
-        checkPermission("findMBeanServer");
 
         if (agentId == null)
             return new ArrayList<>(mBeanServerList);
@@ -382,9 +314,6 @@ public class MBeanServerFactory {
      * was implemented in JMX 1.1 - where the possibility to use
      * <code>null</code> was deprecated.
      * @return The Class Loader Repository used by the given MBeanServer.
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanPermission}("getClassLoaderRepository")</code>.
      *
      * @exception NullPointerException if <code>server</code> is null.
      *
@@ -402,16 +331,6 @@ public class MBeanServerFactory {
             JmxProperties.MISC_LOGGER.log(Level.TRACE,
                     "Ignoring exception while getting MBeanServerId: "+e);
             return null;
-        }
-    }
-
-    private static void checkPermission(String action)
-    throws SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Permission perm = new MBeanServerPermission(action);
-            sm.checkPermission(perm);
         }
     }
 
@@ -446,7 +365,7 @@ public class MBeanServerFactory {
         }
 
         // No context class loader? Try with Class.forName()
-        return ReflectUtil.forName(builderClassName);
+        return Class.forName(builderClassName);
     }
 
     /**
@@ -476,10 +395,7 @@ public class MBeanServerFactory {
      **/
     private static synchronized void checkMBeanServerBuilder() {
         try {
-            GetPropertyAction act =
-                    new GetPropertyAction(JMX_INITIAL_BUILDER);
-            @SuppressWarnings("removal")
-            String builderClassName = AccessController.doPrivileged(act);
+            String builderClassName = System.getProperty(JMX_INITIAL_BUILDER);
 
             try {
                 final Class<?> newBuilderClass;
@@ -525,9 +441,6 @@ public class MBeanServerFactory {
      *
      * @return the new current {@link javax.management.MBeanServerBuilder}.
      *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not make it possible to instantiate
-     * a new builder.
      * @exception JMRuntimeException if the builder instantiation
      *   fails with a checked exception -
      *   {@link java.lang.ClassNotFoundException} etc...

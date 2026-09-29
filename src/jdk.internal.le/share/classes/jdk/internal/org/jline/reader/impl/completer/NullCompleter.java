@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -22,11 +22,8 @@ import jdk.internal.org.jline.reader.ParsedLine;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
  */
-public final class NullCompleter
-    implements Completer
-{
+public final class NullCompleter implements Completer {
     public static final NullCompleter INSTANCE = new NullCompleter();
 
-    public void complete(LineReader reader, final ParsedLine line, final List<Candidate> candidates) {
-    }
+    public void complete(LineReader reader, final ParsedLine line, final List<Candidate> candidates) {}
 }

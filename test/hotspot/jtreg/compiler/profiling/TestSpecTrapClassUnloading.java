@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8031752
  * @summary speculative traps need to be cleaned up at GC
  *
+ * @requires vm.compMode != "Xcomp"
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
  *                   -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileThreshold=10000

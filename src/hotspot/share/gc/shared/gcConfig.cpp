@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -44,7 +43,7 @@
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/shared/zSharedArguments.hpp"
+#include "gc/z/zArguments.hpp"
 #endif
 
 struct IncludedGC {
@@ -62,7 +61,7 @@ struct IncludedGC {
   PARALLELGC_ONLY(static ParallelArguments   parallelArguments;)
     SERIALGC_ONLY(static SerialArguments     serialArguments;)
 SHENANDOAHGC_ONLY(static ShenandoahArguments shenandoahArguments;)
-         ZGC_ONLY(static ZSharedArguments    zArguments;)
+         ZGC_ONLY(static ZArguments          zArguments;)
 
 // Table of included GCs, for translating between command
 // line flag, CollectedHeap::Name and GCArguments instance.
@@ -96,10 +95,11 @@ void GCConfig::fail_if_non_included_gc_is_selected() {
 }
 
 void GCConfig::select_gc_ergonomically() {
-  if (os::is_server_class_machine()) {
 #if INCLUDE_G1GC
-    FLAG_SET_ERGO_IF_DEFAULT(UseG1GC, true);
-#elif INCLUDE_PARALLELGC
+  FLAG_SET_ERGO_IF_DEFAULT(UseG1GC, true);
+#else
+  if (os::is_server_class_machine()) {
+#if INCLUDE_PARALLELGC
     FLAG_SET_ERGO_IF_DEFAULT(UseParallelGC, true);
 #elif INCLUDE_SERIALGC
     FLAG_SET_ERGO_IF_DEFAULT(UseSerialGC, true);
@@ -109,6 +109,7 @@ void GCConfig::select_gc_ergonomically() {
     FLAG_SET_ERGO_IF_DEFAULT(UseSerialGC, true);
 #endif
   }
+#endif
 }
 
 bool GCConfig::is_no_gc_selected() {

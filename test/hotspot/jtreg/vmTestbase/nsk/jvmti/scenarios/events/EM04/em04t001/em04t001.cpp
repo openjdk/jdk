@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,20 @@
 #include <string.h>
 #include <stdlib.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
-#include "nsk_list.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
+#include "nsk_list.hpp"
 
 extern "C" {
 
 /* ============================================================================= */
 
 /* scaffold objects */
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
-const void *plist = NULL;
+const void *plist = nullptr;
 
 #define NAME_LENGTH 50
 
@@ -48,7 +48,7 @@ typedef struct nsk_jvmti_DCG_paramsStruct {
     int sign;
 } nsk_jvmti_DCG_params;
 
-static jrawMonitorID syncLock = NULL;
+static jrawMonitorID syncLock = nullptr;
 static volatile int callbacksEnabled = NSK_TRUE;
 /* ============================================================================= */
 
@@ -118,11 +118,18 @@ cbDynamicCodeGenerated2(jvmtiEnv *jvmti_env, const char *name,
 
 }
 
+void JNICALL
+cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
+        nsk_jvmti_setFailStatus();
+    }
+}
+
 /* ============================================================================= */
 
 static int
 enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, nullptr))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -138,6 +145,7 @@ int setCallBacks(int stage) {
     eventCallbacks.DynamicCodeGenerated = (stage == 1) ?
                             cbDynamicCodeGenerated1 : cbDynamicCodeGenerated2;
 
+    eventCallbacks.VMDeath = &cbVMDeath;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
@@ -212,7 +220,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
-    if (!NSK_VERIFY(jvmti != NULL))
+    if (!NSK_VERIFY(jvmti != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
@@ -221,7 +229,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     plist = (const void *)nsk_list_create();
-    if (!NSK_VERIFY(plist != NULL))
+    if (!NSK_VERIFY(plist != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY1("plist = 0x%p\n", plist);
@@ -236,7 +244,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;
@@ -256,9 +264,6 @@ Agent_OnUnload(JavaVM *jvm)
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
-        nsk_jvmti_setFailStatus();
-    }
 }
 
 }

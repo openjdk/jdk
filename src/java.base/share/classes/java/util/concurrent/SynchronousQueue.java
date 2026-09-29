@@ -194,6 +194,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                     if ((m = s.await(e, ns, this,  // spin if (nearly) empty
                                      p == null || p.waiter == null)) == e)
                         unspliceLifo(s);           // cancelled
+                    else if (m != null)
+                        s.selfLinkItem();
                     break;
                 }
             }
@@ -475,8 +477,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Returns a zero-length array.
-     * @return a zero-length array
+     * {@return a zero-length array}
      */
     public Object[] toArray() {
         return new Object[0];
@@ -554,8 +555,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     static class FifoWaitQueue extends WaitQueue {
         private static final long serialVersionUID = -3623113410248163686L;
     }
+    /** @serial */
     private ReentrantLock qlock;
+    /** @serial */
     private WaitQueue waitingProducers;
+    /** @serial */
     private WaitQueue waitingConsumers;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 
+@Deprecated(since="24", forRemoval=true)
 public class DebugServer {
   private void usage() {
     System.out.println("usage: java " + getClass().getName() + " <pid> [server id]");
@@ -42,9 +43,11 @@ public class DebugServer {
   }
 
   public static void main(String[] args) {
+    System.err.println("WARNING: DebugServer is deprecated and will be removed in a future release.");
     new DebugServer().run(args);
   }
 
+  @SuppressWarnings("removal")
   private void run(String[] args) {
     if ((args.length < 1) || (args.length > 3)) {
       usage();

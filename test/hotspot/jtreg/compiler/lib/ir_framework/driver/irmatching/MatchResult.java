@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,12 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
-import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 /**
  * This interface is implemented by all classes which represent an IR match result of a {@link Matchable} class.
  * A match result class accepts a {@link MatchResultVisitor} to visit the result (i.e. for reporting etc.).
- * The visitor is responsible to call {@link #accept(MatchResultVisitor)} of the children match results by using
- * {@link AcceptChildren#accept(MatchResultVisitor)}.
+ * The visitor is responsible to call {@link #accept(MatchResultVisitor)} on the sub results.
  */
 public interface MatchResult {
     /**
@@ -43,4 +41,9 @@ public interface MatchResult {
      * visitor.
      */
     void accept(MatchResultVisitor visitor);
+
+    /**
+     * Returns the sub results of this {@link MatchResult}.
+     */
+    SubResults subResults();
 }

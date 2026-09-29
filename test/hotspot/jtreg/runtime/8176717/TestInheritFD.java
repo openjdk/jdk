@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -54,7 +56,7 @@ import java.util.stream.Stream;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestInheritFD
+ * @run driver/timeout=480 TestInheritFD
  */
 
 /**
@@ -76,6 +78,8 @@ import java.util.stream.Stream;
  * the third VM.
  */
 
+import jdk.test.lib.Utils;
+
 public class TestInheritFD {
 
     public static final String LEAKS_FD = "VM RESULT => LEAKS FD";
@@ -88,8 +92,7 @@ public class TestInheritFD {
     public static final String THIRD_VM_PID_PREFIX = "Third VM pid=";
     public static final String THIRD_VM_WAITING_PREFIX = "Third VM waiting for second VM pid=";
 
-    public static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-    public static long subProcessTimeout = (long)(15L * timeoutFactor);
+    public static long subProcessTimeout = (long)(60L * Utils.TIMEOUT_FACTOR);
 
     // Extract a pid from the specified String at the specified start offset.
     private static long extractPidFromStringOffset(String str, int start) {
@@ -107,7 +110,12 @@ public class TestInheritFD {
 
     // Wait for the sub-process pids identified in commFile to finish executing.
     // Returns true if RETAINS_FD was found in the commFile and false otherwise.
-    private static boolean waitForSubPids(File commFile) throws Exception {
+    enum Result {
+        FOUND_LEAKS_FD,
+        FOUND_RETAINS_FD,
+        FOUND_NONE // Unexpected.
+    };
+    private static Result waitForSubPids(File commFile) throws Exception {
         String out = "";
         int sleepCnt = 0;
         long secondVMPID = -1;
@@ -214,8 +222,13 @@ public class TestInheritFD {
             System.out.println(out);
             System.out.println("<END commFile contents>");
         }
-
-        return out.contains(RETAINS_FD);
+        if (out.contains(RETAINS_FD)) {
+            return Result.FOUND_RETAINS_FD;
+        } else if (out.contains(LEAKS_FD)) {
+            return Result.FOUND_LEAKS_FD;
+        } else {
+            return Result.FOUND_NONE;
+        }
     }
 
     // first VM
@@ -238,10 +251,13 @@ public class TestInheritFD {
         pb.redirectOutput(commFile); // use temp file to communicate between processes
         pb.start();
 
-        if (waitForSubPids(commFile)) {
+        Result result = waitForSubPids(commFile);
+        if (result == Result.FOUND_RETAINS_FD) {
             System.out.println("Log file was not inherited by third VM.");
-        } else {
+        } else if (result == Result.FOUND_LEAKS_FD) {
             throw new RuntimeException("Log file was leaked to the third VM.");
+        } else {
+            throw new RuntimeException("Found neither message, test failed to run correctly");
         }
         System.out.println("First VM ends.");
     }
@@ -290,8 +306,15 @@ public class TestInheritFD {
                 if (false) {  // Enable to simulate a timeout in the third VM.
                     Thread.sleep(300 * 1000);
                 }
+            } catch (CompletionException e) {
+                if (e.getCause() instanceof TimeoutException) {
+                    System.out.println("(Third VM) Timed out waiting for second VM: " + e.toString());
+                } else {
+                    System.out.println("(Third VM) Exception was thrown: " + e.toString());
+                }
+                throw e;
             } catch (Exception e) {
-                System.out.println("Exception was thrown: " + e.toString());
+                System.out.println("(Third VM) Exception was thrown: " + e.toString());
                 throw e;
             } finally {
                 System.out.println(EXIT);
@@ -361,4 +384,3 @@ public class TestInheritFD {
         System.out.println(f.renameTo(f) ? RETAINS_FD : LEAKS_FD); // this parts communicates a closed file descriptor by printing "VM RESULT => RETAINS FD"
     }
 }
-

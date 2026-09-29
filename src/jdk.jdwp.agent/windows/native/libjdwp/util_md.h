@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,6 @@ typedef unsigned __int64 UNSIGNED_JLONG;
 typedef unsigned long UNSIGNED_JINT;
 
 #define MAXPATHLEN _MAX_PATH
-
-/* Needed on Windows because names seem to be hidden in stdio.h. */
-
-#define snprintf        _snprintf
-#define vsnprintf       _vsnprintf
 
 /* On little endian machines, convert java big endian numbers. */
 

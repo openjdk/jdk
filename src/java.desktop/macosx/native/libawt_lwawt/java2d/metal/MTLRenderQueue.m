@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,19 @@ jint mtlPreviousOp = MTL_OP_INIT;
 
 extern void MTLGC_DestroyMTLGraphicsConfig(jlong pConfigInfo);
 
+/**
+ * Triggers the display link for the current destination surface.
+ */
+static void MTLSD_Flush() {
+    if (dstOps != NULL) {
+        MTLSDOps *dstMTLOps = (MTLSDOps *)dstOps->privOps;
+        MTLLayer *layer = (MTLLayer*)dstMTLOps->layer;
+        if (layer != NULL) {
+            [layer startDisplayLink];
+        }
+    }
+}
+
 void MTLRenderQueue_CheckPreviousOp(jint op) {
 
     if (mtlPreviousOp == op) {
@@ -65,8 +78,8 @@ void MTLRenderQueue_CheckPreviousOp(jint op) {
         return;
     }
 
-    J2dTraceLn1(J2D_TRACE_VERBOSE,
-                "MTLRenderQueue_CheckPreviousOp: new op=%d", op);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "MTLRenderQueue_CheckPreviousOp: new op=%d", op);
 
     switch (mtlPreviousOp) {
         case MTL_OP_INIT :
@@ -104,8 +117,8 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
 {
     unsigned char *b, *end;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "MTLRenderQueue_flushBuffer: limit=%d", limit);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderQueue_flushBuffer: limit=%d", limit);
 
     b = (unsigned char *)jlong_to_ptr(buf);
     if (b == NULL) {
@@ -119,9 +132,9 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
         while (b < end) {
             jint opcode = NEXT_INT(b);
 
-            J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "MTLRenderQueue_flushBuffer: opcode=%d, rem=%d",
-                    opcode, (end-b));
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "MTLRenderQueue_flushBuffer: opcode=%d, rem=%d",
+                       opcode, (end-b));
 
             switch (opcode) {
 
@@ -161,35 +174,21 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                 case sun_java2d_pipe_BufferedOpCodes_DRAW_POLY:
                 {
                     CHECK_PREVIOUS_OP(MTL_OP_OTHER);
-                    jint nPoints      = NEXT_INT(b);
-                    jboolean isClosed = NEXT_BOOLEAN(b);
-                    jint transX       = NEXT_INT(b);
-                    jint transY       = NEXT_INT(b);
-                    jint *xPoints = (jint *)b;
-                    jint *yPoints = ((jint *)b) + nPoints;
 
                     if ([mtlc useXORComposite]) {
                         commitEncodedCommands();
                         J2dTraceLn(J2D_TRACE_VERBOSE,
                                    "DRAW_POLY in XOR mode - Force commit earlier draw calls before DRAW_POLY.");
 
-                        // draw separate (N-1) lines using N points
-                        for(int point = 0; point < nPoints-1; point++) {
-                            jint x1 = xPoints[point] + transX;
-                            jint y1 = yPoints[point] + transY;
-                            jint x2 = xPoints[point + 1] + transX;
-                            jint y2 = yPoints[point + 1] + transY;
-                            MTLRenderer_DrawLine(mtlc, dstOps, x1, y1, x2, y2);
-                        }
-
-                        if (isClosed) {
-                            MTLRenderer_DrawLine(mtlc, dstOps, xPoints[0] + transX, yPoints[0] + transY,
-                                                 xPoints[nPoints-1] + transX, yPoints[nPoints-1] + transY);
-                        }
-                    } else {
-                        MTLRenderer_DrawPoly(mtlc, dstOps, nPoints, isClosed, transX, transY, xPoints, yPoints);
                     }
 
+                    jint nPoints      = NEXT_INT(b);
+                    jboolean isClosed = NEXT_BOOLEAN(b);
+                    jint transX       = NEXT_INT(b);
+                    jint transY       = NEXT_INT(b);
+                    jint *xPoints = (jint *)b;
+                    jint *yPoints = ((jint *)b) + nPoints;
+                    MTLRenderer_DrawPoly(mtlc, dstOps, nPoints, isClosed, transX, transY, xPoints, yPoints);
                     SKIP_BYTES(b, nPoints * BYTES_PER_POLY_POINT);
                     break;
                 }
@@ -589,6 +588,7 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                             [cbwrapper release];
                         }];
                         [commandbuf commit];
+                        MTLSD_Flush();
                     }
                     mtlc = [MTLContext setSurfacesEnv:env src:pSrc dst:pDst];
                     dstOps = (BMTLSDOps *)jlong_to_ptr(pDst);
@@ -616,6 +616,7 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                                     [cbwrapper release];
                                 }];
                                 [commandbuf commit];
+                                MTLSD_Flush();
                             }
                             mtlc = newMtlc;
                             dstOps = NULL;
@@ -868,8 +869,9 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                 }
 
                 default:
-                    J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                        "MTLRenderQueue_flushBuffer: invalid opcode=%d", opcode);
+                    J2dRlsTraceLn(J2D_TRACE_ERROR,
+                                  "MTLRenderQueue_flushBuffer: invalid opcode=%d",
+                                  opcode);
                     return;
             }
         }
@@ -885,14 +887,7 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                 [cbwrapper release];
             }];
             [commandbuf commit];
-            BMTLSDOps *dstOps = MTLRenderQueue_GetCurrentDestination();
-            if (dstOps != NULL) {
-                MTLSDOps *dstMTLOps = (MTLSDOps *)dstOps->privOps;
-                MTLLayer *layer = (MTLLayer*)dstMTLOps->layer;
-                if (layer != NULL) {
-                    [layer startDisplayLink];
-                }
-            }
+            MTLSD_Flush();
         }
         RESET_PREVIOUS_OP();
     }

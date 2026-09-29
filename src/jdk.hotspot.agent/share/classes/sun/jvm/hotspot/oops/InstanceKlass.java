@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,16 +53,32 @@ public class InstanceKlass extends Klass {
   static int FIELD_FLAG_IS_GENERIC;
   static int FIELD_FLAG_IS_STABLE;
   static int FIELD_FLAG_IS_CONTENDED;
+  static int FIELD_FLAG_IS_NULL_FREE_VALUE;
+  static int FIELD_FLAG_IS_FLAT;
+  static int FIELD_FLAG_IS_NULL_MARKER;
 
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
   private static int CLASS_STATE_LOADED;
-  private static int CLASS_STATE_BEING_LINKED;
   private static int CLASS_STATE_LINKED;
   private static int CLASS_STATE_BEING_INITIALIZED;
   private static int CLASS_STATE_FULLY_INITIALIZED;
   private static int CLASS_STATE_INITIALIZATION_ERROR;
 
+  public long     getAccessFlags()          { return            accessFlags.getValue(this); }
+  // Convenience routine
+  public AccessFlags getAccessFlagsObj()    { return new AccessFlags(getAccessFlags()); }
+
+  public boolean isPublic()                 { return getAccessFlagsObj().isPublic(); }
+  public boolean isFinal()                  { return getAccessFlagsObj().isFinal(); }
+  public boolean isInterface()              { return getAccessFlagsObj().isInterface(); }
+  public boolean isAbstract()               { return getAccessFlagsObj().isAbstract(); }
+  public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
+  public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
+
+  public boolean supportsValueTypes() {
+      return majorVersion() >= VALUE_TYPES_MAJOR_VERSION && minorVersion() == JAVA_PREVIEW_MINOR_VERSION;
+  }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("InstanceKlass");
@@ -89,6 +105,9 @@ public class InstanceKlass extends Klass {
       breakpoints        = type.getAddressField("_breakpoints");
     }
     headerSize           = type.getSize();
+    accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
+    valueFieldLayoutInfoArray = type.getAddressField("_value_field_layout_info_array");
+    adrValueKlassMembers = type.getAddressField("_adr_value_klass_members");
 
     // read internal field flags constants
     FIELD_FLAG_IS_INITIALIZED      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_initialized");
@@ -96,12 +115,14 @@ public class InstanceKlass extends Klass {
     FIELD_FLAG_IS_GENERIC          = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_generic");
     FIELD_FLAG_IS_STABLE           = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_stable");
     FIELD_FLAG_IS_CONTENDED        = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_contended");
+    FIELD_FLAG_IS_NULL_FREE_VALUE  = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_free_value_type");
+    FIELD_FLAG_IS_FLAT             = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_flat");
+    FIELD_FLAG_IS_NULL_MARKER      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_marker");
 
 
     // read ClassState constants
     CLASS_STATE_ALLOCATED = db.lookupIntConstant("InstanceKlass::allocated").intValue();
     CLASS_STATE_LOADED = db.lookupIntConstant("InstanceKlass::loaded").intValue();
-    CLASS_STATE_BEING_LINKED = db.lookupIntConstant("InstanceKlass::being_linked").intValue();
     CLASS_STATE_LINKED = db.lookupIntConstant("InstanceKlass::linked").intValue();
     CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("InstanceKlass::being_initialized").intValue();
     CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
@@ -152,13 +173,15 @@ public class InstanceKlass extends Klass {
   private static CIntField initState;
   private static CIntField itableLen;
   private static CIntField nestHostIndex;
+  private static CIntField accessFlags;
   private static AddressField breakpoints;
+  private static AddressField valueFieldLayoutInfoArray;
+  private static AddressField adrValueKlassMembers;
 
   // type safe enum for ClassState from instanceKlass.hpp
   public static class ClassState {
      public static final ClassState ALLOCATED    = new ClassState("allocated");
      public static final ClassState LOADED       = new ClassState("loaded");
-     public static final ClassState BEING_LINKED = new ClassState("beingLinked");
      public static final ClassState LINKED       = new ClassState("linked");
      public static final ClassState BEING_INITIALIZED      = new ClassState("beingInitialized");
      public static final ClassState FULLY_INITIALIZED    = new ClassState("fullyInitialized");
@@ -182,8 +205,6 @@ public class InstanceKlass extends Klass {
         return ClassState.ALLOCATED;
      } else if (state == CLASS_STATE_LOADED) {
         return ClassState.LOADED;
-     } else if (state == CLASS_STATE_BEING_LINKED) {
-        return ClassState.BEING_LINKED;
      } else if (state == CLASS_STATE_LINKED) {
         return ClassState.LINKED;
      } else if (state == CLASS_STATE_BEING_INITIALIZED) {
@@ -256,6 +277,9 @@ public class InstanceKlass extends Klass {
                  getNonstaticOopMapSize()) * wordLength;
     if (isInterface()) {
       size += wordLength;
+    }
+    if (this instanceof ValueKlass) {
+      size += ValueKlass.Members.getSize();
     }
     return alignSize(size);
   }
@@ -439,46 +463,6 @@ public class InstanceKlass extends Klass {
     }
   }
 
-  // refer to compute_modifier_flags in VM code.
-  public long computeModifierFlags() {
-    long access = getAccessFlags();
-    // But check if it happens to be member class.
-    U2Array innerClassList = getInnerClasses();
-    int length = (innerClassList == null)? 0 : innerClassList.length();
-    if (length > 0) {
-       if (Assert.ASSERTS_ENABLED) {
-          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
-                      length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosingMethodAttributeSize,
-                      "just checking");
-       }
-       for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
-          if (i == length - EnclosingMethodAttributeOffset.enclosingMethodAttributeSize) {
-              break;
-          }
-          int ioff = innerClassList.at(i +
-                         InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
-          // 'ioff' can be zero.
-          // refer to JVM spec. section 4.7.5.
-          if (ioff != 0) {
-             // only look at classes that are already loaded
-             // since we are looking for the flags for our self.
-             Symbol name = getConstants().getKlassNameAt(ioff);
-
-             if (name.equals(getName())) {
-                // This is really a member class
-                access = innerClassList.at(i +
-                        InnerClassAttributeOffset.innerClassAccessFlagsOffset);
-                break;
-             }
-          }
-       } // for inner classes
-    }
-
-    // Remember to strip ACC_SUPER bit
-    return (access & (~JVM_ACC_SUPER)) & JVM_ACC_WRITTEN_FLAGS;
-  }
-
-
   // whether given Symbol is name of an inner/nested Klass of this Klass?
   // anonymous and local classes are excluded.
   public boolean isInnerClassName(Symbol sym) {
@@ -544,7 +528,7 @@ public class InstanceKlass extends Klass {
     }
   }
 
-  public boolean implementsInterface(Klass k) {
+  public boolean implementsInterface(InstanceKlass k) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(k.isInterface(), "should not reach here");
     }
@@ -556,7 +540,7 @@ public class InstanceKlass extends Klass {
     return false;
   }
 
-  boolean computeSubtypeOf(Klass k) {
+  boolean computeSubtypeOf(InstanceKlass k) {
     if (k.isInterface()) {
       return implementsInterface(k);
     } else {
@@ -580,6 +564,7 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(nonstaticOopMapSize, true);
       visitor.doCInt(initState, true);
       visitor.doCInt(itableLen, true);
+      visitor.doCInt(accessFlags, true);
     }
 
   /*
@@ -910,6 +895,15 @@ public class InstanceKlass extends Klass {
     return VMObjectFactory.newObject(U2Array.class, addr);
   }
 
+  public Address getAdrValueKlassMembers() {
+    return getAddress().getAddressAt(adrValueKlassMembers.getOffset());
+  }
+
+  public ValueFieldLayoutInfoArray getValueFieldLayoutInfoArray() {
+    Address addr = valueFieldLayoutInfoArray.getValue(getAddress());
+    return VMObjectFactory.newObject(ValueFieldLayoutInfoArray.class, addr);
+  }
+
   //----------------------------------------------------------------------
   // Internals only below this point
   //
@@ -1009,85 +1003,5 @@ public class InstanceKlass extends Klass {
       }
     }
     return -1;
-  }
-
-  public void dumpReplayData(PrintStream out) {
-    ConstantPool cp = getConstants();
-
-    // Try to record related loaded classes
-    Klass sub = getSubklassKlass();
-    while (sub != null) {
-        if (sub instanceof InstanceKlass) {
-            out.println("instanceKlass " + sub.getName().asString());
-        }
-        sub = sub.getNextSiblingKlass();
-    }
-
-    final int length = cp.getLength();
-    out.print("ciInstanceKlass " + getName().asString() + " " + (isLinked() ? 1 : 0) + " " + (isInitialized() ? 1 : 0) + " " + length);
-    for (int index = 1; index < length; index++) {
-      out.print(" " + cp.getTags().at(index));
-    }
-    out.println();
-    if (isInitialized()) {
-      Field[] staticFields = getStaticFields();
-      for (int i = 0; i < staticFields.length; i++) {
-        Field f = staticFields[i];
-        Oop mirror = getJavaMirror();
-        if (f.isFinal() && !f.hasInitialValue()) {
-          out.print("staticfield " + getName().asString() + " " +
-                    OopUtilities.escapeString(f.getID().getName()) + " " +
-                    f.getFieldType().getSignature().asString() + " ");
-          if (f instanceof ByteField) {
-            ByteField bf = (ByteField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof BooleanField) {
-            BooleanField bf = (BooleanField)f;
-            out.println(bf.getValue(mirror) ? 1 : 0);
-          } else if (f instanceof ShortField) {
-            ShortField bf = (ShortField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof CharField) {
-            CharField bf = (CharField)f;
-            out.println(bf.getValue(mirror) & 0xffff);
-          } else if (f instanceof IntField) {
-            IntField bf = (IntField)f;
-            out.println(bf.getValue(mirror));
-          } else  if (f instanceof LongField) {
-            LongField bf = (LongField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof FloatField) {
-            FloatField bf = (FloatField)f;
-            out.println(Float.floatToRawIntBits(bf.getValue(mirror)));
-          } else if (f instanceof DoubleField) {
-            DoubleField bf = (DoubleField)f;
-            out.println(Double.doubleToRawLongBits(bf.getValue(mirror)));
-          } else if (f instanceof OopField) {
-            OopField bf = (OopField)f;
-
-            Oop value = bf.getValue(mirror);
-            if (value == null) {
-              out.println("null");
-            } else if (value.isInstance()) {
-              Instance inst = (Instance)value;
-              if (inst.isA(SystemDictionary.getStringKlass())) {
-                out.println("\"" + OopUtilities.stringOopToEscapedString(inst) + "\"");
-              } else {
-                out.println(inst.getKlass().getName().asString());
-              }
-            } else if (value.isObjArray()) {
-              ObjArray oa = (ObjArray)value;
-              Klass ek = (ObjArrayKlass)oa.getKlass();
-              out.println(oa.getLength() + " " + ek.getName().asString());
-            } else if (value.isTypeArray()) {
-              TypeArray ta = (TypeArray)value;
-              out.println(ta.getLength());
-            } else {
-              out.println(value);
-            }
-          }
-        }
-      }
-    }
   }
 }

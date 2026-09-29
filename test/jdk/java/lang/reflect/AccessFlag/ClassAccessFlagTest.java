@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,15 @@
 /*
  * @test
  * @bug 8266670 8291734 8296743
+ * @requires !java.enablePreview
  * @summary Test expected AccessFlag's on classes.
  */
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
+
+import static java.lang.reflect.AccessFlag.*;
 
 /*
  * Class access flags that can directly or indirectly declared in
@@ -47,7 +50,7 @@ import java.util.*;
  * file. Therefore, this test does not attempt to probe the setting of
  * that access flag.
  */
-@ExpectedClassFlags("[PUBLIC, FINAL, SUPER]")
+@ExpectedClassFlags({PUBLIC, FINAL, SUPER})
 public final class ClassAccessFlagTest {
     public static void main(String... args) {
         // Top-level and auxiliary classes; i.e. non-inner classes
@@ -76,10 +79,12 @@ public final class ClassAccessFlagTest {
         ExpectedClassFlags expected =
             clazz.getAnnotation(ExpectedClassFlags.class);
         if (expected != null) {
-            String actual = clazz.accessFlags().toString();
-            if (!expected.value().equals(actual)) {
+            Set<AccessFlag> base = EnumSet.noneOf(AccessFlag.class);
+            Collections.addAll(base, expected.value());
+            Set<AccessFlag> actual = clazz.accessFlags();
+            if (!base.equals(actual)) {
                 throw new RuntimeException("On " + clazz +
-                                           " expected " + expected.value() +
+                                           " expected " + base +
                                            " got " + actual);
             }
         }
@@ -98,7 +103,7 @@ public final class ClassAccessFlagTest {
             void.class // same access flag rules
         };
 
-        var expected = Set.of(AccessFlag.PUBLIC,
+        var expected = Set.of(PUBLIC,
                               AccessFlag.FINAL,
                               AccessFlag.ABSTRACT);
 
@@ -127,8 +132,8 @@ public final class ClassAccessFlagTest {
         for (var accessClass : accessClasses) {
             AccessFlag accessLevel;
             var flags = accessClass.accessFlags();
-            if (flags.contains(AccessFlag.PUBLIC))
-                accessLevel = AccessFlag.PUBLIC;
+            if (flags.contains(PUBLIC))
+                accessLevel = PUBLIC;
             else if (flags.contains(AccessFlag.PROTECTED))
                 accessLevel = AccessFlag.PROTECTED;
             else if (flags.contains(AccessFlag.PRIVATE))
@@ -145,7 +150,7 @@ public final class ClassAccessFlagTest {
                 }
             } else {
                 if (containsAny(arrayClass.accessFlags(),
-                                Set.of(AccessFlag.PUBLIC,
+                                Set.of(PUBLIC,
                                        AccessFlag.PROTECTED,
                                        AccessFlag.PRIVATE))) {
                     throw new RuntimeException("Unexpected access flags on " +
@@ -161,32 +166,32 @@ public final class ClassAccessFlagTest {
     // PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, INTERFACE, ABSTRACT,
     // SYNTHETIC, ANNOTATION, ENUM.
 
-    @ExpectedClassFlags("[PUBLIC, STATIC, INTERFACE, ABSTRACT]")
+    @ExpectedClassFlags({PUBLIC, STATIC, INTERFACE, ABSTRACT})
     public      interface PublicInterface {}
-    @ExpectedClassFlags("[PROTECTED, STATIC, INTERFACE, ABSTRACT]")
+    @ExpectedClassFlags({PROTECTED, STATIC, INTERFACE, ABSTRACT})
     protected   interface ProtectedInterface {}
-    @ExpectedClassFlags("[PRIVATE, STATIC, INTERFACE, ABSTRACT]")
+    @ExpectedClassFlags({PRIVATE, STATIC, INTERFACE, ABSTRACT})
     private     interface PrivateInterface {}
-    @ExpectedClassFlags("[STATIC, INTERFACE, ABSTRACT]")
+    @ExpectedClassFlags({STATIC, INTERFACE, ABSTRACT})
     /*package*/ interface PackageInterface {}
 
-    @ExpectedClassFlags("[FINAL]")
+    @ExpectedClassFlags({FINAL})
     /*package*/ final class TestFinalClass {}
 
-    @ExpectedClassFlags("[ABSTRACT]")
+    @ExpectedClassFlags({ABSTRACT})
     /*package*/ abstract class TestAbstractClass {}
 
-    @ExpectedClassFlags("[STATIC, INTERFACE, ABSTRACT, ANNOTATION]")
+    @ExpectedClassFlags({STATIC, INTERFACE, ABSTRACT, ANNOTATION})
     /*package*/ @interface TestMarkerAnnotation {}
 
-    @ExpectedClassFlags("[PUBLIC, STATIC, FINAL, ENUM]")
+    @ExpectedClassFlags({PUBLIC, STATIC, FINAL, ENUM})
     public enum MetaSynVar {
         QUUX;
     }
 
     // Is there is at least one special enum constant, the enum class
     // itself is implicitly abstract rather than final.
-    @ExpectedClassFlags("[PROTECTED, STATIC, ABSTRACT, ENUM]")
+    @ExpectedClassFlags({PROTECTED, STATIC, ABSTRACT, ENUM})
     protected enum MetaSynVar2 {
         WOMBAT{
             @Override
@@ -195,24 +200,24 @@ public final class ClassAccessFlagTest {
         public abstract int foo();
     }
 
-    @ExpectedClassFlags("[PRIVATE, ABSTRACT]")
+    @ExpectedClassFlags({PRIVATE, ABSTRACT})
     private abstract class Foo {}
 
-    @ExpectedClassFlags("[STATIC, INTERFACE, ABSTRACT]")
+    @ExpectedClassFlags({STATIC, INTERFACE, ABSTRACT})
     interface StaticTestInterface {}
 }
 
 @Retention(RetentionPolicy.RUNTIME)
-@ExpectedClassFlags("[INTERFACE, ABSTRACT, ANNOTATION]")
+@ExpectedClassFlags({INTERFACE, ABSTRACT, ANNOTATION})
 @interface ExpectedClassFlags {
-    String value();
+    AccessFlag[] value();
 }
 
-@ExpectedClassFlags("[INTERFACE, ABSTRACT]")
+@ExpectedClassFlags({INTERFACE, ABSTRACT})
 interface TestInterface {}
 
 
-@ExpectedClassFlags("[FINAL, SUPER, ENUM]")
+@ExpectedClassFlags({FINAL, SUPER, ENUM})
 enum TestOuterEnum {
     INSTANCE;
 }

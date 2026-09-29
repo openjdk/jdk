@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,17 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Writes nested class documentation in HTML format.
@@ -71,7 +70,7 @@ public class NestedClassWriter extends AbstractMemberWriter {
 
     @Override
     public void buildSummary(Content summariesList, Content content) {
-        writer.addSummary(HtmlStyle.nestedClassSummary,
+        writer.addSummary(HtmlStyles.nestedClassSummary,
                 HtmlIds.NESTED_CLASS_SUMMARY, summariesList, content);
     }
 
@@ -92,18 +91,24 @@ public class NestedClassWriter extends AbstractMemberWriter {
 
     @Override
     protected Table<Element> createSummaryTable() {
-        List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colSecond,
-                HtmlStyle.colLast);
-
-        return new Table<Element>(HtmlStyle.summaryTable)
+        return new Table<Element>(HtmlStyles.summaryTable)
                 .setCaption(contents.getContent("doclet.Nested_Classes"))
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setColumnStyles(bodyRowStyles);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond,
+                        HtmlStyles.colLast);
+    }
+
+    @Override
+    protected Table<Element> createInheritedSummaryTable(TypeElement typeElement) {
+        return new Table<Element>(HtmlStyles.summaryTable)
+                .setHeader(getSummaryTableHeader(typeElement))
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast)
+                .setRenderTabs(false);
     }
 
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
-        Content classLink = writer.getPreQualifiedClassLink(HtmlLinkInfo.Kind.PLAIN, typeElement);
+        Content classLink = getMemberSummaryLinkOrFQN(typeElement, VisibleMemberTable.Kind.NESTED_CLASSES);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = Text.of(utils.isPlainInterface(typeElement)
@@ -115,17 +120,22 @@ public class NestedClassWriter extends AbstractMemberWriter {
                     : resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         }
         var labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING, label);
-        labelHeading.setId(htmlIds.forInheritedClasses(typeElement));
+        labelHeading.setId(getInheritedSummaryId(typeElement));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         content.add(labelHeading);
     }
 
     @Override
+    protected HtmlId getInheritedSummaryId(TypeElement typeElement) {
+        return htmlIds.forInheritedClasses(typeElement);
+    }
+
+    @Override
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
                                   Content content) {
         Content memberLink = writer.getLink(new HtmlLinkInfo(configuration, context, (TypeElement)member)
-                .style(HtmlStyle.typeNameLink));
+                .style(HtmlStyles.typeNameLink));
         var code = HtmlTree.CODE(memberLink);
         content.add(code);
     }
@@ -133,7 +143,7 @@ public class NestedClassWriter extends AbstractMemberWriter {
     @Override
     protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content target) {
         target.add(
-                writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
+                writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                         (TypeElement)member)));
     }
 

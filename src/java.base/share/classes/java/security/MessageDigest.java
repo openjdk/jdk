@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
+
 import sun.security.jca.GetInstance;
 import sun.security.util.Debug;
 import sun.security.util.MessageDigestSpi2;
+import sun.security.util.CryptoAlgorithmConstraints;
 
 import javax.crypto.SecretKey;
 
@@ -87,6 +91,7 @@ import javax.crypto.SecretKey;
  * <ul>
  * <li>{@code SHA-1}</li>
  * <li>{@code SHA-256}</li>
+ * <li>{@code SHA-384}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
@@ -95,6 +100,7 @@ import javax.crypto.SecretKey;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Benjamin Renaud
  * @since 1.1
  *
@@ -127,6 +133,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected MessageDigest(String algorithm) {
         this.algorithm = algorithm;
@@ -152,12 +159,32 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
+     * The JDK Reference Implementation additionally uses the following
+     * security properties:
+     * <ul>
+     * <li>the {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
      * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
+     * </li>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -165,6 +192,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -176,14 +204,24 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @see Provider
      */
+    @CallerSensitive
     public static MessageDigest getInstance(String algorithm)
         throws NoSuchAlgorithmException
     {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        MessageDigest md;
+
+        if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
+        }
 
         GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
                 MessageDigestSpi.class, algorithm);
+        MessageDigest md;
         if (instance.impl instanceof MessageDigest messageDigest) {
             md = messageDigest;
             md.provider = instance.provider;
@@ -212,6 +250,27 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
+     *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
@@ -220,6 +279,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -237,16 +297,28 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @see Provider
      */
+    @CallerSensitive
     public static MessageDigest getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        if (provider == null || provider.isEmpty())
-            throw new IllegalArgumentException("missing provider");
 
-        MessageDigest md;
+        if (provider == null || provider.isEmpty()) {
+            throw new IllegalArgumentException("missing provider");
+        }
+
+        if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
+        }
+
         GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
                 MessageDigestSpi.class, algorithm, provider);
+        MessageDigest md;
         if (instance.impl instanceof MessageDigest messageDigest) {
             md = messageDigest;
             md.provider = instance.provider;
@@ -266,6 +338,27 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * is returned.  Note that the specified provider does not
      * have to be registered in the provider list.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
+     *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
@@ -274,6 +367,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -290,13 +384,26 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @since 1.4
      */
+    @CallerSensitive
     public static MessageDigest getInstance(String algorithm,
                                             Provider provider)
         throws NoSuchAlgorithmException
     {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        if (provider == null)
+
+        if (provider == null) {
             throw new IllegalArgumentException("missing provider");
+        }
+
+        if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
+        }
+
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
         if (objs[0] instanceof MessageDigest md) {
             md.provider = (Provider)objs[1];
@@ -512,6 +619,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the name of the algorithm
      */
     public final String getAlgorithm() {

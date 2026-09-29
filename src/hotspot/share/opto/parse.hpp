@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,6 @@ class SwitchRange;
 
 //------------------------------InlineTree-------------------------------------
 class InlineTree : public AnyObj {
-  friend class VMStructs;
-
   Compile*    C;                  // cache
   JVMState*   _caller_jvms;       // state of caller
   ciMethod*   _method;            // method being called by the caller_jvms
@@ -75,7 +73,7 @@ protected:
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
-                            int caller_bci,
+                            JVMState* caller_jvms,
                             bool& should_delay,
                             ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
@@ -87,8 +85,7 @@ protected:
                              ciMethod* caller_method,
                              int caller_bci,
                              ciCallProfile& profile);
-  void        print_inlining(ciMethod* callee_method, int caller_bci,
-                             ciMethod* caller_method, bool success) const;
+  void print_inlining(ciMethod* callee_method, JVMState* jvm, bool success) const;
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
@@ -354,18 +351,21 @@ class Parse : public GraphKit {
   int           _block_count;   // Number of elements in _blocks.
 
   GraphKit      _exits;         // Record all normal returns and throws here.
-  bool          _wrote_final;   // Did we write a final field?
+  bool          _wrote_non_strict_final; // Did we write a non-strict final field?
   bool          _wrote_volatile;     // Did we write a volatile field?
   bool          _wrote_stable;       // Did we write a @Stable field?
   bool          _wrote_fields;       // Did we write any field?
-  Node*         _alloc_with_final;   // An allocation node with final field
+  Node*         _alloc_with_final_or_stable; // An allocation node with final or @Stable field
+  Node*         _stress_rf_hook; // StressReachabilityFences support
 
   // Variables which track Java semantics during bytecode parsing:
 
   Block*            _block;     // block currently getting parsed
   ciBytecodeStream  _iter;      // stream of this method's bytecodes
 
-  const FastLockNode* _synch_lock; // FastLockNode for synchronized method
+  // Lock info for synchronized method
+  BoxLockNode* _sync_lock_box;
+  Node*        _sync_lock_obj;
 
 #ifndef PRODUCT
   int _max_switch_depth;        // Debugging SwitchRanges.
@@ -395,18 +395,18 @@ class Parse : public GraphKit {
   int           block_count()   const { return _block_count; }
 
   GraphKit&     exits()               { return _exits; }
-  bool          wrote_final() const   { return _wrote_final; }
-  void      set_wrote_final(bool z)   { _wrote_final = z; }
+  bool          wrote_non_strict_final() const { return _wrote_non_strict_final; }
+  void      set_wrote_non_strict_final(bool z) { _wrote_non_strict_final = z; }
   bool          wrote_volatile() const { return _wrote_volatile; }
   void      set_wrote_volatile(bool z) { _wrote_volatile = z; }
   bool          wrote_stable() const  { return _wrote_stable; }
   void      set_wrote_stable(bool z)  { _wrote_stable = z; }
   bool         wrote_fields() const   { return _wrote_fields; }
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
-  Node*    alloc_with_final() const   { return _alloc_with_final; }
-  void set_alloc_with_final(Node* n)  {
-    assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");
-    _alloc_with_final = n;
+  Node*    alloc_with_final_or_stable() const   { return _alloc_with_final_or_stable; }
+  void set_alloc_with_final_or_stable(Node* n)  {
+    assert((_alloc_with_final_or_stable == nullptr) || (_alloc_with_final_or_stable == n), "different init objects?");
+    _alloc_with_final_or_stable = n;
   }
 
   Block*             block()    const { return _block; }
@@ -416,14 +416,17 @@ class Parse : public GraphKit {
   void set_block(Block* b)            { _block = b; }
 
   // Derived accessors:
-  bool is_normal_parse() const  { return _entry_bci == InvocationEntryBci; }
-  bool is_osr_parse() const     { return _entry_bci != InvocationEntryBci; }
+  bool is_osr_parse() const {
+    assert(_entry_bci != UnknownBci, "uninitialized _entry_bci");
+    return _entry_bci != InvocationEntryBci;
+  }
+  bool is_normal_parse() const  { return !is_osr_parse(); }
   int osr_bci() const           { assert(is_osr_parse(),""); return _entry_bci; }
 
   void set_parse_bci(int bci);
 
   // Must this parse be aborted?
-  bool failing()                { return C->failing(); }
+  bool failing() const { return C->failing_internal(); } // might have cascading effects, not stressing bailouts for now.
 
   Block* rpo_at(int rpo) {
     assert(0 <= rpo && rpo < _block_count, "oob");
@@ -442,8 +445,8 @@ class Parse : public GraphKit {
   SafePointNode* create_entry_map();
 
   // OSR helpers
-  Node *fetch_interpreter_state(int index, BasicType bt, Node *local_addrs, Node *local_addrs_base);
-  Node* check_interpreter_type(Node* l, const Type* type, SafePointNode* &bad_type_exit);
+  Node* fetch_interpreter_state(int index, const Type* type, Node* local_addrs);
+  Node* check_interpreter_type(Node* l, ciType* ci_type, SafePointNode* &bad_type_exit);
   void  load_interpreter_state(Node* osr_buf);
 
   // Functions for managing basic blocks:
@@ -474,13 +477,14 @@ class Parse : public GraphKit {
   void merge(          int target_bci);
   // Same as plain merge, except that it allocates a new path number.
   void merge_new_path( int target_bci);
-  // Merge the current mapping into an exception handler.
-  void merge_exception(int target_bci);
+  // Push the exception oop and merge the current mapping into an exception handler.
+  void push_and_merge_exception(int target_bci, Node* ex_oop);
   // Helper: Merge the current mapping into the given basic block
   void merge_common(Block* target, int pnum);
   // Helper functions for merging individual cells.
-  PhiNode *ensure_phi(       int idx, bool nocreate = false);
-  PhiNode *ensure_memory_phi(int idx, bool nocreate = false);
+  Node*    maybe_narrow_phi_input(Node* ctrl, Node* n, const Type* phi_type);
+  Node*    ensure_phi(       int idx, bool nocreate = false);
+  PhiNode* ensure_memory_phi(int idx, bool nocreate = false);
   // Helper to merge the current memory state into the given basic block
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);
 
@@ -488,17 +492,26 @@ class Parse : public GraphKit {
   void do_one_bytecode();
 
   // helper function to generate array store check
-  void array_store_check();
+  Node* array_store_check(const Type*& elemtype);
   // Helper function to generate array load
   void array_load(BasicType etype);
+  Node* load_from_unknown_flat_array(Node* array, Node* array_index, const TypeOopPtr* element_ptr);
   // Helper function to generate array store
   void array_store(BasicType etype);
+  void store_to_unknown_flat_array(Node* array, Node* idx, Node* non_null_stored_value);
   // Helper function to compute array addressing
-  Node* array_addressing(BasicType type, int vals, const Type*& elemtype);
+  Node* prepare_array_addressing(BasicType type, int vals, const Type*& elemtype);
+  Node* get_ptr_to_array_element(Node* array, Node* idx, BasicType elembt, const TypeInt* sizetype, Node* control);
+  bool needs_range_check(const TypeInt* size_type, const Node* index) const;
+  Node* create_speculative_value_type_array_checks(Node* array, const TypeAryPtr* array_type, const Type*& element_type);
+  Node* cast_to_speculative_array_type(Node* array, const TypeAryPtr*& array_type, const Type*& element_type);
+  Node* cast_to_profiled_array_type(Node* const array);
+  Node* speculate_non_null_free_array(Node* array, const TypeAryPtr*& array_type);
+  Node* speculate_non_flat_array(Node* array, const TypeAryPtr* array_type);
+  void create_range_check(Node* idx, Node* ary, const TypeInt* sizetype);
+  Node* record_profile_for_speculation_at_array_load(Node* ld);
 
   void clinit_deopt();
-
-  void rtm_deopt();
 
   // Pass current map to exits
   void return_current(Node* value);
@@ -529,8 +542,7 @@ class Parse : public GraphKit {
   void  do_instanceof();
 
   // Helper functions for shifting & arithmetic
-  void modf();
-  void modd();
+  Node* floating_point_mod(Node* a, Node* b, BasicType type);
   void l2f();
 
   // implementation of _get* and _put* bytecodes
@@ -543,13 +555,15 @@ class Parse : public GraphKit {
   void do_field_access(bool is_get, bool is_field);
 
   // common code for actually performing the load or store
-  void do_get_xxx(Node* obj, ciField* field, bool is_field);
+  void do_get_xxx(Node* obj, ciField* field);
   void do_put_xxx(Node* obj, ciField* field, bool is_field);
+
+  ciType* improve_abstract_value_type_klass(ciType* field_klass);
 
   // implementation of object creation bytecodes
   void do_new();
   void do_newarray(BasicType elemtype);
-  void do_anewarray();
+  void do_newarray();
   void do_multianewarray();
   Node* expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, int ndimensions, int nargs);
 
@@ -561,12 +575,20 @@ class Parse : public GraphKit {
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci, Node* test);
   bool    seems_never_taken(float prob) const;
   bool    path_is_suitable_for_uncommon_trap(float prob) const;
-  bool    seems_stable_comparison() const;
 
   void    do_ifnull(BoolTest::mask btest, Node* c);
-  void    do_if(BoolTest::mask btest, Node* c);
+  void    do_if(BoolTest::mask btest, Node* c, bool can_trap = true, bool new_path = false, Node** ctrl_taken = nullptr,
+                Node** mem_taken = nullptr, Node** id_taken = nullptr);
+  void    do_acmp(BoolTest::mask btest, Node* left, Node* right);
+  void    acmp_always_null_input(Node* input, const TypeOopPtr* tinput, BoolTest::mask btest, Node* eq_region);
+  void    acmp_type_check_or_trap(Node** non_null_input, ciKlass* input_type, Deoptimization::DeoptReason);
+  void    acmp_type_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKind input_ptr, ciKlass* input_type, BoolTest::mask btest, Node* eq_region);
+  Node*   acmp_null_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKind input_ptr, Node*& null_ctl);
+public:
+  static IfNode* acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallStaticJavaNode* call);
+private:
   int     repush_if_args();
-  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path);
+  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path, bool can_trap = true);
   void    sharpen_type_after_if(BoolTest::mask btest,
                                 Node* con, const Type* tcon,
                                 Node* val, const Type* tval);
@@ -611,6 +633,11 @@ class Parse : public GraphKit {
 
   // Use speculative type to optimize CmpP node
   Node* optimize_cmp_with_klass(Node* c);
+
+  // Stress unstable if traps
+  void stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store);
+  // Increment counter used by StressUnstableIfTraps
+  void increment_trap_stress_counter(Node*& counter, Node*& incr_store);
 
  public:
 #ifndef PRODUCT

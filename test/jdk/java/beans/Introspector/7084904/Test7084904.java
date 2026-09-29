@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,11 @@ import java.lang.reflect.Method;
  * @bug 7084904
  * @summary Compares reflection and bean introspection
  * @library ..
- * @run main/othervm -Djava.security.manager=allow Test7084904
+ * @run main Test7084904
  * @author Sergey Malenkov
  */
 public class Test7084904 {
     public static void main(String[] args) throws Exception {
-        System.setSecurityManager(new SecurityManager());
         Derived bean = new Derived();
         Class<?> type = bean.getClass();
         Method method1 = test("reflection", bean, type.getMethod("isAllowed"));

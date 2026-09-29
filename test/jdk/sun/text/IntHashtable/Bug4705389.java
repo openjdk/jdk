@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 4705389
  * @summary Make sure to find removed slots, which test case will be timed out without the fix.
  * @modules java.base/sun.text
- * @run main/timeout=10 Bug4705389
  */
 
 import sun.text.IntHashtable;

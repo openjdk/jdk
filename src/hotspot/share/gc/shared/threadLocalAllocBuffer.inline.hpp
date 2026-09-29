@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "memory/universe.hpp"
 #include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "utilities/copy.hpp"
@@ -39,14 +39,8 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
   invariants();
   HeapWord* obj = top();
   if (pointer_delta(end(), obj) >= size) {
-    // successful thread-local allocation
-#ifdef ASSERT
-    // Skip mangling the space corresponding to the object header to
-    // ensure that the returned space is not considered parsable by
-    // any concurrent GC thread.
-    size_t hdr_size = oopDesc::header_size();
-    Copy::fill_to_words(obj + hdr_size, size - hdr_size, badHeapWordVal);
-#endif // ASSERT
+    // Successful thread-local allocation.
+
     // This addition is safe because we know that top is
     // at least size below end, so the add can't wrap.
     set_top(obj + size);
@@ -58,20 +52,31 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
 }
 
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
-  // Compute the size for the new TLAB.
-  // The "last" tlab may be smaller to reduce fragmentation.
-  // unsafe_max_tlab_alloc is just a hint.
-  const size_t available_size = Universe::heap()->unsafe_max_tlab_alloc(thread()) / HeapWordSize;
-  size_t new_tlab_size = MIN3(available_size, desired_size() + align_object_size(obj_size), max_size());
+  const size_t available_size = Universe::heap()->unsafe_max_tlab_alloc() / HeapWordSize;
+  size_t scaled_desired_size = desired_size();
+  if (ResizeTLAB) {
+    // Extra boost if too many refills; 16X at most.
+    if (_num_refills > _target_num_refills) {
+      const uint excess = _num_refills - _target_num_refills;
+      const uint steps = MIN2(excess / 8, 4U);
+      // Cap before shifting to avoid overflow.
+      if (scaled_desired_size > (max_size() >> steps)) {
+        scaled_desired_size = max_size();
+      } else {
+        scaled_desired_size <<= steps;
+      }
+    }
+  }
+  size_t new_tlab_size = MIN3(available_size, scaled_desired_size + align_object_size(obj_size), max_size());
 
   // Make sure there's enough room for object and filler int[].
   if (new_tlab_size < compute_min_size(obj_size)) {
     // If there isn't enough room for the allocation, return failure.
-    log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(" SIZE_FORMAT ") returns failure",
+    log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(%zu) returns failure",
                         obj_size);
     return 0;
   }
-  log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(" SIZE_FORMAT ") returns " SIZE_FORMAT,
+  log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(%zu) returns %zu",
                       obj_size, new_tlab_size);
   return new_tlab_size;
 }
@@ -89,12 +94,12 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
 
   set_refill_waste_limit(refill_waste_limit() + refill_waste_limit_increment());
 
-  _slow_allocations++;
+  _num_slow_allocations++;
 
   log_develop_trace(gc, tlab)("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
-                              " obj: " SIZE_FORMAT
-                              " free: " SIZE_FORMAT
-                              " waste: " SIZE_FORMAT,
+                              " obj: %zu"
+                              " free: %zu"
+                              " waste: %zu",
                               "slow", p2i(thread()), thread()->osthread()->thread_id(),
                               obj_size, free(), refill_waste_limit());
 }

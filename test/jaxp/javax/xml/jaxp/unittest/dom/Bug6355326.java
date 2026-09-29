@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -47,11 +46,9 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6355326
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug6355326
  * @run testng/othervm dom.Bug6355326
  * @summary Test DOM implementation encoding.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6355326 {
 
     DOMImplementationLS implLS = null;

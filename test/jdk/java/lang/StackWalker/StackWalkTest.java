@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,12 @@ import jdk.test.lib.RandomFactory;
  * @test
  * @bug 8140450
  * @summary Stack Walk Test (use -Dseed=X to set PRNG seed)
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @compile StackRecorderUtil.java
  * @run main/othervm StackWalkTest
- * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest
  * @run main/othervm StackWalkTest -random:50
- * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest -random:50
  * @author danielfuchs, bchristi
  * @key randomness
  */
@@ -57,11 +56,11 @@ public class StackWalkTest {
     static final Set<String> infrastructureClasses = new TreeSet<>(Arrays.asList(
             "jdk.internal.reflect.DirectMethodHandleAccessor",
             "java.lang.reflect.Method",
-            "com.sun.javatest.regtest.MainWrapper$MainThread",
-            "com.sun.javatest.regtest.agent.MainWrapper$MainThread",
-            "com.sun.javatest.regtest.agent.MainWrapper$MainTask",
             "java.lang.Thread"
     ));
+    static final List<String> infrastructurePackages = List.of(
+            "com.sun.javatest.regtest."
+    );
     static final List<Class<?>> streamPipelines = Arrays.asList(
         classForName("java.util.stream.AbstractPipeline"),
         classForName("java.util.stream.TerminalOp")
@@ -131,6 +130,12 @@ public class StackWalkTest {
             if (infrastructureClasses.contains(sf.getClassName())) {
                 // safe to ignore
                 return;
+            }
+            for (String prefix : infrastructurePackages) {
+                if (sf.getClassName().startsWith(prefix)) {
+                    // safe to ignore
+                    return;
+                }
             }
         }
         try {

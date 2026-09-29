@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,11 +102,14 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        boolean result = false;
-        if  (cancelable != null && !isDone()) {
-            result = cancelable.cancel(mayInterruptIfRunning);
+        if  (!super.cancel(mayInterruptIfRunning)) {
+            assert isDone();
+            return false;
         }
-        return super.cancel(mayInterruptIfRunning) || result;
+        if (cancelable != null) {
+            cancelable.cancel(mayInterruptIfRunning);
+        }
+        return true;
     }
 
     private Cancelable cancelable() {

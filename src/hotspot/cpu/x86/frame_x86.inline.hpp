@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,58 @@
 #include "interpreter/interpreter.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 // Inline functions for Intel frames:
+
+#if INCLUDE_JFR
+
+// Static helper routines
+
+inline address frame::interpreter_bcp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(fp[frame::interpreter_frame_bcp_offset]);
+}
+
+inline address frame::interpreter_return_address(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(fp[frame::return_addr_offset]);
+}
+
+inline intptr_t* frame::interpreter_sender_sp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(fp[frame::interpreter_frame_sender_sp_offset]);
+}
+
+inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp) {
+  assert(fp != nullptr, "invariant");
+  assert(sp != nullptr, "invariant");
+  return sp <= fp + frame::interpreter_frame_initial_sp_offset;
+}
+
+inline intptr_t* frame::sender_sp(intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return fp + frame::sender_sp_offset;
+}
+
+inline intptr_t* frame::link(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(fp[frame::link_offset]);
+}
+
+inline address frame::return_address(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<address>(sp[-1]);
+}
+
+inline intptr_t* frame::fp(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(sp[-2]);
+}
+
+#endif // INCLUDE_JFR
 
 // Constructors:
 
@@ -64,13 +114,11 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
 }
 
 inline void frame::setup(address pc) {
-  adjust_unextended_sp();
-
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
-    assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
+    assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
@@ -162,9 +210,8 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   // assert(_pc != nullptr, "no pc?");
 
   _cb = CodeCache::find_blob(_pc);
-  adjust_unextended_sp();
 
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
@@ -181,14 +228,14 @@ inline bool frame::equal(frame other) const {
               && unextended_sp() == other.unextended_sp()
               && fp() == other.fp()
               && pc() == other.pc();
-  assert(!ret || ret && cb() == other.cb() && _deopt_state == other._deopt_state, "inconsistent construction");
+  assert(!ret || (ret && cb() == other.cb() && _deopt_state == other._deopt_state), "inconsistent construction");
   return ret;
 }
 
 // Return unique id for this frame. The id must have a value where we can distinguish
 // identity and younger/older relationship. null represents an invalid (incomparable)
-// frame.
-inline intptr_t* frame::id(void) const { return unextended_sp(); }
+// frame. Should not be called for heap frames.
+inline intptr_t* frame::id(void) const { return real_fp(); }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != nullptr && id != nullptr, "null frame id");
@@ -226,8 +273,8 @@ inline int frame::frame_size() const {
 }
 
 inline int frame::compiled_frame_stack_argsize() const {
-  assert(cb()->is_compiled(), "");
-  return (cb()->as_compiled_method()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  assert(cb()->is_nmethod(), "");
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
@@ -343,34 +390,29 @@ inline int frame::sender_sp_ret_address_offset() {
   return frame::sender_sp_offset - frame::return_addr_offset;
 }
 
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == nullptr) return nullptr;
-  if (_cb->oop_maps() != nullptr) {
-    NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != nullptr && nop->displacement() != 0) {
-      int slot = ((nop->displacement() >> 24) & 0xff);
-      return _cb->oop_map_for_slot(slot, _pc);
-    }
-    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
-    return oop_map;
-  }
-  return nullptr;
-}
-
-//------------------------------------------------------------------------------
-// frame::sender
-
-inline frame frame::sender(RegisterMap* map) const {
+// This method can be on a hot path. Since Valhalla made it a bit bigger, compilers are
+// not as eager to inline it, but in some cases, it makes a significant difference.
+// Let's encourage the compiler to inline sender all the way to frame::repair_sender_sp.
+// through frame::sender_for_compiled_frame.
+ALWAYSINLINE frame frame::sender(RegisterMap* map) const {
   frame result = sender_raw(map);
 
   if (map->process_frames() && !map->in_cont()) {
     StackWatermarkSet::on_iteration(map->thread(), result);
   }
 
+  // Calling frame::id() is currently not supported for heap frames.
+  // For an async map, registers are sampled at an arbitrary point,
+  // which means that the apparent sender may not be a valid frame
+  // suitable for walking. Because of this we only assert if the
+  // sender frame is older than this frame for non-async maps.
+  assert(result._on_heap || this->_on_heap || map->is_async() ||
+         result.is_older(this->id()), "Must be");
+
   return result;
 }
 
-inline frame frame::sender_raw(RegisterMap* map) const {
+ALWAYSINLINE frame frame::sender_raw(RegisterMap* map) const {
   // Default is we done have to follow them. The sender_for_xxx will
   // update it accordingly
   map->set_include_argument_oops(false);
@@ -391,28 +433,69 @@ inline frame frame::sender_raw(RegisterMap* map) const {
   return frame(sender_sp(), link(), sender_pc());
 }
 
-inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
-  assert(map != nullptr, "map must be set");
+// Check for a method with scalarized value type arguments that needs
+// a stack repair and return the repaired sender stack pointer.
+ALWAYSINLINE intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
+  nmethod* nm = _cb->as_nmethod_or_null();
+  if (nm != nullptr && nm->needs_stack_repair()) {
+    // The stack increment resides just below the saved rbp on the stack
+    // and does not account for the return address and rbp (see MacroAssembler::remove_frame).
+    intptr_t* real_frame_size_addr = (intptr_t*) (saved_fp_addr - 1);
+    int real_frame_size = (*real_frame_size_addr / wordSize) + metadata_words_at_bottom;
+    assert(real_frame_size >= _cb->frame_size() && real_frame_size <= 1000000, "invalid frame size");
+    sender_sp = unextended_sp() + real_frame_size;
+  }
+  return sender_sp;
+}
 
+
+// See comment in MacroAssembler::remove_frame
+ALWAYSINLINE frame::CompiledFramePointers frame::compiled_frame_details() const {
   // frame owned by optimizing compiler
   assert(_cb->frame_size() > 0, "must have non-zero frame size");
   intptr_t* sender_sp = unextended_sp() + _cb->frame_size();
   assert(sender_sp == real_fp(), "");
 
-  // On Intel the return_address is always the word on the stack
-  address sender_pc = (address) *(sender_sp-1);
+  // Repair the sender sp if the frame has been extended
+  sender_sp = repair_sender_sp(sender_sp, (intptr_t**)(sender_sp - frame::sender_sp_offset));
 
-  // This is the saved value of EBP which may or may not really be an FP.
-  // It is only an FP if the sender is an interpreter frame (or C1?).
-  // saved_fp_addr should be correct even for a bottom thawed frame (with a return barrier)
-  intptr_t** saved_fp_addr = (intptr_t**) (sender_sp - frame::sender_sp_offset);
+  CompiledFramePointers cfp;
+  cfp.sender_sp = sender_sp;
+  cfp.saved_fp_addr = (intptr_t**)(sender_sp - frame::sender_sp_offset);
+  // On Intel the return_address is always the word on the stack
+  cfp.sender_pc_addr = (address*)(sender_sp - frame::return_addr_offset);
+
+  return cfp;
+}
+
+ALWAYSINLINE frame frame::sender_for_compiled_frame(RegisterMap* map) const {
+  assert(map != nullptr, "map must be set");
+  CompiledFramePointers cfp = compiled_frame_details();
 
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     // For C1, the runtime stub might not have oop maps, so set this flag
     // outside of update_register_map.
-    if (!_cb->is_compiled()) { // compiled frames do not use callee-saved registers
-      map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
+    bool c1_buffering = false;
+#ifdef COMPILER1
+    nmethod* nm = _cb->as_nmethod_or_null();
+    if (nm != nullptr && nm->is_compiled_by_c1() && nm->method()->has_scalarized_args() &&
+        pc() < nm->verified_value_entry_point()) {
+      // The VEP and VIEP(RO) of C1-compiled methods call buffer_value_args_xxx
+      // before doing any argument shuffling, so we need to scan the oops
+      // as the caller passes them.
+      c1_buffering = true;
+#ifdef ASSERT
+      NativeCall* call = nativeCall_before(pc());
+      address dest = call->destination();
+      assert(dest == Runtime1::entry_for(StubId::c1_buffer_value_args_no_receiver_id) ||
+             dest == Runtime1::entry_for(StubId::c1_buffer_value_args_id), "unexpected safepoint in entry point");
+#endif
+    }
+#endif
+    if (!_cb->is_nmethod() || c1_buffering) { // compiled frames do not use callee-saved registers
+      bool caller_args = _cb->caller_must_gc_arguments(map->thread()) || c1_buffering;
+      map->set_include_argument_oops(caller_args);
       if (oop_map() != nullptr) {
         _oop_map->update_register_map(this, map);
       }
@@ -425,21 +508,21 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     // Since the prolog does the save and restore of EBP there is no oopmap
     // for it so we must fill in its location as if there was an oopmap entry
     // since if our caller was compiled code there could be live jvm state in it.
-    update_map_with_saved_link(map, saved_fp_addr);
+    update_map_with_saved_link(map, cfp.saved_fp_addr);
   }
 
-  assert(sender_sp != sp(), "must have changed");
+  assert(cfp.sender_sp != sp(), "must have changed");
 
-  if (Continuation::is_return_barrier_entry(sender_pc)) {
+  if (Continuation::is_return_barrier_entry(*cfp.sender_pc_addr)) {
     if (map->walk_cont()) { // about to walk into an h-stack
       return Continuation::top_frame(*this, map);
     } else {
-      return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
+      return Continuation::continuation_bottom_sender(map->thread(), *this, cfp.sender_sp);
     }
   }
 
-  intptr_t* unextended_sp = sender_sp;
-  return frame(sender_sp, unextended_sp, *saved_fp_addr, sender_pc);
+  intptr_t* unextended_sp = cfp.sender_sp;
+  return frame(cfp.sender_sp, unextended_sp, *cfp.saved_fp_addr, *cfp.sender_pc_addr);
 }
 
 template <typename RegisterMapT>
@@ -453,7 +536,6 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
   // we don't have to always save EBP/RBP on entry and exit to c2 compiled
   // code, on entry will be enough.
   map->set_location(rbp->as_VMReg(), (address) link_addr);
-#ifdef AMD64
   // this is weird "H" ought to be at a higher address however the
   // oopMaps seems to have the "H" regs at the same address and the
   // vanilla register.
@@ -461,6 +543,5 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
   if (true) {
     map->set_location(rbp->as_VMReg()->next(), (address) link_addr);
   }
-#endif // AMD64
 }
 #endif // CPU_X86_FRAME_X86_INLINE_HPP

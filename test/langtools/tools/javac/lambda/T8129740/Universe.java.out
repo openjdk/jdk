@@ -69,28 +69,26 @@ class Universe {
                 }
                 
                 Planet(String name, int moonsCount) {
-                    this(name, moonsCount, java.lang.invoke.LambdaMetafactory.metafactory(name, Universe.Galaxy.this, Universe.Galaxy.SolarSystem.this));
+                    this(name, moonsCount, ()->{
+                        String n = name;
+                        StringBuffer buf = new StringBuffer();
+                        buf.append("This planet belongs to the galaxy " + Galaxy.this.name + " with " + starsCount + " stars\n");
+                        buf.append("This planet belongs to the galaxy " + Universe.Galaxy.this.name + " with " + starsCount() + " stars\n");
+                        buf.append("This planet belongs to the galaxy " + Galaxy.this.name() + " with " + starsCount() + " stars\n");
+                        buf.append("This planet belongs to the galaxy " + Universe.Galaxy.this.name() + " with " + (Universe.Galaxy.this).starsCount() + " stars\n");
+                        buf.append("This planet belongs to the solar system " + SolarSystem.this.name + " with " + planetsCount + " planets\n");
+                        buf.append("This planet belongs to the solar system " + Galaxy.SolarSystem.this.name + " with " + planetsCount() + " planets\n");
+                        buf.append("This planet belongs to the solar system " + (SolarSystem.this).name + " with " + planetsCount + " planets\n");
+                        buf.append("This planet belongs to the solar system " + Universe.Galaxy.SolarSystem.this.name + " with " + Universe.Galaxy.SolarSystem.this.planetsCount + " planets\n");
+                        buf.append("This planet belongs to the solar system " + Universe.Galaxy.SolarSystem.this.name.toLowerCase().toUpperCase() + " with " + Universe.Galaxy.SolarSystem.this.planetsCount + " planets\n");
+                        buf.append("This planet belongs to the solar system " + copy(Universe.Galaxy.SolarSystem.this).name.toLowerCase().toUpperCase() + " with " + Universe.Galaxy.SolarSystem.this.planetsCount + " planets\n");
+                        if (!buf.toString().equals(output)) throw new AssertionError("Unexpected value\n" + buf);
+                    });
                 }
                 static final String output = "This planet belongs to the galaxy Mily way with 23456789 stars\nThis planet belongs to the galaxy Mily way with 23456789 stars\nThis planet belongs to the galaxy Mily way with 23456789 stars\nThis planet belongs to the galaxy Mily way with 23456789 stars\nThis planet belongs to the solar system Sun with 9 planets\nThis planet belongs to the solar system Sun with 9 planets\nThis planet belongs to the solar system Sun with 9 planets\nThis planet belongs to the solar system Sun with 9 planets\nThis planet belongs to the solar system SUN with 9 planets\nThis planet belongs to the solar system SUN with 9 planets\n";
                 
                 public String toString() {
                     return "Planet " + name + " with " + moonsCount + " moon(s)";
-                }
-                
-                /*synthetic*/ private static void lambda$new$0(/*synthetic*/ final String name, /*synthetic*/ final Universe.Galaxy Universe$Galaxy$this, /*synthetic*/ final Universe.Galaxy.SolarSystem Universe$Galaxy$SolarSystem$this) {
-                    String n = name;
-                    StringBuffer buf = new StringBuffer();
-                    buf.append("This planet belongs to the galaxy " + Universe$Galaxy$this.name + " with " + Universe$Galaxy$this.starsCount + " stars\n");
-                    buf.append("This planet belongs to the galaxy " + Universe$Galaxy$this.name + " with " + Universe$Galaxy$this.starsCount() + " stars\n");
-                    buf.append("This planet belongs to the galaxy " + Universe$Galaxy$this.name() + " with " + Universe$Galaxy$this.starsCount() + " stars\n");
-                    buf.append("This planet belongs to the galaxy " + Universe$Galaxy$this.name() + " with " + (Universe$Galaxy$this).starsCount() + " stars\n");
-                    buf.append("This planet belongs to the solar system " + Universe$Galaxy$SolarSystem$this.name + " with " + Universe$Galaxy$SolarSystem$this.planetsCount + " planets\n");
-                    buf.append("This planet belongs to the solar system " + Universe$Galaxy$SolarSystem$this.name + " with " + Universe$Galaxy$SolarSystem$this.planetsCount() + " planets\n");
-                    buf.append("This planet belongs to the solar system " + (Universe$Galaxy$SolarSystem$this).name + " with " + Universe$Galaxy$SolarSystem$this.planetsCount + " planets\n");
-                    buf.append("This planet belongs to the solar system " + Universe$Galaxy$SolarSystem$this.name + " with " + Universe$Galaxy$SolarSystem$this.planetsCount + " planets\n");
-                    buf.append("This planet belongs to the solar system " + Universe$Galaxy$SolarSystem$this.name.toLowerCase().toUpperCase() + " with " + Universe$Galaxy$SolarSystem$this.planetsCount + " planets\n");
-                    buf.append("This planet belongs to the solar system " + Universe$Galaxy$SolarSystem$this.copy(Universe$Galaxy$SolarSystem$this).name.toLowerCase().toUpperCase() + " with " + Universe$Galaxy$SolarSystem$this.planetsCount + " planets\n");
-                    if (!buf.toString().equals(output)) throw new AssertionError("Unexpected value\n" + buf);
                 }
             }
         }

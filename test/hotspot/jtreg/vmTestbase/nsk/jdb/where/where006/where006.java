@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.where.where006.where006a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.where.where006.where006
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -65,14 +65,10 @@ import java.util.*;
 public class where006 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new where006().runTest(argv, out);
+        new where006().runTest(argv);
     }
 
     static final String PACKAGE_NAME     = "nsk.jdb.where.where006";
@@ -80,6 +76,7 @@ public class where006 extends JdbTest {
     static final String DEBUGGEE_CLASS   = TEST_CLASS + "a";
     static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
     static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
+    static final String THREAD_STARTED_BREAK = PACKAGE_NAME + ".MyThread.threadStarted";
 
     static final String[][] FRAMES = new String[][] {
         {PACKAGE_NAME + ".MyThread.func5", "111"},
@@ -97,9 +94,9 @@ public class where006 extends JdbTest {
         String found;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        waitForTestedThreadStarts(THREAD_STARTED_BREAK, where006a.numThreads);
 
-        String[] threadIds = jdb.getThreadIds(PACKAGE_NAME + ".MyThread");
+        String[] threadIds = jdb.getThreadIdsByName("MyThread");
         reply = jdb.receiveReplyFor(JdbCommand.where + "all");
         for (int i = 0; i < where006a.numThreads; i++) {
             checkFrames(threadIds[i], reply, 5);

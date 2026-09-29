@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @summary Tests Agent Loaded event by starting native and Java agents
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.jvmti
  *
  * @library /test/lib
  * @modules java.instrument
@@ -65,9 +65,15 @@ import jdk.test.lib.jfr.TestClassLoader;
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testJavaDynamic
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -agentlib:jdwp=transport=dt_socket,server=y,address=any,onjcmd=y
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testNativeStatic
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps
+ *                   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0
+ *                   -javaagent:JavaAgent.jar=foo=bar
+ *      jdk.jfr.event.runtime.TestAgentEvent
+ *      testMultipleAgents
  */
 public final class TestAgentEvent {
     @StackTrace(false)
@@ -122,7 +128,7 @@ public final class TestAgentEvent {
             RecordedEvent e = events.get(1);
             System.out.println(e);
             Events.assertField(e, "name").equal("jdwp");
-            Events.assertField(e, "options").equal("transport=dt_socket,server=y,address=any,onjcmd=y");
+            Events.assertField(e, "options").equal("transport=dt_socket,server=y,suspend=n,address=0");
             Events.assertField(e, "dynamic").equal(false);
             Instant initializationTime = e.getInstant("initializationTime");
             if (initializationTime.isAfter(interval.getStartTime())) {
@@ -177,6 +183,27 @@ public final class TestAgentEvent {
             Events.assertField(events.get(2), "options").equal(null);
             Events.assertField(events.get(3), "options").equal("");
             Events.assertField(events.get(4), "options").equal("=");
+        }
+    }
+
+    private static void testMultipleAgents() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(EventNames.NativeAgent).with("period", "endChunk");
+            r.enable(EventNames.JavaAgent).with("period", "endChunk");
+            r.start();
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            if (events.size() != 2) {
+                throw new Exception("Expected two agents");
+            }
+            Instant timestamp = events.getFirst().getStartTime();
+            for (RecordedEvent event : events) {
+                if (!event.getStartTime().equals(timestamp) ||
+                    !event.getEndTime().equals(timestamp))  {
+                    System.out.println(events);
+                    throw new Exception("Expected agent to have the same start and end time");
+                }
+            }
         }
     }
 }

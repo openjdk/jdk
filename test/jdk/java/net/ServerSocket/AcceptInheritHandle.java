@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,12 @@ import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import jdk.test.lib.net.IPSupport;
+import jdk.test.lib.process.ProcessTools;
 
 public class AcceptInheritHandle {
 
@@ -95,16 +97,12 @@ public class AcceptInheritHandle {
         System.out.println("\nStarting test for " + ssp.name());
 
         List<String> commands = new ArrayList<>();
-        commands.add(JAVA);
-        for (String arg : jvmArgs)
-            commands.add(arg);
-        commands.add("-cp");
-        commands.add(CLASSPATH);
+        Collections.addAll(commands, jvmArgs);
         commands.add("AcceptInheritHandle");
         commands.add(ssp.name());
 
         System.out.println("Executing: "+ commands);
-        ProcessBuilder pb = new ProcessBuilder(commands);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(commands);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         Process serverProcess = pb.start();
         DataInputStream dis = new DataInputStream(serverProcess.getInputStream());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ jmethodID AwtPrintControl::getMinPageID;
 jmethodID AwtPrintControl::getCollateID;
 jmethodID AwtPrintControl::getOrientID;
 jmethodID AwtPrintControl::getQualityID;
-jmethodID AwtPrintControl::getPrintToFileEnabledID;
 jmethodID AwtPrintControl::getPrinterID;
 jmethodID AwtPrintControl::setPrinterID;
 jmethodID AwtPrintControl::getResID;
@@ -369,11 +368,6 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
     DASSERT(AwtPrintControl::getSelectID != NULL);
     CHECK_NULL(AwtPrintControl::getSelectID);
 
-    AwtPrintControl::getPrintToFileEnabledID =
-      env->GetMethodID(cls, "getPrintToFileEnabled", "()Z");
-    DASSERT(AwtPrintControl::getPrintToFileEnabledID != NULL);
-    CHECK_NULL(AwtPrintControl::getPrintToFileEnabledID);
-
     AwtPrintControl::setNativeAttID =
       env->GetMethodID(cls, "setNativeAttributes", "(III)V");
     DASSERT(AwtPrintControl::setNativeAttID != NULL);
@@ -448,6 +442,9 @@ BOOL AwtPrintControl::CreateDevModeAndDevNames(PRINTDLG *ppd,
                 throw std::bad_alloc();
             }
             DEVMODE *devmode = (DEVMODE *)::GlobalLock(ppd->hDevMode);
+            if (devmode == NULL) {
+                throw std::bad_alloc();
+            }
             DASSERT(!::IsBadWritePtr(devmode, devmodeSize));
             memcpy(devmode, info2->pDevMode, devmodeSize);
             VERIFY(::GlobalUnlock(ppd->hDevMode) == 0);
@@ -481,8 +478,10 @@ BOOL AwtPrintControl::CreateDevModeAndDevNames(PRINTDLG *ppd,
             throw std::bad_alloc();
         }
 
-        DEVNAMES *devnames =
-            (DEVNAMES *)::GlobalLock(ppd->hDevNames);
+        DEVNAMES *devnames = (DEVNAMES*)::GlobalLock(ppd->hDevNames);
+        if (devnames == NULL) {
+            throw std::bad_alloc();
+        }
         DASSERT(!IsBadWritePtr(devnames, devnameSize));
         LPTSTR lpcDevnames = (LPTSTR)devnames;
 
@@ -687,14 +686,13 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
                 printName = lpdevnames+devnames->wDeviceOffset;
 
                 if (!_tcscmp(printName, getName)) {
-
                     samePrinter = TRUE;
                     printName = _tcsdup(lpdevnames+devnames->wDeviceOffset);
                     portName = _tcsdup(lpdevnames+devnames->wOutputOffset);
-
                 }
+                ::GlobalUnlock(pd.hDevNames);
             }
-            ::GlobalUnlock(pd.hDevNames);
+
         }
         JNU_ReleaseStringPlatformChars(env, printerName, getName);
 
@@ -809,13 +807,17 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
       pd.Flags |= selectType;
     }
 
-    if (!env->CallBooleanMethod(printCtrl,
-                                AwtPrintControl::getPrintToFileEnabledID)) {
-      pd.Flags |= PD_DISABLEPRINTTOFILE;
-    }
-
     if (pd.hDevMode != NULL) {
       DEVMODE *devmode = (DEVMODE *)::GlobalLock(pd.hDevMode);
+      if (devmode == NULL) {
+        if (printName != NULL) {
+          free(printName);
+        }
+        if (portName != NULL) {
+          free(portName);
+        }
+        return FALSE;
+      }
       DASSERT(!IsBadWritePtr(devmode, sizeof(DEVMODE)));
 
       WORD copies = (WORD)env->CallIntMethod(printCtrl,
@@ -1042,27 +1044,28 @@ BOOL AwtPrintControl::UpdateAttributes(JNIEnv *env,
     }
 
     if (pd.hDevNames != NULL) {
-        DEVNAMES *devnames = (DEVNAMES*)::GlobalLock(pd.hDevNames);
-        DASSERT(!IsBadReadPtr(devnames, sizeof(DEVNAMES)));
-        LPTSTR lpcNames = (LPTSTR)devnames;
-        LPCTSTR pbuf = (_tcslen(lpcNames + devnames->wDeviceOffset) == 0 ?
-                      TEXT("") : lpcNames + devnames->wDeviceOffset);
-        if (pbuf != NULL) {
-            jstring jstr = JNU_NewStringPlatform(env, pbuf);
-            env->CallVoidMethod(printCtrl,
-                                AwtPrintControl::setPrinterID,
-                                jstr);
-            env->DeleteLocalRef(jstr);
-        }
-        pbuf = (_tcslen(lpcNames + devnames->wOutputOffset) == 0 ?
-                      TEXT("") : lpcNames + devnames->wOutputOffset);
-        if (pbuf != NULL) {
-            if (wcscmp(pbuf, L"FILE:") == 0) {
-                pdFlags |= PD_PRINTTOFILE;
+        devnames = (DEVNAMES*)::GlobalLock(pd.hDevNames);
+        if (devnames != NULL) {
+            DASSERT(!IsBadReadPtr(devnames, sizeof(DEVNAMES)));
+            LPTSTR lpcNames = (LPTSTR)devnames;
+            LPCTSTR pbuf = (_tcslen(lpcNames + devnames->wDeviceOffset) == 0 ?
+                          TEXT("") : lpcNames + devnames->wDeviceOffset);
+            if (pbuf != NULL) {
+                jstring jstr = JNU_NewStringPlatform(env, pbuf);
+                env->CallVoidMethod(printCtrl,
+                                    AwtPrintControl::setPrinterID,
+                                    jstr);
+                env->DeleteLocalRef(jstr);
             }
+            pbuf = (_tcslen(lpcNames + devnames->wOutputOffset) == 0 ?
+                          TEXT("") : lpcNames + devnames->wOutputOffset);
+            if (pbuf != NULL) {
+                if (wcscmp(pbuf, L"FILE:") == 0) {
+                    pdFlags |= PD_PRINTTOFILE;
+                }
+            }
+            ::GlobalUnlock(pd.hDevNames);
         }
-        ::GlobalUnlock(pd.hDevNames);
-        devnames = NULL;
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8146115 8292083
  * @key cgroups
  * @summary Test JVM's memory resource awareness when running inside docker container
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.platform
@@ -59,10 +59,7 @@ public class TestMemoryAwareness {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
@@ -105,9 +102,7 @@ public class TestMemoryAwareness {
             testMetricsSwapExceedingPhysical();
             testContainerMemExceedsPhysical();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
@@ -140,7 +135,7 @@ public class TestMemoryAwareness {
             .addDockerOpts("--memory", badMem);
 
         Common.run(opts)
-            .shouldMatch("container memory limit (ignored: " + badMem + "|unlimited: -1), using host value " + hostMaxMem);
+            .shouldMatch("container memory limit (ignored: " + badMem + "|unlimited: -1), upper bound is " + hostMaxMem);
     }
 
 
@@ -172,11 +167,11 @@ public class TestMemoryAwareness {
         opts.addDockerOpts("--memory-swap=" + swapToSet);
 
         Common.run(opts)
-            .shouldMatch("memory_limit_in_bytes:.*" + expectedMem)
-            .shouldNotMatch("memory_and_swap_limit_in_bytes:.*not supported")
+            .shouldMatch("memory_limit:.*" + expectedMem)
+            .shouldNotMatch("memory_and_swap_limit:.*not supported")
             // On systems with swapaccount=0 this returns the memory limit.
             // On systems with swapaccount=1 this returns the set memory+swap value.
-            .shouldMatch("memory_and_swap_limit_in_bytes:.*(" + expectedMem + "|" + expectedSwap + ")");
+            .shouldMatch("memory_and_swap_limit:.*(" + expectedMem + "|" + expectedSwap + ")");
     }
 
     /*
@@ -200,8 +195,8 @@ public class TestMemoryAwareness {
             .shouldMatch("Memory Limit is:.*" + expectedTraceValue)
             // Either for cgroup v1: a_1) same as memory limit, or b_1) -2 on systems with swapaccount=0
             // Either for cgroup v2: a_2) 0, or b_2) -2 on systems with swapaccount=0
-            .shouldMatch("Memory and Swap Limit is:.*(" + expectedTraceValue + "|-2|0)")
-            .shouldNotMatch("Memory and Swap Limit is:.*" + neg2InUnsignedLong);
+            .shouldMatch("(Memory and )?Swap Limit is:.*(" + expectedTraceValue + "|-2|0)")
+            .shouldNotMatch("(Memory and )?Swap Limit is:.*" + neg2InUnsignedLong);
     }
 
 
@@ -218,6 +213,9 @@ public class TestMemoryAwareness {
         System.out.println("sizeToAllocInMb is:" + sizeToAllocInMb + " sizeToAllocInMb/2 is:" + sizeToAllocInMb/2);
         String javaHeapSize = sizeToAllocInMb/2 + "m";
         opts.addJavaOptsAppended("-Xmx" + javaHeapSize);
+        // reduce the number of CPUs to 2, so that the number of GC threads is not too
+        // high for the small memory limit (each thread reserves 2MB stacksize).
+        opts.addJavaOptsAppended("-XX:ActiveProcessorCount=2");
 
         OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
 

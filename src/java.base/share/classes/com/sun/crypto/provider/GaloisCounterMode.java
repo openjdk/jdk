@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,38 +25,25 @@
 
 package com.sun.crypto.provider;
 
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.Unsafe;
-import sun.nio.ch.DirectBuffer;
-import sun.security.jca.JCAUtil;
-import sun.security.util.ArrayUtil;
-
-import javax.crypto.AEADBadTagException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.ShortBufferException;
-import javax.crypto.spec.GCMParameterSpec;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.security.AlgorithmParameters;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.ProviderException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
+import javax.crypto.*;
+import javax.crypto.spec.GCMParameterSpec;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.ch.DirectBuffer;
+import sun.security.jca.JCAUtil;
+import sun.security.util.ArrayUtil;
 
 /**
  * This class represents ciphers in GaloisCounter (GCM) mode.
@@ -86,7 +73,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     // data size when buffer is divided up to aid in intrinsics
     private static final int TRIGGERLEN = 65536;  // 64k
     // x86-64 parallel intrinsic data size
-    private static final int PARALLEL_LEN = 7680;
+    private static final int PARALLEL_LEN = 512;
     // max data size for x86-64 intrinsic
     private static final int SPLIT_LEN = 1048576;  // 1MB
 
@@ -115,7 +102,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     /**
      *
      * @param keySize length of key.
-     * @param embeddedCipher Cipher object, such as AESCrypt.
+     * @param embeddedCipher Cipher object, such as AES_Crypt.
      */
     GaloisCounterMode(int keySize, SymmetricCipher embeddedCipher) {
         blockCipher = embeddedCipher;
@@ -211,7 +198,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
         Arrays.fill(encoded, (byte)0);
-        if (!AESCrypt.isKeySizeValid(encoded.length)) {
+        if (!AES_Crypt.isKeySizeValid(encoded.length)) {
             throw new InvalidKeyException("Invalid key length: " +
                                           encoded.length + " bytes");
         }
@@ -255,7 +242,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             params.init(spec);
             return params;
         } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
-            throw new RuntimeException(e);
+            throw new ProviderException(e);
         }
     }
 
@@ -795,7 +782,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         int mergeBlock(byte[] buffer, int bufOfs, int bufLen, byte[] in,
             int inOfs, int inLen, byte[] block) {
             if (bufLen > blockSize) {
-                throw new RuntimeException("mergeBlock called on an ibuffer " +
+                throw new ProviderException("mergeBlock called on an ibuffer " +
                     "too big:  " + bufLen + " bytes");
             }
 
@@ -924,26 +911,26 @@ abstract class GaloisCounterMode extends CipherSpi {
          */
         ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
             if (src.isDirect() && dst.isDirect()) {
-                // The use of DirectBuffer::address below need not be guarded as
+                // The use of addresses below need not be guarded as
                 // no access is made to actual memory.
                 DirectBuffer dsrc = (DirectBuffer) src;
                 DirectBuffer ddst = (DirectBuffer) dst;
 
                 // Get the current memory address for the given ByteBuffers
-                long srcaddr = dsrc.address();
-                long dstaddr = ddst.address();
+                long srcaddr = NIO_ACCESS.getBufferAddress(src);
+                long dstaddr = NIO_ACCESS.getBufferAddress(dst);
 
                 // Find the lowest attachment that is the base memory address
                 // of the shared memory for the src object
                 while (dsrc.attachment() != null) {
-                    srcaddr = ((DirectBuffer) dsrc.attachment()).address();
+                    srcaddr = NIO_ACCESS.getBufferAddress((Buffer) dsrc.attachment());
                     dsrc = (DirectBuffer) dsrc.attachment();
                 }
 
                 // Find the lowest attachment that is the base memory address
                 // of the shared memory for the dst object
                 while (ddst.attachment() != null) {
-                    dstaddr = ((DirectBuffer) ddst.attachment()).address();
+                    dstaddr = NIO_ACCESS.getBufferAddress((Buffer) ddst.attachment());
                     ddst = (DirectBuffer) ddst.attachment();
                 }
 
@@ -961,8 +948,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // side, we are not in overlap.
                 // NOTE: inPlaceArray does not apply here as direct buffers run
                 // through a byte[] to get to the combined intrinsic
-                if (((DirectBuffer) src).address() - srcaddr + src.position() >=
-                    ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
+                if (NIO_ACCESS.getBufferAddress(src) - srcaddr + src.position() >=
+                    NIO_ACCESS.getBufferAddress(dst) - dstaddr + dst.position()) {
                     return dst;
                 }
 
@@ -1616,7 +1603,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                         NIO_ACCESS.acquireSession(dst);
                         try {
                             Unsafe.getUnsafe().setMemory(
-                                ((DirectBuffer)dst).address(),
+                                NIO_ACCESS.getBufferAddress(dst),
                                 len + dst.position(), (byte) 0);
                         } finally {
                             NIO_ACCESS.releaseSession(dst);
@@ -1706,25 +1693,25 @@ abstract class GaloisCounterMode extends CipherSpi {
 
     public static final class AESGCM extends GaloisCounterMode {
         public AESGCM() {
-            super(-1, new AESCrypt());
+            super(-1, new AES_Crypt());
         }
     }
 
     public static final class AES128 extends GaloisCounterMode {
         public AES128() {
-            super(16, new AESCrypt());
+            super(16, new AES_Crypt());
         }
     }
 
     public static final class AES192 extends GaloisCounterMode {
         public AES192() {
-            super(24, new AESCrypt());
+            super(24, new AES_Crypt());
         }
     }
 
     public static final class AES256 extends GaloisCounterMode {
         public AES256() {
-            super(32, new AESCrypt());
+            super(32, new AES_Crypt());
         }
     }
 

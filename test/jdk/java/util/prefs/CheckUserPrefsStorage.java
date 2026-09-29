@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class CheckUserPrefsStorage {
     }
 
     public static void run(String testName) throws Exception {
-        ProcessTools.executeTestJvm("-Djava.util.prefs.userRoot=.", testName)
+        ProcessTools.executeTestJava("-Djava.util.prefs.userRoot=.", testName)
                     .outputTo(System.out)
                     .errorTo(System.out)
                     .shouldHaveExitValue(0);

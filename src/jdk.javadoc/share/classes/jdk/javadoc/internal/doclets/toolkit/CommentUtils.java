@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,6 +361,10 @@ public class CommentUtils {
      */
     public void updatePropertyMethodComment(ExecutableElement member,
                                  Element property) {
+        // Check if member was already processed
+        if (dcInfoMap.containsKey(member)) {
+            return;
+        }
         final String memberName = member.getSimpleName().toString();
         final boolean isSetter = memberName.startsWith("set");
         final boolean isGetter = memberName.startsWith("get") || memberName.startsWith("is");
@@ -626,7 +630,7 @@ public class CommentUtils {
 
     public DocCommentTree parse(URI uri, String text) {
         return trees.getDocCommentTree(new SimpleJavaFileObject(
-                uri, JavaFileObject.Kind.SOURCE) {
+                uri, JavaFileObject.Kind.HTML) {
             @Override @DefinedBy(Api.COMPILER)
             public CharSequence getCharContent(boolean ignoreEncoding) {
                 return text;

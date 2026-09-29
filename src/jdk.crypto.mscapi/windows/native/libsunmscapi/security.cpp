@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,7 +366,11 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
 
         } else {
 
-            if (length > 0) {
+            /*
+             * seed could be NULL here when SecureRandom.generateSeed() is
+             * called with a length of zero.
+             */
+            if ((length > 0) || (seed == NULL)) {
                 seed = env->NewByteArray(length);
                 if (seed == NULL) {
                     __leave;
@@ -444,7 +448,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
         }
         else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
             hCertStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
-                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
+                CERT_SYSTEM_STORE_LOCAL_MACHINE | CERT_STORE_MAXIMUM_ALLOWED_FLAG, pszCertStoreName);
         }
         else {
             PP("jCertStoreLocation is not a valid value");
@@ -798,11 +802,15 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signHash
             ::CryptGetProvParam((HCRYPTPROV)hCryptProv, PP_CONTAINER, //deprecated
                 (BYTE *)pbData, &cbData, 0);
 
+            DWORD keysetType = 0;
+            DWORD keysetTypeLen = sizeof(keysetType);
+            ::CryptGetProvParam((HCRYPTPROV)hCryptProv, PP_KEYSET_TYPE, //deprecated
+                (BYTE*)&keysetType, &keysetTypeLen, 0);
+
             // Acquire an alternative CSP handle
             if (::CryptAcquireContext(&hCryptProvAlt, LPCSTR(pbData), NULL, //deprecated
-                PROV_RSA_AES, 0) == FALSE)
+                PROV_RSA_AES, 0 | keysetType) == FALSE)
             {
-
                 ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
                 __leave;
             }
@@ -1309,6 +1317,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     EXPORT_BLOB(NCRYPT_PKCS7_ENVELOPE_BLOB);
     //EXPORT_BLOB(NCRYPTBUFFER_CERT_BLOB);
     //EXPORT_BLOB(NCRYPT_PKCS8_PRIVATE_KEY_BLOB);
+    /*
     BCryptBuffer bb;
     bb.BufferType = NCRYPTBUFFER_PKCS_SECRET;
     bb.cbBuffer = 18;
@@ -1317,6 +1326,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     bbd.ulVersion = 0;
     bbd.cBuffers = 1;
     bbd.pBuffers = &bb;
+    */
     if(::NCryptExportKey(hKey, NULL, NCRYPT_PKCS8_PRIVATE_KEY_BLOB, NULL,
             (PBYTE)buffer, 8192, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) {
         snprintf(header, sizeof(header), "NCRYPT_PKCS8_PRIVATE_KEY_BLOB %ls", NCRYPT_PKCS8_PRIVATE_KEY_BLOB);
@@ -1365,7 +1375,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyPairGenerator_00024RSA_ge
                 PROV_RSA_FULL,
                 CRYPT_NEWKEYSET) == FALSE)
             {
-                ThrowException(env, KEY_EXCEPTION, GetLastError());
+                ThrowExceptionWithMessageAndErrcode(env, KEY_EXCEPTION, "CryptAcquireContext failure", GetLastError());
                 __leave;
             }
         }
@@ -1377,7 +1387,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyPairGenerator_00024RSA_ge
            dwFlags,
            &hKeyPair) == FALSE)
         {
-            ThrowException(env, KEY_EXCEPTION, GetLastError());
+            ThrowExceptionWithMessageAndErrcode(env, KEY_EXCEPTION, "CryptGenKey failure", GetLastError());
             __leave;
         }
 
@@ -1905,18 +1915,25 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
 /*
  * Class:     sun_security_mscapi_CRSACipher
  * Method:    encryptDecrypt
- * Signature: ([BIJZ)[B
+ * Signature: ([I[BIJZ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_encryptDecrypt
-  (JNIEnv *env, jclass clazz, jbyteArray jData, jint jDataSize, jlong hKey,
+  (JNIEnv *env, jclass clazz, jintArray jResultStatus, jbyteArray jData, jint jDataSize, jlong hKey,
    jboolean doEncrypt)
 {
     jbyteArray result = NULL;
     jbyte* pData = NULL;
+    jbyte* resultData = NULL;
     DWORD dwDataLen = jDataSize;
     DWORD dwBufLen = env->GetArrayLength(jData);
     DWORD i;
     BYTE tmp;
+    BOOL success;
+    DWORD ss = ERROR_SUCCESS;
+    DWORD lastError = ERROR_SUCCESS;
+    DWORD resultLen = 0;
+    DWORD pmsLen = 48;
+    jbyte pmsArr[48] = {0};
 
     __try
     {
@@ -1943,6 +1960,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_encryptDecrypt
                 pData[i] = pData[dwBufLen - i -1];
                 pData[dwBufLen - i - 1] = tmp;
             }
+            resultData = pData;
+            resultLen = dwBufLen;
         } else {
             // convert to little-endian
             for (i = 0; i < dwBufLen / 2; i++) {
@@ -1952,21 +1971,28 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_encryptDecrypt
             }
 
             // decrypt
-            if (! ::CryptDecrypt((HCRYPTKEY) hKey, 0, TRUE, 0, (BYTE *)pData, //deprecated
-                &dwBufLen)) {
-
-                ThrowException(env, KEY_EXCEPTION, GetLastError());
-                __leave;
+            success = ::CryptDecrypt((HCRYPTKEY) hKey, 0, TRUE, 0, (BYTE *)pData, //deprecated
+                &dwBufLen);
+            lastError = GetLastError();
+            if (success) {
+                ss = ERROR_SUCCESS;
+                resultData = pData;
+                resultLen = dwBufLen;
+            } else {
+                ss = lastError;
+                resultData = pmsArr;
+                resultLen = pmsLen;
             }
+            env->SetIntArrayRegion(jResultStatus, 0, 1, (jint*) &ss);
         }
 
-        // Create new byte array
-        if ((result = env->NewByteArray(dwBufLen)) == NULL) {
+            // Create new byte array
+        if ((result = env->NewByteArray(resultLen)) == NULL) {
             __leave;
         }
 
         // Copy data from native buffer to Java buffer
-        env->SetByteArrayRegion(result, 0, dwBufLen, (jbyte*) pData);
+        env->SetByteArrayRegion(result, 0, resultLen, (jbyte*) resultData);
     }
     __finally
     {
@@ -1980,17 +2006,22 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_encryptDecrypt
 /*
  * Class:     sun_security_mscapi_CRSACipher
  * Method:    cngEncryptDecrypt
- * Signature: ([BIJZ)[B
+ * Signature: ([I[BIJZ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_cngEncryptDecrypt
-  (JNIEnv *env, jclass clazz, jbyteArray jData, jint jDataSize, jlong hKey,
+  (JNIEnv *env, jclass clazz, jintArray jResultStatus, jbyteArray jData, jint jDataSize, jlong hKey,
    jboolean doEncrypt)
 {
     SECURITY_STATUS ss;
     jbyteArray result = NULL;
     jbyte* pData = NULL;
+    jbyte* resultData = NULL;
     DWORD dwDataLen = jDataSize;
     DWORD dwBufLen = env->GetArrayLength(jData);
+    DWORD resultLen = 0;
+    DWORD pmsLen = 48;
+    jbyte pmsArr[48] = {0};
+
     __try
     {
         // Copy data from Java buffer to native buffer
@@ -2010,6 +2041,9 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_cngEncryptDecry
             if (ss != ERROR_SUCCESS) {
                 ThrowException(env, KEY_EXCEPTION, ss);
                 __leave;
+            } else {
+                resultLen = dwBufLen;
+                resultData = pData;
             }
         } else {
             // decrypt
@@ -2018,18 +2052,22 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_cngEncryptDecry
                     0,
                     (PBYTE)pData, dwBufLen,
                     &dwBufLen, NCRYPT_PAD_PKCS1_FLAG);
-            if (ss != ERROR_SUCCESS) {
-                ThrowException(env, KEY_EXCEPTION, ss);
-                __leave;
+            env->SetIntArrayRegion(jResultStatus, 0, 1, (jint*) &ss);
+            if (ss == ERROR_SUCCESS) {
+                resultLen = dwBufLen;
+                resultData = pData;
+            } else {
+                resultLen = pmsLen;
+                resultData = pmsArr;
             }
-        }
+       }
         // Create new byte array
-        if ((result = env->NewByteArray(dwBufLen)) == NULL) {
+        if ((result = env->NewByteArray(resultLen)) == NULL) {
             __leave;
         }
 
         // Copy data from native buffer to Java buffer
-        env->SetByteArrayRegion(result, 0, dwBufLen, (jbyte*) pData);
+        env->SetByteArrayRegion(result, 0, resultLen, (jbyte*) resultData);
     }
     __finally {
         if (pData) {

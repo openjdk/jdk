@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "memory/allStatic.hpp"
 
 class ClassLoaderData;
+class InstanceKlass;
 class Klass;
 class Method;
 class ModuleEntry;
@@ -92,6 +93,7 @@ class JfrTraceId : public AllStatic {
   static traceid load(const ModuleEntry* module);
   static traceid load(const PackageEntry* package);
   static traceid load(const ClassLoaderData* cld);
+  static traceid load_leakp(const Klass* klass); // leak profiler
   static traceid load_leakp(const Klass* klass, const Method* method); // leak profiler
   static traceid load_leakp_previous_epoch(const Klass* klass, const Method* method); // leak profiler
   static traceid load_no_enqueue(const Method* method);
@@ -101,6 +103,7 @@ class JfrTraceId : public AllStatic {
   static traceid load_raw(const Klass* klass);
   static traceid load_raw(jclass jc);
   static traceid load_raw(const Method* method);
+  static traceid load_raw(const Klass* holder, const Method* method);
   static traceid load_raw(const ModuleEntry* module);
   static traceid load_raw(const PackageEntry* package);
   static traceid load_raw(const ClassLoaderData* cld);
@@ -135,6 +138,28 @@ class JfrTraceId : public AllStatic {
   static bool is_event_host(const jclass jc);
   static void tag_as_event_host(const Klass* k);
   static void tag_as_event_host(const jclass jc);
+
+  // Sticky bits and timing bits
+  static bool has_sticky_bit(const Klass* k);
+  static bool has_sticky_bit(const Method* method);
+  static void set_sticky_bit(const Klass* k);
+  static void set_sticky_bit(const Method* method);
+  static void clear_sticky_bit(const Klass* k);
+  static void clear_sticky_bit(const Method* method);
+  static bool has_timing_bit(const InstanceKlass* ik);
+  static void set_timing_bit(const InstanceKlass* ik);
+  static void clear_timing_bit(const InstanceKlass* ik);
+
+  // Preload tag bits (only valid during class loading, before a klass is defined)
+  static bool has_preload_sticky_bit(const Klass* k);
+  static void set_preload_sticky_bit(const Klass* k);
+  static void clear_preload_sticky_bit(const Klass* k);
+
+  static bool has_preload_bootloader_bit(const Klass* k);
+  static void set_preload_bootloader_bit(const Klass* k);
+  static void clear_preload_bootloader_bit(const Klass* k);
+
+  DEBUG_ONLY(static traceid preload_bits(const Klass* k);)
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.internal.Archive;
+import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.ImageFileCreator;
 import jdk.tools.jlink.internal.ImagePluginStack;
-import jdk.tools.jlink.internal.ExecutableImage;
-import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.plugin.ResourcePool;
 
 
@@ -223,6 +224,6 @@ public class ImageFileCreatorTest {
         ImagePluginStack stack = new ImagePluginStack(noopBuilder, Collections.emptyList(),
                 null, false);
 
-        ImageFileCreator.create(archives, ByteOrder.nativeOrder(), stack);
+        ImageFileCreator.create(archives, ByteOrder.nativeOrder(), stack, false);
     }
 }

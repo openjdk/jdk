@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,6 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   const char* _options;
   void* _os_lib;
   const char* _os_lib_path;
-#ifdef AIX
-  ino64_t _inode;
-  dev64_t _device;
-#endif
   const void* _jplis;
   bool _loaded;
   bool _absolute_path;
@@ -56,7 +52,6 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   bool _xrun;
 
   JvmtiAgent* next() const;
-  void set_next(JvmtiAgent* agent);
   void convert_xrun_agent();
   void set_xrun();
 
@@ -84,12 +79,6 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   void initialization_end();
   const Ticks& initialization_time() const;
   const Tickspan& initialization_duration() const;
-#ifdef AIX
-  void set_inode(ino64_t inode);
-  void set_device(dev64_t device);
-  unsigned long inode() const;
-  unsigned long device() const;
-#endif
 
   bool load(outputStream* st = nullptr);
   void unload();

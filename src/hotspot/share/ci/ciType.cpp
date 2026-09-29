@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciType.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -34,7 +33,7 @@ ciType* ciType::_basic_types[T_CONFLICT+1];
 
 // ciType
 //
-// This class represents a Java reference or primitive type.
+// This class represents a Java reference, value type or primitive type.
 
 // ------------------------------------------------------------------
 // ciType::ciType
@@ -140,4 +139,17 @@ void ciReturnAddress::print_impl(outputStream* st) {
 // ciReturnAddress::make
 ciReturnAddress* ciReturnAddress::make(int bci) {
   GUARDED_VM_ENTRY(return CURRENT_ENV->get_return_address(bci);)
+}
+
+ciWrapper::ciWrapper(ciType* type, int properties)
+    : ciType(type->basic_type()),
+      _type(type),
+      _properties(properties) {
+  assert(!type->is_wrapper(), "Thou shall not double wrap!");
+  assert(type->is_value_klass()
+             // An abstract value type is an instance_klass
+             || (type->is_instance_klass() && !type->as_instance_klass()->flags().is_identity())
+             // An unloaded value type is an instance_klass (see ciEnv::get_klass_by_name_impl())
+             || (type->is_instance_klass() && !type->is_loaded()),
+         "should only be used for value types");
 }

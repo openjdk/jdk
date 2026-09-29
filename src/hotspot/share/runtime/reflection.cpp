@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -37,22 +36,24 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/arrayOop.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/reflection.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 static void trace_class_resolution(oop mirror) {
   if (mirror == nullptr || java_lang_Class::is_primitive(mirror)) {
@@ -230,7 +231,8 @@ BasicType Reflection::array_get(jvalue* value, arrayOop a, int index, TRAPS) {
     THROW_(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), T_ILLEGAL);
   }
   if (a->is_objArray()) {
-    value->l = cast_from_oop<jobject>(objArrayOop(a)->obj_at(index));
+    oop o = objArrayOop(a)->obj_at(index, CHECK_(T_ILLEGAL)); // reading from a flat array can throw an OOM
+    value->l = cast_from_oop<jobject>(o);
     return T_OBJECT;
   } else {
     assert(a->is_typeArray(), "just checking");
@@ -272,17 +274,20 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   if (!a->is_within_bounds(index)) {
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
   }
-  if (a->is_objArray()) {
-    if (value_type == T_OBJECT) {
-      oop obj = cast_to_oop(value->l);
-      if (obj != nullptr) {
-        Klass* element_klass = ObjArrayKlass::cast(a->klass())->element_klass();
-        if (!obj->is_a(element_klass)) {
-          THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "array element type mismatch");
-        }
-      }
-      objArrayOop(a)->obj_at_put(index, obj);
+  if (value_type == T_OBJECT) {
+    assert(a->is_objArray(), "just checking");
+    oop obj = cast_to_oop(value->l);
+    if (a->is_null_free_array() && obj == nullptr) {
+      THROW_MSG(vmSymbols::java_lang_NullPointerException(), "null-restricted array");
     }
+
+    if (obj != nullptr) {
+      Klass* element_klass = ObjArrayKlass::cast(a->klass())->element_klass();
+      if (!obj->is_a(element_klass)) {
+        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "array element type mismatch");
+      }
+    }
+    objArrayOop(a)->obj_at_put(index, obj);
   } else {
     assert(a->is_typeArray(), "just checking");
     BasicType array_type = TypeArrayKlass::cast(a->klass())->element_type();
@@ -322,31 +327,41 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   }
 }
 
+
+// Conversion
+static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
+  assert(java_lang_Class::is_primitive(basic_type_mirror),
+    "just checking");
+  return java_lang_Class::primitive_type(basic_type_mirror);
+}
+
 static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS) {
-  assert(java_lang_Class::is_primitive(basic_type_mirror), "just checking");
-  BasicType type = java_lang_Class::primitive_type(basic_type_mirror);
+  BasicType type = basic_type_mirror_to_basic_type(basic_type_mirror);
   if (type == T_VOID) {
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
   else {
-    return Universe::typeArrayKlassObj(type);
+    return Universe::typeArrayKlass(type);
   }
 }
 
 arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
   if (element_mirror == nullptr) {
-    THROW_0(vmSymbols::java_lang_NullPointerException());
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
   if (length < 0) {
-    THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
+    THROW_MSG_NULL(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
   }
   if (java_lang_Class::is_primitive(element_mirror)) {
-    Klass* tak = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
-    return TypeArrayKlass::cast(tak)->allocate(length, THREAD);
+    BasicType type = basic_type_mirror_to_basic_type(element_mirror);
+    if (type == T_VOID) {
+      THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
+    }
+    return oopFactory::new_typeArray(type, length, THREAD);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
     if (k->is_array_klass() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
-      THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+      THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
     }
     return oopFactory::new_objArray(k, length, THREAD);
   }
@@ -358,19 +373,19 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
   assert(TypeArrayKlass::cast(dim_array->klass())->element_type() == T_INT, "just checking");
 
   if (element_mirror == nullptr) {
-    THROW_0(vmSymbols::java_lang_NullPointerException());
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
 
   int len = dim_array->length();
   if (len <= 0 || len > MAX_DIM) {
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   jint dimensions[MAX_DIM];   // C array copy of intArrayOop
   for (int i = 0; i < len; i++) {
     int d = dim_array->int_at(i);
     if (d < 0) {
-      THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", d));
+      THROW_MSG_NULL(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", d));
     }
     dimensions[i] = d;
   }
@@ -384,7 +399,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
     if (klass->is_array_klass()) {
       int k_dim = ArrayKlass::cast(klass)->dimension();
       if (k_dim + len > MAX_DIM) {
-        THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+        THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
       }
       dim += k_dim;
     }
@@ -449,21 +464,9 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       is_same_class_package(current_class, new_class)) {
     return ACCESS_OK;
   }
-  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
-  // succeed trivially.
-  if (vmClasses::reflect_SerializationConstructorAccessorImpl_klass_is_loaded() &&
-      current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-    return ACCESS_OK;
-  }
 
   // module boundaries
   if (new_class->is_public()) {
-    // Ignore modules for -Xshare:dump because we do not have any package
-    // or module information for modules other than java.base.
-    if (CDSConfig::is_dumping_static_archive()) {
-      return ACCESS_OK;
-    }
-
     // Find the module entry for current_class, the accessor
     ModuleEntry* module_from = current_class->module();
     // Find the module entry for new_class, the accessee
@@ -550,19 +553,19 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
         size_t len = 100 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*strlen(module_to_name);
         msg = NEW_RESOURCE_ARRAY(char, len);
-        jio_snprintf(msg, len - 1,
+        jio_snprintf(msg, len,
           "class %s (in module %s) cannot access class %s (in module %s) because module %s does not read module %s",
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_from_name, module_to_name);
       } else {
-        oop jlm = module_to->module();
-        assert(jlm != nullptr, "Null jlm in module_to ModuleEntry");
-        intptr_t identity_hash = jlm->identity_hash();
+        oop module_oop = module_to->module_oop();
+        assert(module_oop != nullptr, "should have been initialized");
+        intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 160 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
-        jio_snprintf(msg, len - 1,
-          "class %s (in module %s) cannot access class %s (in unnamed module @" SIZE_FORMAT_X ") because module %s does not read unnamed module @" SIZE_FORMAT_X,
+        jio_snprintf(msg, len,
+          "class %s (in module %s) cannot access class %s (in unnamed module @0x%zx) because module %s does not read unnamed module @0x%zx",
           current_class_name, module_from_name, new_class_name, uintx(identity_hash),
           module_from_name, uintx(identity_hash));
       }
@@ -577,19 +580,19 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
         size_t len = 118 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*strlen(module_to_name) + strlen(package_name);
         msg = NEW_RESOURCE_ARRAY(char, len);
-        jio_snprintf(msg, len - 1,
+        jio_snprintf(msg, len,
           "class %s (in module %s) cannot access class %s (in module %s) because module %s does not export %s to module %s",
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_to_name, package_name, module_from_name);
       } else {
-        oop jlm = module_from->module();
-        assert(jlm != nullptr, "Null jlm in module_from ModuleEntry");
-        intptr_t identity_hash = jlm->identity_hash();
+        oop module_oop = module_from->module_oop();
+        assert(module_oop != nullptr, "should have been initialized");
+        intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 170 + strlen(current_class_name) + strlen(new_class_name) +
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
-        jio_snprintf(msg, len - 1,
-          "class %s (in unnamed module @" SIZE_FORMAT_X ") cannot access class %s (in module %s) because module %s does not export %s to unnamed module @" SIZE_FORMAT_X,
+        jio_snprintf(msg, len,
+          "class %s (in unnamed module @0x%zx) cannot access class %s (in module %s) because module %s does not export %s to unnamed module @0x%zx",
           current_class_name, uintx(identity_hash), new_class_name, module_to_name,
           module_to_name, package_name, uintx(identity_hash));
       }
@@ -665,12 +668,6 @@ bool Reflection::verify_member_access(const Klass* current_class,
     }
   }
 
-  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
-  // succeed trivially.
-  if (current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-    return true;
-  }
-
   // Check for special relaxations
   return can_relax_access_check_for(current_class, member_class, classloader_only);
 }
@@ -716,6 +713,7 @@ void Reflection::check_for_inner_class(const InstanceKlass* outer, const Instanc
 
   // 'inner' not declared as an inner klass in outer
   ResourceMark rm(THREAD);
+  // Names are all known to be < 64k so we know this formatted message is not excessively large.
   Exceptions::fthrow(
     THREAD_AND_LOCATION,
     vmSymbols::java_lang_IncompatibleClassChangeError(),
@@ -766,16 +764,13 @@ static objArrayHandle get_exception_types(const methodHandle& method, TRAPS) {
 static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
   ResolvingSignatureStream ss(signature, k, false);
   oop nt = ss.as_java_mirror(SignatureStream::NCDFError, CHECK_NH);
-  if (log_is_enabled(Debug, class, resolve)) {
-    trace_class_resolution(nt);
-  }
   return Handle(THREAD, nt);
 }
 
 oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS) {
-  // Allow sun.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
-  assert(!method()->is_initializer() ||
-         (for_constant_pool_access && method()->is_static()),
+  // Allow jdk.internal.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
+  assert(!method()->is_object_constructor() ||
+         (for_constant_pool_access || !method()->is_class_initializer()),
          "should call new_constructor instead");
   InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
@@ -796,7 +791,7 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
   Handle name = Handle(THREAD, name_oop);
   if (name == nullptr) return nullptr;
 
-  const int modifiers = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+  const int modifiers = method->access_flags().as_method_flags();
 
   Handle mh = java_lang_reflect_Method::create(CHECK_NULL);
 
@@ -824,7 +819,8 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
 
 
 oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
-  assert(method()->is_initializer(), "should call new_method instead");
+  assert(method()->is_object_constructor(),
+         "should call new_method instead");
 
   InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
@@ -837,7 +833,7 @@ oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
   objArrayHandle exception_types = get_exception_types(method, CHECK_NULL);
   assert(!exception_types.is_null(), "cannot return null");
 
-  const int modifiers = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+  const int modifiers = method->access_flags().as_method_flags();
 
   Handle ch = java_lang_reflect_Constructor::create(CHECK_NULL);
 
@@ -873,11 +869,18 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
   java_lang_reflect_Field::set_slot(rh(), fd->index());
   java_lang_reflect_Field::set_name(rh(), name());
   java_lang_reflect_Field::set_type(rh(), type());
+
+  int flags = 0;
   if (fd->is_trusted_final()) {
-    java_lang_reflect_Field::set_trusted_final(rh());
+    flags |= TRUSTED_FINAL;
   }
+  if (fd->is_null_free_value_type()) {
+    flags |= NULL_RESTRICTED;
+  }
+  java_lang_reflect_Field::set_flags(rh(), flags);
+
   // Note the ACC_ANNOTATION bit, which is a per-class access flag, is never set here.
-  java_lang_reflect_Field::set_modifiers(rh(), fd->access_flags().as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS);
+  java_lang_reflect_Field::set_modifiers(rh(), fd->access_flags().as_field_flags());
   java_lang_reflect_Field::set_override(rh(), false);
   if (fd->has_generic_signature()) {
     Symbol*  gs = fd->generic_signature();
@@ -924,13 +927,6 @@ static methodHandle resolve_interface_call(InstanceKlass* klass,
                                        true,
                                        CHECK_(methodHandle()));
   return methodHandle(THREAD, info.selected_method());
-}
-
-// Conversion
-static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
-  assert(java_lang_Class::is_primitive(basic_type_mirror),
-    "just checking");
-  return java_lang_Class::primitive_type(basic_type_mirror);
 }
 
 // Narrowing of basic types. Used to create correct jvalues for
@@ -984,16 +980,17 @@ static oop invoke(InstanceKlass* klass,
   } else {
     // check for null receiver
     if (receiver.is_null()) {
-      THROW_0(vmSymbols::java_lang_NullPointerException());
+      THROW_NULL(vmSymbols::java_lang_NullPointerException());
     }
     // Check class of receiver against class declaring method
     if (!receiver->is_a(klass)) {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "object is not an instance of declaring class");
+      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "object is not an instance of declaring class");
     }
     // target klass is receiver's klass
     target_klass = receiver->klass();
     // no need to resolve if method is private or <init>
-    if (reflected_method->is_private() || reflected_method->name() == vmSymbols::object_initializer_name()) {
+    if (reflected_method->is_private() ||
+        reflected_method->name() == vmSymbols::object_initializer_name()) {
       method = reflected_method;
     } else {
       // resolve based on the receiver
@@ -1011,9 +1008,9 @@ static oop invoke(InstanceKlass* klass,
           // JVMTI internal flag reset is needed in order to report InvocationTargetException
           JvmtiExport::clear_detected_exception(THREAD);
           JavaCallArguments args(Handle(THREAD, resolution_exception));
-          THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
-                      vmSymbols::throwable_void_signature(),
-                      &args);
+          THROW_ARG_NULL(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                         vmSymbols::throwable_void_signature(),
+                         &args);
         }
       }  else {
         // if the method can be overridden, we resolve using the vtable index.
@@ -1035,9 +1032,9 @@ static oop invoke(InstanceKlass* klass,
             Handle h_origexception = Exceptions::new_exception(THREAD,
               vmSymbols::java_lang_AbstractMethodError(), ss.as_string());
             JavaCallArguments args(h_origexception);
-            THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
-              vmSymbols::throwable_void_signature(),
-              &args);
+            THROW_ARG_NULL(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                           vmSymbols::throwable_void_signature(),
+                           &args);
           }
         }
       }
@@ -1054,15 +1051,15 @@ static oop invoke(InstanceKlass* klass,
                                      reflected_method->name(),
                                      reflected_method->signature());
     ss.print("'");
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), ss.as_string());
   }
 
   assert(ptypes->is_objArray(), "just checking");
   int args_len = args.is_null() ? 0 : args->length();
   // Check number of arguments
   if (ptypes->length() != args_len) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                "wrong number of arguments");
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "wrong number of arguments");
   }
 
   // Create object to contain parameters for the JavaCall
@@ -1073,8 +1070,8 @@ static oop invoke(InstanceKlass* klass,
   }
 
   for (int i = 0; i < args_len; i++) {
-    oop type_mirror = ptypes->obj_at(i);
-    oop arg = args->obj_at(i);
+    oop type_mirror = ptypes->obj_at(i, CHECK_NULL);
+    oop arg = args->obj_at(i, CHECK_NULL);
     if (java_lang_Class::is_primitive(type_mirror)) {
       jvalue value;
       BasicType ptype = basic_type_mirror_to_basic_type(type_mirror);
@@ -1092,14 +1089,14 @@ static oop invoke(InstanceKlass* klass,
         case T_FLOAT:       java_args.push_float(value.f);  break;
         case T_DOUBLE:      java_args.push_double(value.d); break;
         default:
-          THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "argument type mismatch");
+          THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "argument type mismatch");
       }
     } else {
       if (arg != nullptr) {
         Klass* k = java_lang_Class::as_Klass(type_mirror);
         if (!arg->is_a(k)) {
-          THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                      "argument type mismatch");
+          THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                         "argument type mismatch");
         }
       }
       Handle arg_handle(THREAD, arg);         // Create handle for argument
@@ -1124,9 +1121,9 @@ static oop invoke(InstanceKlass* klass,
     JvmtiExport::clear_detected_exception(THREAD);
 
     JavaCallArguments args(Handle(THREAD, target_exception));
-    THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
-                vmSymbols::throwable_void_signature(),
-                &args);
+    THROW_ARG_NULL(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                   vmSymbols::throwable_void_signature(),
+                   &args);
   } else {
     if (rtype == T_BOOLEAN || rtype == T_BYTE || rtype == T_CHAR || rtype == T_SHORT) {
       narrow((jvalue*)result.get_value_addr(), rtype, CHECK_NULL);
@@ -1152,10 +1149,10 @@ oop Reflection::invoke_method(oop method_mirror, Handle receiver, objArrayHandle
     rtype = T_OBJECT;
   }
 
-  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
+  InstanceKlass* klass = java_lang_Class::as_InstanceKlass(mirror);
   Method* m = klass->method_with_idnum(slot);
   if (m == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "invoke");
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "invoke");
   }
   methodHandle method(THREAD, m);
 
@@ -1169,10 +1166,10 @@ oop Reflection::invoke_constructor(oop constructor_mirror, objArrayHandle args, 
   bool override          = java_lang_reflect_Constructor::override(constructor_mirror) != 0;
   objArrayHandle ptypes(THREAD, objArrayOop(java_lang_reflect_Constructor::parameter_types(constructor_mirror)));
 
-  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
+  InstanceKlass* klass = java_lang_Class::as_InstanceKlass(mirror);
   Method* m = klass->method_with_idnum(slot);
   if (m == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "invoke");
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "invoke");
   }
   methodHandle method(THREAD, m);
   assert(method->name() == vmSymbols::object_initializer_name(), "invalid constructor");

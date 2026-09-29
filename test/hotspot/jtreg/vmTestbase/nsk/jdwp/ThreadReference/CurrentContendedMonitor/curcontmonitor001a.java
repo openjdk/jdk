@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdwp.ThreadReference.CurrentContendedMonitor;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdwp.*;
@@ -61,6 +62,7 @@ public class curcontmonitor001a {
         argumentHandler = new ArgumentHandler(args);
         log = new Log(out, argumentHandler);
         long timeout = argumentHandler.getWaitTime() * 60 * 1000; // milliseconds
+        String signal = null;
 
         // make communication pipe to debugger
         log.display("Creating pipe");
@@ -68,7 +70,7 @@ public class curcontmonitor001a {
 
         // load tested class and create tested thread
         log.display("Creating object of tested class");
-        TestedClass.thread = new TestedClass(THREAD_NAME);
+        TestedClass.thread = new TestedClass(THREAD_NAME).getThread();
 
         // start the thread and wait for notification from it
         synchronized (threadStarting) {
@@ -83,21 +85,19 @@ public class curcontmonitor001a {
             }
 
             // ensure that tested thread is waiting for monitor object
-            synchronized (TestedClass.thread.monitor) {
+            synchronized (TestedClass.monitor) {
+                TestedClass.monitor.notifyAll();
+
                 // send debugger signal READY
                 log.display("Sending signal to debugger: " + curcontmonitor001.READY);
                 pipe.println(curcontmonitor001.READY);
+
+               // wait for signal QUIT from debugeer
+               log.display("Waiting for signal from debugger: " + curcontmonitor001.QUIT);
+               signal = pipe.readln();
+               log.display("Received signal from debugger: " + signal);
             }
         }
-
-        // wait for signal QUIT from debugeer
-        log.display("Waiting for signal from debugger: " + curcontmonitor001.QUIT);
-        String signal = pipe.readln();
-        log.display("Received signal from debugger: " + signal);
-
-        // interrupt waiting thread
-        log.display("Interrupting tested thread being waited");
-        TestedClass.thread.interrupt();
 
         // check received signal
         if (signal == null || !signal.equals(curcontmonitor001.QUIT)) {
@@ -113,10 +113,10 @@ public class curcontmonitor001a {
     }
 
     // tested thread class
-    public static class TestedClass extends Thread {
+    public static class TestedClass extends ThreadWrapper {
 
         // field with the tested Thread value
-        public static volatile TestedClass thread = null;
+        public static volatile Thread thread = null;
         // field with monitor object which thread will infinitively wait for
         public static volatile Object monitor = new Object();
 

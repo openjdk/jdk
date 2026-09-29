@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.MethodTypeDesc;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 
-public interface MethodInfo {
+public sealed interface MethodInfo
+        permits MethodImpl, TerminalMethodBuilder, BufferedMethodBuilder.Model {
     Utf8Entry methodName();
     Utf8Entry methodType();
     MethodTypeDesc methodTypeSymbol();

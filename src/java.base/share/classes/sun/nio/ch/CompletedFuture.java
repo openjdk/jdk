@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ final class CompletedFuture<V> implements Future<V> {
     }
 
     static <V> CompletedFuture<V> withFailure(Throwable exc) {
-        // exception must be IOException or SecurityException
-        if (!(exc instanceof IOException) && !(exc instanceof SecurityException))
+        // exception must be IOException
+        if (!(exc instanceof IOException))
             exc = new IOException(exc);
         return new CompletedFuture<V>(null, exc);
     }

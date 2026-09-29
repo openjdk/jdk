@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -750,9 +750,17 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws NullPointerException if the specified collection is null
      */
     public boolean addAll(Collection<? extends E> c) {
-        Object[] a = c.toArray();
+        Object[] a;
+        int numNew;
+        if (c.getClass() == ArrayList.class) {
+            ArrayList<?> src = (ArrayList<?>) c;
+            a = src.elementData;
+            numNew = src.size;
+        } else {
+            a = c.toArray();
+            numNew = a.length;
+        }
         modCount++;
-        int numNew = a.length;
         if (numNew == 0)
             return false;
         Object[] elementData;
@@ -1582,6 +1590,13 @@ public class ArrayList<E> extends AbstractList<E>
                 }
             };
         }
+
+        @Override
+        public void sort(Comparator<? super E> c) {
+            checkForComodification();
+            root.sortRange(c, offset, offset + size);
+            updateSizeAndModCount(0);
+        }
     }
 
     /**
@@ -1799,13 +1814,17 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void sort(Comparator<? super E> c) {
+        sortRange(c, 0, size);
+        modCount++;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void sortRange(Comparator<? super E> c, int fromIndex, int toIndex) {
         final int expectedModCount = modCount;
-        Arrays.sort((E[]) elementData, 0, size, c);
+        Arrays.sort((E[]) elementData, fromIndex, toIndex, c);
         if (modCount != expectedModCount)
             throw new ConcurrentModificationException();
-        modCount++;
     }
 
     void checkInvariants() {

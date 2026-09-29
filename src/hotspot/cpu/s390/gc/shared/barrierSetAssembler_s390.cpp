@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,16 +23,20 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/barrierSetRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
+#ifdef COMPILER2
+#include "gc/shared/c2/barrierSetC2.hpp"
+#endif // COMPILER2
 
 #define __ masm->
 
@@ -84,6 +88,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   case T_OBJECT: {
     if (UseCompressedOops && in_heap) {
       if (val == noreg) {
+        assert(!not_null, "inconsistent access");
         __ clear_mem(addr, 4);
       } else if (CompressedOops::mode() == CompressedOops::UnscaledNarrowOop) {
         __ z_st(val, addr);
@@ -94,6 +99,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
       }
     } else {
       if (val == noreg) {
+        assert(!not_null, "inconsistent access");
         __ clear_mem(addr, 8);
       } else {
         __ z_stg(val, addr);
@@ -105,16 +111,74 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
+// Generic implementation. GCs can provide an optimized one.
+void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                                          Register src, Register dst, Register value_field_layout_info) {
+  // flat_field_copy implementation is fairly complex, and there are not any
+  // "short-cuts" to be made from asm. What there is, appears to have the same
+  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
+  // of hand-rolled instructions...
+  if (decorators & IS_DEST_UNINITIALIZED) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, value_field_layout_info);
+  } else {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, value_field_layout_info);
+  }
+}
+
+// Generic implementation. GCs can provide an optimized one.
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2) {
-  NearLabel Ldone;
-  __ z_ltgr(tmp1, value);
-  __ z_bre(Ldone);          // Use null result as-is.
 
-  __ z_nill(value, ~JNIHandles::tag_mask);
-  __ z_lg(value, 0, value); // Resolve (untagged) jobject.
+  assert_different_registers(value, tmp1, tmp2);
+  NearLabel done, weak_tag, verify, tagged;
+  __ z_ltgr(value, value);
+  __ z_bre(done);          // Use null result as-is.
 
+  __ z_tmll(value, JNIHandles::tag_mask);
+  __ branch_optimized(Assembler::bcondNotAllZero, tagged); // not zero
+
+  // Resolve Local handle
+  __ access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2);
+  __ z_bru(verify);
+
+  __ bind(tagged);
+  __ testbit(value, exact_log2(JNIHandles::TypeTag::weak_global)); // test for weak tag
+  __ branch_optimized(Assembler::bcondNotAllZero, weak_tag);
+
+  // resolve global handle
+  __ access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2);
+  __ z_bru(verify);
+
+  __ bind(weak_tag);
+  // resolve jweak.
+  __ access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
+                    Address(value, -JNIHandles::TypeTag::weak_global), value, tmp1, tmp2);
+  __ bind(verify);
   __ verify_oop(value, FILE_AND_LINE);
-  __ bind(Ldone);
+  __ bind(done);
+}
+
+// Generic implementation. GCs can provide an optimized one.
+void BarrierSetAssembler::resolve_global_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  NearLabel done;
+
+  __ z_ltgr(value, value);
+  __ z_bre(done); // use null as-is.
+
+#ifdef ASSERT
+  {
+    NearLabel valid_global_tag;
+    __ testbit(value, exact_log2(JNIHandles::TypeTag::global)); // test for global tag
+    __ z_btrue(valid_global_tag);
+    __ stop("non global jobject using resolve_global_jobject");
+    __ bind(valid_global_tag);
+  }
+#endif // ASSERT
+
+  // Resolve global handle
+  __ access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2);
+  __ verify_oop(value, FILE_AND_LINE);
+  __ bind(done);
 }
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
@@ -123,12 +187,15 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
   __ z_lg(obj, 0, obj); // Resolve (untagged) jobject.
 }
 
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                          Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ z_lg(obj, Address(weak_handle));
+}
+
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == nullptr) {
-    return;
-  }
-
+  __ align(4, __ offset() + OFFSET_TO_PATCHABLE_DATA); // must align the following block which requires atomic updates
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
     // Load jump addr:
@@ -138,7 +205,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     __ z_lg(Z_R0_scratch, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), Z_thread); // 6 bytes
 
     // Compare to current patched value:
-    __ z_cfi(Z_R0_scratch, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)
+    __ z_cfi(Z_R0_scratch, /* to be patched */ 0); // 6 bytes (2 + 4 byte imm val)
 
     // Conditional Jump
     __ z_larl(Z_R14, (Assembler::instr_len((unsigned long)LARL_ZOPC) + Assembler::instr_len((unsigned long)BCR_ZOPC)) / 2); // 6 bytes
@@ -147,3 +214,155 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     // Fall through to method body.
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
+
+void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1, Register tmp2, Register tmp3) {
+  assert_different_registers(tmp1, tmp2, tmp3);
+
+  __ block_comment("c2i_entry_barrier {");
+
+  Register tmp1_class_loader_data = tmp1;
+
+  Label bad_call, skip_barrier;
+
+  // Fast path: If no method is given, the call is definitely bad.
+  __ compareU64_and_branch(Z_method, (intptr_t)0, Assembler::bcondEqual, bad_call);
+
+  // Load class loader data to determine whether the method's holder is concurrently unloading.
+  __ load_method_holder_cld(tmp1_class_loader_data, Z_method);
+
+  // Fast path: If class loader is strong, the holder cannot be unloaded.
+  __ load_and_test_int2long(tmp2, Address(tmp1_class_loader_data, ClassLoaderData::keep_alive_ref_count_offset()));
+  __ branch_optimized(Assembler::bcondNotZero, skip_barrier);
+
+  // Class loader is weak. Determine whether the holder is still alive.
+  // On s390 neither ZGC nor Shenandoah are supported, so resolve_oop_handle
+  // with IN_NATIVE (without ON_PHANTOM_OOP_REF) is sufficient; the additional
+  // GC barrier required by those collectors is not needed here.
+  __ z_lg(tmp2, Address(tmp1_class_loader_data, ClassLoaderData::holder_offset()));
+  __ resolve_oop_handle(tmp2, tmp1, tmp3);
+  __ compareU64_and_branch(tmp2, (intptr_t)0, Assembler::bcondNotEqual, skip_barrier);
+
+  __ bind(bad_call);
+
+  __ load_const_optimized(tmp1, SharedRuntime::get_handle_wrong_method_stub());
+  __ z_br(tmp1);
+
+  __ bind(skip_barrier);
+
+  __ block_comment("} c2i_entry_barrier");
+}
+
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register oop, const char* msg) {
+  __ verify_oop(oop, msg);
+}
+
+#ifdef COMPILER2
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) const {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
+  }
+
+  VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if ((vm_reg->is_Register() || vm_reg ->is_FloatRegister()) && (opto_reg & 1) != 0) {
+    return OptoReg::Bad;
+  }
+
+  return opto_reg;
+}
+
+#undef __
+#define __ _masm->
+
+SaveLiveRegisters::SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub)
+  : _masm(masm), _reg_mask(stub->preserve_set()) {
+
+  const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
+
+  _frame_size = align_up(register_save_size, frame::alignment_in_bytes) + frame::z_abi_160_size;
+
+  __ save_return_pc();
+  __ push_frame(_frame_size, Z_R14);
+
+  __ z_lg(Z_R14, _z_common_abi(return_pc) + _frame_size, Z_SP);
+
+  iterate_over_register_mask(ACTION_SAVE, _frame_size);
+}
+
+SaveLiveRegisters::~SaveLiveRegisters() {
+  iterate_over_register_mask(ACTION_RESTORE, _frame_size);
+
+  __ pop_frame();
+
+  __ restore_return_pc();
+}
+
+int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int offset) {
+  int reg_save_index = 0;
+  RegMaskIterator live_regs_iterator(_reg_mask);
+
+  // Going to preserve the volatile registers which can be used by Register Allocator.
+  while(live_regs_iterator.has_next()) {
+    const OptoReg::Name opto_reg = live_regs_iterator.next();
+
+    // Filter out stack slots (spilled registers, i.e., stack-allocated registers).
+    if (!OptoReg::is_reg(opto_reg)) {
+      continue;
+    }
+
+    const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+    if (vm_reg->is_Register()) {
+      Register std_reg = vm_reg->as_Register();
+      // Z_R0 and Z_R1 will not be allocated by the register allocator, see s390.ad (Integer Register Classes)
+      // Z_R6 to Z_R15 are saved registers, except Z_R14 (see Z-Abi)
+      if (std_reg->encoding() == Z_R14->encoding() ||
+         (std_reg->encoding() >= Z_R2->encoding()  &&
+          std_reg->encoding() <= Z_R5->encoding())) {
+        reg_save_index++;
+
+        if (action == ACTION_SAVE) {
+          __ z_stg(std_reg, offset - reg_save_index * BytesPerWord, Z_SP);
+        } else if (action == ACTION_RESTORE) {
+          __ z_lg(std_reg, offset - reg_save_index * BytesPerWord, Z_SP);
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
+    } else if (vm_reg->is_FloatRegister()) {
+      FloatRegister fp_reg = vm_reg->as_FloatRegister();
+      // Z_R1 will not be allocated by the register allocator, see s390.ad (Float Register Classes)
+      if (fp_reg->encoding() >= Z_F0->encoding() &&
+          fp_reg->encoding() <= Z_F7->encoding() &&
+          fp_reg->encoding() != Z_F1->encoding()) {
+        reg_save_index++;
+
+        if (action == ACTION_SAVE) {
+          __ z_std(fp_reg, offset - reg_save_index * BytesPerWord, Z_SP);
+        } else if (action == ACTION_RESTORE) {
+          __ z_ld(fp_reg, offset - reg_save_index * BytesPerWord, Z_SP);
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
+    } else if (vm_reg->is_VectorRegister()) {
+      VectorRegister vs_reg = vm_reg->as_VectorRegister();
+      // Z_V0 to Z_V15 will not be allocated by the register allocator, see s390.ad (reg class z_v_reg)
+      if (vs_reg->encoding() >= Z_V16->encoding() &&
+          vs_reg->encoding() <= Z_V31->encoding()) {
+        reg_save_index += 2;
+        if (action == ACTION_SAVE) {
+          __ z_vst(vs_reg, Address(Z_SP, offset - reg_save_index * BytesPerWord));
+        } else if (action == ACTION_RESTORE) {
+          __ z_vl(vs_reg, Address(Z_SP, offset - reg_save_index * BytesPerWord));
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
+    } else {
+      fatal("Register type is not known");
+    }
+  }
+  return reg_save_index;
+}
+
+#endif // COMPILER2

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,53 @@
  * questions.
  */
 
-/* @test
-   @bug 6698013
-   @summary JFileChooser can no longer navigate non-local file systems.
-   @run applet/manual=done bug6698013.html
-*/
-
 import java.io.File;
-
-import javax.swing.JApplet;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileSystemView;
 
-public class bug6698013 extends JApplet {
+/*
+ * @test
+ * @bug 6698013
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary JFileChooser can no longer navigate non-local file systems.
+ * @run main/manual bug6698013
+ */
+
+public class bug6698013 {
 
     final static VirtualFile root = new VirtualFile("testdir", true);
 
-    final static VirtualFile rootFile = new VirtualFile("testdir/test.txt", false);
-
-    final static VirtualFile subdir = new VirtualFile("testdir/subdir", true);
-
-    final static VirtualFile subdirFile = new VirtualFile("testdir/subdir/subtest.txt", false);
-
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> new bug6698013().init());
-    }
+        String instructions = """
+                1. Go into 'subdir' folder via double click
+                2. Return to parent directory
+                3. Go into 'subdir' folder: select 'subdir' folder and press the 'Open' button
+                If both methods of navigating into the subdir work, pass test. Otherwise fail.""";
 
-    public void init() {
-        JFileChooser chooser = new JFileChooser(new VirtualFileSystemView());
-        chooser.setCurrentDirectory(root);
-        chooser.showOpenDialog(null);
+        PassFailJFrame pfframe = PassFailJFrame.builder()
+                .title("bug6698013")
+                .instructions(instructions)
+                .rows(25)
+                .columns(40)
+                .testTimeOut(10)
+                .build();
+
+        SwingUtilities.invokeAndWait(() -> {
+            JFileChooser chooser = new JFileChooser(new VirtualFileSystemView());
+            chooser.setCurrentDirectory(root);
+            chooser.showOpenDialog(null);
+        });
+
+        pfframe.awaitAndCheck();
     }
 }
 
 class VirtualFileSystemView extends FileSystemView {
+    final static VirtualFile rootFile = new VirtualFile("testdir/test.txt", false);
+    final static VirtualFile subdir = new VirtualFile("testdir/subdir", true);
+    final static VirtualFile subdirFile = new VirtualFile("testdir/subdir/subtest.txt", false);
 
     public boolean isRoot(File dir) {
         return bug6698013.root.equals(dir);
@@ -87,11 +99,11 @@ class VirtualFileSystemView extends FileSystemView {
 
     public File[] getFiles(File dir, boolean hide_hidden) {
         if (dir.equals(bug6698013.root)) {
-            return new File[]{bug6698013.rootFile, bug6698013.subdir};
+            return new File[]{rootFile, subdir};
         }
 
-        if (dir.equals(bug6698013.subdir)) {
-            return new File[]{bug6698013.subdirFile};
+        if (dir.equals(subdir)) {
+            return new File[]{subdirFile};
         }
 
         return null;

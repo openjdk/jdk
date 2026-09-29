@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,8 +180,6 @@ typedef enum _cairo_status {
 } cairo_status_t;
 
 /* We define all structure pointers to be void* */
-typedef void GdkPixbuf;
-typedef void GMainContext;
 typedef void GVfs;
 
 typedef void GdkColormap;
@@ -195,6 +193,7 @@ typedef void GtkMenuShell;
 typedef void GtkWidgetClass;
 typedef void PangoFontDescription;
 typedef void GtkSettings;
+typedef void GSettings;
 typedef void GtkStyleProvider;
 typedef void cairo_pattern_t;
 typedef void cairo_t;
@@ -394,10 +393,14 @@ static void         (*fp_g_object_set)(gpointer object,
                                        ...);
 
 static gboolean (*fp_g_main_context_iteration)(GMainContext *context, gboolean may_block);
+static GMainContext *(*fp_g_main_context_default)();
+static gboolean (*fp_g_main_context_is_owner)(GMainContext* context);
+
 static gboolean (*fp_g_str_has_prefix)(const gchar *str, const gchar *prefix);
 static gchar** (*fp_g_strsplit)(const gchar *string, const gchar *delimiter,
            gint max_tokens);
 static void (*fp_g_strfreev)(gchar **str_array);
+static gchar* (*fp_g_strconcat)(const gchar* string1, ...);
 
 
 static cairo_surface_t* (*fp_cairo_image_surface_create)(cairo_format_t format,
@@ -631,6 +634,10 @@ static char* (*fp_pango_font_description_to_string)(
         const PangoFontDescription* fd);
 static GtkSettings* (*fp_gtk_settings_get_default)();
 static GtkSettings* (*fp_gtk_widget_get_settings)(GtkWidget *widget);
+
+static GSettings *(*fp_g_settings_new)(const gchar *schema_id);
+static gchar *(*fp_g_settings_get_string)(GSettings *settings, const gchar *key);
+
 static GType        (*fp_gtk_border_get_type)();
 static void (*fp_gtk_arrow_set)(GtkWidget* arrow,
                                 GtkArrowType arrow_type,
@@ -736,6 +743,8 @@ static GVariant *(*fp_g_variant_new_string)(const gchar *string);
 static GVariant *(*fp_g_variant_new_boolean)(gboolean value);
 
 static GVariant *(*fp_g_variant_new_uint32)(guint32 value);
+
+static gchar *(*fp_g_variant_print) (GVariant* value, gboolean type_annotate);
 
 static void (*fp_g_variant_get)(GVariant *value,
                                 const gchar *format_string,

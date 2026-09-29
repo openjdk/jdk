@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
  * such as {@code 10:15:30}.
@@ -111,11 +113,18 @@ import java.util.Objects;
  * representation, this class, for time-of-day.
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code LocalTime} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -123,7 +132,8 @@ import java.util.Objects;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class LocalTime
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class LocalTime
         implements Temporal, TemporalAdjuster, Comparable<LocalTime>, Serializable {
 
     /**
@@ -226,19 +236,19 @@ public final class LocalTime
     private static final long serialVersionUID = 6414437269572265201L;
 
     /**
-     * The hour.
+     * @serial The hour.
      */
     private final byte hour;
     /**
-     * The minute.
+     * @serial The minute.
      */
     private final byte minute;
     /**
-     * The second.
+     * @serial The second.
      */
     private final byte second;
     /**
-     * The nanosecond.
+     * @serial The nanosecond.
      */
     private final int nano;
 
@@ -1629,26 +1639,8 @@ public final class LocalTime
      */
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder(18);
-        int hourValue = hour;
-        int minuteValue = minute;
-        int secondValue = second;
-        int nanoValue = nano;
-        buf.append(hourValue < 10 ? "0" : "").append(hourValue)
-            .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
-        if (secondValue > 0 || nanoValue > 0) {
-            buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
-            if (nanoValue > 0) {
-                buf.append('.');
-                if (nanoValue % 1000_000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000_000) + 1000).substring(1));
-                } else if (nanoValue % 1000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000) + 1000_000).substring(1));
-                } else {
-                    buf.append(Integer.toString((nanoValue) + 1000_000_000).substring(1));
-                }
-            }
-        }
+        var buf = new StringBuilder(18);
+        DateTimeHelper.formatTo(buf, this);
         return buf.toString();
     }
 
@@ -1696,6 +1688,7 @@ public final class LocalTime
      * @throws InvalidObjectException always
      */
     @java.io.Serial
+    @SuppressWarnings("serial") // this method is not invoked for value classes
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

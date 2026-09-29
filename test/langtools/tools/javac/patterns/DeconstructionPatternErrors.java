@@ -1,5 +1,6 @@
 /**
  * @test /nodynamiccopyright/
+ * @bug 8375571
  * @summary Verify error reports for erroneous deconstruction patterns are sensible
  * @compile/fail/ref=DeconstructionPatternErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev DeconstructionPatternErrors.java
  */
@@ -27,13 +28,6 @@ public class DeconstructionPatternErrors {
         if (p instanceof GenRecord<String>(Integer v)); //inconsistency in types
         if (p instanceof P2(var v, var v)); //duplicated variables
         if (p instanceof P6(P2(var v1, var v2), P2(var v1, var v2))); //duplicated variables
-        if (p instanceof P7(byte b)); //incorrect pattern type
-        if (p instanceof P7(long l)); //incorrect pattern type
-        switch (p) {
-            case P7(byte b) -> {} //incorrect pattern type - no exception should occur
-            case P7(long l) -> {} //incorrect pattern type - no exception should occur
-            default -> {}
-        }
         GenRecord<String> r1 = null;
         if (r1 instanceof GenRecord(String s)) {}
         switch (r1) {
@@ -44,6 +38,10 @@ public class DeconstructionPatternErrors {
             case GenRecord<>(String s) -> {}
         }
         boolean b = p instanceof P(int i) p; //introducing a variable for the record pattern
+    }
+
+    <T> void typeVarTest(T p) {
+        if (p instanceof T(int i) && i == 0); //T is a type variable
     }
 
     public record P(int i) {

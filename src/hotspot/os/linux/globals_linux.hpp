@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,8 @@
                          develop_pd,                                    \
                          product,                                       \
                          product_pd,                                    \
-                         notproduct,                                    \
                          range,                                         \
                          constraint)                                    \
-                                                                        \
-  product(bool, UseOprofile, false,                                     \
-        "enable support for Oprofile profiler")                         \
-                                                                        \
-  /*  NB: The default value of UseLinuxPosixThreadCPUClocks may be   */ \
-  /* overridden in Arguments::parse_each_vm_init_arg.                */ \
-  product(bool, UseLinuxPosixThreadCPUClocks, true,                     \
-          "enable fast Linux Posix clocks where available")             \
                                                                         \
   product(bool, UseTransparentHugePages, false,                         \
           "Use MADV_HUGEPAGE for large pages")                          \
@@ -92,7 +83,20 @@
   develop(bool, DelayThreadStartALot, false,                            \
           "Artificially delay thread starts randomly for testing.")     \
                                                                         \
-
+  product(bool, UseMadvPopulateWrite, true, DIAGNOSTIC,                 \
+          "Use MADV_POPULATE_WRITE in os::pd_pretouch_memory.")         \
+                                                                        \
+  product(bool, PrintMemoryMapAtExit, false, DIAGNOSTIC,                \
+          "Print an annotated memory map at exit")                      \
+                                                                        \
+  develop(intx, CompileTaskTimeout, 0,                                  \
+          "Set the timeout for compile tasks' CPU time in milliseconds."\
+          " 0 = no timeout (default)")                                  \
+          range(0,1000000)                                              \
+                                                                        \
+  product(ccstr, AltTempDir, nullptr,                                   \
+          "Alternate temporary directory for JVM files.")               \
+                                                                        \
 
 // end of RUNTIME_OS_FLAGS
 

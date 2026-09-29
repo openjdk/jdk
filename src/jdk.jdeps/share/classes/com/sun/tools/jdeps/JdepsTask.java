@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import static java.util.stream.Collectors.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.module.FindException;
 import java.lang.module.ResolutionException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -534,8 +535,9 @@ class JdepsTask {
                 log.println(getMessage("main.usage.summary", PROGNAME));
             }
             return EXIT_CMDERR;
-        } catch (ResolutionException e) {
-            reportError("err.exception.message", e.getMessage());
+        } catch (ResolutionException | FindException e) {
+            Throwable cause = e.getCause();
+            reportError("err.exception.message", cause != null ? cause.getMessage() : e.getMessage());
             return EXIT_CMDERR;
         } catch (IOException e) {
             e.printStackTrace();
@@ -788,8 +790,8 @@ class JdepsTask {
                     String replacementApiTitle = getMessage("public.api.replacement.column.header");
                     log.format("%-40s %s%n", internalApiTitle, replacementApiTitle);
                     log.format("%-40s %s%n",
-                               internalApiTitle.replaceAll(".", "-"),
-                               replacementApiTitle.replaceAll(".", "-"));
+                               "-".repeat(internalApiTitle.codePointCount(0, internalApiTitle.length())),
+                               "-".repeat(replacementApiTitle.codePointCount(0, replacementApiTitle.length())));
                     jdkInternals.entrySet()
                         .forEach(e -> {
                             String key = e.getKey();
@@ -880,7 +882,7 @@ class JdepsTask {
         /*
          * Returns true if --require is specified so that all modules are
          * analyzed to find all modules that depend on the modules specified in the
-         * --require option directly and indirectly
+         * --require option directly or indirectly
          */
         Set<String> addModules() {
             return options.requires.size() > 0 ? Set.of("ALL-SYSTEM") : Set.of();

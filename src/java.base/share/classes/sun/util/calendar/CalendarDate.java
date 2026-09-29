@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.util.TimeZone;
  * @author Masayoshi Okutsu
  * @since 1.5
  */
-public sealed abstract class CalendarDate implements Cloneable
+public abstract sealed class CalendarDate implements Cloneable
         permits BaseCalendar.Date {
     public static final int FIELD_UNDEFINED = Integer.MIN_VALUE;
     public static final long TIME_UNDEFINED = Long.MIN_VALUE;

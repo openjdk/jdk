@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ public class TestJcmdOutput {
         System.out.println("Verify jcmd error message and that jcmd does not write errors to the target process output");
         output = new OutputAnalyzer((ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dtest.jdk=" + System.getProperty("test.jdk"),
+                "-Dcompile.jdk=" + System.getProperty("compile.jdk"),
                 "-XX:MinHeapFreeRatio=20", "-XX:MaxHeapFreeRatio=80", runJcmd.class.getName())).start());
 
         output.shouldHaveExitValue(0);

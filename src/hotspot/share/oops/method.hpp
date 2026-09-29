@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,9 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/methodFlags.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/methodFlags.hpp"
 #include "oops/oop.hpp"
-#include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
@@ -60,14 +59,14 @@ class LocalVariableTableElement;
 class AdapterHandlerEntry;
 class MethodData;
 class MethodCounters;
+class MethodTrainingData;
 class ConstMethod;
 class InlineTableSizes;
-class CompiledMethod;
+class nmethod;
 class InterpreterOopMap;
 
 class Method : public Metadata {
  friend class VMStructs;
- friend class JVMCIVMStructs;
  friend class MethodTest;
  private:
   // If you add a new field that points to any metaspace object, you
@@ -76,8 +75,8 @@ class Method : public Metadata {
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
   AdapterHandlerEntry* _adapter;
-  AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
+  AccessFlags       _access_flags;               // Access flags
   MethodFlags       _flags;
 
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
@@ -93,14 +92,16 @@ class Method : public Metadata {
   address _i2i_entry;           // All-args-on-stack calling convention
   // Entry point for calling from compiled code, to compiled code if it exists
   // or else the interpreter.
-  volatile address _from_compiled_entry;        // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
+  volatile address _from_compiled_entry;          // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
+  volatile address _from_compiled_value_ro_entry; // Cache of: _code ? _code->verified_value_ro_entry_point() : _adapter->c2i_value_ro_entry()
+  volatile address _from_compiled_value_entry;    // Cache of: _code ? _code->verified_value_entry_point()    : _adapter->c2i_value_entry()
   // The entry point for calling both from and to compiled code is
   // "_code->entry_point()".  Because of tiered compilation and de-opt, this
   // field can come and go.  It can transition from null to not-null at any
   // time (whenever a compile completes).  It can transition from not-null to
   // null only at safepoints (because of a de-opt).
-  CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
-  volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
+  nmethod* volatile _code;                   // Points to the corresponding piece of native code
+  volatile address  _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name);
@@ -122,6 +123,7 @@ class Method : public Metadata {
 #if INCLUDE_CDS
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+  static void restore_archived_method_handle_intrinsic(methodHandle m, TRAPS);
 #endif
 
   // accessors for instance variables
@@ -130,8 +132,10 @@ class Method : public Metadata {
   void set_constMethod(ConstMethod* xconst)    { _constMethod = xconst; }
 
 
-  static address make_adapters(const methodHandle& mh, TRAPS);
+  static void make_adapters(const methodHandle& mh, TRAPS);
   address from_compiled_entry() const;
+  address from_compiled_value_ro_entry() const;
+  address from_compiled_value_entry() const;
   address from_interpreted_entry() const;
 
   // access flag
@@ -170,11 +174,11 @@ class Method : public Metadata {
   // C string, for the purpose of providing more useful
   // fatal error handling. The string is allocated in resource
   // area if a buffer is not provided by the caller.
-  char* name_and_sig_as_C_string() const;
+  char* name_and_sig_as_C_string(bool use_double_colon = false) const;
   char* name_and_sig_as_C_string(char* buf, int size) const;
 
   // Static routine in the situations we don't have a Method*
-  static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature);
+  static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, bool use_double_colon = false);
   static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, char* buf, int size);
 
   // Get return type + klass name + "." + method name + ( parameters types )
@@ -255,15 +259,15 @@ class Method : public Metadata {
   void set_deprecated_for_removal() { constMethod()->set_deprecated_for_removal(); }
   bool deprecated_for_removal() const { return constMethod()->deprecated_for_removal(); }
 
-  int highest_comp_level() const;
+  inline int highest_comp_level() const;
   void set_highest_comp_level(int level);
   int highest_osr_comp_level() const;
   void set_highest_osr_comp_level(int level);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Count of times method was exited via exception while interpreting
   inline void interpreter_throwout_increment(Thread* current);
-#endif
+#endif // COMPILER2
 
   inline int interpreter_throwout_count() const;
 
@@ -310,9 +314,13 @@ class Method : public Metadata {
                               TRAPS);
 
   // method data access
-  MethodData* method_data() const              {
+  MethodData* method_data() const {
     return _method_data;
   }
+  void set_method_data(MethodData* data);
+
+  MethodTrainingData* training_data_or_null() const;
+  bool init_training_data(MethodTrainingData* td);
 
   // mark an exception handler as entered (used to prune dead catch blocks in C2)
   void set_exception_handler_entered(int handler_bci);
@@ -334,17 +342,17 @@ class Method : public Metadata {
   inline float rate() const;
   inline void set_rate(float rate);
 
-  int invocation_count() const;
-  int backedge_count() const;
+  inline int invocation_count() const;
+  inline int backedge_count() const;
 
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
   static void build_profiling_method_data(const methodHandle& method, TRAPS);
-
+  static bool install_training_method_data(const methodHandle& method);
   static MethodCounters* build_method_counters(Thread* current, Method* m);
 
-  int interpreter_invocation_count()            { return invocation_count();          }
+  inline int interpreter_invocation_count() const;
 
 #ifndef PRODUCT
   int64_t  compiled_invocation_count() const    { return _compiled_invocation_count;}
@@ -356,16 +364,18 @@ class Method : public Metadata {
 
   // nmethod/verified compiler entry
   address verified_code_entry();
+  address verified_value_code_entry();
+  address verified_value_ro_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  CompiledMethod* code() const;
+  nmethod* code() const;
 
-  // Locks CompiledMethod_lock if not held.
-  void unlink_code(CompiledMethod *compare);
-  // Locks CompiledMethod_lock if not held.
+  // Locks NMethodState_lock if not held.
+  void unlink_code(nmethod *compare);
+  // Locks NMethodState_lock if not held.
   void unlink_code();
 
 private:
-  // Either called with CompiledMethod_lock held or from constructor.
+  // Either called with NMethodState_lock held or from constructor.
   void clear_code();
 
   void clear_method_data() {
@@ -373,17 +383,26 @@ private:
   }
 
 public:
-  static void set_code(const methodHandle& mh, CompiledMethod* code);
+  static void set_code(const methodHandle& mh, nmethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     _adapter = adapter;
   }
   void set_from_compiled_entry(address entry) {
-    _from_compiled_entry =  entry;
+    _from_compiled_entry = entry;
+  }
+  void set_from_compiled_value_ro_entry(address entry) {
+    _from_compiled_value_ro_entry = entry;
+  }
+  void set_from_compiled_value_entry(address entry) {
+    _from_compiled_value_entry = entry;
   }
 
   address get_i2c_entry();
   address get_c2i_entry();
+  address get_c2i_value_entry();
+  address get_c2i_value_ro_entry();
   address get_c2i_unverified_entry();
+  address get_c2i_unverified_value_entry();
   address get_c2i_no_clinit_check_entry();
   AdapterHandlerEntry* adapter() const {
     return _adapter;
@@ -393,9 +412,6 @@ public:
   // clear entry points. Used by sharing code during dump time
   void unlink_method() NOT_CDS_RETURN;
   void remove_unshareable_flags() NOT_CDS_RETURN;
-
-  // the number of argument reg slots that the compiled method uses on the stack.
-  int num_stack_arg_slots() const { return constMethod()->num_stack_arg_slots(); }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodType; }
@@ -449,11 +465,13 @@ public:
   address signature_handler() const              { return *(signature_handler_addr()); }
   void set_signature_handler(address handler);
 
-  // Interpreter oopmap support
+  // Interpreter oopmap support.
+  // If handle is already available, call with it for better performance.
   void mask_for(int bci, InterpreterOopMap* mask);
+  void mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
-  void print_invocation_count();
+  void print_invocation_count(outputStream* st);
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }
@@ -461,9 +479,9 @@ public:
   bool    contains(address bcp) const { return constMethod()->contains(bcp); }
 
   // prints byte codes
-  void print_codes(int flags = 0) const { print_codes_on(tty, flags); }
-  void print_codes_on(outputStream* st, int flags = 0) const;
-  void print_codes_on(int from, int to, outputStream* st, int flags = 0) const;
+  void print_codes(int flags = 0, bool buffered = true) const { print_codes_on(tty, flags, buffered); }
+  void print_codes_on(outputStream* st, int flags = 0, bool buffered = true) const;
+  void print_codes_on(int from, int to, outputStream* st, int flags = 0, bool buffered = true) const;
 
   // method parameters
   bool has_method_parameters() const
@@ -498,7 +516,7 @@ public:
   Symbol* klass_name() const;                    // returns the name of the method holder
   BasicType result_type() const                  { return constMethod()->result_type(); }
   bool is_returning_oop() const                  { BasicType r = result_type(); return is_reference_type(r); }
-  bool is_returning_fp() const                   { BasicType r = result_type(); return (r == T_FLOAT || r == T_DOUBLE); }
+  ValueKlass* returns_value_type() const;
 
   // Checked exceptions thrown by this method (resolved to mirrors)
   objArrayHandle resolved_checked_exceptions(TRAPS) { return resolved_checked_exceptions_impl(this, THREAD); }
@@ -577,18 +595,15 @@ public:
   // returns true if the method does nothing but return a constant of primitive type
   bool is_constant_getter() const;
 
-  // returns true if the method is an initializer (<init> or <clinit>).
-  bool is_initializer() const;
-
-  // returns true if the method is static OR if the classfile version < 51
-  bool has_valid_initializer_flags() const;
-
   // returns true if the method name is <clinit> and the method has
   // valid static initializer flags.
-  bool is_static_initializer() const;
+  bool is_class_initializer() const;
 
   // returns true if the method name is <init>
-  bool is_object_initializer() const;
+  bool is_object_constructor() const;
+
+  // returns true if the method name is wait0
+  bool is_object_wait0() const;
 
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
@@ -610,7 +625,10 @@ public:
   static ByteSize const_offset()                 { return byte_offset_of(Method, _constMethod       ); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Method, _access_flags      ); }
   static ByteSize from_compiled_offset()         { return byte_offset_of(Method, _from_compiled_entry); }
+  static ByteSize from_compiled_value_offset()   { return byte_offset_of(Method, _from_compiled_value_entry); }
+  static ByteSize from_compiled_value_ro_offset(){ return byte_offset_of(Method, _from_compiled_value_ro_entry); }
   static ByteSize code_offset()                  { return byte_offset_of(Method, _code); }
+  static ByteSize flags_offset()                 { return byte_offset_of(Method, _flags); }
 
   static ByteSize method_counters_offset()       {
     return byte_offset_of(Method, _method_counters);
@@ -699,20 +717,11 @@ public:
   // made obsolete or deleted -- in these cases, the jmethodID
   // refers to null (as is the case for any weak reference).
   static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
-
-  // Ensure there is enough capacity in the internal tracking data
-  // structures to hold the number of jmethodIDs you plan to generate.
-  // This saves substantial time doing allocations.
-  static void ensure_jmethod_ids(ClassLoaderData* cld, int capacity);
 
   // Use resolve_jmethod_id() in situations where the caller is expected
   // to provide a valid jmethodID; the only sanity checks are in asserts;
   // result guaranteed not to be null.
-  inline static Method* resolve_jmethod_id(jmethodID mid) {
-    assert(mid != nullptr, "JNI method id should not be null");
-    return *((Method**)mid);
-  }
+  static Method* resolve_jmethod_id(jmethodID mid);
 
   // Use checked_resolve_jmethod_id() in situations where the caller
   // should provide a valid jmethodID, but might not. Null is returned
@@ -720,10 +729,9 @@ public:
   static Method* checked_resolve_jmethod_id(jmethodID mid);
 
   static void change_method_associated_with_jmethod_id(jmethodID old_jmid_ptr, Method* new_method);
-  static bool is_method_id(jmethodID mid);
+  static bool validate_jmethod_id(jmethodID mid);
 
-  // Clear methods
-  static void clear_jmethod_ids(ClassLoaderData* loader_data);
+  // Clear jmethodID
   void clear_jmethod_id();
   static void print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
@@ -751,6 +759,9 @@ public:
   bool changes_current_thread() const { return constMethod()->changes_current_thread(); }
   void set_changes_current_thread() { constMethod()->set_changes_current_thread(); }
 
+  bool jvmti_hide_events() const { return constMethod()->jvmti_hide_events(); }
+  void set_jvmti_hide_events() { constMethod()->set_jvmti_hide_events(); }
+
   bool jvmti_mount_transition() const { return constMethod()->jvmti_mount_transition(); }
   void set_jvmti_mount_transition() { constMethod()->set_jvmti_mount_transition(); }
 
@@ -768,6 +779,15 @@ public:
 
   bool has_reserved_stack_access() const { return constMethod()->reserved_stack_access(); }
   void set_has_reserved_stack_access() { constMethod()->set_reserved_stack_access(); }
+
+  bool is_scalarized_arg(int idx) const;
+  bool is_scalarized_buffer_arg(int idx) const;
+
+  bool needs_stack_repair() const { return constMethod()->needs_stack_repair(); }
+  void set_needs_stack_repair() { constMethod()->set_needs_stack_repair(); }
+
+  bool mismatch() const { return constMethod()->mismatch(); }
+  void set_mismatch() { constMethod()->set_mismatch(); }
 
   JFR_ONLY(DEFINE_TRACE_FLAG_ACCESSOR;)
 
@@ -862,7 +882,8 @@ public:
   void print_on(outputStream* st) const;
 #endif
   void print_value_on(outputStream* st) const;
-  void print_linkage_flags(outputStream* st) PRODUCT_RETURN;
+  void print_access_flags(outputStream* st) const;
+  void print_linkage_flags(outputStream* st) const PRODUCT_RETURN;
 
   const char* internal_name() const { return "{method}"; }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public final class D3DGraphicsDevice extends Win32GraphicsDevice {
         return d3dCaps != null ? d3dCaps : new D3DContextCaps(CAPS_EMPTY, null);
     }
 
-    public final boolean isCapPresent(int cap) {
+    public boolean isCapPresent(int cap) {
         return ((d3dCaps.getCaps() & cap) != 0);
     }
 
@@ -234,7 +234,7 @@ public final class D3DGraphicsDevice extends Win32GraphicsDevice {
      * REMIND: we create an instance per each full-screen device while a single
      * instance would suffice (but requires more management).
      */
-    private static class D3DFSWindowAdapter extends WindowAdapter {
+    private static final class D3DFSWindowAdapter extends WindowAdapter {
         @Override
         @SuppressWarnings("static")
         public void windowDeactivated(WindowEvent e) {

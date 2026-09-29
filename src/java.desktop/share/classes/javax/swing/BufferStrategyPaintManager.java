@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,15 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 ((SunGraphics2D)bsg).constrain(xOffset + cx, yOffset + cy,
                                                x + w, y + h);
                 bsg.setClip(x, y, w, h);
+
+                if (!bufferComponent.isOpaque()) {
+                    final SunGraphics2D g2d = (SunGraphics2D) bsg;
+                    final Color oldBg = g2d.getBackground();
+                    g2d.setBackground(paintingComponent.getBackground());
+                    g2d.clearRect(x, y, w, h);
+                    g2d.setBackground(oldBg);
+                }
+
                 paintingComponent.paintToOffscreen(bsg, x, y, w, h,
                                                    x + w, y + h);
                 accumulate(xOffset + x, yOffset + y, w, h);
@@ -525,8 +534,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         Container root = c;
         xOffset = yOffset = 0;
         while (root != null &&
-               (!(root instanceof Window) &&
-                !SunToolkit.isInstanceOf(root, "java.applet.Applet"))) {
+               (!(root instanceof Window))) {
             xOffset += root.getX();
             yOffset += root.getY();
             root = root.getParent();
@@ -678,7 +686,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         }
 
         /**
-         * Returns the Root (Window or Applet) that this BufferInfo references.
+         * Returns the Root (Window) that this BufferInfo references.
          */
         public Container getRoot() {
             return (root == null) ? null : root.get();
@@ -784,30 +792,14 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                     null);
             }
             BufferStrategy bs = null;
-            if (SunToolkit.isInstanceOf(root, "java.applet.Applet")) {
-                try {
-                    AWTAccessor.ComponentAccessor componentAccessor
-                            = AWTAccessor.getComponentAccessor();
-                    componentAccessor.createBufferStrategy(root, 2, caps);
-                    bs = componentAccessor.getBufferStrategy(root);
-                } catch (AWTException e) {
-                    // Type is not supported
-                    if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
-                        LOGGER.finer("createBufferStrategy failed",
-                                     e);
-                    }
-                }
-            }
-            else {
-                try {
-                    ((Window)root).createBufferStrategy(2, caps);
-                    bs = ((Window)root).getBufferStrategy();
-                } catch (AWTException e) {
-                    // Type not supported
-                    if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
-                        LOGGER.finer("createBufferStrategy failed",
-                                     e);
-                    }
+            try {
+                ((Window)root).createBufferStrategy(2, caps);
+                bs = ((Window)root).getBufferStrategy();
+            } catch (AWTException e) {
+                // Type not supported
+                if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
+                    LOGGER.finer("createBufferStrategy failed",
+                                 e);
                 }
             }
             return bs;

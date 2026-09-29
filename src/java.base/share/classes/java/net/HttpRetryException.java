@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,12 @@ public class HttpRetryException extends IOException {
     private static final long serialVersionUID = -9186022286469111381L;
 
     /**
-     * The response code.
+     * @serial The response code.
      */
     private final int responseCode;
 
     /**
-     * The URL to be redirected to.
+     * @serial The URL to be redirected to.
      */
     private String location;
 

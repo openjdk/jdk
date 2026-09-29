@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,15 +242,7 @@ public class Popup {
             // Popups are typically transient and most likely won't benefit
             // from true double buffering.  Turn it off here.
             getRootPane().setUseTrueDoubleBuffering(false);
-            // Try to set "always-on-top" for the popup window.
-            // Applets usually don't have sufficient permissions to do it.
-            // In this case simply ignore the exception.
-            try {
-                setAlwaysOnTop(true);
-            } catch (SecurityException se) {
-                // setAlwaysOnTop is restricted,
-                // the exception is ignored
-            }
+            setAlwaysOnTop(true);
         }
 
         public void update(Graphics g) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,103 +21,91 @@
  * questions.
  */
 
-import java.awt.AWTException;
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.lang.reflect.InvocationTargetException;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 /*
  * @test
  * @key headful
  * @bug 4213634 8017187
- * @author Scott Violet
  * @library ../../regtesthelpers
  * @build Util
+ * @summary Verifies if Alt+mnemonic char works when
+ *          menu & menuitem have same mnemonic char
  * @run main bug4213634
  */
 
-
 public class bug4213634 {
 
-    private JMenu menu;
+    private static JMenu menu;
+    private static JFrame frame;
+    private static Robot robot;
 
-    private JFrame frame;
+    public static void main(String[] args) throws Exception {
+        try {
+            robot = new Robot();
+            SwingUtilities.invokeAndWait(bug4213634::createAndShowGUI);
 
-    public static void main(String[] args) throws Throwable {
-        new bug4213634();
+            robot.waitForIdle();
+            robot.delay(1000);
+            test();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 
-    bug4213634() throws AWTException, InterruptedException, InvocationTargetException {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                createAndShowGUI();
-            }
-        });
-
-        test();
-    }
-
-    public  void createAndShowGUI() {
-        frame = new JFrame("TEST");
+    public static void createAndShowGUI() {
+        frame = new JFrame("bug4213634");
         JMenuBar mb = new JMenuBar();
         menu = mb.add(createMenu("1 - First Menu", true));
         mb.add(createMenu("2 - Second Menu", false));
         frame.setJMenuBar(mb);
-        JTextArea ta = new JTextArea("This test dedicated to Nancy and Kathleen, testers and bowlers extraordinaire\n\n\nNo exception means pass.");
-        frame.getContentPane().add("Center", ta);
         JButton button = new JButton("Test");
         frame.getContentPane().add("South", button);
-        frame.setBounds(100, 100, 400, 400);
+        frame.setSize(300, 300);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         button.requestFocusInWindow();
     }
 
-    private void test() throws AWTException, InterruptedException, InvocationTargetException {
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        robot.waitForIdle();
-
+    private static void test() throws Exception {
         Util.hitMnemonics(robot, KeyEvent.VK_1);
         robot.waitForIdle();
+        robot.delay(100);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                if (!menu.isSelected()) {
-                    throw new RuntimeException(
-                        "Failed: Menu didn't remain posted at end of test");
-                } else {
-                    System.out.println("Test passed!");
-                    frame.dispose();
-                }
+        SwingUtilities.invokeAndWait(() -> {
+            if (!menu.isSelected()) {
+                throw new RuntimeException(
+                    "Failed: Menu didn't remain posted at end of test");
+            } else {
+                System.out.println("Test passed!");
             }
         });
     }
-    private JMenu createMenu(String str, boolean bFlag) {
+
+    private static JMenu createMenu(String str, boolean bFlag) {
         JMenuItem menuitem;
         JMenu menu = new JMenu(str);
         menu.setMnemonic(str.charAt(0));
 
-        for(int i = 0; i < 10; i ++) {
+        for (int i = 0; i < 10; i++) {
             menuitem = new JMenuItem("JMenuItem" + i);
-            menuitem.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    throw new RuntimeException(
-                        "Failed: Mnemonic activated");
-                }
+            menuitem.addActionListener(e -> {
+                throw new RuntimeException("Failed: Mnemonic activated");
             });
-            if(bFlag)
+            if (bFlag) {
                 menuitem.setMnemonic('0' + i);
+            }
             menu.add(menuitem);
         }
         return menu;

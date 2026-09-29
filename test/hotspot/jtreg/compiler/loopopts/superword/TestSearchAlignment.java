@@ -27,7 +27,7 @@
  * @summary JVM crash in SWPointer during C2 compilation
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
-        -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestSearchAlignment::vMeth
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestSearchAlignment::vMeth
  *      compiler.loopopts.superword.TestSearchAlignment
  */
 

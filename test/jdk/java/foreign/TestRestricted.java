@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @modules java.base/jdk.internal.javac
  * @modules java.base/jdk.internal.reflect
- * @run testng TestRestricted
+ * @run junit TestRestricted
  */
 
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -57,8 +56,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 /**
  * This test checks all methods in java.base to make sure that methods annotated with {@link Restricted} are
@@ -88,7 +88,11 @@ public class TestRestricted {
             RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, Arena.class, Consumer.class),
             RestrictedMethod.of(MemorySegment.class, "reinterpret", MemorySegment.class, long.class, Arena.class, Consumer.class),
             RestrictedMethod.of(AddressLayout.class, "withTargetLayout", AddressLayout.class, MemoryLayout.class),
-            RestrictedMethod.of(ModuleLayer.Controller.class, "enableNativeAccess", ModuleLayer.Controller.class, Module.class)
+            RestrictedMethod.of(ModuleLayer.Controller.class, "enableNativeAccess", ModuleLayer.Controller.class, Module.class),
+            RestrictedMethod.of(System.class, "load", void.class, String.class),
+            RestrictedMethod.of(System.class, "loadLibrary", void.class, String.class),
+            RestrictedMethod.of(Runtime.class, "load", void.class, String.class),
+            RestrictedMethod.of(Runtime.class, "loadLibrary", void.class, String.class)
     );
 
     @Test

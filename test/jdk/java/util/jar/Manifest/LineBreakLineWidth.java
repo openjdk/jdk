@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,13 +28,15 @@ import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @test
  * @bug 6372077
- * @run testng LineBreakLineWidth
+ * @run junit LineBreakLineWidth
  * @summary write valid manifests with respect to line breaks
  *          and read any line width
  */
@@ -98,16 +98,10 @@ public class LineBreakLineWidth {
         assertMainAndSectionValues(mf, name, value);
     }
 
-    static void writeInvalidManifestThrowsException(String name, String value)
-            throws IOException {
-        try {
-            writeManifest(name, value);
-        } catch (IllegalArgumentException e) {
-            // no invalid manifest was produced which is considered acceptable
-            return;
-        }
-
-        fail("no error writing manifest considered invalid");
+    static void writeInvalidManifestThrowsException(String name, String value) {
+        // no invalid manifest was produced which is considered acceptable
+        assertThrows(IllegalArgumentException.class,
+                () -> writeManifest(name, value), "no error writing manifest considered invalid");
     }
 
     /**
@@ -171,7 +165,7 @@ public class LineBreakLineWidth {
          * if the header name is 69 or 70 bytes and in that case the name/value
          * delimiter ": " was broken on a new line.
          *
-         * changing the line width in Manifest#make72Safe(StringBuffer),
+         * changing the line width in {@link Manifest#println72(OutputStream, String)},
          * however, also affects at which positions values are broken across
          * lines (should always have affected values only and never header
          * names or the delimiter) which is tested here.
@@ -277,8 +271,8 @@ public class LineBreakLineWidth {
         String mainValue = mf.getMainAttributes().getValue(name);
         String sectionValue = mf.getAttributes(name).getValue(name);
 
-        assertEquals(value, mainValue, "value different in main section");
-        assertEquals(value, sectionValue, "value different in named section");
+        assertEquals(mainValue, value, "value different in main section");
+        assertEquals(sectionValue, value, "value different in named section");
     }
 
 }

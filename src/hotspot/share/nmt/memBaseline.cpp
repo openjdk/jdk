@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,14 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memBaseline.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/safepoint.hpp"
+#include "nmt/regionsTree.inline.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 
 /*
  * Sizes are sorted in descenting order for reporting
@@ -43,7 +42,6 @@ int compare_malloc_size(const MallocSite& s1, const MallocSite& s2) {
     return 1;
   }
 }
-
 
 int compare_virtual_memory_size(const VirtualMemoryAllocationSite& s1,
   const VirtualMemoryAllocationSite& s2) {
@@ -61,11 +59,11 @@ int compare_malloc_site(const MallocSite& s1, const MallocSite& s2) {
   return s1.call_stack()->compare(*s2.call_stack());
 }
 
-// Sort into allocation site addresses and memory type order for baseline comparison
-int compare_malloc_site_and_type(const MallocSite& s1, const MallocSite& s2) {
+// Sort into allocation site addresses and memory tag order for baseline comparison
+int compare_malloc_site_and_tag(const MallocSite& s1, const MallocSite& s2) {
   int res = compare_malloc_site(s1, s2);
   if (res == 0) {
-    res = (int)(NMTUtil::flag_to_index(s1.flag()) - NMTUtil::flag_to_index(s2.flag()));
+    res = (int)(NMTUtil::tag_to_index(s1.mem_tag()) - NMTUtil::tag_to_index(s2.mem_tag()));
   }
 
   return res;
@@ -76,104 +74,90 @@ int compare_virtual_memory_site(const VirtualMemoryAllocationSite& s1,
   return s1.call_stack()->compare(*s2.call_stack());
 }
 
-/*
- * Walker to walk malloc allocation site table
- */
+
 class MallocAllocationSiteWalker : public MallocSiteWalker {
- private:
-  SortedLinkedList<MallocSite, compare_malloc_size> _malloc_sites;
+  MallocSite* _malloc_sites;
+  int _length;
+  int _index;
 
-  // Entries in MallocSiteTable with size = 0 and count = 0,
-  // when the malloc site is not longer there.
- public:
-
-  LinkedList<MallocSite>* malloc_sites() {
-    return &_malloc_sites;
+public:
+  MallocAllocationSiteWalker(int entry_count)
+  : MallocSiteWalker(), _malloc_sites(NEW_C_HEAP_ARRAY_RETURN_NULL(MallocSite, entry_count, mtNMT)),
+    _length(_malloc_sites == nullptr ? 0 : entry_count), _index(0) {
   }
 
-  bool do_malloc_site(const MallocSite* site) {
+  MallocSite* malloc_sites(int* len) {
+    *len = _index;
+    MallocSite* r = REALLOC_C_HEAP_ARRAY_RETURN_NULL(_malloc_sites, _index, mtNMT);
+    if (r == nullptr) {
+      return _malloc_sites;
+    }
+    return r;
+  }
+
+  bool do_malloc_site(const MallocSite* site) override {
+    assert(_malloc_sites != nullptr, "must be");
+    // Ignore empty sites.
     if (site->size() > 0) {
-      if (_malloc_sites.add(*site) != nullptr) {
-        return true;
-      } else {
-        return false;  // OOM
+      // There may be inserts concurrent with this traversal
+      // so we must check whether we still have room for another site.
+      if (_index >= _length) {
+        // Ran out of space, we'll do a conservative resize.
+        // Casting float to int is floor(), and we want to increase count by at least 1.
+        int new_len = int(float(_length) * 1.2) + 1;
+        MallocSite* r = REALLOC_C_HEAP_ARRAY_RETURN_NULL(_malloc_sites, new_len, mtNMT);
+        if (r == nullptr) {
+          // Failed, we can bail and let the report continue with an incomplete one.
+          return false;
+        }
+        _malloc_sites = r;
+        _length = new_len;
       }
-    } else {
-      // Ignore empty sites.
-      return true;
+      new (&_malloc_sites[_index]) MallocSite(*site);
+      _index++;
     }
+    return true;
+  }
+
+
+  bool allocation_failed() {
+    return _malloc_sites == nullptr;
   }
 };
-
-// Walk all virtual memory regions for baselining
-class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
- private:
-  typedef LinkedListImpl<ReservedMemoryRegion, AnyObj::C_HEAP, mtNMT,
-                         AllocFailStrategy::RETURN_NULL> EntryList;
-  EntryList _virtual_memory_regions;
-  DEBUG_ONLY(address _last_base;)
- public:
-  VirtualMemoryAllocationWalker() {
-    DEBUG_ONLY(_last_base = nullptr);
-  }
-
-  bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
-    assert(rgn->base() >= _last_base, "region unordered?");
-    DEBUG_ONLY(_last_base = rgn->base());
-    if (rgn->size() > 0) {
-      if (_virtual_memory_regions.add(*rgn) != nullptr) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      // Ignore empty sites.
-      return true;
-    }
-  }
-
-  LinkedList<ReservedMemoryRegion>* virtual_memory_allocations() {
-    return &_virtual_memory_regions;
-  }
-};
-
 
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
-  VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
+  {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
+    MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
+  }
+
   _metaspace_stats = MetaspaceUtils::get_combined_statistics();
 }
 
 bool MemBaseline::baseline_allocation_sites() {
-  // Malloc allocation sites
-  MallocAllocationSiteWalker malloc_walker;
-  if (!MallocSiteTable::walk_malloc_site(&malloc_walker)) {
+  // Malloc allocation sites.
+  MallocAllocationSiteWalker malloc_walker(MallocSiteTable::entry_count());
+  if (malloc_walker.allocation_failed()) {
     return false;
   }
+  MallocSiteTable::walk_malloc_site(&malloc_walker);
+  _malloc_sites = malloc_walker.malloc_sites(&_malloc_sites_length);
+  sort_malloc_sites(by_size);
 
-  // Walk simple thread stacks
-  if (!ThreadStackTracker::walk_simple_thread_stack_site(&malloc_walker)) {
-    return false;
+  assert(_vma_allocations == nullptr, "must");
+  {
+    MemTracker::NmtVirtualMemoryLocker locker;
+    _vma_allocations = new (mtNMT, std::nothrow) RegionsTree(*VirtualMemoryTracker::Instance::tree());
+    if (_vma_allocations == nullptr)  {
+      return false;
+    }
   }
-
-  _malloc_sites.move(malloc_walker.malloc_sites());
-  // The malloc sites are collected in size order
-  _malloc_sites_order = by_size;
-
-  // Virtual memory allocation sites
-  VirtualMemoryAllocationWalker virtual_memory_walker;
-  if (!VirtualMemoryTracker::walk_virtual_memory(&virtual_memory_walker)) {
-    return false;
-  }
-
-  // Virtual memory allocations are collected in call stack order
-  _virtual_memory_allocations.move(virtual_memory_walker.virtual_memory_allocations());
 
   if (!aggregate_virtual_memory_allocation_sites()) {
     return false;
   }
-  // Virtual memory allocation sites are aggregrated in call stack order
-  _virtual_memory_sites_order = by_address;
 
   return true;
 }
@@ -194,130 +178,87 @@ void MemBaseline::baseline(bool summaryOnly) {
     baseline_allocation_sites();
     _baseline_type = Detail_baselined;
   }
-
-}
-
-int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
-  const VirtualMemoryAllocationSite& s2) {
-  return s1.call_stack()->compare(*s2.call_stack());
 }
 
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
-  SortedLinkedList<VirtualMemoryAllocationSite, compare_allocation_site> allocation_sites;
-
-  VirtualMemoryAllocationIterator itr = virtual_memory_allocations();
-  const ReservedMemoryRegion* rgn;
+  auto hash = [](const VirtualMemoryAllocationSite& vmas) { return vmas.call_stack()->calculate_hash(); };
+  auto equals = [](const VirtualMemoryAllocationSite& a, const VirtualMemoryAllocationSite& b) { return a.equals(b); };
+  using VirtualMemorySiteTable = OpenAddressedHashTable<VirtualMemoryAllocationSite,
+                                                        decltype(hash),
+                                                        decltype(equals),
+                                                        mtNMT, AllocFailStrategy::RETURN_NULL,
+                                                        75>;
+  VirtualMemorySiteTable vht(hash, equals);
   VirtualMemoryAllocationSite* site;
-  while ((rgn = itr.next()) != nullptr) {
-    VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->flag());
-    site = allocation_sites.find(tmp);
+  bool failed_oom = false;
+  _vma_allocations->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
+    VirtualMemoryAllocationSite tmp(*rgn.reserved_call_stack(), rgn.mem_tag());
+    bool found;
+    site = vht.put_if_absent(tmp, &found);
     if (site == nullptr) {
-      LinkedListNode<VirtualMemoryAllocationSite>* node =
-        allocation_sites.add(tmp);
-      if (node == nullptr) return false;
-      site = node->data();
+      failed_oom = true;
+      return false;
     }
-    site->reserve_memory(rgn->size());
-    site->commit_memory(rgn->committed_size());
-  }
+    site->reserve_memory(rgn.size());
+    site->commit_memory(_vma_allocations->committed_size(rgn));
+    return true;
+  });
 
-  _virtual_memory_sites.move(&allocation_sites);
+  if (failed_oom) {
+    return false;
+  }
+  _virtual_memory_sites = vht.detach(&_virtual_memory_sites_length);
+  if (_virtual_memory_sites == nullptr) {
+    return false;
+  }
+  sort_virtual_memory_sites(by_site);
   return true;
 }
 
-MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
-  assert(!_malloc_sites.is_empty(), "Not detail baseline");
-  switch(order) {
-    case by_size:
-      malloc_sites_to_size_order();
-      break;
-    case by_site:
-      malloc_sites_to_allocation_site_order();
-      break;
-    case by_site_and_type:
-      malloc_sites_to_allocation_site_and_type_order();
-      break;
-    case by_address:
-    default:
-      ShouldNotReachHere();
-  }
-  return MallocSiteIterator(_malloc_sites.head());
+template<typename T, auto Cmp>
+static void qsort_helper(T* array, int length) {
+  ::qsort(array, length, sizeof(T),
+          [](const void* a, const void* b) {
+            return Cmp(*static_cast<const T*>(a),
+                       *static_cast<const T*>(b));
+          });
 }
-
-VirtualMemorySiteIterator MemBaseline::virtual_memory_sites(SortingOrder order) {
-  assert(!_virtual_memory_sites.is_empty(), "Not detail baseline");
-  switch(order) {
-    case by_size:
-      virtual_memory_sites_to_size_order();
-      break;
-    case by_site:
-      virtual_memory_sites_to_reservation_site_order();
-      break;
-    case by_address:
-    default:
-      ShouldNotReachHere();
-  }
-  return VirtualMemorySiteIterator(_virtual_memory_sites.head());
-}
+template<typename T>
+using Qsorter = void (*)(T*, int);
 
 
-// Sorting allocations sites in different orders
-void MemBaseline::malloc_sites_to_size_order() {
-  if (_malloc_sites_order != by_size) {
-    SortedLinkedList<MallocSite, compare_malloc_size> tmp;
+void MemBaseline::sort_malloc_sites(SortingOrder order) {
+  assert(_malloc_sites_length != 0, "Not detail baseline");
+  assert(order != invalid, "must be");
+  Qsorter<MallocSite> sorter_by_sortingorder[SortingOrder::_count] = {
+    nullptr,
+    &qsort_helper<MallocSite, &compare_malloc_size>,
+    &qsort_helper<MallocSite, &compare_malloc_site>,
+    &qsort_helper<MallocSite, &compare_malloc_site_and_tag>
+  };
 
-    // Add malloc sites to sorted linked list to sort into size order
-    tmp.move(&_malloc_sites);
-    _malloc_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
-    _malloc_sites_order = by_size;
+  auto sort = sorter_by_sortingorder[order];
+  guarantee(sort != nullptr, "An invalid sorting method was selected");
+  if (_malloc_sites_order != order) {
+    sort(_malloc_sites, _malloc_sites_length);
+    _malloc_sites_order = order;
   }
 }
 
-void MemBaseline::malloc_sites_to_allocation_site_order() {
-  if (_malloc_sites_order != by_site && _malloc_sites_order != by_site_and_type) {
-    SortedLinkedList<MallocSite, compare_malloc_site> tmp;
-    // Add malloc sites to sorted linked list to sort into site (address) order
-    tmp.move(&_malloc_sites);
-    _malloc_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
-    _malloc_sites_order = by_site;
+void MemBaseline::sort_virtual_memory_sites(SortingOrder order) {
+  assert(_virtual_memory_sites_length != 0, "Not detail baseline");
+  assert(order != invalid, "must be");
+  Qsorter<VirtualMemoryAllocationSite> sorter_by_sortingorder[SortingOrder::_count] = {
+    nullptr,
+    &qsort_helper<VirtualMemoryAllocationSite, &compare_virtual_memory_size>,
+    &qsort_helper<VirtualMemoryAllocationSite, &compare_virtual_memory_site>,
+    nullptr
+  };
+
+  auto sort = sorter_by_sortingorder[order];
+  guarantee(sort != nullptr, "An invalid sorting method was selected");
+  if (_virtual_memory_sites_order != order) {
+    sort(_virtual_memory_sites, _virtual_memory_sites_length);
+    _virtual_memory_sites_order = order;
   }
 }
-
-void MemBaseline::malloc_sites_to_allocation_site_and_type_order() {
-  if (_malloc_sites_order != by_site_and_type) {
-    SortedLinkedList<MallocSite, compare_malloc_site_and_type> tmp;
-    // Add malloc sites to sorted linked list to sort into site (address) order
-    tmp.move(&_malloc_sites);
-    _malloc_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
-    _malloc_sites_order = by_site_and_type;
-  }
-}
-
-void MemBaseline::virtual_memory_sites_to_size_order() {
-  if (_virtual_memory_sites_order != by_size) {
-    SortedLinkedList<VirtualMemoryAllocationSite, compare_virtual_memory_size> tmp;
-
-    tmp.move(&_virtual_memory_sites);
-
-    _virtual_memory_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
-    _virtual_memory_sites_order = by_size;
-  }
-}
-
-void MemBaseline::virtual_memory_sites_to_reservation_site_order() {
-  if (_virtual_memory_sites_order != by_size) {
-    SortedLinkedList<VirtualMemoryAllocationSite, compare_virtual_memory_site> tmp;
-
-    tmp.move(&_virtual_memory_sites);
-
-    _virtual_memory_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
-
-    _virtual_memory_sites_order = by_size;
-  }
-}
-

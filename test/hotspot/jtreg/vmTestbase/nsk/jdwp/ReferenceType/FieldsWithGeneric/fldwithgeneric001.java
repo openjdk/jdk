@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,11 @@ public class fldwithgeneric001 {
 
     static final int FLDS_NUM = fields.length;
 
-    public static void main(String argv[]) {
-        System.exit(run(argv,System.out) + Consts.JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+        int result = run(argv, System.out);
+        if (result != 0) {
+            throw new RuntimeException("Test failed");
+        }
     }
 
     public static int run(String argv[], PrintStream out) {

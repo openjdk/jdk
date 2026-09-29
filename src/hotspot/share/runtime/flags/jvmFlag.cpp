@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.inline.hpp"
@@ -31,6 +30,7 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLookup.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -55,11 +55,11 @@ void JVMFlag::set_origin(JVMFlagOrigin new_origin) {
 
 /**
  * Returns if this flag is a constant in the binary.  Right now this is
- * true for notproduct and develop flags in product builds.
+ * true for develop flags in product builds.
  */
 bool JVMFlag::is_constant_in_binary() const {
 #ifdef PRODUCT
-  return is_notproduct() || is_develop();
+  return is_develop();
 #else
   return false;
 #endif
@@ -71,6 +71,9 @@ bool JVMFlag::is_unlocker() const {
 }
 
 bool JVMFlag::is_unlocked() const {
+  if (is_unlocker()) {
+    return true;
+  }
   if (is_diagnostic()) {
     return UnlockDiagnosticVMOptions;
   }
@@ -84,18 +87,6 @@ void JVMFlag::clear_diagnostic() {
   assert(is_diagnostic(), "sanity");
   _flags = Flags(_flags & ~KIND_DIAGNOSTIC);
   assert(!is_diagnostic(), "sanity");
-}
-
-void JVMFlag::clear_experimental() {
-  assert(is_experimental(), "sanity");
-  _flags = Flags(_flags & ~KIND_EXPERIMENTAL);
-  assert(!is_experimental(), "sanity");
-}
-
-void JVMFlag::set_product() {
-  assert(!is_product(), "sanity");
-  _flags = Flags(_flags | KIND_PRODUCT);
-  assert(is_product(), "sanity");
 }
 
 // Get custom message for this locked flag, or null if
@@ -121,11 +112,6 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
                  _name);
     return JVMFlag::DEVELOPER_FLAG_BUT_PRODUCT_BUILD;
   }
-  if (is_notproduct() && is_product_build()) {
-    jio_snprintf(buf, buflen, "Error: VM option '%s' is notproduct and is available only in debug version of VM.\n",
-                 _name);
-    return JVMFlag::NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD;
-  }
   return JVMFlag::NONE;
 }
 
@@ -133,7 +119,7 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
 // Fills current line up to requested position.
 // Should the current position already be past the requested position,
 // one separator blank is enforced.
-void fill_to_pos(outputStream* st, unsigned int req_pos) {
+static void fill_to_pos(outputStream* st, unsigned int req_pos) {
   if ((unsigned int)st->position() < req_pos) {
     st->fill_to(req_pos);  // need to fill with blanks to reach req_pos
   } else {
@@ -142,7 +128,7 @@ void fill_to_pos(outputStream* st, unsigned int req_pos) {
 }
 
 void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) const {
-  // Don't print notproduct and develop flags in a product build.
+  // Don't print develop flags in a product build.
   if (is_constant_in_binary()) {
     return;
   }
@@ -167,7 +153,7 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     //      uintx ThresholdTolerance                       = 10                                        {product} {default}
     //     size_t TLABSize                                 = 0                                         {product} {default}
     //      uintx SurvivorRatio                            = 8                                         {product} {default}
-    //     double InitialRAMPercentage                     = 1.562500                                  {product} {default}
+    //     double InitialRAMPercentage                     = 0.000000                                  {product} {default}
     //      ccstr CompileCommandFile                       = MyFile.cmd                                {product} {command line}
     //  ccstrlist CompileOnly                              = Method1
     //            CompileOnly                             += Method2                                   {product} {command line}
@@ -213,13 +199,13 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     } else if (is_uint()) {
       st->print("%u", get_uint());
     } else if (is_intx()) {
-      st->print(INTX_FORMAT, get_intx());
+      st->print("%zd", get_intx());
     } else if (is_uintx()) {
-      st->print(UINTX_FORMAT, get_uintx());
+      st->print("%zu", get_uintx());
     } else if (is_uint64_t()) {
       st->print(UINT64_FORMAT, get_uint64_t());
     } else if (is_size_t()) {
-      st->print(SIZE_FORMAT, get_size_t());
+      st->print("%zu", get_size_t());
     } else if (is_double()) {
       st->print("%f", get_double());
     } else if (is_ccstr()) {
@@ -275,7 +261,6 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     //
     //  Sample output:
     //       intx MinPassesBeforeFlush                               [ 0                         ...       9223372036854775807 ]                         {diagnostic} {default}
-    //      uintx MinRAMFraction                                     [ 1                         ...      18446744073709551615 ]                            {product} {default}
     //     double MinRAMPercentage                                   [ 0.000                     ...                   100.000 ]                            {product} {default}
     //      uintx MinSurvivorRatio                                   [ 3                         ...      18446744073709551615 ]                            {product} {default}
     //     size_t MinTLABSize                                        [ 1                         ...       9223372036854775807 ]                            {product} {default}
@@ -336,7 +321,6 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
   };
 
   Data data[] = {
-    { KIND_JVMCI, "JVMCI" },
     { KIND_C1, "C1" },
     { KIND_C2, "C2" },
     { KIND_ARCH, "ARCH" },
@@ -345,7 +329,6 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
     { KIND_MANAGEABLE, "manageable" },
     { KIND_DIAGNOSTIC, "diagnostic" },
     { KIND_EXPERIMENTAL, "experimental" },
-    { KIND_NOT_PRODUCT, "notproduct" },
     { KIND_DEVELOP, "develop" },
     { KIND_LP64_PRODUCT, "lp64_product" },
     { -1, "" }
@@ -417,13 +400,13 @@ void JVMFlag::print_as_flag(outputStream* st) const {
   } else if (is_uint()) {
     st->print("-XX:%s=%u", _name, get_uint());
   } else if (is_intx()) {
-    st->print("-XX:%s=" INTX_FORMAT, _name, get_intx());
+    st->print("-XX:%s=%zd", _name, get_intx());
   } else if (is_uintx()) {
-    st->print("-XX:%s=" UINTX_FORMAT, _name, get_uintx());
+    st->print("-XX:%s=%zu", _name, get_uintx());
   } else if (is_uint64_t()) {
     st->print("-XX:%s=" UINT64_FORMAT, _name, get_uint64_t());
   } else if (is_size_t()) {
-    st->print("-XX:%s=" SIZE_FORMAT, _name, get_size_t());
+    st->print("-XX:%s=%zu", _name, get_size_t());
   } else if (is_double()) {
     st->print("-XX:%s=%f", _name, get_double());
   } else if (is_ccstr()) {
@@ -453,30 +436,27 @@ void JVMFlag::print_as_flag(outputStream* st) const {
 //----------------------------------------------------------------------
 // Build flagTable[]
 
-// Find out the number of LP64/ARCH/JVMCI/COMPILER1/COMPILER2 flags,
+// Find out the number of LP64/ARCH/COMPILER1/COMPILER2 flags,
 // for JVMFlag::flag_group()
 
 #define ENUM_F(type, name, ...)  enum_##name,
 #define IGNORE_F(...)
 
-//                                                  dev     dev-pd  pro     pro-pd  notpro  range     constraint
-enum FlagCounter_LP64  { LP64_RUNTIME_FLAGS(        ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)  num_flags_LP64   };
-enum FlagCounter_ARCH  { ARCH_FLAGS(                ENUM_F,         ENUM_F,         ENUM_F, IGNORE_F, IGNORE_F)  num_flags_ARCH   };
-enum FlagCounter_JVMCI { JVMCI_ONLY(JVMCI_FLAGS(    ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_JVMCI  };
-enum FlagCounter_C1    { COMPILER1_PRESENT(C1_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C1     };
-enum FlagCounter_C2    { COMPILER2_PRESENT(C2_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C2     };
+//                                                  dev     dev-pd  pro     pro-pd  range     constraint
+enum FlagCounter_LP64  { LP64_RUNTIME_FLAGS(        ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)  num_flags_LP64   };
+enum FlagCounter_ARCH  { ARCH_FLAGS(                ENUM_F,         ENUM_F,         IGNORE_F, IGNORE_F)  num_flags_ARCH   };
+enum FlagCounter_C1    { COMPILER1_PRESENT(C1_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C1     };
+enum FlagCounter_C2    { COMPILER2_PRESENT(C2_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C2     };
 
 const int first_flag_enum_LP64   = 0;
 const int first_flag_enum_ARCH   = first_flag_enum_LP64  + num_flags_LP64;
-const int first_flag_enum_JVMCI  = first_flag_enum_ARCH  + num_flags_ARCH;
-const int first_flag_enum_C1     = first_flag_enum_JVMCI + num_flags_JVMCI;
+const int first_flag_enum_C1     = first_flag_enum_ARCH  + num_flags_ARCH;
 const int first_flag_enum_C2     = first_flag_enum_C1    + num_flags_C1;
 const int first_flag_enum_other  = first_flag_enum_C2    + num_flags_C2;
 
 static constexpr int flag_group(int flag_enum) {
   if (flag_enum < first_flag_enum_ARCH)  return JVMFlag::KIND_LP64_PRODUCT;
-  if (flag_enum < first_flag_enum_JVMCI) return JVMFlag::KIND_ARCH;
-  if (flag_enum < first_flag_enum_C1)    return JVMFlag::KIND_JVMCI;
+  if (flag_enum < first_flag_enum_C1)    return JVMFlag::KIND_ARCH;
   if (flag_enum < first_flag_enum_C2)    return JVMFlag::KIND_C1;
   if (flag_enum < first_flag_enum_other) return JVMFlag::KIND_C2;
 
@@ -504,14 +484,12 @@ const int PRODUCT_KIND     = JVMFlag::KIND_PRODUCT;
 const int PRODUCT_KIND_PD  = JVMFlag::KIND_PRODUCT | JVMFlag::KIND_PLATFORM_DEPENDENT;
 const int DEVELOP_KIND     = JVMFlag::KIND_DEVELOP;
 const int DEVELOP_KIND_PD  = JVMFlag::KIND_DEVELOP | JVMFlag::KIND_PLATFORM_DEPENDENT;
-const int NOTPROD_KIND     = JVMFlag::KIND_NOT_PRODUCT;
 
 #define FLAG_TYPE(type) (JVMFlag::TYPE_ ## type)
 #define INITIALIZE_DEVELOP_FLAG(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, DEVELOP_KIND,    __VA_ARGS__),
 #define INITIALIZE_DEVELOP_FLAG_PD(type, name,        ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, DEVELOP_KIND_PD, __VA_ARGS__),
 #define INITIALIZE_PRODUCT_FLAG(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, PRODUCT_KIND,    __VA_ARGS__),
 #define INITIALIZE_PRODUCT_FLAG_PD(type, name,        ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, PRODUCT_KIND_PD, __VA_ARGS__),
-#define INITIALIZE_NOTPROD_FLAG(   type, name, value, ...) JVMFlag(FLAG_MEMBER_ENUM(name), FLAG_TYPE(type), XSTR(name), (void*)&name, NOTPROD_KIND,    __VA_ARGS__),
 
 // Handy aliases to match the symbols used in the flag specification macros.
 const int DIAGNOSTIC   = JVMFlag::KIND_DIAGNOSTIC;
@@ -523,7 +501,6 @@ const int EXPERIMENTAL = JVMFlag::KIND_EXPERIMENTAL;
             INITIALIZE_DEVELOP_FLAG_PD,  \
             INITIALIZE_PRODUCT_FLAG,     \
             INITIALIZE_PRODUCT_FLAG_PD,  \
-            INITIALIZE_NOTPROD_FLAG,     \
             IGNORE_RANGE,          \
             IGNORE_CONSTRAINT)
 
@@ -560,12 +537,12 @@ JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, 
   JVMFlag* flag = JVMFlagLookup::find(name, length);
   if (flag != nullptr) {
     // Found a matching entry.
-    // Don't report notproduct and develop flags in product builds.
+    // Don't report develop flags in product builds.
     if (flag->is_constant_in_binary()) {
       return (return_flag ? flag : nullptr);
     }
     // Report locked flags only if allowed.
-    if (!(flag->is_unlocked() || flag->is_unlocker())) {
+    if (!flag->is_unlocked()) {
       if (!allow_locked) {
         // disable use of locked flags, e.g. diagnostic, experimental,
         // etc. until they are explicitly unlocked
@@ -596,7 +573,7 @@ JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked
     return nullptr;
   }
 
-  if (!(match->is_unlocked() || match->is_unlocker())) {
+  if (!match->is_unlocked()) {
     if (!allow_locked) {
       return nullptr;
     }
@@ -658,7 +635,7 @@ void JVMFlag::printSetFlags(outputStream* out) {
     }
   }
   out->cr();
-  FREE_C_HEAP_ARRAY(JVMFlag*, array);
+  FREE_C_HEAP_ARRAY(array);
 }
 
 #ifndef PRODUCT
@@ -686,8 +663,7 @@ void JVMFlag::check_all_flag_declarations() {
              (flags & mask) == JVMFlag::KIND_EXPERIMENTAL,
              "%s can be declared with at most one of "
              "DIAGNOSTIC, MANAGEABLE or EXPERIMENTAL", current->_name);
-      assert((flags & KIND_NOT_PRODUCT) == 0 &&
-             (flags & KIND_DEVELOP) == 0,
+      assert((flags & KIND_DEVELOP) == 0,
              "%s has an optional DIAGNOSTIC, MANAGEABLE or EXPERIMENTAL "
              "attribute; it must be declared as a product flag", current->_name);
     }
@@ -703,7 +679,7 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
   //       called as part of error reporting, so handle native OOMs gracefully.
 
   // The last entry is the null entry.
-  const size_t length = JVMFlag::numFlags - 1;
+  constexpr size_t length = (sizeof(flagTable) / sizeof(JVMFlag)) - 1;
 
   // Print
   if (!printRanges) {
@@ -712,26 +688,26 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
     out->print_cr("[Global flags ranges]");
   }
 
-  // Sort
-  JVMFlag** array = NEW_C_HEAP_ARRAY_RETURN_NULL(JVMFlag*, length, mtArguments);
-  if (array != nullptr) {
+  BitMap::bm_word_t iteratorArray[BitMap::calc_size_in_words(length)];
+  BitMapView iteratorMarkers(iteratorArray, length);
+  iteratorMarkers.clear_range(0, length);
+  // Print the flag with best sort value, then mark it.
+  for (size_t j = 0; j < length; j++) {
+    JVMFlag* bestFlag = nullptr;
+    size_t bestFlagIndex = 0;
     for (size_t i = 0; i < length; i++) {
-      array[i] = &flagTable[i];
-    }
-    qsort(array, length, sizeof(JVMFlag*), compare_flags);
-
-    for (size_t i = 0; i < length; i++) {
-      if (array[i]->is_unlocked() && !(skipDefaults && array[i]->is_default())) {
-        array[i]->print_on(out, withComments, printRanges);
+      const bool skip = (skipDefaults && flagTable[i].is_default());
+      const bool visited = iteratorMarkers.at(i);
+      if (!visited && !skip) {
+        if ((bestFlag == nullptr) || (strcmp(bestFlag->name(), flagTable[i].name()) > 0)) {
+          bestFlag = &flagTable[i];
+          bestFlagIndex = i;
+        }
       }
     }
-    FREE_C_HEAP_ARRAY(JVMFlag*, array);
-  } else {
-    // OOM? Print unsorted.
-    for (size_t i = 0; i < length; i++) {
-      if (flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
-        flagTable[i].print_on(out, withComments, printRanges);
-      }
+    if (bestFlag != nullptr) {
+      bestFlag->print_on(out, withComments, printRanges);
+      iteratorMarkers.at_put(bestFlagIndex, true);
     }
   }
 }

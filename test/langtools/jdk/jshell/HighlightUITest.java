@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8274148
  * @summary Check the UI behavior of snippet highligting
@@ -35,18 +35,18 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @compile HighlightUITest.java
- * @run testng HighlightUITest
+ * @run junit HighlightUITest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class HighlightUITest extends UITesting {
 
     public HighlightUITest() {
         super(true);
     }
 
+    @Test
     public void testHighlight() throws Exception {
         System.setProperty("test.enable.highlighter", "true");
         doRunTest((inputSink, out) -> {

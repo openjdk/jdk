@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
 
 package validation;
 
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -33,7 +31,6 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Source;
@@ -42,9 +39,7 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
@@ -55,11 +50,9 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6773084
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6773084Test
  * @run testng/othervm validation.Bug6773084Test
  * @summary Test Schema object is thread safe.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6773084Test {
     static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
@@ -99,7 +92,7 @@ public class Bug6773084Test {
         for (int i = 0; i < files.length; i++) {
             EXEC.execute(new XMLValiddator(dbf.newDocumentBuilder().parse(files[i]), i));
         }
-        runWithAllPerm(() -> EXEC.shutdown());
+        EXEC.shutdown();
         EXEC.awaitTermination(TIMEOUT, TimeUnit.SECONDS);
     }
 

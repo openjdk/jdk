@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </blockquote>
  *
  * <p>If the locale contains "rg" (region override)
- * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
+ * {@linkplain Locale##def_locale_extension Unicode extension},
  * the symbols are overridden for the designated region.
  *
  * <p>
@@ -145,10 +145,12 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @throws     java.util.MissingResourceException
      *             if the resources for the specified locale cannot be
      *             found or cannot be loaded.
+     * @throws     NullPointerException if {@code locale} is null
      */
     public DateFormatSymbols(Locale locale)
     {
-        initializeData(locale);
+        initializeData(Objects.requireNonNull(locale,
+            "locale should not be null"));
     }
 
     /**
@@ -344,20 +346,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @since 1.6
      */
     public static final DateFormatSymbols getInstance(Locale locale) {
-        DateFormatSymbols dfs = getProviderInstance(locale);
-        if (dfs != null) {
-            return dfs;
-        }
-        throw new RuntimeException("DateFormatSymbols instance creation failed.");
-    }
-
-    /**
-     * Returns a DateFormatSymbols provided by a provider or found in
-     * the cache. Note that this method returns a cached instance,
-     * not its clone. Therefore, the instance should never be given to
-     * an application.
-     */
-    static final DateFormatSymbols getInstanceRef(Locale locale) {
+        Objects.requireNonNull(locale, "locale should not be null");
         DateFormatSymbols dfs = getProviderInstance(locale);
         if (dfs != null) {
             return dfs;

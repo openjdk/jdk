@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package jdk.internal.net.http.websocket;
 
-import org.testng.annotations.Test;
 import jdk.internal.net.http.websocket.Frame.Opcode;
 
 import java.nio.ByteBuffer;
@@ -35,9 +34,11 @@ import java.util.function.IntUnaryOperator;
 
 import static java.util.OptionalInt.empty;
 import static java.util.OptionalInt.of;
-import static org.testng.Assert.assertEquals;
 import static jdk.internal.net.http.websocket.TestSupport.assertThrows;
 import static jdk.internal.net.http.websocket.TestSupport.forEachBufferPartition;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReaderTest {
 
@@ -128,15 +129,15 @@ public class ReaderTest {
                     for (ByteBuffer b : buffers) {
                         r.readFrame(b, c);
                     }
-                    assertEquals(fin, c.fin());
-                    assertEquals(rsv1, c.rsv1());
-                    assertEquals(rsv2, c.rsv2());
-                    assertEquals(rsv3, c.rsv3());
-                    assertEquals(opcode, c.opcode());
-                    assertEquals(mask.isPresent(), c.mask());
-                    assertEquals(payloadLen, c.payloadLen());
-                    assertEquals(mask, c.maskingKey());
-                    assertEquals(payloadLen == 0, c.isEndFrame());
+                    assertEquals(c.fin(), fin);
+                    assertEquals(c.rsv1(), rsv1);
+                    assertEquals(c.rsv2(), rsv2);
+                    assertEquals(c.rsv3(), rsv3);
+                    assertEquals(c.opcode(), opcode);
+                    assertEquals(c.mask(), mask.isPresent());
+                    assertEquals(c.payloadLen(), payloadLen);
+                    assertEquals(c.maskingKey(), mask);
+                    assertEquals(c.isEndFrame(), payloadLen == 0);
                 });
     }
 

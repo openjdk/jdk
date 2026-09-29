@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,30 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "classfile/classFileParser.hpp"
+#include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/recorder/service/jfrRecorderService.hpp"
+#include "jfr/support/jfrClassDefineEvent.hpp"
+#include "jfr/support/jfrKlassExtension.hpp"
+#include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrResolution.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/support/methodtracer/jfrMethodTracer.hpp"
+#include "jfr/support/methodtracer/jfrTraceTagging.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/klass.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/safepoint.hpp"
 
 bool Jfr::is_enabled() {
   return JfrRecorder::is_enabled();
@@ -67,7 +78,25 @@ void Jfr::on_create_vm_3() {
 }
 
 void Jfr::on_unloading_classes() {
-  JfrCheckpointManager::on_unloading_classes();
+  if (JfrRecorder::is_created() || JfrRecorder::is_started_on_commandline()) {
+    JfrCheckpointManager::on_unloading_classes();
+  }
+}
+
+void Jfr::on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS) {
+  JfrTraceId::assign(ik);
+  if (IS_EVENT_OR_HOST_KLASS(ik)) {
+    JfrEventClassTransformer::on_klass_creation(ik, parser, THREAD);
+  } else if (JfrMethodTracer::in_use()) {
+    JfrMethodTracer::on_klass_creation(ik, parser, THREAD);
+  }
+  if (!parser.is_internal()) {
+    JfrClassDefineEvent::on_creation(ik, parser, THREAD);
+  }
+}
+
+void Jfr::on_klass_redefinition(const InstanceKlass* ik, const InstanceKlass* scratch_klass) {
+  JfrTraceTagging::on_klass_redefinition(ik, scratch_klass);
 }
 
 bool Jfr::is_excluded(Thread* t) {
@@ -98,6 +127,10 @@ void Jfr::on_set_current_thread(JavaThread* jt, oop thread) {
   JfrThreadLocal::on_set_current_thread(jt, thread);
 }
 
+void Jfr::initialize_main_thread(JavaThread* jt) {
+  JfrThreadLocal::initialize_main_thread(jt);
+}
+
 void Jfr::on_resolution(const CallInfo& info, TRAPS) {
   JfrResolution::on_runtime_resolution(info, THREAD);
 }
@@ -118,15 +151,9 @@ void Jfr::on_resolution(const Parse* parse, const ciKlass* holder, const ciMetho
 }
 #endif
 
-#if INCLUDE_JVMCI
-void Jfr::on_resolution(const Method* caller, const Method* target, TRAPS) {
-  JfrResolution::on_jvmci_resolution(caller, target, CHECK);
-}
-#endif
-
-void Jfr::on_vm_shutdown(bool exception_handler, bool halt) {
+void Jfr::on_vm_shutdown(bool exception_handler /* false */, bool halt /* false */, bool oom /* false */) {
   if (!halt && JfrRecorder::is_recording()) {
-    JfrEmergencyDump::on_vm_shutdown(exception_handler);
+    JfrEmergencyDump::on_vm_shutdown(exception_handler, oom);
   }
 }
 
@@ -143,3 +170,39 @@ bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* delimiter
 bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
   return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
 }
+
+void Jfr::on_report_java_out_of_memory() {
+  if (CrashOnOutOfMemoryError && JfrRecorder::is_recording()) {
+    JfrRecorderService::emit_leakprofiler_events_on_oom();
+  }
+}
+
+void Jfr::on_definition(const InstanceKlass* ik, JavaThread* jt) {
+  const bool from_boot_loader_modules_image = JfrTraceId::has_preload_bootloader_bit(ik);
+  if (from_boot_loader_modules_image) {
+    JfrTraceId::clear_preload_bootloader_bit(ik);
+  }
+  if (JfrTraceId::has_preload_sticky_bit(ik)) {
+    assert(JfrMethodTracer::in_use(), "invariant");
+    JfrMethodTracer::on_definition(ik, jt);
+  }
+  JfrClassDefineEvent::send_event(ik, from_boot_loader_modules_image, jt);
+}
+
+void Jfr::on_deallocation(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+  if (JfrMethodTracer::in_use() && JfrTraceId::has_sticky_bit(k)) {
+    JfrKlassUnloading::add_to_unloaded_set(k);
+  }
+}
+
+#if INCLUDE_CDS
+void Jfr::on_restoration(const Klass* k, JavaThread* jt) {
+  assert(k != nullptr, "invariant");
+  JfrTraceId::restore(k);
+  if (k->is_instance_klass()) {
+    JfrClassDefineEvent::on_restoration(InstanceKlass::cast(k), jt);
+  }
+}
+#endif

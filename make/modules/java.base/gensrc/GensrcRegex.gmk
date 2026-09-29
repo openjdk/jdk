@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,13 @@
 # questions.
 #
 
-#
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 # Rules to create java files under
 # $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/
-#
+################################################################################
 
 GENSRC_INDICCONJUNCTBREAK := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/IndicConjunctBreak.java
 
@@ -44,3 +47,8 @@ $(GENSRC_INDICCONJUNCTBREAK): $(BUILD_TOOLS_JDK) $(INDICCONJUNCTBREAKTEMP) $(IND
 	    $(INDICCONJUNCTBREAKPARAMS)
 
 TARGETS += $(GENSRC_INDICCONJUNCTBREAK)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

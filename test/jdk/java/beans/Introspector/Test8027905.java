@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@ import java.beans.PropertyDescriptor;
  * @test
  * @bug 8027905
  * @summary Tests that GC does not affect a property type
- * @author Sergey Malenkov
- * @run main/othervm -mx16m Test8027905
+ * @run main/othervm -Xmx16m Test8027905
  */
 
 public class Test8027905 {

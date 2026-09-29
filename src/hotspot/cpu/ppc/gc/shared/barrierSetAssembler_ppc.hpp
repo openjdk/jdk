@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,18 @@
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
+#ifdef COMPILER2
+#include "code/vmreg.hpp"
+#include "opto/optoreg.hpp"
+#include "opto/regmask.hpp"
+
+class BarrierStubC2;
+class Node;
+#endif // COMPILER2
 
 enum class NMethodPatchingType {
   stw_instruction_and_data_patch,
-  conc_instruction_and_data_patch,
-  conc_data_patch
+  conc_instruction_and_data_patch
 };
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
@@ -53,6 +60,9 @@ public:
                        Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null = nullptr);
 
+  virtual void flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                               Register src, Register dst, Register value_field_layout_info);
+
   virtual void resolve_jobject(MacroAssembler* masm, Register value,
                                Register tmp1, Register tmp2,
                                MacroAssembler::PreservationLevel preservation_level);
@@ -63,6 +73,11 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
+  // See AS_NO_KEEPALIVE for peek semantics
+  // weak_handle and obj may alias
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                               Register tmp, Label& slow_path);
+
   virtual void barrier_stubs_init() {}
 
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
@@ -71,6 +86,42 @@ public:
   virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void check_oop(MacroAssembler *masm, Register oop, const char* msg);
+
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node, OptoReg::Name opto_reg) const;
+#endif // COMPILER2
 };
+
+#ifdef COMPILER2
+
+// This class saves and restores the registers that need to be preserved across
+// the runtime call represented by a given C2 barrier stub. Use as follows:
+// {
+//   SaveLiveRegisters save(masm, stub);
+//   ..
+//   __ call_VM_leaf(...);
+//   ..
+// }
+class SaveLiveRegisters {
+  MacroAssembler* _masm;
+  RegMask _reg_mask;
+  int _frame_size;
+
+ public:
+  SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub);
+
+  ~SaveLiveRegisters();
+
+ private:
+  enum IterationAction : int {
+    ACTION_SAVE,
+    ACTION_RESTORE,
+    ACTION_COUNT_ONLY
+  };
+
+  int iterate_over_register_mask(IterationAction action, int offset = 0);
+};
+
+#endif // COMPILER2
 
 #endif // CPU_PPC_GC_SHARED_BARRIERSETASSEMBLER_PPC_HPP

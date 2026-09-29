@@ -32,7 +32,8 @@ choose `File -> Open Workspace...` in Visual Studio Code.
 The main `vscode-project` target configures the default C++ support in Visual
 Studio Code. There are also other source indexers that can be installed, that
 may provide additional features. It's currently possible to generate
-configuration for two such indexers, [clangd](https://clang.llvm.org/extra/clangd/)
+configuration for three such indexers, [clangd](https://clang.llvm.org/extra/clangd/),
+[ccls](https://github.com/MaskRay/ccls/wiki/Visual-Studio-Code)
 and [rtags](https://github.com/Andersbakken/rtags). These can be configured by
 appending the name of the indexer to the make target, such as:
 
@@ -99,14 +100,6 @@ make eclipse-mixed-env
 
 Do note that this generates all features that come with both Java and C/C++
 natures.
-
-By default, the Eclipse Workspace is located in the ide subdirectory in the
-build output. To share the JDK's source directory with the Eclipse Workspace,
-you can instead run:
-
-```
-make eclipse-shared-<ENV>-env
-```
 
 Eclipse support in the JDK is relatively new, so do keep in mind that not
 everything may work at the moment. As such, the resulting Workspace also
@@ -175,13 +168,6 @@ Java Workspace.
 If doing so results in an error, you can also import the JDK via
 `File -> Import -> Existing Projects into Workspace`
 as a last resort.
-
-Alternatively, if you want a Java Workspace inside the JDK's source directory,
-you can instead run:
-
-```
-make eclipse-shared-java-env
-```
 
 As mentioned above for Eclipse CDT, you can create a combined Java and C/C++
 Workspace which can conveniently switch between Java and C/C++ natures during

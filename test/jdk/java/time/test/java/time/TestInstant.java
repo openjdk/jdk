@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,18 +59,25 @@
  */
 package test.java.time;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test Instant.
- * @bug 8273369
+ * @bug 8273369 8331202 8364752
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestInstant extends AbstractTest {
 
     @Test
@@ -78,7 +85,6 @@ public class TestInstant extends AbstractTest {
         assertImmutable(Instant.class);
     }
 
-    @DataProvider(name="sampleEpochMillis")
     private Object[][] provider_sampleEpochMillis() {
         return new Object[][] {
             {"Long.MAX_VALUE", Long.MAX_VALUE},
@@ -91,11 +97,12 @@ public class TestInstant extends AbstractTest {
         };
     }
 
-    @Test(dataProvider="sampleEpochMillis")
+    @ParameterizedTest
+    @MethodSource("provider_sampleEpochMillis")
     public void test_epochMillis(String name, long millis) {
         Instant t1 = Instant.ofEpochMilli(millis);
         long m = t1.toEpochMilli();
-        assertEquals(millis, m, name);
+        assertEquals(m, millis, name);
     }
 
     /**
@@ -108,7 +115,7 @@ public class TestInstant extends AbstractTest {
         var nanoMax = Instant.EPOCH.plusNanos(Long.MAX_VALUE);
         var totalMicros = Instant.EPOCH.until(nanoMax, ChronoUnit.MICROS);
         var plusOneMicro = Instant.EPOCH.until(nanoMax.plusNanos(1000), ChronoUnit.MICROS);
-        assertEquals(plusOneMicro - totalMicros, 1L);
+        assertEquals(1L, plusOneMicro - totalMicros);
     }
 
     /**
@@ -117,7 +124,88 @@ public class TestInstant extends AbstractTest {
      */
     @Test
     public void test_millisUntil() {
-        assertEquals(Instant.MIN.until(Instant.MIN.plusSeconds(1), ChronoUnit.MILLIS), 1000L);
-        assertEquals(Instant.MAX.plusSeconds(-1).until(Instant.MAX, ChronoUnit.MILLIS), 1000L);
+        assertEquals(1000L, Instant.MIN.until(Instant.MIN.plusSeconds(1), ChronoUnit.MILLIS));
+        assertEquals(1000L, Instant.MAX.plusSeconds(-1).until(Instant.MAX, ChronoUnit.MILLIS));
+    }
+
+    private Object[][] provider_until_1arg() {
+        Instant t1 = Instant.ofEpochSecond(0, 10);
+        Instant t2 = Instant.ofEpochSecond(10, -20);
+        return new Object[][] {
+            {t1, t2},
+            {t2, t1},
+            {Instant.MIN, Instant.MAX},
+            {Instant.MAX, Instant.MIN},
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("provider_until_1arg")
+    public void test_until_1arg(Instant start, Instant end) {
+        Duration result = start.until(end);
+        Duration expected = Duration.ofSeconds(end.getEpochSecond() - start.getEpochSecond(),
+                end.getNano() - start.getNano());
+        assertEquals(expected, result);
+        expected = Duration.between(start, end);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void test_until_1arg_NPE() {
+        assertThrows(NullPointerException.class, () -> Instant.now().until(null));
+    }
+
+    private Object[][] valid_instants() {
+        var I1 = OffsetDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneOffset.of("+02")).toInstant();
+        var I2 = OffsetDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneOffset.of("+02:02")).toInstant();
+        var I3 = OffsetDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneOffset.of("+02:02:02")).toInstant();
+        var I4 = OffsetDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneOffset.of("Z")).toInstant();
+        return new Object[][] {
+            {"2017-01-01T00:00:00.000+02", I1},
+            {"2017-01-01T00:00:00.000+0200", I1},
+            {"2017-01-01T00:00:00.000+02:00", I1},
+            {"2017-01-01T00:00:00.000+020000", I1},
+            {"2017-01-01T00:00:00.000+02:00:00", I1},
+
+            {"2017-01-01T00:00:00.000+0202", I2},
+            {"2017-01-01T00:00:00.000+02:02", I2},
+
+            {"2017-01-01T00:00:00.000+020202", I3},
+            {"2017-01-01T00:00:00.000+02:02:02", I3},
+
+            {"2017-01-01T00:00:00.000Z", I4},
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("valid_instants")
+    public void test_parse_valid(String instant, Instant expected) {
+        assertEquals(expected, Instant.parse(instant));
+    }
+
+    private Object[][] invalid_instants() {
+        return new Object[][] {
+            {"2017-01-01T00:00:00.000"},
+            {"2017-01-01T00:00:00.000+0"},
+            {"2017-01-01T00:00:00.000+0:"},
+            {"2017-01-01T00:00:00.000+02:"},
+            {"2017-01-01T00:00:00.000+020"},
+            {"2017-01-01T00:00:00.000+02:0"},
+            {"2017-01-01T00:00:00.000+02:0:"},
+            {"2017-01-01T00:00:00.000+02:00:"},
+            {"2017-01-01T00:00:00.000+02:000"},
+            {"2017-01-01T00:00:00.000+02:00:0"},
+            {"2017-01-01T00:00:00.000+02:00:0:"},
+            {"2017-01-01T00:00:00.000+0200000"},
+            {"2017-01-01T00:00:00.000+02:00:000"},
+            {"2017-01-01T00:00:00.000+02:00:00:"},
+            {"2017-01-01T00:00:00.000UTC"},
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalid_instants")
+    public void test_parse_invalid(String instant) {
+        assertThrows(DateTimeParseException.class, () -> Instant.parse(instant));
     }
 }

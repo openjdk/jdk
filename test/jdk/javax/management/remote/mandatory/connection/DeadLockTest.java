@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@
  * @summary test on a client notification deadlock.
  * @author Shanliang JIANG
  *
+ * @requires vm.compMode != "Xcomp"
+ * @comment Running with -Xcomp is likely to cause a timeout while establishing the connection
+ *          (RMI: java.rmi.NoSuchObjectException: no such object in table).
+ *
  * @run clean DeadLockTest
  * @run build DeadLockTest
  * @run main DeadLockTest
@@ -46,21 +50,23 @@ public class DeadLockTest {
     public static void main(String[] args) {
         System.out.println(">>> test on a client notification deadlock.");
 
-        boolean ok = true;
+        boolean fail = false;
         for (int i = 0; i < protocols.length; i++) {
             try {
                 test(protocols[i]);
             } catch (Exception e) {
+                fail = true; // any one protocol failure, fails the test
                 System.out.println(">>> Test failed for " + protocols[i]);
                 e.printStackTrace(System.out);
             }
         }
-
+        if (fail) {
+            throw new RuntimeException("FAILED");
+        }
         System.out.println(">>> Test passed");
     }
 
-    private static void test(String proto)
-            throws Exception {
+    private static void test(String proto) throws Exception {
         System.out.println(">>> Test for protocol " + proto);
 
         JMXServiceURL u = null;
@@ -78,6 +84,7 @@ public class DeadLockTest {
             server = JMXConnectorServerFactory.newJMXConnectorServer(u, env, mbs);
         } catch (MalformedURLException e) {
             System.out.println(">>> Skipping unsupported URL " + proto);
+            return; // skip testing this protocol
         }
 
         server.start();
@@ -101,10 +108,10 @@ public class DeadLockTest {
             // which should be closed by the server.
             conn.getDefaultDomain();
 
-            // allow the listner to have time to work
+            // allow the listener to have time to work
             Thread.sleep(100);
 
-            // get a closed notif, should no block.
+            // get a closed notif, should not block.
             client.close();
             Thread.sleep(100);
 
@@ -136,7 +143,7 @@ public class DeadLockTest {
                     try {
                         conn.getDefaultDomain();
                     } catch (IOException ioe) {
-                        // Greate !
+                        // OK
                     }
 
                     synchronized(this) {

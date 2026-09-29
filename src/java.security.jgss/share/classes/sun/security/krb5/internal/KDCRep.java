@@ -35,6 +35,8 @@ import sun.security.util.*;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * Implements the ASN.1 KDC-REP type.
  *
@@ -68,7 +70,6 @@ public class KDCRep {
     private int pvno;
     private int msgType;
     public PAData[] pAData = null; //optional
-    private boolean DEBUG = Krb5.DEBUG;
 
     public KDCRep(
             PAData[] new_pAData,
@@ -131,8 +132,8 @@ public class KDCRep {
             KrbApErrException {
         DerValue der, subDer;
         if ((encoding.getTag() & 0x1F) != req_type) {
-            if (DEBUG) {
-                System.out.println(">>> KDCRep: init() " +
+            if (DEBUG != null) {
+                DEBUG.println(">>> KDCRep: init() " +
                         "encoding tag is " +
                         encoding.getTag() +
                         " req type is " + req_type);

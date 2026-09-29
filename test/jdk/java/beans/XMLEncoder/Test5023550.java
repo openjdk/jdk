@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 5023550
  * @summary Tests complex references to owner
- * @run main/othervm -Djava.security.manager=allow Test5023550
+ * @run main/othervm Test5023550
  * @author Sergey Malenkov
  */
 
@@ -37,7 +37,7 @@ import java.beans.XMLEncoder;
 
 public class Test5023550 extends AbstractTest {
     public static void main(String[] args) {
-        new Test5023550().test(true);
+        new Test5023550().test();
     }
 
     private final Owner owner = new Owner();

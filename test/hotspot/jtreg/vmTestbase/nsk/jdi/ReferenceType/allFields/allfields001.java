@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,11 @@ import java.io.*;
  * of the JDI interface <code>ReferenceType</code> of com.sun.jdi package
  */
 
-public class allfields001 extends Log {
+public class allfields001 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;  // test argument -vbs or -verbose switches to static
                                           // - for more easy failure evaluation
+    static Log log;
 
     /** The main class names of the debugger & debugee applications. */
     private final static String
@@ -121,13 +122,13 @@ public class allfields001 extends Log {
 
     };
 
-    /**
-     * Re-call to <code>run(args,out)</code>, and exit with
-     * either status 95 or 97 (JCK-like exit status).
-     */
+
     public static void main (String argv[]) {
-        int exitCode = run(argv,System.out);
-        System.exit(exitCode + 95/*STATUS_TEMP*/);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
+
     }
 
     /**
@@ -148,7 +149,7 @@ public class allfields001 extends Log {
     }
 
     private void print_log_on_verbose(String message) {
-        display(message);
+        log.display(message);
     }
 
     /**
@@ -167,11 +168,9 @@ public class allfields001 extends Log {
         out_stream.println("    of the com.sun.jdi package\n");
 
         String debugee_launch_command = debugeeName;
-        if (verbose_mode) {
-            logTo(out_stream);
-        }
+        log = new Log(out_stream, argHandler);
 
-        Binder binder = new Binder(argHandler,this);
+        Binder binder = new Binder(argHandler, log);
         Debugee debugee = binder.bindToDebugee(debugee_launch_command);
         IOPipe pipe = new IOPipe(debugee);
 

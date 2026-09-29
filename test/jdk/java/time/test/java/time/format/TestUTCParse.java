@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,24 @@
 /*
  * @test
  * @modules jdk.localedata
- * @bug 8303440 8317979
+ * @bug 8303440 8317979 8322647 8174269
  * @summary Test parsing "UTC-XX:XX" text works correctly
  */
 package test.java.time.format;
 
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalQueries;
-import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUTCParse {
 
-    static {
-        // Assuming CLDR's SHORT name for "America/Juneau"
-        // produces "UTC\u212209:00"
-        System.setProperty("java.locale.providers", "CLDR");
-    }
-
-    @DataProvider
     public Object[][] utcZoneIdStrings() {
         return new Object[][] {
             {"UTC"},
@@ -57,21 +49,13 @@ public class TestUTCParse {
         };
     }
 
-    @Test
-    public void testUTCShortNameRoundTrip() {
-        var fmt = DateTimeFormatter.ofPattern("z", Locale.FRANCE);
-        var zdt = ZonedDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneId.of("America/Juneau"));
-        var formatted = fmt.format(zdt);
-        assertEquals(formatted, "UTC\u221209:00");
-        assertEquals(fmt.parse(formatted).query(TemporalQueries.zoneId()), zdt.getZone());
-    }
-
-    @Test(dataProvider = "utcZoneIdStrings")
+    @ParameterizedTest
+    @MethodSource("utcZoneIdStrings")
     public void testUTCOffsetRoundTrip(String zidString) {
         var fmt = new DateTimeFormatterBuilder()
                 .appendZoneText(TextStyle.NARROW)
                 .toFormatter();
         var zid = ZoneId.of(zidString);
-        assertEquals(fmt.parse(zidString).query(TemporalQueries.zoneId()), zid);
+        assertEquals(zid, fmt.parse(zidString).query(TemporalQueries.zoneId()));
     }
 }

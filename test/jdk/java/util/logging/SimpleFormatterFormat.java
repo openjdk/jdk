@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  */
 
 import java.io.*;
+import java.util.Locale;
 import java.util.logging.*;
 import java.util.regex.*;
 
@@ -38,6 +39,8 @@ public class SimpleFormatterFormat {
     private static final String origFormat = System.getProperty(key);
     private static final PrintStream err = System.err;
     public static void main(String[] args) throws Exception {
+        Locale savedLocale = Locale.getDefault();
+        Locale.setDefault(Locale.US);
         try {
             File dir = new File(System.getProperty("user.dir", "."));
             File log = new File(dir, "simpleformat.txt");
@@ -53,7 +56,8 @@ public class SimpleFormatterFormat {
                 System.setProperty(key, origFormat);
             }
             System.setErr(err);
-       }
+        }
+        Locale.setDefault(savedLocale);
     }
 
     private static String[] loggers = new String[] {

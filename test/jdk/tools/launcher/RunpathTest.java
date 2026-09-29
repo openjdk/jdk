@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 7190813 8022719
- * @summary Check for extended  RPATHs on *nixes
+ * @summary Check for extended RPATHs on Linux
+ * @requires os.family == "linux"
  * @compile -XDignore.symbol.file RunpathTest.java
  * @run main RunpathTest
  * @author ksrini
@@ -57,25 +58,23 @@ public class RunpathTest extends TestHelper {
         final TestResult tr = doExec(elfreaderCmd, "-d", javacmd);
         if (!tr.matches(expectedRpath)) {
             System.out.println(tr);
-            throw new RuntimeException("FAILED: RPATH/RUNPATH strings " +
+            throw new RuntimeException("FAILED: RPATH strings " +
                     expectedRpath + " not found in " + javaCmd);
         }
-        System.out.println(javacmd + " contains expected RPATHS/RUNPATH");
+        System.out.println(javacmd + " contains expected RPATHS");
     }
 
     void testRpath() {
-        String expectedRpath = ".*R(UN)?PATH.*\\$ORIGIN/../lib.*";
+        String expectedRpath = ".*RPATH.*\\$ORIGIN/../lib.*";
         elfCheck(javaCmd, expectedRpath);
     }
 
     public static void main(String... args) throws Exception {
-        if (isLinux) {
-            RunpathTest rp = new RunpathTest();
-            if (rp.elfreaderCmd == null) {
-                System.err.println("Warning: test passes vacuously");
-                return;
-            }
-            rp.testRpath();
+        RunpathTest rp = new RunpathTest();
+        if (rp.elfreaderCmd == null) {
+            System.err.println("Warning: test passes vacuously");
+            return;
         }
+        rp.testRpath();
     }
 }

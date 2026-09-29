@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,18 @@
  */
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * @test
- * @summary test execution priority of main methods
- * @run main InstanceMainTest
+ * @bug 8329420 8377004
+ * @summary test execution priority and behavior of main methods
+ * @run main/timeout=480 InstanceMainTest
  */
 public class InstanceMainTest extends TestHelper {
+    private static String JAVA_VERSION = System.getProperty("java.specification.version");
 
     private static final String[] SOURCES = new String[] {
             // static dominating with args
@@ -175,16 +180,394 @@ public class InstanceMainTest extends TestHelper {
             """
     };
 
-    public static void main(String... args) throws Exception {
+    private static void testMethodOrder() throws Exception {
         for (String source : SOURCES) {
-            Files.writeString(Path.of("MainClass.java"), source);
-            var version = System.getProperty("java.specification.version");
-            var tr = doExec(javaCmd, "--enable-preview", "--source", version, "MainClass.java");
-            if (!tr.isOK()) {
-                System.err.println(source);
-                System.err.println(tr);
-                throw new AssertionError();
-            }
+            performTest(source, true, tr -> {
+                if (!tr.isOK()) {
+                    System.err.println(source);
+                    System.err.println(tr);
+                    throw new AssertionError();
+                }
+            });
         }
+    }
+
+    record TestCase(String sourceCode, boolean enablePreview, List<String> expectedOutput) {
+
+        public TestCase(String sourceCode, List<String> expectedOutput) {
+            this(sourceCode, true, expectedOutput);
+        }
+
+    }
+
+    private static final TestCase[] EXECUTION_ORDER = new TestCase[] {
+            new TestCase("""
+                     public class MainClass {
+                         public MainClass() {
+                             System.out.println("Constructor called!");
+                         }
+                         public static void main() {
+                             System.out.println("main called!");
+                         }
+                     }
+                     """,
+                    List.of("main called!")),
+            new TestCase("""
+                     public class MainClass {
+                         public MainClass() {
+                             System.out.println("Constructor called!");
+                         }
+                         public void main() {
+                             System.out.println("main called!");
+                         }
+                     }
+                     """,
+                    List.of("Constructor called!", "main called!"))
+    };
+
+    private static void testExecutionOrder() throws Exception {
+        for (TestCase testCase : EXECUTION_ORDER) {
+            performTest(testCase.sourceCode, testCase.enablePreview(), tr -> {
+                assertEquals(testCase.expectedOutput, tr.testOutput);
+            });
+        }
+    }
+
+    private static final TestCase[] EXECUTION_ERRORS = new TestCase[] {
+            new TestCase("""
+                     public class MainClass {
+                         public MainClass() {
+                             System.out.println("Constructor called!");
+                             if (true) throw new Error();
+                         }
+                         public void main(String... args) {
+                             System.out.println("main called!");
+                         }
+                     }
+                     """,
+                    List.of("Constructor called!",
+                            "Exception in thread \"main\" java.lang.Error",
+                            "\tat MainClass.<init>(MainClass.java:4)")),
+            new TestCase("""
+                     public class MainClass {
+                         public MainClass() {
+                             System.out.println("Constructor called!");
+                             if (true) throw new Error();
+                         }
+                         public void main() {
+                             System.out.println("main called!");
+                         }
+                     }
+                     """,
+                    List.of("Constructor called!",
+                            "Exception in thread \"main\" java.lang.Error",
+                            "\tat MainClass.<init>(MainClass.java:4)")),
+            new TestCase("""
+                     public class MainClass {
+                         static int idx;
+                         public MainClass() {
+                             System.out.println("Constructor called!");
+                             if (idx++ == 0) throw new Error();
+                         }
+                         public void main(String... args) {
+                             System.out.println("main called!");
+                         }
+                         public void main() {
+                             System.out.println("main called!");
+                         }
+                     }
+                     """,
+                    List.of("Constructor called!",
+                            "Exception in thread \"main\" java.lang.Error",
+                            "\tat MainClass.<init>(MainClass.java:5)")),
+            new TestCase("""
+                     public class MainClass {
+                         static {
+                             System.out.println("static init called!");
+                             if (true) throw new Error();
+                         }
+                         public static void main(String... args) {
+                             System.out.println("main called!");
+                         }
+                     }
+                     """,
+                    false,
+                    List.of("static init called!",
+                            "Exception in thread \"main\" java.lang.Error",
+                            "\tat MainClass.<clinit>(MainClass.java:4)")),
+            new TestCase("""
+                     public class MainClass {
+                         static {
+                             System.out.println("static init called!");
+                             if (true) throw new Error();
+                         }
+                         public static void main(String... args) {
+                             System.out.println("main called!");
+                         }
+                     }
+                     """,
+                    true,
+                    List.of("static init called!",
+                            "Exception in thread \"main\" java.lang.Error",
+                            "\tat MainClass.<clinit>(MainClass.java:4)")),
+            new TestCase("""
+                     public class MainClass {
+                         static {
+                             System.out.println("static init called!");
+                             if (true) throw new Error();
+                         }
+                         public void main(String... args) {
+                             System.out.println("main called!");
+                         }
+                     }
+                     """,
+                    true,
+                    List.of("static init called!",
+                            "Exception in thread \"main\" java.lang.Error",
+                            "\tat MainClass.<clinit>(MainClass.java:4)")),
+    };
+
+    private static void testExecutionErrors() throws Exception {
+        for (TestCase testCase : EXECUTION_ERRORS) {
+            performTest(testCase.sourceCode, testCase.enablePreview(), tr -> {
+                for (int i = 0; i < testCase.expectedOutput.size(); i++) {
+                    if (i >= tr.testOutput.size() ||
+                            !Objects.equals(testCase.expectedOutput.get(i),
+                                    tr.testOutput.get(i))) {
+                        throw new AssertionError("Unexpected output, " +
+                                "expected: " + testCase.expectedOutput +
+                                ", actual: " + tr.testOutput +
+                                ", failed comparison at index: " + i);
+                    }
+                }
+            });
+        }
+    }
+
+    private static void performTest(String source, boolean enablePreview, Consumer<TestResult> validator) throws Exception {
+        Path mainClass = Path.of("MainClass.java");
+        Files.writeString(mainClass, source);
+        var previewRuntime = enablePreview ? "--enable-preview" : "-DtestNoPreview";
+        var previewCompile = enablePreview ? "--enable-preview" : "-XDtestNoPreview";
+        var trSource = doExec(javaCmd, previewRuntime, "--source", JAVA_VERSION, "MainClass.java");
+        validator.accept(trSource);
+        compile(previewCompile, "--source", JAVA_VERSION, "MainClass.java");
+        String cp = mainClass.toAbsolutePath().getParent().toString();
+        var trCompile = doExec(javaCmd, previewRuntime, "--class-path", cp, "MainClass");
+        validator.accept(trCompile);
+    }
+
+    private static void testInheritance() throws Exception {
+        Path testInheritance = Path.of("testInheritance");
+        Path src = testInheritance.resolve("src");
+        Path classes = testInheritance.resolve("classes");
+        Path mainClass = src.resolve("Main.java");
+        Path libClass = src.resolve("p").resolve("Lib.java");
+
+        Files.createDirectories(libClass.getParent());
+
+        Files.writeString(mainClass,
+                          """
+                          import p.Lib;
+
+                          public class Main extends Lib {
+                              public void main() {
+                                  System.err.println("Main!");
+                              }
+                          }
+                          """);
+
+        {
+            Files.writeString(libClass,
+                              """
+                              package p;
+                              public class Lib {
+                                  void main(String... args) {
+                                      System.err.println("Lib!");
+                                  }
+                              }
+                              """);
+            compile("--release", JAVA_VERSION, "-d", classes.toString(), mainClass.toString(), libClass.toString());
+            var tr = doExec(javaCmd, "--class-path", classes.toString(), "Main");
+            assertEquals(List.of("Main!"), tr.testOutput);
+        }
+
+        {
+            Files.writeString(libClass,
+                              """
+                              package p;
+                              public class Lib {
+                                  protected void main(String... args) {
+                                      System.err.println("Lib!");
+                                  }
+                              }
+                              """);
+            compile("--release", JAVA_VERSION, "-d", classes.toString(), mainClass.toString(), libClass.toString());
+            var tr = doExec(javaCmd, "--class-path", classes.toString(), "Main");
+            assertEquals(List.of("Lib!"), tr.testOutput);
+        }
+
+        {
+            Files.writeString(libClass,
+                              """
+                              package p;
+                              public class Lib {
+                                  public void main(String... args) {
+                                      System.err.println("Lib!");
+                                  }
+                              }
+                              """);
+            compile("--release", JAVA_VERSION, "-d", classes.toString(), mainClass.toString(), libClass.toString());
+            var tr = doExec(javaCmd, "--class-path", classes.toString(), "Main");
+            assertEquals(List.of("Lib!"), tr.testOutput);
+        }
+
+        {
+            Files.writeString(mainClass,
+                              """
+                              package p;
+
+                              public class Main extends Lib {
+                                  public void main() {
+                                      System.err.println("Main!");
+                                  }
+                              }
+                              """);
+
+            Files.writeString(libClass,
+                              """
+                              package p;
+                              public class Lib {
+                                  void main(String... args) {
+                                      System.err.println("Lib!");
+                                  }
+                              }
+                              """);
+            compile("--release", JAVA_VERSION, "-d", classes.toString(), mainClass.toString(), libClass.toString());
+            var tr = doExec(javaCmd, "--class-path", classes.toString(), "p.Main");
+            assertEquals(List.of("Lib!"), tr.testOutput);
+        }
+
+        {
+            Files.writeString(mainClass,
+                              """
+                              package p;
+
+                              public class Main implements Lib {
+                                  public void main() {
+                                      System.err.println("Main!");
+                                  }
+                              }
+                              """);
+
+            Files.writeString(libClass,
+                              """
+                              package p;
+                              public interface Lib {
+                                  public default void main(String... args) {
+                                      System.err.println("Lib!");
+                                  }
+                              }
+                              """);
+            compile("--release", JAVA_VERSION, "-d", classes.toString(), mainClass.toString(), libClass.toString());
+            var tr = doExec(javaCmd, "--class-path", classes.toString(), "p.Main");
+            assertEquals(List.of("Lib!"), tr.testOutput);
+        }
+
+        {
+            Files.writeString(mainClass,
+                              """
+                              package p;
+
+                              public class Main implements Lib {
+                                  public void main() {
+                                      System.err.println("Main!");
+                                  }
+                              }
+                              """);
+
+            Files.writeString(libClass,
+                              """
+                              package p;
+                              public interface Lib {
+                                  public static void main(String... args) {
+                                      System.err.println("Lib!");
+                                  }
+                              }
+                              """);
+            compile("--release", JAVA_VERSION, "-d", classes.toString(), mainClass.toString(), libClass.toString());
+            var tr = doExec(javaCmd, "--class-path", classes.toString(), "p.Main");
+            assertEquals(List.of("Main!"), tr.testOutput);
+        }
+
+        {
+            Files.writeString(mainClass,
+                              """
+                              package p;
+
+                              public class Main extends AbstractClass implements Lib {
+                              }
+                              abstract class AbstractClass {
+                                   public void main(String... args) {
+                                       System.err.println("Correct.");
+                                   }
+                              }
+                              """);
+
+            Files.writeString(libClass,
+                              """
+                              package p;
+                              public interface Lib {
+                                  default void main(String... args) {
+                                      System.err.println("Incorrect!");
+                                  }
+                              }
+                              """);
+            compile("--release", JAVA_VERSION, "-d", classes.toString(), mainClass.toString(), libClass.toString());
+            var tr = doExec(javaCmd, "--class-path", classes.toString(), "p.Main");
+            assertEquals(List.of("Correct."), tr.testOutput);
+        }
+
+        {
+            Files.writeString(mainClass,
+                              """
+                              package p;
+
+                              public class Main extends AbstractClass implements Lib {
+                              }
+                              abstract class AbstractClass {
+                                   public void main() {
+                                       System.err.println("Incorrect!");
+                                   }
+                              }
+                              """);
+
+            Files.writeString(libClass,
+                              """
+                              package p;
+                              public interface Lib {
+                                  default void main(String... args) {
+                                      System.err.println("Correct.");
+                                  }
+                              }
+                              """);
+            compile("--release", JAVA_VERSION, "-d", classes.toString(), mainClass.toString(), libClass.toString());
+            var tr = doExec(javaCmd, "--class-path", classes.toString(), "p.Main");
+            assertEquals(List.of("Correct."), tr.testOutput);
+        }
+    }
+
+    private static void assertEquals(List<String> expected, List<String> actual) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError("Unexpected output, " +
+                    "expected: " + expected +
+                    ", actual: " + actual);
+        }
+    }
+    public static void main(String... args) throws Exception {
+        testMethodOrder();
+        testExecutionOrder();
+        testExecutionErrors();
+        testInheritance();
     }
 }

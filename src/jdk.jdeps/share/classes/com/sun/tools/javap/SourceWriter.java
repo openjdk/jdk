@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class SourceWriter extends InstructionDetailWriter {
     private void setLineMap(CodeModel attr) {
         SortedMap<Integer, SortedSet<Integer>> map = new TreeMap<>();
         SortedSet<Integer> allLines = new TreeSet<>();
-        for (var t : attr.findAttributes(Attributes.LINE_NUMBER_TABLE)) {
+        for (var t : attr.findAttributes(Attributes.lineNumberTable())) {
             for (var e: t.lineNumbers()) {
                 int start_pc = e.startPc();
                 int line = e.lineNumber();
@@ -145,7 +145,7 @@ public class SourceWriter extends InstructionDetailWriter {
         // InnerClasses and EnclosingMethod attributes.
         try {
             String className = cf.thisClass().asInternalName();
-            var sf = cf.findAttribute(Attributes.SOURCE_FILE);
+            var sf = cf.findAttribute(Attributes.sourceFile());
             if (sf.isEmpty()) {
                 report(messages.getMessage("err.no.SourceFile.attribute"));
                 return null;

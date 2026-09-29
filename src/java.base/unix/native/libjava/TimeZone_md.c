@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,46 +37,16 @@
 #include <unistd.h>
 
 #include "jvm.h"
+#include "jni_util.h"
 #include "TimeZone_md.h"
 #include "path_util.h"
 
-static char *isFileIdentical(char* buf, size_t size, char *pathname);
-
-#define SKIP_SPACE(p)   while (*p == ' ' || *p == '\t') p++;
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-#define fileopen        fopen
-#define filegets        fgets
-#define fileclose       fclose
-
-#if defined(_ALLBSD_SOURCE)
-#define stat64 stat
-#define lstat64 lstat
-#define fstat64 fstat
-#endif
-
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
-static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
+#if defined(__linux__) || defined(MACOSX)
 static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
 static const char *DEFAULT_ZONEINFO_FILE = "/etc/localtime";
-#else
-static const char *SYS_INIT_FILE = "/etc/default/init";
-static const char *ZONEINFO_DIR = "/usr/share/lib/zoneinfo";
-static const char *DEFAULT_ZONEINFO_FILE = "/usr/share/lib/zoneinfo/localtime";
-#endif /* defined(__linux__) || defined(_ALLBSD_SOURCE) */
-
 static const char popularZones[][4] = {"UTC", "GMT"};
 
-#if defined(_AIX)
-static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
-#endif
-
-#if defined(__linux__) || defined(MACOSX)
+static char *isFileIdentical(char* buf, size_t size, char *pathname);
 
 /*
  * remove repeated path separators ('/') in the given 'path'.
@@ -114,7 +84,7 @@ getZoneName(char *str)
 {
     static const char *zidir = "zoneinfo/";
 
-    char *pos = strstr((const char *)str, zidir);
+    char* pos = strstr(str, zidir);
     if (pos == NULL) {
         return NULL;
     }
@@ -140,7 +110,7 @@ getPathName(const char *dir, const char *name) {
 /*
  * Scans the specified directory and its subdirectories to find a
  * zoneinfo file which has the same content as /etc/localtime on Linux
- * or /usr/share/lib/zoneinfo/localtime on Solaris given in 'buf'.
+ * given in 'buf'.
  * If file is symbolic link, then the contents it points to are in buf.
  * Returns a zone ID if found, otherwise, NULL is returned.
  */
@@ -219,12 +189,12 @@ static char *
 isFileIdentical(char *buf, size_t size, char *pathname)
 {
     char *possibleMatch = NULL;
-    struct stat64 statbuf;
+    struct stat statbuf;
     char *dbuf = NULL;
     int fd = -1;
     int res;
 
-    RESTARTABLE(stat64(pathname, &statbuf), res);
+    RESTARTABLE(stat(pathname, &statbuf), res);
     if (res == -1) {
         return NULL;
     }
@@ -264,44 +234,17 @@ isFileIdentical(char *buf, size_t size, char *pathname)
 static char *
 getPlatformTimeZoneID()
 {
-    struct stat64 statbuf;
+    struct stat statbuf;
     char *tz = NULL;
-    FILE *fp;
     int fd;
     char *buf;
     size_t size;
     int res;
 
-#if defined(__linux__)
     /*
-     * Try reading the /etc/timezone file for Debian distros. There's
-     * no spec of the file format available. This parsing assumes that
-     * there's one line of an Olson tzid followed by a '\n', no
-     * leading or trailing spaces, no comments.
+     * Try /etc/localtime to find the zone ID.
      */
-    if ((fp = fopen(ETC_TIMEZONE_FILE, "r")) != NULL) {
-        char line[256];
-
-        if (fgets(line, sizeof(line), fp) != NULL) {
-            char *p = strchr(line, '\n');
-            if (p != NULL) {
-                *p = '\0';
-            }
-            if (strlen(line) > 0) {
-                tz = strdup(line);
-            }
-        }
-        (void) fclose(fp);
-        if (tz != NULL) {
-            return tz;
-        }
-    }
-#endif /* defined(__linux__) */
-
-    /*
-     * Next, try /etc/localtime to find the zone ID.
-     */
-    RESTARTABLE(lstat64(DEFAULT_ZONEINFO_FILE, &statbuf), res);
+    RESTARTABLE(lstat(DEFAULT_ZONEINFO_FILE, &statbuf), res);
     if (res == -1) {
         return NULL;
     }
@@ -343,7 +286,7 @@ getPlatformTimeZoneID()
         return NULL;
     }
 
-    RESTARTABLE(fstat64(fd, &statbuf), res);
+    RESTARTABLE(fstat(fd, &statbuf), res);
     if (res == -1) {
         (void) close(fd);
         return NULL;
@@ -369,6 +312,7 @@ getPlatformTimeZoneID()
 }
 
 #elif defined(_AIX)
+static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
 
 static char *
 getPlatformTimeZoneID()
@@ -397,33 +341,15 @@ getPlatformTimeZoneID()
 }
 
 static char *
-mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
+getJavaTimezoneFromPlatform(const char *tz_buf, size_t tz_len, const char *mapfilename) {
     FILE *tzmapf;
-    char mapfilename[PATH_MAX + 1];
     char line[256];
     int linecount = 0;
-    char *tz_buf = NULL;
-    char *temp_tz = NULL;
     char *javatz = NULL;
-    size_t tz_len = 0;
 
-    /* On AIX, the TZ environment variable may end with a comma
-     * followed by modifier fields until early AIX6.1.
-     * This restriction has been removed from AIX7. */
-
-    tz_buf = strdup(tz);
-    tz_len = strlen(tz_buf);
-
-    /* Open tzmappings file, with buffer overrun check */
-    if ((strlen(java_home_dir) + 15) > PATH_MAX) {
-        jio_fprintf(stderr, "Path %s/lib/tzmappings exceeds maximum path length\n", java_home_dir);
-        goto tzerr;
-    }
-    strcpy(mapfilename, java_home_dir);
-    strcat(mapfilename, "/lib/tzmappings");
     if ((tzmapf = fopen(mapfilename, "r")) == NULL) {
         jio_fprintf(stderr, "can't open %s\n", mapfilename);
-        goto tzerr;
+        return NULL;
     }
 
     while (fgets(line, sizeof(line), tzmapf) != NULL) {
@@ -476,10 +402,58 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
             break;
         }
     }
+
     (void) fclose(tzmapf);
+    return javatz;
+}
+
+static char *
+mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
+    char mapfilename[PATH_MAX + 1];
+    char *tz_buf = NULL;
+    char *javatz = NULL;
+    char *temp_tz = NULL;
+    size_t tz_len = 0;
+
+    /* On AIX, the TZ environment variable may end with a comma
+     * followed by modifier fields until early AIX6.1.
+     * This restriction has been removed from AIX7. */
+
+    tz_buf = strdup(tz);
+    if (tz_buf == NULL) {
+        jio_fprintf(stderr, "Failed to allocate timezone buffer\n");
+        goto tzerr;
+    }
+    tz_len = strlen(tz_buf);
+
+    /* Open tzmappings file, with buffer overrun check */
+    if ((strlen(java_home_dir) + 15) > PATH_MAX) {
+        jio_fprintf(stderr, "Path %s/lib/tzmappings exceeds maximum path length\n", java_home_dir);
+        goto tzerr;
+    }
+    strcpy(mapfilename, java_home_dir);
+    strcat(mapfilename, "/lib/tzmappings");
+
+    // First attempt to find the Java timezone for the full tz string
+    javatz = getJavaTimezoneFromPlatform(tz_buf, tz_len, mapfilename);
+
+    // If no match was found, check for timezone with truncated value
+    if (javatz == NULL) {
+        temp_tz = strchr(tz, ',');
+        tz_len = (temp_tz == NULL) ? strlen(tz) : temp_tz - tz;
+        free((void *) tz_buf);
+        tz_buf = (char *)malloc(tz_len + 1);
+        if (tz_buf == NULL) {
+            jio_fprintf(stderr, "Failed to allocate timezone buffer\n");
+            goto tzerr;
+        }
+        memcpy(tz_buf, tz, tz_len);
+        tz_buf[tz_len] = '\0';
+        javatz = getJavaTimezoneFromPlatform(tz_buf, tz_len, mapfilename);
+    }
 
 tzerr:
-    if (tz_buf != NULL ) {
+    if (tz_buf != NULL) {
         free((void *) tz_buf);
     }
 
@@ -490,7 +464,7 @@ tzerr:
     return javatz;
 }
 
-#endif /* defined(_AIX) */
+#endif /* defined(__linux__) || defined(MACOSX) || defined(_AIX) */
 
 /*
  * findJavaTZ_md() maps platform time zone ID to Java time zone ID
@@ -557,7 +531,6 @@ char *
 getGMTOffsetID()
 {
     char buf[32];
-    char offset[6];
     struct tm localtm;
     time_t clock = time(NULL);
     if (localtime_r(&clock, &localtm) == NULL) {
@@ -591,6 +564,7 @@ getGMTOffsetID()
     snprintf(buf, sizeof(buf), (const char *)"GMT%c%02.2d:%02.2d",
             gmt_off < 0 ? '-' : '+' , abs(gmt_off / 60), gmt_off % 60);
 #else
+    char offset[6];
     if (strftime(offset, 6, "%z", &localtm) != 5) {
         return strdup("GMT");
     }

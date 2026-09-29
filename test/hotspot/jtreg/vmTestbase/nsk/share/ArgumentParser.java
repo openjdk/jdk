@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,7 +476,7 @@ public class ArgumentParser {
         if (option.equals("verbose")
                 || option.equals("vbs")
                 || option.equals("trace.time")) {
-            if (!(value == null || value.length() <= 0)) {
+            if (!(value == null || value.length() == 0)) {
                 throw new BadOption(option + ": no value must be specified");
             }
             return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,30 +40,20 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 /**
  * From AquaRootPaneUI.java
  *
- * The JRootPane manages the default button.  There can be only one active rootpane,
- * and one default button, so we need only one timer
- *
  * AquaRootPaneUI is a singleton object
  */
-public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
+public final class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
     private static final RecyclableSingleton<AquaRootPaneUI> sRootPaneUI = new RecyclableSingletonFromDefaultConstructor<AquaRootPaneUI>(AquaRootPaneUI.class);
-
-    static final int kDefaultButtonPaintDelayBetweenFrames = 50;
-    JButton fCurrentDefaultButton = null;
-    Timer fTimer = null;
     static final boolean sUseScreenMenuBar = AquaMenuBarUI.getScreenMenuBarProperty();
 
     public static ComponentUI createUI(final JComponent c) {
         return sRootPaneUI.get();
     }
 
+    @Override
     public void installUI(final JComponent c) {
         super.installUI(c);
         c.addAncestorListener(this);
-
-        if (c.isShowing() && c.isEnabled()) {
-            updateDefaultButton((JRootPane)c);
-        }
 
         // for <rdar://problem/3689020> REGR: Realtime LAF updates no longer work
         //
@@ -91,8 +81,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         }
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
-        stopTimer();
         c.removeAncestorListener(this);
 
         if (sUseScreenMenuBar) {
@@ -109,6 +99,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * because it holds the JMenuBar.  So, if a new layered pane was added, listen to it.
      * If a new JMenuBar was added, tell the menu bar UI, because it will need to update the menu bar.
      */
+    @Override
     public void componentAdded(final ContainerEvent e) {
         if (e.getContainer() instanceof JRootPane) {
             final JRootPane root = (JRootPane)e.getContainer();
@@ -137,6 +128,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * Likewise, when the layered pane is removed from the root pane, stop listening to it.
      * If the JMenuBar is removed, tell the menu bar UI to clear the menu bar.
      */
+    @Override
     public void componentRemoved(final ContainerEvent e) {
         if (e.getContainer() instanceof JRootPane) {
             final JRootPane root = (JRootPane)e.getContainer();
@@ -162,79 +154,13 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     }
 
     /**
-     * Invoked when a property changes on the root pane. If the event
-     * indicates the {@code defaultButton} has changed, this will
-     * update the animation.
-     * If the enabled state changed, it will start or stop the animation
-     */
-    public void propertyChange(final PropertyChangeEvent e) {
-        super.propertyChange(e);
-
-        final String prop = e.getPropertyName();
-        if ("defaultButton".equals(prop) || "temporaryDefaultButton".equals(prop)) {
-            // Change the animating button if this root is showing and enabled
-            // otherwise do nothing - someone else may be active
-            final JRootPane root = (JRootPane)e.getSource();
-
-            if (root.isShowing() && root.isEnabled()) {
-                updateDefaultButton(root);
-            }
-        } else if ("enabled".equals(prop) || AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
-            final JRootPane root = (JRootPane)e.getSource();
-            if (root.isShowing()) {
-                if (((Boolean)e.getNewValue()).booleanValue()) {
-                    updateDefaultButton((JRootPane)e.getSource());
-                } else {
-                    stopTimer();
-                }
-            }
-        }
-    }
-
-    synchronized void stopTimer() {
-        if (fTimer != null) {
-            fTimer.stop();
-            fTimer = null;
-        }
-    }
-
-    synchronized void updateDefaultButton(final JRootPane root) {
-        final JButton button = root.getDefaultButton();
-        //System.err.println("in updateDefaultButton button = " + button);
-        fCurrentDefaultButton = button;
-        stopTimer();
-        if (button != null) {
-            fTimer = new Timer(kDefaultButtonPaintDelayBetweenFrames, new DefaultButtonPainter(root));
-            fTimer.start();
-        }
-    }
-
-    class DefaultButtonPainter implements ActionListener {
-        JRootPane root;
-
-        public DefaultButtonPainter(final JRootPane root) {
-            this.root = root;
-        }
-
-        public void actionPerformed(final ActionEvent e) {
-            final JButton defaultButton = root.getDefaultButton();
-            if ((defaultButton != null) && defaultButton.isShowing()) {
-                if (defaultButton.isEnabled()) {
-                    defaultButton.repaint();
-                }
-            } else {
-                stopTimer();
-            }
-        }
-    }
-
-    /**
      * This is sort of like viewDidMoveToWindow:.  When the root pane is put into a window
      * this method gets called for the notification.
      * We need to set up the listener relationship so we can pick up activation events.
      * And, if a JMenuBar was added before the root pane was added to the window, we now need
      * to notify the menu bar UI.
      */
+    @Override
     public void ancestorAdded(final AncestorEvent event) {
         // this is so we can handle window activated and deactivated events so
         // our swing controls can color/enable/disable/focus draw correctly
@@ -249,18 +175,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             owningWindow.removeWindowListener(this);
             owningWindow.addWindowListener(this);
         }
-
-        // The root pane has been added to the hierarchy.  If it's enabled update the default
-        // button to start the throbbing.  Since the UI is a singleton make sure the root pane
-        // we are checking has a default button before calling update otherwise we will stop
-        // throbbing the current default button.
-        final JComponent comp = event.getComponent();
-        if (comp instanceof JRootPane) {
-            final JRootPane rp = (JRootPane)comp;
-            if (rp.isEnabled() && rp.getDefaultButton() != null) {
-                updateDefaultButton((JRootPane)comp);
-            }
-        }
     }
 
     /**
@@ -269,27 +183,36 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * before it was removed.  By the time ancestorRemoved was called, the JRootPane has already been removed
      */
 
+    @Override
     public void ancestorRemoved(final AncestorEvent event) { }
+    @Override
     public void ancestorMoved(final AncestorEvent event) { }
 
+    @Override
     public void windowActivated(final WindowEvent e) {
         updateComponentTreeUIActivation((Component)e.getSource(), Boolean.TRUE);
     }
 
+    @Override
     public void windowDeactivated(final WindowEvent e) {
         updateComponentTreeUIActivation((Component)e.getSource(), Boolean.FALSE);
     }
 
+    @Override
     public void windowOpened(final WindowEvent e) { }
+    @Override
     public void windowClosing(final WindowEvent e) { }
 
+    @Override
     public void windowClosed(final WindowEvent e) {
         // We know the window is closed so remove the listener.
         final Window w = e.getWindow();
         w.removeWindowListener(this);
     }
 
+    @Override
     public void windowIconified(final WindowEvent e) { }
+    @Override
     public void windowDeiconified(final WindowEvent e) { }
     public void windowStateChanged(final WindowEvent e) { }
     public void windowGainedFocus(final WindowEvent e) { }

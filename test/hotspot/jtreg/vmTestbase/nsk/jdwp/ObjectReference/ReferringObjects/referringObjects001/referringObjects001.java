@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@
  *     Finally, debugger sends debuggee signal to quit, waits for it exits
  *     and exits too with the proper exit code.
  *
- * @requires !vm.graal.enabled
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @run main/othervm/native
@@ -95,8 +94,11 @@ public class referringObjects001 extends TestDebuggerType1 {
         return nsk.jdwp.ObjectReference.ReferringObjects.referringObjects001.referringObjects001a.class.getName();
     }
 
-    public static void main(String[] argv) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+        int result = run(argv, System.out);
+        if (result != 0) {
+            throw new RuntimeException("Test failed");
+        }
     }
 
     public static int run(String[] argv, PrintStream out) {

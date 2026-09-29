@@ -1,7 +1,7 @@
-RestrictedMethods.java:14:44: compiler.warn.restricted.method: java.lang.foreign.MemorySegment, reinterpret(long)
-RestrictedMethods.java:18:49: compiler.warn.restricted.method: java.lang.foreign.MemorySegment, reinterpret(long)
-RestrictedMethods.java:24:27: compiler.warn.restricted.method: java.lang.foreign.MemorySegment, reinterpret(long)
-RestrictedMethods.java:33:16: compiler.warn.restricted.method: java.lang.foreign.MemorySegment, reinterpret(long)
+RestrictedMethods.java:15:44: compiler.warn.restricted.method: java.lang.foreign.MemorySegment, reinterpret(long)
+RestrictedMethods.java:19:49: compiler.warn.restricted.method: java.lang.foreign.MemorySegment, reinterpret(long)
+RestrictedMethods.java:25:27: compiler.warn.restricted.method: java.lang.foreign.MemorySegment, reinterpret(long)
+RestrictedMethods.java:34:16: compiler.warn.restricted.method: java.lang.foreign.MemorySegment, reinterpret(long)
 - compiler.err.warnings.and.werror
 1 error
 4 warnings

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,10 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
+     * {@inheritDoc FileObject}
+     * @implSpec
      * This implementation always throws {@linkplain
-     * UnsupportedOperationException}.  Subclasses can change this
-     * behavior as long as the contract of {@link FileObject} is
-     * obeyed.
+     * UnsupportedOperationException}.
      */
     @Override
     public InputStream openInputStream() throws IOException {
@@ -90,10 +90,10 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
+     * {@inheritDoc FileObject}
+     * @implSpec
      * This implementation always throws {@linkplain
-     * UnsupportedOperationException}.  Subclasses can change this
-     * behavior as long as the contract of {@link FileObject} is
-     * obeyed.
+     * UnsupportedOperationException}.
      */
     @Override
     public OutputStream openOutputStream() throws IOException {
@@ -101,9 +101,10 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
-     * Wraps the result of {@linkplain #getCharContent} in a Reader.
-     * Subclasses can change this behavior as long as the contract of
-     * {@link FileObject} is obeyed.
+     * {@inheritDoc FileObject}
+     * @implSpec
+     * This implementation wraps the result of {@link #getCharContent}
+     * in a {@link Reader}.
      *
      * @param  ignoreEncodingErrors {@inheritDoc}
      * @return a Reader wrapping the result of getCharContent
@@ -123,10 +124,10 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
+     * {@inheritDoc FileObject}
+     * @implSpec
      * This implementation always throws {@linkplain
-     * UnsupportedOperationException}.  Subclasses can change this
-     * behavior as long as the contract of {@link FileObject} is
-     * obeyed.
+     * UnsupportedOperationException}.
      */
     @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
@@ -134,9 +135,10 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
-     * Wraps the result of openOutputStream in a Writer.  Subclasses
-     * can change this behavior as long as the contract of {@link
-     * FileObject} is obeyed.
+     * {@inheritDoc FileObject}
+     * @implSpec
+     * This implementation wraps the result of {@link
+     * #openOutputStream} in a {@link Writer}.
      *
      * @return a Writer wrapping the result of openOutputStream
      * @throws IllegalStateException {@inheritDoc}
@@ -149,9 +151,9 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
-     * This implementation returns {@code 0L}.  Subclasses can change
-     * this behavior as long as the contract of {@link FileObject} is
-     * obeyed.
+     * {@inheritDoc FileObject}
+     * @implSpec
+     * This implementation returns {@code 0L}.
      *
      * @return {@code 0L}
      */
@@ -161,9 +163,9 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
-     * This implementation does nothing.  Subclasses can change this
-     * behavior as long as the contract of {@link FileObject} is
-     * obeyed.
+     * {@inheritDoc FileObject}
+     * @implSpec
+     * This implementation does nothing.
      *
      * @return {@code false}
      */
@@ -181,6 +183,8 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
+     * {@inheritDoc JavaFileObject}
+     * @implSpec
      * This implementation compares the path of its URI to the given
      * simple name.  This method returns true if the given kind is
      * equal to the kind of this object, and if the path is equal to
@@ -190,9 +194,6 @@ public class SimpleJavaFileObject implements JavaFileObject {
      * <p>This method calls {@link #getKind} and {@link #toUri} and
      * does not access the fields {@link #uri} and {@link #kind}
      * directly.
-     *
-     * <p>Subclasses can change this behavior as long as the contract
-     * of {@link JavaFileObject} is obeyed.
      */
     @Override
     public boolean isNameCompatible(String simpleName, Kind kind) {
@@ -203,17 +204,17 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
-     * This implementation returns {@code null}.  Subclasses can
-     * change this behavior as long as the contract of
-     * {@link JavaFileObject} is obeyed.
+     * {@inheritDoc JavaFileObject}
+     * @implSpec
+     * This implementation returns {@code null}.
      */
     @Override
     public NestingKind getNestingKind() { return null; }
 
     /**
-     * This implementation returns {@code null}.  Subclasses can
-     * change this behavior as long as the contract of
-     * {@link JavaFileObject} is obeyed.
+     * {@inheritDoc JavaFileObject}
+     * @implSpec
+     * This implementation returns {@code null}.
      */
     @Override
     public Modifier getAccessLevel()  { return null; }
@@ -222,4 +223,48 @@ public class SimpleJavaFileObject implements JavaFileObject {
     public String toString() {
         return getClass().getName() + "[" + toUri() + "]";
     }
+
+    /**
+     * Creates a {@link JavaFileObject} which represents the given source content.
+     *
+     * <p>The provided {@code uri} will be returned from {@link #toUri()}.
+     * The provided {@code content} will be returned from {@link #getCharContent(boolean)}.
+     * The {@link #getKind()} method will return {@link Kind#SOURCE}.
+     *
+     * <p>All other methods will behave as described in the documentation in this class,
+     * as if the constructor is called with {@code uri} and {@code Kind.SOURCE}.
+     *
+     * <p>This method can be, for example, used to compile an in-memory String
+     * to a set of classfile in a target directory:
+     * {@snippet lang="java":
+     *      var code = """
+     *                 public class CompiledCode {}
+     *                 """;
+     *      var compiler = ToolProvider.getSystemJavaCompiler();
+     *      var targetDirectory = "...";
+     *      var task = compiler.getTask(null,
+     *                                  null,
+     *                                  null,
+     *                                  List.of("-d", targetDirectory),
+     *                                  null,
+     *                                  List.of(SimpleJavaFileObject.forSource(URI.create("CompiledCode.java"), code)));
+     *      if (!task.call()) {
+     *          throw new IllegalStateException("Compilation failed!");
+     *      }
+     * }
+     *
+     * @param uri that should be used for the resulting {@code JavaFileObject}
+     * @param content the content of the {@code JavaFileObject}
+     * @return a {@code JavaFileObject} representing the given source content.
+     * @since 23
+     */
+    public static JavaFileObject forSource(URI uri, String content) {
+        return new SimpleJavaFileObject(uri, Kind.SOURCE) {
+            @Override
+            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+                return content;
+            }
+        };
+    }
+
 }

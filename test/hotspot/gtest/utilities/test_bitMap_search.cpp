@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -44,7 +43,7 @@ static const size_t search_offsets[] =
 static const size_t search_noffsets = ARRAY_SIZE(search_offsets);
 
 static const size_t search_nchunks = BITMAP_SIZE / search_chunk_size;
-STATIC_ASSERT(search_nchunks * search_chunk_size == BITMAP_SIZE);
+static_assert(search_nchunks * search_chunk_size == BITMAP_SIZE);
 
 namespace {
 class TestIteratorFn : public BitMapClosure {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -590,13 +590,13 @@ public class TagletManager {
         addStandardTaglet(new ReturnTaglet(config));
         addStandardTaglet(new ThrowsTaglet(config), EXCEPTION);
         addStandardTaglet(
-                new SimpleTaglet(config, SINCE, resources.getText("doclet.Since"),
+                SimpleTaglet.createWithDefaultForNested(config, SINCE, resources.getText("doclet.Since"),
                     EnumSet.allOf(Location.class), !nosince));
         addStandardTaglet(
-                new SimpleTaglet(config, VERSION, resources.getText("doclet.Version"),
+                SimpleTaglet.createWithDefaultForNested(config, VERSION, resources.getText("doclet.Version"),
                     EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showversion));
         addStandardTaglet(
-                new SimpleTaglet(config, AUTHOR, resources.getText("doclet.Author"),
+                SimpleTaglet.createWithDefaultForNested(config, AUTHOR, resources.getText("doclet.Author"),
                     EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showauthor));
         addStandardTaglet(
                 new SimpleTaglet(config, SERIAL_DATA, resources.getText("doclet.SerialData"),

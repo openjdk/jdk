@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.LinkOption;
-import java.nio.file.LinkPermission;
 import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutionException;
 
@@ -82,15 +81,6 @@ class WindowsFileCopy {
             if (option == null)
                 throw new NullPointerException();
             throw new UnsupportedOperationException("Unsupported copy option: " + option);
-        }
-
-        // check permissions. If the source file is a symbolic link then
-        // later we must also check LinkPermission
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            source.checkRead();
-            target.checkWrite();
         }
 
         // get attributes of source file
@@ -144,11 +134,6 @@ class WindowsFileCopy {
             CloseHandle(sourceHandle);
         }
 
-        // if source file is a symbolic link then we must check for LinkPermission
-        if (sm != null && sourceAttrs.isSymbolicLink()) {
-            sm.checkPermission(new LinkPermission("symbolic"));
-        }
-
         // if source is a Unix domain socket, we don't want to copy it for various
         // reasons including consistency with Unix
         if (sourceAttrs.isUnixDomainSocket()) {
@@ -177,15 +162,23 @@ class WindowsFileCopy {
                             target.getPathForExceptionMessage());
                     }
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                    x.lastError() != ERROR_PATH_NOT_FOUND) {
+                    x.rethrowAsIOException(target);
+                }
             }
+        }
+
+        if (!followLinks && sourceAttrs.isSymbolicLink()) {
+            copySymbolicLink(source, sourceAttrs, target, copyAttributes);
+            return;
         }
 
         // Use CopyFileEx if the file is not a directory or junction
         if (!sourceAttrs.isDirectory() && !sourceAttrs.isDirectoryLink()) {
             boolean isBuffering = sourceAttrs.size() <= UNBUFFERED_IO_THRESHOLD;
-            final int flags = (followLinks ? 0 : COPY_FILE_COPY_SYMLINK) |
-                              (isBuffering ? 0 : COPY_FILE_NO_BUFFERING);
+            final int flags = isBuffering ? 0 : COPY_FILE_NO_BUFFERING;
 
             if (interruptible) {
                 // interruptible copy
@@ -257,12 +250,52 @@ class WindowsFileCopy {
                         RemoveDirectory(targetPath);
                     } catch (WindowsException ignore) { }
                 }
+                throw x;
             }
 
             // copy security attributes. If this fail it doesn't cause the move
             // to fail.
             try {
                 copySecurityAttributes(source, target, followLinks);
+            } catch (IOException ignore) { }
+        }
+    }
+
+    private static void copySymbolicLink(WindowsPath source,
+                                         WindowsFileAttributes sourceAttrs,
+                                         WindowsPath target,
+                                         boolean copyAttributes)
+        throws IOException
+    {
+        String targetPath = asWin32Path(target);
+        try {
+            String linkTarget = WindowsLinkSupport.readLink(source);
+            int flags = sourceAttrs.isDirectoryLink() ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0;
+            WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                  WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                  flags);
+        } catch (WindowsException x) {
+            x.rethrowAsIOException(target);
+        }
+
+        if (copyAttributes) {
+            WindowsFileAttributeViews.Dos view =
+                WindowsFileAttributeViews.createDosView(target, false);
+            try {
+                view.setAttributes(sourceAttrs);
+            } catch (IOException x) {
+                try {
+                    if (sourceAttrs.isDirectoryLink()) {
+                        RemoveDirectory(targetPath);
+                    } else {
+                        DeleteFile(targetPath);
+                    }
+                } catch (WindowsException ignore) { }
+                throw x;
+            }
+
+            try {
+                copySecurityAttributes(source, target, false);
             } catch (IOException ignore) { }
         }
     }
@@ -302,13 +335,6 @@ class WindowsFileCopy {
             }
             if (option == null) throw new NullPointerException();
             throw new UnsupportedOperationException("Unsupported option: " + option);
-        }
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            source.checkWrite();
-            target.checkWrite();
         }
 
         final String sourcePath = asWin32Path(source);
@@ -400,7 +426,11 @@ class WindowsFileCopy {
                             target.getPathForExceptionMessage());
                     }
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.lastError() != ERROR_FILE_NOT_FOUND &&
+                    x.lastError() != ERROR_PATH_NOT_FOUND) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 

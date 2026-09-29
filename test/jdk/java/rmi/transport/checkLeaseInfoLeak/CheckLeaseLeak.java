@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,16 +54,18 @@
 
 import java.rmi.*;
 import java.rmi.server.*;
-import sun.rmi.transport.*;
-import sun.rmi.*;
 import java.util.Map;
 import java.io.*;
 import java.lang.reflect.*;
 import java.rmi.registry.*;
+import sun.rmi.transport.*;
+import java.util.concurrent.CountDownLatch;
 
 public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
     public CheckLeaseLeak() throws RemoteException { }
-    public void ping () throws RemoteException { }
+    public void ping () throws RemoteException {
+        remoteCallsComplete.countDown();
+    }
 
     /**
      * Id to fake the DGC_ID, so we can later get a reference to the
@@ -75,6 +77,9 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
     private final static int numberPingCalls = 0;
     private final static int CHECK_INTERVAL = 400;
     private final static int LEASE_VALUE = 20;
+    private static final int NO_OF_CLIENTS = ITERATIONS;
+    private static final int GOOD_LUCK_FACTOR = 2;
+    private static CountDownLatch remoteCallsComplete = new CountDownLatch(NO_OF_CLIENTS);
 
     public static void main (String[] args) {
         CheckLeaseLeak leakServer = null;
@@ -102,8 +107,6 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
                 System.err.println("Created client: " + i);
 
                 JavaVM jvm = new JavaVM("LeaseLeakClient",
-                                        " -Djava.security.policy=" +
-                                        TestParams.defaultPolicy +
                                         " -Drmi.registry.port=" +
                                         registryPort,
                                         "");
@@ -116,8 +119,14 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
                     jvm.destroy();
                 }
             }
+            try {
+                remoteCallsComplete.await();
+                System.out.println("remoteCallsComplete . . . ");
+            } catch (InterruptedException intEx) {
+                System.out.println("remoteCallsComplete.await interrupted . . . ");
+            }
+            Thread.sleep(NO_OF_CLIENTS * LEASE_VALUE * GOOD_LUCK_FACTOR);
             numLeft = getDGCLeaseTableSize();
-            Thread.sleep(3000);
 
         } catch(Exception e) {
             TestLibrary.bomb("CheckLeaseLeak Error: ", e);
@@ -128,7 +137,7 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
             }
         }
 
-        /* numLeft should be 2 - if 11 there is a problem. */
+        /* numLeft should not be greater than 2 - if 11 there is a problem. */
         if (numLeft > 2) {
             TestLibrary.bomb("Too many objects in DGCImpl.leaseTable: "+
                             numLeft);
@@ -156,70 +165,62 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
         Field f;
 
         try {
-            f = (Field) java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction() {
-                    public Object run() throws Exception {
+            ObjID dgcID = new ObjID(DGC_ID);
+            /*
+             * Construct an ObjectEndpoint containing DGC's
+             * ObjID.
+             */
+            Class oeClass =
+                    Class.forName("sun.rmi.transport.ObjectEndpoint");
+            Class[] constrParams =
+                    new Class[]{ ObjID.class, Transport.class };
+            Constructor oeConstructor =
+                    oeClass.getDeclaredConstructor(constrParams);
+            oeConstructor.setAccessible(true);
+            Object oe =
+                    oeConstructor.newInstance(
+                            new Object[]{ dgcID, null });
 
-                        ObjID dgcID = new ObjID(DGC_ID);
+            /*
+             * Get Target that contains DGCImpl in ObjectTable
+             */
+            Class objTableClass =
+                    Class.forName("sun.rmi.transport.ObjectTable");
+            Class getTargetParams[] = new Class[] { oeClass };
+            Method objTableGetTarget =
+                    objTableClass.getDeclaredMethod("getTarget",
+                            getTargetParams);
+            objTableGetTarget.setAccessible(true);
+            Target dgcTarget = (Target)
+                    objTableGetTarget.invoke(null, new Object[]{ oe });
 
-                        /*
-                         * Construct an ObjectEndpoint containing DGC's
-                         * ObjID.
-                         */
-                        Class oeClass =
-                            Class.forName("sun.rmi.transport.ObjectEndpoint");
-                        Class[] constrParams =
-                            new Class[]{ ObjID.class, Transport.class };
-                        Constructor oeConstructor =
-                            oeClass.getDeclaredConstructor(constrParams);
-                        oeConstructor.setAccessible(true);
-                        Object oe =
-                            oeConstructor.newInstance(
-                                new Object[]{ dgcID, null });
-
-                        /*
-                         * Get Target that contains DGCImpl in ObjectTable
-                         */
-                        Class objTableClass =
-                            Class.forName("sun.rmi.transport.ObjectTable");
-                        Class getTargetParams[] = new Class[] { oeClass };
-                        Method objTableGetTarget =
-                            objTableClass.getDeclaredMethod("getTarget",
-                                                            getTargetParams);
-                        objTableGetTarget.setAccessible(true);
-                        Target dgcTarget = (Target)
-                            objTableGetTarget.invoke(null, new Object[]{ oe });
-
-                        /* get the DGCImpl from its Target */
-                        Method targetGetImpl =
-                            dgcTarget.getClass().getDeclaredMethod
+            /* get the DGCImpl from its Target */
+            Method targetGetImpl =
+                    dgcTarget.getClass().getDeclaredMethod
                             ("getImpl", null);
-                        targetGetImpl.setAccessible(true);
-                        dgcImpl[0] =
-                            (Remote) targetGetImpl.invoke(dgcTarget, null);
+            targetGetImpl.setAccessible(true);
+            dgcImpl[0] =
+                    (Remote) targetGetImpl.invoke(dgcTarget, null);
 
-                        /* Get the lease table from the DGCImpl. */
-                        Field reflectedLeaseTable =
-                            dgcImpl[0].getClass().getDeclaredField
+            /* Get the lease table from the DGCImpl. */
+            Field reflectedLeaseTable =
+                    dgcImpl[0].getClass().getDeclaredField
                             ("leaseTable");
-                        reflectedLeaseTable.setAccessible(true);
+            reflectedLeaseTable.setAccessible(true);
 
-                        return reflectedLeaseTable;
-                    }
-            });
+            f = reflectedLeaseTable;
+
 
             /**
              * This is the leaseTable that will fill up with LeaseInfo
              * objects if the LeaseInfo memory leak is not fixed.
              */
             leaseTable = (Map) f.get(dgcImpl[0]);
-
-            numLeaseInfosLeft = leaseTable.size();
+            synchronized (leaseTable) {
+                numLeaseInfosLeft = leaseTable.size();
+            }
 
         } catch(Exception e) {
-            if (e instanceof java.security.PrivilegedActionException)
-                e = ((java.security.PrivilegedActionException) e).
-                    getException();
             TestLibrary.bomb(e);
         }
 

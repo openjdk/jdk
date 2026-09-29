@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,10 @@ public class ExpressionExecuter implements ExpressionEvaluator {
 
         if (e instanceof Literal) {
             return ((Literal)e).getValue();
+        }
+
+        if (e instanceof Timestamp) {
+            return ((Timestamp)e).getValue();
         }
 
         if (e instanceof Identifier) {

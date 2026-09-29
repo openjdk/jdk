@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "oops/fieldInfo.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -63,20 +63,32 @@ inline InstanceKlass* volatile* InstanceKlass::adr_implementor() const {
   }
 }
 
+inline address InstanceKlass::end_of_instance_klass() const {
+  return (address)end_of_nonstatic_oop_maps() +
+      (is_interface() ? sizeof(InstanceKlass*) : 0);
+}
+
+inline ValueKlass* InstanceKlass::get_value_type_field_klass(int idx) const {
+  assert(has_flat_fields() || has_null_restricted_static_fields(), "Sanity checking");
+  assert(idx < java_fields_count(), "IOOB");
+  ValueKlass* k = value_field_layout_info(idx).klass();
+  assert(k != nullptr, "Should always be set before being read");
+  return k;
+}
+
+inline ValueKlass* InstanceKlass::get_value_type_field_klass_or_null(int idx) const {
+  assert(has_flat_fields() || has_null_restricted_static_fields(), "Sanity checking");
+  assert(idx < java_fields_count(), "IOOB");
+  ValueKlass* k = value_field_layout_info(idx).klass();
+  return k;
+}
+
 inline ObjArrayKlass* InstanceKlass::array_klasses_acquire() const {
-  return Atomic::load_acquire(&_array_klasses);
+  return AtomicAccess::load_acquire(&_array_klasses);
 }
 
 inline void InstanceKlass::release_set_array_klasses(ObjArrayKlass* k) {
-  Atomic::release_store(&_array_klasses, k);
-}
-
-inline jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
-  return Atomic::load_acquire(&_methods_jmethod_ids);
-}
-
-inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
-  Atomic::release_store(&_methods_jmethod_ids, jmeths);
+  AtomicAccess::release_store(&_array_klasses, k);
 }
 
 // The iteration over the oops in objects is a hot path in the GC code.
@@ -184,6 +196,19 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType
   }
 
   oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
+}
+
+template<typename T, typename TConsumerType>
+inline void InstanceKlass::print_array_on(outputStream* st, Array<T>* array, TConsumerType elem_printer) {
+   if (array == nullptr) { st->print_cr("nullptr"); return; }
+   array->print_value_on(st); st->cr();
+   if (Verbose || WizardMode) {
+     for (int i = 0; i < array->length(); i++) {
+       st->print("%d : ", i);
+       elem_printer(st, array->at(i));
+       st->cr();
+     }
+   }
 }
 
 #endif // SHARE_OOPS_INSTANCEKLASS_INLINE_HPP

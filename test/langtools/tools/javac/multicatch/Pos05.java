@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 6943289
  * @summary  Project Coin: Improved Exception Handling for Java (aka 'multicatch')
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main Pos05
  */
 
@@ -90,7 +88,7 @@ public class Pos05 {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 throw new Error("Code attribute for test() method not found");
             }

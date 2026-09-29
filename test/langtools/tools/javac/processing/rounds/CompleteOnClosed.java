@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,9 @@ public class CompleteOnClosed extends JavacTestingAbstractProcessor {
         Iterable<JavaFileObject> files = Arrays.<JavaFileObject>asList(new ToolBox.JavaSource(source));
         Iterable<String> options = Arrays.asList("-processor", "CompleteOnClosed");
         CompilationTask task = compiler.getTask(null, null, collector, options, null, files);
-        task.call();
+        if (task.call()) {
+            throw new AssertionError("test compilation was expected to fail");
+        }
         for (Diagnostic<? extends JavaFileObject> d : collector.getDiagnostics()) {
             System.out.println(d.toString());
         }

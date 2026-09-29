@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class CodeHeap extends VMObject {
     while (ptr != null && ptr.lessThan(end())) {
       try {
         // Use findStart to get a pointer inside blob other findBlob asserts
-        CodeBlob blob = cache.createCodeBlobWrapper(findStart(ptr));
+        CodeBlob blob = cache.createCodeBlobWrapper(findStart(ptr), ptr);
         if (blob != null) {
           visitor.visit(blob);
           if (blob == lastBlob) {

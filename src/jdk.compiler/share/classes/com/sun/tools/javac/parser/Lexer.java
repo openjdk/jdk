@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,11 @@
 
 package com.sun.tools.javac.parser;
 
+import java.util.Queue;
+
 import com.sun.tools.javac.parser.Tokens.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.Position.LineMap;
 
 /**
@@ -89,4 +93,24 @@ public interface Lexer {
      * @return a LineMap
      */
     LineMap getLineMap();
+
+    /**
+     * Returns a queue for the documentation comments encountered
+     * in a compilation unit.
+     *
+     * Comments may be added to this queue by the implementation;
+     * clients may remove them from the queue as they are analyzed.
+     *
+     * Note: all comments may also be associated with the following
+     * token.
+     */
+    Queue<Comment> getDocComments();
+
+    /**
+     * Report a warning that is subject to possible suppression by {@code @SuppressWarnings}.
+     *
+     * @param pos the lexical position at which the warning occurs
+     * @param key the warning to report
+     */
+    void lintWarning(DiagnosticPosition pos, LintWarning key);
 }

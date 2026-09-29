@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
             this.pixelStride = csm.getPixelStride();
             this.dataOffsets = csm.getBandOffsets();
             for (int i = 0; i < getNumDataElements(); i++) {
-                dataOffsets[i] += xOffset*pixelStride+yOffset*scanlineStride;
+                dataOffsets[i] += dataBuffer.getOffset() + xOffset*pixelStride+yOffset*scanlineStride;
             }
         } else if (sampleModel instanceof SinglePixelPackedSampleModel) {
             SinglePixelPackedSampleModel sppsm =
@@ -227,7 +227,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         }
         this.bandOffset = this.dataOffsets[0];
 
-        this.dbOffsetPacked = dataBuffer.getOffset() -
+        this.dbOffsetPacked = -
             sampleModelTranslateY*scanlineStride -
             sampleModelTranslateX*pixelStride;
         this.dbOffset = dbOffsetPacked -

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@ class ZStoreBarrierBuffer : public CHeapObj<mtGC> {
   friend class ZVerify;
 
 private:
-  static const size_t _buffer_length     = 32;
-  static const size_t _buffer_size_bytes = _buffer_length * sizeof(ZStoreBarrierEntry);
+  static const size_t BufferLength    = 32;
+  static const size_t BufferSizeBytes = BufferLength * sizeof(ZStoreBarrierEntry);
 
-  ZStoreBarrierEntry _buffer[_buffer_length];
+  ZStoreBarrierEntry _buffer[BufferLength];
 
   // Color from previous phase this buffer was processed
   uintptr_t          _last_processed_color;
@@ -54,21 +54,21 @@ private:
   uintptr_t          _last_installed_color;
 
   ZLock              _base_pointer_lock;
-  zaddress_unsafe    _base_pointers[_buffer_length];
+  zaddress_unsafe    _base_pointers[BufferLength];
 
   // sizeof(ZStoreBarrierEntry) scaled index growing downwards
   size_t             _current;
 
-  void on_new_phase_relocate(int i);
-  void on_new_phase_remember(int i);
-  void on_new_phase_mark(int i);
+  void on_new_phase_relocate(size_t i);
+  void on_new_phase_remember(size_t i);
+  void on_new_phase_mark(size_t i);
 
   void clear();
 
   bool is_old_mark() const;
   bool stored_during_old_mark() const;
   bool is_empty() const;
-  intptr_t current() const;
+  size_t current() const;
 
   void install_base_pointers_inner();
 

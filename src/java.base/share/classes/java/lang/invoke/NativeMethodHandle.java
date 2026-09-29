@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         final int GET_NEP = nameCursor++;
         final int LINKER_CALL = nameCursor++;
 
-        LambdaForm.Name[] names = arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
+        LambdaForm.Name[] names = invokeArguments(nameCursor - ARG_LIMIT, mtype);
         assert (names.length == nameCursor);
 
         names[GET_NEP] = new LambdaForm.Name(Lazy.NF_internalNativeEntryPoint, names[NMH_THIS]);

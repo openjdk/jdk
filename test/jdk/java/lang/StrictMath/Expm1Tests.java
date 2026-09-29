@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -863,6 +863,14 @@ public class Expm1Tests {
             {0x1.619ffffffdccep9,       0x1.45663d67095d1p1020},
             {0x1.621ffffffdccep9,       0x1.ba437b80a6915p1021},
             {0x1.629ffffffdccep9,       0x1.2c8c9d8cda0c8p1023},
+
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            { 0x1.63be411e096ep-2,      0x1.a95c1f32ed8d5p-2},
+            {-0x1.62d7c116d2e32p-1,    -0x1.fff3910089df7p-2},
+            { 0x1.633f993a730c9p-2,     0x1.a8a8e5d1e41ccp-2},
+            { 0x1.a0e95d59498e9p-2,     0x1.01499d91804bdp-1},
+            { 0x1.632cfb1033275p-2,     0x1.a88e8f5550a34p-2},
         };
 
         for (double[] testCase: testCases)

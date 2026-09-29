@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,22 @@ import java.time.temporal.*;
 import java.util.List;
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests for the Japanese chronology
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestJapaneseChronology {
     private static final JapaneseChronology JAPANESE = JapaneseChronology.INSTANCE;
     private static final Locale jaJPJP = Locale.forLanguageTag("ja-JP-u-ca-japanese");
 
-    @DataProvider(name="transitions")
     Object[][] transitionData() {
         return new Object[][] {
             // Japanese era, yearOfEra, month, dayOfMonth, gregorianYear
@@ -62,7 +64,6 @@ public class TestJapaneseChronology {
         };
     }
 
-    @DataProvider(name="day_year_data")
     Object[][] dayYearData() {
         return new Object[][] {
             // Japanese era, yearOfEra, dayOfYear, month, dayOfMonth
@@ -80,7 +81,6 @@ public class TestJapaneseChronology {
         };
     }
 
-    @DataProvider(name="range_data")
     Object[][] rangeData() {
         return new Object[][] {
             // field, minSmallest, minLargest, maxSmallest, maxLargest
@@ -91,7 +91,6 @@ public class TestJapaneseChronology {
         };
     }
 
-    @DataProvider(name="invalid_dates")
     Object[][] invalidDatesData() {
         return new Object[][] {
             // Japanese era, yearOfEra, month, dayOfMonth
@@ -114,7 +113,6 @@ public class TestJapaneseChronology {
         };
     }
 
-    @DataProvider(name="invalid_eraYear")
     Object[][] invalidEraYearData() {
         return new Object[][] {
             // Japanese era, yearOfEra
@@ -136,7 +134,6 @@ public class TestJapaneseChronology {
         };
     }
 
-    @DataProvider(name="invalid_day_year_data")
     Object[][] invalidDayYearData() {
         return new Object[][] {
             // Japanese era, yearOfEra, dayOfYear
@@ -155,7 +152,6 @@ public class TestJapaneseChronology {
         };
     }
 
-    @DataProvider
     Object[][] eraNameData() {
         return new Object[][] {
             // Japanese era, name, exception
@@ -171,56 +167,69 @@ public class TestJapaneseChronology {
     @Test
     public void test_ofLocale() {
         // must be a singleton
-        assertEquals(Chronology.ofLocale(jaJPJP) == JAPANESE, true);
+        assertEquals(true, Chronology.ofLocale(jaJPJP) == JAPANESE);
     }
 
-    @Test(dataProvider="transitions")
+    @ParameterizedTest
+    @MethodSource("transitionData")
     public void test_transitions(JapaneseEra era, int yearOfEra, int month, int dayOfMonth, int gregorianYear) {
-        assertEquals(JAPANESE.prolepticYear(era, yearOfEra), gregorianYear);
+        assertEquals(gregorianYear, JAPANESE.prolepticYear(era, yearOfEra));
 
         JapaneseDate jdate1 = JapaneseDate.of(era, yearOfEra, month, dayOfMonth);
         JapaneseDate jdate2 = JapaneseDate.of(gregorianYear, month, dayOfMonth);
-        assertEquals(jdate1, jdate2);
+        assertEquals(jdate2, jdate1);
     }
 
-    @Test(dataProvider="range_data")
+    @ParameterizedTest
+    @MethodSource("rangeData")
     public void test_range(ChronoField field, int minSmallest, int minLargest, int maxSmallest, int maxLargest) {
         ValueRange range = JAPANESE.range(field);
-        assertEquals(range.getMinimum(), minSmallest);
-        assertEquals(range.getLargestMinimum(), minLargest);
-        assertEquals(range.getSmallestMaximum(), maxSmallest);
-        assertEquals(range.getMaximum(), maxLargest);
+        assertEquals(minSmallest, range.getMinimum());
+        assertEquals(minLargest, range.getLargestMinimum());
+        assertEquals(maxSmallest, range.getSmallestMaximum());
+        assertEquals(maxLargest, range.getMaximum());
     }
 
-    @Test(dataProvider="day_year_data")
+    @ParameterizedTest
+    @MethodSource("dayYearData")
     public void test_firstDayOfEra(JapaneseEra era, int yearOfEra, int dayOfYear, int month, int dayOfMonth) {
         JapaneseDate date1 = JAPANESE.dateYearDay(era, yearOfEra, dayOfYear);
         JapaneseDate date2 = JAPANESE.date(era, yearOfEra, month, dayOfMonth);
-        assertEquals(date1, date2);
+        assertEquals(date2, date1);
     }
 
-    @Test(dataProvider="invalid_dates", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("invalidDatesData")
     public void test_invalidDate(JapaneseEra era, int yearOfEra, int month, int dayOfMonth) {
-        JapaneseDate jdate = JapaneseDate.of(era, yearOfEra, month, dayOfMonth);
-        System.out.printf("No DateTimeException with %s %d.%02d.%02d%n", era, yearOfEra, month, dayOfMonth);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            JapaneseDate jdate = JapaneseDate.of(era, yearOfEra, month, dayOfMonth);
+            System.out.printf("No DateTimeException with %s %d.%02d.%02d%n", era, yearOfEra, month, dayOfMonth);
+        });
     }
 
-    @Test(dataProvider="invalid_eraYear", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("invalidEraYearData")
     public void test_invalidEraYear(JapaneseEra era, int yearOfEra) {
-        int year = JAPANESE.prolepticYear(era, yearOfEra);
-        System.out.printf("No DateTimeException with era=%s, year=%d%n", era, yearOfEra);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            int year = JAPANESE.prolepticYear(era, yearOfEra);
+            System.out.printf("No DateTimeException with era=%s, year=%d%n", era, yearOfEra);
+        });
     }
 
-    @Test(dataProvider="invalid_day_year_data", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("invalidDayYearData")
     public void test_invalidDayYear(JapaneseEra era, int yearOfEra, int dayOfYear) {
-        JapaneseDate date = JAPANESE.dateYearDay(era, yearOfEra, dayOfYear);
-        System.out.printf("No DateTimeException with era=%s, year=%d, dayOfYear=%d%n", era, yearOfEra, dayOfYear);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            JapaneseDate date = JAPANESE.dateYearDay(era, yearOfEra, dayOfYear);
+            System.out.printf("No DateTimeException with era=%s, year=%d, dayOfYear=%d%n", era, yearOfEra, dayOfYear);
+        });
     }
 
-    @Test(dataProvider="eraNameData")
+    @ParameterizedTest
+    @MethodSource("eraNameData")
     public void test_eraName(String eraName, JapaneseEra era, Class expectedEx) {
         try {
-            assertEquals(JapaneseEra.valueOf(eraName), era);
+            assertEquals(era, JapaneseEra.valueOf(eraName));
         } catch (Exception ex) {
             assertTrue(expectedEx.isInstance(ex));
         }

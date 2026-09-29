@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 
 static jclass jlM(JNIEnv *env) {
-    return findClass(env, "Ljava/lang/Module;");
+    return findClass(env, "java/lang/Module");
 }
 
 static jboolean
@@ -50,6 +50,11 @@ getName(PacketInputStream *in, PacketOutputStream *out)
         return JNI_TRUE;
     }
     namestr = (jstring)JNI_FUNC_PTR(env, CallObjectMethod) (env, module, method);
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
+        ERROR_MESSAGE(("JNI Exception occurred calling Module.getName()"));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION, NULL);
+    }
     if (namestr != NULL) {
         name = (char*)JNI_FUNC_PTR(env, GetStringUTFChars)(env, namestr, NULL);
     } else {
@@ -78,6 +83,11 @@ getClassLoader(PacketInputStream *in, PacketOutputStream *out)
         return JNI_TRUE;
     }
     loader = JNI_FUNC_PTR(env, CallObjectMethod) (env, module, method);
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
+        ERROR_MESSAGE(("JNI Exception occurred calling ClassLoader.getClassLoader()"));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION, NULL);
+    }
 
     (void)outStream_writeObjectRef(env, out, loader);
     return JNI_TRUE;

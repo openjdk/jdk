@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import jdk.test.lib.compiler.CompilerUtils;
-import org.testng.annotations.BeforeTest;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
 
 /**
  * An abstract superclass for tests that require to serialize and deserialize
@@ -54,7 +55,7 @@ public class AbstractTest {
     static final Path RECORD_SRC_DIR = Path.of(TEST_SRC, "record");
     static final Path RECORD_DEST_DIR = Path.of("record");
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws IOException {
         assertTrue(CompilerUtils.compile(PLAIN_SRC_DIR, PLAIN_DEST_DIR,
                    "--class-path", TEST_CLASSES_DIR.toString()));

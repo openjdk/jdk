@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,24 +33,26 @@ import java.io.IOException;
  */
 public class FileKey {
 
-    private int dwVolumeSerialNumber;
-    private int nFileIndexHigh;
-    private int nFileIndexLow;
+    private final int dwVolumeSerialNumber;
+    private final int nFileIndexHigh;
+    private final int nFileIndexLow;
 
-    private FileKey() { }
+    private FileKey(int dwVolumeSerialNumber, int nFileIndexHigh,
+        int nFileIndexLow) {
+        this.dwVolumeSerialNumber = dwVolumeSerialNumber;
+        this.nFileIndexHigh = nFileIndexHigh;
+        this.nFileIndexLow = nFileIndexLow;
+    }
 
     public static FileKey create(FileDescriptor fd) throws IOException {
-        FileKey fk = new FileKey();
-        fk.init(fd);
-        return fk;
+        int finfo[] = new int[3];
+        init(fd, finfo);
+        return new FileKey(finfo[0], finfo[1], finfo[2]);
     }
 
     @Override
     public int hashCode() {
-        int h = dwVolumeSerialNumber;
-        h = h << 31 + nFileIndexHigh;
-        h = h << 31 + nFileIndexLow;
-        return h;
+        return dwVolumeSerialNumber + nFileIndexHigh + nFileIndexLow;
     }
 
     @Override
@@ -63,11 +65,10 @@ public class FileKey {
                 && this.nFileIndexLow == other.nFileIndexLow;
     }
 
-    private native void init(FileDescriptor fd) throws IOException;
-    private static native void initIDs();
+    private static native void init(FileDescriptor fd, int[] finfo)
+        throws IOException;
 
     static {
         IOUtil.load();
-        initIDs();
     }
 }

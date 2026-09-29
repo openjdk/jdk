@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,30 @@
  */
 package datatype;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
-import org.testng.Assert;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 8068839
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow datatype.JDK8068839Test
- * @run testng/othervm datatype.JDK8068839Test
+ * @run junit/othervm datatype.JDK8068839Test
  * @summary Verifies that Duration's edge cases
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class JDK8068839Test {
 
     @Test
     public void test() throws DatatypeConfigurationException {
         DatatypeFactory df = DatatypeFactory.newInstance();
         Duration durationx = df.newDuration(Long.MIN_VALUE);
-        Assert.assertEquals(durationx.toString(), "-P292277024Y7M16DT7H12M55.808S");
+        assertEquals("-P292277024Y7M16DT7H12M55.808S", durationx.toString());
         durationx = df.newDuration(Long.MAX_VALUE);
-        Assert.assertEquals(durationx.toString(), "P292277024Y7M16DT7H12M55.807S");
+        assertEquals("P292277024Y7M16DT7H12M55.807S", durationx.toString());
     }
 
 }

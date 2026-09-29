@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  */
 
 /* @test
- * @bug 4434723 4482726 4559072 4795550 5081340 5103988 6984545
+ * @bug 4434723 4482726 4559072 4795550 5081340 5103988 6984545 8325382
  * @summary Test FileChannel.transferFrom and transferTo (use -Dseed=X to set PRNG seed)
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/timeout=300 Transfer
+ * @run junit/timeout=300 Transfer
  * @key randomness
  */
 
@@ -48,12 +48,19 @@ import java.nio.channels.Pipe;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.file.Files;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.RandomFactory;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Transfer {
 
@@ -81,25 +88,22 @@ public class Transfer {
         long oldSourcePosition = sourceChannel.position();
 
         long bytesWritten = sinkChannel.transferFrom(sourceChannel, 0, 10);
-        if (bytesWritten != 10)
-            throw new RuntimeException("Transfer failed");
+        assertEquals(10, bytesWritten, "Transfer failed");
 
-        if (sourceChannel.position() == oldSourcePosition)
-            throw new RuntimeException("Source position didn't change");
+        assertNotEquals(oldSourcePosition, sourceChannel.position(),
+                        "Source position didn't change");
 
-        if (sinkChannel.position() != oldSinkPosition)
-            throw new RuntimeException("Sink position changed");
+        assertEquals(oldSinkPosition, sinkChannel.position(),
+                     "Sink position changed");
 
-        if (sinkChannel.size() != 10)
-            throw new RuntimeException("Unexpected sink size");
+        assertEquals(10, sinkChannel.size(), "Unexpected sink size");
 
         bytesWritten = sinkChannel.transferFrom(sourceChannel, 1000, 10);
 
-        if (bytesWritten > 10)
-            throw new RuntimeException("Wrote too many bytes");
+        assertFalse(bytesWritten > 10, "Wrote too many bytes");
 
-        if (sinkChannel.size() != 1000 + bytesWritten)
-            throw new RuntimeException("Unexpected sink size");
+        assertEquals(1000 + bytesWritten, sinkChannel.size(),
+                     "Unexpected sink size");
 
         sourceChannel.close();
         sinkChannel.close();
@@ -128,8 +132,7 @@ public class Transfer {
             int totalWritten = 0;
             while (totalWritten < size + 10) {
                 int written = sink.write(outgoingdata);
-                if (written < 0)
-                    throw new Exception("Write failed");
+                assertTrue(written >= 0, "Write failed");
                 totalWritten += written;
             }
 
@@ -141,20 +144,44 @@ public class Transfer {
 
             long bytesWritten = fc.transferFrom(source, 0, size);
             fc.force(true);
-            if (bytesWritten != size)
-                throw new RuntimeException("Transfer failed");
+            assertEquals(size, bytesWritten, "Transfer failed");
 
-            if (fc.position() != oldPosition)
-                throw new RuntimeException("Position changed");
+            assertEquals(oldPosition, fc.position(), "Position changed");
 
-            if (fc.size() != size)
-                throw new RuntimeException("Unexpected sink size "+ fc.size());
+            assertEquals(size, fc.size(), "Unexpected sink size "+ fc.size());
 
             fc.close();
             sink.close();
             source.close();
 
             f.delete();
+        }
+    }
+
+    @Test
+    public void transferToNoThrow() throws IOException { // for bug 8325382
+        File source = File.createTempFile("before", "after");
+        source.deleteOnExit();
+
+        CharSequence csq = "Reality is greater than the sum of its parts.";
+        Files.writeString(source.toPath(), csq);
+        final long length = csq.length();
+        assertEquals(length, source.length());
+
+        File target = File.createTempFile("before", "after");
+        target.deleteOnExit();
+
+        try (FileInputStream in = new FileInputStream(source);
+             FileOutputStream out = new FileOutputStream(target);
+             FileChannel chSource = in.getChannel();
+             FileChannel chTarget = out.getChannel()) {
+            // The count of bytes requested to transfer must exceed
+            // FileChannelImpl.MAPPED_TRANSFER_THRESHOLD which is
+            // currently 16384
+            long n = chSource.transferTo(length, 16385, chTarget);
+
+            // At the end of the input so no bytes should be transferred
+            assertEquals(0, n);
         }
     }
 
@@ -222,8 +249,7 @@ public class Transfer {
 
         fc1.transferTo(0, srcData.length + 1, fc2);
 
-        if (fc2.size() > 4)
-            throw new Exception("xferTest03 failed");
+        assertFalse(fc2.size() > 4, "xferTest03 failed");
 
         fc1.close();
         fc2.close();
@@ -244,9 +270,7 @@ public class Transfer {
         while ((c = r.read()) != -1)
             sb.append((char)c);
         String contents = sb.toString();
-        if (! contents.equals(expected))
-            throw new Exception("expected: " + expected
-                                + ", got: " + contents);
+        assertEquals(expected, contents);
         r.close();
     }
 
@@ -272,8 +296,7 @@ public class Transfer {
             new RandomAccessFile(sink, "rw").getChannel();
         long n = sinkChannel.transferFrom(sourceChannel, 0L,
                                           sourceChannel.size()); // overflow
-        if (n != remaining)
-            throw new Exception("n == " + n + ", remaining == " + remaining);
+        assertEquals(remaining, n);
 
         sinkChannel.close();
         sourceChannel.close();
@@ -334,9 +357,8 @@ public class Transfer {
         FileChannel fc1 = new FileOutputStream(source).getChannel();
         FileChannel fc2 = new RandomAccessFile(target, "rw").getChannel();
         try {
-            fc2.transferFrom(fc1, 0L, 0);
-            throw new RuntimeException("NonReadableChannelException expected");
-        } catch (NonReadableChannelException expected) {
+            assertThrows(NonReadableChannelException.class,
+                         () -> fc2.transferFrom(fc1, 0L, 0));
         } finally {
             fc1.close();
             fc2.close();

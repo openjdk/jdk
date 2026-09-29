@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,14 @@ public class DocPaths {
     /** The name of the file for all references to external specifications. */
     public static final DocPath EXTERNAL_SPECS = DocPath.create("external-specs.html");
 
-    /** The name of the image file showing a magnifying glass on the search box. */
-    public static final DocPath GLASS_IMG = DocPath.create("glass.png");
+    /** The name of the sub-directory containing font resources. */
+    public static final DocPath FONTS = DocPath.create("fonts");
+
+    /** The name of the DejaVu web fonts CSS file. */
+    public static final DocPath DEJAVU_CSS = DocPath.create("dejavu.css");
+
+    /** The name of the svg file showing a magnifying glass on the search box. */
+    public static final DocPath GLASS_SVG = DocPath.create("glass.svg");
 
     /** The name of the file for help info. */
     public static final DocPath HELP_DOC = DocPath.create("help-doc.html");
@@ -94,26 +100,41 @@ public class DocPaths {
     /** The name of the default javascript file. */
     public static final DocPath SCRIPT_JS = DocPath.create("script.js");
 
+    /** The name of the template of the default javascript file. */
+    public static final DocPath SCRIPT_JS_TEMPLATE = DocPath.create("script.js.template");
+
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
+
+    /** The name of the downwards pointing angle icon. */
+    public static final DocPath DOWN_SVG = DocPath.create("down.svg");
+
+    /** The name of the left pointing angle icon. */
+    public static final DocPath LEFT_SVG = DocPath.create("left.svg");
 
     /** The name of the link icon file. */
     public static final DocPath LINK_SVG = DocPath.create("link.svg");
 
-    /** The name of the default jQuery directory. */
-    public static final DocPath JQUERY_DIR = DocPath.create("jquery");
+    /** The name of the table of contents toggle icon file. */
+    public static final DocPath SORT_A_Z_SVG = DocPath.create("sort-a-z.svg");
 
-    /** The name of the default jQuery javascript file. */
-    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.1.min.js");
+    /** The name of the right pointing angle icon. */
+    public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
 
-    /** The name of the default jQuery UI stylesheet file. */
-    public static final DocPath JQUERY_UI_CSS = DocPath.create("jquery-ui.min.css");
+    /** The name of the moon icon for the dark theme. */
+    public static final DocPath MOON_SVG = DocPath.create("moon.svg");
 
-    /** The name of the default jQuery UI javascript file. */
-    public static final DocPath JQUERY_UI_JS = DocPath.create("jquery-ui.min.js");
+    /** The name of the sun icon for the light theme. */
+    public static final DocPath SUN_SVG = DocPath.create("sun.svg");
 
-    /** The name of the default jQuery file for legal notices. */
-    public static final DocPath JQUERY_MD = DocPath.create("jquery.md");
+    /** The name of the syntax highlighting style sheet. */
+    public static final DocPath HIGHLIGHT_CSS = DocPath.create("highlight.css");
+
+    /** The name of the syntax highlighting script file. */
+    public static final DocPath HIGHLIGHT_JS = DocPath.create("highlight.js");
+
+    /** The name of the dejavu file for legal notices. */
+    public static final DocPath DEJAVU_MD = DocPath.create("dejavufonts.md");
 
     /** The name of the directory for legal files. */
     public static final DocPath LEGAL = DocPath.create("legal");
@@ -154,6 +175,9 @@ public class DocPaths {
     /** The name of the file for restricted methods. */
     public static final DocPath RESTRICTED_LIST = DocPath.create("restricted-list.html");
 
+    /** The name of the doc-file for restricted methods. */
+    public static final DocPath RESTRICTED_DOC = DocPath.create("RestrictedMethods.html");
+
     /** The name of the directory for the resource files. */
     public static final DocPath RESOURCE_FILES = DocPath.create("resource-files");
 
@@ -162,6 +186,9 @@ public class DocPaths {
 
     /** The name of the file for search page. */
     public static final DocPath SEARCH_PAGE = DocPath.create("search.html");
+
+    /** The name of the file for search tags index page. */
+    public static final DocPath SEARCH_TAGS = DocPath.create("search-tags.html");
 
     /** The name of the file for all system properties. */
     public static final DocPath SYSTEM_PROPERTIES = DocPath.create("system-properties.html");
@@ -303,9 +330,6 @@ public class DocPaths {
     /** The name of the template for the search javascript file. */
     public static final DocPath SEARCH_JS_TEMPLATE = DocPath.create("search.js.template");
 
-    /** The name of the search javascript file. */
-    public static final DocPath SEARCH_PAGE_JS = DocPath.create("search-page.js");
-
     /** The name of the file for the serialized form info. */
     public static final DocPath SERIALIZED_FORM = DocPath.create("serialized-form.html");
 
@@ -323,7 +347,7 @@ public class DocPaths {
     /** The name of the type search index js file. */
     public static final DocPath TYPE_SEARCH_INDEX_JS = DocPath.create("type-search-index.js");
 
-    /** The name of the image file for undo button on the search box. */
-    public static final DocPath X_IMG = DocPath.create("x.png");
+    /** The name of the svg file for undo button on the search box. */
+    public static final DocPath X_SVG = DocPath.create("x.svg");
 
 }

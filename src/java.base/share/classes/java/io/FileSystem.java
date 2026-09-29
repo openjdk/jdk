@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,22 @@ import java.lang.annotation.Native;
  */
 
 abstract class FileSystem {
+
+    /* -- Current Working Directory --*/
+
+    /* lazy initialization of CWD object */
+    private static class CurrentWorkingDirectoryHolder {
+        static final File CURRENT_WORKING_DIRECTORY = currentWorkingDirectory();
+
+        private static final File currentWorkingDirectory() {
+            return new File(".");
+        }
+    }
+
+    /* CWD object accessor */
+    static File getCWD() {
+        return CurrentWorkingDirectoryHolder.CURRENT_WORKING_DIRECTORY;
+    }
 
     /* -- Normalization and construction -- */
 

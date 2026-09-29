@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ final class OutputFeedback extends FeedbackCipher {
     private final byte[] register;
 
     /*
-     * number of bytes for each stream unit, defaults to the blocksize
+     * number of bytes for each stream unit, defaults to the block size
      * of the embedded cipher
      */
     private final int numBytes;

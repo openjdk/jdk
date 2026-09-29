@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class AllocFromTest extends CLayouts {
 
     Arena arena = Arena.ofConfined();
@@ -73,6 +73,13 @@ public class AllocFromTest extends CLayouts {
         }
     }
 
+    // Save `jvmArgsAppend` for `OfVirtual`
+    @Fork(jvmArgs = {"--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED", "-Djdk.internal.foreign.native.confined.pool.power.size=-1"})
+    @Benchmark
+    public MemorySegment alloc_confined_no_pool() {
+        return alloc_confined();
+    }
+
     @Benchmark
     public MemorySegment alloc_malloc_arena() {
         try (MallocArena arena = new MallocArena()) {
@@ -93,6 +100,9 @@ public class AllocFromTest extends CLayouts {
             return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
         }
     }
+
+    @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")
+    public static class OfVirtual extends AllocFromTest {}
 
     static class SlicingPool {
         final MemorySegment pool = Arena.ofAuto().allocate(1024);

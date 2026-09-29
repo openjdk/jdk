@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "oops/symbolHandle.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 Symbol* volatile TempSymbolCleanupDelayer::_queue[QueueSize] = {};
 volatile uint TempSymbolCleanupDelayer::_index = 0;
@@ -34,14 +33,14 @@ volatile uint TempSymbolCleanupDelayer::_index = 0;
 void TempSymbolCleanupDelayer::delay_cleanup(Symbol* sym) {
   assert(sym != nullptr, "precondition");
   sym->increment_refcount();
-  uint i = Atomic::add(&_index, 1u) % QueueSize;
-  Symbol* old = Atomic::xchg(&_queue[i], sym);
+  uint i = AtomicAccess::add(&_index, 1u) % QueueSize;
+  Symbol* old = AtomicAccess::xchg(&_queue[i], sym);
   Symbol::maybe_decrement_refcount(old);
 }
 
 void TempSymbolCleanupDelayer::drain_queue() {
   for (uint i = 0; i < QueueSize; i++) {
-    Symbol* sym = Atomic::xchg(&_queue[i], (Symbol*) nullptr);
+    Symbol* sym = AtomicAccess::xchg(&_queue[i], (Symbol*) nullptr);
     Symbol::maybe_decrement_refcount(sym);
   }
 }

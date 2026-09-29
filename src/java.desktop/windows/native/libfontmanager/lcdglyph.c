@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@
 #define MAX_GAMMA 220
 #define LCDLUTCOUNT (MAX_GAMMA-MIN_GAMMA+1)
 
-static unsigned char* igLUTable[LCDLUTCOUNT];
+static unsigned char* igLUTable[LCDLUTCOUNT] = { 0 };
 
 static unsigned char* getIGTable(int gamma) {
     int i, index;
@@ -120,15 +120,6 @@ static unsigned char* getIGTable(int gamma) {
     }
     igLUTable[index] = igTable;
     return igTable;
-}
-
-
-JNIEXPORT jboolean JNICALL
-    Java_sun_font_FileFontStrike_initNative(JNIEnv *env, jclass unused) {
-
-    memset(igLUTable, 0, sizeof igLUTable);
-
-    return JNI_TRUE;
 }
 
 #ifndef CLEARTYPE_QUALITY

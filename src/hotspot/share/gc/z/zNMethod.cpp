@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,9 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
-#include "code/icBuffer.hpp"
+#include "code/relocInfo.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -50,8 +48,9 @@
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/icache.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {
@@ -105,6 +104,10 @@ ZReentrantLock* ZNMethod::lock_for_nmethod(nmethod* nm) {
   return gc_data(nm)->lock();
 }
 
+ZReentrantLock* ZNMethod::ic_lock_for_nmethod(nmethod* nm) {
+  return gc_data(nm)->ic_lock();
+}
+
 void ZNMethod::log_register(const nmethod* nm) {
   LogTarget(Debug, gc, nmethod) log;
   if (!log.is_enabled()) {
@@ -144,7 +147,7 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
+      const oop o = AtomicAccess::load(p); // C1 PatchingStub may replace it concurrently.
       const char* const external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
       log_oops.print("           Oop: " PTR_FORMAT " (%s)",
                      p2i(o), external_name);
@@ -239,12 +242,20 @@ void ZNMethod::disarm(nmethod* nm) {
 
 void ZNMethod::set_guard_value(nmethod* nm, int value) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  bs->set_guard_value(nm, value);
+  bs->guard_with(nm, value);
 }
 
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
+  ICacheInvalidationContext icic;
+  nmethod_patch_barriers(nm, &icic);
+}
+
+void ZNMethod::nmethod_patch_barriers(nmethod* nm, ICacheInvalidationContext* icic) {
   ZBarrierSetAssembler* const bs_asm = ZBarrierSet::assembler();
   ZArrayIterator<ZNMethodDataBarrier> iter(gc_data(nm)->barriers());
+  if (gc_data(nm)->barriers()->is_nonempty()) {
+    icic->set_has_modified_code();
+  }
   for (ZNMethodDataBarrier barrier; iter.next(&barrier);) {
     bs_asm->patch_barrier_relocation(barrier._reloc_addr, barrier._reloc_format);
   }
@@ -256,6 +267,11 @@ void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
 }
 
 void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
+  ICacheInvalidationContext icic;
+  nmethod_oops_do_inner(nm, cl, &icic);
+}
+
+void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, ICacheInvalidationContext* icic) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -281,7 +297,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
 
   // Process non-immediate oops
   if (data->has_non_immediate_oops()) {
-    nm->fix_oop_relocations();
+    nm->fix_oop_relocations(icic);
   }
 }
 
@@ -298,30 +314,36 @@ void ZNMethod::nmethods_do(bool secondary, NMethodClosure* cl) {
 }
 
 uintptr_t ZNMethod::color(nmethod* nm) {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  // color is stored at low order bits of int; implicit conversion to uintptr_t is fine
-  return bs_nm->guard_value(nm);
+  ZBarrierSetNMethod* bs_nm = static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod());
+  return bs_nm->color(nm);
 }
 
-oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {
-  assert((decorators & ON_WEAK_OOP_REF) == 0,
-         "nmethod oops have phantom strength, not weak");
-  nmethod* const nm = CodeCache::find_nmethod((void*)p);
+oop ZNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return oop_load(nm, index, false /* keep_alive */);
+}
+
+oop ZNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return oop_load(nm, index, true /* keep_alive */);
+}
+
+oop ZNMethod::oop_load(const nmethod* const_nm, int index, bool keep_alive) {
+  // The rest of the code is not ready to handle const nmethod, so cast it away
+  // until we are more consistent with our const correctness.
+  nmethod* nm = const_cast<nmethod*>(const_nm);
+
   if (!is_armed(nm)) {
     // If the nmethod entry barrier isn't armed, then it has been applied
     // already. The implication is that the contents of the memory location
     // is already a valid oop, and the barrier would have kept it alive if
     // necessary. Therefore, no action is required, and we are allowed to
     // simply read the oop.
-    return *p;
+    return *nm->oop_addr_at(index);
   }
 
-  const bool keep_alive = (decorators & ON_PHANTOM_OOP_REF) != 0 &&
-                          (decorators & AS_NO_KEEPALIVE) == 0;
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
   // Make a local root
-  zaddress_unsafe obj = *ZUncoloredRoot::cast(p);
+  zaddress_unsafe obj = *ZUncoloredRoot::cast(nm->oop_addr_at(index));
 
   if (keep_alive) {
     ZUncoloredRoot::process(&obj, ZNMethod::color(nm));
@@ -334,23 +356,13 @@ oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {
 
 class ZNMethodUnlinkClosure : public NMethodClosure {
 private:
-  bool          _unloading_occurred;
-  volatile bool _failed;
-
-  void set_failed() {
-    Atomic::store(&_failed, true);
-  }
+  bool _unloading_occurred;
 
 public:
   ZNMethodUnlinkClosure(bool unloading_occurred)
-    : _unloading_occurred(unloading_occurred),
-      _failed(false) {}
+    : _unloading_occurred(unloading_occurred) {}
 
   virtual void do_nmethod(nmethod* nm) {
-    if (failed()) {
-      return;
-    }
-
     if (nm->is_unloading()) {
       // Unlink from the ZNMethodTable
       ZNMethod::unregister_nmethod(nm);
@@ -361,51 +373,46 @@ public:
       return;
     }
 
-    ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
+    {
+      ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
-    if (ZNMethod::is_armed(nm)) {
-      const uintptr_t prev_color = ZNMethod::color(nm);
-      assert(prev_color != ZPointerStoreGoodMask, "Potentially non-monotonic transition");
+      if (ZNMethod::is_armed(nm)) {
+        const uintptr_t prev_color = ZNMethod::color(nm);
+        assert(prev_color != ZPointerStoreGoodMask, "Potentially non-monotonic transition");
 
-      // Heal oops and potentially mark young objects if there is a concurrent young collection.
-      ZUncoloredRootProcessOopClosure cl(prev_color);
-      ZNMethod::nmethod_oops_do_inner(nm, &cl);
+        // Heal oops and potentially mark young objects if there is a concurrent young collection.
+        ZUncoloredRootProcessOopClosure cl(prev_color);
+        ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
-      // Disarm for marking and relocation, but leave the remset bits so this isn't store good.
-      // This makes sure the mutator still takes a slow path to fill in the nmethod epoch for
-      // the sweeper, to track continuations, if they exist in the system.
-      const zpointer new_disarm_value_ptr = ZAddress::color(zaddress::null, ZPointerMarkGoodMask | ZPointerRememberedMask);
+        // Disarm for marking and relocation, but leave the remset bits so this isn't store good.
+        // This makes sure the mutator still takes a slow path to fill in the nmethod epoch for
+        // the sweeper, to track continuations, if they exist in the system.
+        const zpointer new_disarm_value_ptr = ZAddress::color(zaddress::null, ZPointerMarkGoodMask | ZPointerRememberedMask);
 
-      // The new disarm value is mark good, and hence never store good. Therefore, this operation
-      // never completely disarms the nmethod. Therefore, we don't need to patch barriers yet
-      // via ZNMethod::nmethod_patch_barriers.
-      ZNMethod::set_guard_value(nm, (int)untype(new_disarm_value_ptr));
+        // The new disarm value is mark good, and hence never store good. Therefore, this operation
+        // never completely disarms the nmethod. Therefore, we don't need to patch barriers yet
+        // via ZNMethod::nmethod_patch_barriers.
+        ZNMethod::set_guard_value(nm, (int)untype(new_disarm_value_ptr));
 
-      log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by unlinking [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
-      assert(ZNMethod::is_armed(nm), "Must be considered armed");
+        log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by unlinking [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
+        assert(ZNMethod::is_armed(nm), "Must be considered armed");
+      }
     }
 
     // Clear compiled ICs and exception caches
-    if (!nm->unload_nmethod_caches(_unloading_occurred)) {
-      set_failed();
-    }
-  }
-
-  bool failed() const {
-    return Atomic::load(&_failed);
+    ZLocker<ZReentrantLock> locker(ZNMethod::ic_lock_for_nmethod(nm));
+    nm->unload_nmethod_caches(_unloading_occurred);
   }
 };
 
 class ZNMethodUnlinkTask : public ZTask {
 private:
   ZNMethodUnlinkClosure _cl;
-  ICRefillVerifier*     _verifier;
 
 public:
-  ZNMethodUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier)
+  ZNMethodUnlinkTask(bool unloading_occurred)
     : ZTask("ZNMethodUnlinkTask"),
-      _cl(unloading_occurred),
-      _verifier(verifier) {
+      _cl(unloading_occurred) {
     ZNMethodTable::nmethods_do_begin(false /* secondary */);
   }
 
@@ -414,33 +421,13 @@ public:
   }
 
   virtual void work() {
-    ICRefillVerifierMark mark(_verifier);
     ZNMethodTable::nmethods_do(false /* secondary */, &_cl);
-  }
-
-  bool success() const {
-    return !_cl.failed();
   }
 };
 
 void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
-  for (;;) {
-    ICRefillVerifier verifier;
-
-    {
-      ZNMethodUnlinkTask task(unloading_occurred, &verifier);
-      workers->run(&task);
-      if (task.success()) {
-        return;
-      }
-    }
-
-    // Cleaning failed because we ran out of transitional IC stubs,
-    // so we have to refill and try again. Refilling requires taking
-    // a safepoint, so we temporarily leave the suspendible thread set.
-    SuspendibleThreadSetLeaver sts_leaver;
-    InlineCacheBuffer::refill_ic_stubs();
-  }
+  ZNMethodUnlinkTask task(unloading_occurred);
+  workers->run(&task);
 }
 
 void ZNMethod::purge() {

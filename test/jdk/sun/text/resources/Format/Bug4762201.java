@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 4762201
+ * @bug 4762201 8174269
  * @modules jdk.localedata
  * @summary verify the zh_CN full time pattern (and other time patterns)
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI Bug4762201
  */
 
 import java.text.DateFormat;
@@ -45,16 +44,16 @@ public class Bug4762201
                 DateFormat df =
                    DateFormat.getTimeInstance(DateFormat.SHORT,loc);
                 SimpleDateFormat sdf = new SimpleDateFormat("",loc);
-                sdf.applyPattern("ah:mm");                              // short time pattern
+                sdf.applyPattern("HH:mm");                              // short time pattern
                 if( !sdf.format(now).equals(df.format(now))) result++;
                 df =  DateFormat.getTimeInstance(DateFormat.MEDIUM,loc);
-                sdf.applyPattern("H:mm:ss");                            // medium time pattern
+                sdf.applyPattern("HH:mm:ss");                           // medium time pattern
                 if( !sdf.format(now).equals(df.format(now))) result++;
                 df = DateFormat.getTimeInstance(DateFormat.LONG,loc);
-                sdf.applyPattern("ahh'\u65f6'mm'\u5206'ss'\u79d2'");    // long time pattern
+                sdf.applyPattern("z HH:mm:ss");                         // long time pattern
                 if( !sdf.format(now).equals(df.format(now))) result++;
                 df = DateFormat.getTimeInstance(DateFormat.FULL,loc);
-                sdf.applyPattern("ahh'\u65f6'mm'\u5206'ss'\u79d2' z");  // full time pattern
+                sdf.applyPattern("zzzz HH:mm:ss");                      // full time pattern
                 if( !sdf.format(now).equals(df.format(now))) result++;
 
            if(result > 0) throw new RuntimeException();

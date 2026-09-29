@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.security;
 
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
+import jdk.internal.util.ByteArray;
 import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.jca.Providers;
@@ -141,6 +141,11 @@ import java.util.regex.Pattern;
  * <li>{@link SecureRandomSpi#engineReseed(SecureRandomParameters)}
  * </ul>
  *
+ * @spec https://www.rfc-editor.org/info/rfc4086
+ *      RFC 4086: Randomness Requirements for Security
+ * @spec https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf
+ *      Security Requirements for Cryptographic Modules
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @see java.security.SecureRandomSpi
  * @see java.util.Random
  *
@@ -149,10 +154,6 @@ import java.util.regex.Pattern;
  * @since 1.1
  */
 
-@RandomGeneratorProperties(
-        name = "SecureRandom",
-        isStochastic = true
-)
 public class SecureRandom extends java.util.Random {
 
     private static final Debug pdebug =
@@ -214,6 +215,7 @@ public class SecureRandom extends java.util.Random {
      * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public SecureRandom() {
         /*
@@ -230,8 +232,8 @@ public class SecureRandom extends java.util.Random {
         if (provider == null || algorithm == null) {
             return false;
         } else {
-            return Boolean.parseBoolean(provider.getProperty(
-                    "SecureRandom." + algorithm + " ThreadSafe", "false"));
+            Service service = provider.getService("SecureRandom", algorithm);
+            return Boolean.parseBoolean(service.getAttribute("ThreadSafe"));
         }
     }
 
@@ -257,6 +259,7 @@ public class SecureRandom extends java.util.Random {
      * for information about standard RNG algorithm names.
      *
      * @param seed the seed.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws NullPointerException if {@code seed} is {@code null}
      */
     public SecureRandom(byte[] seed) {
@@ -371,6 +374,7 @@ public class SecureRandom extends java.util.Random {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SecureRandom} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -412,6 +416,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SecureRandom} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -456,6 +461,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SecureRandom} object
      *
      * @throws IllegalArgumentException if the specified provider is
@@ -511,6 +517,7 @@ public class SecureRandom extends java.util.Random {
      * @param params the {@code SecureRandomParameters}
      *               the newly created {@code SecureRandom} object must support.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SecureRandom} object
      *
      * @throws IllegalArgumentException if the specified params is
@@ -563,6 +570,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SecureRandom} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -615,6 +623,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SecureRandom} object
      *
      * @throws IllegalArgumentException if the specified provider or params
@@ -830,6 +839,16 @@ public class SecureRandom extends java.util.Random {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long nextLong() {
+        byte[] b = new byte[8];
+        nextBytes(b); // Calls engineNextBytes internally
+        return ByteArray.getLong(b, 0);
+    }
+
+    /**
      * Returns the given number of seed bytes, computed using the seed
      * generation algorithm that this class uses to seed itself.  This
      * call may be used to seed other random number generators.
@@ -942,11 +961,7 @@ public class SecureRandom extends java.util.Random {
     public static SecureRandom getInstanceStrong()
             throws NoSuchAlgorithmException {
 
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> Security.getProperty(
-                    "securerandom.strongAlgorithms"));
-
+        String property = Security.getProperty("securerandom.strongAlgorithms");
         if (property == null || property.isEmpty()) {
             throw new NoSuchAlgorithmException(
                 "Null/empty securerandom.strongAlgorithms Security Property");

@@ -22,21 +22,29 @@
  */
 package test.auctionportal;
 
-import static jaxp.library.JAXPTestUtilities.getPathByClassName;
+import java.io.File;
+import java.nio.file.Path;
 
 /**
  * This is the Base test class provide basic support for Auction portal test.
  */
 public class HiBidConstants {
+    private static final Path TEST_SRC = Path.of(System.getProperty("test.src")).toAbsolutePath();
+
+    private static String forwardSlashDir(Path p) {
+        // Convention in these tests is to include trailing '/' in directory strings.
+        return p.toString().replace(File.separatorChar, '/') + '/';
+    }
+
     /**
      * XML source file directory.
      */
-    public static final String XML_DIR = getPathByClassName(HiBidConstants.class, "content");
+    public static final String XML_DIR = forwardSlashDir(TEST_SRC.resolve("content"));
 
     /**
      * Golden validation files directory.
      */
-    public static final String GOLDEN_DIR = getPathByClassName(HiBidConstants.class, "golden");
+    public static final String GOLDEN_DIR = forwardSlashDir(TEST_SRC.resolve("golden"));
 
     /**
      * Name space for account operation.

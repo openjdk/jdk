@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright Red Hat, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
 public class MemLimitTest {
 
     static void do_test(String option, boolean expectSuccess, int expectedValue) throws Exception {
-        OutputAnalyzer output = ProcessTools.executeTestJvm("-Xmx64m", "-XX:CompileCommand=" + option, "-version");
+        OutputAnalyzer output = ProcessTools.executeTestJava("-Xmx64m", "-XX:CompileCommand=" + option, "-version");
         if (expectSuccess) {
             output.shouldHaveExitValue(0);
             output.shouldNotContain("error occurred");

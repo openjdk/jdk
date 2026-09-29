@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import static jdk.test.lib.Asserts.assertEquals;
 /**
  * @test
  * @summary The test uses SettingControl
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.api.settings.TestFilterEvents
@@ -70,6 +70,7 @@ public class TestFilterEvents {
         continuous.enable(HTTPGetEvent.class).with("threadNames", "\"unused-threadname-1\"");
         assertEquals(0, makeProfilingRecording("\"unused-threadname-2\""));
         assertEquals(1, makeProfilingRecording("\"" + Thread.currentThread().getName() + "\""));
+        assertEquals(2, makeCombineControl());
         continuous.close();
     }
 
@@ -91,6 +92,34 @@ public class TestFilterEvents {
             recording.stop();
 
             return Events.fromRecording(recording).size();
+        }
+    }
+
+    private static int makeCombineControl() throws Exception {
+        try (Recording r1 = new Recording()) {
+            r1.enable(HTTPPostEvent.class).with("uriFilter", "https://www.example.com/list");
+            r1.start();
+
+            try (Recording r2 = new Recording()) {
+                r2.enable(HTTPPostEvent.class).with("uriFilter", "https://www.example.com/get");
+                r2.start();
+
+                HTTPPostEvent e1 = new HTTPPostEvent();
+                e1.uri = "https://www.example.com/list";
+                e1.commit();
+
+                HTTPPostEvent e2 = new HTTPPostEvent();
+                e2.uri = "https://www.example.com/get";
+                e2.commit();
+
+                HTTPPostEvent e3 = new HTTPPostEvent();
+                e3.uri = "https://www.example.com/put";
+                e3.commit();
+            }
+
+            r1.stop();
+
+            return Events.fromRecording(r1).size();
         }
     }
 

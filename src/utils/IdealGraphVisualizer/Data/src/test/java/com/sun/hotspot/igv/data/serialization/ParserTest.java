@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import java.util.ArrayList;
+import java.util.HashSet;
 import org.junit.*;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -62,19 +64,18 @@ public class ParserTest {
     }
 
     private void test(GraphDocument document) {
-        final Printer printer = new Printer();
         final CharArrayWriter writer = new CharArrayWriter();
-        printer.export(writer, document);
+        Printer.exportGraphDocument(writer, document, new ArrayList<>());
         test(document, writer.toString());
     }
 
     private void test(GraphDocument document, String xmlString) {
         InputStream in = new ByteArrayInputStream(xmlString.getBytes(UTF_8));
         try {
-            Parser parser = new Parser(Channels.newChannel(in));
+            Parser parser = new Parser(Channels.newChannel(in), null, null, null);
             parser.setInvokeLater(false);
-            final GraphDocument parsedDocument = parser.parse();
-            Util.assertGraphDocumentEquals(document, parsedDocument);
+            final GraphDocument exportData = parser.parse();
+            Util.assertGraphDocumentEquals(document, exportData);
         } catch (IOException ex) {
             fail(ex.toString());
         }

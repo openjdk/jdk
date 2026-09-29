@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -53,15 +52,15 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;
 
-  objArrayOop inputStorage = jdk_internal_foreign_abi_ABIDescriptor::inputStorage(abi_oop);
+  refArrayOop inputStorage = jdk_internal_foreign_abi_ABIDescriptor::inputStorage(abi_oop);
   parse_register_array(inputStorage, StorageType::INTEGER, abi._integer_argument_registers, as_Register);
   parse_register_array(inputStorage, StorageType::FLOAT, abi._float_argument_registers, as_FloatRegister);
 
-  objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
+  refArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
   parse_register_array(outputStorage, StorageType::INTEGER, abi._integer_return_registers, as_Register);
   parse_register_array(outputStorage, StorageType::FLOAT, abi._float_return_registers, as_FloatRegister);
 
-  objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
+  refArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
   parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_volatile_registers, as_Register);
   parse_register_array(volatileStorage, StorageType::FLOAT, abi._float_additional_volatile_registers, as_FloatRegister);
 
@@ -166,7 +165,7 @@ static void move_stack(MacroAssembler* masm, Register tmp_reg, int in_stk_bias, 
     case StorageType::INTEGER:
       switch (from_reg.stack_size()) {
         case 8: __ mem2reg_opt(as_Register(to_reg), from_addr, true);break;
-        case 4: __ mem2reg_opt(as_Register(to_reg), from_addr, false);break;
+        case 4: __ mem2reg_signed_opt(as_Register(to_reg), from_addr);break;
         default: ShouldNotReachHere();
       }
       break;

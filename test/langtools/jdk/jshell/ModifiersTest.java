@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test 8167643 8129559 8247456
  * @summary Tests for modifiers
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
- * @run testng ModifiersTest
+ * @run junit ModifiersTest
  */
 
 import java.util.ArrayList;
@@ -34,13 +34,14 @@ import java.util.List;
 import java.util.function.Consumer;
 import javax.tools.Diagnostic;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ModifiersTest extends KullaTesting {
 
-    @DataProvider(name = "ignoredModifiers")
     public Object[][] getTestCases() {
         List<Object[]> testCases = new ArrayList<>();
         String[] ignoredModifiers = new String[] {
@@ -77,7 +78,8 @@ public class ModifiersTest extends KullaTesting {
         return testCases.toArray(new Object[testCases.size()][]);
     }
 
-    @Test(dataProvider = "ignoredModifiers")
+    @ParameterizedTest
+    @MethodSource("getTestCases")
     public void ignoredModifiers(String modifier, ClassType classType,
             Consumer<String> eval, String preface, String context) {
         if (context != null) {
@@ -95,6 +97,7 @@ public class ModifiersTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void accessToStaticFieldsOfClass() {
         assertEval("class A {" +
                 "int x = 14;" +
@@ -108,6 +111,7 @@ public class ModifiersTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void accessToStaticMethodsOfClass() {
         assertEval("class A {" +
                 "void x() {}" +
@@ -119,6 +123,7 @@ public class ModifiersTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void accessToStaticFieldsOfInterface() {
         assertEval("interface A {" +
                 "int x = 14;" +
@@ -134,12 +139,14 @@ public class ModifiersTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void accessToStaticMethodsOfInterface() {
         assertEval("interface A { static void x() {} }");
         assertEval("A.x();");
         assertActiveKeys();
     }
 
+    @Test
     public void finalMethod() {
         assertEval("class A { final void f() {} }");
         assertDeclareFail("class B extends A { void f() {} }",
@@ -148,6 +155,7 @@ public class ModifiersTest extends KullaTesting {
     }
 
     //TODO: is this the right semantics?
+    @Test
     public void finalConstructor() {
         assertDeclareFail("class A { final A() {} }",
                 new ExpectedDiagnostic("compiler.err.mod.not.allowed.here", 10, 22, 16, -1, -1, Diagnostic.Kind.ERROR));
@@ -155,6 +163,7 @@ public class ModifiersTest extends KullaTesting {
     }
 
     //TODO: is this the right semantics?
+    @Test
     public void finalDefaultMethod() {
         assertDeclareFail("interface A { final default void a() {} }",
                 new ExpectedDiagnostic("compiler.err.mod.not.allowed.here", 14, 39, 33, -1, -1, Diagnostic.Kind.ERROR));

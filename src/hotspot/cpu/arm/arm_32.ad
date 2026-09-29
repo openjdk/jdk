@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -62,22 +62,22 @@ register %{
 // Integer/Long Registers
 // ----------------------------
 
-reg_def R_R0 (SOC, SOC, Op_RegI,  0,  R(0)->as_VMReg());
-reg_def R_R1 (SOC, SOC, Op_RegI,  1,  R(1)->as_VMReg());
-reg_def R_R2 (SOC, SOC, Op_RegI,  2,  R(2)->as_VMReg());
-reg_def R_R3 (SOC, SOC, Op_RegI,  3,  R(3)->as_VMReg());
-reg_def R_R4 (SOC, SOE, Op_RegI,  4,  R(4)->as_VMReg());
-reg_def R_R5 (SOC, SOE, Op_RegI,  5,  R(5)->as_VMReg());
-reg_def R_R6 (SOC, SOE, Op_RegI,  6,  R(6)->as_VMReg());
-reg_def R_R7 (SOC, SOE, Op_RegI,  7,  R(7)->as_VMReg());
-reg_def R_R8 (SOC, SOE, Op_RegI,  8,  R(8)->as_VMReg());
-reg_def R_R9 (SOC, SOE, Op_RegI,  9,  R(9)->as_VMReg());
-reg_def R_R10(NS,  SOE, Op_RegI, 10, R(10)->as_VMReg());
-reg_def R_R11(NS,  SOE, Op_RegI, 11, R(11)->as_VMReg());
-reg_def R_R12(SOC, SOC, Op_RegI, 12, R(12)->as_VMReg());
-reg_def R_R13(NS,  NS,  Op_RegI, 13, R(13)->as_VMReg());
-reg_def R_R14(SOC, SOC, Op_RegI, 14, R(14)->as_VMReg());
-reg_def R_R15(NS,  NS,  Op_RegI, 15, R(15)->as_VMReg());
+reg_def R_R0 (SOC, SOC, Op_RegI,  0,  as_Register(0)->as_VMReg());
+reg_def R_R1 (SOC, SOC, Op_RegI,  1,  as_Register(1)->as_VMReg());
+reg_def R_R2 (SOC, SOC, Op_RegI,  2,  as_Register(2)->as_VMReg());
+reg_def R_R3 (SOC, SOC, Op_RegI,  3,  as_Register(3)->as_VMReg());
+reg_def R_R4 (SOC, SOE, Op_RegI,  4,  as_Register(4)->as_VMReg());
+reg_def R_R5 (SOC, SOE, Op_RegI,  5,  as_Register(5)->as_VMReg());
+reg_def R_R6 (SOC, SOE, Op_RegI,  6,  as_Register(6)->as_VMReg());
+reg_def R_R7 (SOC, SOE, Op_RegI,  7,  as_Register(7)->as_VMReg());
+reg_def R_R8 (SOC, SOE, Op_RegI,  8,  as_Register(8)->as_VMReg());
+reg_def R_R9 (SOC, SOE, Op_RegI,  9,  as_Register(9)->as_VMReg());
+reg_def R_R10(NS,  SOE, Op_RegI, 10, as_Register(10)->as_VMReg());
+reg_def R_R11(NS,  SOE, Op_RegI, 11, as_Register(11)->as_VMReg());
+reg_def R_R12(SOC, SOC, Op_RegI, 12, as_Register(12)->as_VMReg());
+reg_def R_R13(NS,  NS,  Op_RegI, 13, as_Register(13)->as_VMReg());
+reg_def R_R14(SOC, SOC, Op_RegI, 14, as_Register(14)->as_VMReg());
+reg_def R_R15(NS,  NS,  Op_RegI, 15, as_Register(15)->as_VMReg());
 
 // ----------------------------
 // Float/Double Registers
@@ -430,19 +430,18 @@ OptoRegPair c2::return_value(int ideal_reg) {
 //       from the start of the call to the point where the return address
 //       will point.
 
-int MachCallStaticJavaNode::ret_addr_offset() {
-  bool far = (_method == NULL) ? maybe_far_call(this) : !cache_reachable();
-  return ((far ? 3 : 1) + (_method_handle_invoke ? 1 : 0)) *
-    NativeInstruction::instruction_size;
+int MachCallStaticJavaNode::ret_addr_offset() const {
+  bool far = (_method == nullptr) ? maybe_far_call(this) : !cache_reachable();
+  return (far ? 3 : 1) * NativeInstruction::instruction_size;
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset() {
+int MachCallDynamicJavaNode::ret_addr_offset() const {
   bool far = !cache_reachable();
   // mov_oop is always 2 words
   return (2 + (far ? 3 : 1)) * NativeInstruction::instruction_size;
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
+int MachCallRuntimeNode::ret_addr_offset() const {
   // bl or movw; movt; blx
   bool far = maybe_far_call(this);
   return (far ? 3 : 1) * NativeInstruction::instruction_size;
@@ -501,33 +500,8 @@ operand immIRotn() %{
   interface(CONST_INTER);
 %}
 
-operand immIRotneg() %{
-  // if AsmOperand::is_rotated_imm() is true for this constant, it is
-  // a immIRot and an optimal instruction combination exists to handle the
-  // constant as an immIRot
-  predicate(!AsmOperand::is_rotated_imm(n->get_int()) && AsmOperand::is_rotated_imm(-n->get_int()));
-  match(ConI);
-
-  op_cost(0);
-  // formats are generated automatically for constants and base registers
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Non-negative integer immediate that is encodable using the rotation scheme,
-// and that when expanded fits in 31 bits.
-operand immU31Rot() %{
-  predicate((0 <= n->get_int()) && AsmOperand::is_rotated_imm(n->get_int()));
-  match(ConI);
-
-  op_cost(0);
-  // formats are generated automatically for constants and base registers
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immPRot() %{
-  predicate(n->get_ptr() == 0 || (AsmOperand::is_rotated_imm(n->get_ptr()) && ((ConPNode*)n)->type()->reloc() == relocInfo::none));
+  predicate(n->get_ptr() == 0 || (AsmOperand::is_rotated_imm(n->get_ptr()) && ((ConPNode*)n)->type()->is_ptr()->reloc() == relocInfo::none));
 
   match(ConP);
 
@@ -546,15 +520,15 @@ operand immLlowRot() %{
   interface(CONST_INTER);
 %}
 
-operand immLRot2() %{
-  predicate(AsmOperand::is_rotated_imm((int)(n->get_long() >> 32)) &&
-            AsmOperand::is_rotated_imm((int)(n->get_long())));
-  match(ConL);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
+//operand immLRot2() %{
+//  predicate(AsmOperand::is_rotated_imm((int)(n->get_long() >> 32)) &&
+//            AsmOperand::is_rotated_imm((int)(n->get_long())));
+//  match(ConL);
+//  op_cost(0);
+//
+//  format %{ %}
+//  interface(CONST_INTER);
+//%}
 
 // Integer Immediate: 12-bit - for addressing mode
 operand immI12() %{

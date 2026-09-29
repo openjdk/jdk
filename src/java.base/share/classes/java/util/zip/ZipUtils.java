@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import static java.util.zip.ZipConstants.ENDHDR;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Preconditions;
 
 class ZipUtils {
 
@@ -170,7 +171,10 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final int get16(byte[] b, int off) {
-        return (b[off] & 0xff) | ((b[off + 1] & 0xff) << 8);
+        Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkIndex(off + 1, b.length, Preconditions.AIOOBE_FORMATTER);
+        return Short.toUnsignedInt(
+                UNSAFE.getShortUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false));
     }
 
     /**
@@ -178,15 +182,20 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final long get32(byte[] b, int off) {
-        return (get16(b, off) | ((long)get16(b, off+2) << 16)) & 0xffffffffL;
+        Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkIndex(off + 3, b.length, Preconditions.AIOOBE_FORMATTER);
+        return Integer.toUnsignedLong(
+                UNSAFE.getIntUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false));
     }
 
     /**
      * Fetches signed 64-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    public static final long get64(byte[] b, int off) {
-        return get32(b, off) | (get32(b, off+4) << 32);
+    public static final long get64S(byte[] b, int off) {
+        Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkIndex(off + 7, b.length, Preconditions.AIOOBE_FORMATTER);
+        return UNSAFE.getLongUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
     }
 
     /**
@@ -195,28 +204,9 @@ class ZipUtils {
      *
      */
     public static final int get32S(byte[] b, int off) {
-        return (get16(b, off) | (get16(b, off+2) << 16));
-    }
-
-    // fields access methods
-    static final int CH(byte[] b, int n) {
-        return b[n] & 0xff ;
-    }
-
-    static final int SH(byte[] b, int n) {
-        return (b[n] & 0xff) | ((b[n + 1] & 0xff) << 8);
-    }
-
-    static final long LG(byte[] b, int n) {
-        return ((SH(b, n)) | (SH(b, n + 2) << 16)) & 0xffffffffL;
-    }
-
-    static final long LL(byte[] b, int n) {
-        return (LG(b, n)) | (LG(b, n + 4) << 32);
-    }
-
-    static final long GETSIG(byte[] b) {
-        return LG(b, 0);
+        Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkIndex(off + 3, b.length, Preconditions.AIOOBE_FORMATTER);
+        return UNSAFE.getIntUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
     }
 
     /*
@@ -231,78 +221,78 @@ class ZipUtils {
 
 
     // local file (LOC) header fields
-    static final long LOCSIG(byte[] b) { return LG(b, 0); } // signature
-    static final int  LOCVER(byte[] b) { return SH(b, 4); } // version needed to extract
-    static final int  LOCFLG(byte[] b) { return SH(b, 6); } // general purpose bit flags
-    static final int  LOCHOW(byte[] b) { return SH(b, 8); } // compression method
-    static final long LOCTIM(byte[] b) { return LG(b, 10);} // modification time
-    static final long LOCCRC(byte[] b) { return LG(b, 14);} // crc of uncompressed data
-    static final long LOCSIZ(byte[] b) { return LG(b, 18);} // compressed data size
-    static final long LOCLEN(byte[] b) { return LG(b, 22);} // uncompressed data size
-    static final int  LOCNAM(byte[] b) { return SH(b, 26);} // filename length
-    static final int  LOCEXT(byte[] b) { return SH(b, 28);} // extra field length
+    static final long LOCSIG(byte[] b) { return get32(b, 0); } // signature
+    static final int  LOCVER(byte[] b) { return get16(b, 4); } // version needed to extract
+    static final int  LOCFLG(byte[] b) { return get16(b, 6); } // general purpose bit flags
+    static final int  LOCHOW(byte[] b) { return get16(b, 8); } // compression method
+    static final long LOCTIM(byte[] b) { return get32(b, 10);} // modification time
+    static final long LOCCRC(byte[] b) { return get32(b, 14);} // crc of uncompressed data
+    static final long LOCSIZ(byte[] b) { return get32(b, 18);} // compressed data size
+    static final long LOCLEN(byte[] b) { return get32(b, 22);} // uncompressed data size
+    static final int  LOCNAM(byte[] b) { return get16(b, 26);} // filename length
+    static final int  LOCEXT(byte[] b) { return get16(b, 28);} // extra field length
 
     // extra local (EXT) header fields
-    static final long EXTCRC(byte[] b) { return LG(b, 4);}  // crc of uncompressed data
-    static final long EXTSIZ(byte[] b) { return LG(b, 8);}  // compressed size
-    static final long EXTLEN(byte[] b) { return LG(b, 12);} // uncompressed size
+    static final long EXTCRC(byte[] b) { return get32(b, 4);}  // crc of uncompressed data
+    static final long EXTSIZ(byte[] b) { return get32(b, 8);}  // compressed size
+    static final long EXTLEN(byte[] b) { return get32(b, 12);} // uncompressed size
 
     // end of central directory header (END) fields
-    static final int  ENDSUB(byte[] b) { return SH(b, 8); }  // number of entries on this disk
-    static final int  ENDTOT(byte[] b) { return SH(b, 10);}  // total number of entries
-    static final long ENDSIZ(byte[] b) { return LG(b, 12);}  // central directory size
-    static final long ENDOFF(byte[] b) { return LG(b, 16);}  // central directory offset
-    static final int  ENDCOM(byte[] b) { return SH(b, 20);}  // size of zip file comment
-    static final int  ENDCOM(byte[] b, int off) { return SH(b, off + 20);}
+    static final int  ENDSUB(byte[] b) { return get16(b, 8); }  // number of entries on this disk
+    static final int  ENDTOT(byte[] b) { return get16(b, 10);}  // total number of entries
+    static final long ENDSIZ(byte[] b) { return get32(b, 12);}  // central directory size
+    static final long ENDOFF(byte[] b) { return get32(b, 16);}  // central directory offset
+    static final int  ENDCOM(byte[] b) { return get16(b, 20);}  // size of ZIP file comment
+    static final int  ENDCOM(byte[] b, int off) { return get16(b, off + 20);}
 
-    // zip64 end of central directory recoder fields
-    static final long ZIP64_ENDTOD(byte[] b) { return LL(b, 24);}  // total number of entries on disk
-    static final long ZIP64_ENDTOT(byte[] b) { return LL(b, 32);}  // total number of entries
-    static final long ZIP64_ENDSIZ(byte[] b) { return LL(b, 40);}  // central directory size
-    static final long ZIP64_ENDOFF(byte[] b) { return LL(b, 48);}  // central directory offset
-    static final long ZIP64_LOCOFF(byte[] b) { return LL(b, 8);}   // zip64 end offset
+    // zip64 end of central directory record fields
+    static final long ZIP64_ENDTOD(byte[] b) { return get64S(b, 24);}  // total number of entries on disk
+    static final long ZIP64_ENDTOT(byte[] b) { return get64S(b, 32);}  // total number of entries
+    static final long ZIP64_ENDSIZ(byte[] b) { return get64S(b, 40);}  // central directory size
+    static final long ZIP64_ENDOFF(byte[] b) { return get64S(b, 48);}  // central directory offset
+    static final long ZIP64_LOCOFF(byte[] b) { return get64S(b, 8);}   // zip64 end offset
 
     // central directory header (CEN) fields
-    static final long CENSIG(byte[] b, int pos) { return LG(b, pos + 0); }
-    static final int  CENVEM(byte[] b, int pos) { return SH(b, pos + 4); }
-    static final int  CENVEM_FA(byte[] b, int pos) { return CH(b, pos + 5); } // file attribute compatibility
-    static final int  CENVER(byte[] b, int pos) { return SH(b, pos + 6); }
-    static final int  CENFLG(byte[] b, int pos) { return SH(b, pos + 8); }
-    static final int  CENHOW(byte[] b, int pos) { return SH(b, pos + 10);}
-    static final long CENTIM(byte[] b, int pos) { return LG(b, pos + 12);}
-    static final long CENCRC(byte[] b, int pos) { return LG(b, pos + 16);}
-    static final long CENSIZ(byte[] b, int pos) { return LG(b, pos + 20);}
-    static final long CENLEN(byte[] b, int pos) { return LG(b, pos + 24);}
-    static final int  CENNAM(byte[] b, int pos) { return SH(b, pos + 28);}
-    static final int  CENEXT(byte[] b, int pos) { return SH(b, pos + 30);}
-    static final int  CENCOM(byte[] b, int pos) { return SH(b, pos + 32);}
-    static final int  CENDSK(byte[] b, int pos) { return SH(b, pos + 34);}
-    static final int  CENATT(byte[] b, int pos) { return SH(b, pos + 36);}
-    static final long CENATX(byte[] b, int pos) { return LG(b, pos + 38);}
-    static final int  CENATX_PERMS(byte[] b, int pos) { return SH(b, pos + 40);} // posix permission data
-    static final long CENOFF(byte[] b, int pos) { return LG(b, pos + 42);}
+    static final long CENSIG(byte[] b, int pos) { return get32(b, pos + 0); }
+    static final int  CENVEM(byte[] b, int pos) { return get16(b, pos + 4); }
+    static final int  CENVEM_FA(byte[] b, int pos) { return Byte.toUnsignedInt(b[pos + 5]); } // file attribute compatibility
+    static final int  CENVER(byte[] b, int pos) { return get16(b, pos + 6); }
+    static final int  CENFLG(byte[] b, int pos) { return get16(b, pos + 8); }
+    static final int  CENHOW(byte[] b, int pos) { return get16(b, pos + 10);}
+    static final long CENTIM(byte[] b, int pos) { return get32(b, pos + 12);}
+    static final long CENCRC(byte[] b, int pos) { return get32(b, pos + 16);}
+    static final long CENSIZ(byte[] b, int pos) { return get32(b, pos + 20);}
+    static final long CENLEN(byte[] b, int pos) { return get32(b, pos + 24);}
+    static final int  CENNAM(byte[] b, int pos) { return get16(b, pos + 28);}
+    static final int  CENEXT(byte[] b, int pos) { return get16(b, pos + 30);}
+    static final int  CENCOM(byte[] b, int pos) { return get16(b, pos + 32);}
+    static final int  CENDSK(byte[] b, int pos) { return get16(b, pos + 34);}
+    static final int  CENATT(byte[] b, int pos) { return get16(b, pos + 36);}
+    static final long CENATX(byte[] b, int pos) { return get32(b, pos + 38);}
+    static final int  CENATX_PERMS(byte[] b, int pos) { return get16(b, pos + 40);} // posix permission data
+    static final long CENOFF(byte[] b, int pos) { return get32(b, pos + 42);}
 
     // The END header is followed by a variable length comment of size < 64k.
     static final long END_MAXLEN = 0xFFFF + ENDHDR;
     static final int READBLOCKSZ = 128;
 
     /**
-     * Loads zip native library, if not already loaded
+     * Loads ZIP native library, if not already loaded
      */
     static void loadLibrary() {
         jdk.internal.loader.BootLoader.loadLibrary("zip");
     }
 
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    private static final long byteBufferArrayOffset = unsafe.objectFieldOffset(ByteBuffer.class, "hb");
-    private static final long byteBufferOffsetOffset = unsafe.objectFieldOffset(ByteBuffer.class, "offset");
+    private static final long byteBufferArrayOffset = UNSAFE.objectFieldOffset(ByteBuffer.class, "hb");
+    private static final long byteBufferOffsetOffset = UNSAFE.objectFieldOffset(ByteBuffer.class, "offset");
 
     static byte[] getBufferArray(ByteBuffer byteBuffer) {
-        return (byte[]) unsafe.getReference(byteBuffer, byteBufferArrayOffset);
+        return (byte[]) UNSAFE.getReference(byteBuffer, byteBufferArrayOffset);
     }
 
     static int getBufferOffset(ByteBuffer byteBuffer) {
-        return unsafe.getInt(byteBuffer, byteBufferOffsetOffset);
+        return UNSAFE.getInt(byteBuffer, byteBufferOffsetOffset);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.lang.classfile.attribute.*;
  * @test Wildcards
  * @bug 6843077
  * @summary test that annotations target wildcards get emitted to classfile
- * @enablePreview
  */
 public class Wildcards {
     public static void main(String[] args) throws Exception {
@@ -56,8 +55,8 @@ public class Wildcards {
         System.out.println("PASSED");
     }
     void test(AttributedElement m) {
-        test(m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(m, Attributes.runtimeVisibleTypeAnnotations());
+        test(m, Attributes.runtimeInvisibleTypeAnnotations());
     }
     <T extends Attribute<T>> void test(AttributedElement m, AttributeMapper<T> attr_name) {
         Attribute<T> attr_instance = m.findAttribute(attr_name).orElse(null);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/stringUtils.hpp"
 #include "unittest.hpp"
@@ -71,4 +70,18 @@ TEST_VM(StringUtils, replace_no_expand) {
 
   deleted = StringUtils::replace_no_expand(s2, "\n", "");
   ASSERT_EQ(deleted, 0);
+}
+
+TEST(StringUtils, ClassListMatch) {
+  // Wild card matching doesn't look backwards
+  const char* str = "xabc";
+  const char* pat = "*abc";
+  bool match =  StringUtils::class_list_match(pat, &str[3]);
+  EXPECT_FALSE(match);
+
+  // Package name supports both / and .
+  str = "java/lang/String";
+  pat = "java.lang.String";
+  match =  StringUtils::class_list_match(pat, str);
+  EXPECT_TRUE(match);
 }

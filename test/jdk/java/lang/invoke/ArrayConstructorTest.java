@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8155106
- * @run testng/othervm -ea -esa test.java.lang.invoke.ArrayConstructorTest
+ * @run junit/othervm -ea -esa test.java.lang.invoke.ArrayConstructorTest
  */
 package test.java.lang.invoke;
 
@@ -32,30 +32,22 @@ import java.lang.invoke.MethodHandles;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import static org.testng.AssertJUnit.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.*;
-
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ArrayConstructorTest {
 
     static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     @Test
-    public static void testFindConstructorArray() {
-        boolean caught = false;
-        try {
-            MethodHandle h = LOOKUP.findConstructor(Object[].class, methodType(void.class));
-        } catch (NoSuchMethodException nsme) {
-            assertEquals("no constructor for array class: [Ljava.lang.Object;", nsme.getMessage());
-            caught = true;
-        } catch (Exception e) {
-            throw new AssertionError("unexpected exception: " + e);
-        }
-        assertTrue(caught);
+    public void testFindConstructorArray() {
+        var nsme = assertThrows(NoSuchMethodException.class, () -> LOOKUP.findConstructor(Object[].class, methodType(void.class)));
+        assertEquals("no constructor for array class: [Ljava.lang.Object;", nsme.getMessage());
     }
 
-    @DataProvider
     static Object[][] arrayConstructorNegative() {
         return new Object[][]{
                 {String.class, IllegalArgumentException.class, "not an array class: java.lang.String"},
@@ -63,34 +55,28 @@ public class ArrayConstructorTest {
         };
     }
 
-    @Test(dataProvider = "arrayConstructorNegative")
-    public static void testArrayConstructorNegative(Class<?> clazz, Class<?> exceptionClass, String message) {
-        boolean caught = false;
-        try {
-            MethodHandle h = MethodHandles.arrayConstructor(clazz);
-        } catch (Exception e) {
-            assertEquals(exceptionClass, e.getClass());
-            if (message != null) {
-                assertEquals(message, e.getMessage());
-            }
-            caught = true;
+    @ParameterizedTest
+    @MethodSource("arrayConstructorNegative")
+    public void testArrayConstructorNegative(Class<?> clazz, Class<? extends Exception> exceptionClass, String message) {
+        var e = assertThrowsExactly(exceptionClass, () -> MethodHandles.arrayConstructor(clazz));
+        if (message != null) {
+            assertEquals(message, e.getMessage());
         }
-        assertTrue(caught);
     }
 
     @Test
-    public static void testArrayConstructor() throws Throwable {
+    public void testArrayConstructor() throws Throwable {
         MethodHandle h = MethodHandles.arrayConstructor(String[].class);
         assertEquals(methodType(String[].class, int.class), h.type());
         String[] a = (String[]) h.invoke(17);
         assertEquals(17, a.length);
     }
 
-    @Test(expectedExceptions = {NegativeArraySizeException.class})
-    public static void testArrayConstructorNegativeIndex() throws Throwable {
+    @Test
+    public void testArrayConstructorNegativeIndex() throws Throwable {
         MethodHandle h = MethodHandles.arrayConstructor(String[].class);
         assertEquals(methodType(String[].class, int.class), h.type());
-        h.invoke(-1); // throws exception
+        assertThrows(NegativeArraySizeException.class, () -> h.invoke(-1));
     }
 
 }

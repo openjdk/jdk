@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ class G1SurvRateGroup : public CHeapObj<mtGC> {
   uint _stats_arrays_length;
   uint _num_added_regions;   // The number of regions in this survivor rate group.
 
+  // The initial survivor rate for predictors. Somewhat random value.
+  const double InitialSurvivorRate = 0.4;
+
   double* _accum_surv_rate_pred;
   double  _last_pred;
   TruncatedSeq** _surv_rate_predictors;
@@ -73,15 +76,7 @@ public:
   void record_surviving_words(uint age, size_t surv_words);
   void all_surviving_words_recorded(const G1Predictions& predictor, bool update_predictors);
 
-  double accum_surv_rate_pred(uint age) const {
-    assert(_stats_arrays_length > 0, "invariant" );
-    if (age < _stats_arrays_length)
-      return _accum_surv_rate_pred[age];
-    else {
-      double diff = (double)(age - _stats_arrays_length + 1);
-      return _accum_surv_rate_pred[_stats_arrays_length - 1] + diff * _last_pred;
-    }
-  }
+  double accum_surv_rate_pred(uint age) const;
 
   double surv_rate_pred(G1Predictions const& predictor, uint age) const {
     assert(is_valid_age(age), "must be");

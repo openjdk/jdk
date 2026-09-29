@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,103 +22,152 @@
  */
 package jdk.jpackage.test;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundlingEnvironment;
+import jdk.jpackage.internal.model.BundlingOperationDescriptor;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 /**
  * jpackage type traits.
  */
 public enum PackageType {
-    WIN_MSI(".msi",
-            TKit.isWindows() ? "jdk.jpackage.internal.WinMsiBundler" : null),
-    WIN_EXE(".exe",
-            TKit.isWindows() ? "jdk.jpackage.internal.WinMsiBundler" : null),
-    LINUX_DEB(".deb",
-            TKit.isLinux() ? "jdk.jpackage.internal.LinuxDebBundler" : null),
-    LINUX_RPM(".rpm",
-            TKit.isLinux() ? "jdk.jpackage.internal.LinuxRpmBundler" : null),
-    MAC_DMG(".dmg", TKit.isOSX() ? "jdk.jpackage.internal.MacDmgBundler" : null),
-    MAC_PKG(".pkg", TKit.isOSX() ? "jdk.jpackage.internal.MacPkgBundler" : null),
-    IMAGE("app-image", null, null);
+    WIN_MSI(".msi", OperatingSystem.WINDOWS),
+    WIN_EXE(".exe", OperatingSystem.WINDOWS),
+    LINUX_DEB(".deb", OperatingSystem.LINUX),
+    LINUX_RPM(".rpm", OperatingSystem.LINUX),
+    MAC_DMG(".dmg", OperatingSystem.MACOS),
+    MAC_PKG(".pkg", OperatingSystem.MACOS),
+    IMAGE(OperatingSystem.current()),
+    WIN_IMAGE(OperatingSystem.WINDOWS),
+    LINUX_IMAGE(OperatingSystem.LINUX),
+    MAC_IMAGE(OperatingSystem.MACOS),
+    ;
 
-    PackageType(String packageName, String bundleSuffix, String bundlerClass) {
-        name  = packageName;
-        suffix = bundleSuffix;
-        if (bundlerClass != null && !Inner.DISABLED_PACKAGERS.contains(getName())) {
-            supported = isBundlerSupported(bundlerClass);
-        } else {
-            supported = false;
-        }
+    PackageType(OperatingSystem os) {
+        this.os = Objects.requireNonNull(os);
+        type  = "app-image";
+        suffix = null;
+        supported = (os == OperatingSystem.current());
+        enabled = supported;
+    }
 
-        if (suffix != null && supported) {
-            TKit.trace(String.format("Bundler %s supported", getName()));
+    PackageType(String packageName, String bundleSuffix, OperatingSystem os) {
+        this.os = Objects.requireNonNull(os);
+        type  = Objects.requireNonNull(packageName);
+        suffix = Objects.requireNonNull(bundleSuffix);
+        supported = isSupported(new BundlingOperationDescriptor(os, type));
+        enabled = supported && !Inner.DISABLED_PACKAGERS.contains(getType());
+
+        if (suffix != null && enabled) {
+            TKit.trace(String.format("Bundler %s enabled", getType()));
         }
     }
 
-    PackageType(String bundleSuffix, String bundlerClass) {
-        this(bundleSuffix.substring(1), bundleSuffix, bundlerClass);
+    PackageType(String bundleSuffix, OperatingSystem os) {
+        this(bundleSuffix.substring(1), bundleSuffix, os);
     }
 
     void applyTo(JPackageCommand cmd) {
-        cmd.setArgumentValue("--type", getName());
+        cmd.setArgumentValue("--type", getType());
     }
 
     String getSuffix() {
-        return suffix;
+        return Optional.ofNullable(suffix).orElseThrow(UnsupportedOperationException::new);
     }
 
-    boolean isSupported() {
+    public boolean isSupported() {
         return supported;
     }
 
-    String getName() {
-        return name;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    static PackageType fromSuffix(String packageFilename) {
-        if (packageFilename != null) {
-            for (PackageType v : values()) {
-                if (packageFilename.endsWith(v.getSuffix())) {
-                    return v;
-                }
-            }
+    public boolean isAppImage() {
+        return type.equals(IMAGE.type);
+    }
+
+    public boolean isNative() {
+        return !isAppImage();
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public OperatingSystem os() {
+        return os;
+    }
+
+    public static PackageType appImageForOS(OperatingSystem os) {
+        Objects.requireNonNull(os);
+        return Stream.of(LINUX_IMAGE, MAC_IMAGE, WIN_IMAGE).filter(type -> {
+            return type.os() == os;
+        }).findFirst().orElseThrow();
+    }
+
+    public static RuntimeException throwSkippedExceptionIfNativePackagingUnavailable() {
+        if (NATIVE.stream().noneMatch(PackageType::isSupported)) {
+            TKit.throwSkippedException("None of the native packagers supported in this environment");
+        } else if (NATIVE.stream().noneMatch(PackageType::isEnabled)) {
+            TKit.throwSkippedException("All native packagers supported in this environment are disabled");
         }
         return null;
     }
 
-    private static boolean isBundlerSupported(String bundlerClass) {
-        try {
-            Class clazz = Class.forName(bundlerClass);
-            Method supported = clazz.getMethod("supported", boolean.class);
-            return ((Boolean) supported.invoke(
-                    clazz.getConstructor().newInstance(), true));
-        } catch (ClassNotFoundException | IllegalAccessException ex) {
-        } catch (InstantiationException | NoSuchMethodException
-                | InvocationTargetException ex) {
-            Functional.rethrowUnchecked(ex);
-        }
-        return false;
+    private static boolean isSupported(BundlingOperationDescriptor op) {
+        return Inner.BUNDLING_ENV.filter(bundlingEnv -> {
+            try {
+                return bundlingEnv.configurationErrors(op).isEmpty();
+            } catch (NoSuchElementException ex) {
+                return false;
+            }
+        }).isPresent();
     }
 
-    private final String name;
+    private static Set<PackageType> orderedSet(PackageType... types) {
+        return new LinkedHashSet<>(List.of(types));
+    }
+
+    private final OperatingSystem os;
+    private final String type;
     private final String suffix;
+    private final boolean enabled;
     private final boolean supported;
 
-    public final static Set<PackageType> LINUX = Set.of(LINUX_DEB, LINUX_RPM);
-    public final static Set<PackageType> WINDOWS = Set.of(WIN_EXE, WIN_MSI);
-    public final static Set<PackageType> MAC = Set.of(MAC_PKG, MAC_DMG);
-    public final static Set<PackageType> NATIVE = Stream.concat(
-            Stream.concat(LINUX.stream(), WINDOWS.stream()),
-            MAC.stream()).collect(Collectors.toUnmodifiableSet());
+    public static final Set<PackageType> LINUX = orderedSet(LINUX_DEB, LINUX_RPM);
+    public static final Set<PackageType> WINDOWS = orderedSet(WIN_MSI, WIN_EXE);
+    public static final Set<PackageType> MAC = orderedSet(MAC_DMG, MAC_PKG);
+    public static final Set<PackageType> NATIVE = Stream.of(LINUX, WINDOWS, MAC)
+            .flatMap(Collection::stream).collect(Collectors.toUnmodifiableSet());
 
-    private final static class Inner {
-        private final static Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
+    public static final Set<PackageType> ALL_LINUX = orderedSet(LINUX_IMAGE, LINUX_DEB, LINUX_RPM);
+    public static final Set<PackageType> ALL_WINDOWS = orderedSet(WIN_IMAGE, WIN_MSI, WIN_EXE);
+    public static final Set<PackageType> ALL_MAC = orderedSet(MAC_IMAGE, MAC_DMG, MAC_PKG);
+
+    private static final class Inner {
+        private static final Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
                 TKit.tokenizeConfigProperty("disabledPackagers")).orElse(
                 TKit.isLinuxAPT() ? Set.of("rpm") : Collections.emptySet());
+
+        private static final Optional<BundlingEnvironment> BUNDLING_ENV = ServiceLoader.load(
+                ThrowingSupplier.toSupplier(() -> {
+                    @SuppressWarnings("unchecked")
+                    var reply = (Class<BundlingEnvironment>)Class.forName("jdk.jpackage.internal.cli.CliBundlingEnvironment");
+                    return reply;
+                }).get(),
+                BundlingEnvironment.class.getClassLoader()
+        ).findFirst();
     }
 }

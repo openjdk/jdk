@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,11 +87,11 @@ abstract class Wrap implements GeneralWrap {
      * @return a Wrap that declares the given variable, potentially with
      *         an initialization method
      */
-    public static Wrap varWrap(String source, Wrap wtype, String brackets,
+    public static Wrap varWrap(String source, Wrap prefix, Wrap wtype, String brackets,
                                Wrap wname, Wrap winit, boolean enhanced,
                                Wrap anonDeclareWrap) {
         List<Object> components = new ArrayList<>();
-        components.add(new VarDeclareWrap(wtype, brackets, wname));
+        components.add(new VarDeclareWrap(prefix, wtype, brackets, wname));
         Wrap wmeth;
 
         if (winit == null) {
@@ -113,9 +113,9 @@ abstract class Wrap implements GeneralWrap {
                     scratchName += "$";
                 }
                 Wrap waux = new CompoundWrap(
-                        "    private static <" + scratchName + "> " + scratchName +" ", DOIT_METHOD_NAME + "Aux", "() throws Throwable {\n",
+                        "    private static <" + scratchName + "> " + scratchName +" ", DOIT_METHOD_NAME + "Aux", "() throws java.lang.Throwable {\n",
                         wtype, brackets + " ", scratchName, "_ =\n        ", winit, semi(winit),
-                        "        @SuppressWarnings(\"unchecked\") ", scratchName, " ", scratchName, "__ = (", scratchName, ")", scratchName, "_;\n",
+                        "        @java.lang.SuppressWarnings(\"unchecked\") ", scratchName, " ", scratchName, "__ = (", scratchName, ")", scratchName, "_;\n",
                         "        return ", scratchName, "__;\n",
                         "}"
                 );
@@ -164,9 +164,10 @@ abstract class Wrap implements GeneralWrap {
         return new RangeWrap(source, range);
     }
 
-    public static Wrap classMemberWrap(String source) {
-        Wrap w = new NoWrap(source);
-        return new CompoundWrap("    public static\n    ", w);
+    public static Wrap classMemberWrap(String source, int modifierInsertPos) {
+        Wrap prefix = modifierInsertPos == 0 ? null : new RangeWrap(source, new Range(0, modifierInsertPos));
+        Wrap suffix = new RangeWrap(source, new Range(modifierInsertPos, source.length()));
+        return new CompoundWrap(prefix, " public static ", suffix);
     }
 
     private static int countLines(String s) {
@@ -257,6 +258,8 @@ abstract class Wrap implements GeneralWrap {
                         snlnLast = w.lastSnippetLine();
                     }
                     sb.append(w.wrapped());
+                } else if (o == null) {
+                    //permit missing delegates
                 } else {
                     throw new InternalError("Bad object in CommoundWrap: " + o);
                 }
@@ -550,7 +553,7 @@ abstract class Wrap implements GeneralWrap {
     private static class DoitMethodWrap extends CompoundWrap {
 
         DoitMethodWrap(Wrap w) {
-            super("    public static Object " + DOIT_METHOD_NAME + "() throws Throwable {\n"
+            super("    public static java.lang.Object " + DOIT_METHOD_NAME + "() throws java.lang.Throwable {\n"
                     + "        ", w,
                     "    }\n");
         }
@@ -558,8 +561,8 @@ abstract class Wrap implements GeneralWrap {
 
     private static class VarDeclareWrap extends CompoundWrap {
 
-        VarDeclareWrap(Wrap wtype, String brackets, Wrap wname) {
-            super("    public static ", wtype, brackets + " ", wname, semi(wname));
+        VarDeclareWrap(Wrap prefix, Wrap wtype, String brackets, Wrap wname) {
+            super(prefix, "    public static ", wtype, brackets + " ", wname, semi(wname));
         }
     }
 

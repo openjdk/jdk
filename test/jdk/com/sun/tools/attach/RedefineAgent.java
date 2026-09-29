@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * 6446941 java.lang.instrument: multiple agent attach fails (first agent chooses capabilities)
  */
 import java.net.Socket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.io.IOException;
 import java.util.Arrays;
@@ -104,7 +105,7 @@ public class RedefineAgent implements ClassFileTransformer {
         int port = Integer.parseInt(args);
         System.out.println("RedefineAgent connecting back to Tool....");
         Socket s = new Socket();
-        s.connect( new InetSocketAddress(port) );
+        s.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
         System.out.println("RedefineAgent connected to Tool.");
 
         testRedefine(inst);

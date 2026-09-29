@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,21 @@
  *          java.base/jdk.internal.reflect
  * @library /test/lib
  * @compile ConstantPoolTestDummy.jasm
- * @run main jdk.internal.reflect.constantPool.ConstantPoolTest
+ * @compile ConstantPoolTest.java
+ * @run junit ConstantPoolTest
  */
 
-package jdk.internal.reflect.constantPool;
-
+import java.lang.classfile.ClassFile;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.ConstantPool;
 import jdk.test.lib.Asserts;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ConstantPoolTest {
 
@@ -46,13 +51,23 @@ public class ConstantPoolTest {
     private static final ConstantPool CP = SharedSecrets.getJavaLangAccess()
             .getConstantPool(TEST_CLASS);
 
-    public static void main(String[] s) {
-        for (TestCase testCase : TestCase.values()) {
-            testCase.test();
-        }
+    @ParameterizedTest
+    @EnumSource(TestCase.class)
+    void runTestCases(TestCase testCase) {
+        testCase.test();
     }
 
-    public static enum TestCase {
+    @Test
+    void testSize() throws Throwable {
+        byte[] data;
+        try (var in = ConstantPoolTest.class.getResourceAsStream("/ConstantPoolTestDummy.class")) {
+            data = in.readAllBytes();
+        }
+        var testClass = ClassFile.of().parse(data);
+        assertEquals(testClass.constantPool().size(), CP.getSize());
+    }
+
+    public enum TestCase {
         GET_TAG_AT {
             {
                 referenceMap.put(1, ConstantPool.Tag.METHODREF);

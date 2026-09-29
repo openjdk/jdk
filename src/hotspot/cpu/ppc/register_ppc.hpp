@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define CPU_PPC_REGISTER_PPC_HPP
 
 #include "asm/register.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 
 // forward declaration
 class VMRegImpl;
@@ -98,8 +99,8 @@ class Register {
 
   // testers
   constexpr bool is_valid()       const { return ( 0 <= _encoding && _encoding <  number_of_registers); }
-  constexpr bool is_volatile()    const { return ( 0 <= _encoding && _encoding <= 13 ); }
-  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31 ); }
+  constexpr bool is_volatile()    const { return ( 0 <= _encoding && _encoding <= 13); }
+  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31); }
 
   const char* name() const;
 };
@@ -168,7 +169,7 @@ class ConditionRegister {
 
   // testers
   constexpr bool is_valid()       const { return (0 <= _encoding && _encoding <  number_of_registers); }
-  constexpr bool is_nonvolatile() const { return (2 <= _encoding && _encoding <= 4 );  }
+  constexpr bool is_nonvolatile() const { return (2 <= _encoding && _encoding <= 4); }
 
   const char* name() const;
 };
@@ -178,14 +179,14 @@ inline constexpr ConditionRegister as_ConditionRegister(int encoding) {
   return ConditionRegister(encoding);
 }
 
-constexpr ConditionRegister CCR0 = as_ConditionRegister(0);
-constexpr ConditionRegister CCR1 = as_ConditionRegister(1);
-constexpr ConditionRegister CCR2 = as_ConditionRegister(2);
-constexpr ConditionRegister CCR3 = as_ConditionRegister(3);
-constexpr ConditionRegister CCR4 = as_ConditionRegister(4);
-constexpr ConditionRegister CCR5 = as_ConditionRegister(5);
-constexpr ConditionRegister CCR6 = as_ConditionRegister(6);
-constexpr ConditionRegister CCR7 = as_ConditionRegister(7);
+constexpr ConditionRegister CR0 = as_ConditionRegister(0);
+constexpr ConditionRegister CR1 = as_ConditionRegister(1);
+constexpr ConditionRegister CR2 = as_ConditionRegister(2);
+constexpr ConditionRegister CR3 = as_ConditionRegister(3);
+constexpr ConditionRegister CR4 = as_ConditionRegister(4);
+constexpr ConditionRegister CR5 = as_ConditionRegister(5);
+constexpr ConditionRegister CR6 = as_ConditionRegister(6);
+constexpr ConditionRegister CR7 = as_ConditionRegister(7);
 
 
 class VectorSRegister;
@@ -213,6 +214,7 @@ class FloatRegister {
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31); }
 
   const char* name() const;
 
@@ -319,9 +321,11 @@ class VectorRegister {
 
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  inline VMReg as_VMReg() const;
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_nonvolatile() const { return (20 <= _encoding && _encoding <= 31); }
 
   const char* name() const;
 
@@ -371,6 +375,7 @@ constexpr VectorRegister VR31 = as_VectorRegister(31);
 
 
 // The implementation of Vector-Scalar (VSX) registers on POWER architecture.
+// VSR0-31 are aliases for F0-31 and VSR32-63 are aliases for VR0-31.
 class VectorSRegister {
   int _encoding;
  public:
@@ -388,7 +393,7 @@ class VectorSRegister {
 
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
-  inline VMReg as_VMReg() const;
+  VectorSRegister successor() const { return VectorSRegister(encoding() + 1); }
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
@@ -479,8 +484,8 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   enum {
     max_gpr = Register::number_of_registers * 2,
     max_fpr = max_gpr + FloatRegister::number_of_registers * 2,
-    max_vsr = max_fpr + VectorSRegister::number_of_registers,
-    max_cnd = max_vsr + ConditionRegister::number_of_registers,
+    max_vr  = max_fpr + VectorRegister::number_of_registers * 4,
+    max_cnd = max_vr  + ConditionRegister::number_of_registers,
     max_spr = max_cnd + SpecialRegister::number_of_registers,
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.
     // There is no requirement that any ordering here matches any ordering c2 gives
@@ -518,7 +523,7 @@ constexpr FloatRegister F11_ARG11  = F11; // volatile
 constexpr FloatRegister F12_ARG12  = F12; // volatile
 constexpr FloatRegister F13_ARG13  = F13; // volatile
 
-// Register declarations to be used in frame manager assembly code.
+// Register declarations to be used in template interpreter assembly code.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register R14_bcp       = R14;
 constexpr Register R15_esp       = R15;      // slot below top of expression stack for ld/st with update
@@ -528,7 +533,7 @@ constexpr Register R17_tos       = R17;      // The interpreter's top of (expres
 constexpr Register R18_locals    = R18;      // address of first param slot (receiver).
 constexpr Register R19_method    = R19;      // address of current method
 
-// Temporary registers to be used within frame manager. We can use
+// Temporary registers to be used within template interpreter. We can use
 // the non-volatiles because the call stub has saved them.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register R21_tmp1 = R21;
@@ -554,5 +559,13 @@ constexpr Register R29_TOC = R29;
 // Scratch registers are volatile.
 constexpr Register R11_scratch1 = R11;
 constexpr Register R12_scratch2 = R12;
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  if (_bitset == 0) { return noreg; }
+  return as_Register(count_trailing_zeros(_bitset));
+}
+
+typedef AbstractRegSet<Register> RegSet;
 
 #endif // CPU_PPC_REGISTER_PPC_HPP

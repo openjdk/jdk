@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class TestDriver {
         Process debugger = startDebugger(jdiArgs, Arrays.copyOfRange(args, 3, args.length), debuggee.pid());
 
         int debuggerExit = debugger.waitFor();
-        if (debuggerExit != 95) {
+        if (debuggerExit != 0) {
             throw new Error("debugger exit code is " + debuggerExit);
         }
 

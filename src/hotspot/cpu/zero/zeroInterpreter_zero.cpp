@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -37,13 +36,16 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include "entry_zero.hpp"
@@ -330,25 +332,9 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   monitor = nullptr;
   if (method->is_synchronized()) {
     monitor = (BasicObjectLock*) istate->stack_base();
-    oop lockee = monitor->obj();
-    markWord disp = lockee->mark().set_unlocked();
-    monitor->lock()->set_displaced_header(disp);
-    bool call_vm = (LockingMode == LM_MONITOR);
-    bool inc_monitor_count = true;
-    if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
-      // Is it simple recursive case?
-      if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
-        monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-      } else {
-        inc_monitor_count = false;
-        CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
-        if (HAS_PENDING_EXCEPTION)
-          goto unwind_and_return;
-      }
-    }
-    if (inc_monitor_count) {
-      THREAD->inc_held_monitor_count();
-    }
+    CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
+    if (HAS_PENDING_EXCEPTION)
+      goto unwind_and_return;
   }
 
   // Get the signature handler
@@ -383,12 +369,15 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     goto unlock_unwind_and_return;
 
   void **arguments;
-  void *mirror; {
+  // These locals must remain on stack until call completes
+  void *mirror;
+  void *env;
+  {
     arguments =
       (void **) stack->alloc(handler->argument_count() * sizeof(void **));
     void **dst = arguments;
 
-    void *env = thread->jni_environment();
+    env = thread->jni_environment();
     *(dst++) = &env;
 
     if (method->is_static()) {
@@ -439,18 +428,16 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // ThreadStateTransition::transition_from_native() cannot be used
   // here because it does not check for asynchronous exceptions.
   // We have to manage the transition ourself.
-  thread->set_thread_state_fence(_thread_in_native_trans);
+  thread->set_thread_state_fence(_thread_in_Java);
 
   // Handle safepoint operations, pending suspend requests,
   // and pending asynchronous exceptions.
   if (SafepointMechanism::should_process(thread) ||
       thread->has_special_condition_for_native_trans()) {
-    JavaThread::check_special_condition_for_native_trans(thread);
+    SharedRuntime::check_special_condition_for_native_trans(thread);
     CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops());
   }
 
-  // Finally we can change the thread state to _thread_in_Java.
-  thread->set_thread_state(_thread_in_Java);
   fixup_after_potential_safepoint();
 
   // Notify the stack watermarks machinery that we are unwinding.
@@ -479,26 +466,10 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Unlock if necessary
   if (monitor) {
-    BasicLock *lock = monitor->lock();
-    markWord header = lock->displaced_header();
-    oop rcvr = monitor->obj();
-    monitor->set_obj(nullptr);
-
-    bool dec_monitor_count = true;
-    if (header.to_pointer() != nullptr) {
-      markWord old_header = markWord::encode(lock);
-      if (rcvr->cas_set_mark(header, old_header) != old_header) {
-        monitor->set_obj(rcvr);
-        dec_monitor_count = false;
-        InterpreterRuntime::monitorexit(monitor);
-      }
-    }
-    if (dec_monitor_count) {
-      THREAD->dec_held_monitor_count();
-    }
+    InterpreterRuntime::monitorexit(monitor);
   }
 
- unwind_and_return:
+  unwind_and_return:
 
   // Unwind the current activation
   thread->pop_zero_frame();
@@ -610,6 +581,12 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     return normal_entry(method, 0, THREAD);
   }
 
+  // Flattened entries require handling beyond a direct field load.
+  // Bail to slow path.
+  if (entry->is_flat()) {
+    return normal_entry(method, 0, THREAD);
+  }
+
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -698,6 +675,12 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   ConstantPoolCache* cache = method->constants()->cache();
   ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_putfield)) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  // Flattened entries require handling beyond a direct field store.
+  // Bail to slow path.
+  if (entry->is_flat()) {
     return normal_entry(method, 0, THREAD);
   }
 

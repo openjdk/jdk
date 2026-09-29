@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,12 +47,36 @@ extern "C" {
 
 #endif
 
+// JVMTI_ERROR_WRONG_PHASE guard
+static jrawMonitorID event_mon = NULL;
+static int is_vm_dead = 0;
+
+void lock(jvmtiEnv *jvmti, JNIEnv *jni) {
+  jvmtiError err = (*jvmti)->RawMonitorEnter(jvmti, event_mon);
+  if (err != JVMTI_ERROR_NONE) {
+    JNI_ENV_PTR(jni)->FatalError(JNI_ENV_ARGS2(jni, "RawMonitorEnter failed"));
+  }
+}
+
+void unlock(jvmtiEnv *jvmti, JNIEnv *jni) {
+  jvmtiError err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
+  if (err != JVMTI_ERROR_NONE) {
+    JNI_ENV_PTR(jni)->FatalError(JNI_ENV_ARGS2(jni, "RawMonitorExit failed"));
+  }
+}
+
 extern JNIEXPORT void JNICALL VMObjectAlloc(jvmtiEnv *jvmti,
                                             JNIEnv* jni,
                                             jthread thread,
                                             jobject object,
                                             jclass klass,
                                             jlong size) {
+  lock(jvmti, jni);
+  if (is_vm_dead) {
+    unlock(jvmti, jni);
+    return;
+  }
+
   char *signature = NULL;
   jvmtiError error = (*jvmti)->GetClassSignature(jvmti, klass, &signature, NULL);
 
@@ -78,10 +102,17 @@ extern JNIEXPORT void JNICALL VMObjectAlloc(jvmtiEnv *jvmti,
           JNI_ENV_ARGS2(jni, "Failed during the CallObjectMethod call"));
     }
   }
+  unlock(jvmti, jni);
 }
 
 extern JNIEXPORT void JNICALL OnVMInit(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL);
+}
+
+extern JNIEXPORT void JNICALL OnVMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
+  lock(jvmti, jni);
+  is_vm_dead = 1;
+  unlock(jvmti, jni);
 }
 
 extern JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options,
@@ -89,14 +120,22 @@ extern JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options,
   jvmtiEnv *jvmti;
   jvmtiEventCallbacks callbacks;
   jvmtiCapabilities caps;
+  jvmtiError err;
 
   if ((*jvm)->GetEnv(jvm, (void **) (&jvmti), JVMTI_VERSION) != JNI_OK) {
+    return JNI_ERR;
+  }
+
+  err = (*jvmti)->CreateRawMonitor(jvmti, "Event Monitor", &event_mon);
+  if (err != JVMTI_ERROR_NONE) {
+    printf("CreateRawMonitor failed: %d\n", err);
     return JNI_ERR;
   }
 
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.VMObjectAlloc = &VMObjectAlloc;
   callbacks.VMInit = &OnVMInit;
+  callbacks.VMDeath = &OnVMDeath;
 
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_vm_object_alloc_events = 1;
@@ -104,6 +143,7 @@ extern JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options,
 
   (*jvmti)->SetEventCallbacks(jvmti, &callbacks, sizeof(jvmtiEventCallbacks));
   (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+  (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
   return 0;
 }
 

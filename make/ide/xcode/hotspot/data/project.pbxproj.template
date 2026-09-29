@@ -1,0 +1,207 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 48;
+	objects = {
+
+/* Begin PBXBuildFile section */
+TEMPLATE_PBXBUILDFILE
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		D60000000000000000000003 /* script_before.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = script_before.sh; sourceTree = "<group>"; };
+		D60000000000000000000002 /* script_after.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = script_after.sh; sourceTree = "<group>"; };
+		D60000000000000000000006 /* libjvm.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libjvm.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+TEMPLATE_PBXFILEREFERENCE
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		D60000000000000000000004 /* scripts */ = {
+			isa = PBXGroup;
+			children = (
+				D60000000000000000000003 /* script_before.sh */,
+				D60000000000000000000002 /* script_after.sh */,
+			);
+			name = scripts;
+			sourceTree = "<group>";
+		};
+		D60000000000000000000005 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D60000000000000000000006 /* libjvm.dylib */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D60000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				D60000000000000000000004 /* scripts */,
+TEMPLATE_GROUP_GENSRC /* gensrc */,
+TEMPLATE_GROUP_SRC /* src */,
+TEMPLATE_GROUP_TEST /* test */,
+				D60000000000000000000005 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+TEMPLATE_GROUPS
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D60000000000000000000000 /* jvm */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D6000000000000000000000F /* Build configuration list for PBXNativeTarget "jvm" */;
+			buildPhases = (
+				D60000000000000000000007 /* Run script_before */,
+				D60000000000000000000008 /* Sources */,
+				D6000000000000000000000A /* Run script_after */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = jvm;
+			productName = jvm;
+			productReference = D60000000000000000000006 /* libjvm.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D60000000000000000000010 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0900;
+				ORGANIZATIONNAME = Oracle;
+				TargetAttributes = {
+					D60000000000000000000000 = {
+						CreatedOnToolsVersion = 9.0;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D6000000000000000000000E /* Build configuration list for PBXProject "jvm" */;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = D60000000000000000000001;
+			productRefGroup = D60000000000000000000005 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D60000000000000000000000 /* jvm */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D60000000000000000000007 /* Run script_before */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Run script_before";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd $PROJECT_DIR;\ntime ./script_before.sh;\n";
+		};
+		D6000000000000000000000A /* Run script_after */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Run script_after";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd $PROJECT_DIR;\ntime ./script_after.sh;\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D60000000000000000000008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+TEMPLATE_PBXSOURCESSBUILDPHASE
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D6000000000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CODE_SIGN_IDENTITY = "-";
+				CONFIGURATION_BUILD_DIR = build/jdk/lib/server;
+				CONFIGURATION_TEMP_DIR = build;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MTL_ENABLE_DEBUG_INFO = NO;
+				OBJROOT = build;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D6000000000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)";
+				EXECUTABLE_PREFIX = lib;
+				FRAMEWORK_SEARCH_PATHS = (
+TEMPLATE_FRAMEWORK_SEARCH_PATHS
+				);
+				OTHER_CFLAGS = (
+TEMPLATE_OTHER_CFLAGS
+				);
+				OTHER_LDFLAGS = (
+TEMPLATE_OTHER_LDFLAGS
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SYMROOT = build/jdk/lib/server;
+				USER_HEADER_SEARCH_PATHS = (
+TEMPLATE_USER_HEADER_SEARCH_PATHS
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D6000000000000000000000E /* Build configuration list for PBXProject "jvm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D6000000000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D6000000000000000000000F /* Build configuration list for PBXNativeTarget "jvm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D6000000000000000000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D60000000000000000000010 /* Project object */;
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import java.util.Enumeration;
  *
  * @author Scott Violet
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractLayoutCache implements RowMapper {
     /** Object responsible for getting the size of a node. */
     protected NodeDimensions     nodeDimensions;

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -205,7 +205,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gmh">Mëttelhéichdäitsch</language>
 			<language type="gn">Guarani</language>
 			<language type="goh">Alhéichdäitsch</language>
-			<language type="gom">Goan-Konkani</language>
 			<language type="gon">Gondi-Sprooch</language>
 			<language type="gor">Mongondou</language>
 			<language type="got">Gotesch</language>
@@ -1121,14 +1120,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="japanese">Japanesche Kalenner</type>
 			<type key="calendar" type="persian">Persesche Kalenner</type>
 			<type key="calendar" type="roc">Kalenner vun der Republik China</type>
-			<type key="collation" type="big5han">Traditionellt Chinesesch - Big5</type>
 			<type key="collation" type="dictionary">Lexikographesch Zortéierreiefolleg</type>
 			<type key="collation" type="ducet">Unicode-Zortéierung</type>
 			<type key="collation" type="eor">Europäesch Zortéierregelen</type>
-			<type key="collation" type="gb2312han">Vereinfacht Chinesesch - GB2312</type>
 			<type key="collation" type="phonebook">Telefonsbuch-Zortéierung</type>
 			<type key="collation" type="pinyin">Pinyin-Zortéierregelen</type>
-			<type key="collation" type="reformed">Reforméiert Zortéierreiefolleg</type>
 			<type key="collation" type="search">Allgemeng Sich</type>
 			<type key="collation" type="searchjl">Sich no Ufanksbuschtawen aus dem koreaneschen Alphabet</type>
 			<type key="collation" type="standard">Standard Zortéierreiefolleg</type>
@@ -2342,14 +2338,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Taipei">
 				<exemplarCity>Taipeh</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uschgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiew</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Saporischschja</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
 				<exemplarCity>Taschkent</exemplarCity>
@@ -2389,9 +2379,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Westafrikanesch Zäit</generic>
-					<standard>Westafrikanesch Normalzäit</standard>
-					<daylight>Westafrikanesch Summerzäit</daylight>
+					<standard>Westafrikanesch Zäit</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2589,13 +2577,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Chinesesch Summerzäit</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choibalsan-Zäit</generic>
-					<standard>Choibalsan-Normalzäit</standard>
-					<daylight>Choibalsan-Summerzäit</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Chrëschtdagsinsel-Zäit</standard>
@@ -2755,6 +2736,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Guyana-Zäit</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hawaii-Aleuten-Normalzäit</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Hawaii-Aleuten-Zäit</generic>
@@ -2887,11 +2873,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Lord-Howe-Summerzäit</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarieinsel-Zäit</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan-Zäit</generic>
@@ -2929,13 +2910,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson-Zäit</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Nordwest-Mexiko-Zäit</generic>
-					<standard>Nordwest-Mexiko-Normalzäit</standard>
-					<daylight>Nordwest-Mexiko-Summerzäit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -3340,6 +3314,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">

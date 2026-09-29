@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ import java.util.Objects;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.ReferenceQueue;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.ResourceBundle;
 
@@ -70,7 +68,7 @@ import java.util.ResourceBundle;
  * that provides the necessary configuration.
  *
  * @apiNote Programmers are not expected to call this class directly.
- * Instead they should rely on the static methods defined by {@link
+ * Instead, they should rely on the static methods defined by {@link
  * java.lang.System java.lang.System} or {@link sun.util.logging.PlatformLogger
  * sun.util.logging.PlatformLogger}.
  *
@@ -81,30 +79,12 @@ import java.util.ResourceBundle;
  */
 public class DefaultLoggerFinder extends LoggerFinder {
 
-    static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
-
     /**
      * Creates a new instance of DefaultLoggerFinder.
-     * @throws SecurityException if the calling code does not have the
-     * {@code RuntimePermission("loggerFinder")}
      */
     protected DefaultLoggerFinder() {
-        this(checkPermission());
     }
 
-    private DefaultLoggerFinder(Void unused) {
-        // nothing to do.
-    }
-
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(LOGGERFINDER_PERMISSION);
-        }
-        return null;
-    }
 
     // SharedLoggers is a default cache of loggers used when JUL is not
     // present - in that case we use instances of SimpleConsoleLogger which
@@ -139,23 +119,14 @@ public class DefaultLoggerFinder extends LoggerFinder {
         static final SharedLoggers application = new SharedLoggers();
     }
 
-    @SuppressWarnings("removal")
     public static boolean isSystem(Module m) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Boolean run() {
-                // returns true if moduleCL is the platform class loader
-                // or one of its ancestors.
-                return VM.isSystemDomainLoader(m.getClassLoader());
-            }
-        });
+        return VM.isSystemDomainLoader(m.getClassLoader());
     }
 
     @Override
     public final Logger getLogger(String name,  Module module) {
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(module, "module");
-        checkPermission();
         return demandLoggerFor(name, module);
     }
 
@@ -176,11 +147,8 @@ public class DefaultLoggerFinder extends LoggerFinder {
      * @param name The name of the logger.
      * @param module The module on behalf of which the logger is created.
      * @return A {@link Logger logger} suitable for the application usage.
-     * @throws SecurityException if the calling code does not have the
-     * {@code RuntimePermission("loggerFinder")}.
      */
     protected Logger demandLoggerFor(String name, Module module) {
-        checkPermission();
         if (isSystem(module)) {
             return SharedLoggers.system.get(SimpleConsoleLogger::makeSimpleLogger, name);
         } else {

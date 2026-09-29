@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestDSA
- * @run main/othervm -Djava.security.manager=allow TestDSA sm
  */
+
+import jtreg.SkippedException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -123,8 +124,7 @@ public class TestDSA extends PKCS11Test {
         System.out.println("Testing provider " + provider + "...");
 
         if (provider.getService("Signature", "SHA1withDSA") == null) {
-            System.out.println("DSA not supported, skipping");
-            return;
+            throw new SkippedException("DSA not supported");
         }
 
         KeyFactory kf = KeyFactory.getInstance("DSA", provider);

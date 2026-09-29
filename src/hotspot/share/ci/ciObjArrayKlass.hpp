@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_CI_CIOBJARRAYKLASS_HPP
 
 #include "ci/ciArrayKlass.hpp"
+#include "oops/objArrayKlass.hpp"
 
 // ciObjArrayKlass
 //
@@ -46,10 +47,11 @@ protected:
                   int dimension);
 
   ObjArrayKlass* get_ObjArrayKlass() {
-    return (ObjArrayKlass*)get_Klass();
+    return ObjArrayKlass::cast(get_Klass());
   }
 
-  static ciObjArrayKlass* make_impl(ciKlass* element_klass);
+  static ciObjArrayKlass* make_impl(ciKlass* element_klass, bool refined_type = false, bool null_free = false,
+                                    bool atomic = true, bool force_reference_layout = false);
   static ciSymbol* construct_array_name(ciSymbol* element_name,
                                         int       dimension);
 
@@ -57,10 +59,6 @@ protected:
 
   oop     loader()        { return _base_element_klass->loader(); }
   jobject loader_handle() { return _base_element_klass->loader_handle(); }
-
-  oop     protection_domain()        { return _base_element_klass->protection_domain(); }
-  jobject protection_domain_handle() { return _base_element_klass->protection_domain_handle(); }
-
 
 public:
   // The one-level type of the array elements.
@@ -72,10 +70,15 @@ public:
   // What kind of ciObject is this?
   bool is_obj_array_klass() const { return true; }
 
-  static ciObjArrayKlass* make(ciKlass* element_klass);
+  static ciObjArrayKlass* make(ciKlass* element_klass, bool refined_type = true, bool null_free = false,
+                               bool atomic = true, bool force_ref_layout = false);
   static ciObjArrayKlass* make(ciKlass* element_klass, int dims);
 
   virtual ciKlass* exact_klass();
+
+  virtual bool can_be_value_array_klass() {
+    return element_klass()->can_be_value_klass();
+  }
 };
 
 #endif // SHARE_CI_CIOBJARRAYKLASS_HPP

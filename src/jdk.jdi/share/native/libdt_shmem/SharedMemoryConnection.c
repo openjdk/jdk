@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ packetToByteArray(JNIEnv *env, jdwpPacket *str)
 
     /* total packet length is header + data */
     array = (*env)->NewByteArray(env, total_length);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return NULL;
     }
 
@@ -144,7 +144,7 @@ packetToByteArray(JNIEnv *env, jdwpPacket *str)
     if (data_length > 0) {
         (*env)->SetByteArrayRegion(env, array, JDWP_HEADER_SIZE,
                                    data_length, str->type.cmd.data);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             return NULL;
         }
     }
@@ -174,7 +174,7 @@ byteArrayToPacket(JNIEnv *env, jbyteArray b, jdwpPacket *str)
      * Get the packet header
      */
     (*env)->GetByteArrayRegion(env, b, 0, sizeof(pktHeader), pktHeader);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         /* b shorter than sizeof(pktHeader) */
         return;
     }
@@ -221,7 +221,7 @@ byteArrayToPacket(JNIEnv *env, jbyteArray b, jdwpPacket *str)
         }
 
         (*env)->GetByteArrayRegion(env, b, sizeof(pktHeader), /*sizeof(CmdPacket)+4*/ data_length, data);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             free(data);
             return;
         }
@@ -326,7 +326,7 @@ JNIEXPORT void JNICALL Java_com_sun_tools_jdi_SharedMemoryConnection_sendPacket0
     jint rc;
 
     byteArrayToPacket(env, b, &packet);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 

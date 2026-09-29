@@ -84,7 +84,7 @@ public abstract class RecursiveTask<V> extends ForkJoinTask<V> {
     public RecursiveTask() {}
 
     /**
-     * The result of the computation.
+     * @serial The result of the computation.
      */
     @SuppressWarnings("serial") // Conditionally serializable
     V result;

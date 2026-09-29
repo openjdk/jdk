@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1777,9 +1777,9 @@ public class GroupLayout implements LayoutManager2 {
         /**
          * Adds a {@code Group} to this {@code Group}.
          *
-         * @param group the {@code Group} to add
          * @param useAsBaseline whether the specified {@code Group} should
          *        be used to calculate the baseline for this {@code Group}
+         * @param group the {@code Group} to add
          * @return this {@code Group}
          */
         public SequentialGroup addGroup(boolean useAsBaseline, Group group) {
@@ -2528,8 +2528,8 @@ public class GroupLayout implements LayoutManager2 {
          * Adds a {@code Component} to this {@code ParallelGroup} with
          * the specified alignment.
          *
-         * @param alignment the alignment
          * @param component the {@code Component} to add
+         * @param alignment the alignment
          * @return this {@code Group}
          * @throws IllegalArgumentException if {@code alignment} is
          *         {@code null}
@@ -2544,8 +2544,8 @@ public class GroupLayout implements LayoutManager2 {
          * Adds a {@code Component} to this {@code ParallelGroup} with the
          * specified alignment and size.
          *
-         * @param alignment the alignment
          * @param component the {@code Component} to add
+         * @param alignment the alignment
          * @param min the minimum size
          * @param pref the preferred size
          * @param max the maximum size

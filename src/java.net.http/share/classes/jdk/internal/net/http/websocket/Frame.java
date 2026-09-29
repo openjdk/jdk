@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.net.http.websocket;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import static jdk.internal.net.http.common.Utils.dump;
 import static jdk.internal.net.http.websocket.Frame.Opcode.ofCode;
@@ -33,14 +34,14 @@ import static jdk.internal.net.http.websocket.Frame.Opcode.ofCode;
 /*
  * A collection of utilities for reading, writing, and masking frames.
  */
-final class Frame {
+public final class Frame {
 
     private Frame() { }
 
     static final int MAX_HEADER_SIZE_BYTES = 2 + 8 + 4;
-    static final int MAX_CONTROL_FRAME_PAYLOAD_LENGTH = 125;
+    public static final int MAX_CONTROL_FRAME_PAYLOAD_LENGTH = 125;
 
-    enum Opcode {
+    public enum Opcode {
 
         CONTINUATION   (0x0),
         TEXT           (0x1),
@@ -87,13 +88,13 @@ final class Frame {
     /*
      * A utility for masking frame payload data.
      */
-    static final class Masker {
+    public static final class Masker {
 
-        // Exploiting ByteBuffer's ability to read/write multi-byte integers
         private final ByteBuffer acc = ByteBuffer.allocate(8);
-        private final int[] maskBytes = new int[4];
+        private final byte[] maskBytes = new byte[4];
         private int offset;
-        private long maskLong;
+        private long maskLongBe;
+        private long maskLongLe;
 
         /*
          * Reads all remaining bytes from the given input buffer, masks them
@@ -102,11 +103,11 @@ final class Frame {
          *
          * The source and the destination buffers may be the same instance.
          */
-        static void transferMasking(ByteBuffer src, ByteBuffer dst, int mask) {
+        static void applyMask(ByteBuffer src, ByteBuffer dst, int mask) {
             if (src.remaining() > dst.remaining()) {
                 throw new IllegalArgumentException(dump(src, dst));
             }
-            new Masker().mask(mask).transferMasking(src, dst);
+            new Masker().setMask(mask).applyMask(src, dst);
         }
 
         /*
@@ -114,13 +115,14 @@ final class Frame {
          *
          * The behaviour is as if the mask was set on a newly created instance.
          */
-        Masker mask(int value) {
-            acc.clear().putInt(value).putInt(value).flip();
+        public Masker setMask(int mask) {
+            acc.clear().putInt(mask).putInt(mask).flip();
             for (int i = 0; i < maskBytes.length; i++) {
                 maskBytes[i] = acc.get(i);
             }
             offset = 0;
-            maskLong = acc.getLong(0);
+            maskLongBe = acc.getLong(0);
+            maskLongLe = Long.reverseBytes(maskLongBe);
             return this;
         }
 
@@ -132,18 +134,25 @@ final class Frame {
          * The source and the destination buffers may be the same instance. If
          * the mask hasn't been previously set it is assumed to be 0.
          */
-        Masker transferMasking(ByteBuffer src, ByteBuffer dst) {
-            begin(src, dst);
-            loop(src, dst);
-            end(src, dst);
-            return this;
+        public void applyMask(ByteBuffer src, ByteBuffer dst) {
+            if (canVectorMask(src, dst)) {
+                initVectorMask(src, dst);
+                applyVectorMask(src, dst);
+            }
+            applyPlainMask(src, dst);
         }
 
-        /*
-         * Applies up to 3 remaining from the previous pass bytes of the mask.
+        private static boolean canVectorMask(ByteBuffer src, ByteBuffer dst) {
+            return src.order() == dst.order() && Math.min(src.remaining(), dst.remaining()) >= 8;
+        }
+
+        /**
+         * Positions the {@link #offset} at 0, which is needed for vectorized
+         * masking, by masking up to 3 remaining bytes from the previous pass.
          */
-        private void begin(ByteBuffer src, ByteBuffer dst) {
-            if (offset == 0) { // No partially applied mask from the previous invocation
+        private void initVectorMask(ByteBuffer src, ByteBuffer dst) {
+            assert src.order() == dst.order() : "vectorized masking is only allowed on matching byte orders";
+            if (offset == 0) {
                 return;
             }
             int i = src.position(), j = dst.position();
@@ -158,12 +167,16 @@ final class Frame {
         }
 
         /*
-         * Gallops one long (mask + mask) at a time.
+         * Masks one {@code long} (mask + mask) at a time.
          */
-        private void loop(ByteBuffer src, ByteBuffer dst) {
+        private void applyVectorMask(ByteBuffer src, ByteBuffer dst) {
+            assert src.order() == dst.order() : "vectorized masking is only allowed on matching byte orders";
+            long maskLong = ByteOrder.LITTLE_ENDIAN == src.order() ? maskLongLe : maskLongBe;
             int i = src.position();
             int j = dst.position();
             final int srcLongLim = src.limit() - 7, dstLongLim = dst.limit() - 7;
+            assert !(i < srcLongLim && j < dstLongLim) || // That is, if loop will run at least once
+                    offset == 0 : "offset must have been positioned at 0";
             for (; i < srcLongLim && j < dstLongLim; i += 8, j += 8) {
                 dst.putLong(j, src.getLong(i) ^ maskLong);
             }
@@ -180,11 +193,9 @@ final class Frame {
         }
 
         /*
-         * Applies up to 7 remaining from the "galloping" phase bytes of the
-         * mask.
+         * Masks one {@code byte} at a time.
          */
-        private void end(ByteBuffer src, ByteBuffer dst) {
-            assert Math.min(src.remaining(), dst.remaining()) < 8;
+        private void applyPlainMask(ByteBuffer src, ByteBuffer dst) {
             final int srcLim = src.limit(), dstLim = dst.limit();
             int i = src.position(), j = dst.position();
             for (; i < srcLim && j < dstLim;
@@ -195,6 +206,7 @@ final class Frame {
             src.position(i);
             dst.position(j);
         }
+
     }
 
     /*
@@ -204,14 +216,14 @@ final class Frame {
      * header structure to the given buffer. The order of calls to intermediate
      * methods is NOT significant.
      */
-    static final class HeaderWriter {
+    public static final class HeaderWriter {
 
         private char firstChar;
         private long payloadLen;
         private int maskingKey;
         private boolean mask;
 
-        HeaderWriter fin(boolean value) {
+        public HeaderWriter fin(boolean value) {
             if (value) {
                 firstChar |=  0b10000000_00000000;
             } else {
@@ -254,12 +266,12 @@ final class Frame {
             return this;
         }
 
-        HeaderWriter opcode(Opcode value) {
+        public HeaderWriter opcode(Opcode value) {
             firstChar = (char) ((firstChar & 0xF0FF) | (value.code << 8));
             return this;
         }
 
-        HeaderWriter payloadLen(long value) {
+        public HeaderWriter payloadLen(long value) {
             if (value < 0) {
                 throw new IllegalArgumentException("Negative: " + value);
             }
@@ -282,7 +294,7 @@ final class Frame {
             return this;
         }
 
-        HeaderWriter noMask() {
+        public HeaderWriter noMask() {
             // Explicit cast required: see fin() above
             firstChar &= (char) ~0b00000000_10000000;
             mask = false;
@@ -295,7 +307,7 @@ final class Frame {
          * The buffer must have at least MAX_HEADER_SIZE_BYTES remaining. The
          * buffer's position is incremented by the number of bytes written.
          */
-        void write(ByteBuffer buffer) {
+        public void write(ByteBuffer buffer) {
             buffer.putChar(firstChar);
             if (payloadLen >= 126) {
                 if (payloadLen < 65536) {
@@ -317,7 +329,7 @@ final class Frame {
      *
      *     fin rsv1 rsv2 rsv3 opcode mask payloadLength maskingKey? payloadData+ endFrame
      */
-    interface Consumer {
+    public interface Consumer {
 
         void fin(boolean value);
 
@@ -358,7 +370,7 @@ final class Frame {
      *
      * No protocol-level rules are checked.
      */
-    static final class Reader {
+    public static final class Reader {
 
         private static final int AWAITING_FIRST_BYTE  =  1;
         private static final int AWAITING_SECOND_BYTE =  2;
@@ -382,7 +394,7 @@ final class Frame {
          *
          * Throws FailWebSocketException if detects the frame is malformed.
          */
-        void readFrame(ByteBuffer input, Consumer consumer) {
+        public void readFrame(ByteBuffer input, Consumer consumer) {
             loop:
             while (true) {
                 byte b;

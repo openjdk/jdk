@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public abstract class SurfaceData
 
     private static native void initIDs();
 
-    private Object blitProxyKey;
+    private SurfaceManager.ProxyCache blitProxyCache;
     private StateTrackableDelegate stateDelegate;
 
     static {
@@ -143,23 +143,21 @@ public abstract class SurfaceData
     }
 
     /**
-     * Subclasses can set a "blit proxy key" which will be used
-     * along with the SurfaceManager.getCacheData() mechanism to
+     * Subclasses can set a "blit proxy cache" which will be used
+     * along with the SurfaceManager to
      * store acceleration-compatible cached copies of source images.
-     * This key is a "tag" used to identify which cached copies
-     * are compatible with this destination SurfaceData.
-     * The getSourceSurfaceData() method uses this key to manage
-     * cached copies of a source image as described below.
+     * The getSourceSurfaceData() method uses this cache to manage
+     * copies of a source image as described below.
      * <p>
-     * The Object used as this key should be as unique as it needs
+     * The cache used should be as unique as it needs
      * to be to ensure that multiple acceleratible destinations can
-     * each store their cached copies separately under different keys
+     * each store their cached copies separately into different caches
      * without interfering with each other or getting back the wrong
      * cached copy.
      * <p>
-     * Many acceleratable SurfaceData objects can use their own
-     * GraphicsConfiguration as their proxy key as the GC object will
-     * typically be unique to a given screen and pixel format, but
+     * Many GraphicsConfiguration implementations have their own
+     * cache as the GC object is
+     * typically unique to a given screen and pixel format, but
      * other rendering destinations may have more or less stringent
      * sharing requirements.  For instance, X11 pixmaps can be
      * shared on a given screen by any GraphicsConfiguration that
@@ -168,14 +166,14 @@ public abstract class SurfaceData
      * a different cached proxy for each would be a waste.  One can
      * imagine platforms where a single cached copy can be created
      * and shared across all screens and pixel formats - such
-     * implementations could use a single heavily shared key Object.
+     * implementations could use a single heavily shared cache object.
      */
-    protected void setBlitProxyKey(Object key) {
-        // Caching is effectively disabled if we never have a proxy key
+    protected void setBlitProxyCache(SurfaceManager.ProxyCache cache) {
+        // Caching is effectively disabled if we never have a proxy cache
         // since the getSourceSurfaceData() method only does caching
-        // if the key is not null.
+        // if the cache is not null.
         if (SurfaceDataProxy.isCachingAllowed()) {
-            this.blitProxyKey = key;
+            this.blitProxyCache = cache;
         }
     }
 
@@ -192,7 +190,7 @@ public abstract class SurfaceData
      * appropriate SurfaceDataProxy instance.
      * The parameters describe the type of imaging operation being performed.
      * <p>
-     * If a blitProxyKey was supplied by the subclass then it is
+     * If a blitProxyCache was supplied by the subclass then it is
      * used to potentially override the choice of source SurfaceData.
      * The outline of this process is:
      * <ol>
@@ -201,8 +199,8 @@ public abstract class SurfaceData
      * <li> destSD gets the SurfaceManager of the source Image
      *      and first retrieves the default SD from it using
      *      getPrimarySurfaceData()
-     * <li> destSD uses its "blit proxy key" (if set) to look for
-     *      some cached data stored in the source SurfaceManager
+     * <li> destSD uses its "blit proxy cache" (if set) to look for
+     *      some cached data corresponding to the the source SurfaceManager
      * <li> If the cached data is null then makeProxyFor() is used
      *      to create some cached data which is stored back in the
      *      source SurfaceManager under the same key for future uses.
@@ -219,18 +217,15 @@ public abstract class SurfaceData
     {
         SurfaceManager srcMgr = SurfaceManager.getManager(img);
         SurfaceData srcData = srcMgr.getPrimarySurfaceData();
-        if (img.getAccelerationPriority() > 0.0f &&
-            blitProxyKey != null)
-        {
-            SurfaceDataProxy sdp =
-                (SurfaceDataProxy) srcMgr.getCacheData(blitProxyKey);
+        if (img.getAccelerationPriority() > 0.0f && blitProxyCache != null) {
+            SurfaceDataProxy sdp = blitProxyCache.get(srcMgr);
             if (sdp == null || !sdp.isValid()) {
                 if (srcData.getState() == State.UNTRACKABLE) {
                     sdp = SurfaceDataProxy.UNCACHED;
                 } else {
                     sdp = makeProxyFor(srcData);
                 }
-                srcMgr.setCacheData(blitProxyKey, sdp);
+                blitProxyCache.put(srcMgr, sdp);
             }
             srcData = sdp.replaceData(srcData, txtype, comp, bgColor);
         }
@@ -1006,25 +1001,6 @@ public abstract class SurfaceData
      * Returns the bounds of the destination surface.
      */
     public abstract Rectangle getBounds();
-
-    static java.security.Permission compPermission;
-
-    /**
-     * Performs Security Permissions checks to see if a Custom
-     * Composite object should be allowed access to the pixels
-     * of this surface.
-     */
-    protected void checkCustomComposite() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (compPermission == null) {
-                compPermission =
-                    new java.awt.AWTPermission("readDisplayPixels");
-            }
-            sm.checkPermission(compPermission);
-        }
-    }
 
     /**
      * Fetches private field IndexColorModel.allgrayopaque

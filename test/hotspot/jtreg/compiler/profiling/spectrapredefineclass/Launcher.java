@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,21 @@
  * @modules java.base/jdk.internal.misc
  *          java.instrument
  * @requires vm.jvmti & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires vm.compMode != "Xcomp"
  * @build compiler.profiling.spectrapredefineclass.Agent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.profiling.spectrapredefineclass.Agent
  * @run driver compiler.profiling.spectrapredefineclass.Launcher
- * @run main/othervm -XX:CompilationMode=high-only -XX:-BackgroundCompilation -XX:CompileThreshold=10000
- *                   -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222
- *                   -XX:ReservedCodeCacheSize=3M -Djdk.attach.allowAttachSelf
- *                   compiler.profiling.spectrapredefineclass.Agent
+ * @run main/othervm/timeout=480 -XX:CompilationMode=high-only -XX:-BackgroundCompilation -XX:CompileThreshold=10000
+ *                               -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222
+ *                               -XX:ReservedCodeCacheSize=3M -Djdk.attach.allowAttachSelf
+ *                               compiler.profiling.spectrapredefineclass.Agent
  */
 
 package compiler.profiling.spectrapredefineclass;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,11 +62,10 @@ public class Launcher {
                 .addToolArg(Agent.AGENT_JAR)
                 .addToolArg(Agent.class.getName().replace('.', File.separatorChar) + ".class");
 
-        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
         try {
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            OutputAnalyzer output = ProcessTools.executeProcess(jar.getCommand());
             output.shouldHaveExitValue(0);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new Error("TESTBUG: jar failed.", ex);
         }
     }

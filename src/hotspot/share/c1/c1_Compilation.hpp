@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,11 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "memory/resourceArea.hpp"
+#include "compiler/stress.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 
+class CompilationFailureInfo;
 class CompilationResourceObj;
 class XHandlers;
 class ExceptionInfo;
@@ -69,10 +71,10 @@ class Compilation: public StackObj {
   DirectiveSet*      _directive;
   ciEnv*             _env;
   CompileLog*        _log;
+  Stress             _stress;
   ciMethod*          _method;
   int                _osr_bci;
   IR*                _hir;
-  int                _max_spills;
   FrameMap*          _frame_map;
   C1_MacroAssembler* _masm;
   bool               _has_exception_handlers;
@@ -80,11 +82,12 @@ class Compilation: public StackObj {
   bool               _has_unsafe_access;
   bool               _has_irreducible_loops;
   bool               _would_profile;
-  bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   bool               _has_reserved_stack_access;
   bool               _has_monitors; // Fastpath monitors detection for Continuations
+  bool               _has_scoped_access; // For shared scope closure
   bool               _install_code;
   const char*        _bailout_msg;
+  CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
   bool               _oom;
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
@@ -137,24 +140,25 @@ class Compilation: public StackObj {
   DirectiveSet* directive() const                { return _directive; }
   CompileLog* log() const                        { return _log; }
   AbstractCompiler* compiler() const             { return _compiler; }
+  Stress& stress()                               { return _stress; }
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }
   bool has_unsafe_access() const                 { return _has_unsafe_access; }
   bool has_monitors() const                      { return _has_monitors; }
+  bool has_scoped_access() const                 { return _has_scoped_access; }
   bool has_irreducible_loops() const             { return _has_irreducible_loops; }
   int max_vector_size() const                    { return 0; }
   ciMethod* method() const                       { return _method; }
   int osr_bci() const                            { return _osr_bci; }
   bool is_osr_compile() const                    { return osr_bci() >= 0; }
   IR* hir() const                                { return _hir; }
-  int max_spills() const                         { return _max_spills; }
   FrameMap* frame_map() const                    { return _frame_map; }
   CodeBuffer* code()                             { return &_code; }
   C1_MacroAssembler* masm() const                { return _masm; }
   CodeOffsets* offsets()                         { return &_offsets; }
   Arena* arena()                                 { return _arena; }
   bool has_access_indexed()                      { return _has_access_indexed; }
-  bool should_install_code()                     { return _install_code && InstallMethods; }
+  bool should_install_code()                     { return _install_code; }
   LinearScan* allocator()                        { return _allocator; }
 
   // Instruction ids
@@ -173,14 +177,11 @@ class Compilation: public StackObj {
   void set_would_profile(bool f)                 { _would_profile = f; }
   void set_has_access_indexed(bool f)            { _has_access_indexed = f; }
   void set_has_monitors(bool f)                  { _has_monitors = f; }
+  void set_has_scoped_access(bool f)             { _has_scoped_access = f; }
   // Add a set of exception handlers covering the given PC offset
   void add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers);
   // Statistics gathering
   void notice_inlined_method(ciMethod* method);
-
-  // JSR 292
-  bool     has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
   bool     has_reserved_stack_access() const { return _has_reserved_stack_access; }
   void set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }
@@ -212,13 +213,10 @@ class Compilation: public StackObj {
   void bailout(const char* msg);
   bool bailed_out() const                        { return _bailout_msg != nullptr; }
   const char* bailout_msg() const                { return _bailout_msg; }
+  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  static uint desired_max_code_buffer_size() {
-    return (uint)NMethodSizeLimit;  // default 64K
-  }
-  static uint desired_max_constant_size() {
-    return desired_max_code_buffer_size() / 10;
-  }
+  const static uint desired_max_code_buffer_size = 64*K * wordSize;
+  const static uint desired_max_constant_size = desired_max_code_buffer_size / 10;
 
   static bool setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
 
@@ -258,11 +256,22 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
   }
+  bool profile_array_accesses() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData && MethodData::profile_array_accesses();
+  }
+  bool profile_acmp() {
+    return is_profiling() && profile_branches() && MethodData::profile_acmp();
+  }
+  bool profile_switches() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      UseSwitchProfiling;
+  }
 
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
   bool is_optimistic() {
-    return CompilerConfig::is_c1_only_no_jvmci() && !is_profiling() &&
+    return CompilerConfig::is_c1_only() && !is_profiling() &&
       (RangeCheckElimination || UseLoopInvariantCodeMotion) &&
       method()->method_data()->trap_count(Deoptimization::Reason_none) == 0;
   }

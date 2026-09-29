@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ import jdk.dynalink.linker.support.Lookup;
  * Race conditions in linking are resolved by throwing away the
  * {@link GuardedInvocation} produced on the losing thread without incorporating
  * it into the chain, so it can lead to repeated linking for the same arguments.
+ * @since 9
  */
 public class ChainedCallSite extends AbstractRelinkableCallSite {
     private static final MethodHandle PRUNE_CATCHES;

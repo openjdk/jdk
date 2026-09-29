@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,36 +26,48 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
 
-template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
-class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, F, N>
+class ShenandoahHeap;
+
+template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
+class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, MT, N>
 {
 public:
-  typedef OverflowTaskQueue<E, F, N> taskqueue_t;
+  typedef OverflowTaskQueue<E, MT, N> taskqueue_t;
 
   BufferedOverflowTaskQueue() : _buf_empty(true) {};
 
   TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
 
   // Push task t into the queue. Returns true on success.
-  inline bool push(E t);
+  ALWAYSINLINE
+  bool push(E t);
 
   // Attempt to pop from the queue. Returns true on success.
-  inline bool pop(E &t);
+  ALWAYSINLINE
+  bool pop(E &t);
 
   inline void clear();
 
   inline bool is_empty()        const {
     return _buf_empty && taskqueue_t::is_empty();
   }
+
+  NOINLINE
+  void pop_more_overflow();
+
+  inline size_t full_size();
+
+  inline size_t capacity() const;
 
 private:
   bool _buf_empty;
@@ -154,11 +167,11 @@ private:
   static const uintptr_t weak_extract_mask      = 1 << 1;
   static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
-  static const int chunk_range_mask = right_n_bits(chunk_bits);
-  static const int pow_range_mask   = right_n_bits(pow_bits);
+  static const int chunk_range_mask = right_n_bits<int>(chunk_bits);
+  static const int pow_range_mask   = right_n_bits<int>(pow_bits);
 
   inline oop decode_oop(uintptr_t val) const {
-    STATIC_ASSERT(oop_shift == 0);
+    static_assert(oop_shift == 0);
     return cast_to_oop(val & oop_extract_mask);
   }
 
@@ -184,7 +197,7 @@ private:
   }
 
   inline uintptr_t encode_oop(oop obj, bool skip_live, bool weak) const {
-    STATIC_ASSERT(oop_shift == 0);
+    static_assert(oop_shift == 0);
     uintptr_t encoded = cast_from_oop<uintptr_t>(obj);
     if (skip_live) {
       encoded |= skip_live_extract_mask;
@@ -245,7 +258,7 @@ public:
   }
 
   static int chunk_size() {
-    return nth_bit(chunk_bits);
+    return nth_bit<int>(chunk_bits);
   }
 };
 #else
@@ -299,65 +312,14 @@ public:
 typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
 typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 
-template <class T, MEMFLAGS F>
-class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, F> {
-private:
-  shenandoah_padding(0);
-  volatile jint     _claimed_index;
-  shenandoah_padding(1);
-
-  debug_only(uint   _reserved;  )
-
+class ShenandoahObjToScanQueueSet: public GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC> {
 public:
-  using GenericTaskQueueSet<T, F>::size;
+  ShenandoahObjToScanQueueSet(int n) : GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
 
-public:
-  ParallelClaimableQueueSet(int n) : GenericTaskQueueSet<T, F>(n), _claimed_index(0) {
-    debug_only(_reserved = 0; )
-  }
-
-  void clear_claimed() { _claimed_index = 0; }
-  T*   claim_next();
-
-  // reserve queues that not for parallel claiming
-  void reserve(uint n) {
-    assert(n <= size(), "Sanity");
-    _claimed_index = (jint)n;
-    debug_only(_reserved = n;)
-  }
-
-  debug_only(uint get_reserved() const { return (uint)_reserved; })
-};
-
-template <class T, MEMFLAGS F>
-T* ParallelClaimableQueueSet<T, F>::claim_next() {
-  jint size = (jint)GenericTaskQueueSet<T, F>::size();
-
-  if (_claimed_index >= size) {
-    return nullptr;
-  }
-
-  jint index = Atomic::add(&_claimed_index, 1, memory_order_relaxed);
-
-  if (index <= size) {
-    return GenericTaskQueueSet<T, F>::queue((uint)index - 1);
-  } else {
-    return nullptr;
-  }
-}
-
-class ShenandoahObjToScanQueueSet: public ParallelClaimableQueueSet<ShenandoahObjToScanQueue, mtGC> {
-public:
-  ShenandoahObjToScanQueueSet(int n) : ParallelClaimableQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
+  void rebalance(size_t target_queues);
 
   bool is_empty();
   void clear();
-
-#if TASKQUEUE_STATS
-  static void print_taskqueue_stats_hdr(outputStream* const st);
-  void print_taskqueue_stats() const;
-  void reset_taskqueue_stats();
-#endif // TASKQUEUE_STATS
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {

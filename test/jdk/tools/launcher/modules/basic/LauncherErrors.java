@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,10 @@ public class LauncherErrors {
     }
 
     /*
-     * Run jdk.test2.Main without security manager.
+     * Launch java using --module and expect the launched main to succeed.
      */
     @Test
-    public void test() throws Exception {
+    public void testNoFailure() throws Exception {
         String dir = MODS_DIR.toString();
         String mid = TEST_MODULE + "/" + MAIN_CLASS;
 
@@ -81,19 +81,21 @@ public class LauncherErrors {
     }
 
     /*
-     * Run jdk.test2.Main with security manager such that main class will
-     * fail to initialize.
+     * Launch java using --module but pass a main class name that doesn't
+     * belong to the module being launched. Expect the launch to fail
+     * with an expected exception.
      */
     @Test
     public void testErrorMessage() throws Exception {
         String dir = MODS_DIR.toString();
-        String mid = TEST_MODULE + "/" + MAIN_CLASS;
+        String wrongMainClass = MAIN_CLASS + "IntentionallyWrong";
+        String mid = TEST_MODULE + "/" + wrongMainClass;
 
-        ProcessTools.executeTestJava("-Djava.security.manager", "--module-path", dir, "--module", mid)
+        ProcessTools.executeTestJava("--module-path", dir, "--module", mid)
                     .outputTo(System.out)
                     .errorTo(System.out)
-                    .shouldContain("Error: Unable to load main class " + MAIN_CLASS + " in module " + TEST_MODULE)
-                    .shouldContain("Caused by: java.security.AccessControlException")
+                    .shouldContain("Error: Could not find or load main class " + wrongMainClass
+                            + " in module " + TEST_MODULE)
                     .shouldNotHaveExitValue(0);
 
     }

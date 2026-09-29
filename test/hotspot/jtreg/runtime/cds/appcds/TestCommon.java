@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,22 @@
  *
  */
 
-import jdk.test.lib.Utils;
-import jdk.test.lib.BuildHelper;
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
-import jdk.test.lib.cds.CDSOptions;
-import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.cds.CDSTestUtils.Result;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+import cdsutils.DynamicDumpHelper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
@@ -53,8 +45,17 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+import jdk.test.lib.BuildHelper;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
+import jdk.test.lib.Utils;
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils.Result;
+import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
-import cdsutils.DynamicDumpHelper;
 
 
 /**
@@ -75,9 +76,6 @@ public class TestCommon extends CDSTestUtils {
 
     private static final SimpleDateFormat timeStampFormat =
         new SimpleDateFormat("HH'h'mm'm'ss's'SSS");
-
-    private static final String timeoutFactor =
-        System.getProperty("test.timeout.factor", "1.0");
 
     private static String currentArchiveName;
 
@@ -420,14 +418,12 @@ public class TestCommon extends CDSTestUtils {
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-showversion");
         cmd.add("-XX:SharedArchiveFile=" + getCurrentArchiveName());
-        cmd.add("-Dtest.timeout.factor=" + timeoutFactor);
+        cmd.add("-Dtest.timeout.factor=" + Utils.TIMEOUT_FACTOR);
 
         if (opts.appJar != null) {
             cmd.add("-cp");
             cmd.add(opts.appJar);
         }
-
-        CDSTestUtils.addVerifyArchivedFields(cmd);
 
         for (String s : opts.suffix) cmd.add(s);
 
@@ -678,27 +674,26 @@ public class TestCommon extends CDSTestUtils {
         return true;
     }
 
-    static Pattern pattern;
-
     static void findAllClasses(ArrayList<String> list) throws Exception {
         // Find all the classes in the jrt file system
-        pattern = Pattern.compile("/modules/[a-z.]*[a-z]+/([^-]*)[.]class");
+        Pattern pattern = Pattern.compile("/modules/[a-z.]*[a-z]+/([^-]*)[.]class");
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         Path base = fs.getPath("/modules/");
-        findAllClassesAtPath(base, list);
+        findAllClassesAtPath(base, pattern, list);
     }
 
-    private static void findAllClassesAtPath(Path p, ArrayList<String> list) throws Exception {
+    private static void findAllClassesAtPath(Path p, Pattern pattern, ArrayList<String> list) throws Exception {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
             for (Path entry: stream) {
-                Matcher matcher = pattern.matcher(entry.toString());
-                if (matcher.find()) {
-                    String className = matcher.group(1);
-                    list.add(className);
+                if (Files.isDirectory(entry)) {
+                    findAllClassesAtPath(entry, pattern, list);
+                } else {
+                    Matcher matcher = pattern.matcher(entry.toString());
+                    if (matcher.find()) {
+                        String className = matcher.group(1);
+                        list.add(className);
+                    }
                 }
-                try {
-                    findAllClassesAtPath(entry, list);
-                } catch (Exception ex) {}
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ public final class UnninstallUIMemoryLeaks {
 
     private static Process runProcess(LookAndFeelInfo laf) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-Dswing.defaultlaf=" + laf.getClassName(), "-mx9m",
+                "-Dswing.defaultlaf=" + laf.getClassName(), "-Xmx9m",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 UnninstallUIMemoryLeaks.class.getSimpleName(), "mark");
         return ProcessTools.startProcess(laf.getName(), pb);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -34,17 +34,17 @@ extern "C" {
 #define STATUS_FAILED 2
 #define WAIT_FOREVER ((jlong)(3600*1000))
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
-static jrawMonitorID breakpointLock = NULL;
-static jrawMonitorID popFrameLock = NULL;
-static jrawMonitorID suspendLock = NULL;
+static jrawMonitorID breakpointLock = nullptr;
+static jrawMonitorID popFrameLock = nullptr;
+static jrawMonitorID suspendLock = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static jboolean popDone = JNI_FALSE;
-static jmethodID midCheckPoint = NULL;
-static jmethodID midRun = NULL;
+static jmethodID midCheckPoint = nullptr;
+static jmethodID midRun = nullptr;
 static int bpCount = 0;
 static int framesCount = 0;
 
@@ -165,12 +165,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -225,7 +225,7 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_PopFrame_popframe009_getReady(JNIEnv *env, jclass cls) {
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -238,7 +238,7 @@ Java_nsk_jvmti_PopFrame_popframe009_getReady(JNIEnv *env, jclass cls) {
     }
 
     midCheckPoint = env->GetStaticMethodID(cls, "checkPoint", "()V");
-    if (midCheckPoint == NULL) {
+    if (midCheckPoint == nullptr) {
         printf("Cannot find Method ID for method checkPoint\n");
         result = STATUS_FAILED;
         return;
@@ -261,7 +261,7 @@ Java_nsk_jvmti_PopFrame_popframe009_getReady(JNIEnv *env, jclass cls) {
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);
@@ -331,14 +331,14 @@ Java_nsk_jvmti_PopFrame_popframe009_check(JNIEnv *env, jclass cls, jthread thr) 
     jvmtiError err;
     jmethodID midFibonacci;
     jclass clazz;
-    jmethodID method = NULL;
+    jmethodID method = nullptr;
     jlocation loc;
     char *name, *sig, *generic;
     jlong delayTime = 1;
     int popCount = 0;
     int i;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -412,19 +412,19 @@ Java_nsk_jvmti_PopFrame_popframe009_check(JNIEnv *env, jclass cls, jthread thr) 
     }
 
     midFibonacci = env->GetStaticMethodID(cls, "fibonacci", "(I)I");
-    if (midFibonacci == NULL) {
+    if (midFibonacci == nullptr) {
         printf("Cannot get method ID for method \"fibonacci\"\n");
         result = STATUS_FAILED;
     }
 
     clazz = env->GetObjectClass(thr);
-    if (clazz == NULL) {
+    if (clazz == nullptr) {
         printf("Cannot get class of thread object\n");
         return STATUS_FAILED;
     }
 
     midRun = env->GetMethodID(clazz, "run", "()V");
-    if (midRun == NULL) {
+    if (midRun == nullptr) {
         printf("Cannot get method ID for \"run\"\n");
         return STATUS_FAILED;
     }

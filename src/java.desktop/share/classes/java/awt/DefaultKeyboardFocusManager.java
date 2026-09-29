@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,12 @@ import java.awt.peer.ComponentPeer;
 import java.awt.peer.LightweightPeer;
 import java.io.Serial;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Set;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.TimedWindowEvent;
 import sun.util.logging.PlatformLogger;
@@ -86,21 +83,14 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
     private static void initStatic() {
         AWTAccessor.setDefaultKeyboardFocusManagerAccessor(
             new AWTAccessor.DefaultKeyboardFocusManagerAccessor() {
                 public void consumeNextKeyTyped(DefaultKeyboardFocusManager dkfm, KeyEvent e) {
                     dkfm.consumeNextKeyTyped(e);
-                }
+               }
             });
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
-                fxAppThreadIsDispatchThread =
-                        "true".equals(System.getProperty("javafx.embed.singleThread"));
-                return null;
-            }
-        });
+        fxAppThreadIsDispatchThread = "true".equals(System.getProperty("javafx.embed.singleThread"));
     }
 
     /**
@@ -240,9 +230,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         @Serial
         private static final long serialVersionUID = -2924743257508701758L;
 
-        public DefaultKeyboardFocusManagerSentEvent(AWTEvent nested,
-                                                    AppContext toNotify) {
-            super(nested, toNotify);
+        public DefaultKeyboardFocusManagerSentEvent(AWTEvent nested) {
+            super(nested);
         }
         public final void dispatch() {
             KeyboardFocusManager manager =
@@ -269,76 +258,12 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     }
 
     /**
-     * Sends a synthetic AWTEvent to a Component. If the Component is in
-     * the current AppContext, then the event is immediately dispatched.
-     * If the Component is in a different AppContext, then the event is
-     * posted to the other AppContext's EventQueue, and this method blocks
-     * until the event is handled or target AppContext is disposed.
-     * Returns true if successfully dispatched event, false if failed
-     * to dispatch.
+     * Sends a synthetic AWTEvent to a Component.
      */
     static boolean sendMessage(Component target, AWTEvent e) {
         e.isPosted = true;
-        AppContext myAppContext = AppContext.getAppContext();
-        final AppContext targetAppContext = target.appContext;
-        final SentEvent se =
-            new DefaultKeyboardFocusManagerSentEvent(e, myAppContext);
-
-        if (myAppContext == targetAppContext) {
-            se.dispatch();
-        } else {
-            if (targetAppContext.isDisposed()) {
-                return false;
-            }
-            SunToolkit.postEvent(targetAppContext, se);
-            if (EventQueue.isDispatchThread()) {
-                if (Thread.currentThread() instanceof EventDispatchThread) {
-                    EventDispatchThread edt = (EventDispatchThread)
-                            Thread.currentThread();
-                    edt.pumpEvents(SentEvent.ID, new Conditional() {
-                        public boolean evaluate() {
-                            return !se.dispatched && !targetAppContext.isDisposed();
-                        }
-                    });
-                } else {
-                    if (fxAppThreadIsDispatchThread) {
-                        Thread fxCheckDispatchThread = new Thread() {
-                            @Override
-                            public void run() {
-                                while (!se.dispatched && !targetAppContext.isDisposed()) {
-                                    try {
-                                        Thread.sleep(100);
-                                    } catch (InterruptedException e) {
-                                        break;
-                                    }
-                                }
-                            }
-                        };
-                        fxCheckDispatchThread.start();
-                        try {
-                            // check if event is dispatched or disposed
-                            // but since this user app thread is same as
-                            // dispatch thread in fx when run with
-                            // javafx.embed.singleThread=true
-                            // we do not wait infinitely to avoid deadlock
-                            // as dispatch will ultimately be done by this thread
-                            fxCheckDispatchThread.join(500);
-                        } catch (InterruptedException ex) {
-                        }
-                    }
-                }
-            } else {
-                synchronized (se) {
-                    while (!se.dispatched && !targetAppContext.isDisposed()) {
-                        try {
-                            se.wait(1000);
-                        } catch (InterruptedException ie) {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        final SentEvent se = new DefaultKeyboardFocusManagerSentEvent(e);
+        se.dispatch();
         return se.dispatched;
     }
 
@@ -365,7 +290,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                     // Check that the component awaiting focus belongs to
                     // the current focused window. See 8015454.
                     if (toplevel != null && toplevel.isFocused()) {
-                        SunToolkit.postEvent(AppContext.getAppContext(), new SequencedEvent(e));
+                        SunToolkit.postEvent(new SequencedEvent(e));
                         return true;
                     }
                 }
@@ -1096,7 +1021,6 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private boolean preDispatchKeyEvent(KeyEvent ke) {
         if (((AWTEvent) ke).isPosted) {
             Component focusOwner = getFocusOwner();

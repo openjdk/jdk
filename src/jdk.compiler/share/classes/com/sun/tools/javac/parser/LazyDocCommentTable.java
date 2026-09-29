@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,11 @@ package com.sun.tools.javac.parser;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.lang.model.util.Elements.DocCommentKind;
+
+import com.sun.source.doctree.DocCommentTree;
+
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.DiagnosticSource;
@@ -44,7 +47,7 @@ import com.sun.tools.javac.util.DiagnosticSource;
 public class LazyDocCommentTable implements DocCommentTable {
     private static class Entry {
         final Comment comment;
-        DCDocComment tree;
+        DocCommentTree tree;
 
         Entry(Comment c) {
             comment = c;
@@ -73,18 +76,30 @@ public class LazyDocCommentTable implements DocCommentTable {
     }
 
     @Override
+    public DocCommentKind getCommentKind(JCTree tree) {
+        Comment c = getComment(tree);
+        return (c == null) ? null : switch (c.getStyle()) {
+            case JAVADOC_BLOCK -> DocCommentKind.TRADITIONAL;
+            case JAVADOC_LINE -> DocCommentKind.END_OF_LINE;
+            default -> throw new IllegalStateException(c.getStyle().toString());
+        };
+    }
+
+    @Override
     public String getCommentText(JCTree tree) {
         Comment c = getComment(tree);
         return (c == null) ? null : c.getText();
     }
 
     @Override
-    public DCDocComment getCommentTree(JCTree tree) {
+    public DocCommentTree getCommentTree(JCTree tree) {
         Entry e = table.get(tree);
-        if (e == null)
+        if (e == null) {
             return null;
-        if (e.tree == null)
-            e.tree = new DocCommentParser(fac, diagSource, e.comment).parse();
+        }
+        if (e.tree == null) {
+            e.tree = fac.getTrees().getDocCommentTree(diagSource, e.comment);
+        }
         return e.tree;
     }
 
@@ -92,5 +107,4 @@ public class LazyDocCommentTable implements DocCommentTable {
     public void putComment(JCTree tree, Comment c) {
         table.put(tree, new Entry(c));
     }
-
 }

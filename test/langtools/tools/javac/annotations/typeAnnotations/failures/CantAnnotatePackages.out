@@ -1,5 +1,5 @@
-CantAnnotatePackages.java:14:13: compiler.err.cant.type.annotate.scoping.1: @TA
-CantAnnotatePackages.java:19:18: compiler.err.cant.type.annotate.scoping.1: @TA
-CantAnnotatePackages.java:20:19: compiler.err.cant.type.annotate.scoping.1: @TA
-CantAnnotatePackages.java:21:24: compiler.err.cant.type.annotate.scoping.1: @TA
+CantAnnotatePackages.java:14:18: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), java.lang, @TA java.lang.Object
+CantAnnotatePackages.java:16:14: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), java.lang, @TA java.lang.Object
+CantAnnotatePackages.java:17:9: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), java.lang, @TA java.lang.Object
+CantAnnotatePackages.java:18:14: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @TA), java.lang, @TA java.lang.Object
 4 errors

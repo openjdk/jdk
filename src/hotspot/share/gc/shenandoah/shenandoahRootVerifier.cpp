@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +24,77 @@
  */
 
 
-#include "precompiled.hpp"
 
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 
+Atomic<int> ShenandoahGCStateResetter::_active_count;
+
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
-  _gc_state(_heap->gc_state()) {
-  _heap->_gc_state.clear();
+  _saved_gc_state(_heap->gc_state()),
+  _saved_gc_state_changed(_heap->_gc_state_changed) {
+
+  // Need to complete GC processing before deactivating the barriers.
+  // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
+  // that would patch barriers or process the oops incorrectly. Verifier code
+  // can enter stack watermark processing as part of regular thread root work.
+  // This pretends Java threads have fixed up all state before we go for verification.
+  // Do this unconditionally in all callers to get to the same consensus point.
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
+    StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
+  }
+
+  // Processing stack frames can also enqueue elements in current thread SATB.
+  // We need to flush it here, to avoid triggering the empty SATB verification code.
+  ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
+  satb_qs.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
+
+  // From this moment on, level-1 resetter is active.
+  if (_active_count.compare_set(0, 1, memory_order_relaxed)) {
+    // Clear state to deactivate barriers. Indicate that state has changed
+    // so that verifier threads will use this value, rather than thread local
+    // values (which we are _not_ changing here).
+    _heap->_gc_state.clear();
+    _heap->_gc_state_changed = true;
+  }
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
-  _heap->_gc_state.set(_gc_state);
-  assert(_heap->gc_state() == _gc_state, "Should be restored");
+  if (_active_count.add_then_fetch(-1, memory_order_relaxed) > 0) {
+    // Nested, nothing to do.
+    return;
+  }
+
+  _heap->_gc_state.set(_saved_gc_state);
+  _heap->_gc_state_changed = _saved_gc_state_changed;
+  assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
 }
 
-void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
+void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {
   ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
-  CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-  CodeCache::blobs_do(&blobs);
+  NMethodToOopClosure blobs(oops, !NMethodToOopClosure::FixRelocations);
+  CodeCache::nmethods_do(&blobs);
 
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::cld_do(&clds);
@@ -67,13 +103,19 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
 
+  if (generation->is_young()) {
+    shenandoah_assert_safepoint();
+    shenandoah_assert_generational();
+    ShenandoahGenerationalHeap::heap()->old_generation()->card_scan()->roots_do(oops);
+  }
+
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
   Threads::possibly_parallel_oops_do(true, oops, nullptr);
 }
 
-void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
+void ShenandoahRootVerifier::strong_roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {
   ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
@@ -83,9 +125,15 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
+
+  if (generation->is_young()) {
+    shenandoah_assert_generational();
+    ShenandoahGenerationalHeap::heap()->old_generation()->card_scan()->roots_do(oops);
+  }
+
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
-  CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-  Threads::possibly_parallel_oops_do(true, oops, &blobs);
+  NMethodToOopClosure nmethods(oops, !NMethodToOopClosure::FixRelocations);
+  Threads::possibly_parallel_oops_do(true, oops, &nmethods);
 }

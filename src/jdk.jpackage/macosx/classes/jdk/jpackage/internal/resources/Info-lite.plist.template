@@ -5,7 +5,7 @@
   <key>LSMinimumSystemVersion</key>
   <string>10.11</string>
   <key>CFBundleDevelopmentRegion</key>
-  <string>English</string>
+  <string>en-US</string>
   <key>CFBundleAllowMixedLocalizations</key>
   <true/>
   <key>CFBundleExecutable</key>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
      */
     protected KeySpec engineGetKeySpec(SecretKey key, Class<?> keySpecCl)
         throws InvalidKeySpecException {
-        if ((key instanceof SecretKey)
+        if ((key != null)
             && (validTypes.contains(key.getAlgorithm().toUpperCase(Locale.ENGLISH)))
             && (key.getFormat().equalsIgnoreCase("RAW"))) {
 

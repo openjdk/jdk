@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -33,8 +32,34 @@
 
 #define __ masm->
 
-void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst) {
+void CardTableBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                      Register src, Register dst, Register count, RegSet saved_regs) {
 
+  if (is_oop) {
+    gen_write_ref_array_pre_barrier(masm, decorators, dst, count, saved_regs);
+  }
+}
+
+void CardTableBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                      Register start, Register count, Register tmp) {
+  if (is_oop) {
+    gen_write_ref_array_post_barrier(masm, decorators, start, count, tmp);
+  }
+}
+
+void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                            Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  if (is_reference_type(type)) {
+    oop_store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  }
+}
+
+void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2) {
+  precond(tmp1 != noreg);
+  precond(tmp2 != noreg);
+  assert_different_registers(obj, tmp1, tmp2);
   BarrierSet* bs = BarrierSet::barrier_set();
   assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
 
@@ -42,21 +67,21 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 
   assert(CardTable::dirty_card_val() == 0, "must be");
 
-  __ load_byte_map_base(rscratch1);
+  __ load_byte_map_base(tmp1);
 
   if (UseCondCardMark) {
     Label L_already_dirty;
-    __ ldrb(rscratch2,  Address(obj, rscratch1));
-    __ cbz(rscratch2, L_already_dirty);
-    __ strb(zr, Address(obj, rscratch1));
+    __ ldrb(tmp2,  Address(obj, tmp1));
+    __ cbz(tmp2, L_already_dirty);
+    __ strb(zr, Address(obj, tmp1));
     __ bind(L_already_dirty);
   } else {
-    __ strb(zr, Address(obj, rscratch1));
+    __ strb(zr, Address(obj, tmp1));
   }
 }
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                                                    Register start, Register count, Register scratch, RegSet saved_regs) {
+                                                                    Register start, Register count, Register scratch) {
   Label L_loop, L_done;
   const Register end = count;
 
@@ -89,10 +114,10 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
   if (needs_post_barrier) {
     // flatten object address if needed
     if (!precise || (dst.index() == noreg && dst.offset() == 0)) {
-      store_check(masm, dst.base(), dst);
+      store_check(masm, dst.base(), tmp1, tmp2);
     } else {
       __ lea(tmp3, dst);
-      store_check(masm, tmp3, dst);
+      store_check(masm, tmp3, tmp1, tmp2);
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logFileStreamOutput.hpp"
@@ -182,7 +181,7 @@ static void add_selections(LogSelection** selections,
     // Ensure there's enough room for both wildcard_match and exact_match
     if (*n_selections + 2 > *selections_cap) {
       *selections_cap *= 2;
-      *selections = REALLOC_C_HEAP_ARRAY(LogSelection, *selections, *selections_cap, mtLogging);
+      *selections = REALLOC_C_HEAP_ARRAY(*selections, *selections_cap, mtLogging);
     }
 
     // Add found matching selections to the result array
@@ -318,8 +317,8 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
       break;
     }
   }
-  FREE_C_HEAP_ARRAY(LogTagSet*, deviates);
-  FREE_C_HEAP_ARRAY(Selection, selections);
+  FREE_C_HEAP_ARRAY(deviates);
+  FREE_C_HEAP_ARRAY(selections);
 }
 
 bool LogOutput::parse_options(const char* options, outputStream* errstream) {
@@ -354,7 +353,9 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
       }
       break;
     }
-    pos = comma_pos + 1;
+    if (comma_pos != nullptr) {
+      pos = comma_pos + 1;
+    }
   } while (comma_pos != nullptr);
 
   os::free(opts);

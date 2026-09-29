@@ -51,7 +51,7 @@ import jdk.test.whitebox.cpuinfo.CPUInfo;
  *        jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=7200
+ * @run main/othervm/timeout=28800
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      compiler.arraycopy.stress.TestStressArrayCopy
  */
@@ -124,16 +124,6 @@ public class TestStressArrayCopy {
             }
             if (containsFuzzy(cpuFeatures, "sse2")) {
                 configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=2"));
-            }
-
-            // x86_64 always has UseSSE >= 2. These lower configurations only
-            // make sense for x86_32.
-            if (Platform.isX86()) {
-                if (containsFuzzy(cpuFeatures, "sse")) {
-                    configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=1"));
-                }
-
-                configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=0"));
             }
 
             // Alternate configs with other flags

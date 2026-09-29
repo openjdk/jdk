@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
         return new WindowsTableHeaderUI();
     }
 
+    @Override
     public void installUI(JComponent c) {
         super.installUI(c);
 
@@ -68,6 +69,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
         }
     }
 
+    @Override
     public void uninstallUI(JComponent c) {
         if (header.getDefaultRenderer() instanceof XPDefaultRenderer) {
             header.setDefaultRenderer(originalHeaderRenderer);
@@ -84,7 +86,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private class XPDefaultRenderer extends DefaultTableCellHeaderRenderer {
+    private final class XPDefaultRenderer extends DefaultTableCellHeaderRenderer {
         Skin skin;
         boolean isSelected, hasFocus, hasRollover;
         int column;
@@ -93,6 +95,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             setHorizontalAlignment(LEADING);
         }
 
+        @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
@@ -135,9 +138,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
              * We use border to paint it.
              */
             Icon sortIcon;
-            if (WindowsLookAndFeel.isOnVista()
-                && ((sortIcon = getIcon()) instanceof javax.swing.plaf.UIResource
-                    || sortIcon == null)) {
+            if (((sortIcon = getIcon()) instanceof javax.swing.plaf.UIResource || sortIcon == null)) {
                 contentTop += 1;
                 setIcon(null);
                 sortIcon = null;
@@ -181,6 +182,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             return this;
         }
 
+        @Override
         public void paint(Graphics g) {
             Dimension size = getSize();
             State state = State.NORMAL;
@@ -192,32 +194,31 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             } else if (isSelected || hasFocus || hasRollover) {
                 state = State.HOT;
             }
-            /* on Vista there are more states for sorted columns */
-            if (WindowsLookAndFeel.isOnVista()) {
-                SortOrder sortOrder = getColumnSortOrder(header.getTable(), column);
-                if (sortOrder != null) {
-                     switch(sortOrder) {
-                     case ASCENDING:
-                     case DESCENDING:
-                         switch (state) {
-                         case NORMAL:
-                             state = State.SORTEDNORMAL;
-                             break;
-                         case PRESSED:
-                             state = State.SORTEDPRESSED;
-                             break;
-                         case HOT:
-                             state = State.SORTEDHOT;
-                             break;
-                         default:
-                             /* do nothing */
-                         }
+
+            SortOrder sortOrder = getColumnSortOrder(header.getTable(), column);
+            if (sortOrder != null) {
+                 switch (sortOrder) {
+                 case ASCENDING:
+                 case DESCENDING:
+                     switch (state) {
+                     case NORMAL:
+                         state = State.SORTEDNORMAL;
                          break;
-                     default :
+                     case PRESSED:
+                         state = State.SORTEDPRESSED;
+                         break;
+                     case HOT:
+                         state = State.SORTEDHOT;
+                         break;
+                     default:
                          /* do nothing */
                      }
-                }
+                     break;
+                 default :
+                     /* do nothing */
+                 }
             }
+
             skin.paintSkin(g, 0, 0, size.width-1, size.height-1, state);
             super.paint(g);
         }
@@ -227,7 +228,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
      * A border with an Icon at the middle of the top side.
      * Outer insets can be provided for this border.
      */
-    private static class IconBorder implements Border, UIResource{
+    private static final class IconBorder implements Border, UIResource{
         private final Icon icon;
         private final int top;
         private final int left;
@@ -246,12 +247,15 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             this.bottom = bottom;
             this.right = right;
         }
+        @Override
         public Insets getBorderInsets(Component c) {
             return new Insets(icon.getIconHeight() + top, left, bottom, right);
         }
+        @Override
         public boolean isBorderOpaque() {
             return false;
         }
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             icon.paintIcon(c, g,

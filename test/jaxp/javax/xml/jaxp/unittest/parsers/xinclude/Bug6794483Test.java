@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -46,12 +45,10 @@ import org.w3c.dom.NodeList;
  * @test
  * @bug 6794483 8080908
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.xinclude.Bug6794483Test
  * @run testng/othervm parsers.xinclude.Bug6794483Test
  * @summary Test JAXP parser can resolve the included content properly if the
  * included xml contains an empty tag that ends with "/>", refer to XERCESJ-1134.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6794483Test {
 
     @Test

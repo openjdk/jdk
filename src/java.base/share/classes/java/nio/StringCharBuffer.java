@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,13 @@ final class StringCharBuffer                                  // package-private
         return str.charAt(index + offset);
     }
 
-    // ## Override bulk get methods for better performance
+    @Override
+    CharBuffer getArray(int index, char[] dst, int dstOffset, int length) {
+        // Note: the variable "offset" is defined and set in the superclass
+        int srcOffset = offset + index;
+        str.getChars(srcOffset, srcOffset + length, dst, dstOffset);
+        return this;
+    }
 
     public final CharBuffer put(char c) {
         throw new ReadOnlyBufferException();

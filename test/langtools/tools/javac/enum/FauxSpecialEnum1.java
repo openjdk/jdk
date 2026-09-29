@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 5009601
  * @summary verify specialized enum classes can't be abstract
- * @author Joseph D. Darcy
  *
  * @compile/fail/ref=FauxSpecialEnum1.out -XDrawDiagnostics  FauxSpecialEnum1.java
  */

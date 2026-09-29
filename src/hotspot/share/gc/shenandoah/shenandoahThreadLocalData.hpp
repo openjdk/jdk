@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +26,17 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 
-#include "gc/shared/plab.hpp"
-#include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcThreadLocalData.hpp"
+#include "gc/shared/plab.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
+#include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
@@ -37,30 +44,38 @@
 
 class ShenandoahThreadLocalData {
 private:
+  // Thread-local mirror for global GC state
   char _gc_state;
-  // Evacuation OOM state
-  uint8_t                 _oom_scope_nesting_level;
-  bool                    _oom_during_evac;
+
   SATBMarkQueue           _satb_mark_queue;
+
+  // Current active CardTable's byte_map_base for this thread.
+  CardTable::CardValue*   _card_table;
+
+  // Thread-local allocation buffer for object evacuations.
+  // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
-  double _paced_time;
 
-  ShenandoahThreadLocalData() :
-    _gc_state(0),
-    _oom_scope_nesting_level(0),
-    _oom_during_evac(false),
-    _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
-    _gclab(nullptr),
-    _gclab_size(0),
-    _paced_time(0) {
-  }
+  // Thread-local allocation buffer only used in generational mode.
+  // Used both by mutator threads and by GC worker threads
+  // for evacuations within the old generation and
+  // for promotions from the young generation into the old generation.
+  ShenandoahPLAB* _shenandoah_plab;
 
-  ~ShenandoahThreadLocalData() {
-    if (_gclab != nullptr) {
-      delete _gclab;
-    }
-  }
+  ShenandoahEvacuationStats* _evacuation_stats;
+
+  Atomic<HeapWord*> _invisible_root;
+  Atomic<size_t> _invisible_root_word_size;
+
+  // Thread-local pin cache used to increment/decrement the pin count for
+  // a region and flush the accumulated count to the shared pin counter.
+  // This avoids contended atomic updates of the shared pin counter.
+  size_t _pin_region_idx;
+  size_t _pin_count;
+
+  ShenandoahThreadLocalData();
+  ~ShenandoahThreadLocalData();
 
   static ShenandoahThreadLocalData* data(Thread* thread) {
     assert(UseShenandoahGC, "Sanity");
@@ -85,18 +100,41 @@ public:
   }
 
   static void set_gc_state(Thread* thread, char gc_state) {
-    data(thread)->_gc_state = gc_state;
+    ShenandoahThreadLocalData* d = data(thread);
+    d->_gc_state = gc_state;
   }
 
   static char gc_state(Thread* thread) {
     return data(thread)->_gc_state;
   }
 
+  static bool is_gc_state(Thread* thread, ShenandoahHeap::GCState state) {
+    return (gc_state(thread) & state) != 0;
+  }
+
+  static bool is_gc_state(ShenandoahHeap::GCState state) {
+    return is_gc_state(Thread::current(), state);
+  }
+
+  static void set_card_table(Thread* thread, CardTable::CardValue* ct) {
+    assert(ct != nullptr, "trying to set thread local card_table pointer to nullptr.");
+    data(thread)->_card_table = ct;
+  }
+
+  static CardTable::CardValue* card_table(Thread* thread) {
+    CardTable::CardValue* ct = data(thread)->_card_table;
+    assert(ct != nullptr, "returning a null thread local card_table pointer.");
+    return ct;
+  }
+
   static void initialize_gclab(Thread* thread) {
-    assert (thread->is_Java_thread() || thread->is_Worker_thread(), "Only Java and GC worker threads are allowed to get GCLABs");
     assert(data(thread)->_gclab == nullptr, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
+
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      data(thread)->_shenandoah_plab = new ShenandoahPLAB();
+    }
   }
 
   static PLAB* gclab(Thread* thread) {
@@ -111,56 +149,23 @@ public:
     data(thread)->_gclab_size = v;
   }
 
-  static void add_paced_time(Thread* thread, double v) {
-    data(thread)->_paced_time += v;
+  static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+    data(thread)->_evacuation_stats->begin_evacuation(bytes, from, to);
   }
 
-  static double paced_time(Thread* thread) {
-    return data(thread)->_paced_time;
+  static void end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+    data(thread)->_evacuation_stats->end_evacuation(bytes, from, to);
   }
 
-  static void reset_paced_time(Thread* thread) {
-    data(thread)->_paced_time = 0;
+  static ShenandoahEvacuationStats* evacuation_stats(Thread* thread) {
+    return data(thread)->_evacuation_stats;
   }
 
-  // Evacuation OOM handling
-  static bool is_oom_during_evac(Thread* thread) {
-    return data(thread)->_oom_during_evac;
-  }
-
-  static void set_oom_during_evac(Thread* thread, bool oom) {
-    data(thread)->_oom_during_evac = oom;
-  }
-
-  static uint8_t evac_oom_scope_level(Thread* thread) {
-    return data(thread)->_oom_scope_nesting_level;
-  }
-
-  // Push the scope one level deeper, return previous level
-  static uint8_t push_evac_oom_scope(Thread* thread) {
-    uint8_t level = evac_oom_scope_level(thread);
-    assert(level < 254, "Overflow nesting level"); // UINT8_MAX = 255
-    data(thread)->_oom_scope_nesting_level = level + 1;
-    return level;
-  }
-
-  // Pop the scope by one level, return previous level
-  static uint8_t pop_evac_oom_scope(Thread* thread) {
-    uint8_t level = evac_oom_scope_level(thread);
-    assert(level > 0, "Underflow nesting level");
-    data(thread)->_oom_scope_nesting_level = level - 1;
-    return level;
-  }
-
-  static bool is_evac_allowed(Thread* thread) {
-    return evac_oom_scope_level(thread) > 0;
+  static ShenandoahPLAB* shenandoah_plab(Thread* thread) {
+    return data(thread)->_shenandoah_plab;
   }
 
   // Offsets
-  static ByteSize satb_mark_queue_active_offset() {
-    return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active();
-  }
-
   static ByteSize satb_mark_queue_index_offset() {
     return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index();
   }
@@ -172,8 +177,47 @@ public:
   static ByteSize gc_state_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state);
   }
+
+  static ByteSize card_table_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _card_table);
+  }
+
+  // invisible root are the partially initialized obj array set by ShenandoahObjArrayAllocator
+  static void set_invisible_root(Thread* thread, HeapWord* invisible_root, size_t word_size) {
+    data(thread)->_invisible_root.store_relaxed(invisible_root);
+    data(thread)->_invisible_root_word_size.store_relaxed(word_size);
+  }
+
+  static void clear_invisible_root(Thread* thread) {
+    data(thread)->_invisible_root.store_relaxed(nullptr);
+    data(thread)->_invisible_root_word_size.store_relaxed(0);
+  }
+
+  static HeapWord* get_invisible_root(Thread* thread) {
+    return data(thread)->_invisible_root.load_relaxed();
+  }
+
+  static size_t get_invisible_root_word_size(Thread* thread) {
+    return data(thread)->_invisible_root_word_size.load_relaxed();
+  }
+
+  static size_t pin_cache_region(Thread* thread) {
+    return data(thread)->_pin_region_idx;
+  }
+
+  static size_t pin_cache_count(Thread* thread) {
+    return data(thread)->_pin_count;
+  }
+
+  static void pin_cache_set_region(Thread* thread, size_t region_idx) {
+    data(thread)->_pin_region_idx = region_idx;
+  }
+
+  static void pin_cache_set_count(Thread* thread, size_t new_count) {
+    data(thread)->_pin_count = new_count;
+  }
 };
 
-STATIC_ASSERT(sizeof(ShenandoahThreadLocalData) <= sizeof(GCThreadLocalData));
+static_assert(sizeof(ShenandoahThreadLocalData) <= sizeof(GCThreadLocalData));
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary annotations cause memory leak
  * @library /test/lib
  * @build jdk.test.lib.process.*
- * @run testng LoaderLeakTest
+ * @run testng/timeout=480 LoaderLeakTest
  */
 
 import jdk.test.lib.Utils;
@@ -55,7 +55,7 @@ public class LoaderLeakTest {
     }
 
     private void runJavaProcessExpectSuccessExitCode(String ... command) throws Throwable {
-        var processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(command)
+        var processBuilder = ProcessTools.createTestJavaProcessBuilder(command)
                                                       .directory(Paths.get(Utils.TEST_CLASSES).toFile());
         ProcessTools.executeCommand(processBuilder).shouldHaveExitValue(0);
     }

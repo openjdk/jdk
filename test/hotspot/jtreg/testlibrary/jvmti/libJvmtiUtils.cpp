@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
-static jvmtiEnv* jvmti = NULL;
+static jvmtiEnv* jvmti = nullptr;
 
 JNIEXPORT jint JNICALL
 Java_jvmti_JVMTIUtils_init(JNIEnv *jni, jclass cls) {
@@ -67,6 +67,14 @@ Java_jvmti_JVMTIUtils_suspendThread0(JNIEnv *jni, jclass cls, jthread thread) {
 JNIEXPORT jint JNICALL
 Java_jvmti_JVMTIUtils_resumeThread0(JNIEnv *jni, jclass cls, jthread thread) {
   return jvmti->ResumeThread(thread);
+}
+
+JNIEXPORT jint JNICALL
+Java_jvmti_JVMTIUtils_getThreadState(JNIEnv *jni, jclass cls, jthread thread) {
+  jint state = 0;
+  jvmtiError err = jvmti->GetThreadState(thread, &state);
+  check_jvmti_status(jni, err, "Error during GetThreadState()");
+  return state;
 }
 
 }

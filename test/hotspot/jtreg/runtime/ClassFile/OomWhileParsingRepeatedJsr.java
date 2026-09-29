@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,43 +35,43 @@
  * @bug 8016029
  * @requires vm.flagless
  * @library /test/lib
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.desktop
  *          java.management
  * @run driver OomWhileParsingRepeatedJsr
  */
 
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
-import jdk.test.lib.process.ProcessTools;
+import java.io.File;
+import java.nio.file.Files;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class OomWhileParsingRepeatedJsr {
 
     public static void main(String[] args) throws Exception {
 
-        // ======= Configure the test
-        String jarFile = System.getProperty("test.src") + "/testcase.jar";
         String className = "OOMCrashClass1960_2";
 
-        // ======= extract the test class
-        ProcessBuilder pb = new ProcessBuilder(new String[] {
-            JDKToolFinder.getJDKTool("jar"),
-            "xvf", jarFile } );
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
+        // create a file in the scratch dir
+        File classFile = new File(className + ".class");
+        classFile.createNewFile();
+
+        // fill it with the binary data of the class file
+        byte[] bytes = OOMCrashClass1960_2.dump();
+        Files.write(classFile.toPath(), bytes);
 
         // ======= execute the test
         // We run the test with MallocLimit set to 768m in oom mode,
         // in order to trigger and observe a fake os::malloc oom. This needs NMT.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-cp", ".",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=summary",
             "-XX:MallocLimit=768m:oom",
-            className );
+            className);
 
-        output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         output.shouldContain("Cannot reserve enough memory");
     }

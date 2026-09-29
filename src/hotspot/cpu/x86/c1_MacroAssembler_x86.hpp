@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,17 +46,17 @@
   void initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1);
 
   // locking
-  // hdr     : must be rax, contents destroyed
-  // obj     : must point to the object to lock, contents preserved
-  // disp_hdr: must point to the displaced header location, contents preserved
+  // hdr       : must be rax, contents destroyed
+  // obj       : must point to the object to lock, contents preserved
+  // basic_lock: must point to the basic lock, contents preserved
   // returns code offset at which to add null check debug information
-  int lock_object  (Register swap, Register obj, Register disp_hdr, Register tmp, Label& slow_case);
+  int lock_object  (Register swap, Register obj, Register basic_lock, Register tmp, Label& slow_case);
 
   // unlocking
-  // hdr     : contents destroyed
-  // obj     : must point to the object to lock, contents preserved
-  // disp_hdr: must be eax & must point to the displaced header location, contents destroyed
-  void unlock_object(Register swap, Register obj, Register lock, Label& slow_case);
+  // hdr       : contents destroyed
+  // obj       : must point to the object to lock, contents preserved
+  // basic_lock: must be eax & must point to the basic lock, contents destroyed
+  void unlock_object(Register swap, Register obj, Register basic_lock, Label& slow_case);
 
   void initialize_object(
     Register obj,                      // result: pointer to object after successful allocation
@@ -83,13 +83,14 @@
   };
 
   // allocation of arrays
-  // obj        : must be rax, will contain pointer to allocated object
-  // len        : array length in number of elements
-  // t          : scratch register - contents destroyed
-  // header_size: size of object header in words
-  // f          : element scale factor
-  // slow_case  : exit to slow case implementation if fast allocation fails
-  void allocate_array(Register obj, Register len, Register t, Register t2, int header_size, Address::ScaleFactor f, Register klass, Label& slow_case);
+  // obj                 : must be rax, will contain pointer to allocated object
+  // len                 : array length in number of elements
+  // t                   : scratch register - contents destroyed
+  // base_offset_in_bytes: offset of the first array element, in bytes
+  // f                   : element scale factor
+  // slow_case           : exit to slow case implementation if fast allocation fails
+  // zero_array          : zero the allocated array or not
+  void allocate_array(Register obj, Register len, Register t, Register t2, int base_offset_in_bytes, Address::ScaleFactor f, Register klass, Label& slow_case, bool zero_array);
 
   int  rsp_offset() const { return _rsp_offset; }
   void set_rsp_offset(int n) { _rsp_offset = n; }

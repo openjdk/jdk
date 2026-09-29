@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,28 +46,31 @@ public class NegativeAvailable {
 
         // Create a temporary file with size of 10 bytes.
         Path tmp = Files.createTempFile(null, null);
-        try (BufferedWriter writer =
-            Files.newBufferedWriter(tmp, Charset.defaultCharset())) {
-            for (int i = 0; i < SIZE; i++) {
-                writer.write('1');
+        try {
+            try (BufferedWriter writer =
+                         Files.newBufferedWriter(tmp, Charset.defaultCharset())) {
+                for (int i = 0; i < SIZE; i++) {
+                    writer.write('1');
+                }
             }
-        }
 
-        File tempFile = tmp.toFile();
-        try (FileInputStream fis = new FileInputStream(tempFile)) {
-            if (tempFile.length() != SIZE) {
-                throw new RuntimeException("unexpected file size = "
-                                           + tempFile.length());
+            File tempFile = tmp.toFile();
+            try (FileInputStream fis = new FileInputStream(tempFile)) {
+                if (tempFile.length() != SIZE) {
+                    throw new RuntimeException("unexpected file size = "
+                            + tempFile.length());
+                }
+                long space = skipBytes(fis, SKIP, SIZE);
+                space = skipBytes(fis, NEGATIVE_SKIP, space);
+                space = skipBytes(fis, SKIP, space);
+                space = skipBytes(fis, SKIP, space);
+                space = skipBytes(fis, SKIP, space);
+                space = skipBytes(fis, NEGATIVE_SKIP, space);
+                space = skipBytes(fis, NEGATIVE_SKIP, space);
             }
-            long space = skipBytes(fis, SKIP, SIZE);
-            space = skipBytes(fis, NEGATIVE_SKIP, space);
-            space = skipBytes(fis, SKIP, space);
-            space = skipBytes(fis, SKIP, space);
-            space = skipBytes(fis, SKIP, space);
-            space = skipBytes(fis, NEGATIVE_SKIP, space);
-            space = skipBytes(fis, NEGATIVE_SKIP, space);
+        } finally {
+            Files.deleteIfExists(tmp);
         }
-        Files.deleteIfExists(tmp);
     }
 
     /**

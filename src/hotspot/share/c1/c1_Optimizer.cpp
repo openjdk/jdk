@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Optimizer.hpp"
-#include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "compiler/compileLog.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "compiler/compileLog.hpp"
 
 typedef GrowableArray<ValueSet*> ValueSetList;
 
@@ -89,7 +86,8 @@ class CE_Eliminator: public BlockClosure {
   virtual void block_do(BlockBegin* block);
 
  private:
-  Value make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval);
+  Value make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval,
+                  ValueStack* state_before, bool substitutability_check);
 };
 
 void CE_Eliminator::block_do(BlockBegin* block) {
@@ -218,7 +216,8 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     cur_end = cur_end->set_next(f_value);
   }
 
-  Value result = make_ifop(if_->x(), if_->cond(), if_->y(), t_value, f_value);
+  Value result = make_ifop(if_->x(), if_->cond(), if_->y(), t_value, f_value,
+                           if_->state_before(), if_->substitutability_check());
   assert(result != nullptr, "make_ifop must return a non-null instruction");
   if (!result->is_linked() && result->can_be_linked()) {
     NOT_PRODUCT(result->set_printable_bci(if_->printable_bci()));
@@ -273,9 +272,10 @@ void CE_Eliminator::block_do(BlockBegin* block) {
 
 }
 
-Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval) {
+Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval,
+                               ValueStack* state_before, bool substitutability_check) {
   if (!OptimizeIfOps) {
-    return new IfOp(x, cond, y, tval, fval);
+    return new IfOp(x, cond, y, tval, fval, state_before, substitutability_check);
   }
 
   tval = tval->subst();
@@ -289,7 +289,8 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
   y = y->subst();
 
   Constant* y_const = y->as_Constant();
-  if (y_const != nullptr) {
+  // We must not optimize a substitutability check to a pointer comparison.
+  if (!substitutability_check && y_const != nullptr) {
     IfOp* x_ifop = x->as_IfOp();
     if (x_ifop != nullptr) {                 // x is an ifop, y is a constant
       Constant* x_tval_const = x_ifop->tval()->subst()->as_Constant();
@@ -310,7 +311,7 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
           if (new_tval == new_fval) {
             return new_tval;
           } else {
-            return new IfOp(x_ifop->x(), x_ifop_cond, x_ifop->y(), new_tval, new_fval);
+            return new IfOp(x_ifop->x(), x_ifop_cond, x_ifop->y(), new_tval, new_fval, x_ifop->state_before(), x_ifop->substitutability_check());
           }
         }
       }
@@ -326,7 +327,7 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
       }
     }
   }
-  return new IfOp(x, cond, y, tval, fval);
+  return new IfOp(x, cond, y, tval, fval, state_before, substitutability_check);
 }
 
 void Optimizer::eliminate_conditional_expressions() {
@@ -335,7 +336,7 @@ void Optimizer::eliminate_conditional_expressions() {
 }
 
 // This removes others' relation to block, but doesn't empty block's lists
-void disconnect_from_graph(BlockBegin* block) {
+static void disconnect_from_graph(BlockBegin* block) {
   for (int p = 0; p < block->number_of_preds(); p++) {
     BlockBegin* pred = block->pred_at(p);
     int idx;
@@ -466,7 +467,7 @@ class BlockMerger: public BlockClosure {
         con  = if_->x()->as_Constant();
         swapped = true;
       }
-      if (con && ifop) {
+      if (con && ifop && !ifop->substitutability_check()) {
         Constant* tval = ifop->tval()->as_Constant();
         Constant* fval = ifop->fval()->as_Constant();
         if (tval && fval) {
@@ -491,7 +492,7 @@ class BlockMerger: public BlockClosure {
             BlockBegin* fblock = fval->compare(cond, con, tsux, fsux);
             if (tblock != fblock && !if_->is_safepoint()) {
               If* newif = new If(ifop->x(), ifop->cond(), false, ifop->y(),
-                                 tblock, fblock, if_->state_before(), if_->is_safepoint());
+                                 tblock, fblock, if_->state_before(), if_->is_safepoint(), ifop->substitutability_check());
               newif->set_state(if_->state()->copy());
 
               assert(prev->next() == if_, "must be guaranteed by above search");
@@ -580,12 +581,12 @@ public:
   void do_Base           (Base*            x);
   void do_OsrEntry       (OsrEntry*        x);
   void do_ExceptionObject(ExceptionObject* x);
-  void do_RoundFP        (RoundFP*         x);
   void do_UnsafeGet      (UnsafeGet*       x);
   void do_UnsafePut      (UnsafePut*       x);
   void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
   void do_ProfileCall    (ProfileCall*     x);
   void do_ProfileReturnType (ProfileReturnType*  x);
+  void do_ProfileACmpTypes(ProfileACmpTypes*  x);
   void do_ProfileInvoke  (ProfileInvoke*   x);
   void do_RuntimeCall    (RuntimeCall*     x);
   void do_MemBar         (MemBar*          x);
@@ -714,6 +715,9 @@ class NullCheckEliminator: public ValueVisitor {
   void handle_Phi             (Phi* x);
   void handle_ProfileCall     (ProfileCall* x);
   void handle_ProfileReturnType (ProfileReturnType* x);
+  void handle_ProfileACmpTypes(ProfileACmpTypes* x);
+  void handle_Constant        (Constant* x);
+  void handle_IfOp            (IfOp* x);
 };
 
 
@@ -728,7 +732,7 @@ class NullCheckEliminator: public ValueVisitor {
 // that in for safety, otherwise should think more about it.
 void NullCheckVisitor::do_Phi            (Phi*             x) { nce()->handle_Phi(x);      }
 void NullCheckVisitor::do_Local          (Local*           x) {}
-void NullCheckVisitor::do_Constant       (Constant*        x) { /* FIXME: handle object constants */ }
+void NullCheckVisitor::do_Constant       (Constant*        x) { nce()->handle_Constant(x); }
 void NullCheckVisitor::do_LoadField      (LoadField*       x) { nce()->handle_AccessField(x); }
 void NullCheckVisitor::do_StoreField     (StoreField*      x) { nce()->handle_AccessField(x); }
 void NullCheckVisitor::do_ArrayLength    (ArrayLength*     x) { nce()->handle_ArrayLength(x); }
@@ -739,7 +743,7 @@ void NullCheckVisitor::do_ArithmeticOp   (ArithmeticOp*    x) { if (x->can_trap(
 void NullCheckVisitor::do_ShiftOp        (ShiftOp*         x) {}
 void NullCheckVisitor::do_LogicOp        (LogicOp*         x) {}
 void NullCheckVisitor::do_CompareOp      (CompareOp*       x) {}
-void NullCheckVisitor::do_IfOp           (IfOp*            x) {}
+void NullCheckVisitor::do_IfOp           (IfOp*            x) { nce()->handle_IfOp(x); }
 void NullCheckVisitor::do_Convert        (Convert*         x) {}
 void NullCheckVisitor::do_NullCheck      (NullCheck*       x) { nce()->handle_NullCheck(x); }
 void NullCheckVisitor::do_TypeCast       (TypeCast*        x) {}
@@ -763,7 +767,6 @@ void NullCheckVisitor::do_Throw          (Throw*           x) { nce()->clear_las
 void NullCheckVisitor::do_Base           (Base*            x) {}
 void NullCheckVisitor::do_OsrEntry       (OsrEntry*        x) {}
 void NullCheckVisitor::do_ExceptionObject(ExceptionObject* x) { nce()->handle_ExceptionObject(x); }
-void NullCheckVisitor::do_RoundFP        (RoundFP*         x) {}
 void NullCheckVisitor::do_UnsafeGet      (UnsafeGet*       x) {}
 void NullCheckVisitor::do_UnsafePut      (UnsafePut*       x) {}
 void NullCheckVisitor::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
@@ -771,6 +774,7 @@ void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_las
                                                                 nce()->handle_ProfileCall(x); }
 void NullCheckVisitor::do_ProfileReturnType (ProfileReturnType* x) { nce()->handle_ProfileReturnType(x); }
 void NullCheckVisitor::do_ProfileInvoke  (ProfileInvoke*   x) {}
+void NullCheckVisitor::do_ProfileACmpTypes(ProfileACmpTypes* x) { nce()->handle_ProfileACmpTypes(x); }
 void NullCheckVisitor::do_RuntimeCall    (RuntimeCall*     x) {}
 void NullCheckVisitor::do_MemBar         (MemBar*          x) {}
 void NullCheckVisitor::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
@@ -882,7 +886,9 @@ void NullCheckEliminator::iterate_one(BlockBegin* block) {
     // visiting instructions which are references in other blocks or
     // visiting instructions more than once.
     mark_visitable(instr);
-    if (instr->is_pinned() || instr->can_trap() || (instr->as_NullCheck() != nullptr)) {
+    if (instr->is_pinned() || instr->can_trap() || (instr->as_NullCheck() != nullptr)
+        || (instr->as_Constant() != nullptr && instr->as_Constant()->type()->is_object())
+        || (instr->as_IfOp() != nullptr)) {
       mark_visited(instr);
       instr->input_values_do(this);
       instr->visit(&_visitor);
@@ -1196,6 +1202,33 @@ void NullCheckEliminator::handle_ProfileCall(ProfileCall* x) {
 
 void NullCheckEliminator::handle_ProfileReturnType(ProfileReturnType* x) {
   x->set_needs_null_check(!set_contains(x->ret()));
+}
+
+void NullCheckEliminator::handle_ProfileACmpTypes(ProfileACmpTypes* x) {
+  x->set_left_maybe_null(!set_contains(x->left()));
+  x->set_right_maybe_null(!set_contains(x->right()));
+}
+
+void NullCheckEliminator::handle_Constant(Constant *x) {
+  ObjectType* ot = x->type()->as_ObjectType();
+  if (ot != nullptr && ot->is_loaded()) {
+    ObjectConstant* oc = ot->as_ObjectConstant();
+    if (oc == nullptr || !oc->value()->is_null_object()) {
+      set_put(x);
+      if (PrintNullCheckElimination) {
+        tty->print_cr("Constant %d is non-null", x->id());
+      }
+    }
+  }
+}
+
+void NullCheckEliminator::handle_IfOp(IfOp *x) {
+  if (x->type()->is_object() && set_contains(x->tval()) && set_contains(x->fval())) {
+    set_put(x);
+    if (PrintNullCheckElimination) {
+      tty->print_cr("IfOp %d is non-null", x->id());
+    }
+  }
 }
 
 void Optimizer::eliminate_null_checks() {

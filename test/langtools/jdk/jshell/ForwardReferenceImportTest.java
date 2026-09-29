@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@
  * @test 8173232
  * @summary Test of forward referencing of snippets (related to import).
  * @build KullaTesting TestingInputStream
- * @run testng ForwardReferenceImportTest
+ * @run junit ForwardReferenceImportTest
  */
 
 import jdk.jshell.Snippet;
 import jdk.jshell.DeclarationSnippet;
-import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.*;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ForwardReferenceImportTest extends KullaTesting {
 
+    @Test
     public void testImportDeclare() {
         Snippet singleImport = importKey(assertEval("import java.util.List;", added(VALID)));
         Snippet importOnDemand = importKey(assertEval("import java.util.*;", added(VALID)));
@@ -57,6 +57,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testForwardSingleImportMethodToMethod() {
         DeclarationSnippet string = methodKey(assertEval("String string() { return format(\"string\"); }",
                 added(RECOVERABLE_DEFINED)));
@@ -76,6 +77,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testForwardImportMethodOnDemandToMethod() {
         DeclarationSnippet string = methodKey(assertEval("String string() { return format(\"string\"); }",
                 added(RECOVERABLE_DEFINED)));
@@ -95,6 +97,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testForwardSingleImportFieldToMethod() {
         DeclarationSnippet pi = methodKey(assertEval("double pi() { return PI; }",
                 added(RECOVERABLE_DEFINED)));
@@ -114,6 +117,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testForwardImportFieldOnDemandToMethod() {
         DeclarationSnippet pi = methodKey(assertEval("double pi() { return PI; }",
                 added(RECOVERABLE_DEFINED)));
@@ -133,6 +137,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testForwardSingleImportMethodToClass1() {
         Snippet a = classKey(assertEval("class A { String s = format(\"%d\", 10); }",
                 added(RECOVERABLE_DEFINED)));
@@ -153,6 +158,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, false, format));
     }
 
+    @Test
     public void testForwardSingleImportMethodToClass2() {
         Snippet a = classKey(assertEval("class A { String s() { return format(\"%d\", 10); } }",
                 added(RECOVERABLE_DEFINED)));
@@ -173,6 +179,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, false, format));
     }
 
+    @Test
     public void testForwardSingleImportClassToClass1() {
         Snippet a = classKey(assertEval("class A { static List<Integer> list; }",
                 added(RECOVERABLE_NOT_DEFINED)));
@@ -195,6 +202,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(a, RECOVERABLE_NOT_DEFINED, VALID, true, list));
     }
 
+    @Test
     public void testForwardSingleImportClassToClass2() {
         Snippet clsA = classKey(assertEval("class A extends ArrayList<Integer> { }",
                 added(RECOVERABLE_NOT_DEFINED)));
@@ -219,6 +227,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(clsA, RECOVERABLE_NOT_DEFINED, VALID, true, arraylist));
     }
 
+    @Test
     public void testForwardImportOnDemandMethodToClass1() {
         Snippet a = classKey(assertEval("class A { String s = format(\"%d\", 10); }",
                 added(RECOVERABLE_DEFINED)));
@@ -241,6 +250,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
         assertEval("x.s;", "\"10\"");
     }
 
+    @Test
     public void testForwardImportOnDemandMethodToClass2() {
         Snippet a = classKey(assertEval("class A { String s() { return format(\"%d\", 10); } }",
                 added(RECOVERABLE_DEFINED)));
@@ -261,6 +271,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, false, format));
     }
 
+    @Test
     public void testForwardImportOnDemandClassToClass1() {
         Snippet a = classKey(assertEval("class A { static List<Integer> list; }",
                 added(RECOVERABLE_NOT_DEFINED)));
@@ -282,6 +293,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(a, RECOVERABLE_NOT_DEFINED, VALID, true, list));
     }
 
+    @Test
     public void testForwardImportOnDemandClassToClass2() {
         Snippet clsA = classKey(assertEval("class A extends ArrayList<Integer> { }",
                 added(RECOVERABLE_NOT_DEFINED)));
@@ -305,6 +317,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(vara, RECOVERABLE_NOT_DEFINED, VALID, true, clsA));
     }
 
+    @Test
     public void testForwardSingleImportFieldToClass1() {
         Snippet a = classKey(assertEval("class A { static double pi() { return PI; } }",
                 added(RECOVERABLE_DEFINED)));
@@ -326,6 +339,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, false, list));
     }
 
+    @Test
     public void testForwardSingleImportFieldToClass2() {
         Snippet a = classKey(assertEval("class A { static double pi = PI; }",
                 added(RECOVERABLE_DEFINED)));
@@ -347,6 +361,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, true, list));
     }
 
+    @Test
     public void testForwardImportOnDemandFieldToClass1() {
         Snippet a = classKey(assertEval("class A { static double pi() { return PI; } }",
                 added(RECOVERABLE_DEFINED)));
@@ -368,6 +383,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 ste(a, RECOVERABLE_DEFINED, VALID, false, list));
     }
 
+    @Test
     public void testForwardImportOnDemandFieldToClass2() {
         Snippet a = classKey(assertEval("class A { static double pi = PI; }",
                 added(RECOVERABLE_DEFINED)));

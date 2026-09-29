@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -196,14 +196,12 @@ void LIR_Op2::verify() const {
 
   if (two_operand_lir_form) {
 
-#ifdef ASSERT
     bool threeOperandForm = false;
 #ifdef S390
     // There are 3 operand shifts on S390 (see LIR_Assembler::shift_op()).
     threeOperandForm =
       code() == lir_shl ||
       ((code() == lir_shr || code() == lir_ushr) && (result_opr()->is_double_cpu() || in_opr1()->type() == T_OBJECT));
-#endif
 #endif
 
     switch (code()) {
@@ -289,7 +287,7 @@ void LIR_OpBranch::negate_cond() {
 LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, ciKlass* klass,
                                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
                                  bool fast_check, CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch,
-                                 CodeStub* stub)
+                                 CodeStub* stub, bool need_null_check)
 
   : LIR_Op(code, result, nullptr)
   , _object(object)
@@ -298,13 +296,14 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, 
   , _tmp1(tmp1)
   , _tmp2(tmp2)
   , _tmp3(tmp3)
-  , _fast_check(fast_check)
   , _info_for_patch(info_for_patch)
   , _info_for_exception(info_for_exception)
   , _stub(stub)
   , _profiled_method(nullptr)
   , _profiled_bci(-1)
   , _should_profile(false)
+  , _fast_check(fast_check)
+  , _need_null_check(need_null_check)
 {
   if (code == lir_checkcast) {
     assert(info_for_exception != nullptr, "checkcast throws exceptions");
@@ -325,13 +324,14 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
   , _tmp1(tmp1)
   , _tmp2(tmp2)
   , _tmp3(tmp3)
-  , _fast_check(false)
   , _info_for_patch(nullptr)
   , _info_for_exception(info_for_exception)
   , _stub(nullptr)
   , _profiled_method(nullptr)
   , _profiled_bci(-1)
   , _should_profile(false)
+  , _fast_check(false)
+  , _need_null_check(true)
 {
   if (code == lir_store_check) {
     _stub = new ArrayStoreExceptionStub(object, info_for_exception);
@@ -340,6 +340,33 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
     ShouldNotReachHere();
   }
 }
+
+LIR_OpFlattenedArrayCheck::LIR_OpFlattenedArrayCheck(LIR_Opr array, LIR_Opr tmp, CodeStub* stub)
+  : LIR_Op(lir_flat_array_check, LIR_OprFact::illegalOpr, nullptr)
+  , _array(array)
+  , _tmp(tmp)
+  , _stub(stub) {}
+
+
+LIR_OpNullFreeArrayCheck::LIR_OpNullFreeArrayCheck(LIR_Opr array, LIR_Opr tmp)
+  : LIR_Op(lir_null_free_array_check, LIR_OprFact::illegalOpr, nullptr)
+  , _array(array)
+  , _tmp(tmp) {}
+
+
+LIR_OpSubstitutabilityCheck::LIR_OpSubstitutabilityCheck(LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr equal_result, LIR_Opr not_equal_result,
+                                                         ciKlass* left_klass, ciKlass* right_klass, LIR_Opr tmp1, LIR_Opr tmp2,
+                                                         CodeEmitInfo* info, CodeStub* stub)
+  : LIR_Op(lir_substitutability_check, result, info)
+  , _left(left)
+  , _right(right)
+  , _equal_result(equal_result)
+  , _not_equal_result(not_equal_result)
+  , _left_klass(left_klass)
+  , _right_klass(right_klass)
+  , _tmp1(tmp1)
+  , _tmp2(tmp2)
+  , _stub(stub) {}
 
 
 LIR_OpArrayCopy::LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_Opr dst_pos, LIR_Opr length,
@@ -353,7 +380,16 @@ LIR_OpArrayCopy::LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_
   , _tmp(tmp)
   , _expected_type(expected_type)
   , _flags(flags) {
+#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV64) || defined(PPC64)
+  if (expected_type != nullptr &&
+      ((flags & ~LIR_OpArrayCopy::get_initial_copy_flags()) == 0)) {
+    _stub = nullptr;
+  } else {
+    _stub = new ArrayCopyStub(this);
+  }
+#else
   _stub = new ArrayCopyStub(this);
+#endif
 }
 
 LIR_OpUpdateCRC32::LIR_OpUpdateCRC32(LIR_Opr crc, LIR_Opr val, LIR_Opr res)
@@ -398,7 +434,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
   switch (op->code()) {
 
 // LIR_Op0
-    case lir_fpop_raw:                 // result and info always invalid
     case lir_breakpoint:               // result and info always invalid
     case lir_membar:                   // result and info always invalid
     case lir_membar_acquire:           // result and info always invalid
@@ -407,6 +442,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_membar_storestore:        // result and info always invalid
     case lir_membar_loadstore:         // result and info always invalid
     case lir_membar_storeload:         // result and info always invalid
+    case lir_check_orig_pc:            // result and info always invalid
     case lir_on_spin_wait:
     {
       assert(op->as_Op0() != nullptr, "must be");
@@ -438,20 +474,24 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
 
 // LIR_Op1
-    case lir_fxch:           // input always valid, result and info always invalid
-    case lir_fld:            // input always valid, result and info always invalid
     case lir_push:           // input always valid, result and info always invalid
     case lir_pop:            // input always valid, result and info always invalid
     case lir_leal:           // input and result always valid, info always invalid
     case lir_monaddr:        // input and result always valid, info always invalid
     case lir_null_check:     // input and info always valid, result always invalid
     case lir_move:           // input and result always valid, may have info
+    case lir_sqrt:           // FP Ops have no info, but input and result
+    case lir_abs:
+    case lir_neg:
+    case lir_f2hf:
+    case lir_hf2f:
     {
       assert(op->as_Op1() != nullptr, "must be");
       LIR_Op1* op1 = (LIR_Op1*)op;
 
       if (op1->_info)                  do_info(op1->_info);
       if (op1->_opr->is_valid())       do_input(op1->_opr);
+      if (op1->_tmp->is_valid())       do_temp(op1->_tmp);
       if (op1->_result->is_valid())    do_output(op1->_result);
 
       break;
@@ -477,6 +517,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
       assert(op1->_info != nullptr, "");  do_info(op1->_info);
       if (op1->_opr->is_valid())       do_temp(op1->_opr); // safepoints on SPARC need temporary register
+      assert(op1->_tmp->is_illegal(), "not used");
       assert(op1->_result->is_illegal(), "safepoint does not produce value");
 
       break;
@@ -491,7 +532,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opConvert->_info == nullptr, "must be");
       if (opConvert->_opr->is_valid())       do_input(opConvert->_opr);
       if (opConvert->_result->is_valid())    do_output(opConvert->_result);
-      do_stub(opConvert->_stub);
 
       break;
     }
@@ -538,20 +578,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     }
 
 
-// LIR_OpRoundFP;
-    case lir_roundfp: {
-      assert(op->as_OpRoundFP() != nullptr, "must be");
-      LIR_OpRoundFP* opRoundFP = (LIR_OpRoundFP*)op;
-
-      assert(op->_info == nullptr, "info not used by this instruction");
-      assert(opRoundFP->_tmp->is_illegal(), "not used");
-      do_input(opRoundFP->_opr);
-      do_output(opRoundFP->_result);
-
-      break;
-    }
-
-
 // LIR_Op2
     case lir_cmp:
     case lir_cmp_l2i:
@@ -560,11 +586,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_add:
     case lir_sub:
     case lir_rem:
-    case lir_sqrt:
-    case lir_abs:
-    case lir_neg:
-    case lir_f2hf:
-    case lir_hf2f:
     case lir_logic_and:
     case lir_logic_or:
     case lir_logic_xor:
@@ -661,6 +682,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
       assert(op1->_info == nullptr, "no info");
       assert(op1->_opr->is_valid(), "exception oop");         do_input(op1->_opr);
+      assert(op1->_tmp->is_illegal(), "not used");
       assert(op1->_result->is_illegal(), "no result");
 
       break;
@@ -717,11 +739,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       }
 
       if (opJavaCall->_info)                     do_info(opJavaCall->_info);
-      if (FrameMap::method_handle_invoke_SP_save_opr() != LIR_OprFact::illegalOpr &&
-          opJavaCall->is_method_handle_invoke()) {
-        opJavaCall->_method_handle_invoke_SP_save_opr = FrameMap::method_handle_invoke_SP_save_opr();
-        do_temp(opJavaCall->_method_handle_invoke_SP_save_opr);
-      }
       do_call();
       if (opJavaCall->_result->is_valid())       do_output(opJavaCall->_result);
 
@@ -803,19 +820,11 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opLock->_result->is_illegal(), "unused");
 
       do_stub(opLock->_stub);
+      do_stub(opLock->_throw_ie_stub);
 
       break;
     }
 
-
-// LIR_OpDelay
-    case lir_delay_slot: {
-      assert(op->as_OpDelay() != nullptr, "must be");
-      LIR_OpDelay* opDelay = (LIR_OpDelay*)op;
-
-      visit(opDelay->delay_op());
-      break;
-    }
 
 // LIR_OpTypeCheck
     case lir_instanceof:
@@ -836,6 +845,56 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (opTypeCheck->_tmp3->is_valid())         do_temp(opTypeCheck->_tmp3);
       if (opTypeCheck->_result->is_valid())       do_output(opTypeCheck->_result);
       if (opTypeCheck->_stub != nullptr)          do_stub(opTypeCheck->_stub);
+      break;
+    }
+
+// LIR_OpFlattenedArrayCheck
+    case lir_flat_array_check: {
+      assert(op->as_OpFlattenedArrayCheck() != nullptr, "must be");
+      LIR_OpFlattenedArrayCheck* opFlattenedArrayCheck = (LIR_OpFlattenedArrayCheck*)op;
+
+      if (opFlattenedArrayCheck->_array->is_valid()) do_input(opFlattenedArrayCheck->_array);
+      if (opFlattenedArrayCheck->_tmp->is_valid())   do_temp(opFlattenedArrayCheck->_tmp);
+
+      do_stub(opFlattenedArrayCheck->_stub);
+
+      break;
+    }
+
+// LIR_OpNullFreeArrayCheck
+    case lir_null_free_array_check: {
+      assert(op->as_OpNullFreeArrayCheck() != nullptr, "must be");
+      LIR_OpNullFreeArrayCheck* opNullFreeArrayCheck = (LIR_OpNullFreeArrayCheck*)op;
+
+      if (opNullFreeArrayCheck->_array->is_valid()) do_input(opNullFreeArrayCheck->_array);
+#ifdef RISCV
+      // tmp is used to hold the result of null free array check on riscv
+      // See LIR_Assembler::emit_opNullFreeArrayCheck
+      if (opNullFreeArrayCheck->_tmp->is_valid())   do_output(opNullFreeArrayCheck->_tmp);
+#else
+      if (opNullFreeArrayCheck->_tmp->is_valid())   do_temp(opNullFreeArrayCheck->_tmp);
+#endif
+      break;
+    }
+
+// LIR_OpSubstitutabilityCheck
+    case lir_substitutability_check: {
+      assert(op->as_OpSubstitutabilityCheck() != nullptr, "must be");
+      LIR_OpSubstitutabilityCheck* opSubstitutabilityCheck = (LIR_OpSubstitutabilityCheck*)op;
+                                                                do_input(opSubstitutabilityCheck->_left);
+                                                                do_temp (opSubstitutabilityCheck->_left);
+                                                                do_input(opSubstitutabilityCheck->_right);
+                                                                do_temp (opSubstitutabilityCheck->_right);
+                                                                do_input(opSubstitutabilityCheck->_equal_result);
+                                                                do_temp (opSubstitutabilityCheck->_equal_result);
+                                                                do_input(opSubstitutabilityCheck->_not_equal_result);
+                                                                do_temp (opSubstitutabilityCheck->_not_equal_result);
+      if (opSubstitutabilityCheck->_tmp1->is_valid())           do_temp(opSubstitutabilityCheck->_tmp1);
+      if (opSubstitutabilityCheck->_tmp2->is_valid())           do_temp(opSubstitutabilityCheck->_tmp2);
+      if (opSubstitutabilityCheck->_result->is_valid())         do_output(opSubstitutabilityCheck->_result);
+
+      do_info(opSubstitutabilityCheck->_info);
+      do_stub(opSubstitutabilityCheck->_stub);
       break;
     }
 
@@ -916,7 +975,18 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       do_temp(opProfileType->_tmp);
       break;
     }
-  default:
+
+    // LIR_OpProfileValueType:
+    case lir_profile_value_type: {
+      assert(op->as_OpProfileValueType() != nullptr, "must be");
+      LIR_OpProfileValueType* opProfileValueType = (LIR_OpProfileValueType*)op;
+
+      do_input(opProfileValueType->_mdp); do_temp(opProfileValueType->_mdp);
+      do_input(opProfileValueType->_obj);
+      do_temp(opProfileValueType->_tmp);
+      break;
+    }
+default:
     op->visit(this);
   }
 }
@@ -989,6 +1059,34 @@ void LIR_OpJavaCall::emit_code(LIR_Assembler* masm) {
   masm->emit_call(this);
 }
 
+bool LIR_OpJavaCall::maybe_return_as_fields(ciValueKlass** vk_ret) const {
+  ciType* return_type = method()->return_type();
+  if (ValueTypeReturnedAsFields) {
+    if (return_type->is_value_klass()) {
+      ciValueKlass* vk = return_type->as_value_klass();
+      if (vk->can_be_returned_as_fields()) {
+        if (vk_ret != nullptr) {
+          *vk_ret = vk;
+        }
+        return true;
+      }
+    } else if (return_type->is_instance_klass() &&
+               (method()->is_method_handle_intrinsic() || !return_type->is_loaded() ||
+                StressCallingConvention)) {
+      // A value type might be returned from the call but we don't know its type.
+      // This can happen with method handle intrinsics or when the return type is
+      // not loaded (method holder is not loaded or preload attribute is missing).
+      // If a value type is returned, we either get an oop to a buffer and nothing
+      // needs to be done or one of the values being returned is the klass of the
+      // value type (RAX on x64, with LSB set to 1) and we need to allocate a value
+      // type instance of that type and initialize it with the fields values being
+      // returned in other registers.
+      return true;
+    }
+  }
+  return false;
+}
+
 void LIR_OpRTCall::emit_code(LIR_Assembler* masm) {
   masm->emit_rtcall(this);
 }
@@ -999,7 +1097,10 @@ void LIR_OpLabel::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpArrayCopy::emit_code(LIR_Assembler* masm) {
   masm->emit_arraycopy(this);
-  masm->append_code_stub(stub());
+  ArrayCopyStub* code_stub = stub();
+  if (code_stub != nullptr) {
+    masm->append_code_stub(code_stub);
+  }
 }
 
 void LIR_OpUpdateCRC32::emit_code(LIR_Assembler* masm) {
@@ -1028,9 +1129,6 @@ void LIR_OpBranch::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpConvert::emit_code(LIR_Assembler* masm) {
   masm->emit_opConvert(this);
-  if (stub() != nullptr) {
-    masm->append_code_stub(stub());
-  }
 }
 
 void LIR_Op2::emit_code(LIR_Assembler* masm) {
@@ -1045,6 +1143,24 @@ void LIR_OpAllocArray::emit_code(LIR_Assembler* masm) {
 void LIR_OpTypeCheck::emit_code(LIR_Assembler* masm) {
   masm->emit_opTypeCheck(this);
   if (stub()) {
+    masm->append_code_stub(stub());
+  }
+}
+
+void LIR_OpFlattenedArrayCheck::emit_code(LIR_Assembler* masm) {
+  masm->emit_opFlattenedArrayCheck(this);
+  if (stub() != nullptr) {
+    masm->append_code_stub(stub());
+  }
+}
+
+void LIR_OpNullFreeArrayCheck::emit_code(LIR_Assembler* masm) {
+  masm->emit_opNullFreeArrayCheck(this);
+}
+
+void LIR_OpSubstitutabilityCheck::emit_code(LIR_Assembler* masm) {
+  masm->emit_opSubstitutabilityCheck(this);
+  if (stub() != nullptr) {
     masm->append_code_stub(stub());
   }
 }
@@ -1066,6 +1182,9 @@ void LIR_OpLock::emit_code(LIR_Assembler* masm) {
   if (stub()) {
     masm->append_code_stub(stub());
   }
+  if (throw_ie_stub()) {
+    masm->append_code_stub(throw_ie_stub());
+  }
 }
 
 void LIR_OpLoadKlass::emit_code(LIR_Assembler* masm) {
@@ -1078,16 +1197,16 @@ void LIR_OpAssert::emit_code(LIR_Assembler* masm) {
 }
 #endif
 
-void LIR_OpDelay::emit_code(LIR_Assembler* masm) {
-  masm->emit_delay(this);
-}
-
 void LIR_OpProfileCall::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_call(this);
 }
 
 void LIR_OpProfileType::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_type(this);
+}
+
+void LIR_OpProfileValueType::emit_code(LIR_Assembler* masm) {
+  masm->emit_profile_value_type(this);
 }
 
 // LIR_List
@@ -1365,7 +1484,7 @@ void LIR_List::allocate_object(LIR_Opr dst, LIR_Opr t1, LIR_Opr t2, LIR_Opr t3, 
                            stub));
 }
 
-void LIR_List::allocate_array(LIR_Opr dst, LIR_Opr len, LIR_Opr t1,LIR_Opr t2, LIR_Opr t3,LIR_Opr t4, BasicType type, LIR_Opr klass, CodeStub* stub) {
+void LIR_List::allocate_array(LIR_Opr dst, LIR_Opr len, LIR_Opr t1,LIR_Opr t2, LIR_Opr t3,LIR_Opr t4, BasicType type, LIR_Opr klass, CodeStub* stub, bool zero_array, bool always_slow_path) {
   append(new LIR_OpAllocArray(
                            klass,
                            len,
@@ -1375,7 +1494,9 @@ void LIR_List::allocate_array(LIR_Opr dst, LIR_Opr len, LIR_Opr t1,LIR_Opr t2, L
                            t3,
                            t4,
                            type,
-                           stub));
+                           stub,
+                           zero_array,
+                           always_slow_path));
 }
 
 void LIR_List::shift_left(LIR_Opr value, LIR_Opr count, LIR_Opr dst, LIR_Opr tmp) {
@@ -1413,7 +1534,7 @@ void LIR_List::fcmp2int(LIR_Opr left, LIR_Opr right, LIR_Opr dst, bool is_unorde
                      dst));
 }
 
-void LIR_List::lock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scratch, CodeStub* stub, CodeEmitInfo* info) {
+void LIR_List::lock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scratch, CodeStub* stub, CodeEmitInfo* info, CodeStub* throw_ie_stub) {
   append(new LIR_OpLock(
                     lir_lock,
                     hdr,
@@ -1421,7 +1542,8 @@ void LIR_List::lock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scrat
                     lock,
                     scratch,
                     stub,
-                    info));
+                    info,
+                    throw_ie_stub));
 }
 
 void LIR_List::unlock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scratch, CodeStub* stub) {
@@ -1446,10 +1568,14 @@ void check_LIR() {
 void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
                           LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check,
                           CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
-                          ciMethod* profiled_method, int profiled_bci) {
+                          ciMethod* profiled_method, int profiled_bci, bool is_null_free) {
+  // If klass is non-nullable,  LIRGenerator::do_CheckCast has already performed null-check
+  // on the object.
+  bool need_null_check = !is_null_free;
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_checkcast, result, object, klass,
-                                           tmp1, tmp2, tmp3, fast_check, info_for_exception, info_for_patch, stub);
-  if (profiled_method != nullptr) {
+                                           tmp1, tmp2, tmp3, fast_check, info_for_exception, info_for_patch, stub,
+                                           need_null_check);
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);
@@ -1459,7 +1585,7 @@ void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
 
 void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, fast_check, nullptr, info_for_patch, nullptr);
-  if (profiled_method != nullptr) {
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);
@@ -1471,7 +1597,7 @@ void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Op
 void LIR_List::store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
                            CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_store_check, object, array, tmp1, tmp2, tmp3, info_for_exception);
-  if (profiled_method != nullptr) {
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);
@@ -1489,6 +1615,24 @@ void LIR_List::null_check(LIR_Opr opr, CodeEmitInfo* info, bool deoptimize_on_nu
     // Emit an implicit null check
     append(new LIR_Op1(lir_null_check, opr, info));
   }
+}
+
+void LIR_List::check_flat_array(LIR_Opr array, LIR_Opr tmp, CodeStub* stub) {
+  LIR_OpFlattenedArrayCheck* c = new LIR_OpFlattenedArrayCheck(array, tmp, stub);
+  append(c);
+}
+
+void LIR_List::check_null_free_array(LIR_Opr array, LIR_Opr tmp) {
+  LIR_OpNullFreeArrayCheck* c = new LIR_OpNullFreeArrayCheck(array, tmp);
+  append(c);
+}
+
+void LIR_List::substitutability_check(LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr equal_result, LIR_Opr not_equal_result,
+                                      ciKlass* left_klass, ciKlass* right_klass, LIR_Opr tmp1, LIR_Opr tmp2,
+                                      CodeEmitInfo* info, CodeStub* stub) {
+  LIR_OpSubstitutabilityCheck* c = new LIR_OpSubstitutabilityCheck(result, left, right, equal_result, not_equal_result,
+                                                                   left_klass, right_klass, tmp1, tmp2, info, stub);
+  append(c);
 }
 
 void LIR_List::cas_long(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
@@ -1604,7 +1748,7 @@ void LIR_Address::print_value_on(outputStream* out) const {
     case times_8: out->print(" * 8"); break;
     }
   }
-  out->print(" Disp: " INTX_FORMAT, _disp);
+  out->print(" Disp: %zd", _disp);
 }
 
 // debug output of block header without InstructionPrinter
@@ -1704,12 +1848,10 @@ const char * LIR_Op::name() const {
      case lir_on_spin_wait:          s = "on_spin_wait";  break;
      case lir_std_entry:             s = "std_entry";     break;
      case lir_osr_entry:             s = "osr_entry";     break;
-     case lir_fpop_raw:              s = "fpop_raw";      break;
      case lir_breakpoint:            s = "breakpoint";    break;
      case lir_get_thread:            s = "get_thread";    break;
+     case lir_check_orig_pc:         s = "check_orig_pc"; break;
      // LIR_Op1
-     case lir_fxch:                  s = "fxch";          break;
-     case lir_fld:                   s = "fld";           break;
      case lir_push:                  s = "push";          break;
      case lir_pop:                   s = "pop";           break;
      case lir_null_check:            s = "null_check";    break;
@@ -1719,7 +1861,11 @@ const char * LIR_Op::name() const {
      case lir_branch:                s = "branch";        break;
      case lir_cond_float_branch:     s = "flt_cond_br";   break;
      case lir_move:                  s = "move";          break;
-     case lir_roundfp:               s = "roundfp";       break;
+     case lir_abs:                   s = "abs";           break;
+     case lir_neg:                   s = "neg";           break;
+     case lir_sqrt:                  s = "sqrt";          break;
+     case lir_f2hf:                  s = "f2hf";          break;
+     case lir_hf2f:                  s = "hf2f";          break;
      case lir_rtcall:                s = "rtcall";        break;
      case lir_throw:                 s = "throw";         break;
      case lir_unwind:                s = "unwind";        break;
@@ -1736,11 +1882,6 @@ const char * LIR_Op::name() const {
      case lir_mul:                   s = "mul";           break;
      case lir_div:                   s = "div";           break;
      case lir_rem:                   s = "rem";           break;
-     case lir_abs:                   s = "abs";           break;
-     case lir_neg:                   s = "neg";           break;
-     case lir_sqrt:                  s = "sqrt";          break;
-     case lir_f2hf:                  s = "f2hf";          break;
-     case lir_hf2f:                  s = "hf2f";          break;
      case lir_logic_and:             s = "logic_and";     break;
      case lir_logic_or:              s = "logic_or";      break;
      case lir_logic_xor:             s = "logic_xor";     break;
@@ -1769,12 +1910,16 @@ const char * LIR_Op::name() const {
      // LIR_OpLock
      case lir_lock:                  s = "lock";          break;
      case lir_unlock:                s = "unlock";        break;
-     // LIR_OpDelay
-     case lir_delay_slot:            s = "delay";         break;
      // LIR_OpTypeCheck
      case lir_instanceof:            s = "instanceof";    break;
      case lir_checkcast:             s = "checkcast";     break;
      case lir_store_check:           s = "store_check";   break;
+     // LIR_OpFlattenedArrayCheck
+     case lir_flat_array_check:      s = "flat_array_check"; break;
+     // LIR_OpNullFreeArrayCheck
+     case lir_null_free_array_check: s = "null_free_array_check"; break;
+     // LIR_OpSubstitutabilityCheck
+     case lir_substitutability_check: s = "substitutability_check"; break;
      // LIR_OpCompareAndSwap
      case lir_cas_long:              s = "cas_long";      break;
      case lir_cas_obj:               s = "cas_obj";      break;
@@ -1783,6 +1928,8 @@ const char * LIR_Op::name() const {
      case lir_profile_call:          s = "profile_call";  break;
      // LIR_OpProfileType
      case lir_profile_type:          s = "profile_type";  break;
+     // LIR_OpProfileValueType
+     case lir_profile_value_type:    s = "profile_value_type"; break;
      // LIR_OpAssert
 #ifdef ASSERT
      case lir_assert:                s = "assert";        break;
@@ -1964,12 +2111,6 @@ void LIR_OpAllocObj::print_instr(outputStream* out) const {
   out->print("[lbl:" INTPTR_FORMAT "]", p2i(stub()->entry()));
 }
 
-void LIR_OpRoundFP::print_instr(outputStream* out) const {
-  _opr->print(out);         out->print(" ");
-  tmp()->print(out);        out->print(" ");
-  result_opr()->print(out); out->print(" ");
-}
-
 // LIR_Op2
 void LIR_Op2::print_instr(outputStream* out) const {
   if (code() == lir_cmp || code() == lir_branch || code() == lir_cond_float_branch) {
@@ -2014,6 +2155,41 @@ void LIR_OpTypeCheck::print_instr(outputStream* out) const {
   if (info_for_exception() != nullptr) out->print(" [bci:%d]", info_for_exception()->stack()->bci());
 }
 
+void LIR_OpFlattenedArrayCheck::print_instr(outputStream* out) const {
+  array()->print(out);                   out->print(" ");
+  tmp()->print(out);                     out->print(" ");
+  if (stub() != nullptr) {
+    out->print("[label:" INTPTR_FORMAT "]", p2i(stub()->entry()));
+  }
+}
+
+void LIR_OpNullFreeArrayCheck::print_instr(outputStream* out) const {
+  array()->print(out);                   out->print(" ");
+  tmp()->print(out);                     out->print(" ");
+}
+
+void LIR_OpSubstitutabilityCheck::print_instr(outputStream* out) const {
+  result_opr()->print(out);              out->print(" ");
+  left()->print(out);                    out->print(" ");
+  right()->print(out);                   out->print(" ");
+  equal_result()->print(out);            out->print(" ");
+  not_equal_result()->print(out);        out->print(" ");
+  if (left_klass() == nullptr) {
+    out->print("unknown ");
+  } else {
+    left_klass()->print(out);            out->print(" ");
+  }
+  if (right_klass() == nullptr) {
+    out->print("unknown ");
+  } else {
+    right_klass()->print(out);           out->print(" ");
+  }
+  tmp1()->print(out);                    out->print(" ");
+  tmp2()->print(out);                    out->print(" ");
+  if (stub() != nullptr) {
+    out->print("[label:" INTPTR_FORMAT "]", p2i(stub()->entry()));
+  }
+}
 
 // LIR_Op3
 void LIR_Op3::print_instr(outputStream* out) const {
@@ -2058,11 +2234,6 @@ void LIR_OpAssert::print_instr(outputStream* out) const {
 #endif
 
 
-void LIR_OpDelay::print_instr(outputStream* out) const {
-  _op->print_on(out);
-}
-
-
 // LIR_OpProfileCall
 void LIR_OpProfileCall::print_instr(outputStream* out) const {
   profiled_method()->name()->print_symbol_on(out);
@@ -2084,6 +2255,14 @@ void LIR_OpProfileType::print_instr(outputStream* out) const {
   }
   out->print(" current = "); ciTypeEntries::print_ciklass(out, current_klass());
   out->print(" ");
+  mdp()->print(out);          out->print(" ");
+  obj()->print(out);          out->print(" ");
+  tmp()->print(out);          out->print(" ");
+}
+
+// LIR_OpProfileValueType
+void LIR_OpProfileValueType::print_instr(outputStream* out) const {
+  out->print(" flag = %x ", flag());
   mdp()->print(out);          out->print(" ");
   obj()->print(out);          out->print(" ");
   tmp()->print(out);          out->print(" ");

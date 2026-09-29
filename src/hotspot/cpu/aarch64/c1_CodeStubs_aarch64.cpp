@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -57,7 +56,7 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ mov_metadata(rscratch1, m);
   ce->store_parameter(rscratch1, 1);
   ce->store_parameter(_bci, 0);
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::counter_overflow_id)));
+  __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_counter_overflow_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ b(_continuation);
@@ -66,11 +65,11 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   if (_info->deoptimize_on_exception()) {
-    address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+    address a = Runtime1::entry_for(StubId::c1_predicate_failed_trap_id);
     __ far_call(RuntimeAddress(a));
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
-    debug_only(__ should_not_reach_here());
+    DEBUG_ONLY(__ should_not_reach_here());
     return;
   }
 
@@ -79,19 +78,19 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   } else {
     __ mov(rscratch1, _index->as_jint());
   }
-  Runtime1::StubID stub_id;
+  StubId stub_id;
   if (_throw_index_out_of_bounds_exception) {
-    stub_id = Runtime1::throw_index_exception_id;
+    stub_id = StubId::c1_throw_index_exception_id;
   } else {
     assert(_array != LIR_Opr::nullOpr(), "sanity");
     __ mov(rscratch2, _array->as_pointer_register());
-    stub_id = Runtime1::throw_range_check_failed_id;
+    stub_id = StubId::c1_throw_range_check_failed_id;
   }
   __ lea(lr, RuntimeAddress(Runtime1::entry_for(stub_id)));
   __ blr(lr);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
@@ -100,11 +99,11 @@ PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
 
 void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+  address a = Runtime1::entry_for(StubId::c1_predicate_failed_trap_id);
   __ far_call(RuntimeAddress(a));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 void DivByZeroStub::emit_code(LIR_Assembler* ce) {
@@ -112,7 +111,7 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
     ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   }
   __ bind(_entry);
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::throw_div0_exception_id)));
+  __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_throw_div0_exception_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
 #ifdef ASSERT
@@ -120,18 +119,83 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
 #endif
 }
 
+// Implementation of LoadFlattenedArrayStub
+
+LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _result = result;
+  _stub_result_reg = FrameMap::r0_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  assert(__ rsp_offset() == 0, "frame size should be fixed");
+  __ bind(_entry);
+  ce->store_parameter(_array->as_register(), 1);
+  ce->store_parameter(_index->as_register(), 0);
+  __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_load_flat_array_id)));
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  if (_result->as_register() != r0) {
+    __ mov(_result->as_register(), r0);
+  }
+  __ b(_continuation);
+}
+
+
+// Implementation of StoreFlattenedArrayStub
+
+StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _value = value;
+  _info = new CodeEmitInfo(info);
+}
+
+
+void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  assert(__ rsp_offset() == 0, "frame size should be fixed");
+  __ bind(_entry);
+  ce->store_parameter(_array->as_register(), 2);
+  ce->store_parameter(_index->as_register(), 1);
+  ce->store_parameter(_value->as_register(), 0);
+  __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_store_flat_array_id)));
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ b(_continuation);
+}
+
+// Implementation of SubstitutabilityCheckStub
+SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
+  _left = left;
+  _right = right;
+  _stub_result_reg = FrameMap::r0_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
+  assert(__ rsp_offset() == 0, "frame size should be fixed");
+  __ bind(_entry);
+  ce->store_parameter(_left->as_register(), 1);
+  ce->store_parameter(_right->as_register(), 0);
+  __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_substitutability_check_id)));
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ b(_continuation);
+}
 
 
 // Implementation of NewInstanceStub
 
-NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, Runtime1::StubID stub_id) {
+NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, StubId stub_id) {
   _result = result;
   _klass = klass;
   _klass_reg = klass_reg;
   _info = new CodeEmitInfo(info);
-  assert(stub_id == Runtime1::new_instance_id                 ||
-         stub_id == Runtime1::fast_new_instance_id            ||
-         stub_id == Runtime1::fast_new_instance_init_check_id,
+  assert(stub_id == StubId::c1_new_instance_id                 ||
+         stub_id == StubId::c1_fast_new_instance_id            ||
+         stub_id == StubId::c1_fast_new_instance_init_check_id,
          "need new_instance id");
   _stub_id   = stub_id;
 }
@@ -167,7 +231,7 @@ void NewTypeArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   assert(_length->as_register() == r19, "length must in r19,");
   assert(_klass_reg->as_register() == r3, "klass_reg must in r3");
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::new_type_array_id)));
+  __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_new_type_array_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   assert(_result->as_register() == r0, "result must in r0");
@@ -177,11 +241,13 @@ void NewTypeArrayStub::emit_code(LIR_Assembler* ce) {
 
 // Implementation of NewObjectArrayStub
 
-NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result, CodeEmitInfo* info) {
+NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result,
+                                       CodeEmitInfo* info, bool is_null_free) {
   _klass_reg = klass_reg;
   _result = result;
   _length = length;
   _info = new CodeEmitInfo(info);
+  _is_null_free = is_null_free;
 }
 
 
@@ -190,7 +256,13 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   assert(_length->as_register() == r19, "length must in r19,");
   assert(_klass_reg->as_register() == r3, "klass_reg must in r3");
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::new_object_array_id)));
+
+  if (_is_null_free) {
+    __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_new_null_free_array_id)));
+  } else {
+    __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_new_object_array_id)));
+  }
+
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   assert(_result->as_register() == r0, "result must in r0");
@@ -200,13 +272,23 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   assert(__ rsp_offset() == 0, "frame size should be fixed");
   __ bind(_entry);
+  if (_throw_ie_stub != nullptr) {
+    // When we come here, _obj_reg has already been checked to be non-null.
+    __ ldr(rscratch1, Address(_obj_reg->as_register(), oopDesc::mark_offset_in_bytes()));
+    __ mov(rscratch2, markWord::value_type_pattern);
+    __ andr(rscratch1, rscratch1, rscratch2);
+
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::EQ, *_throw_ie_stub->entry());
+  }
+
   ce->store_parameter(_obj_reg->as_register(),  1);
   ce->store_parameter(_lock_reg->as_register(), 0);
-  Runtime1::StubID enter_id;
+  StubId enter_id;
   if (ce->compilation()->has_fpu_code()) {
-    enter_id = Runtime1::monitorenter_id;
+    enter_id = StubId::c1_monitorenter_id;
   } else {
-    enter_id = Runtime1::monitorenter_nofpu_id;
+    enter_id = StubId::c1_monitorenter_nofpu_id;
   }
   __ far_call(RuntimeAddress(Runtime1::entry_for(enter_id)));
   ce->add_call_info_here(_info);
@@ -217,17 +299,17 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  if (_compute_lock) {
-    // lock_reg was destroyed by fast unlocking attempt => recompute it
-    ce->monitor_address(_monitor_ix, _lock_reg);
-  }
+
+  // lock_reg was destroyed by fast unlocking attempt => recompute it
+  ce->monitor_address(_monitor_ix, _lock_reg);
+
   ce->store_parameter(_lock_reg->as_register(), 0);
   // note: non-blocking leaf routine => no call info needed
-  Runtime1::StubID exit_id;
+  StubId exit_id;
   if (ce->compilation()->has_fpu_code()) {
-    exit_id = Runtime1::monitorexit_id;
+    exit_id = StubId::c1_monitorexit_id;
   } else {
-    exit_id = Runtime1::monitorexit_nofpu_id;
+    exit_id = StubId::c1_monitorexit_nofpu_id;
   }
   __ adr(lr, _continuation);
   __ far_jump(RuntimeAddress(Runtime1::entry_for(exit_id)));
@@ -255,7 +337,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   ce->store_parameter(_trap_request, 0);
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::deoptimize_id)));
+  __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_deoptimize_id)));
   ce->add_call_info_here(_info);
   DEBUG_ONLY(__ should_not_reach_here());
 }
@@ -265,9 +347,9 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   address a;
   if (_info->deoptimize_on_exception()) {
     // Deoptimize, do not throw the exception, because it is probably wrong to do it here.
-    a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+    a = Runtime1::entry_for(StubId::c1_predicate_failed_trap_id);
   } else {
-    a = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
+    a = Runtime1::entry_for(StubId::c1_throw_null_pointer_exception_id);
   }
 
   ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
@@ -275,7 +357,7 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   __ far_call(RuntimeAddress(a));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 
@@ -290,7 +372,7 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   }
   __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)), rscratch2);
   ce->add_call_info_here(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 

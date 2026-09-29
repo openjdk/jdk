@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Cursor;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -189,6 +190,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         graphicsConfigData = new AwtGraphicsConfigData(graphicsConfig.getAData());
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         reparented = Boolean.TRUE.equals(params.get(REPARENTED));
@@ -254,6 +256,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         savedState = XUtilConstants.WithdrawnState;
     }
 
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
 
@@ -271,6 +274,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
     }
 
+    @Override
     public GraphicsConfiguration getGraphicsConfiguration() {
         if (graphicsConfig == null) {
             initGraphicsConfiguration();
@@ -342,6 +346,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return (parent == target);
     }
 
+    @Override
     public Object getTarget() {
         return target;
     }
@@ -384,6 +389,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return new SunGraphics2D(surfData, fgColor, bgColor, font);
     }
 
+    @Override
     public Graphics getGraphics() {
         return getGraphics(surfaceData,
                            target.getForeground(),
@@ -420,7 +426,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (focusLog.isLoggable(PlatformLogger.Level.FINER) && (e instanceof FocusEvent)) {
             focusLog.finer("Sending " + e);
         }
-        XToolkit.postEvent(XToolkit.targetToAppContext(e.getSource()), pe);
+        XToolkit.postEvent(pe);
     }
 
 
@@ -430,11 +436,11 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
 // NOTE: This method may be called by privileged threads.
 //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     void postEvent(AWTEvent event) {
-        XToolkit.postEvent(XToolkit.targetToAppContext(event.getSource()), event);
+        XToolkit.postEvent(event);
     }
 
     static void postEventStatic(AWTEvent event) {
-        XToolkit.postEvent(XToolkit.targetToAppContext(event.getSource()), event);
+        XToolkit.postEvent(event);
     }
 
     public void postEventToEventQueue(final AWTEvent event) {
@@ -509,7 +515,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (g != null) {
             try {
                 g.setClip(x, y, width, height);
-                if (SunToolkit.isDispatchThreadForAppContext(getTarget())) {
+                if (EventQueue.isDispatchThread()) {
                     paint(g); // The native and target will be painted in place.
                 } else {
                     paintPeer(g);
@@ -533,6 +539,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     void paintPeer(final Graphics g) {
     }
     //used by Peers to avoid flickering within paint()
+    @Override
     protected void flush(){
         XToolkit.awtLock();
         try {
@@ -547,6 +554,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         xSetBounds(x, y, width, height);
     }
 
+    @Override
     public void handleExposeEvent(XEvent xev) {
         super.handleExposeEvent(xev);
         XExposeEvent xe = xev.get_xexpose();
@@ -656,6 +664,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return AWT_MULTICLICK_SMUDGE;
     }
 
+    @Override
     public void handleButtonPressRelease(XEvent xev) {
         super.handleButtonPressRelease(xev);
         XButtonEvent xbe = xev.get_xbutton();
@@ -779,6 +788,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
     }
 
+    @Override
     public void handleMotionNotify(XEvent xev) {
         super.handleMotionNotify(xev);
         XMotionEvent xme = xev.get_xmotion();
@@ -884,6 +894,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
     }
 
+    @Override
     public void handleXCrossingEvent(XEvent xev) {
         super.handleXCrossingEvent(xev);
         XCrossingEvent xce = xev.get_xcrossing();
@@ -996,6 +1007,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     public void doLayout(int x, int y, int width, int height) {}
 
+    @Override
     public void handleConfigureNotifyEvent(XEvent xev) {
         Rectangle oldBounds = getBounds();
 
@@ -1020,6 +1032,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
 //  }
     }
 
+    @Override
     public void handleMapNotifyEvent(XEvent xev) {
         super.handleMapNotifyEvent(xev);
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
@@ -1034,6 +1047,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         postEventToEventQueue(ce);
     }
 
+    @Override
     public void handleUnmapNotifyEvent(XEvent xev) {
         super.handleUnmapNotifyEvent(xev);
         if (isEventDisabled(xev)) {
@@ -1084,6 +1098,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
             keyEventLog.fine("XXXXXXXXXXXXXX javakeycode will be most probably:0x"+ Integer.toHexString(XKeysym.getJavaKeycodeOnly(ev)));
         }
     }
+    @Override
     public void handleKeyPress(XEvent xev) {
         super.handleKeyPress(xev);
         XKeyEvent ev = xev.get_xkey();
@@ -1193,6 +1208,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     }
 
+    @Override
     public void handleKeyRelease(XEvent xev) {
         super.handleKeyRelease(xev);
         XKeyEvent ev = xev.get_xkey();
@@ -1403,6 +1419,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
     }
 
+    @Override
     public SurfaceData getSurfaceData() {
         return surfaceData;
     }
@@ -1425,7 +1442,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
                 comp = AWTAccessor.getComponentAccessor().getParent(comp);
             }
 
-            // applets, embedded, etc - translate directly
+            // embedded, etc - translate directly
             // XXX: override in subclass?
             if (comp == null || comp instanceof sun.awt.EmbeddedFrame) {
                 return toGlobal(0, 0);
@@ -1488,8 +1505,8 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     static native int getKeySymForAWTKeyCode(int keycode);
 
     /* These two methods are actually applicable to toplevel windows only.
-     * However, the functionality is required by both the XWindowPeer and
-     * XWarningWindow, both of which have the XWindow as a common ancestor.
+     * However, the functionality is required by XWindowPeer
+     * which has XWindow as an ancestor.
      * See XWM.setMotifDecor() for details.
      */
     public PropMwmHints getMWMHints() {

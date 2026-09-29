@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+
+/*
+
+class ResolvedPutFieldHelper {
+   int x; // change it to 'final'
+   ResolvedPutFieldHelper() { x = 1; }
+   void set_x() { x = 2; }
+
+    public static void main(String args[]) {
+        ResolvedPutFieldHelper s = new ResolvedPutFieldHelper();
+        s.set_x();
+        System.out.println(s.x);
+    }
+}
+
+*/
+
+
+
+super class ResolvedPutFieldHelper
+    version 66:0
+{
+  //WAS Field x:I;
+  final Field x:I;
+
+  Method "<init>":"()V"
+    stack 2 locals 1
+  {
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        aload_0;
+        iconst_1;
+        putfield         Field x:"I";
+        return;
+  }
+
+  // set_x is not allowed to write to the final "x" field. If CDS pre-resolves its
+  // ResolvedFieldEntry for the putfield bytecode, then we cannot get
+  // the IllegalAccessError at runtime. See JDK-8157181 for the code that
+  // throws the IllegalAccessError.
+
+  Method set_x:"()V"
+    stack 2 locals 1
+  {
+        aload_0;
+        iconst_2;
+        putfield         Field x:"I";
+        return;
+  }
+  public static Method main:"([Ljava/lang/String;)V"
+    stack 2 locals 2
+  {
+        new              class ResolvedPutFieldHelper;
+        dup;
+        invokespecial    Method "<init>":"()V";
+        astore_1;
+        aload_1;
+        invokevirtual    Method set_x:"()V";
+        getstatic         Field java/lang/System.out:"Ljava/io/PrintStream;";
+        aload_1;
+        getfield         Field x:"I";
+        invokevirtual    Method java/io/PrintStream.println:"(I)V";
+        return;
+  }
+}

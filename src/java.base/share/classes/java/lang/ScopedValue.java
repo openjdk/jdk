@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,19 @@
 
 package java.lang;
 
+import java.lang.ref.Reference;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.lang.ref.Reference;
-import java.util.concurrent.Callable;
-import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.StructureViolationException;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.vm.ScopedValueContainer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.ScopedValueContainer;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A value that may be safely and efficiently shared to methods without using method
@@ -64,46 +63,46 @@ import sun.security.action.GetPropertyAction;
  * execution of the methods define a <em>dynamic scope</em>. Code in these methods with
  * access to the {@code ScopedValue} object may read its value. The {@code ScopedValue}
  * object reverts to being <em>unbound</em> when the original method completes normally or
- * with an exception. The {@code ScopedValue} API supports executing a {@link Runnable#run()
- * Runnable.run}, {@link Callable#call() Callable.call}, or {@link Supplier#get() Supplier.get}
- * method with a {@code ScopedValue} bound to a value.
+ * with an exception. The {@code ScopedValue} API supports executing a {@link Runnable},
+ * or {@link CallableOp} with a {@code ScopedValue} bound to a value.
  *
  * <p> Consider the following example with a scoped value "{@code NAME}" bound to the value
- * "{@code duke}" for the execution of a {@code run} method. The {@code run} method, in
- * turn, invokes {@code doSomething}.
+ * "{@code duke}" for the execution of a {@code Runnable}'s {@code run} method.
+ * The {@code run} method, in turn, invokes a method {@code doSomething}.
+ *
+ *
  * {@snippet lang=java :
  *     // @link substring="newInstance" target="#newInstance" :
  *     private static final ScopedValue<String> NAME = ScopedValue.newInstance();
  *
- *     // @link substring="runWhere" target="#runWhere" :
- *     ScopedValue.runWhere(NAME, "duke", () -> doSomething());
+ *     // @link substring="run" target="Carrier#run(Runnable)" :
+ *     ScopedValue.where(NAME, "duke").run(() -> doSomething());
  * }
  * Code executed directly or indirectly by {@code doSomething}, with access to the field
  * {@code NAME}, can invoke {@code NAME.get()} to read the value "{@code duke}". {@code
  * NAME} is bound while executing the {@code run} method. It reverts to being unbound when
  * the {@code run} method completes.
  *
- * <p> The example using {@code runWhere} invokes a method that does not return a result.
- * The {@link #callWhere(ScopedValue, Object, Callable) callWhere} and {@link
- * #getWhere(ScopedValue, Object, Supplier) getWhere} can be used to invoke a method that
- * returns a result.
- * In addition, {@code ScopedValue} defines the {@link #where(ScopedValue, Object)} method
+ * <p> The example using {@code run} invokes a method that does not return a result.
+ * The {@link Carrier#call(CallableOp) call} method can be used
+ * to invoke a method that returns a result.
+ * {@code ScopedValue} defines the {@link #where(ScopedValue, Object)} method
  * for cases where multiple mappings (of {@code ScopedValue} to value) are accumulated
  * in advance of calling a method with all {@code ScopedValue}s bound to their value.
  *
  * <h2>Bindings are per-thread</h2>
  *
- * A {@code ScopedValue} binding to a value is per-thread. Invoking {@code xxxWhere}
+ * A {@code ScopedValue} binding to a value is per-thread. Invoking {@code run}
  * executes a method with a {@code ScopedValue} bound to a value for the current thread.
  * The {@link #get() get} method returns the value bound for the current thread.
  *
  * <p> In the example, if code executed by one thread invokes this:
  * {@snippet lang=java :
- *     ScopedValue.runWhere(NAME, "duke1", () -> doSomething());
+ *     ScopedValue.where(NAME, "duke1").run(() -> doSomething());
  * }
  * and code executed by another thread invokes:
  * {@snippet lang=java :
- *     ScopedValue.runWhere(NAME, "duke2", () -> doSomething());
+ *     ScopedValue.where(NAME, "duke2").run(() -> doSomething());
  * }
  * then code in {@code doSomething} (or any method that it calls) invoking {@code NAME.get()}
  * will read the value "{@code duke1}" or "{@code duke2}", depending on which thread is
@@ -130,7 +129,7 @@ import sun.security.action.GetPropertyAction;
  * <p> In the above example, suppose that code executed by {@code doSomething} binds
  * {@code NAME} to a new value with:
  * {@snippet lang=java :
- *     ScopedValue.runWhere(NAME, "duchess", () -> doMore());
+ *     ScopedValue.where(NAME, "duchess").run(() -> doMore());
  * }
  * Code executed directly or indirectly by {@code doMore()} that invokes {@code
  * NAME.get()} will read the value "{@code duchess}". When {@code doMore()} completes
@@ -143,7 +142,7 @@ import sun.security.action.GetPropertyAction;
  * period of execution by a parent thread. When using a {@link StructuredTaskScope},
  * scoped value bindings are <em>captured</em> when creating a {@code StructuredTaskScope}
  * and inherited by all threads started in that task scope with the
- * {@link StructuredTaskScope#fork(Callable) fork} method.
+ * {@link StructuredTaskScope#fork(java.util.concurrent.Callable) fork} method.
  *
  * <p> A {@code ScopedValue} that is shared across threads requires that the value be an
  * immutable object or for all access to the value to be appropriately synchronized.
@@ -158,14 +157,19 @@ import sun.security.action.GetPropertyAction;
  * {@snippet lang=java :
  *     private static final ScopedValue<String> NAME = ScopedValue.newInstance();
 
- *     ScopedValue.runWhere(NAME, "duke", () -> {
- *         try (var scope = new StructuredTaskScope<String>()) {
+ *     ScopedValue.where(NAME, "duke").run(() -> {
+ *         // @link substring="open" target="StructuredTaskScope#open()" :
+ *         try (var scope = StructuredTaskScope.open()) {
  *
- *             scope.fork(() -> childTask1());
- *             scope.fork(() -> childTask2());
- *             scope.fork(() -> childTask3());
+ *              // @link substring="fork" target="StructuredTaskScope#fork(java.util.concurrent.Callable)" :
+ *              scope.fork(() -> childTask1());
+ *              scope.fork(() -> childTask2());
+ *              scope.fork(() -> childTask3());
  *
- *             ...
+ *              // @link substring="join" target="StructuredTaskScope#join()" :
+ *              scope.join();
+ *
+ *              ..
  *          }
  *     });
  * }
@@ -234,14 +238,16 @@ import sun.security.action.GetPropertyAction;
  * have to be regenerated after a blocking operation.
  *
  * @param <T> the type of the value
- * @since 21
+ * @since 25
  */
-@PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
 public final class ScopedValue<T> {
     private final int hash;
 
     @Override
     public int hashCode() { return hash; }
+
+    @Stable
+    static IntSupplier hashGenerator;
 
     /**
      * An immutable map from {@code ScopedValue} to values.
@@ -291,8 +297,8 @@ public final class ScopedValue<T> {
     /**
      * A mapping of scoped values, as <em>keys</em>, to values.
      *
-     * <p> A {@code Carrier} is used to accumulate mappings so that an operation (a
-     * {@link Runnable} or {@link Callable}) can be executed with all scoped values in the
+     * <p> A {@code Carrier} is used to accumulate mappings so that an operation (a {@link
+     * Runnable} or {@link CallableOp}) can be executed with all scoped values in the
      * mapping bound to values. The following example runs an operation with {@code k1}
      * bound (or rebound) to {@code v1}, and {@code k2} bound (or rebound) to {@code v2}.
      * {@snippet lang=java :
@@ -307,11 +313,10 @@ public final class ScopedValue<T> {
      * <p> Unless otherwise specified, passing a {@code null} argument to a method in
      * this class will cause a {@link NullPointerException} to be thrown.
      *
-     * @since 21
+     * @since 25
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
     public static final class Carrier {
-        // Bit masks: a 1 in postion n indicates that this set of bound values
+        // Bit masks: a 1 in position n indicates that this set of bound values
         // hits that slot in the cache.
         final int bitmask;
         final ScopedValue<?> key;
@@ -383,10 +388,10 @@ public final class ScopedValue<T> {
                  carrier = carrier.prev) {
                 if (carrier.getKey() == key) {
                     Object value = carrier.get();
-                    return (T)value;
+                    return (T) value;
                 }
             }
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("No mapping present");
         }
 
         /**
@@ -406,60 +411,17 @@ public final class ScopedValue<T> {
          *
          * @param op the operation to run
          * @param <R> the type of the result of the operation
+         * @param <X> type of the exception thrown by the operation
          * @return the result
          * @throws StructureViolationException if a structure violation is detected
-         * @throws Exception if {@code op} completes with an exception
-         * @see ScopedValue#callWhere(ScopedValue, Object, Callable)
+         * @throws X if {@code op} completes with an exception
          */
-        public <R> R call(Callable<? extends R> op) throws Exception {
+        public <R, X extends Throwable> R call(CallableOp<? extends R, X> op) throws X {
             Objects.requireNonNull(op);
             Cache.invalidate(bitmask);
             var prevSnapshot = scopedValueBindings();
             var newSnapshot = new Snapshot(this, prevSnapshot);
             return runWith(newSnapshot, op);
-        }
-
-        /**
-         * Invokes a supplier of results with each scoped value in this mapping bound
-         * to its value in the current thread.
-         * When the operation completes (normally or with an exception), each scoped value
-         * in the mapping will revert to being unbound, or revert to its previous value
-         * when previously bound, in the current thread. If {@code op} completes with an
-         * exception then it propagated by this method.
-         *
-         * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
-         * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
-         * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-         * as a <em>structure violation</em> when the operation completes (normally or with an
-         * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
-         * is closed and {@link StructureViolationException} is thrown.
-         *
-         * @param op the operation to run
-         * @param <R> the type of the result of the operation
-         * @return the result
-         * @throws StructureViolationException if a structure violation is detected
-         * @see ScopedValue#getWhere(ScopedValue, Object, Supplier)
-         */
-        public <R> R get(Supplier<? extends R> op) {
-            Objects.requireNonNull(op);
-            Cache.invalidate(bitmask);
-            var prevSnapshot = scopedValueBindings();
-            var newSnapshot = new Snapshot(this, prevSnapshot);
-            return runWith(newSnapshot, new CallableAdapter<R>(op));
-        }
-
-        // A lightweight adapter from Supplier to Callable. This is
-        // used here to create the Callable which is passed to
-        // Carrier#call() in this thread because it needs neither
-        // runtime bytecode generation nor any release fencing.
-        private static final class CallableAdapter<V> implements Callable<V> {
-            private /*non-final*/ Supplier<? extends V> s;
-            CallableAdapter(Supplier<? extends V> s) {
-                this.s = s;
-            }
-            public V call() {
-                return s.get();
-            }
         }
 
         /**
@@ -471,7 +433,7 @@ public final class ScopedValue<T> {
          */
         @Hidden
         @ForceInline
-        private <R> R runWith(Snapshot newSnapshot, Callable<R> op) {
+        private <R, X extends Throwable> R runWith(Snapshot newSnapshot, CallableOp<R, X> op) {
             try {
                 Thread.setScopedValueBindings(newSnapshot);
                 Thread.ensureMaterializedForStackWalk(newSnapshot);
@@ -500,7 +462,6 @@ public final class ScopedValue<T> {
          *
          * @param op the operation to run
          * @throws StructureViolationException if a structure violation is detected
-         * @see ScopedValue#runWhere(ScopedValue, Object, Runnable)
          */
         public void run(Runnable op) {
             Objects.requireNonNull(op);
@@ -533,6 +494,23 @@ public final class ScopedValue<T> {
     }
 
     /**
+     * An operation that returns a result and may throw an exception.
+     *
+     * @param <T> result type of the operation
+     * @param <X> type of the exception thrown by the operation
+     * @since 25
+     */
+    @FunctionalInterface
+    public interface CallableOp<T, X extends Throwable> {
+        /**
+         * Executes this operation.
+         * @return the result, can be null
+         * @throws X if the operation completes with an exception
+         */
+        T call() throws X;
+    }
+
+    /**
      * Creates a new {@code Carrier} with a single mapping of a {@code ScopedValue}
      * <em>key</em> to a value. The {@code Carrier} can be used to accumulate mappings so
      * that an operation can be executed with all scoped values in the mapping bound to
@@ -552,110 +530,9 @@ public final class ScopedValue<T> {
         return Carrier.of(key, value);
     }
 
-    /**
-     * Calls a value-returning operation with a {@code ScopedValue} bound to a value
-     * in the current thread. When the operation completes (normally or with an
-     * exception), the {@code ScopedValue} will revert to being unbound, or revert to
-     * its previous value when previously bound, in the current thread. If {@code op}
-     * completes with an exception then it propagated by this method.
-     *
-     * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
-     * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
-     * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-     * as a <em>structure violation</em> when the operation completes (normally or with an
-     * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
-     * is closed and {@link StructureViolationException} is thrown.
-     *
-     * @implNote
-     * This method is implemented to be equivalent to:
-     * {@snippet lang=java :
-     *     // @link substring="call" target="Carrier#call(Callable)" :
-     *     ScopedValue.where(key, value).call(op);
-     * }
-     *
-     * @param key the {@code ScopedValue} key
-     * @param value the value, can be {@code null}
-     * @param <T> the type of the value
-     * @param <R> the result type
-     * @param op the operation to call
-     * @return the result
-     * @throws StructureViolationException if a structure violation is detected
-     * @throws Exception if the operation completes with an exception
-     */
-    public static <T, R> R callWhere(ScopedValue<T> key,
-                                     T value,
-                                     Callable<? extends R> op) throws Exception {
-        return where(key, value).call(op);
-    }
-
-    /**
-     * Invokes a supplier of results with a {@code ScopedValue} bound to a value
-     * in the current thread. When the operation completes (normally or with an
-     * exception), the {@code ScopedValue} will revert to being unbound, or revert to
-     * its previous value when previously bound, in the current thread. If {@code op}
-     * completes with an exception then it propagated by this method.
-     *
-     * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
-     * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
-     * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-     * as a <em>structure violation</em> when the operation completes (normally or with an
-     * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
-     * is closed and {@link StructureViolationException} is thrown.
-     *
-     * @implNote
-     * This method is implemented to be equivalent to:
-     * {@snippet lang=java :
-     *     // @link substring="get" target="Carrier#get(Supplier)" :
-     *     ScopedValue.where(key, value).get(op);
-     * }
-     *
-     * @param key the {@code ScopedValue} key
-     * @param value the value, can be {@code null}
-     * @param <T> the type of the value
-     * @param <R> the result type
-     * @param op the operation to call
-     * @return the result
-     * @throws StructureViolationException if a structure violation is detected
-     */
-    public static <T, R> R getWhere(ScopedValue<T> key,
-                                    T value,
-                                    Supplier<? extends R> op) {
-        return where(key, value).get(op);
-    }
-
-    /**
-     * Run an operation with a {@code ScopedValue} bound to a value in the current
-     * thread. When the operation completes (normally or with an exception), the
-     * {@code ScopedValue} will revert to being unbound, or revert to its previous value
-     * when previously bound, in the current thread. If {@code op} completes with an
-     * exception then it propagated by this method.
-     *
-     * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
-     * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
-     * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-     * as a <em>structure violation</em> when the operation completes (normally or with an
-     * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
-     * is closed and {@link StructureViolationException} is thrown.
-     *
-     * @implNote
-     * This method is implemented to be equivalent to:
-     * {@snippet lang=java :
-     *     // @link substring="run" target="Carrier#run(Runnable)" :
-     *     ScopedValue.where(key, value).run(op);
-     * }
-     *
-     * @param key the {@code ScopedValue} key
-     * @param value the value, can be {@code null}
-     * @param <T> the type of the value
-     * @param op the operation to call
-     * @throws StructureViolationException if a structure violation is detected
-     */
-    public static <T> void runWhere(ScopedValue<T> key, T value, Runnable op) {
-        where(key, value).run(op);
-    }
-
     private ScopedValue() {
-        this.hash = generateKey();
+        IntSupplier nextHash = hashGenerator;
+        this.hash = nextHash != null ? nextHash.getAsInt() : generateKey();
     }
 
     /**
@@ -681,11 +558,11 @@ public final class ScopedValue<T> {
             // This code should perhaps be in class Cache. We do it
             // here because the generated code is small and fast and
             // we really want it to be inlined in the caller.
-            int n = (hash & Cache.SLOT_MASK) * 2;
+            int n = (hash & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
                 return (T)objects[n + 1];
             }
-            n = ((hash >>> Cache.INDEX_BITS) & Cache.SLOT_MASK) * 2;
+            n = ((hash >>> Cache.INDEX_BITS) & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
                 return (T)objects[n + 1];
             }
@@ -695,51 +572,55 @@ public final class ScopedValue<T> {
 
     @SuppressWarnings("unchecked")
     private T slowGet() {
-        var value = findBinding();
+        Object value = scopedValueBindings().find(this);
         if (value == Snapshot.NIL) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("ScopedValue not bound");
         }
         Cache.put(this, value);
         return (T)value;
     }
 
     /**
-     * {@return {@code true} if this scoped value is bound in the current thread}
+     * Return the value of the scoped value or NIL if not bound.
+     * Consult the cache, and only if the value is not found there
+     * search the list of bindings. Update the cache if the binding
+     * was found.
      */
-    public boolean isBound() {
+    private Object findBinding() {
         Object[] objects = scopedValueCache();
         if (objects != null) {
-            int n = (hash & Cache.SLOT_MASK) * 2;
+            int n = (hash & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
-                return true;
+                return objects[n + 1];
             }
-            n = ((hash >>> Cache.INDEX_BITS) & Cache.SLOT_MASK) * 2;
+            n = ((hash >>> Cache.INDEX_BITS) & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
-                return true;
+                return objects[n + 1];
             }
         }
-        var value = findBinding();
-        boolean result = (value != Snapshot.NIL);
-        if (result)  Cache.put(this, value);
-        return result;
+        Object value = scopedValueBindings().find(this);
+        boolean found = (value != Snapshot.NIL);
+        if (found)  Cache.put(this, value);
+        return value;
     }
 
     /**
-     * Return the value of the scoped value or NIL if not bound.
+     * {@return {@code true} if this scoped value is bound in the current thread}
      */
-    private Object findBinding() {
-        Object value = scopedValueBindings().find(this);
-        return value;
+    public boolean isBound() {
+        Object obj = findBinding();
+        return obj != Snapshot.NIL;
     }
 
     /**
      * Returns the value of this scoped value if bound in the current thread, otherwise
      * returns {@code other}.
      *
-     * @param other the value to return if not bound, can be {@code null}
+     * @param other the value to return if not bound
      * @return the value of the scoped value if bound, otherwise {@code other}
      */
     public T orElse(T other) {
+        Objects.requireNonNull(other);
         Object obj = findBinding();
         if (obj != Snapshot.NIL) {
             @SuppressWarnings("unchecked")
@@ -816,17 +697,17 @@ public final class ScopedValue<T> {
 
     private static int nextKey = 0xf0f0_f0f0;
 
-    // A Marsaglia xor-shift generator used to generate hashes. This one has full period, so
-    // it generates 2**32 - 1 hashes before it repeats. We're going to use the lowest n bits
-    // and the next n bits as cache indexes, so we make sure that those indexes map
-    // to different slots in the cache.
+    // A Marsaglia xor-shift generator used to generate hashes. This one has
+    // full period, so it generates 2**32 - 1 hashes before it repeats. We're
+    // going to use the lowest n bits and the next n bits as cache indexes, so
+    // we make sure that those indexes map to different slots in the cache.
     private static synchronized int generateKey() {
         int x = nextKey;
         do {
             x ^= x >>> 12;
             x ^= x << 9;
             x ^= x >>> 23;
-        } while (Cache.primarySlot(x) == Cache.secondarySlot(x));
+        } while (((Cache.primaryIndex(x) ^ Cache.secondaryIndex(x)) & 1) == 0);
         return (nextKey = x);
     }
 
@@ -837,7 +718,7 @@ public final class ScopedValue<T> {
      * @return the bitmask
      */
     int bitmask() {
-        return (1 << Cache.primaryIndex(this)) | (1 << (Cache.secondaryIndex(this) + Cache.TABLE_SIZE));
+        return (1 << Cache.primaryIndex(hash)) | (1 << (Cache.secondaryIndex(hash) + Cache.TABLE_SIZE));
     }
 
     // Return true iff bitmask, considered as a set of bits, contains all
@@ -855,57 +736,100 @@ public final class ScopedValue<T> {
         static final int TABLE_MASK = TABLE_SIZE - 1;
         static final int PRIMARY_MASK = (1 << TABLE_SIZE) - 1;
 
-        // The number of elements in the cache array, and a bit mask used to
-        // select elements from it.
-        private static final int CACHE_TABLE_SIZE, SLOT_MASK;
-        // The largest cache we allow. Must be a power of 2 and greater than
-        // or equal to 2.
-        private static final int MAX_CACHE_SIZE = 16;
 
-        static {
-            final String propertyName = "java.lang.ScopedValue.cacheSize";
-            var sizeString = GetPropertyAction.privilegedGetProperty(propertyName, "16");
-            var cacheSize = Integer.valueOf(sizeString);
-            if (cacheSize < 2 || cacheSize > MAX_CACHE_SIZE) {
-                cacheSize = MAX_CACHE_SIZE;
-                System.err.println(propertyName + " is out of range: is " + sizeString);
+        // This class serves to defer initialization of some values until they
+        // are needed. In particular, we must not invoke System.getProperty
+        // early in the JDK boot process, because that leads to a circular class
+        // initialization dependency.
+        //
+        // In more detail:
+        //
+        //  The size of the cache depends on System.getProperty. Generating the
+        //  hash of an instance of ScopedValue depends on ThreadLocalRandom.
+        //
+        //  Invoking either of these early in the JDK boot process will cause
+        //  startup to fail with an unrecoverable circular dependency.
+        //
+        // To break these cycles we allow scoped values to be created (but not
+        // used) without invoking either System.getProperty or
+        // ThreadLocalRandom. To do this we defer querying System.getProperty
+        // until the first reference to CACHE_TABLE_SIZE, and we define a local
+        // hash generator which is used until CACHE_TABLE_SIZE is initialized.
+
+        private static class Constants {
+            // The number of elements in the cache array, and a bit mask used to
+            // select elements from it.
+            private static final int CACHE_TABLE_SIZE, SLOT_MASK;
+            // The largest cache we allow. Must be a power of 2 and greater than
+            // or equal to 2.
+            private static final int MAX_CACHE_SIZE = 16;
+
+            private static final JavaUtilConcurrentTLRAccess THREAD_LOCAL_RANDOM_ACCESS
+                = SharedSecrets.getJavaUtilConcurrentTLRAccess();
+
+            static {
+                final String propertyName = "java.lang.ScopedValue.cacheSize";
+                var sizeString = System.getProperty(propertyName, "16");
+                var cacheSize = Integer.valueOf(sizeString);
+                if (cacheSize < 2 || cacheSize > MAX_CACHE_SIZE) {
+                    cacheSize = MAX_CACHE_SIZE;
+                    System.err.println(propertyName + " is out of range: is " + sizeString);
+                }
+                if ((cacheSize & (cacheSize - 1)) != 0) {  // a power of 2
+                    cacheSize = MAX_CACHE_SIZE;
+                    System.err.println(propertyName + " must be an integer power of 2: is " + sizeString);
+                }
+                CACHE_TABLE_SIZE = cacheSize;
+                SLOT_MASK = cacheSize - 1;
+
+                // hashGenerator is set here (in class Constants rather than
+                // in global scope) in order not to initialize
+                // j.u.c.ThreadLocalRandom early in the JDK boot process.
+                // After this static initialization, new instances of
+                // ScopedValue will be initialized by a thread-local random
+                // generator.
+                hashGenerator = new IntSupplier() {
+                    @Override
+                    public int getAsInt() {
+                        int x;
+                        do {
+                            x = THREAD_LOCAL_RANDOM_ACCESS
+                                .nextSecondaryThreadLocalRandomSeed();
+                        } while (Cache.primarySlot(x) == Cache.secondarySlot(x));
+                        return x;
+                    }
+                };
             }
-            if ((cacheSize & (cacheSize - 1)) != 0) {  // a power of 2
-                cacheSize = MAX_CACHE_SIZE;
-                System.err.println(propertyName + " must be an integer power of 2: is " + sizeString);
-            }
-            CACHE_TABLE_SIZE = cacheSize;
-            SLOT_MASK = cacheSize - 1;
         }
 
-        static int primaryIndex(ScopedValue<?> key) {
-            return key.hash & TABLE_MASK;
+        static int primaryIndex(int hash) {
+            return hash & Cache.TABLE_MASK;
         }
 
-        static int secondaryIndex(ScopedValue<?> key) {
-            return (key.hash >> INDEX_BITS) & TABLE_MASK;
+        static int secondaryIndex(int hash) {
+            return (hash >> INDEX_BITS) & Cache.TABLE_MASK;
         }
 
         private static int primarySlot(ScopedValue<?> key) {
-            return key.hashCode() & SLOT_MASK;
+            return key.hashCode() & Constants.SLOT_MASK;
         }
 
         private static int secondarySlot(ScopedValue<?> key) {
-            return (key.hash >> INDEX_BITS) & SLOT_MASK;
+            return (key.hash >> INDEX_BITS) & Constants.SLOT_MASK;
         }
 
         static int primarySlot(int hash) {
-            return hash & SLOT_MASK;
+            return hash & Constants.SLOT_MASK;
         }
 
         static int secondarySlot(int hash) {
-            return (hash >> INDEX_BITS) & SLOT_MASK;
+            return (hash >> INDEX_BITS) & Constants.SLOT_MASK;
         }
 
         static void put(ScopedValue<?> key, Object value) {
             Object[] theCache = scopedValueCache();
             if (theCache == null) {
-                theCache = new Object[CACHE_TABLE_SIZE * 2];
+                theCache = new Object[Constants.CACHE_TABLE_SIZE * 2];
                 setScopedValueCache(theCache);
             }
             // Update the cache to replace one entry with the value we just looked up.
@@ -941,26 +865,23 @@ public final class ScopedValue<T> {
             objs[n * 2] = key;
         }
 
-        private static final JavaUtilConcurrentTLRAccess THREAD_LOCAL_RANDOM_ACCESS
-                = SharedSecrets.getJavaUtilConcurrentTLRAccess();
-
         // Return either true or false, at pseudo-random, with a bias towards true.
         // This chooses either the primary or secondary cache slot, but the
         // primary slot is approximately twice as likely to be chosen as the
         // secondary one.
         private static boolean chooseVictim() {
-            int r = THREAD_LOCAL_RANDOM_ACCESS.nextSecondaryThreadLocalRandomSeed();
+            int r = Constants.THREAD_LOCAL_RANDOM_ACCESS.nextSecondaryThreadLocalRandomSeed();
             return (r & 15) >= 5;
         }
 
         // Null a set of cache entries, indicated by the 1-bits given
         static void invalidate(int toClearBits) {
-            toClearBits = (toClearBits >>> TABLE_SIZE) | (toClearBits & PRIMARY_MASK);
+            toClearBits = ((toClearBits >>> Cache.TABLE_SIZE) | toClearBits) & PRIMARY_MASK;
             Object[] objects;
             if ((objects = scopedValueCache()) != null) {
                 for (int bits = toClearBits; bits != 0; ) {
                     int index = Integer.numberOfTrailingZeros(bits);
-                    setKeyAndObjectAt(objects, index & SLOT_MASK, null, null);
+                    setKeyAndObjectAt(objects, index & Constants.SLOT_MASK, null, null);
                     bits &= ~1 << index;
                 }
             }

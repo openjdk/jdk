@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run driver jdk.jfr.event.gc.configuration.TestGCYoungGenerationConfigurationEventWithMinAndMaxSize
@@ -46,7 +46,7 @@ public class TestGCYoungGenerationConfigurationEventWithMinAndMaxSize {
                              "-Xms32m",
                              "-Xmx64m",
                              Tester.class.getName()};
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(jvm_args);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(jvm_args);
         OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
         analyzer.shouldHaveExitValue(0);
     }

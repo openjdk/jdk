@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,11 @@
  * @compile -XDignore.symbol.file RevealDirectTest.java
  * @run junit/othervm -ea -esa test.java.lang.invoke.RevealDirectTest
  *
- * @test
- * @summary verify Lookup.revealDirect on a variety of input handles, with security manager
- * @run main/othervm/policy=jtreg.security.policy/secure=java.lang.SecurityManager -ea -esa test.java.lang.invoke.RevealDirectTest
  */
 
 /* To run manually:
  * $ $JAVA8X_HOME/bin/javac -cp $JUNIT4_JAR -d ../../../.. -XDignore.symbol.file RevealDirectTest.java
  * $ $JAVA8X_HOME/bin/java  -cp $JUNIT4_JAR:../../../.. -ea -esa org.junit.runner.JUnitCore test.java.lang.invoke.RevealDirectTest
- * $ $JAVA8X_HOME/bin/java  -cp $JUNIT4_JAR:../../../.. -ea -esa    -Djava.security.manager test.java.lang.invoke.RevealDirectTest
  */
 
 package test.java.lang.invoke;
@@ -242,22 +238,9 @@ public class RevealDirectTest {
         //System.out.println("getSupers => "+res);
         return res;
     }
-    static boolean hasSM() {
-        return (System.getSecurityManager() != null);
-    }
     static List<Member> getDeclaredMembers(Class<?> cls, String accessor) {
         Member[] mems = {};
         Method getter = getMethod(Class.class, accessor);
-        if (hasSM()) {
-            try {
-                mems = (Member[]) invokeMethod(getter, cls);
-            } catch (SecurityException ex) {
-                //if (VERBOSE)  ex.printStackTrace();
-                accessor = accessor.replace("Declared", "");
-                getter = getMethod(Class.class, accessor);
-                if (VERBOSE)  System.out.println("replaced accessor: "+getter);
-            }
-        }
         if (mems.length == 0) {
             try {
                 mems = (Member[]) invokeMethod(getter, cls);
@@ -743,20 +726,8 @@ public class RevealDirectTest {
             MethodHandleInfo info2 = lookup.revealDirect(mh2);
             assert(consistent(info, info2));
             assert(consistent(res, info2));
-            Member mem3;
-            if (hasSM())
-                mem3 = info2.reflectAs(Member.class, lookup);
-            else
-                mem3 = MethodHandles.reflectAs(Member.class, mh2);
+            Member mem3 = MethodHandles.reflectAs(Member.class, mh2);
             assert(consistent(mem2, mem3));
-            if (hasSM()) {
-                try {
-                    MethodHandles.reflectAs(Member.class, mh2);
-                    throw new AssertionError("failed to throw on "+mem3);
-                } catch (SecurityException ex3) {
-                    // OK...
-                }
-            }
         }
     }
 }

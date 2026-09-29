@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,8 @@
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.provider.certpath
  *          java.base/sun.security.util
- * @library ../../../../../java/security/testlibrary
- * @build CertificateBuilder SimpleOCSPServer
- * @run main/othervm OCSPNoContentLength
+ * @library /test/lib
+ * @run main/othervm -Dtest.debug=true OCSPNoContentLength
  */
 
 import java.io.IOException;
@@ -46,8 +45,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.SimpleOCSPServer;
+import jdk.test.lib.security.CertificateBuilder;
 
 public class OCSPNoContentLength {
 
@@ -56,7 +55,7 @@ public class OCSPNoContentLength {
     static String EE_ALIAS = "endentity";
 
     // Enable debugging for additional output
-    static final boolean debug = true;
+    static final boolean debug = Boolean.getBoolean("test.debug");
 
     // PKI components we will need for this test
     static X509Certificate rootCert;        // The root CA certificate

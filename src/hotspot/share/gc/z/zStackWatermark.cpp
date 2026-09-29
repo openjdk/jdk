@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStoreBarrierBuffer.hpp"
@@ -37,15 +37,13 @@
 #include "runtime/thread.hpp"
 #include "utilities/preserveException.hpp"
 
-ZOnStackCodeBlobClosure::ZOnStackCodeBlobClosure()
+ZOnStackNMethodClosure::ZOnStackNMethodClosure()
   : _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
-void ZOnStackCodeBlobClosure::do_code_blob(CodeBlob* cb) {
-  nmethod* const nm = cb->as_nmethod_or_null();
-  if (nm != nullptr) {
-    const bool result = _bs_nm->nmethod_entry_barrier(nm);
-    assert(result, "NMethod on-stack must be alive");
-  }
+void ZOnStackNMethodClosure::do_nmethod(nmethod* nm) {
+  assert(nm != nullptr, "Sanity");
+  const bool result = _bs_nm->nmethod_entry_barrier(nm);
+  assert(result, "NMethod on-stack must be alive");
 }
 
 ThreadLocalAllocStats& ZStackWatermark::stats() {
@@ -132,7 +130,7 @@ void ZStackWatermark::save_old_watermark() {
   } else {
     // Found none too replace - push it to the top
     _old_watermarks_newest++;
-    assert(_old_watermarks_newest < _old_watermarks_max, "Unexpected amount of old watermarks");
+    assert(_old_watermarks_newest < OldWatermarksMax, "Unexpected amount of old watermarks");
   }
 
   // Install old watermark
@@ -166,9 +164,9 @@ void ZStackWatermark::process_head(void* context) {
   const uintptr_t color = prev_head_color();
 
   ZStackWatermarkProcessOopClosure cl(context, color);
-  ZOnStackCodeBlobClosure cb_cl;
+  ZOnStackNMethodClosure nm_cl;
 
-  _jt->oops_do_no_frames(&cl, &cb_cl);
+  _jt->oops_do_no_frames(&cl, &nm_cl);
 
   zaddress_unsafe* const invisible_root = ZThreadLocalData::invisible_root(_jt);
   if (invisible_root != nullptr) {
@@ -192,7 +190,9 @@ void ZStackWatermark::start_processing_impl(void* context) {
   ZThreadLocalData::set_mark_bad_mask(_jt, ZPointerMarkBadMask);
   ZThreadLocalData::set_store_bad_mask(_jt, ZPointerStoreBadMask);
   ZThreadLocalData::set_store_good_mask(_jt, ZPointerStoreGoodMask);
-  ZThreadLocalData::set_nmethod_disarmed(_jt, ZPointerStoreGoodMask);
+
+  // Update thread-local nmethod disarmed guard value
+  BarrierSet::barrier_set()->barrier_set_nmethod()->set_thread_disarmed_guard_value(_jt);
 
   // Retire TLAB
   if (ZGeneration::young()->is_phase_mark() || ZGeneration::old()->is_phase_mark()) {
@@ -209,7 +209,7 @@ void ZStackWatermark::start_processing_impl(void* context) {
 void ZStackWatermark::process(const frame& fr, RegisterMap& register_map, void* context) {
   const uintptr_t color = prev_frame_color(fr);
   ZStackWatermarkProcessOopClosure cl(context, color);
-  ZOnStackCodeBlobClosure cb_cl;
+  ZOnStackNMethodClosure nm_cl;
 
-  fr.oops_do(&cl, &cb_cl, &register_map, DerivedPointerIterationMode::_directly);
+  fr.oops_do(&cl, &nm_cl, &register_map, DerivedPointerIterationMode::_directly);
 }

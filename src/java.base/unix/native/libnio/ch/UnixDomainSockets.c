@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, sockl
         jbyteArray name = (*env)->NewByteArray(env, namelen);
         if (namelen != 0) {
             (*env)->SetByteArrayRegion(env, name, 0, namelen, (jbyte*)sa->sun_path);
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 return NULL;
             }
         }
@@ -172,8 +172,10 @@ Java_sun_nio_ch_UnixDomainSockets_accept0(JNIEnv *env, jclass clazz, jobject fdo
     setfdval(env, newfdo, newfd);
 
     address = sockaddrToUnixAddressBytes(env, &sa, sa_len);
-    CHECK_NULL_RETURN(address, IOS_THROWN);
-
+    if (address == NULL) {
+        close(newfd);
+        return IOS_THROWN;
+    }
     (*env)->SetObjectArrayElement(env, array, 0, address);
 
     return 1;

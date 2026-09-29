@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public class plugMultiConnect004 {
     }
 
     private static void logAlways(String message) {
-        logHandler.println(message);
+        logHandler.display(message);
     }
 
     public static void main (String argv[]) {
@@ -233,7 +233,6 @@ public class plugMultiConnect004 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         logAlways("==> nsk/jdi/PlugConnectors/MultiConnectors/plugMultiConnect004 test...");
         logOnVerbose

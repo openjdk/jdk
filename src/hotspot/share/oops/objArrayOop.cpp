@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "oops/access.inline.hpp"
 #include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.inline.hpp"
+#include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-
-oop objArrayOopDesc::replace_if_null(int index, oop exchange_value) {
-  ptrdiff_t offs;
-  if (UseCompressedOops) {
-    offs = objArrayOopDesc::obj_at_offset<narrowOop>(index);
-  } else {
-    offs = objArrayOopDesc::obj_at_offset<oop>(index);
-  }
-  return HeapAccess<IS_ARRAY>::oop_atomic_cmpxchg_at(as_oop(), offs, (oop)nullptr, exchange_value);
-}
 
 Klass* objArrayOopDesc::element_klass() {
   return ObjArrayKlass::cast(klass())->element_klass();

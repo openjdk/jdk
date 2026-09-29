@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,16 @@ public interface WebSocket {
          * {@link HttpTimeoutException}. If this method is not invoked then the
          * infinite timeout is assumed.
          *
+         * @implSpec
+         * A connection timeout applies to the entire connection phase, from the
+         * moment a connection is requested until it is established.
+         * Implementations are recommended to ensure that the connection timeout
+         * covers any WebSocket and SSL/TLS handshakes.
+         *
+         * @implNote
+         * The built-in JDK implementation of the connection timeout covers any
+         * WebSocket and SSL/TLS handshakes.
+         *
          * @param timeout
          *         the timeout, non-{@linkplain Duration#isNegative() negative},
          *         non-{@linkplain Duration#ZERO ZERO}
@@ -194,12 +204,6 @@ public interface WebSocket {
          *          the timeout
          * <li> {@link InterruptedException} -
          *          if the operation is interrupted
-         * <li> {@link SecurityException} -
-         *          if a security manager has been installed and it denies
-         *          {@link java.net.URLPermission access} to {@code uri}.
-         *          <a href="HttpClient.html#securitychecks">Security checks</a>
-         *          contains more information relating to the security context
-         *          in which the listener is invoked.
          * <li> {@link IllegalArgumentException} -
          *          if any of the arguments of this builder's methods are
          *          illegal

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8316141
+ * @bug 8316141 8321802
  * @summary test for correct detection and reporting of corrupted zip files
  * @run junit CorruptedZipFilesTest
  */
@@ -285,6 +285,16 @@ public class CorruptedZipFilesTest {
     public void unsupportedCompressionMethod() throws IOException {
         copy[cenpos+CENHOW] = 2;
         assertZipException(".*unsupported compression method.*");
+    }
+
+    /*
+     * A ZipException is thrown when a LOC header has an unexpected signature
+     */
+    @Test
+    public void invalidLOCSignature() throws IOException {
+        int existingSignature = buffer.getInt(locpos);
+        buffer.putInt(locpos, existingSignature +1);
+        assertZipException(".*bad signature.*");
     }
 
     /*

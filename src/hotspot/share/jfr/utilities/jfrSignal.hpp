@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_UTILITIES_JFRSIGNAL_HPP
 #define SHARE_JFR_UTILITIES_JFRSIGNAL_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class JfrSignal {
  private:
@@ -34,16 +34,26 @@ class JfrSignal {
   JfrSignal() : _signaled(false) {}
 
   void signal() const {
-    Atomic::release_store(&_signaled, true);
+    AtomicAccess::release_store(&_signaled, true);
+  }
+
+  void reset() const {
+    AtomicAccess::release_store(&_signaled, false);
   }
 
   bool is_signaled() const {
-    return Atomic::load_acquire(&_signaled);
+    return AtomicAccess::load_acquire(&_signaled);
+  }
+
+  void signal_if_not_set() const {
+    if (!is_signaled()) {
+      signal();
+    }
   }
 
   bool is_signaled_with_reset() const {
     if (is_signaled()) {
-      Atomic::release_store(&_signaled, false);
+      reset();
       return true;
     }
     return false;

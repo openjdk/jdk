@@ -26,7 +26,12 @@
 #define SHARE_OPTO_C2COMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
-#include "opto/output.hpp"
+
+// Define the initial sizes for allocation of the resizable code buffer
+enum {
+  initial_const_capacity =   4 * 1024
+};
+
 
 class C2Compiler : public AbstractCompiler {
  private:

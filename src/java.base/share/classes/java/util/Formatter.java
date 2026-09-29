@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +50,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.spi.NumberFormatProvider;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -62,7 +61,6 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFPDecimal;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -434,7 +432,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     prefix {@code 'T'} forces this output to upper case.
  *
  * <tr><th scope="row" style="vertical-align:top">{@code 'z'}
- *     <td> <a href="http://www.ietf.org/rfc/rfc0822.txt">RFC&nbsp;822</a>
+ *     <td> <a href="https://www.ietf.org/rfc/rfc822.txt">RFC&nbsp;822</a>
  *     style numeric time zone offset from GMT, e.g. {@code -0800}.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is
@@ -1722,7 +1720,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <tr><th scope="row" style="vertical-align:top">{@code 'z'}
  *     <td style="vertical-align:top"> <code>'&#92;u007a'</code>
- *     <td> <a href="http://www.ietf.org/rfc/rfc0822.txt">RFC&nbsp;822</a>
+ *     <td> <a href="https://www.ietf.org/rfc/rfc822.txt">RFC&nbsp;822</a>
  *     style numeric time zone offset from GMT, e.g. {@code -0800}.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is
@@ -2179,11 +2177,6 @@ public final class Formatter implements Closeable, Flushable {
      *         zero size; otherwise, a new file will be created.  The output
      *         will be written to the file and is buffered.
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
-     *
      * @throws  FileNotFoundException
      *          If the given file name does not denote an existing, writable
      *          regular file and a new regular file of that name cannot be
@@ -2219,11 +2212,6 @@ public final class Formatter implements Closeable, Flushable {
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
-     *
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
      */
@@ -2258,11 +2246,6 @@ public final class Formatter implements Closeable, Flushable {
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
-     *
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
      */
@@ -2293,13 +2276,10 @@ public final class Formatter implements Closeable, Flushable {
      * @throws  IOException
      *          if an I/O error occurs while opening or creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
-     *          access to the file
-     *
      * @throws NullPointerException
      *         if {@code fileName} or {@code charset} is {@code null}.
+     *
+     * @since 10
      */
     public Formatter(String fileName, Charset charset, Locale l) throws IOException {
         this(Objects.requireNonNull(charset, "charset"), l, new File(fileName));
@@ -2322,11 +2302,6 @@ public final class Formatter implements Closeable, Flushable {
      *         file exists then it will be truncated to zero size; otherwise,
      *         a new file will be created.  The output will be written to the
      *         file and is buffered.
-     *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())} denies
-     *          write access to the file
      *
      * @throws  FileNotFoundException
      *          If the given file object does not denote an existing, writable
@@ -2363,11 +2338,6 @@ public final class Formatter implements Closeable, Flushable {
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())} denies
-     *          write access to the file
-     *
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
      */
@@ -2402,11 +2372,6 @@ public final class Formatter implements Closeable, Flushable {
      *          created, or if some other error occurs while opening or
      *          creating the file
      *
-     * @throws  SecurityException
-     *          If a security manager is present and {@link
-     *          SecurityManager#checkWrite checkWrite(file.getPath())} denies
-     *          write access to the file
-     *
      * @throws  UnsupportedEncodingException
      *          If the named charset is not supported
      */
@@ -2437,13 +2402,10 @@ public final class Formatter implements Closeable, Flushable {
      * @throws IOException
      *         if an I/O error occurs while opening or creating the file
      *
-     * @throws SecurityException
-     *         If a security manager is present and {@link
-     *         SecurityManager#checkWrite checkWrite(file.getPath())} denies
-     *         write access to the file
-     *
      * @throws NullPointerException
      *         if {@code file} or {@code charset} is {@code null}.
+     *
+     * @since 10
      */
     public Formatter(File file, Charset charset, Locale l) throws IOException {
         this(Objects.requireNonNull(charset, "charset"), l, file);
@@ -2561,6 +2523,8 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @throws NullPointerException
      *         if {@code os} or {@code charset} is {@code null}.
+     *
+     * @since 10
      */
     public Formatter(OutputStream os, Charset charset, Locale l) {
         this(l, new BufferedWriter(new OutputStreamWriter(os, charset)));
@@ -2810,20 +2774,14 @@ public final class Formatter implements Closeable, Flushable {
         return this;
     }
 
-    // %[argument_index$][flags][width][.precision][t]conversion
-    static final String FORMAT_SPECIFIER
-        = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
-
-    static final Pattern FORMAT_SPECIFIER_PATTERN = Pattern.compile(FORMAT_SPECIFIER);
-
     /**
      * Finds format specifiers in the format string.
      */
     static List<FormatString> parse(String s) {
+        FormatSpecifierParser parser = null;
         ArrayList<FormatString> al = new ArrayList<>();
         int i = 0;
         int max = s.length();
-        Matcher m = null; // create if needed
         while (i < max) {
             int n = s.indexOf('%', i);
             if (n < 0) {
@@ -2846,14 +2804,16 @@ public final class Formatter implements Closeable, Flushable {
                 al.add(new FormatSpecifier(c));
                 i++;
             } else {
-                if (m == null) {
-                    m = FORMAT_SPECIFIER_PATTERN.matcher(s);
-                }
                 // We have already parsed a '%' at n, so we either have a
                 // match or the specifier at n is invalid
-                if (m.find(n) && m.start() == n) {
-                    al.add(new FormatSpecifier(s, m));
-                    i = m.end();
+                if (parser == null) {
+                    parser = new FormatSpecifierParser(al, c, i, s, max);
+                } else {
+                    parser.reset(c, i);
+                }
+                int off = parser.parse();
+                if (off > 0) {
+                    i += off;
                 } else {
                     throw new UnknownFormatConversionException(String.valueOf(c));
                 }
@@ -2862,21 +2822,166 @@ public final class Formatter implements Closeable, Flushable {
         return al;
     }
 
+    static final class FormatSpecifierParser {
+        final ArrayList<FormatString> al;
+        final String s;
+        final int max;
+        char first;
+        int start;
+        int off;
+        char c;
+        int argSize;
+        int flagSize;
+        int widthSize;
+
+        FormatSpecifierParser(ArrayList<FormatString> al, char first, int start, String s, int max) {
+            this.al = al;
+
+            this.first = first;
+            this.c = first;
+            this.start = start;
+            this.off = start;
+
+            this.s = s;
+            this.max = max;
+        }
+
+        void reset(char first, int start) {
+            this.first = first;
+            this.c = first;
+            this.start = start;
+            this.off = start;
+
+            argSize = 0;
+            flagSize = 0;
+            widthSize = 0;
+        }
+
+        /**
+         * If a valid format specifier is found, construct a FormatString and add it to {@link #al}.
+         * The format specifiers for general, character, and numeric types have
+         * the following syntax:
+         *
+         * <blockquote><pre>
+         *   %[argument_index$][flags][width][.precision]conversion
+         * </pre></blockquote>
+         *
+         * As described by the following regular expression:
+         *
+         * <blockquote><pre>
+         *    %(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])
+         * </pre></blockquote>
+         *
+         * @return the length of the format specifier. If no valid format specifier is found, 0 is returned.
+         */
+        int parse() {
+            int precisionSize = 0;
+
+            // (\d+\$)?
+            parseArgument();
+
+            // ([-#+ 0,(\<]*)?
+            parseFlag();
+
+            // (\d+)?
+            parseWidth();
+
+            if (c == '.') {
+                // (\.\d+)?
+                precisionSize = parsePrecision();
+                if (precisionSize == -1) {
+                    return 0;
+                }
+            }
+
+            // ([tT])?([a-zA-Z%])
+            char t = '\0', conversion = '\0';
+            if ((c == 't' || c == 'T') && off + 1 < max) {
+                char c1 = s.charAt(off + 1);
+                if (isConversion(c1)) {
+                    t = c;
+                    conversion = c1;
+                    off += 2;
+                }
+            } else if (isConversion(c)) {
+                conversion = c;
+                ++off;
+            } else {
+                return 0;
+            }
+
+            if (argSize + flagSize + widthSize + precisionSize + t + conversion != 0) {
+                if (al != null) {
+                    FormatSpecifier formatSpecifier
+                            = new FormatSpecifier(s, start, argSize, flagSize, widthSize, precisionSize, t, conversion);
+                    al.add(formatSpecifier);
+                }
+                return off - start;
+            }
+            return 0;
+        }
+
+        private void parseArgument() {
+            // (\d+\$)?
+            int i = off;
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
+            if (i == off || c != '$') {
+                c = first;
+                return;
+            }
+
+            i++; // skip '$'
+            if (i < max) {
+                c = s.charAt(i);
+            }
+
+            argSize = i - off;
+            off = i;
+        }
+
+        private void parseFlag() {
+            // ([-#+ 0,(\<]*)?
+            int i = off;
+            for (; i < max && Flags.isFlag(c = s.charAt(i)); ++i);  // empty body
+            flagSize = i - off;
+            off = i;
+        }
+
+        private void parseWidth() {
+            // (\d+)?
+            int i = off;
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
+            widthSize = i - off;
+            off = i;
+        }
+
+        private int parsePrecision() {
+            int i = ++off;
+            for (; i < max && isDigit(c = s.charAt(i)); ++i);  // empty body
+            if (i != off) {
+                int size = i - off + 1;
+                off = i;
+                return size;
+            }
+            return -1;
+        }
+    }
+
+    static boolean isConversion(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '%';
+    }
+
+    private static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
     interface FormatString {
         int index();
         void print(Formatter fmt, Object arg, Locale l) throws IOException;
         String toString();
     }
 
-    private static class FixedString implements FormatString {
-        private final String s;
-        private final int start;
-        private final int end;
-        FixedString(String s, int start, int end) {
-            this.s = s;
-            this.start = start;
-            this.end = end;
-        }
+    private record FixedString(String s, int start, int end) implements FormatString {
         public int index() { return -2; }
         public void print(Formatter fmt, Object arg, Locale l)
             throws IOException { fmt.a.append(s, start, end); }
@@ -2984,21 +3089,44 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        FormatSpecifier(String s, Matcher m) {
-            index(s, m.start(1), m.end(1));
-            flags(s, m.start(2), m.end(2));
-            width(s, m.start(3), m.end(3));
-            precision(s, m.start(4), m.end(4));
+        FormatSpecifier(
+                String s,
+                int i,
+                int argSize,
+                int flagSize,
+                int widthSize,
+                int precisionSize,
+                char t,
+                char conversion
+        ) {
+            int argEnd = i + argSize;
+            int flagEnd = argEnd + flagSize;
+            int widthEnd = flagEnd + widthSize;
+            int precisionEnd = widthEnd + precisionSize;
 
-            int tTStart = m.start(5);
-            if (tTStart >= 0) {
+            if (argSize > 0) {
+                index(s, i, argEnd);
+            }
+            if (flagSize > 0) {
+                flags(s, argEnd, flagEnd);
+            }
+            if (widthSize > 0) {
+                width(s, flagEnd, widthEnd);
+            }
+            if (precisionSize > 0) {
+                precision(s, widthEnd, precisionEnd);
+            }
+            if (t != '\0') {
                 dt = true;
-                if (s.charAt(tTStart) == 'T') {
+                if (t == 'T') {
                     flags = Flags.add(flags, Flags.UPPERCASE);
                 }
             }
-            conversion(s.charAt(m.start(6)));
+            conversion(conversion);
+            check();
+        }
 
+        private void check() {
             if (dt)
                 checkDateTime();
             else if (Conversion.isGeneral(c))
@@ -4073,8 +4201,8 @@ public final class Formatter implements Closeable, Flushable {
 
         // Add trailing zeros
         private void trailingZeros(StringBuilder sb, int nzeros) {
-            for (int i = 0; i < nzeros; i++) {
-                sb.append('0');
+            if (nzeros > 0) {
+                sb.repeat('0', nzeros);
             }
         }
 
@@ -4705,6 +4833,13 @@ public final class Formatter implements Closeable, Flushable {
             };
         }
 
+        private static boolean isFlag(char c) {
+            return switch (c) {
+                case '-', '#', '+', ' ', '0', ',', '(', '<' -> true;
+                default -> false;
+            };
+        }
+
         // Returns a string representation of the current {@code Flags}.
         public static String toString(int f) {
             StringBuilder sb = new StringBuilder();
@@ -4784,9 +4919,9 @@ public final class Formatter implements Closeable, Flushable {
                      DECIMAL_FLOAT,
                      HEXADECIMAL_FLOAT,
                      HEXADECIMAL_FLOAT_UPPER,
-                     LINE_SEPARATOR,
-                     PERCENT_SIGN -> true;
-                default -> false;
+                     LINE_SEPARATOR -> true;
+                // Don't put PERCENT_SIGN inside switch, as that will make the method size exceed 325 and cannot be inlined.
+                default -> c == PERCENT_SIGN;
             };
         }
 

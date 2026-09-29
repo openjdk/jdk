@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_JAVA_HPP
 #define SHARE_RUNTIME_JAVA_HPP
 
-#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Handle;
@@ -59,13 +58,15 @@ extern void vm_shutdown_during_initialization(const char* error, const char* mes
 
 extern void vm_exit_during_cds_dumping(const char* error, const char* message = nullptr);
 
+// This is defined in linkType.cpp due to linking restraints
+extern bool is_vm_statically_linked();
+
 /**
  * With the integration of the changes to handle the version string
  * as defined by JEP-223, most of the code related to handle the version
  * string prior to JDK 1.6 was removed (partial initialization)
  */
 class JDK_Version {
-  friend class VMStructs;
   friend class Universe;
   friend void JDK_Version_init();
  private:
@@ -131,38 +132,27 @@ class JDK_Version {
   static const char* java_version() {
     return _java_version;
   }
-  static void set_java_version(const char* version) {
-    _java_version = os::strdup(version);
-  }
+  static void set_java_version(const char* version);
 
   static const char* runtime_name() {
     return _runtime_name;
   }
-  static void set_runtime_name(const char* name) {
-    _runtime_name = os::strdup(name);
-  }
+  static void set_runtime_name(const char* name);
 
   static const char* runtime_version() {
     return _runtime_version;
   }
-  static void set_runtime_version(const char* version) {
-    _runtime_version = os::strdup(version);
-  }
+  static void set_runtime_version(const char* version);
 
   static const char* runtime_vendor_version() {
     return _runtime_vendor_version;
   }
-  static void set_runtime_vendor_version(const char* vendor_version) {
-    _runtime_vendor_version = os::strdup(vendor_version);
-  }
+  static void set_runtime_vendor_version(const char* vendor_version);
 
   static const char* runtime_vendor_vm_bug_url() {
     return _runtime_vendor_vm_bug_url;
   }
-  static void set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url) {
-    _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url);
-  }
-
+  static void set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url);
 };
 
 #endif // SHARE_RUNTIME_JAVA_HPP

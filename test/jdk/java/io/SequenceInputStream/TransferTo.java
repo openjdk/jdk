@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.util.Arrays;
@@ -32,21 +33,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.testng.annotations.Test;
+import static java.lang.String.format;
 
 import jdk.test.lib.RandomFactory;
 
-import static java.lang.String.format;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm/timeout=180 TransferTo
+ * @run junit/othervm/timeout=180 TransferTo
  * @bug 8297298
  * @summary Tests whether java.io.SequenceInputStream.transferTo conforms to the
  *          InputStream.transferTo specification
@@ -127,6 +129,49 @@ public class TransferTo {
     }
 
     /*
+     * Special case: Assert subsequent input stream is read when preceding stream already was MAX_VALUE long.
+     * Note: Not testing actual content as it requires multiple GBs of memory and long time.
+     */
+    @Test
+    public void testHugeStream() throws Exception {
+        InputStream is1 = repeat(0, Long.MAX_VALUE);
+        InputStream is2 = repeat(0, 1);
+        assertNotEquals(is1.available(), 0);
+        assertNotEquals(is2.available(), 0);
+        SequenceInputStream sis = new SequenceInputStream(is1, is2);
+        OutputStream nos = OutputStream.nullOutputStream();
+        sis.transferTo(nos);
+        assertEquals(0, is1.available());
+        assertEquals(0, is2.available());
+    }
+
+    /*
+     * Produces an input stream that returns b count times.
+     * Builds a dysfunctional mock that solely implements
+     * available() and transferTo() particually,
+     * but fails with any other operation.
+     */
+    private static InputStream repeat(int b, long count) {
+        return new InputStream() {
+            private long pos;
+            @Override
+            public int available() throws IOException {
+                return (int) Math.min(count - pos, Integer.MAX_VALUE);
+            }
+            @Override
+            public int read() throws IOException {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public long transferTo(OutputStream os) throws IOException {
+                // skipping actual writing to os to spare time
+                pos += count;
+                return count;
+            }
+        };
+    }
+
+    /*
      * Asserts that the transferred content is correct, i.e., compares the bytes
      * actually transferred to those expected. The position of the input and
      * output streams before the transfer are zero (BOF).
@@ -155,7 +200,7 @@ public class TransferTo {
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
 
-            assertEquals(reported, count,
+            assertEquals(count, reported,
                     format("reported %d bytes but should report %d", reported, count));
 
             byte[] outBytes = recorder.get().get();

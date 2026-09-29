@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
    @bug 4032066 4039597 4046914 4054511 4065189 4109131 4875229 6983520 8009258
    @summary General exhaustive test of win32 pathname handling
+   @requires (os.family == "windows")
    @author Mark Reinhold
 
    @build General GeneralWin32
@@ -162,10 +163,6 @@ public class GeneralWin32 extends General {
 
 
     public static void main(String[] args) throws Exception {
-        if (File.separatorChar != '\\') {
-            /* This test is only valid on win32 systems */
-            return;
-        }
         if (args.length > 0) debug = true;
 
         initTestData(3);

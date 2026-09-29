@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.processing.Processor;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -62,6 +63,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private JavaFileManager fileManager;
     private Consumer<com.sun.source.util.JavacTask> callback;
     private List<Processor> procs;
+    private DiagnosticListener<? super JavaFileObject> diagnosticListener;
 
     private JavaCompiler compiler;
     private StandardJavaFileManager internalFileManager;
@@ -286,6 +288,14 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
+     * Sets the diagnostic listener to be used.
+     */
+    public JavacTask diagnosticListener(DiagnosticListener<? super JavaFileObject> diagnosticListener) {
+        this.diagnosticListener = diagnosticListener;
+        return this;
+    }
+
+    /**
      * Sets the file manager to be used by this task.
      * @param fileManager the file manager
      * @return this task object
@@ -312,6 +322,26 @@ public class JavacTask extends AbstractTask<JavacTask> {
     @Override
     public String name() {
         return "javac";
+    }
+
+    @Override
+    public Result run(Expect expect) {
+        int expectedExitCode = expect == Expect.SUCCESS ? 0 : 1;
+
+        return run(expect, (exitCode, testName) -> {
+            if (exitCode == 4) {
+                throw new TaskError("Task " + testName + " failed due to a javac crash "
+                    + "(exit code 4)");
+            }
+        });
+    }
+
+    @Override
+    public Result run(Expect expect, int exitCode) {
+        if (exitCode == 4) {
+            throw new IllegalArgumentException("Disallowed exit code: 4");
+        }
+        return super.run(expect, exitCode);
     }
 
     /**
@@ -386,7 +416,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
             Iterable<? extends JavaFileObject> allFiles = joinFiles(files, fileObjects);
             JavaCompiler.CompilationTask task = compiler.getTask(pw,
                     fileManager,
-                    null,  // diagnostic listener; should optionally collect diags
+                    diagnosticListener,  // diagnostic listener; should optionally collect diags
                     allOpts,
                     classes,
                     allFiles);

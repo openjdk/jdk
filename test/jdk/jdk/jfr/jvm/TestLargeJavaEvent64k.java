@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,10 @@ import jdk.test.lib.jfr.Stressor;
 
 /**
  * @test TestLargeJavaEvent64k
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- *    java.base/jdk.internal.org.objectweb.asm
  * @run main/othervm jdk.jfr.jvm.TestLargeJavaEvent64k
  */
 public class TestLargeJavaEvent64k {

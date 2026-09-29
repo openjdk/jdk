@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,11 @@ public class stepevent001 {
 
     static private volatile boolean methodCompleted;
 
-    public static void main (String args[]) {
-          System.exit(run(args, System.out) + JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(final String args[], final PrintStream out) {
@@ -118,16 +121,7 @@ public class stepevent001 {
             checkedClass = (ReferenceType) classes.get(0);
 
             log.display("Getting reference to main thread");
-            Iterator threadIterator = vm.allThreads().iterator();
-            while (threadIterator.hasNext()) {
-                ThreadReference curThread = (ThreadReference) threadIterator.next();
-                if (curThread.name().equals("main")) {
-                     checkedThread = curThread;
-                }
-            }
-            if (checkedThread == null) {
-                throw new Failure("TEST BUG: unable to find reference to main thread");
-            }
+            checkedThread = debuggee.threadByFieldNameOrThrow(checkedClass, "mainThread", "main");
 
             log.display("Getting reference to method <foo>");
             List allMethods  = checkedClass.methodsByName("foo");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,12 @@
  * @comment JDK-8231610 Relocate the CDS archive if it cannot be mapped to the requested address
  * @bug 8231610
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build Hello
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @compile ../test-classes/HelloValueClassApp.java ../test-classes/HelloRelocation.java
  * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloRelocation HelloValueClassApp HelloValueClassApp$Point HelloValueClassApp$Rectangle  HelloValueClassApp$ValueRecord
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicArchiveRelocationTest
  */
@@ -78,10 +81,11 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         System.out.println("============================================================");
 
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
-        String mainClass = "Hello";
-        String forceRelocation = "-XX:ArchiveRelocationMode=1";
-        String dumpTopRelocArg  = dump_top_reloc  ? forceRelocation : "-showversion";
-        String runRelocArg      = run_reloc       ? forceRelocation : "-showversion";
+        String mainClass = "HelloRelocation";
+        String maybeRelocation = "-XX:ArchiveRelocationMode=0";
+        String alwaysRelocation = "-XX:ArchiveRelocationMode=1";
+        String dumpTopRelocArg  = dump_top_reloc  ? alwaysRelocation : maybeRelocation;
+        String runRelocArg      = run_reloc       ? alwaysRelocation : maybeRelocation;
         String logArg = "-Xlog:cds=debug,cds+reloc=debug";
 
         String baseArchiveName = getNewArchiveName("base");
@@ -89,15 +93,17 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
 
         String runtimeMsg = "Try to map archive(s) at an alternative address";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
+        String relocationModeMsg = "ArchiveRelocationMode: 0";
 
         // (1) Dump base archive (static)
 
-        TestCommon.dumpBaseArchive(baseArchiveName, unlockArg, logArg)
+        TestCommon.dumpBaseArchive(baseArchiveName, "--enable-preview", unlockArg, logArg)
           .shouldContain("Relocating archive from");
 
         // (2) Dump top archive (dynamic)
 
         dump2(baseArchiveName, topArchiveName,
+              "--enable-preview",
               unlockArg,
               dumpTopRelocArg,
               logArg,
@@ -105,10 +111,13 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                     if (dump_top_reloc) {
                         output.shouldContain(runtimeMsg);
+                    } else {
+                        output.shouldContain(relocationModeMsg);
                     }
                 });
 
         run2(baseArchiveName, topArchiveName,
+             "--enable-preview",
              unlockArg,
              runRelocArg,
              logArg,
@@ -116,6 +125,8 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                     if (run_reloc) {
                         output.shouldContain(runtimeMsg);
+                    } else {
+                        output.shouldContain(relocationModeMsg);
                     }
                 });
     }

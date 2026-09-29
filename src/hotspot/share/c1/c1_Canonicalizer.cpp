@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_ValueStack.hpp"
@@ -281,7 +280,7 @@ void Canonicalizer::do_LoadIndexed    (LoadIndexed*     x) {
   assert(array == nullptr || FoldStableValues, "not enabled");
 
   // Constant fold loads from stable arrays.
-  if (!x->mismatched() && array != nullptr && index != nullptr) {
+  if (!x->should_profile() && !x->mismatched() && array != nullptr && index != nullptr) {
     jint idx = index->value();
     if (idx < 0 || idx >= array->value()->length()) {
       // Leave the load as is. The range check will handle it.
@@ -469,9 +468,8 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
 
 
 void Canonicalizer::do_IfOp(IfOp* x) {
-  // Caution: do not use do_Op2(x) here for now since
-  //          we map the condition to the op for now!
-  move_const_to_right(x);
+  // Currently, Canonicalizer is only used by GraphBuilder, and IfOp is only created by
+  // GraphBuilder when loading/storing flat fields, do nothing for now.
 }
 
 
@@ -522,7 +520,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
       ciType* t = c->value()->java_mirror_type();
       if (t->is_klass()) {
         // substitute cls.isInstance(obj) of a constant Class into
-        // an InstantOf instruction
+        // an InstanceOf instruction
         InstanceOf* i = new InstanceOf(t->as_klass(), x->argument_at(1), x->state_before());
         set_canonical(i);
         // and try to canonicalize even further
@@ -531,33 +529,6 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
         assert(t->is_primitive_type(), "should be a primitive type");
         // cls.isInstance(obj) always returns false for primitive classes
         set_constant(0);
-      }
-    }
-    break;
-  }
-  case vmIntrinsics::_isPrimitive        : {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Class.isPrimitive is known on constant classes:
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != nullptr && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      set_constant(t->is_primitive_type());
-    }
-    break;
-  }
-  case vmIntrinsics::_getModifiers: {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Optimize for Foo.class.getModifier()
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != nullptr && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      if (t->is_klass()) {
-        set_constant(t->as_klass()->modifier_flags());
-      } else {
-        assert(t->is_primitive_type(), "should be a primitive type");
-        set_constant(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
       }
     }
     break;
@@ -675,12 +646,13 @@ void Canonicalizer::do_CheckCast      (CheckCast*       x) {
       // Interface casts can't be statically optimized away since verifier doesn't
       // enforce interface types in bytecode.
       if (!is_interface && klass->is_subtype_of(x->klass())) {
+        assert(!x->klass()->is_value_klass() || x->klass() == klass, "Value klasses can't have subtypes");
         set_canonical(obj);
         return;
       }
     }
-    // checkcast of null returns null
-    if (obj->as_Constant() && obj->type()->as_ObjectType()->constant_value()->is_null_object()) {
+    // checkcast of null returns null for non null-free klasses
+    if (obj->is_null_obj()) {
       set_canonical(obj);
     }
   }
@@ -694,7 +666,7 @@ void Canonicalizer::do_InstanceOf     (InstanceOf*      x) {
       return;
     }
     // instanceof null returns false
-    if (obj->as_Constant() && obj->type()->as_ObjectType()->constant_value()->is_null_object()) {
+    if (obj->is_null_obj()) {
       set_constant(0);
     }
   }
@@ -752,7 +724,17 @@ void Canonicalizer::do_If(If* x) {
     return;
   }
 
+  // Simplify further when we have two constants.
   if (lt->is_constant() && rt->is_constant()) {
+    const ciType* l_exact_type = l->exact_type();
+    const ciType* r_exact_type = r->exact_type();
+    if (l_exact_type != nullptr && l_exact_type->is_value_klass() &&
+        r_exact_type != nullptr && r_exact_type->is_value_klass() && x->substitutability_check()) {
+      // If we have a substitutability check and both sides are known value types we must
+      // preserve it instead of performing a pointer comparison during compile time.
+      return;
+    }
+
     if (x->x()->as_Constant() != nullptr) {
       // pattern: If (lc cond rc) => simplify to: Goto
       BlockBegin* sux = x->x()->as_Constant()->compare(x->cond(), x->y(),
@@ -827,6 +809,10 @@ void Canonicalizer::do_If(If* x) {
 
 
 void Canonicalizer::do_TableSwitch(TableSwitch* x) {
+  // Keep the switch if we are profiling it
+  if (compilation()->profile_switches()) {
+    return;
+  }
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();
@@ -839,12 +825,25 @@ void Canonicalizer::do_TableSwitch(TableSwitch* x) {
 
 
 void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
+  // Keep the switch if we are profiling it
+  if (compilation()->profile_switches()) {
+    return;
+  }
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();
-    for (int i = 0; i < x->length(); i++) {
-      if (v == x->key_at(i)) {
-        sux = x->sux_at(i);
+    int low = 0;
+    int high = x->length() - 1;
+    while (low <= high) {
+      int mid = low + ((high - low) >> 1);
+      int key = x->key_at(mid);
+      if (key == v) {
+        sux = x->sux_at(mid);
+        break;
+      } else if (key > v) {
+        high = mid - 1;
+      } else {
+        low = mid + 1;
       }
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
@@ -857,14 +856,14 @@ void Canonicalizer::do_Throw          (Throw*           x) {}
 void Canonicalizer::do_Base           (Base*            x) {}
 void Canonicalizer::do_OsrEntry       (OsrEntry*        x) {}
 void Canonicalizer::do_ExceptionObject(ExceptionObject* x) {}
-void Canonicalizer::do_RoundFP        (RoundFP*         x) {}
 void Canonicalizer::do_UnsafeGet      (UnsafeGet*       x) {}
 void Canonicalizer::do_UnsafePut      (UnsafePut*       x) {}
 void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
 void Canonicalizer::do_ProfileCall    (ProfileCall*     x) {}
 void Canonicalizer::do_ProfileReturnType(ProfileReturnType* x) {}
-void Canonicalizer::do_ProfileInvoke  (ProfileInvoke*   x) {}
-void Canonicalizer::do_RuntimeCall    (RuntimeCall*     x) {}
+void Canonicalizer::do_ProfileInvoke    (ProfileInvoke* x) {}
+void Canonicalizer::do_ProfileACmpTypes (ProfileACmpTypes* x) {}
+void Canonicalizer::do_RuntimeCall      (RuntimeCall* x) {}
 void Canonicalizer::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
 #ifdef ASSERT
 void Canonicalizer::do_Assert         (Assert*          x) {}

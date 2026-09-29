@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class SyntheticTestDriver extends TestResult {
                 foundClasses.add(className);
                 if (testAttribute(
                         classFile,
-                        () -> classFile.findAttribute(Attributes.SYNTHETIC).orElse(null),
+                        () -> classFile.findAttribute(Attributes.synthetic()).orElse(null),
                         classFile.flags()::flags,
                         expectedClasses.keySet(),
                         className,
@@ -136,7 +136,7 @@ public class SyntheticTestDriver extends TestResult {
                     foundMethods.add(methodName);
                     if (testAttribute(
                             classFile,
-                            () -> method.findAttribute(Attributes.SYNTHETIC).orElse(null),
+                            () -> method.findAttribute(Attributes.synthetic()).orElse(null),
                             method.flags()::flags,
                             expectedMethods,
                             methodName,
@@ -162,7 +162,7 @@ public class SyntheticTestDriver extends TestResult {
                     foundFields.add(fieldName);
                     if (testAttribute(
                             classFile,
-                            () -> field.findAttribute(Attributes.SYNTHETIC).orElse(null),
+                            () -> field.findAttribute(Attributes.synthetic()).orElse(null),
                             field.flags()::flags,
                             expectedFields,
                             fieldName,

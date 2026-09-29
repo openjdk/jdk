@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 /*
  * @test
@@ -231,7 +232,7 @@ public class TLSRestrictions {
 
             // Run client on another JVM so that its properties cannot be in conflict
             // with server's.
-            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                     "-Dcert.dir=" + CERT_DIR,
                     "-Djava.security.debug=certpath",
                     "-classpath",
@@ -250,8 +251,7 @@ public class TLSRestrictions {
             Exception serverException = serverFuture.get(TIMEOUT, TimeUnit.MILLISECONDS);
             if (serverException instanceof SocketTimeoutException
                     || clientOut.contains("SocketTimeoutException")) {
-                System.out.println("The communication gets timeout and skips the test.");
-                return;
+                throw new SkippedException("The communication gets timeout.");
             }
 
             if (pass) {

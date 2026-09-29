@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.ServiceLoader;
@@ -72,40 +70,22 @@ import java.util.ServiceConfigurationError;
 
 public abstract class SelectorProvider {
 
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("selectorProvider"));
-        return null;
-    }
-    private SelectorProvider(Void ignore) { }
-
     /**
      * Initializes a new instance of this class.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("selectorProvider")}
      */
     protected SelectorProvider() {
-        this(checkPermission());
     }
 
     private static class Holder {
         static final SelectorProvider INSTANCE = provider();
 
-        @SuppressWarnings("removal")
         static SelectorProvider provider() {
-            PrivilegedAction<SelectorProvider> pa = () -> {
-                SelectorProvider sp;
-                if ((sp = loadProviderFromProperty()) != null)
-                    return sp;
-                if ((sp = loadProviderAsService()) != null)
-                    return sp;
-                return sun.nio.ch.DefaultSelectorProvider.get();
-            };
-            return AccessController.doPrivileged(pa);
+            SelectorProvider sp;
+            if ((sp = loadProviderFromProperty()) != null)
+                return sp;
+            if ((sp = loadProviderAsService()) != null)
+                return sp;
+            return sun.nio.ch.DefaultSelectorProvider.get();
         }
 
         private static SelectorProvider loadProviderFromProperty() {
@@ -119,8 +99,7 @@ public abstract class SelectorProvider {
                     NoSuchMethodException |
                     IllegalAccessException |
                     InvocationTargetException |
-                    InstantiationException |
-                    SecurityException x) {
+                    InstantiationException x) {
                 throw new ServiceConfigurationError(null, x);
             }
         }
@@ -130,17 +109,7 @@ public abstract class SelectorProvider {
                 ServiceLoader.load(SelectorProvider.class,
                                    ClassLoader.getSystemClassLoader());
             Iterator<SelectorProvider> i = sl.iterator();
-            for (;;) {
-                try {
-                    return i.hasNext() ? i.next() : null;
-                } catch (ServiceConfigurationError sce) {
-                    if (sce.getCause() instanceof SecurityException) {
-                        // Ignore the security exception, try the next provider
-                        continue;
-                    }
-                    throw sce;
-                }
-            }
+            return sl.findFirst().orElse(null);
         }
     }
 
@@ -314,10 +283,6 @@ public abstract class SelectorProvider {
      *
      * @throws  IOException
      *          If an I/O error occurs
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("inheritedChannel")}
      *
      * @since 1.5
      */

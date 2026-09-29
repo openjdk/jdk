@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,8 +46,8 @@ import org.openide.util.NbBundle.Messages;
         @ActionReference(path = "Shortcuts", name = "D-H")
 })
 @Messages({
-        "CTL_HideAction=Hide nodes",
-        "HINT_HideAction=Hide selected nodes"
+        "CTL_HideAction=Hide",
+        "HINT_HideAction=Hide selected nodes and live ranges"
 })
 public final class HideAction extends ModelAwareAction {
 
@@ -69,11 +71,18 @@ public final class HideAction extends ModelAwareAction {
         Set<Integer> selectedNodes = model.getSelectedNodes();
         HashSet<Integer> nodes = new HashSet<>(model.getHiddenNodes());
         nodes.addAll(selectedNodes);
+        InputGraph graph = model.getDiagram().getInputGraph();
+        for (int liveRangeId : model.getSelectedLiveRanges()) {
+            for (InputNode node : graph.getRelatedNodes(liveRangeId)) {
+                nodes.add(node.getId());
+            }
+        }
         model.setHiddenNodes(nodes);
     }
 
     @Override
     public boolean isEnabled(DiagramViewModel model) {
-        return model != null && !model.getSelectedNodes().isEmpty();
+        return model != null &&
+               !(model.getSelectedNodes().isEmpty() && model.getSelectedLiveRanges().isEmpty());
     }
 }

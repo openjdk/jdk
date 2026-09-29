@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 #define SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class ClassLoaderData;
 
@@ -37,7 +37,6 @@ class ClassLoaderData;
 
 class InstanceKlassFlags {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 #define IK_FLAGS_DO(flag)  \
     flag(rewritten                          , 1 << 0) /* methods rewritten. */ \
@@ -47,28 +46,45 @@ class InstanceKlassFlags {
     flag(has_nonstatic_concrete_methods     , 1 << 4) /* class/superclass/implemented interfaces has non-static, concrete methods */ \
     flag(declares_nonstatic_concrete_methods, 1 << 5) /* directly declares non-static, concrete methods */ \
     flag(shared_loading_failed              , 1 << 6) /* class has been loaded from shared archive */ \
-    flag(is_shared_boot_class               , 1 << 7) /* defining class loader is boot class loader */ \
-    flag(is_shared_platform_class           , 1 << 8) /* defining class loader is platform class loader */ \
-    flag(is_shared_app_class                , 1 << 9) /* defining class loader is app class loader */ \
+    flag(defined_by_boot_loader             , 1 << 7) /* defining class loader is boot class loader */ \
+    flag(defined_by_platform_loader         , 1 << 8) /* defining class loader is platform class loader */ \
+    flag(defined_by_app_loader              , 1 << 9) /* defining class loader is app class loader */ \
     flag(has_contended_annotations          , 1 << 10) /* has @Contended annotation */ \
     flag(has_localvariable_table            , 1 << 11) /* has localvariable information */ \
     flag(has_miranda_methods                , 1 << 12) /* True if this class has miranda methods in it's vtable */ \
-    flag(has_vanilla_constructor            , 1 << 13) /* True if klass has a vanilla default constructor */ \
-    flag(has_final_method                   , 1 << 14) /* True if klass has final method */ \
+    flag(has_final_method                   , 1 << 13) /* True if klass has final method */ \
+    flag(has_flat_fields                    , 1 << 14) /* has flat fields and related embedded section is not empty */ \
+    flag(is_empty_value_type                , 1 << 15) /* empty value type (*) */ \
+    flag(is_naturally_atomic                , 1 << 16) /* loaded/stored in one instruction*/ \
+    flag(must_be_atomic                     , 1 << 17) /* doesn't allow tearing */ \
+    flag(has_loosely_consistent_annotation  , 1 << 18) /* the class has the LooselyConsistentValue annotation WARNING: it doesn't automatically mean that the class allows tearing */ \
+    flag(has_strict_static_fields           , 1 << 19) /* True if strict static fields declared */ \
+    flag(trust_final_fields                 , 1 << 20) /* All instance final fields in this class should be trusted */ \
+    flag(has_null_restricted_static_fields  , 1 << 21) /* True if static null restricted fields declared */ \
+    flag(fail_over_verified                 , 1 << 22) /* class failed split verification but passed inference verification */ \
+    flag(has_strict_instance_fields         , 1 << 23) /* True if strict instance fields declared */ \
     /* end of list */
 
+    // (*) A value type is considered empty if it contains no non-static fields or
+    //  if it contains only empty value fields. Note that JITs have a slightly different
+    //  definition: empty value fields must be flat otherwise the container won't
+    //  be considered empty.
+
+public:
 #define IK_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,
   enum {
     IK_FLAGS_DO(IK_FLAGS_ENUM_NAME)
   };
 #undef IK_FLAGS_ENUM_NAME
 
+private:
 #define IK_STATUS_DO(status)  \
     status(is_being_redefined                , 1 << 0) /* True if the klass is being redefined */ \
     status(has_resolved_methods              , 1 << 1) /* True if the klass has resolved MethodHandle methods */ \
     status(has_been_redefined                , 1 << 2) /* class has been redefined */ \
     status(is_scratch_class                  , 1 << 3) /* class is the redefined scratch class */ \
     status(is_marked_dependent               , 1 << 4) /* class is the redefined scratch class */ \
+    status(has_init_deps_processed           , 1 << 5) /* all init dependencies are processed */ \
     /* end of list */
 
 #define IK_STATUS_ENUM_NAME(name, value)    _misc_##name = value,
@@ -77,12 +93,12 @@ class InstanceKlassFlags {
   };
 #undef IK_STATUS_ENUM_NAME
 
-  u2 shared_loader_type_bits() const {
-    return _misc_is_shared_boot_class|_misc_is_shared_platform_class|_misc_is_shared_app_class;
+  u2 builtin_loader_type_bits() const {
+    return _misc_defined_by_boot_loader|_misc_defined_by_platform_loader|_misc_defined_by_app_loader;
   }
 
   // These flags are write-once before the class is published and then read-only so don't require atomic updates.
-  u2 _flags;
+  u4 _flags;
 
   // These flags are written during execution so require atomic stores
   u1 _status;
@@ -101,13 +117,18 @@ class InstanceKlassFlags {
   IK_FLAGS_DO(IK_FLAGS_GET_SET)
 #undef IK_FLAGS_GET_SET
 
-  bool is_shared_unregistered_class() const {
-    return (_flags & shared_loader_type_bits()) == 0;
+  bool defined_by_other_loaders() const {
+    return (_flags & builtin_loader_type_bits()) == 0;
   }
 
-  void set_shared_class_loader_type(s2 loader_type);
+  void set_class_loader_type(const ClassLoaderData* cld);
 
-  void assign_class_loader_type(const ClassLoaderData* cld);
+  u4 flags() const { return _flags; }
+
+  static u4 is_empty_value_type_value() {
+    return _misc_is_empty_value_type;
+  }
+
   void assert_is_safe(bool set) NOT_DEBUG_RETURN;
 
   // Create getters and setters for the status values.
@@ -123,9 +144,11 @@ class InstanceKlassFlags {
   IK_STATUS_DO(IK_STATUS_GET_SET)
 #undef IK_STATUS_GET_SET
 
-  void atomic_set_bits(u1 bits)   { Atomic::fetch_then_or(&_status, bits); }
-  void atomic_clear_bits(u1 bits) { Atomic::fetch_then_and(&_status, (u1)(~bits)); }
+  void atomic_set_bits(u1 bits)   { AtomicAccess::fetch_then_or(&_status, bits); }
+  void atomic_clear_bits(u1 bits) { AtomicAccess::fetch_then_and(&_status, (u1)(~bits)); }
   void print_on(outputStream* st) const;
+
+  static ByteSize flags_offset() { return byte_offset_of(InstanceKlassFlags, _flags); }
 };
 
 #endif // SHARE_OOPS_INSTANCEKLASSFLAGS_HPP

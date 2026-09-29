@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.PreviewFeatures;
+import jdk.internal.value.Deserializer;
+import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
@@ -35,14 +39,13 @@ import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
 import static java.lang.constant.ConstantDescs.CD_byte;
-import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**
- *
- * The {@code Byte} class wraps a value of primitive type {@code byte}
- * in an object.  An object of type {@code Byte} contains a single
- * field whose type is {@code byte}.
+ * The {@code Byte} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code byte}. An object of type {@code Byte} contains a
+ * single field whose type is {@code byte}.
  *
  * <p>In addition, this class provides several methods for converting
  * a {@code byte} to a {@code String} and a {@code String} to a {@code
@@ -50,18 +53,26 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * with a {@code byte}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
  *
- * @author  Nakul Saraiya
- * @author  Joseph D. Darcy
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Byte} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
+ *
  * @see     java.lang.Number
  * @since   1.1
  */
 @jdk.internal.ValueBased
-public final class Byte extends Number implements Comparable<Byte>, Constable {
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Byte extends Number
+        implements Comparable<Byte>, Constable {
 
     /**
      * A constant holding the minimum value a {@code byte} can
@@ -79,8 +90,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * The {@code Class} instance representing the primitive type
      * {@code byte}.
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Byte>     TYPE = (Class<Byte>) Class.getPrimitiveClass("byte");
+    public static final Class<Byte> TYPE = Class.getPrimitiveClass("byte");
 
     /**
      * Returns a new {@code String} object representing the
@@ -106,6 +116,10 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
         return Optional.of(DynamicConstantDesc.ofNamed(BSM_EXPLICIT_CAST, DEFAULT_NAME, CD_byte, intValue()));
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
+    @AOTSafeClassInitializer
     private static final class ByteCache {
         private ByteCache() {}
 
@@ -118,8 +132,8 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
 
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(ByteCache.class);
-            if (archivedCache == null || archivedCache.length != size) {
-                Byte[] c = new Byte[size];
+            if (archivedCache == null) {
+                Byte[] c = newCacheArray(size);
                 byte value = (byte)-128;
                 for(int i = 0; i < size; i++) {
                     c[i] = new Byte(value++);
@@ -127,17 +141,38 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
                 archivedCache = c;
             }
             cache = archivedCache;
+            assert cache.length == size;
+        }
+
+        private static Byte[] newCacheArray(int size) {
+            // ValueClass.newReferenceArray requires a value class component.
+            if (PreviewFeatures.isEnabled()) {
+                return (Byte[]) ValueClass.newReferenceArray(Byte.class, size);
+            }
+            return new Byte[size];
         }
     }
 
     /**
      * Returns a {@code Byte} instance representing the specified
      * {@code byte} value.
-     * If a new {@code Byte} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Byte(byte)}, as this method is likely to yield
-     * significantly better space and time performance since
-     * all byte values are cached.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Byte} is an identity class.
+     *              If a new {@code Byte} instance is not required, this method
+     *              should generally be used in preference to the constructor
+     *              {@link #Byte(byte)}, as this method is likely to yield
+     *              significantly better space and time performance since
+     *              all byte values are cached.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Byte} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor,
+     *              whether cached or not.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  b a byte value.
      * @return a {@code Byte} instance representing {@code b}.
@@ -146,7 +181,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
     @IntrinsicCandidate
     public static Byte valueOf(byte b) {
         final int offset = 128;
-        return ByteCache.cache[(int)b + offset];
+        return ByteCache.cache[(int) b + offset];
     }
 
     /**
@@ -346,7 +381,8 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * {@link #valueOf(byte)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
+    @Deserializer("value")
     public Byte(byte value) {
         this.value = value;
     }
@@ -369,7 +405,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * {@code byte} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Byte} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Byte(String s) throws NumberFormatException {
         this.value = parseByte(s, 10);
     }
@@ -477,8 +513,8 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      *                  {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Byte) {
-            return value == ((Byte)obj).byteValue();
+        if (obj instanceof Byte b) {
+            return value == b.byteValue();
         }
         return false;
     }

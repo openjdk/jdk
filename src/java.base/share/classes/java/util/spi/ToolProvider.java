@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package java.util.spi;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -178,18 +176,14 @@ public interface ToolProvider {
      *
      * @throws NullPointerException if {@code name} is {@code null}
      */
-    @SuppressWarnings("removal")
     static Optional<ToolProvider> findFirst(String name) {
         Objects.requireNonNull(name);
         ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-        return AccessController.doPrivileged(
-            (PrivilegedAction<Optional<ToolProvider>>) () -> {
-                ServiceLoader<ToolProvider> sl =
-                    ServiceLoader.load(ToolProvider.class, systemClassLoader);
-                return StreamSupport.stream(sl.spliterator(), false)
-                    .filter(p -> p.name().equals(name))
-                    .findFirst();
-            });
+
+        ServiceLoader<ToolProvider> sl =
+            ServiceLoader.load(ToolProvider.class, systemClassLoader);
+        return StreamSupport.stream(sl.spliterator(), false)
+            .filter(p -> p.name().equals(name))
+            .findFirst();
     }
 }
-

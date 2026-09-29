@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,8 @@ public final class PropertyInfo {
         }
         if (!isInitedToIsGetter && this.readList != null) {
             for (MethodInfo info : this.readList) {
-                if ((this.read == null) || this.read.type.isAssignableFrom(info.type)) {
+                if ((this.read == null) || (!info.method.isDefault()
+                                            && this.read.type.isAssignableFrom(info.type))) {
                     this.read = info;
                     this.type = info.type;
                 }
@@ -89,6 +90,9 @@ public final class PropertyInfo {
         if (this.writeList != null) {
             for (MethodInfo info : this.writeList) {
                 if (writeType == null) {
+                    this.write = info;
+                    writeType = info.type;
+                } else if (isParentOfIncoming(this.write, info)) {
                     this.write = info;
                     writeType = info.type;
                 } else if (writeType.isAssignableFrom(info.type)) {
@@ -306,5 +310,17 @@ public final class PropertyInfo {
         return !map.isEmpty()
                 ? Collections.unmodifiableMap(map)
                 : Collections.emptyMap();
+    }
+
+    private static boolean isParentOfIncoming(MethodInfo current, MethodInfo incoming) {
+        if (null == current) {
+            return false;
+        }
+        Class<?> currentClass = current.method.getDeclaringClass();
+        Class<?> incomingClass = incoming.method.getDeclaringClass();
+        if (currentClass == incomingClass) {
+            return false;
+        }
+        return currentClass.isAssignableFrom(incomingClass);
     }
 }

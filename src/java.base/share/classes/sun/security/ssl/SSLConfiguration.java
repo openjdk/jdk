@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.security.ssl;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -38,10 +36,9 @@ import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLExtension.ClientExtensions;
 import sun.security.ssl.SSLExtension.ServerExtensions;
+import sun.security.ssl.SignatureScheme.SupportedSigSchemes;
 
 /**
  * SSL/(D)TLS configuration.
@@ -67,9 +64,6 @@ final class SSLConfiguration implements Cloneable {
     // the configured named groups for the "supported_groups" extensions
     String[]                   namedGroups;
 
-    // the maximum protocol version of enabled protocols
-    ProtocolVersion             maximumProtocolVersion;
-
     // Configurations per SSLSocket or SSLEngine instance.
     boolean                     isClientMode;
     boolean                     enableSessionCreation;
@@ -78,12 +72,11 @@ final class SSLConfiguration implements Cloneable {
     BiFunction<SSLSocket, List<String>, String> socketAPSelector;
     BiFunction<SSLEngine, List<String>, String> engineAPSelector;
 
-    @SuppressWarnings("removal")
-    HashMap<HandshakeCompletedListener, AccessControlContext>
-                                handshakeListeners;
+    HashSet<HandshakeCompletedListener> handshakeListeners;
 
     boolean                     noSniExtension;
     boolean                     noSniMatcher;
+    boolean                     isQuic;
 
     // To switch off the extended_master_secret extension.
     static final boolean useExtendedMasterSecret;
@@ -97,7 +90,7 @@ final class SSLConfiguration implements Cloneable {
         Utilities.getBooleanProperty("jdk.tls.allowLegacyMasterSecret", true);
 
     // Use TLS1.3 middlebox compatibility mode.
-    static final boolean useCompatibilityMode = Utilities.getBooleanProperty(
+    private static final boolean useCompatibilityMode = Utilities.getBooleanProperty(
             "jdk.tls.client.useCompatibilityMode", true);
 
     // Respond a close_notify alert if receiving close_notify alert.
@@ -105,7 +98,7 @@ final class SSLConfiguration implements Cloneable {
             "jdk.tls.acknowledgeCloseNotify", false);
 
     // Set the max size limit for Handshake Message to 2^15
-    static final int maxHandshakeMessageSize = GetIntegerAction.privilegedGetProperty(
+    static final int maxHandshakeMessageSize = Integer.getInteger(
             "jdk.tls.maxHandshakeMessageSize", 32768);
 
     // Limit the certificate chain length accepted from clients
@@ -120,6 +113,11 @@ final class SSLConfiguration implements Cloneable {
 
     static final boolean enableDtlsResumeCookie = Utilities.getBooleanProperty(
             "jdk.tls.enableDtlsResumeCookie", true);
+
+    // Number of NewSessionTickets that will be sent by the server.
+    static final int serverNewSessionTicketCount;
+    // Default for NewSessionTickets
+    static final int SERVER_NST_DEFAULT = 1;
 
     // Is the extended_master_secret extension supported?
     static {
@@ -142,7 +140,7 @@ final class SSLConfiguration implements Cloneable {
          * jdk.tls.maxCertificateChainLength system property works for both
          * server and client modes.
          */
-        Integer maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
+        Integer maxCertificateChainLength = Integer.getInteger(
                 "jdk.tls.maxCertificateChainLength");
         if (maxCertificateChainLength != null && maxCertificateChainLength >= 0) {
             globalPropSet = true;
@@ -159,7 +157,7 @@ final class SSLConfiguration implements Cloneable {
          *    property is set and its value >= 0, it uses that value.
          *  - Otherwise it is set to a default value of 8.
          */
-        Integer inboundClientLen = GetIntegerAction.privilegedGetProperty(
+        Integer inboundClientLen = Integer.getInteger(
                 "jdk.tls.server.maxInboundCertificateChainLength");
 
         // Default for jdk.tls.server.maxInboundCertificateChainLength is 8
@@ -181,8 +179,8 @@ final class SSLConfiguration implements Cloneable {
          *    property is set and its value >= 0, it uses that value.
          *  - Otherwise it is set to a default value of 10.
          */
-        Integer inboundServerLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.client.maxInboundCertificateChainLength");
+        Integer inboundServerLen = Integer.getInteger(
+            "jdk.tls.client.maxInboundCertificateChainLength");
 
         // Default for jdk.tls.client.maxInboundCertificateChainLength is 10
         if (inboundServerLen == null || inboundServerLen < 0) {
@@ -190,6 +188,33 @@ final class SSLConfiguration implements Cloneable {
                     maxCertificateChainLength : 10;
         } else {
             maxInboundServerCertChainLen = inboundServerLen;
+        }
+
+        /*
+         * jdk.tls.server.newSessionTicketCount system property
+         * Sets the number of NewSessionTickets sent to a TLS 1.3 resumption
+         * client.  The value must be between 0 and 10.  Default is defined by
+         * SERVER_NST_DEFAULT.
+         */
+        Integer nstServerCount = Integer.getInteger(
+            "jdk.tls.server.newSessionTicketCount");
+        if (nstServerCount == null || nstServerCount < 0 ||
+            nstServerCount > 10) {
+            serverNewSessionTicketCount = SERVER_NST_DEFAULT;
+            if (nstServerCount != null && SSLLogger.isOn() &&
+                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                SSLLogger.fine(
+                    "jdk.tls.server.newSessionTicketCount defaults to " +
+                        SERVER_NST_DEFAULT + " as the property was not " +
+                        "between 0 and 10");
+            }
+        } else {
+            serverNewSessionTicketCount = nstServerCount;
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                SSLLogger.fine(
+                    "jdk.tls.server.newSessionTicketCount set to " +
+                        serverNewSessionTicketCount);
+            }
         }
     }
 
@@ -214,16 +239,13 @@ final class SSLConfiguration implements Cloneable {
         this.maximumPacketSize = 0;         // please reset it explicitly later
 
         this.signatureSchemes = isClientMode ?
-                CustomizedClientSignatureSchemes.signatureSchemes :
-                CustomizedServerSignatureSchemes.signatureSchemes;
+                CustomizedClientSignatureSchemes.signatureSchemes != null ?
+                        CustomizedClientSignatureSchemes.signatureSchemes :
+                        SupportedSigSchemes.DEFAULT :
+                CustomizedServerSignatureSchemes.signatureSchemes != null ?
+                        CustomizedServerSignatureSchemes.signatureSchemes :
+                        SupportedSigSchemes.DEFAULT;
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
-        this.maximumProtocolVersion = ProtocolVersion.NONE;
-        for (ProtocolVersion pv : enabledProtocols) {
-            if (pv.compareTo(maximumProtocolVersion) > 0) {
-                this.maximumProtocolVersion = pv;
-            }
-        }
-
         // Configurations per SSLSocket or SSLEngine instance.
         this.isClientMode = isClientMode;
         this.enableSessionCreation = true;
@@ -291,13 +313,6 @@ final class SSLConfiguration implements Cloneable {
         sa = params.getProtocols();
         if (sa != null) {
             this.enabledProtocols = ProtocolVersion.namesOf(sa);
-
-            this.maximumProtocolVersion = ProtocolVersion.NONE;
-            for (ProtocolVersion pv : enabledProtocols) {
-                if (pv.compareTo(maximumProtocolVersion) > 0) {
-                    this.maximumProtocolVersion = pv;
-                }
-            }
         }   // otherwise, use the default values
 
         if (params.getNeedClientAuth()) {
@@ -335,7 +350,9 @@ final class SSLConfiguration implements Cloneable {
             // Note if 'ss' is empty, then no signature schemes should be
             // specified over the connections.
             this.signatureSchemes = ss;
-        }   // Otherwise, use the default values
+        } else {    // Otherwise, use the default values.
+            this.signatureSchemes = SupportedSigSchemes.DEFAULT;
+        }
 
         String[] ngs = params.getNamedGroups();
         if (ngs != null) {
@@ -352,15 +369,14 @@ final class SSLConfiguration implements Cloneable {
     }
 
     // SSLSocket only
-    @SuppressWarnings("removal")
     void addHandshakeCompletedListener(
             HandshakeCompletedListener listener) {
 
         if (handshakeListeners == null) {
-            handshakeListeners = new HashMap<>(4);
+            handshakeListeners = new HashSet<>(4);
         }
 
-        handshakeListeners.put(listener, AccessController.getContext());
+        handshakeListeners.add(listener);
     }
 
     // SSLSocket only
@@ -371,7 +387,7 @@ final class SSLConfiguration implements Cloneable {
             throw new IllegalArgumentException("no listeners");
         }
 
-        if (handshakeListeners.remove(listener) == null) {
+        if (!handshakeListeners.remove(listener)) {
             throw new IllegalArgumentException("listener not registered");
         }
 
@@ -488,7 +504,8 @@ final class SSLConfiguration implements Cloneable {
     void toggleClientMode() {
         this.isClientMode ^= true;
 
-        // Reset the signature schemes, if it was configured with SSLParameters.
+        // Reset the signature schemes, if it was configured with a
+        // system property.
         if (Arrays.equals(signatureSchemes,
                 CustomizedClientSignatureSchemes.signatureSchemes) ||
             Arrays.equals(signatureSchemes,
@@ -499,15 +516,23 @@ final class SSLConfiguration implements Cloneable {
         }
     }
 
+    public boolean isUseCompatibilityMode() {
+        return useCompatibilityMode && !isQuic;
+    }
+
+    public void setQuic(boolean quic) {
+        isQuic = quic;
+    }
+
     @Override
-    @SuppressWarnings({"removal","unchecked", "CloneDeclaresCloneNotSupported"})
+    @SuppressWarnings({"unchecked", "CloneDeclaresCloneNotSupported"})
     public Object clone() {
         // Note that only references to the configurations are copied.
         try {
             SSLConfiguration config = (SSLConfiguration)super.clone();
             if (handshakeListeners != null) {
                 config.handshakeListeners =
-                    (HashMap<HandshakeCompletedListener, AccessControlContext>)
+                    (HashSet<HandshakeCompletedListener>)
                             handshakeListeners.clone();
             }
 
@@ -541,8 +566,11 @@ final class SSLConfiguration implements Cloneable {
      * system property.
      */
     private static String[] getCustomizedSignatureScheme(String propertyName) {
-        String property = GetPropertyAction.privilegedGetProperty(propertyName);
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        String property = System.getProperty(propertyName);
+        // this method is called from class initializer; logging here
+        // will occasionally pin threads and deadlock if called from a virtual thread
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)
+                && !Thread.currentThread().isVirtual()) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
                             property + "'");
@@ -570,7 +598,9 @@ final class SSLConfiguration implements Cloneable {
                 if (scheme != null && scheme.isAvailable) {
                     signatureSchemes.add(schemeName);
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSLCTX)
+                                && !Thread.currentThread().isVirtual()) {
                         SSLLogger.fine(
                         "The current installed providers do not " +
                               "support signature scheme: " + schemeName);

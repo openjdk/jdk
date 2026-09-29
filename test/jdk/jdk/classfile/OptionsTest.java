@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,6 +24,7 @@
 /*
  * @test
  * @summary Testing ClassFile options on small Corpus.
+ * @bug 8384653
  * @run junit/othervm -Djunit.jupiter.execution.parallel.enabled=true OptionsTest
  */
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,6 +44,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.lang.classfile.*;
+import java.lang.constant.ConstantDescs;
 
 /**
  * OptionsTest
@@ -64,7 +64,7 @@ class OptionsTest {
     @MethodSource("corpus")
     void testAttributesProcessingOptionOnTransform(Path path) throws Exception {
         testNoUnstable(path, ClassFile.of().parse(
-                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATRIBUTES).transform(
+                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATTRIBUTES).transformClass(
                             ClassFile.of().parse(path),
                             ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL))));
     }
@@ -110,15 +110,28 @@ class OptionsTest {
 
         //test drop unknown at transform
         assertTrue(ClassFile.of().parse(
-                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).transform(
+                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).transformClass(
                         ClassFile.of().parse(classBytes),
                         ClassTransform.ACCEPT_ALL)).attributes().isEmpty());
+    }
+
+    @Test
+    void testDropDeadLabelsNoNPE() {
+        // see JDK-8384653
+        assertThrows(IllegalArgumentException.class, () ->
+                ClassFile.of(ClassFile.DeadLabelsOption.DROP_DEAD_LABELS).build(ClassDesc.of("C"), clb ->
+                        clb.withMethodBody("m", ConstantDescs.MTD_void, 0, cob ->
+                                cob.nop()
+                                   .exceptionCatch(cob.startLabel(),
+                                                   cob.endLabel(),
+                                                   cob.endLabel(),
+                                                   ConstantDescs.CD_Throwable))));
     }
 
     void testNoUnstable(Path path, ClassFileElement e) {
         if (e instanceof AttributedElement ae) ae.attributes().forEach(a ->
                 assertTrue(AttributeMapper.AttributeStability.UNSTABLE.ordinal() >= a.attributeMapper().stability().ordinal(),
                            () -> "class " + path + " contains unexpected " + a));
-        if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoUnstable(path, (ClassFileElement)ee));
+        if (e instanceof CompoundElement ce) ce.forEach(ee -> testNoUnstable(path, (ClassFileElement)ee));
     }
 }

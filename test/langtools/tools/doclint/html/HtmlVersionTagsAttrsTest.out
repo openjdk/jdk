@@ -226,7 +226,7 @@ HtmlVersionTagsAttrsTest.java:67: error: attribute not supported in HTML5: width
 HtmlVersionTagsAttrsTest.java:68: error: attribute not supported in HTML5: name
      * <a name="AnchorTest">Anchor Test</a>
           ^
-HtmlVersionTagsAttrsTest.java:69: error: attribute "border" for table only accepts "" or "1": BORDER
+HtmlVersionTagsAttrsTest.java:69: error: attribute "border" for table only accepts "" or "1": 0
      * <table border="0">
               ^
 HtmlVersionTagsAttrsTest.java:71: error: no caption for table
@@ -259,19 +259,7 @@ HtmlVersionTagsAttrsTest.java:97: error: unknown tag: hgroup
 HtmlVersionTagsAttrsTest.java:100: error: unknown tag: hgroup
      * </hgroup>
        ^
-HtmlVersionTagsAttrsTest.java:103: error: unknown tag: details
-     * <details>
-       ^
-HtmlVersionTagsAttrsTest.java:104: error: unknown tag: summary
-     * <summary>Summary</summary>
-       ^
-HtmlVersionTagsAttrsTest.java:104: error: unknown tag: summary
-     * <summary>Summary</summary>
-                       ^
-HtmlVersionTagsAttrsTest.java:106: error: unknown tag: details
-     * </details>
-       ^
-HtmlVersionTagsAttrsTest.java:129: error: element not allowed in documentation comments: <main>
+HtmlVersionTagsAttrsTest.java:125: error: element not allowed in documentation comments: <main>
      * <main>
        ^
 HtmlVersionTagsAttrsTest.java:161: error: heading not found for </section>
@@ -298,7 +286,7 @@ HtmlVersionTagsAttrsTest.java:181: error: tag not allowed here: <footer>
 HtmlVersionTagsAttrsTest.java:184: error: element not allowed in documentation comments: <main>
      * <main>
        ^
-HtmlVersionTagsAttrsTest.java:189: error: attribute "border" for table only accepts "" or "1": BORDER
+HtmlVersionTagsAttrsTest.java:189: error: attribute "border" for table only accepts "" or "1": 2
      * <table border="2">
               ^
 HtmlVersionTagsAttrsTest.java:191: error: no caption for table
@@ -310,5 +298,5 @@ HtmlVersionTagsAttrsTest.java:202: error: no caption for table
 HtmlVersionTagsAttrsTest.java:205: error: no caption for table
      * </table>
        ^
-102 errors
+98 errors
 2 warnings

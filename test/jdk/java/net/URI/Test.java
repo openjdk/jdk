@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 /* @test
  * @summary Unit test for java.net.URI
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
- *      7171415 6339649 6933879 8037396 8272072 8051627 8297687
+ *      7171415 6339649 6933879 8037396 8272072 8051627 8297687 8353013
+ *      8391603
  * @author Mark Reinhold
+ * @run main/othervm Test
  */
 
 import java.io.ByteArrayInputStream;
@@ -1041,9 +1043,19 @@ public class Test {
         test("http://[1:2:3:4:5:6:7:8:9]").x().z();
         test("http://[1:2:3:4:5:6:7:8%]").x().z();
         test("http://[1:2:3:4:5:6:7:8%!/]").x().z();
+        // Oversized IPv4 octet in IPv4-compatible IPv6 address
         test("http://[::1.2.3.300]").x().z();
+        // Oversized IPv4 octet in IPv4-compatible IPv6 address, stressing NFE
+        test("http://[::1.2.3.4" + Long.MAX_VALUE + "]").x().z();
+        // Oversized IPv4 octet in IPv4-mapped IPv6 address
+        test("http://[::FFFF:1.2.3.300]").x().z();
+        // Oversized IPv4 octet in IPv4-mapped IPv6 address, stressing NFE
+        test("http://[::FFFF:1.2.3.4" + Long.MAX_VALUE + "]").x().z();
         test("http://1.2.3").psa().x().z();
+        // Oversized IPv4 octet
         test("http://1.2.3.300").psa().x().z();
+        // Oversized IPv4 octet, stressing NFE
+        test("http://1.2.3.4" + Long.MAX_VALUE).psa().x().z();
         test("http://1.2.3.4.5").psa().x().z();
         test("http://[1.2.3.4:5]").x().z();
         test("http://1:2:3:4:5:6:7:8").psa().x().z();
@@ -1136,6 +1148,53 @@ public class Test {
             norm().p("b");
         test("a/../b:c").p("a/../b:c").z()
             .norm().p("./b:c").z();
+
+        // Relative URI empty path segment normalization
+        String[] slashes = {"/", "//", "///", "////"};
+        for (var s1 : slashes) {
+            test("/1" + s1).p("/1" + s1).z()
+                    .norm().p("/1/").z();
+            test("/1" + s1 + "2").p("/1" + s1 + "2").z()
+                    .norm().p("/1/2").z();
+            test("///1" + s1).p("/1" + s1).z()
+                    .norm().p("/1/").z();
+            test("///1" + s1 + "2").p("/1" + s1 + "2").z()
+                    .norm().p("/1/2").z();
+            for (var s2 : slashes) {
+                test("/1" + s1 + "2" + s2).p("/1" + s1 + "2" + s2).z()
+                        .norm().p("/1/2/").z();
+                test("///1" + s1 + "2" + s2).p("/1" + s1 + "2" + s2).z()
+                        .norm().p("/1/2/").z();
+            }
+        }
+
+        // Absolute URI empty path segment normalization
+        for (var s1 : slashes) {
+            test("//a" + s1).h("a").p(s1).z()
+                    .norm().h("a").p("/").z();
+            test("//a" + s1 + "1").h("a").p(s1 + "1").z()
+                    .norm().h("a").p("/1").z();
+            test("s://a" + s1).s("s").h("a").p(s1).z()
+                    .norm().s("s").h("a").p("/").z();
+            test("s://a" + s1 + "1").s("s").h("a").p(s1 + "1").z()
+                    .norm().s("s").h("a").p("/1").z();
+            for (var s2 : slashes) {
+                test("//a" + s1 + "1" + s2).h("a").p(s1 + "1" + s2).z()
+                        .norm().h("a").p("/1/").z();
+                test("//a" + s1 + "1" + s2 + "2").h("a").p(s1 + "1" + s2 + "2").z()
+                        .norm().h("a").p("/1/2").z();
+                test("s://a" + s1 + "1" + s2).s("s").h("a").p(s1 + "1" + s2).z()
+                        .norm().s("s").h("a").p("/1/").z();
+                test("s://a" + s1 + "1" + s2 + "2").s("s").h("a").p(s1 + "1" + s2 + "2").z()
+                        .norm().s("s").h("a").p("/1/2").z();
+                for (var s3 : slashes) {
+                    test("//a" + s1 + "1" + s2 + "2" + s3).h("a").p(s1 + "1" + s2 + "2" + s3).z()
+                            .norm().h("a").p("/1/2/").z();
+                    test("s://a" + s1 + "1" + s2 + "2" + s3).s("s").h("a").p(s1 + "1" + s2 + "2" + s3).z()
+                            .norm().s("s").h("a").p("/1/2/").z();
+                }
+            }
+        }
 
         // Normalization of already normalized URI should yield the
         // same URI
@@ -1620,6 +1679,7 @@ public class Test {
         b8051627();
         b8272072();
         b8297687();
+        b8353013();
     }
 
     private static void b8297687() {
@@ -1784,6 +1844,39 @@ public class Test {
         } catch (URISyntaxException e) {
             throw new AssertionError("shouldn't ever happen", e);
         }
+    }
+
+    // 8353013 - Increase test coverage for cases where the authority component of a hierarchical
+    // URI has a host component that starts with a number.
+    private static void b8353013() {
+        testCreate("https://0.0.0.1").s("https").h("0.0.0.1").p("").z();
+        testCreate("https://00.0.0.2").s("https").h("00.0.0.2").p("").z();
+        testCreate("https://000.0.0.3").s("https").h("000.0.0.3").p("").z();
+        testCreate("https://0000.0.0.4").s("https").h("0000.0.0.4").p("").z();
+
+        testCreate("https://00000.0.0.5").s("https").h("00000.0.0.5").p("").z();
+        testCreate("https://00001.0.0.6").s("https").h("00001.0.0.6").p("").z();
+
+        testCreate("https://01.0.0.1").s("https").h("01.0.0.1").p("").z();
+
+        testCreate("https://111111.2.3.com").s("https").h("111111.2.3.com").p("").z();
+
+        testCreate("https://1.example.com").s("https").h("1.example.com").p("").z();
+        testCreate("https://12.example.com").s("https").h("12.example.com").p("").z();
+        testCreate("https://123.example.com").s("https").h("123.example.com").p("").z();
+        testCreate("https://1234.example.com").s("https").h("1234.example.com").p("").z();
+        testCreate("https://12345.example.com").s("https").h("12345.example.com").p("").z();
+
+        testCreate("https://98765432101.example.com").s("https").h("98765432101.example.com").p("").z();
+        testCreate("https://98765432101.www.example.com/").s("https").h("98765432101.www.example.com").p("/").z();
+        testCreate("https://98765432101.www.example.com").s("https").h("98765432101.www.example.com").p("").z();
+
+        testCreate("https://9223372036854775808.example.com").s("https").h("9223372036854775808.example.com").p("").z();
+        testCreate("https://9223372036854775808.www.example.com").s("https").h("9223372036854775808.www.example.com").p("").z();
+        testCreate("https://9223372036854775808.xyz.abc.com").s("https").h("9223372036854775808.xyz.abc.com").p("").z();
+        testCreate("https://9223372036854775808.xyz.abc.pqr.com").s("https").h("9223372036854775808.xyz.abc.pqr.com").p("").z();
+
+        testCreate("https://256.example.com").s("https").h("256.example.com").p("").z();
     }
 
     public static void main(String[] args) throws Exception {

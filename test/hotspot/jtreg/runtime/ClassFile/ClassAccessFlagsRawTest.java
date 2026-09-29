@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,17 @@
 
 /**
  * @test
- * @bug 8291360
+ * @bug 8291360 8293448
  * @summary Test getting a class's raw access flags using java.lang.Class API
  * @modules java.base/java.lang:open
+ * @enablePreview
  * @compile classAccessFlagsRaw.jcod
  * @run main/othervm ClassAccessFlagsRawTest
  */
 
+import java.lang.classfile.ClassFile;
 import java.lang.reflect.*;
+import java.util.Set;
 
 public class ClassAccessFlagsRawTest {
 
@@ -48,31 +51,65 @@ public class ClassAccessFlagsRawTest {
 
     public static void main(String argv[]) throws Throwable {
         Class<?> cl = java.lang.Class.class;
-        m = cl.getDeclaredMethod("getClassAccessFlagsRaw", new Class[0]);
+        m = cl.getDeclaredMethod("getClassFileAccessFlags", new Class[0]);
         m.setAccessible(true);
 
-        testIt("SUPERset", 0x21);  // ACC_SUPER 0x20 + ACC_PUBLIC 0x1
-        testIt("SUPERnotset", Modifier.PUBLIC);
+        testIt("SUPERset", Modifier.PUBLIC | ClassFile.ACC_IDENTITY);
+        // Because of the repurposing of ACC_SUPER into ACC_IDENTITY by JEP 401, the VM now fixes missing ACC_IDENTITY flags in old class files
+        testIt("SUPERnotset", Modifier.PUBLIC | ClassFile.ACC_IDENTITY);
 
-        // test primitive array.  should return ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
-        int flags = (int)m.invoke((new int[3]).getClass());
+        // Test that primitive should return ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
+        int[] arr = new int[3];
+        if (!arr.getClass().getComponentType().isPrimitive()) {
+            throw new RuntimeException("not primitive");
+        }
+        int flags = (int)m.invoke(arr.getClass().getComponentType());
         if (flags != (Modifier.ABSTRACT | Modifier.FINAL | Modifier.PUBLIC)) {
             throw new RuntimeException(
-                "expected 0x411, got 0x" + Integer.toHexString(flags) + " for primitive array");
+                "expected 0x411, got 0x" + Integer.toHexString(flags) + " for primitive type");
         }
 
-        // test object array.  should return flags of component.
+        // Test that primitive array raw access flags return 0.
+        flags = (int)m.invoke(arr.getClass());
+        if (flags != 0) {
+            throw new RuntimeException(
+                "expected 0x0 got 0x" + Integer.toHexString(flags) + " for primitive array");
+        }
+
+        // Test that the modifier flags return element type flags.
+        flags = (int)arr.getClass().getModifiers();
+        if (flags != (Modifier.ABSTRACT | Modifier.FINAL | Modifier.PUBLIC | ClassFile.ACC_IDENTITY)) {
+            throw new RuntimeException(
+                "expected 0x431, got 0x" + Integer.toHexString(flags) + " for primitive type");
+        }
+
+        // Test that AccessFlags set will return element type access flags.
+        Set<AccessFlag> aacc = arr.getClass().accessFlags();
+        if (!aacc.containsAll(Set.of(AccessFlag.FINAL, AccessFlag.ABSTRACT, AccessFlag.PUBLIC))) {
+            throw new RuntimeException(
+                "AccessFlags should contain FINAL, ABSTRACT and PUBLIC for primitive type");
+        }
+
+        // Test object array.  Raw access flags are 0 for arrays.
         flags = (int)m.invoke((new SUPERnotset[2]).getClass());
-        if (flags != Modifier.PUBLIC) {
+        if (flags != 0) {
+            throw new RuntimeException(
+                "expected 0x0, got 0x" + Integer.toHexString(flags) + " for object array");
+        }
+
+        // Test object array component type.
+        flags = (int)m.invoke((new SUPERnotset[2]).getClass().getComponentType());
+        // Because of the repurposing of ACC_SUPER into ACC_IDENTITY by JEP 401, the VM now fixes missing ACC_IDENTITY flags in old class files
+        if (flags != (Modifier.PUBLIC | ClassFile.ACC_IDENTITY)) {
             throw new RuntimeException(
                 "expected 0x1, got 0x" + Integer.toHexString(flags) + " for object array");
         }
 
         // test multi-dimensional object array.  should return flags of component.
         flags = (int)m.invoke((new SUPERnotset[4][2]).getClass());
-        if (flags != Modifier.PUBLIC) {
+        if (flags != 0) {
             throw new RuntimeException(
-                "expected 0x1, got 0x" + Integer.toHexString(flags) + " for object array");
+                "expected 0x0, got 0x" + Integer.toHexString(flags) + " for object array");
         }
     }
 }

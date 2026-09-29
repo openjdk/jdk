@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  *          java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestMasterSecret
- * @run main/othervm -Djava.security.manager=allow TestMasterSecret sm TestMasterSecret.policy
  */
 
 import java.io.BufferedReader;
@@ -43,6 +42,8 @@ import java.util.Arrays;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import jtreg.SkippedException;
 import sun.security.internal.interfaces.TlsMasterSecret;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 
@@ -57,8 +58,7 @@ public class TestMasterSecret extends PKCS11Test {
     @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyGenerator", "SunTlsMasterSecret") == null) {
-            System.out.println("Not supported by provider, skipping");
-            return;
+            throw new SkippedException("Not supported by provider, skipping");
         }
 
         try (BufferedReader reader = Files.newBufferedReader(

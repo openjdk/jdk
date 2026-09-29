@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
@@ -37,8 +36,8 @@
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
+#include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
-#include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
@@ -51,11 +50,12 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/thread.inline.hpp"
 
 typedef JfrCheckpointManager::BufferPtr BufferPtr;
 typedef JfrCheckpointManager::ConstBufferPtr ConstBufferPtr;
@@ -117,16 +117,16 @@ bool JfrCheckpointManager::initialize_early() {
   assert(_thread_local_mspace == nullptr, "invariant");
   _thread_local_mspace = new JfrThreadLocalCheckpointMspace();
   if (_thread_local_mspace == nullptr || !_thread_local_mspace->initialize(thread_local_buffer_size,
-                                                                        thread_local_buffer_prealloc_count,
-                                                                        thread_local_buffer_prealloc_count)) {
+                                                                           thread_local_buffer_prealloc_count,
+                                                                           thread_local_buffer_prealloc_count)) {
     return false;
   }
 
   assert(_virtual_thread_local_mspace == nullptr, "invariant");
   _virtual_thread_local_mspace = new JfrThreadLocalCheckpointMspace();
   if (_virtual_thread_local_mspace == nullptr || !_virtual_thread_local_mspace->initialize(virtual_thread_local_buffer_size,
-                                                                                        JFR_MSPACE_UNLIMITED_CACHE_SIZE,
-                                                                                        virtual_thread_local_buffer_prealloc_count)) {
+                                                                                           JFR_MSPACE_UNLIMITED_CACHE_SIZE,
+                                                                                           virtual_thread_local_buffer_prealloc_count)) {
     return false;
   }
   return true;
@@ -176,6 +176,7 @@ static inline bool is_global(ConstBufferPtr buffer) {
   return buffer->context() == JFR_GLOBAL;
 }
 
+#ifdef ASSERT
 static inline bool is_thread_local(ConstBufferPtr buffer) {
   assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_THREADLOCAL;
@@ -185,6 +186,7 @@ static inline bool is_virtual_thread_local(ConstBufferPtr buffer) {
   assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_VIRTUAL_THREADLOCAL;
 }
+#endif // ASSERT
 
 BufferPtr JfrCheckpointManager::lease_global(Thread* thread, bool previous_epoch /* false */, size_t size /* 0 */) {
   JfrCheckpointMspace* const mspace = instance()._global_mspace;
@@ -255,6 +257,7 @@ BufferPtr JfrCheckpointManager::acquire_virtual_thread_local(Thread* thread, siz
 BufferPtr JfrCheckpointManager::renew(ConstBufferPtr old, Thread* thread, size_t size, JfrCheckpointBufferKind kind /* JFR_THREADLOCAL */) {
   assert(old != nullptr, "invariant");
   assert(old->acquired_by_self(), "invariant");
+  assert(!old->retired(), "invariant");
   if (kind == JFR_GLOBAL) {
     return lease_global(thread, instance()._global_mspace->in_previous_epoch_list(old), size);
   }
@@ -491,33 +494,29 @@ class VirtualThreadLocalCheckpointWriteOp {
 };
 
 typedef CheckpointWriteOp<JfrCheckpointManager::Buffer> WriteOperation;
+typedef ExclusiveOp<WriteOperation> ExclusiveWriteOperation;
 typedef MutexedWriteOp<WriteOperation> MutexedWriteOperation;
 typedef ReleaseWithExcisionOp<JfrCheckpointMspace, JfrCheckpointMspace::LiveList> ReleaseOperation;
-typedef CompositeOperation<MutexedWriteOperation, ReleaseOperation> WriteReleaseOperation;
+typedef CompositeOperation<ExclusiveWriteOperation, ReleaseOperation> WriteReleaseOperation;
 typedef VirtualThreadLocalCheckpointWriteOp<JfrCheckpointManager::Buffer> VirtualThreadLocalCheckpointOperation;
 typedef MutexedWriteOp<VirtualThreadLocalCheckpointOperation> VirtualThreadLocalWriteOperation;
 
-void JfrCheckpointManager::begin_epoch_shift() {
+void JfrCheckpointManager::shift_epoch() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  JfrTraceIdEpoch::begin_epoch_shift();
-}
-
-void JfrCheckpointManager::end_epoch_shift() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  debug_only(const u1 current_epoch = JfrTraceIdEpoch::current();)
-  JfrTraceIdEpoch::end_epoch_shift();
+  DEBUG_ONLY(const u1 current_epoch = JfrTraceIdEpoch::current();)
+  JfrTraceIdEpoch::shift_epoch();
   assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
-  JfrStringPool::on_epoch_shift();
 }
 
 size_t JfrCheckpointManager::write() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   WriteOperation wo(chunkwriter());
-  MutexedWriteOperation mwo(wo);
-  _thread_local_mspace->iterate(mwo, true); // previous epoch list
+  // Must take exclusive ownership before writing, because non-Java threads can still have active usage.
+  ExclusiveWriteOperation ewo(wo);
+  _thread_local_mspace->iterate(ewo, true); // previous epoch list
   assert(_global_mspace->free_list_is_empty(), "invariant");
   ReleaseOperation ro(_global_mspace, _global_mspace->live_list(true)); // previous epoch list
-  WriteReleaseOperation wro(&mwo, &ro);
+  WriteReleaseOperation wro(&ewo, &ro);
   process_live_list(wro, _global_mspace, true); // previous epoch list
   // Do virtual thread local list last. Careful, the vtlco destructor writes to chunk.
   VirtualThreadLocalCheckpointOperation vtlco(chunkwriter());
@@ -527,19 +526,22 @@ size_t JfrCheckpointManager::write() {
 }
 
 typedef DiscardOp<DefaultDiscarder<JfrCheckpointManager::Buffer> > DiscardOperation;
-typedef CompositeOperation<DiscardOperation, ReleaseOperation> DiscardReleaseOperation;
+typedef ExclusiveDiscardOp<DefaultDiscarder<JfrCheckpointManager::Buffer> > ExclusiveDiscardOperation;
+typedef CompositeOperation<ExclusiveDiscardOperation, ReleaseOperation> DiscardReleaseOperation;
 
 size_t JfrCheckpointManager::clear() {
   JfrTraceIdLoadBarrier::clear();
   clear_type_set();
-  DiscardOperation dop(mutexed); // mutexed discard mode
-  _thread_local_mspace->iterate(dop, true); // previous epoch list
+  // Must take exclusive ownership before discarding, because non-Java threads can still have active usage.
+  ExclusiveDiscardOperation edo(mutexed);
+  _thread_local_mspace->iterate(edo, true); // previous epoch list
+  DiscardOperation dop(mutexed); // already has exclusive ownership discard mode
   _virtual_thread_local_mspace->iterate(dop, true); // previous epoch list
   ReleaseOperation ro(_global_mspace, _global_mspace->live_list(true)); // previous epoch list
-  DiscardReleaseOperation dro(&dop, &ro);
+  DiscardReleaseOperation dro(&edo, &ro);
   assert(_global_mspace->free_list_is_empty(), "invariant");
   process_live_list(dro, _global_mspace, true); // previous epoch list
-  return dop.elements();
+  return edo.elements() + dop.elements();
 }
 
 size_t JfrCheckpointManager::write_static_type_set(Thread* thread) {
@@ -589,12 +591,14 @@ void JfrCheckpointManager::clear_type_set() {
     MutexLocker module_lock(Module_lock);
     JfrTypeSet::clear(&writer, &leakp_writer);
   }
-  JfrDeprecationManager::on_type_set(leakp_writer, nullptr, thread);
-  // We placed a blob in the Deprecated subsystem by moving the information
-  // from the leakp writer. For the real writer, the data will not be
-  // committed, because the JFR system is yet to be started.
-  // Therefore, the writer is cancelled before its destructor is run,
-  // to avoid writing unnecessary information into the checkpoint system.
+  JfrAddRefCountedBlob add_blob(leakp_writer);
+  JfrDeprecationManager::on_type_set(nullptr, thread);
+  // We installed a blob in the JfrReferenceCountedStorage subsystem
+  // by moving the information from the leakp writer.
+  // For the real writer, the data will not be committed,
+  // because the JFR system is yet to be started.
+  // Therefore, we cancel the writer before its destructor is run
+  // to avoid writing invalid information into the checkpoint system.
   writer.cancel();
 }
 
@@ -613,23 +617,24 @@ void JfrCheckpointManager::write_type_set() {
       MutexLocker module_lock(thread, Module_lock);
       JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
     }
+    JfrAddRefCountedBlob add_blob(leakp_writer);
     if (LeakProfiler::is_running()) {
-      ObjectSampleCheckpoint::on_type_set(leakp_writer);
+      ObjectSampleCheckpoint::on_type_set(thread);
     }
-    // Place this call after ObjectSampleCheckpoint::on_type_set.
-    JfrDeprecationManager::on_type_set(leakp_writer, _chunkwriter, thread);
+    JfrDeprecationManager::on_type_set(_chunkwriter, thread);
   }
   write();
 }
 
 void JfrCheckpointManager::on_unloading_classes() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  JfrCheckpointWriter writer(Thread::current());
+  Thread* const current = Thread::current();
+  // Take the epoch shift lock to ensure no epoch shift
+  // occurs during artifact serialization (for concurrent GCs).
+  ConditionalMutexLocker lock(current, JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
+  JfrCheckpointWriter writer(current);
   JfrTypeSet::on_unloading_classes(&writer);
-  if (LeakProfiler::is_running()) {
-    ObjectSampleCheckpoint::on_type_set_unload(writer);
-  }
-  JfrDeprecationManager::on_type_set_unload(writer);
+  JfrAddRefCountedBlob add_blob(writer, false /* move */, false /* reset */);
 }
 
 static size_t flush_type_set(Thread* thread) {
@@ -678,18 +683,40 @@ void JfrCheckpointManager::write_checkpoint(Thread* thread, traceid tid /* 0 */,
   JfrTypeManager::write_checkpoint(thread, tid, vthread);
 }
 
-class JfrNotifyClosure : public ThreadClosure {
+void JfrCheckpointManager::write_simplified_vthread_checkpoint(traceid vtid) {
+  JfrTypeManager::write_simplified_vthread_checkpoint(vtid);
+}
+
+// Reset thread local state used for object allocation sampling.
+static void clear_last_allocated_bytes(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  assert(!JfrRecorder::is_recording(), "invariant");
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+  if (tl->last_allocated_bytes() != 0) {
+    tl->clear_last_allocated_bytes();
+  }
+  assert(tl->last_allocated_bytes() == 0, "invariant");
+}
+
+class JfrNotifyClosure : public StackObj {
+ private:
+  bool _clear;
  public:
-  void do_thread(Thread* thread) {
-    assert(thread != nullptr, "invariant");
+  JfrNotifyClosure(bool clear) : _clear(clear) {}
+  void do_thread(JavaThread* jt) {
+    assert(jt != nullptr, "invariant");
     assert_locked_or_safepoint(Threads_lock);
-    JfrJavaEventWriter::notify(JavaThread::cast(thread));
+    JfrJavaEventWriter::notify(jt);
+    if (_clear) {
+      clear_last_allocated_bytes(jt);
+    }
   }
 };
 
-void JfrCheckpointManager::notify_threads() {
+void JfrCheckpointManager::notify_threads(bool clear /* false */) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  JfrNotifyClosure tc;
+  JfrNotifyClosure tc(clear);
   JfrJavaThreadIterator iter;
   while (iter.has_next()) {
     tc.do_thread(iter.next());

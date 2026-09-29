@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.IsoEra;
@@ -103,6 +105,8 @@ import java.util.Objects;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A date without a time-zone in the ISO-8601 calendar system,
  * such as {@code 2007-12-03}.
@@ -125,11 +129,18 @@ import java.util.stream.Stream;
  * to be accurate will find the ISO-8601 approach unsuitable.
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code LocalDate} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -137,8 +148,25 @@ import java.util.stream.Stream;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class LocalDate
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class LocalDate
         implements Temporal, TemporalAdjuster, ChronoLocalDate, Serializable {
+
+    /**
+     * For backward compatibility of the serialized {@code LocalDate.class} object,
+     * explicitly declare the types of the serialized fields as defined in Java SE 8.
+     * Instances of {@code LocalDate} are serialized using the dedicated
+     * serialized form by {@code writeReplace}.
+     * @serialField year int The year.
+     * @serialField month short The month-of-year.
+     * @serialField day short The day-of-month.
+     */
+    @Serial
+    private static final ObjectStreamField[] serialPersistentFields = {
+            new ObjectStreamField("year", int.class),
+            new ObjectStreamField("month", short.class),
+            new ObjectStreamField("day", short.class)
+    };
 
     /**
      * The minimum supported {@code LocalDate}, '-999999999-01-01'.
@@ -174,17 +202,17 @@ public final class LocalDate
     static final long DAYS_0000_TO_1970 = (DAYS_PER_CYCLE * 5L) - (30L * 365L + 7L);
 
     /**
-     * The year.
+     * @serial The year.
      */
-    private final int year;
+    private final transient int year;
     /**
-     * The month-of-year.
+     * @serial The month-of-year.
      */
-    private final short month;
+    private final transient byte month;
     /**
-     * The day-of-month.
+     * @serial The day-of-month.
      */
-    private final short day;
+    private final transient byte day;
 
     //-----------------------------------------------------------------------
     /**
@@ -488,8 +516,8 @@ public final class LocalDate
      */
     private LocalDate(int year, int month, int dayOfMonth) {
         this.year = year;
-        this.month = (short) month;
-        this.day = (short) dayOfMonth;
+        this.month = (byte) month;
+        this.day = (byte) dayOfMonth;
     }
 
     //-----------------------------------------------------------------------
@@ -2131,10 +2159,7 @@ public final class LocalDate
      */
     @Override
     public int hashCode() {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        return (yearValue & 0xFFFFF800) ^ ((yearValue << 11) + (monthValue << 6) + (dayValue));
+        return (year & 0xFFFFF800) ^ ((year << 11) + (month << 6) + day);
     }
 
     //-----------------------------------------------------------------------
@@ -2147,28 +2172,9 @@ public final class LocalDate
      */
     @Override
     public String toString() {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        int absYear = Math.abs(yearValue);
-        StringBuilder buf = new StringBuilder(10);
-        if (absYear < 1000) {
-            if (yearValue < 0) {
-                buf.append(yearValue - 10000).deleteCharAt(1);
-            } else {
-                buf.append(yearValue + 10000).deleteCharAt(0);
-            }
-        } else {
-            if (yearValue > 9999) {
-                buf.append('+');
-            }
-            buf.append(yearValue);
-        }
-        return buf.append(monthValue < 10 ? "-0" : "-")
-            .append(monthValue)
-            .append(dayValue < 10 ? "-0" : "-")
-            .append(dayValue)
-            .toString();
+        var buf = new StringBuilder(10);
+        DateTimeHelper.formatTo(buf, this);
+        return buf.toString();
     }
 
     //-----------------------------------------------------------------------
@@ -2197,6 +2203,7 @@ public final class LocalDate
      * @throws InvalidObjectException always
      */
     @java.io.Serial
+    @SuppressWarnings("serial") // this method is not invoked for value classes
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests DefaultTreeModel encoding
- * @run main/othervm -Djava.security.manager=allow javax_swing_tree_DefaultTreeModel
+ * @run main/othervm javax_swing_tree_DefaultTreeModel
  * @author Sergey Malenkov
  */
 
@@ -35,7 +35,7 @@ import javax.swing.tree.TreeNode;
 
 public final class javax_swing_tree_DefaultTreeModel extends AbstractTest<DefaultTreeModel> {
     public static void main(String[] args) {
-        new javax_swing_tree_DefaultTreeModel().test(true);
+        new javax_swing_tree_DefaultTreeModel().test();
     }
 
     protected DefaultTreeModel getObject() {

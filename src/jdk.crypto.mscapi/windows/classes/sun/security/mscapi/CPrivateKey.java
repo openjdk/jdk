@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class CPrivateKey extends CKey implements PrivateKey {
     private static final long serialVersionUID = 8113152807912338063L;
 
     private CPrivateKey(String alg, NativeHandles handles, int keyLength) {
-        super(alg, handles, keyLength);
+        super(alg, handles, keyLength, false);
     }
 
     // Called by native code inside security.cpp
@@ -63,16 +63,6 @@ class CPrivateKey extends CKey implements PrivateKey {
     // this key does not support encoding
     public byte[] getEncoded() {
         return null;
-    }
-
-    public String toString() {
-        if (handles.hCryptKey != 0) {
-            return algorithm + "PrivateKey [size=" + keyLength + " bits, type=" +
-                    getKeyType(handles.hCryptKey) + ", container=" +
-                    getContainerName(handles.hCryptProv) + "]";
-        } else {
-            return algorithm + "PrivateKey [size=" + keyLength + " bits, type=CNG]";
-        }
     }
 
     // This class is not serializable

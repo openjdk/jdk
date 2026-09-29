@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
-import java.applet.AudioClip;
+import javax.sound.SoundClip;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -70,7 +70,7 @@ public class DataPusherThreadCheck {
     }
 
     private static void checkThread(File file) throws Exception {
-        AudioClip clip = (AudioClip) file.toURL().getContent();
+        SoundClip clip = SoundClip.createSoundClip(file);
         clip.loop();
         try {
             Thread.sleep(2000);

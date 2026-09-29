@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
 
@@ -30,7 +29,7 @@
 // used by SA and jvmti, but it's a leaky abstraction: SA and jvmti
 // "know" that stack0 is an integer masquerading as a pointer. For the
 // sake of those clients, we preserve this interface.
-VMReg VMRegImpl::stack0 = (VMReg)(intptr_t)VMRegImpl::stack_0()->value();
+VMReg VMRegImpl::stack0 = (VMReg)(intptr_t)FIRST_STACK;
 
 // VMRegs are 4 bytes wide on all platforms
 const int VMRegImpl::stack_slot_size = 4;
@@ -55,3 +54,11 @@ void VMRegImpl::print_on(outputStream* st) const {
 VMRegImpl all_VMRegs[ConcreteRegisterImpl::number_of_registers + 1];
 
 void VMRegImpl::print() const { print_on(tty); }
+
+void VMRegPair::print_on(outputStream* st) const {
+  st->print("(");
+  _first->print_on(st);
+  st->print(",");
+  _second->print_on(st);
+  st->print(")");
+}

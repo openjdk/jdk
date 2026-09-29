@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.io.*;
  * of the JDI interface <code>ReferenceType</code> of com.sun.jdi package
  */
 
-public class methbyname_s002 extends Log {
+public class methbyname_s002 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;  // test argument -vbs or -verbose switches to true
                                           // - for more easy failure evaluation
@@ -57,14 +57,12 @@ public class methbyname_s002 extends Log {
     static ArgumentHandler      argsHandler;
     private static Log  logHandler;
 
-
-    /**
-     * Re-call to <code>run(args,out)</code>, and exit with
-     * either status 95 or 97 (JCK-like exit status).
-     */
     public static void main (String argv[]) {
-        int exitCode = run(argv,System.out);
-        System.exit(exitCode + 95/*STATUS_TEMP*/);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
+
     }
 
     /**
@@ -97,18 +95,13 @@ public class methbyname_s002 extends Log {
      */
     private int runThis (String argv[], PrintStream out) {
 
-
         argsHandler     = new ArgumentHandler(argv);
         logHandler      = new Log(out, argsHandler);
         Binder binder   = new Binder(argsHandler, logHandler);
 
         Debugee debugee;
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         print_log_on_verbose("==> nsk/jdi/ReferenceType/methodsByName_s/methbyname_s002 test LOG:");
         print_log_on_verbose("==> test checks methodsByName(String name) method of ReferenceType interface ");

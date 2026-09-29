@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,9 @@ import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Objects;
 import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
@@ -67,30 +64,27 @@ public class InferenceUnitTest {
         new InferenceUnitTest().runAll();
     }
 
-    void runAll() throws URISyntaxException {
+    void runAll() {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, null, null, List.of(new SimpleJavaFileObject(new URI("mem://Test.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                return """
-                       interface A<T> {}
-                       interface B<T> extends A<T> {}
-                       interface C<X,Y> extends A<X> {}
-                       interface D<X,Y> extends A<Y> {}
-                       interface E<T> extends C<T,T> {}
-                       interface F<T> extends A<B<T>> {}
-                       interface G<T extends Number> extends A<T> {}
-                       interface H extends A<String> {}
-                       interface I<T> extends H {}
-                       class Test<T1 extends CharSequence&Runnable, T2 extends Number> {
-                       }
-                       interface RecursiveTest1Interface<IB extends RecursiveTest1Interface<IB>> { }
-                       interface RecursiveTest1Use<BB extends RecursiveTest1Use<BB>> extends RecursiveTest1Interface<BB> { }
-                       interface RecursiveTest2Interface<X> { }
-                       interface RecursiveTest2Use<X extends RecursiveTest2Use<X, Y>, Y> extends RecursiveTest2Interface<Y> { }
-                       """;
-            }
-        }));
+        String source = """
+                        interface A<T> {}
+                        interface B<T> extends A<T> {}
+                        interface C<X,Y> extends A<X> {}
+                        interface D<X,Y> extends A<Y> {}
+                        interface E<T> extends C<T,T> {}
+                        interface F<T> extends A<B<T>> {}
+                        interface G<T extends Number> extends A<T> {}
+                        interface H extends A<String> {}
+                        interface I<T> extends H {}
+                        class Test<T1 extends CharSequence&Runnable, T2 extends Number> {
+                        }
+                        interface RecursiveTest1Interface<IB extends RecursiveTest1Interface<IB>> { }
+                        interface RecursiveTest1Use<BB extends RecursiveTest1Use<BB>> extends RecursiveTest1Interface<BB> { }
+                        interface RecursiveTest2Interface<X> { }
+                        interface RecursiveTest2Use<X extends RecursiveTest2Use<X, Y>, Y> extends RecursiveTest2Interface<Y> { }
+                        """;
+
+        JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, null, null, List.of(SimpleJavaFileObject.forSource(URI.create("mem://Test.java"), source)));
         task.enter();
         context = task.getContext();
         infer = Infer.instance(context);

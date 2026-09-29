@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @summary Tests emitting an event, both in Java and native, in a virtual
  *          thread with the maximum number of allowed stack frames for JFR
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main/othervm -XX:FlightRecorderOptions:stackdepth=2048
+ * @run main/othervm -XX:MaxNewSize=40M -XX:FlightRecorderOptions:stackdepth=2048
  *      jdk.jfr.threading.TestDeepVirtualStackTrace
  */
 public class TestDeepVirtualStackTrace {
@@ -80,6 +80,8 @@ public class TestDeepVirtualStackTrace {
 
     private static void deepsleep(int depth) {
         if (depth == 0) {
+            // The TLAB max size is not limited explicitly
+            // So the test limit max size of young generation to allocate outside TLAB
             allocated = new Object[10_000_000];
             System.out.println("Emitted ObjectAllocationOutsideTLAB event");
             return;

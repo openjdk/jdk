@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.KerberosTime;
 import sun.security.krb5.internal.Krb5;
 import sun.security.krb5.internal.KrbApErrException;
@@ -116,7 +115,7 @@ public class DflCache extends ReplayCache {
     }
 
     private static String defaultPath() {
-        return GetPropertyAction.privilegedGetProperty("java.io.tmpdir");
+        return System.getProperty("java.io.tmpdir");
     }
 
     private static String defaultFile(String server) {

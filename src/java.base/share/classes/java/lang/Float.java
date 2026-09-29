@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,14 @@ import java.util.Optional;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.FloatToDecimal;
+import jdk.internal.value.Deserializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
- * The {@code Float} class wraps a value of primitive type
- * {@code float} in an object. An object of type
- * {@code Float} contains a single field whose type is
- * {@code float}.
+ * The {@code Float} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code float}. An object of type {@code Float} contains a
+ * single field whose type is {@code float}.
  *
  * <p>In addition, this class provides several methods for converting a
  * {@code float} to a {@code String} and a
@@ -48,10 +49,18 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@code float}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Float} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
  * and Comparison</a></h2>
@@ -67,16 +76,14 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * decimal conversion issues} in {@code java.lang.Double} is also
  * applicable to {@code float} values.
  *
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
- * @author  Lee Boynton
- * @author  Arthur van Hoff
- * @author  Joseph D. Darcy
  * @since 1.0
  */
 @jdk.internal.ValueBased
-public final class Float extends Number
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Float extends Number
         implements Comparable<Float>, Constable, ConstantDesc {
     /**
      * A constant holding the positive infinity of type
@@ -93,9 +100,9 @@ public final class Float extends Number
     public static final float NEGATIVE_INFINITY = -1.0f / 0.0f;
 
     /**
-     * A constant holding a Not-a-Number (NaN) value of type
-     * {@code float}.  It is equivalent to the value returned by
-     * {@code Float.intBitsToFloat(0x7fc00000)}.
+     * A constant holding a Not-a-Number (NaN) value of type {@code float}.
+     * It is {@linkplain Double##equivalenceRelation equivalent}
+     * to the value returned by{@code Float.intBitsToFloat(0x7fc00000)}.
      */
     public static final float NaN = 0.0f / 0.0f;
 
@@ -127,15 +134,16 @@ public final class Float extends Number
     public static final float MIN_VALUE = 0x0.000002P-126f; // 1.4e-45f
 
     /**
-     * The number of bits used to represent a {@code float} value.
+     * The number of bits used to represent a {@code float} value,
+     * {@value}.
      *
      * @since 1.5
      */
     public static final int SIZE = 32;
 
     /**
-     * The number of bits in the significand of a {@code float} value.
-     * This is the parameter N in section {@jls 4.2.3} of
+     * The number of bits in the significand of a {@code float} value,
+     * {@value}.  This is the parameter N in section {@jls 4.2.3} of
      * <cite>The Java Language Specification</cite>.
      *
      * @since 19
@@ -143,8 +151,8 @@ public final class Float extends Number
     public static final int PRECISION = 24;
 
     /**
-     * Maximum exponent a finite {@code float} variable may have.  It
-     * is equal to the value returned by {@code
+     * Maximum exponent a finite {@code float} variable may have,
+     * {@value}.  It is equal to the value returned by {@code
      * Math.getExponent(Float.MAX_VALUE)}.
      *
      * @since 1.6
@@ -152,8 +160,8 @@ public final class Float extends Number
     public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1; // 127
 
     /**
-     * Minimum exponent a normalized {@code float} variable may have.
-     * It is equal to the value returned by {@code
+     * Minimum exponent a normalized {@code float} variable may have,
+     * {@value}.  It is equal to the value returned by {@code
      * Math.getExponent(Float.MIN_NORMAL)}.
      *
      * @since 1.6
@@ -161,7 +169,8 @@ public final class Float extends Number
     public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -126
 
     /**
-     * The number of bytes used to represent a {@code float} value.
+     * The number of bytes used to represent a {@code float} value,
+     * {@value}.
      *
      * @since 1.8
      */
@@ -173,8 +182,7 @@ public final class Float extends Number
      *
      * @since 1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Float> TYPE = (Class<Float>) Class.getPrimitiveClass("float");
+    public static final Class<Float> TYPE = Class.getPrimitiveClass("float");
 
     /**
      * Returns a string representation of the {@code float}
@@ -305,6 +313,23 @@ public final class Float extends Number
      * <p>To create localized string representations of a floating-point
      * value, use subclasses of {@link java.text.NumberFormat}.
      *
+     * @apiNote
+     * This method corresponds to the general functionality of the
+     * convertToDecimalCharacter operation defined in IEEE 754;
+     * however, that operation is defined in terms of specifying the
+     * number of significand digits used in the conversion.
+     * Code to do such a conversion in the Java platform includes
+     * converting the {@code float} to a {@link java.math.BigDecimal
+     * BigDecimal} exactly and then rounding the {@code BigDecimal} to
+     * the desired number of digits; sample code:
+     * {@snippet lang=java :
+     * floatf = 0.1f;
+     * int digits = 15;
+     * BigDecimal bd = new BigDecimal(f);
+     * String result = bd.round(new MathContext(digits,  RoundingMode.HALF_UP));
+     * // 0.100000001490116
+     * }
+     *
      * @param   f   the {@code float} to be converted.
      * @return a string representation of the argument.
      */
@@ -385,10 +410,14 @@ public final class Float extends Number
      *     <td>{@code 0x0.000002p-126}</td>
      * </tbody>
      * </table>
+     *
+     * @apiNote
+     * This method corresponds to the convertToHexCharacter operation
+     * defined in IEEE 754.
+     *
      * @param   f   the {@code float} to be converted.
      * @return a hex string representation of the argument.
      * @since 1.5
-     * @author Joseph D. Darcy
      */
     public static String toHexString(float f) {
         if (Math.abs(f) < Float.MIN_NORMAL
@@ -397,10 +426,12 @@ public final class Float extends Number
             // replace subnormal double exponent with subnormal float
             // exponent
             String s = Double.toHexString(Math.scalb((double)f,
-                                                     /* -1022+126 */
-                                                     Double.MIN_EXPONENT-
+                                                     // -1022 + 126
+                                                     Double.MIN_EXPONENT -
                                                      Float.MIN_EXPONENT));
-            return s.replaceFirst("p-1022$", "p-126");
+            // The char sequence "-1022" can only appear in the
+            // representation of the exponent, not in the (hex) significand.
+            return s.replace("-1022", "-126");
         }
         else // double string will be the same as float string
             return Double.toHexString(f);
@@ -489,10 +520,6 @@ public final class Float extends Number
      * Finally, after rounding a {@code Float} object representing
      * this {@code float} value is returned.
      *
-     * <p>To interpret localized string representations of a
-     * floating-point value, use subclasses of {@link
-     * java.text.NumberFormat}.
-     *
      * <p>Note that trailing format specifiers, specifiers that
      * determine the type of a floating-point literal
      * ({@code 1.0f} is a {@code float} value;
@@ -516,6 +543,20 @@ public final class Float extends Number
      * for {@link Double#valueOf Double.valueOf} lists a regular
      * expression which can be used to screen the input.
      *
+     * @apiNote To interpret localized string representations of a
+     * floating-point value, or string representations that have
+     * non-ASCII digits, use {@link java.text.NumberFormat}. For
+     * example,
+     * {@snippet lang="java" :
+     *     NumberFormat.getInstance(l).parse(s).floatValue();
+     * }
+     * where {@code l} is the desired locale, or
+     * {@link java.util.Locale#ROOT} if locale insensitive.
+     *
+     * @apiNote
+     * This method corresponds to the convertFromDecimalCharacter and
+     * convertFromHexCharacter operations defined in IEEE 754.
+     *
      * @param   s   the string to be parsed.
      * @return  a {@code Float} object holding the value
      *          represented by the {@code String} argument.
@@ -530,11 +571,22 @@ public final class Float extends Number
     /**
      * Returns a {@code Float} instance representing the specified
      * {@code float} value.
-     * If a new {@code Float} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Float(float)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Float} is an identity class.
+     *              If a new {@code Float} instance is not required, this
+     *              method should generally be used in preference to the
+     *              constructor {@link #Float(float)}, as this method is
+     *              likely to yield significantly better space and time
+     *              performance by caching frequently requested values.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Float} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  f a float value.
      * @return a {@code Float} instance representing {@code f}.
@@ -635,7 +687,8 @@ public final class Float extends Number
      * {@link #valueOf(float)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
+    @Deserializer("value")
     public Float(float value) {
         this.value = value;
     }
@@ -651,7 +704,7 @@ public final class Float extends Number
      * static factory method {@link #valueOf(float)} method as follows:
      * {@code Float.valueOf((float)value)}.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Float(double value) {
         this.value = (float)value;
     }
@@ -672,7 +725,7 @@ public final class Float extends Number
      * {@code float} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Float} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Float(String s) throws NumberFormatException {
         value = parseFloat(s);
     }
@@ -721,6 +774,7 @@ public final class Float extends Number
      *          converted to type {@code byte}
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
+    @Override
     public byte byteValue() {
         return (byte)value;
     }
@@ -734,6 +788,7 @@ public final class Float extends Number
      * @jls 5.1.3 Narrowing Primitive Conversion
      * @since 1.1
      */
+    @Override
     public short shortValue() {
         return (short)value;
     }
@@ -742,10 +797,15 @@ public final class Float extends Number
      * Returns the value of this {@code Float} as an {@code int} after
      * a narrowing primitive conversion.
      *
+     * @apiNote
+     * This method corresponds to the convertToIntegerTowardZero
+     * operation defined in IEEE 754.
+     *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code int}
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
+    @Override
     public int intValue() {
         return (int)value;
     }
@@ -754,10 +814,15 @@ public final class Float extends Number
      * Returns value of this {@code Float} as a {@code long} after a
      * narrowing primitive conversion.
      *
+     * @apiNote
+     * This method corresponds to the convertToIntegerTowardZero
+     * operation defined in IEEE 754.
+     *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code long}
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
+    @Override
     public long longValue() {
         return (long)value;
     }
@@ -767,6 +832,7 @@ public final class Float extends Number
      *
      * @return the {@code float} value represented by this object
      */
+    @Override
     @IntrinsicCandidate
     public float floatValue() {
         return value;
@@ -784,6 +850,7 @@ public final class Float extends Number
      *         object converted to type {@code double}
      * @jls 5.1.2 Widening Primitive Conversion
      */
+    @Override
     public double doubleValue() {
         return (double)value;
     }
@@ -824,6 +891,9 @@ public final class Float extends Number
      * same if and only if the method {@link #floatToIntBits(float)}
      * returns the identical {@code int} value when applied to
      * each.
+     * In other words, {@linkplain Double##repEquivalence
+     * representation equivalence} is used to compare the {@code
+     * float} values.
      *
      * @apiNote
      * This method is defined in terms of {@link
@@ -831,9 +901,8 @@ public final class Float extends Number
      * {@code float} values since the {@code ==} operator does
      * <em>not</em> define an equivalence relation and to satisfy the
      * {@linkplain Object#equals equals contract} an equivalence
-     * relation must be implemented; see <a
-     * href="Double.html#equivalenceRelation">this discussion</a> for
-     * details of floating-point equality and equivalence.
+     * relation must be implemented; see {@linkplain Double##equivalenceRelation
+     * this discussion for details of floating-point equality and equivalence}.
      *
      * @param obj the object to be compared
      * @return  {@code true} if the objects are the same;
@@ -842,8 +911,8 @@ public final class Float extends Number
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
-        return (obj instanceof Float)
-               && (floatToIntBits(((Float)obj).value) == floatToIntBits(value));
+        return (obj instanceof Float f) &&
+            (floatToIntBits(f.value) == floatToIntBits(value));
     }
 
     /**
@@ -1084,7 +1153,7 @@ public final class Float extends Number
      * <li> If the argument is a NaN, the result is a NaN.
      * </ul>
      *
-     * The <a href="#binary16Format">binary16 format</a> is discussed in
+     * The {@linkplain ##binary16Format binary16 format} is discussed in
      * more detail in the {@link #float16ToFloat} method.
      *
      * @apiNote
@@ -1200,10 +1269,14 @@ public final class Float extends Number
      *
      * This ensures that the <i>natural ordering</i> of {@code Float}
      * objects imposed by this method is <i>consistent with
-     * equals</i>; see <a href="Double.html#equivalenceRelation">this
-     * discussion</a> for details of floating-point comparison and
-     * ordering.
+     * equals</i>; see {@linkplain Double##equivalenceRelation this
+     * discussion for details of floating-point comparison and
+     * ordering}.
      *
+     * @apiNote
+     * For a discussion of differences between the total order of this
+     * method compared to the total order defined by the IEEE 754
+     * standard, see the note in {@link Double#compareTo(Double)}.
      *
      * @param   anotherFloat   the {@code Float} to be compared.
      * @return  the value {@code 0} if {@code anotherFloat} is
@@ -1217,6 +1290,7 @@ public final class Float extends Number
      * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
      * @since   1.2
      */
+    @Override
     public int compareTo(Float anotherFloat) {
         return Float.compare(value, anotherFloat.value);
     }
@@ -1228,6 +1302,14 @@ public final class Float extends Number
      * <pre>
      *    Float.valueOf(f1).compareTo(Float.valueOf(f2))
      * </pre>
+     *
+     * @apiNote
+     * One idiom to implement {@linkplain
+     * Double##repEquivalence representation equivalence} on {@code
+     * float} values is
+     * {@snippet lang="java" :
+     * Float.compare(a, b) == 0
+     * }
      *
      * @param   f1        the first {@code float} to compare.
      * @param   f2        the second {@code float} to compare.

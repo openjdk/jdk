@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,18 +35,6 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test id=iu
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm
- *      -Xbootclasspath/a:.
- *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      gc.shenandoah.TestReferenceRefersToShenandoah
- */
-
 /* @test id=satb-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -60,7 +48,19 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test id=iu-100
+/* @test id=generational
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      gc.shenandoah.TestReferenceRefersToShenandoah
+ */
+
+/* @test id=generational-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -69,7 +69,7 @@ package gc.shenandoah;
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGarbageThreshold=100 -Xmx100m
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGarbageThreshold=100 -Xmx100m
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
@@ -124,7 +124,11 @@ public class TestReferenceRefersToShenandoah {
         if (!WB.isObjectInOldGen(o)) {
             WB.fullGC();
             if (!WB.isObjectInOldGen(o)) {
-                fail("object not promoted by full gc");
+                // This is just a warning, because failing would
+                // be overspecifying for generational shenandoah,
+                // which need not necessarily promote objects upon
+                // a full GC.
+                warn("object not promoted by full gc");
             }
         }
     }
@@ -149,6 +153,10 @@ public class TestReferenceRefersToShenandoah {
 
     private static void fail(String msg) throws Exception {
         throw new RuntimeException(msg);
+    }
+
+    private static void warn(String msg) {
+        System.out.println("Warning: " + msg);
     }
 
     private static void expectCleared(Reference<TestObject> ref,
@@ -200,10 +208,6 @@ public class TestReferenceRefersToShenandoah {
         testObject4 = null;
     }
 
-    private static boolean isShenandoahIUMode() {
-        return "iu".equals(WB.getStringVMFlag("ShenandoahGCMode"));
-    }
-
     private static void testConcurrentCollection() throws Exception {
         progress("setup concurrent collection test");
         setup();
@@ -239,14 +243,7 @@ public class TestReferenceRefersToShenandoah {
             expectCleared(testPhantom1, "testPhantom1");
             expectCleared(testWeak2, "testWeak2");
             expectValue(testWeak3, testObject3, "testWeak3");
-            // This is true for all currently supported concurrent collectors,
-            // except Shenandoah+IU, which allows clearing refs even when
-            // accessed during concurrent marking.
-            if (isShenandoahIUMode()) {
-              expectCleared(testWeak4, "testWeak4");
-            } else {
-              expectNotCleared(testWeak4, "testWeak4");
-            }
+            expectNotCleared(testWeak4, "testWeak4");
 
             progress("verify get returns expected values");
             if (testWeak2.get() != null) {
@@ -261,12 +258,10 @@ public class TestReferenceRefersToShenandoah {
             }
 
             TestObject obj4 = testWeak4.get();
-            if (!isShenandoahIUMode()) {
-                if (obj4 == null) {
-                    fail("testWeak4.get() returned null");
-                } else if (obj4.value != 4) {
-                    fail("testWeak4.get().value is " + obj4.value);
-                }
+            if (obj4 == null) {
+                fail("testWeak4.get() returned null");
+            } else if (obj4.value != 4) {
+                fail("testWeak4.get().value is " + obj4.value);
             }
 
             progress("verify queue entries");

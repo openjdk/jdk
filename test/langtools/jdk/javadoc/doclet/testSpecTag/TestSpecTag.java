@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6251738 8226279 8297802 8296546 8305407
+ * @bug 6251738 8226279 8297802 8305407 8309748
  * @summary JDK-8226279 javadoc should support a new at-spec tag
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -112,24 +112,22 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("external-specs.html", true,
                 """
                     <!-- ========= START OF TOP NAVBAR ======= -->
-                    <div class="top-nav" id="navbar-top"><button id="navbar-toggle-button" aria-controls="navbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span></button>
-                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
+                    <div class="top-nav" id="navbar-top">
+                    <div class="nav-content">
+                    <div class="nav-menu-button"><button id="navbar-toggle-button" aria-controls="na\
+                    vbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class\
+                    ="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</sp\
+                    an><span class="nav-bar-toggle-icon">&nbsp;</span></button></div>
+                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">S\
+                    kip navigation links</a></div>
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     <li><a href="p/package-summary.html">Package</a></li>
-                    <li>Class</li>
                     <li><a href="p/package-tree.html">Tree</a></li>
                     <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#external-specs">Help</a></li>
-                    </ul>
-                    </div>
-                    <div class="sub-nav">
-                    <div id="navbar-sub-list"></div>
-                    <div class="nav-list-search"><a href="search.html">SEARCH</a>
-                    <input type="text" id="search-input" disabled placeholder="Search">
-                    <input type="reset" id="reset-button" disabled value="reset">
-                    </div>
-                    </div>
-                    <!-- ========= END OF TOP NAVBAR ========= -->
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></b\
+                    utton></li>
                     """);
     }
 
@@ -345,18 +343,17 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
-                    <button id="external-specs-tab0" role="tab" aria-selected="true" aria-controls="external-specs.tabpanel" \
-                    tabindex="0" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs', 2)" \
-                    class="active-table-tab">All Specifications</button>\
-                    <button id="external-specs-tab1" role="tab" aria-selected="false" aria-controls="external-specs.tabpanel" \
-                    tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab1', 2)" \
-                    class="table-tab">example.com</button>\
-                    <button id="external-specs-tab2" role="tab" aria-selected="false" aria-controls="external-specs.tabpanel" \
-                    tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab2', 2)" \
-                    class="table-tab">example.net</button></div>
-                    <div id="external-specs.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="external-specs-tab0">
+                    <label for="specs-by-domain">Show specifications by host name:</label> <select id="specs-by-domain">
+                    <option value>All host names</option>
+                    <option value="1">example.com</option>
+                    <option value="2">example.net</option>
+                    </select>
+                    <div id="external-specs">
+                    <div class="table-tabs">
+                    <div class="caption"><span>External Specifications</span></div>
+                    </div>
+                    <div id="external-specs.tabpanel" role="tabpanel" aria-labelledby="external-specs-tab0">
+                    <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Specification</div>
                     <div class="table-header col-last">Referenced In</div>""",
                 """
@@ -371,7 +368,25 @@ public class TestSpecTag extends JavadocTester {
                     <ul class="ref-list">
                     <li><code><a href="p/C.html#example-2">class p.C</a></code></li>
                     </ul>
-                    </div>""");
+                    </div>""",
+                """
+                    <script type="text/javascript">let select = document.getElementById('specs-by-domain');
+                    select.addEventListener("change", selectHost);
+                    addEventListener("pageshow", selectHost);
+                    function selectHost() {
+                        const selectedClass = select.value ? "external-specs-tab" + select.value : "external-specs";
+                        let tabPanel = document.getElementById("external-specs.tabpanel");
+                        let count = 0;
+                        tabPanel.querySelectorAll("div.external-specs").forEach(function(elem) {
+                            elem.style.display = elem.classList.contains(selectedClass) ? "" : "none";
+                            if (elem.style.display === "") {
+                                let isEvenRow = count++ % 4 < 2;
+                                toggleStyle(elem.classList, isEvenRow, evenRowColor, oddRowColor);
+                            }
+                        });
+                    }
+                    selectHost();
+                    </script>""");
     }
 
     @Test
@@ -499,20 +514,6 @@ public class TestSpecTag extends JavadocTester {
                            ^
                     """
                     .replace("#FILE#", src.resolve("p").resolve("C.java").toString()));
-    }
-
-    @Test
-    public void testSuppressSpecPage(Path base) throws IOException {
-        Path src = base.resolve("src");
-        tb.writeJavaFiles(src, "package p; /** @spec http://example.com label */ public class C { }");
-
-        javadoc("-d", base.resolve("out").toString(),
-                "--source-path", src.toString(),
-                "--no-external-specs-page",
-                "p");
-        checkExit(Exit.OK);
-
-        checkFiles(false, "external-specs.html");
     }
 
     @Test

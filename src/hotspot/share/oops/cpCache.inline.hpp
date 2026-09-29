@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
 
 #include "oops/cpCache.hpp"
 
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 // Constructor
-inline ConstantPoolCache::ConstantPoolCache(const intStack& invokedynamic_references_map,
-                                            Array<ResolvedIndyEntry>* invokedynamic_info,
+inline ConstantPoolCache::ConstantPoolCache(Array<ResolvedIndyEntry>* invokedynamic_info,
                                             Array<ResolvedFieldEntry>* field_entries,
                                             Array<ResolvedMethodEntry>* method_entries) :
                                                   _constant_pool(nullptr),
@@ -46,10 +46,10 @@ inline ConstantPoolCache::ConstantPoolCache(const intStack& invokedynamic_refere
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
 }
 
-inline objArrayOop ConstantPoolCache::resolved_references() {
+inline refArrayOop ConstantPoolCache::resolved_references() {
   oop obj = _resolved_references.resolve();
-  assert(obj == nullptr || obj->is_objArray(), "should be objArray");
-  return (objArrayOop)obj;
+  assert(obj == nullptr || obj->is_refArray(), "should be refArray");
+  return obj == nullptr ? nullptr : oop_cast<refArrayOop>(obj);
 }
 
 inline ResolvedFieldEntry* ConstantPoolCache::resolved_field_entry_at(int field_index) const {
@@ -73,6 +73,9 @@ inline ResolvedIndyEntry* ConstantPoolCache::resolved_indy_entry_at(int index) c
 }
 
 inline int ConstantPoolCache::resolved_indy_entries_length() const {
+  if (_resolved_indy_entries == nullptr) {
+    return 0;
+  }
   return _resolved_indy_entries->length();
 }
 #endif // SHARE_OOPS_CPCACHE_INLINE_HPP

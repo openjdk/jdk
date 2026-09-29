@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,35 @@
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
 import java.util.Random;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-/**
- * Utility class for zipfs tests.
- */
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-class Utils {
-    private Utils() { }
+/**
+ * Utility class for {@code ZipFileSystem} tests.
+ */
+final class Utils {
+    private Utils() {}
 
     /**
-     * Creates a JAR file of the given name with 0 or more named entries.
+     * Creates a JAR file of the given name with 0 or more named entries with
+     * random content.
      *
-     * @return Path to the newly created JAR file
+     * <p>If an existing file of the same name already exists, it is silently
+     * overwritten.
+     *
+     * @param name the file name of the jar file to create in the working directory.
+     * @param entries entries JAR file entry names, whose content will be populated
+     *                with random bytes
+     * @return the absolute path to the newly created JAR file.
      */
     static Path createJarFile(String name, String... entries) throws IOException {
-        Path jarFile = Paths.get("basic.jar");
+        Path jarFile = Path.of(name);
         Random rand = new Random();
         try (OutputStream out = Files.newOutputStream(jarFile);
              JarOutputStream jout = new JarOutputStream(out)) {
@@ -56,6 +66,32 @@ class Utils {
                 len += 1024;
             }
         }
-        return jarFile;
+        return jarFile.toAbsolutePath();
+    }
+
+    /**
+     * Creates a JAR file of the given name with 0 or more entries with specified
+     * content.
+     *
+     * <p>If an existing file of the same name already exists, it is silently
+     * overwritten.
+     *
+     * @param name the file name of the jar file to create in the working directory.
+     * @param entries a map of JAR file entry names to entry content (stored as
+     *                UTF-8 encoded bytes).
+     * @return the absolute path to the newly created JAR file.
+     */
+    static Path createJarFile(String name, Map<String, String> entries) throws IOException {
+        Path jarFile = Path.of(name);
+        try (OutputStream out = Files.newOutputStream(jarFile);
+             JarOutputStream jout = new JarOutputStream(out)) {
+            for (var entry : entries.entrySet()) {
+                JarEntry je = new JarEntry(entry.getKey());
+                jout.putNextEntry(je);
+                jout.write(entry.getValue().getBytes(UTF_8));
+                jout.closeEntry();
+            }
+        }
+        return jarFile.toAbsolutePath();
     }
 }

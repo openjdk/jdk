@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,11 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import java.security.AccessController;
-
 import javax.management.ObjectName;
 import javax.management.MBeanServer;
 import javax.management.InstanceNotFoundException;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServerFactory;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.remote.security.NotificationAccessController;
 
 public class EnvHelp {
@@ -265,50 +262,35 @@ public class EnvHelp {
     public static int getNotifBufferSize(Map<String, ?> env) {
         int defaultQueueSize = 1000; // default value
 
-        // keep it for the compatibility for the fix:
-        // 6174229: Environment parameter should be notification.buffer.size
-        // instead of buffer.size
-        final String oldP = "jmx.remote.x.buffer.size";
-
         // the default value re-specified in the system
         try {
-            GetPropertyAction act = new GetPropertyAction(BUFFER_SIZE_PROPERTY);
-            String s = AccessController.doPrivileged(act);
+            String s = System.getProperty(BUFFER_SIZE_PROPERTY);
             if (s != null) {
                 defaultQueueSize = Integer.parseInt(s);
-            } else { // try the old one
-                act = new GetPropertyAction(oldP);
-                s = AccessController.doPrivileged(act);
-                if (s != null) {
-                    defaultQueueSize = Integer.parseInt(s);
-                }
             }
         } catch (RuntimeException e) {
-            logger.warning("getNotifBufferSize",
-                           "Can't use System property "+
-                           BUFFER_SIZE_PROPERTY+ ": " + e);
-              logger.debug("getNotifBufferSize", e);
+            logger.warning("getNotifBufferSize", "Can't use System property " +
+                           BUFFER_SIZE_PROPERTY + ": " + e);
+            logger.debug("getNotifBufferSize", e);
         }
 
         int queueSize = defaultQueueSize;
 
         try {
             if (env.containsKey(BUFFER_SIZE_PROPERTY)) {
-                queueSize = (int)EnvHelp.getIntegerAttribute(env,BUFFER_SIZE_PROPERTY,
-                                            defaultQueueSize,0,
-                                            Integer.MAX_VALUE);
-            } else { // try the old one
-                queueSize = (int)EnvHelp.getIntegerAttribute(env,oldP,
-                                            defaultQueueSize,0,
+                queueSize = (int)EnvHelp.getIntegerAttribute(env, BUFFER_SIZE_PROPERTY,
+                                            defaultQueueSize, 0,
                                             Integer.MAX_VALUE);
             }
         } catch (RuntimeException e) {
-            logger.warning("getNotifBufferSize",
-                           "Can't determine queuesize (using default): "+
-                           e);
+            logger.warning("getNotifBufferSize", "Can't determine queuesize (using default): " + e);
             logger.debug("getNotifBufferSize", e);
         }
 
+        // Throw if near maximum value (ArrayQueue will add one to size before creating array).
+        if (queueSize >= Integer.MAX_VALUE - 1) {
+            throw new IllegalArgumentException("Notification Buffer size too large");
+        }
         return queueSize;
     }
 

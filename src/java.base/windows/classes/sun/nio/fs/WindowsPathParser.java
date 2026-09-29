@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,38 +37,7 @@ class WindowsPathParser {
     /**
      * The result of a parse operation
      */
-    static class Result {
-        private final WindowsPathType type;
-        private final String root;
-        private final String path;
-
-        Result(WindowsPathType type, String root, String path) {
-            this.type = type;
-            this.root = root;
-            this.path = path;
-        }
-
-        /**
-         * The path type
-         */
-        WindowsPathType type() {
-            return type;
-        }
-
-        /**
-         * The root component
-         */
-        String root() {
-            return root;
-        }
-
-        /**
-         * The normalized path (includes root)
-         */
-        String path() {
-            return path;
-        }
-    }
+    record Result(WindowsPathType type, String root, String path) {};
 
     /**
      * Parses the given input as a Windows path
@@ -117,7 +86,7 @@ class WindowsPathParser {
             char c = 0;
             int next = 2;
             if (isSlash(c0) && isSlash(c1)) {
-                // UNC: We keep the first two slash, collapse all the
+                // UNC: We keep the first two slashes, collapse all the
                 // following, then take the hostname and share name out,
                 // meanwhile collapsing all the redundant slashes.
                 type = WindowsPathType.UNC;
@@ -170,9 +139,7 @@ class WindowsPathParser {
         }
 
         if (requireToNormalize) {
-            StringBuilder sb = new StringBuilder(input.length());
-            sb.append(root);
-            return new Result(type, root, normalize(sb, input, off));
+            return new Result(type, root, normalize(root, input, off));
         } else {
             return new Result(type, root, input);
         }
@@ -182,40 +149,62 @@ class WindowsPathParser {
      * Remove redundant slashes from the rest of the path, forcing all slashes
      * into the preferred slash.
      */
-    private static String normalize(StringBuilder sb, String path, int off) {
-        int len = path.length();
-        off = nextNonSlash(path, off, len);
-        int start = off;
+    private static String normalize(String root, String path, int pathOff) {
+
+        int rootLen = root.length();
+        int pathLen = path.length();
+
+        // the result array will initally contain the characters of root in
+        // the first rootLen elements followed by the chanacters of path from
+        // position index pathOff to the end of path
+        char[] result = new char[rootLen + pathLen - pathOff];
+        root.getChars(0, rootLen, result, 0);
+        path.getChars(pathOff, pathLen, result, rootLen);
+
+        // the portion of array derived from path is normalized by copying
+        // from position srcPos to position dstPos, and as the invariant
+        // dstPos <= srcPos holds, no characters can be overwritten
+        int dstPos = rootLen;
+        int srcPos = nextNonSlash(result, rootLen, result.length);
+
+        // pathPos is the position in array which is being tested as to
+        // whether the element at that position is a slash
+        int pathPos = srcPos;
+
         char lastC = 0;
-        while (off < len) {
-            char c = path.charAt(off);
+        while (pathPos < result.length) {
+            char c = result[pathPos];
             if (isSlash(c)) {
                 if (lastC == ' ')
                     throw new InvalidPathException(path,
                                                    "Trailing char <" + lastC + ">",
-                                                   off - 1);
-                sb.append(path, start, off);
-                off = nextNonSlash(path, off, len);
-                if (off != len)   //no slash at the end of normalized path
-                    sb.append('\\');
-                start = off;
+                                                   pathPos - 1);
+                int nchars = pathPos - srcPos;
+                System.arraycopy(result, srcPos, result, dstPos, nchars);
+                dstPos += nchars;
+                pathPos = nextNonSlash(result, pathPos, result.length);
+                if (pathPos != result.length)   //no slash at the end of normalized path
+                    result[dstPos++] = '\\';
+                srcPos = pathPos;
             } else {
                 if (isInvalidPathChar(c))
                     throw new InvalidPathException(path,
                                                    "Illegal char <" + c + ">",
-                                                   off);
+                                                   pathPos);
                 lastC = c;
-                off++;
+                pathPos++;
             }
         }
-        if (start != off) {
+        if (srcPos != pathPos) {
             if (lastC == ' ')
                 throw new InvalidPathException(path,
                                                "Trailing char <" + lastC + ">",
-                                               off - 1);
-            sb.append(path, start, off);
+                                               pathPos - 1);
+            int nchars = pathPos - srcPos;
+            System.arraycopy(result, srcPos, result, dstPos, nchars);
+            dstPos += nchars;
         }
-        return sb.toString();
+        return new String(result, 0, dstPos);
     }
 
     private static final boolean isSlash(char c) {
@@ -227,11 +216,28 @@ class WindowsPathParser {
         return off;
     }
 
+    private static final int nextNonSlash(char[] path, int off, int end) {
+        while (off < end && isSlash(path[off])) { off++; }
+        return off;
+    }
+
     private static final int nextSlash(String path, int off, int end) {
         char c;
         while (off < end && !isSlash(c=path.charAt(off))) {
             if (isInvalidPathChar(c))
                 throw new InvalidPathException(path,
+                                               "Illegal character [" + c + "] in path",
+                                               off);
+            off++;
+        }
+        return off;
+    }
+
+    private static final int nextSlash(char[] path, int off, int end) {
+        char c;
+        while (off < end && !isSlash(c=path[off])) {
+            if (isInvalidPathChar(c))
+                throw new InvalidPathException(new String(path),
                                                "Illegal character [" + c + "] in path",
                                                off);
             off++;

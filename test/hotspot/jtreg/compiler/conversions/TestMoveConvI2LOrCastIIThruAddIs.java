@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@ package compiler.conversions;
 
 import java.util.Objects;
 import java.util.Random;
+import jdk.test.lib.Utils;
 import jdk.test.lib.Asserts;
 
 /*
  * @test
+ * @key randomness
  * @bug 8254317 8256730
  * @requires vm.compiler2.enabled
  * @summary Exercises the optimization that moves integer-to-long conversions
@@ -157,7 +159,7 @@ public class TestMoveConvI2LOrCastIIThruAddIs {
         // We use a random number generator to avoid constant propagation in C2
         // and produce a variable ("a" in the different tests) with a finite,
         // small value range.
-        Random rnd = new Random();
+        Random rnd = Utils.getRandomInstance();
         switch(args[0]) {
         case "functional":
             // Small, functional tests.

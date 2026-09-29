@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -110,8 +109,10 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   assert(_field_entry_index == _initialized_field_entries.length(), "Field entry size mismatch");
   assert(_method_entry_index == _initialized_method_entries.length(), "Method entry size mismatch");
   ConstantPoolCache* cache =
-      ConstantPoolCache::allocate(loader_data, _invokedynamic_references_map,
-                                  _initialized_indy_entries, _initialized_field_entries, _initialized_method_entries,
+      ConstantPoolCache::allocate(loader_data,
+                                  _initialized_indy_entries,
+                                  _initialized_field_entries,
+                                  _initialized_method_entries,
                                   CHECK);
 
   // initialize object cache in constant pool
@@ -125,7 +126,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
                                         THREAD);
 #if INCLUDE_CDS
   if (!HAS_PENDING_EXCEPTION && CDSConfig::is_dumping_archive()) {
-    if (_pool->pool_holder()->is_shared()) {
+    if (_pool->pool_holder()->in_aot_cache()) {
       assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
       // We are linking a shared class from the base archive. This
       // class won't be written into the dynamic archive, so there's no
@@ -256,14 +257,14 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
                                                          _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index);
           _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
         } else if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(vmClasses::VarHandle_klass(),
                                                                 _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index);
           _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
         } else {
@@ -295,7 +296,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
-    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, -1); // Indy no longer has a CPCE
+    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index); // Indy no longer has a CPCE
     // Replace the trailing four bytes with an index to the array of
     // indy resolution information in the CPC. There is one entry for
     // each bytecode, even if they make the same call. In other words,
@@ -305,15 +306,14 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
-    Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
+    Bytes::put_native_u4(p, (u2)_invokedynamic_index);
     _invokedynamic_index++;
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
     _initialized_indy_entries.push(ResolvedIndyEntry((u2)resolved_index, (u2)cp_index));
   } else {
     // Should do nothing since we are not patching this bytecode
-    int cache_index = ConstantPool::decode_invokedynamic_index(
-                        Bytes::get_native_u4(p));
+    int cache_index = Bytes::get_native_u4(p);
     int cp_index = _initialized_indy_entries.at(cache_index).constant_pool_index();
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
@@ -456,11 +456,11 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
             if (klass->find_field(field_name, field_sig, &fd) != nullptr) {
               if (fd.access_flags().is_final()) {
                 if (fd.access_flags().is_static()) {
-                  if (!method->is_static_initializer()) {
+                  if (!method->is_class_initializer()) {
                     fd.set_has_initialized_final_update(true);
                   }
                 } else {
-                  if (!method->is_object_initializer()) {
+                  if (!method->is_object_constructor()) {
                     fd.set_has_initialized_final_update(true);
                   }
                 }
@@ -531,7 +531,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   // determine index maps for Method* rewriting
   compute_index_maps();
 
-  if (RegisterFinalizersAtInit && _klass->name() == vmSymbols::java_lang_Object()) {
+  if (_klass->name() == vmSymbols::java_lang_Object()) {
     bool did_rewrite = false;
     int i = _methods->length();
     while (i-- > 0) {
@@ -569,8 +569,8 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 
 void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
 #if INCLUDE_CDS
-  if (klass->is_shared()) {
-    assert(!klass->is_rewritten(), "rewritten shared classes cannot be rewritten again");
+  if (klass->in_aot_cache()) {
+    assert(!klass->is_rewritten(), "rewritten classes in the AOT cache cannot be rewritten again");
   }
 #endif // INCLUDE_CDS
   ResourceMark rm(THREAD);
@@ -586,7 +586,6 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
     _cp_map(cpool->length()),
     _reference_map(cpool->length()),
     _resolved_references_map(cpool->length() / 2),
-    _invokedynamic_references_map(cpool->length() / 2),
     _method_handle_invokers(cpool->length()),
     _invokedynamic_index(0),
     _field_entry_index(0),

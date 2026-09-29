@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public:
   // All code generators assume that the size of a card table entry is one byte.
   // They need to be updated to reflect any change to this.
   // This code can typically be found by searching for the byte_map_base() method.
-  STATIC_ASSERT(sizeof(CardValue) == 1);
+  static_assert(sizeof(CardValue) == 1);
 
 protected:
   // The declaration order of these const fields is important; see the
@@ -59,11 +59,22 @@ protected:
   // The covered regions should be in address order.
   MemRegion _covered[max_covered_regions];
 
-  // The last card is a guard card; never committed.
-  MemRegion _guard_region;
-
   inline size_t compute_byte_map_size(size_t num_bytes);
 
+  // We use 0x00 (zero) to represent Dirty and 0xFF to represent Clean because
+  // this choice reduces the barrier code by one instruction on architectures with
+  // a constant-zero register. On such architectures, the Dirty value (0x00) is
+  // directly accessible through the zero register, eliminating the need to load
+  // the value explicitly and thereby saving one instruction
+  //
+  // E.g. see
+  //  Urs Hölzle. A fast write barrier for generational garbage collectors.
+  //  In Eliot Moss, Paul R. Wilson, and Benjamin Zorn, editors, OOPSLA/ECOOP '93
+  //  Workshop on Garbage Collection in Object-Oriented Systems, October 1993
+  //
+  // that shows this for SPARC (but aarch32/aarch64/RISC-V are similar in this
+  // respect).
+  //
   enum CardValues {
     clean_card                  = (CardValue)-1,
 
@@ -83,18 +94,11 @@ protected:
     return cards_required(_whole_heap.word_size()) - 1;
   }
 
-  // Mapping from card marking array entry to address of first word without checks.
-  HeapWord* addr_for_raw(const CardValue* p) const {
-    // As _byte_map_base may be "negative" (the card table has been allocated before
-    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
-    size_t delta = p - _byte_map_base;
-    return (HeapWord*) (delta << _card_shift);
-  }
+  MemRegion committed_for(const MemRegion mr) const;
 
 private:
   void initialize_covered_region(void* region0_start, void* region1_start);
 
-  MemRegion committed_for(const MemRegion mr) const;
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable() = default;
@@ -142,8 +146,6 @@ public:
     return byte_for(p) + 1;
   }
 
-  void invalidate(MemRegion mr);
-
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
     return byte_for(p);
@@ -152,13 +154,16 @@ public:
     return byte_after(p);
   }
 
-  // Mapping from card marking array entry to address of first word.
+  // Mapping from card marking array entry to address of first word
   HeapWord* addr_for(const CardValue* p) const {
     assert(p >= _byte_map && p < _byte_map + _byte_map_size,
            "out of bounds access to card marking array. p: " PTR_FORMAT
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
            p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
-    HeapWord* result = addr_for_raw(p);
+    // As _byte_map_base may be "negative" (the card table has been allocated before
+    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
+    size_t delta = p - _byte_map_base;
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -213,12 +218,12 @@ public:
 
   virtual bool is_in_young(const void* p) const = 0;
 
-  // Print a description of the memory for the card table
-  virtual void print_on(outputStream* st) const;
+  // Print card table information.
+  void print_on(outputStream* st, const char* description = "Card") const;
 
   // val_equals -> it will check that all cards covered by mr equal val
   // !val_equals -> it will check that all cards covered by mr do not equal val
-  void verify_region(MemRegion mr, CardValue val, bool val_equals) PRODUCT_RETURN;
+  virtual void verify_region(MemRegion mr, CardValue val, bool val_equals) PRODUCT_RETURN;
   void verify_not_dirty_region(MemRegion mr) PRODUCT_RETURN;
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
 };

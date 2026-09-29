@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test %I% %G%
  * @bug 4935607
  * @summary Tests transient properties
- * @run main/othervm -Djava.security.manager=allow Test4935607
+ * @run main/othervm Test4935607
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.beans.Transient;
 
 public class Test4935607 extends AbstractTest<Test4935607.TransientBean> {
     public static void main(String[] args) {
-        new Test4935607().test(true);
+        new Test4935607().test();
     }
 
     @Override

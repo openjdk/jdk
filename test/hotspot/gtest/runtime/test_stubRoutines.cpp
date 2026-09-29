@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/copy.hpp"
 #include "unittest.hpp"
@@ -110,7 +109,7 @@ TEST_VM(StubRoutines, array_fill_routine) {
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
 
 #define TEST_FILL(type)                                                                      \
-  if (StubRoutines::_##type##_fill != nullptr) {                                             \
+  if (StubRoutines::type##_fill() != nullptr) {                         \
     union {                                                                                  \
       double d;                                                                              \
       type body[96];                                                                         \
@@ -125,12 +124,12 @@ TEST_VM(StubRoutines, array_fill_routine) {
       for (int aligned = 0; aligned < 2; aligned++) {                                        \
         if (aligned) {                                                                       \
           if (((intptr_t)start) % HeapWordSize == 0) {                                       \
-            ((void (*)(type*, int, int))StubRoutines::_arrayof_##type##_fill)(start, v, 80); \
+            ((void (*)(type*, int, int))StubRoutines::arrayof_##type##_fill())(start, v, 80); \
           } else {                                                                           \
             continue;                                                                        \
           }                                                                                  \
         } else {                                                                             \
-          ((void (*)(type*, int, int))StubRoutines::_##type##_fill)(start, v, 80);           \
+          ((void (*)(type*, int, int))StubRoutines::type##_fill())(start, v, 80); \
         }                                                                                    \
         for (int i = 0; i < 96; i++) {                                                       \
           if (i < (8 + offset) || i >= (88 + offset)) {                                      \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,29 @@
 
 /*
  * @test
- * @library /test/lib
  * @bug 8278067
+ * @library /test/lib
  * @run main/othervm -Dhttp.keepAlive.time.server=30 KeepAliveProperty long
  * @run main/othervm -Dhttp.keepAlive.time.server=1 KeepAliveProperty short
  * @run main/othervm -ea -Dhttp.keepAlive.time.server=0 KeepAliveProperty short
  */
 
-import java.net.*;
-import java.io.*;
-import java.nio.charset.*;
-import java.util.logging.*;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import jdk.test.lib.net.URIBuilder;
+
 import static java.net.Proxy.NO_PROXY;
 
 public class KeepAliveProperty {

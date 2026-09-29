@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,15 @@ import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFile
 import java.util.Map;
 
 /**
- * This class stores all test methods that need to be IR matched as identified by {@link IREncodingParser}.
+ * This class stores all test methods that need to be IR matched as identified by {@link ApplicableIRRulesParser}.
  *
- * @see IREncodingParser
+ * @see ApplicableIRRulesParser
  * @see HotSpotPidFileParser
  * @see IRMethod
  */
 public class TestMethods {
     /**
-     * "Method name" -> TestMethod map created by {@link IREncodingParser} which contains an entry for each method that
+     * "Method name" -> TestMethod map created by {@link ApplicableIRRulesParser} which contains an entry for each method that
      * needs to be IR matched on.
      */
     private final Map<String, TestMethod> testMethods;

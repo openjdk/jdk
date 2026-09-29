@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,29 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "cds/archiveUtils.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/instanceStackChunkKlass.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/refArrayKlass.hpp"
+#include "oops/trainingData.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 // Objects of the Metadata types (such as Klass and ConstantPool) have C++ vtables.
 // (In GCC this is the field <Type>::_vptr, i.e., first word in the object.)
@@ -52,7 +59,23 @@
 // + at run time:   we clone the actual contents of the vtables from libjvm.so
 //                  into our own tables.
 
+
+#ifndef PRODUCT
+
+// GrowableArray has a vtable only when in non-product builds (due to
+// the virtual printing functions in AnyObj).
+
+using GrowableArray_ModuleEntry_ptr = GrowableArray<ModuleEntry*>;
+using GrowableArray_SigEntry = GrowableArray<SigEntry>;
+
+#define DEBUG_CPP_VTABLE_TYPES_DO(f) \
+  f(GrowableArray_ModuleEntry_ptr) \
+  f(GrowableArray_SigEntry) \
+
+#endif
+
 // Currently, the archive contains ONLY the following types of objects that have C++ vtables.
+// NOTE: this table must be in-sync with sun.jvm.hotspot.memory.FileMapInfo::populateMetadataTypeArray().
 #define CPP_VTABLE_TYPES_DO(f) \
   f(ConstantPool) \
   f(InstanceKlass) \
@@ -61,28 +84,35 @@
   f(InstanceRefKlass) \
   f(InstanceStackChunkKlass) \
   f(Method) \
+  f(MethodData) \
+  f(MethodCounters) \
+  f(TypeArrayKlass) \
   f(ObjArrayKlass) \
-  f(TypeArrayKlass)
+  f(RefArrayKlass) \
+  f(FlatArrayKlass) \
+  f(ValueKlass) \
+  f(KlassTrainingData) \
+  f(MethodTrainingData) \
+  f(CompileTrainingData) \
+  NOT_PRODUCT(DEBUG_CPP_VTABLE_TYPES_DO(f))
 
 class CppVtableInfo {
   intptr_t _vtable_size;
-  intptr_t _cloned_vtable[1];
+  intptr_t _cloned_vtable[1]; // Pseudo flexible array member.
+  static size_t cloned_vtable_offset() { return offset_of(CppVtableInfo, _cloned_vtable); }
 public:
-  static int num_slots(int vtable_size) {
-    return 1 + vtable_size; // Need to add the space occupied by _vtable_size;
-  }
   int vtable_size()           { return int(uintx(_vtable_size)); }
   void set_vtable_size(int n) { _vtable_size = intptr_t(n); }
-  intptr_t* cloned_vtable()   { return &_cloned_vtable[0]; }
-  void zero()                 { memset(_cloned_vtable, 0, sizeof(intptr_t) * vtable_size()); }
+  // Using _cloned_vtable[i] for i > 0 causes undefined behavior. We use address calculation instead.
+  intptr_t* cloned_vtable()   { return (intptr_t*)((char*)this + cloned_vtable_offset()); }
+  void zero()                 { memset(cloned_vtable(), 0, sizeof(intptr_t) * vtable_size()); }
   // Returns the address of the next CppVtableInfo that can be placed immediately after this CppVtableInfo
   static size_t byte_size(int vtable_size) {
-    CppVtableInfo i;
-    return pointer_delta(&i._cloned_vtable[vtable_size], &i, sizeof(u1));
+    return cloned_vtable_offset() + (sizeof(intptr_t) * vtable_size);
   }
 };
 
-static inline intptr_t* vtable_of(const Metadata* m) {
+static inline intptr_t* vtable_of(const void* m) {
   return *((intptr_t**)m);
 }
 
@@ -112,6 +142,7 @@ CppVtableInfo* CppVtableCloner<T>::allocate_and_initialize(const char* name) {
 
 template <class T>
 void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
+  ResourceMark rm;
   T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
   int n = info->vtable_size();
   intptr_t* srcvtable = vtable_of(&tmp);
@@ -119,7 +150,7 @@ void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
   // safe to do memcpy.
-  log_debug(cds, vtables)("Copying %3d vtable entries for %s", n, name);
+  log_debug(aot, vtables)("Copying %3d vtable entries for %s to " INTPTR_FORMAT, n, name, p2i(dstvtable));
   memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
 }
 
@@ -169,7 +200,7 @@ int CppVtableCloner<T>::get_vtable_length(const char* name) {
       break;
     }
   }
-  log_debug(cds, vtables)("Found   %3d vtable entries for %s", vtable_len, name);
+  log_debug(aot, vtables)("Found   %3d vtable entries for %s", vtable_len, name);
 
   return vtable_len;
 }
@@ -192,12 +223,22 @@ enum ClonedVtableKind {
   _num_cloned_vtable_kinds
 };
 
-// This is a map of all the original vtptrs. E.g., for
+// _orig_cpp_vtptrs and _archived_cpp_vtptrs are used for type checking in
+// CppVtables::get_archived_vtable().
+//
+// _orig_cpp_vtptrs is a map of all the original vtptrs. E.g., for
 //     ConstantPool *cp = new (...) ConstantPool(...) ; // a dynamically allocated constant pool
 // the following holds true:
-//     _orig_cpp_vtptrs[ConstantPool_Kind] ==  ((intptr_t**)cp)[0]
-static intptr_t* _orig_cpp_vtptrs[_num_cloned_vtable_kinds];
+//     _orig_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
+//
+// _archived_cpp_vtptrs is a map of all the vptprs used by classes in a preimage. E.g., for
+//    InstanceKlass* k = a class loaded from the preimage;
+//    ConstantPool* cp = k->constants();
+// the following holds true:
+//     _archived_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
 static bool _orig_cpp_vtptrs_inited = false;
+static intptr_t* _orig_cpp_vtptrs[_num_cloned_vtable_kinds];
+static intptr_t* _archived_cpp_vtptrs[_num_cloned_vtable_kinds];
 
 template <class T>
 void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
@@ -213,29 +254,48 @@ void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
 // the following holds true:
 //     _index[ConstantPool_Kind]->cloned_vtable()  == ((intptr_t**)cp)[0]
 //     _index[InstanceKlass_Kind]->cloned_vtable() == ((intptr_t**)ik)[0]
-CppVtableInfo** CppVtables::_index = nullptr;
+static CppVtableInfo* _index[_num_cloned_vtable_kinds];
 
-char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
+// This marks the location in the archive where _index[0] is stored. This location
+// will be stored as FileMapHeader::_cloned_vtables_offset into the archive header.
+// Serviceability Agent uses this information to determine the vtables of
+// archived Metadata objects.
+char* CppVtables::_vtables_serialized_base = nullptr;
+
+void CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
-  size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(CppVtableInfo*);
-  _index = (CppVtableInfo**)builder->rw_region()->allocate(vtptrs_bytes);
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    // When dumping final archive, _index[kind] at this point is in the preimage.
+    // Remember these vtable pointers in _archived_cpp_vtptrs, as _index[kind] will now be rewritten
+    // to point to the runtime vtable data.
+    for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
+      assert(_index[i] != nullptr, "must have been restored by CppVtables::serialize()");
+      _archived_cpp_vtptrs[i] = _index[i]->cloned_vtable();
+    }
+  } else {
+    memset(_archived_cpp_vtptrs, 0, sizeof(_archived_cpp_vtptrs));
+  }
 
   CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
 
   size_t cpp_tables_size = builder->rw_region()->top() - builder->rw_region()->base();
   builder->alloc_stats()->record_cpp_vtables((int)cpp_tables_size);
-
-  return (char*)_index;
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
-  soc->do_ptr(&_index);
+  if (!soc->reading()) {
+    _vtables_serialized_base = (char*)ArchiveBuilder::current()->buffer_top();
+  }
+  for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
+    soc->do_ptr(&_index[i]);
+  }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }
 }
 
-intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address obj) {
+intptr_t* CppVtables::get_archived_vtable(MetaspaceClosureType type, address obj) {
   if (!_orig_cpp_vtptrs_inited) {
     CPP_VTABLE_TYPES_DO(INIT_ORIG_CPP_VTPTRS);
     _orig_cpp_vtptrs_inited = true;
@@ -243,28 +303,29 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
 
   assert(CDSConfig::is_dumping_archive(), "sanity");
   int kind = -1;
-  switch (msotype) {
-  case MetaspaceObj::SymbolType:
-  case MetaspaceObj::TypeArrayU1Type:
-  case MetaspaceObj::TypeArrayU2Type:
-  case MetaspaceObj::TypeArrayU4Type:
-  case MetaspaceObj::TypeArrayU8Type:
-  case MetaspaceObj::TypeArrayOtherType:
-  case MetaspaceObj::ConstMethodType:
-  case MetaspaceObj::ConstantPoolCacheType:
-  case MetaspaceObj::AnnotationsType:
-  case MetaspaceObj::MethodCountersType:
-  case MetaspaceObj::SharedClassPathEntryType:
-  case MetaspaceObj::RecordComponentType:
+  switch (type) {
+  case MetaspaceClosureType::SymbolType:
+  case MetaspaceClosureType::TypeArrayU1Type:
+  case MetaspaceClosureType::TypeArrayU2Type:
+  case MetaspaceClosureType::TypeArrayU4Type:
+  case MetaspaceClosureType::TypeArrayU8Type:
+  case MetaspaceClosureType::TypeArrayOtherType:
+  case MetaspaceClosureType::CArrayType:
+  case MetaspaceClosureType::ConstMethodType:
+  case MetaspaceClosureType::ConstantPoolCacheType:
+  case MetaspaceClosureType::AnnotationsType:
+  case MetaspaceClosureType::ModuleEntryType:
+  case MetaspaceClosureType::PackageEntryType:
+  case MetaspaceClosureType::RecordComponentType:
+  case MetaspaceClosureType::AdapterHandlerEntryType:
+  case MetaspaceClosureType::AdapterFingerPrintType:
+  PRODUCT_ONLY(case MetaspaceClosureType::GrowableArrayType:)
     // These have no vtables.
-    break;
-  case MetaspaceObj::MethodDataType:
-    // We don't archive MethodData <-- should have been removed in removed_unsharable_info
-    ShouldNotReachHere();
     break;
   default:
     for (kind = 0; kind < _num_cloned_vtable_kinds; kind ++) {
-      if (vtable_of((Metadata*)obj) == _orig_cpp_vtptrs[kind]) {
+      if (vtable_of((Metadata*)obj) == _orig_cpp_vtptrs[kind] ||
+          vtable_of((Metadata*)obj) == _archived_cpp_vtptrs[kind]) {
         break;
       }
     }
@@ -291,6 +352,7 @@ void CppVtables::zero_archived_vtables() {
 }
 
 bool CppVtables::is_valid_shared_method(const Method* m) {
-  assert(MetaspaceShared::is_in_shared_metaspace(m), "must be");
-  return vtable_of(m) == _index[Method_Kind]->cloned_vtable();
+  assert(AOTMetaspace::in_aot_cache(m), "must be");
+  return vtable_of(m) == _index[Method_Kind]->cloned_vtable() ||
+         vtable_of(m) == _archived_cpp_vtptrs[Method_Kind];
 }

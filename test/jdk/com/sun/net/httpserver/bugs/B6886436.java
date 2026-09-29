@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6886436
- * @summary HttpServer should not send a body with 204 response.
- * @library /test/lib
- * @run main B6886436
- * @run main/othervm -Djava.net.preferIPv6Addresses=true B6886436
- */
-
 import com.sun.net.httpserver.*;
 
 import java.util.*;
@@ -38,15 +29,31 @@ import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
+/*
+ * @test
+ * @bug 6886436
+ * @summary HttpServer should not send a body with 204 response.
+ * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ */
 public class B6886436 {
 
+    private static final Logger logger = Logger.getLogger ("com.sun.net.httpserver");
+
+    private static void setupLogging() {
+        final ConsoleHandler c = new ConsoleHandler();
+        c.setLevel(Level.WARNING);
+        logger.addHandler(c);
+        logger.setLevel(Level.WARNING);
+    }
+
     public static void main (String[] args) throws Exception {
-        Logger logger = Logger.getLogger ("com.sun.net.httpserver");
-        ConsoleHandler c = new ConsoleHandler();
-        c.setLevel (Level.WARNING);
-        logger.addHandler (c);
-        logger.setLevel (Level.WARNING);
+        setupLogging(); // merely for debugging
         Handler handler = new Handler();
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress (loopback, 0);
@@ -96,7 +103,7 @@ public class B6886436 {
             while (is.read () != -1) ;
             is.close();
             // send a 204 response with an empty chunked body
-            t.sendResponseHeaders (204, 0);
+            t.sendResponseHeaders (204, RSPBODY_CHUNKED);
             t.close();
         }
     }

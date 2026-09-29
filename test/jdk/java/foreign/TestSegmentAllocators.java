@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,21 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm TestSegmentAllocators
+ * @library /test/lib
+ * @run junit/othervm                                                           TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=-1 TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=3  TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=4  TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=5  TestSegmentAllocators
  */
 
 import java.lang.foreign.*;
 
-import org.testng.annotations.*;
+import jdk.test.lib.thread.VThreadRunner;
 
 import java.lang.foreign.Arena;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
@@ -44,18 +50,44 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ParameterizedClass
+@EnumSource(TestSegmentAllocators.ThreadMode.class)
+@ExtendWith(TestSegmentAllocators.ThreadModeInterceptor.class)
 public class TestSegmentAllocators {
 
     final static int ELEMS = 128;
 
-    @Test(dataProvider = "scalarAllocations")
+    @Parameter(0)
+    private ThreadMode threadMode;
+
+    enum ThreadMode {
+        PLATFORM,
+        VIRTUAL
+    }
+
     @SuppressWarnings("unchecked")
+    @ParameterizedTest
+    @MethodSource("scalarAllocations")
     public <Z, L extends ValueLayout> void testAllocation(Z value, AllocationFactory allocationFactory, L layout, AllocationFunction<Z, L> allocationFunction, Function<MemoryLayout, VarHandle> handleFactory) {
         layout = (L)layout.withByteAlignment(layout.byteSize());
         L[] layouts = (L[])new ValueLayout[] {
@@ -76,10 +108,10 @@ public class TestSegmentAllocators {
                     SegmentAllocator allocator = allocationFactory.allocator(alignedLayout.byteSize() * ELEMS, arena);
                     for (int i = 0; i < elems; i++) {
                         MemorySegment address = allocationFunction.allocate(allocator, alignedLayout, value);
-                        assertEquals(address.byteSize(), alignedLayout.byteSize());
+                        assertEquals(alignedLayout.byteSize(), address.byteSize());
                         addressList.add(address);
                         VarHandle handle = handleFactory.apply(alignedLayout);
-                        assertEquals(value, handle.get(address, 0L));
+                        assertEquals(handle.get(address, 0L), value);
                     }
                     boolean isBound = allocationFactory.isBound();
                     try {
@@ -100,14 +132,18 @@ public class TestSegmentAllocators {
 
     static final int SIZE_256M = 1024 * 1024 * 256;
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testReadOnlySlicingAllocator() {
-        SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        assertThrows(IllegalArgumentException.class, () -> {
+            SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testReadOnlyPrefixAllocator() {
-        SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        assertThrows(IllegalArgumentException.class, () -> {
+            SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        });
     }
 
     @Test
@@ -117,9 +153,9 @@ public class TestSegmentAllocators {
                 SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(i * 2 + 1));
                 MemorySegment address = allocator.allocate(i, i);
                 //check size
-                assertEquals(address.byteSize(), i);
+                assertEquals(i, address.byteSize());
                 //check alignment
-                assertEquals(address.address() % i, 0);
+                assertEquals(0, address.address() % i);
             }
         }
     }
@@ -133,61 +169,160 @@ public class TestSegmentAllocators {
         }
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationSize(SegmentAllocator allocator) {
-        allocator.allocate(-1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(-1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignZero(SegmentAllocator allocator) {
-        allocator.allocate(1, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, 0);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignNeg(SegmentAllocator allocator) {
-        allocator.allocate(1, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, -1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignNotPowerTwo(SegmentAllocator allocator) {
-        allocator.allocate(1, 3);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, 3);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
-        allocator.allocate(ValueLayout.JAVA_BYTE, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(ValueLayout.JAVA_BYTE, -1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationArrayOverflow(SegmentAllocator allocator) {
-        allocator.allocate(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
+        });
     }
 
-    @Test(expectedExceptions = OutOfMemoryError.class)
+    @Test
     public void testBadArenaNullReturn() {
         try (Arena arena = Arena.ofConfined()) {
-            arena.allocate(Long.MAX_VALUE, 2);
+            assertThrows(OutOfMemoryError.class, () -> {
+                arena.allocate(Long.MAX_VALUE, 2);
+            });
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void testArenaAllocateFromHeapSegment() {
         try (Arena arena = Arena.ofConfined()) {
             var heapSegment = MemorySegment.ofArray(new int[]{1});
-            arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+                arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            });
+            assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void testAllocatorAllocateFromHeapSegment() {
         try (Arena arena = Arena.ofConfined()) {
             SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
             var heapSegment = MemorySegment.ofArray(new int[]{1});
-            allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+                allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            });
+            assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
         }
     }
+
+    // Invariant checking tests for the SegmentAllocator method:
+    // MemorySegment allocateFrom(ValueLayout elementLayout,
+    //                            MemorySegment source,
+    //                            ValueLayout sourceElementLayout,
+    //                            long sourceOffset,
+    //                            long elementCount) {
+    @Test
+    public void testAllocatorAllocateFromArguments() {
+        try (Arena arena = Arena.ofConfined()) {
+            var sourceElements = 2;
+            var source = arena.allocate(ValueLayout.JAVA_LONG, sourceElements);
+            var elementLayout = ValueLayout.JAVA_INT;
+            var sourceElementLayout = ValueLayout.JAVA_INT;
+
+            // IllegalArgumentException if {@code elementLayout.byteSize() != sourceElementLayout.byteSize()}
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source, ValueLayout.JAVA_BYTE, 0, 1)
+            );
+
+            // IllegalArgumentException if source segment/offset
+            // are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
+            // in the source element layout
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source.asSlice(1), sourceElementLayout, 0, 1)
+            );
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, 1, 1)
+            );
+
+            // IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout.withByteAlignment(elementLayout.byteAlignment() * 2), source, sourceElementLayout, 1, 1)
+            );
+
+            // IllegalStateException if the {@linkplain MemorySegment#scope() scope} associated
+            // with {@code source} is not {@linkplain MemorySegment.Scope#isAlive() alive}
+            // This is tested in TestScopedOperations
+
+            // WrongThreadException if this method is called from a thread {@code T},
+            // such that {@code source.isAccessibleBy(T) == false}
+            CompletableFuture<Arena> future = CompletableFuture.supplyAsync(Arena::ofConfined);
+            try {
+                Arena otherThreadArena = future.get();
+                assertThrows(WrongThreadException.class, () ->
+                        otherThreadArena.allocateFrom(elementLayout, source, sourceElementLayout, 0, 1)
+                );
+            } catch (ExecutionException | InterruptedException e) {
+                fail("Unable to create arena", e);
+            }
+
+            // IllegalArgumentException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, Long.MAX_VALUE)
+            );
+
+            // IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, source.byteSize() - (1 * sourceElementLayout.byteAlignment()) + elementLayout.byteSize(), 1)
+            );
+
+            // IndexOutOfBoundsException if {@code sourceOffset < 0}
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, -elementLayout.byteSize(), 1)
+            );
+
+            // IllegalArgumentException if {@code elementCount < 0}
+            assertThrows(IllegalArgumentException.class, () ->
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, -1)
+            );
+
+
+        }
+    }
+
 
     @Test
     public void testArrayAllocateDelegation() {
@@ -211,7 +346,7 @@ public class TestSegmentAllocators {
         allocator.allocateFrom(ValueLayout.JAVA_FLOAT);
         allocator.allocateFrom(ValueLayout.JAVA_LONG);
         allocator.allocateFrom(ValueLayout.JAVA_DOUBLE);
-        assertEquals(calls.get(), 7);
+        assertEquals(7, calls.get());
     }
 
     @Test
@@ -230,11 +365,12 @@ public class TestSegmentAllocators {
             };
         };
         allocator.allocateFrom("Hello");
-        assertEquals(calls.get(), 1);
+        assertEquals(1, calls.get());
     }
 
 
-    @Test(dataProvider = "arrayAllocations")
+    @ParameterizedTest
+    @MethodSource("arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
         Arena[] arenas = {
@@ -246,12 +382,35 @@ public class TestSegmentAllocators {
                 SegmentAllocator allocator = allocationFactory.allocator(100, arena);
                 MemorySegment address = allocationFunction.allocate(allocator, layout, arr);
                 Z found = arrayHelper.toArray(address, layout);
-                assertEquals(found, arr);
+                assertArraysEqual(arr, found);
             }
         }
     }
 
-    @Test(dataProvider = "arrayAllocations")
+    private static void assertArraysEqual(Object arr, Object found) {
+        //in JUnit, assertEquals will really only call .equals, and that does not work well for arrays
+        //there's a set of explicit assertArrayEquals method, but we need "sharp" types for that to work(??):
+        if (arr instanceof byte[]) {
+            assertArrayEquals((byte[]) arr, (byte[]) found);
+        } else if (arr instanceof char[]) {
+            assertArrayEquals((char[]) arr, (char[]) found);
+        } else if (arr instanceof short[]) {
+            assertArrayEquals((short[]) arr, (short[]) found);
+        } else if (arr instanceof int[]) {
+            assertArrayEquals((int[]) arr, (int[]) found);
+        } else if (arr instanceof long[]) {
+            assertArrayEquals((long[]) arr, (long[]) found);
+        } else if (arr instanceof float[]) {
+            assertArrayEquals((float[]) arr, (float[]) found);
+        } else if (arr instanceof double[]) {
+            assertArrayEquals((double[]) arr, (double[]) found);
+        } else {
+            assertArrayEquals((Object[]) arr, (Object[]) found);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("arrayAllocations")
     public <Z> void testPredicatesAndCommands(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
         Arena[] arenas = {
@@ -272,7 +431,6 @@ public class TestSegmentAllocators {
         }
     }
 
-    @DataProvider(name = "scalarAllocations")
     static Object[][] scalarAllocations() {
         List<Object[]> scalarAllocations = new ArrayList<>();
         for (AllocationFactory factory : AllocationFactory.values()) {
@@ -328,7 +486,6 @@ public class TestSegmentAllocators {
         return scalarAllocations.toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "arrayAllocations")
     static Object[][] arrayAllocations() {
         List<Object[]> arrayAllocations = new ArrayList<>();
         for (AllocationFactory factory : AllocationFactory.values()) {
@@ -532,10 +689,36 @@ public class TestSegmentAllocators {
         };
     }
 
-    @DataProvider(name = "allocators")
     static Object[][] allocators() {
         return new Object[][] {
                 { SegmentAllocator.prefixAllocator(Arena.global().allocate(10, 1)) },
         };
+    }
+
+    public static final class ThreadModeInterceptor implements InvocationInterceptor {
+
+        @Override
+        public void interceptTestMethod(Invocation<Void> invocation,
+                                        ReflectiveInvocationContext<Method> invocationContext,
+                                        ExtensionContext extensionContext) throws Throwable {
+            proceed(invocation, extensionContext);
+        }
+
+        @Override
+        public void interceptTestTemplateMethod(Invocation<Void> invocation,
+                                                ReflectiveInvocationContext<Method> invocationContext,
+                                                ExtensionContext extensionContext) throws Throwable {
+            proceed(invocation, extensionContext);
+        }
+
+        private static void proceed(Invocation<Void> invocation,
+                                    ExtensionContext extensionContext) throws Throwable {
+            TestSegmentAllocators test = (TestSegmentAllocators) extensionContext.getRequiredTestInstance();
+            if (test.threadMode == ThreadMode.VIRTUAL) {
+                VThreadRunner.run(invocation::proceed);
+            } else {
+                invocation.proceed();
+            }
+        }
     }
 }

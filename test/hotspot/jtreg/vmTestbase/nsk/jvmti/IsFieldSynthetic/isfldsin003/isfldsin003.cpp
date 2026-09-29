@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -40,7 +40,7 @@ typedef struct {
     jboolean is_synthetic;
 } field_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
@@ -64,12 +64,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -114,14 +114,14 @@ Java_nsk_jvmti_IsFieldSynthetic_isfldsin003a_check(JNIEnv *env,
     jboolean isSynthetic;
     size_t i;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
 
     for (i = 0; i < sizeof(fields) / sizeof(field_info); i++) {
         fid = env->GetFieldID(clazz, fields[i].name, fields[i].sig);
-        if (fid == NULL) {
+        if (fid == nullptr) {
             printf("(%" PRIuPTR ") cannot get field ID for %s:\"%s\"\n",
                    i, fields[i].name, fields[i].sig);
             result = STATUS_FAILED;

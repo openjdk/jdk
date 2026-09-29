@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8225715
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @compile JShellHeapDumpTest.java
  * @run main/timeout=240 JShellHeapDumpTest
@@ -53,7 +54,8 @@ public class JShellHeapDumpTest {
     static Process jShellProcess;
     static boolean doSleep = true; // By default do a short sleep when app starts up
 
-    public static void launch(String expectedMessage, List<String> toolArgs)
+    // Returns false if the attempt should be retried.
+    public static boolean launch(String expectedMessage, List<String> toolArgs, boolean allowRetry)
         throws IOException {
 
         try {
@@ -81,6 +83,10 @@ public class JShellHeapDumpTest {
             System.out.println("###### End of all output which took " + elapsedTime + "ms");
             output.shouldHaveExitValue(0);
         } catch (Exception ex) {
+            if (allowRetry) {
+                System.out.println("Exception " + ex + " in 'launch' occured. Allow one retry.");
+                return false;
+            }
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
             if (jShellProcess.isAlive()) {
@@ -91,12 +97,18 @@ public class JShellHeapDumpTest {
                 System.out.println("Jshell not alive");
             }
         }
+        return true;
     }
 
     public static void launch(String expectedMessage, String... toolArgs)
         throws IOException {
 
-        launch(expectedMessage, Arrays.asList(toolArgs));
+        boolean res = launch(expectedMessage, Arrays.asList(toolArgs), true);
+        // Allow a retry for !doSleep, because the sleep allows the debuggee to stabilize,
+        // making it very unlikely that jmap will fail.
+        if (!res && !doSleep) {
+            launch(expectedMessage, Arrays.asList(toolArgs), false);
+        }
     }
 
     /* Returns false if the attempt should be retried. */
@@ -151,12 +163,7 @@ public class JShellHeapDumpTest {
         long startTime = System.currentTimeMillis();
         try {
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jshell");
-            if (doSleep) {
-                launcher.addVMArgs(Utils.getTestJavaOpts());
-            } else {
-                // Don't allow use of SerialGC. See JDK-8313655.
-                launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:\\+UseSerialGC"));
-            }
+            launcher.addVMArgs(Utils.getTestJavaOpts());
             ProcessBuilder pb = new ProcessBuilder(launcher.getCommand());
             // Needed so we can properly parse the "Welcome to JShell" output.
             pb.command().add("-J-Duser.language=en");

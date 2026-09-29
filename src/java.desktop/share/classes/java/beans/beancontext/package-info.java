@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,16 @@
  * context can be nested within another bean context. This package also
  * contains events and listener interface for beans being added and removed from
  * a bean context.
+ * <p>
+ * These APIs are now both obsolete and express an <em>anti-pattern</em> of component
+ * assembly and interaction.
+ * <p>
+ * This package has been deprecated and may be removed in a future version of
+ * the Java Platform. There is no replacement.
+ * <p>
+ * All of the classes and interfaces in this package have been terminally deprecated.
+ * <p>
+ * Users are advised to migrate their applications to other technologies.
  *
  * @since 1.2
  */

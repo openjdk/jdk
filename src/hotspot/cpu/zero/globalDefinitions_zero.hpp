@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2021, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,9 +30,11 @@
 #define SUPPORTS_NATIVE_CX8
 #endif
 
+// The expected size in bytes of a cache line.
 #define DEFAULT_CACHE_LINE_SIZE 64
 
-#define SUPPORT_MONITOR_COUNT
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
 #include <ffi.h>
 

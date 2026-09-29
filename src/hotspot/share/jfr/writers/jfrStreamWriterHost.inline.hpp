@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_JFR_WRITERS_JFRSTREAMWRITERHOST_INLINE_HPP
 #define SHARE_JFR_WRITERS_JFRSTREAMWRITERHOST_INLINE_HPP
 
-#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/writers/jfrStreamWriterHost.hpp"
+
+#include "jfr/jni/jfrJavaSupport.hpp"
 #include "runtime/os.hpp"
 
 template <typename Adapter, typename AP>

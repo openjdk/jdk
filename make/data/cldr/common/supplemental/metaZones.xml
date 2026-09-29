@@ -146,8 +146,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Africa_Eastern"/>
 			</timezone>
 			<timezone type="Africa/Monrovia">
-				<usesMetazone mzone="Liberia" to="1972-05-01 00:45"/>
-				<usesMetazone mzone="GMT" from="1972-05-01 00:45"/>
+				<usesMetazone mzone="Liberia" to="1972-01-07 00:45"/>
+				<!-- actual transition at 00:44:30, but ICU4C cannot parse that -->
+				<usesMetazone mzone="GMT" from="1972-01-07 00:45"/>
 			</timezone>
 			<timezone type="Africa/Nairobi">
 				<usesMetazone mzone="Africa_Eastern"/>
@@ -187,7 +188,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Africa/Windhoek">
 				<usesMetazone to="1990-03-20 22:00" mzone="Africa_Southern"/>
 				<usesMetazone to="1994-03-20 22:00" from="1990-03-20 22:00" mzone="Africa_Central"/>
-				<usesMetazone to="2017-10-23 22:00" from="1994-03-20 22:00" mzone="Africa_Western"/>
+				<usesMetazone to="2017-10-23 22:00" from="1994-03-20 22:00" mzone="Africa_Western" stdOffset="+01" dstOffset="+02"/>
 				<usesMetazone from="2017-10-23 22:00" mzone="Africa_Central"/>
 			</timezone>
 			<timezone type="America/Adak">
@@ -265,8 +266,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Brasilia"/>
 			</timezone>
 			<timezone type="America/Bahia_Banderas">
-				<usesMetazone to="1970-01-01 08:00" mzone="America_Pacific"/>
-				<usesMetazone to="2010-04-04 09:00" from="1970-01-01 08:00" mzone="America_Mountain"/>
+				<usesMetazone to="2010-04-04 09:00" mzone="America_Mountain"/>
 				<usesMetazone from="2010-04-04 09:00" mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Barbados">
@@ -304,8 +304,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Amazon"/>
 			</timezone>
 			<timezone type="America/Cancun">
-				<usesMetazone to="1981-12-23 06:00" mzone="America_Central"/>
-				<usesMetazone to="1998-08-02 06:00" from="1981-12-23 06:00" mzone="America_Eastern"/>
+				<usesMetazone to="1981-12-26 08:00" mzone="America_Central"/>
+				<usesMetazone to="1983-01-04 05:00" from="1981-12-26 08:00" mzone="America_Eastern"/>
+				<usesMetazone to="1997-10-26 07:00" from="1983-01-04 05:00" mzone="America_Central"/>
+				<usesMetazone to="1998-08-02 06:00" from="1997-10-26 07:00" mzone="America_Eastern"/>
 				<usesMetazone to="2015-02-01 08:00" from="1998-08-02 06:00" mzone="America_Central"/>
 				<usesMetazone from="2015-02-01 08:00" mzone="America_Eastern"/>
 			</timezone>
@@ -402,7 +404,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Atlantic"/>
 			</timezone>
 			<timezone type="America/Godthab">
-				<usesMetazone mzone="Greenland_Western"/>
+				<usesMetazone to="2024-03-26 01:00" mzone="Greenland_Western"/>
+				<usesMetazone from="2024-03-26 01:00" mzone="Greenland"/>
 			</timezone>
 			<timezone type="America/Goose_Bay">
 				<usesMetazone to="1988-04-03 04:01" mzone="Atlantic"/>
@@ -436,8 +439,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Cuba"/>
 			</timezone>
 			<timezone type="America/Hermosillo">
-				<usesMetazone to="1970-01-01 08:00" mzone="America_Pacific"/>
-				<usesMetazone from="1970-01-01 08:00" mzone="Mexico_Pacific"/>
+				<usesMetazone mzone="Mexico_Pacific"/>
 			</timezone>
 			<timezone type="America/Indiana/Knox">
 				<usesMetazone to="1991-10-27 07:00" mzone="America_Central"/>
@@ -546,8 +548,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Mazatlan">
-				<usesMetazone to="1970-01-01 08:00" mzone="America_Pacific"/>
-				<usesMetazone from="1970-01-01 08:00" mzone="Mexico_Pacific"/>
+				<usesMetazone mzone="Mexico_Pacific"/>
 			</timezone>
 			<timezone type="America/Mendoza">
 				<usesMetazone to="1990-03-04 02:00" mzone="Argentina"/>
@@ -561,9 +562,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1973-04-29 07:00" mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Merida">
-				<usesMetazone to="1981-12-23 06:00" mzone="America_Central"/>
-				<usesMetazone to="1982-12-02 05:00" from="1981-12-23 06:00" mzone="America_Eastern"/>
-				<usesMetazone from="1982-12-02 05:00" mzone="America_Central"/>
+				<usesMetazone to="1981-12-26 08:00" mzone="America_Central"/>
+				<usesMetazone to="1982-11-02 07:00" from="1981-12-26 08:00" mzone="America_Eastern"/>
+				<usesMetazone from="1982-11-02 07:00" mzone="America_Central"/>
 			</timezone>
 			<timezone type="America/Metlakatla">
 				<usesMetazone to="2015-11-01 10:00" mzone="America_Pacific"/>
@@ -596,9 +597,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="America/New_York">
 				<usesMetazone mzone="America_Eastern"/>
 			</timezone>
-			<timezone type="America/Nipigon">
-				<usesMetazone mzone="America_Eastern"/>
-			</timezone>
 			<timezone type="America/Nome">
 				<usesMetazone to="1983-10-30 12:00" mzone="Bering"/>
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
@@ -626,11 +624,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="America/Panama">
 				<usesMetazone mzone="America_Eastern"/>
 			</timezone>
-			<timezone type="America/Pangnirtung">
-				<usesMetazone to="1999-10-31 06:00" mzone="America_Eastern"/>
-				<usesMetazone to="2000-10-29 07:00" from="1999-10-31 06:00" mzone="America_Central"/>
-				<usesMetazone from="2000-10-29 07:00" mzone="America_Eastern"/>
-			</timezone>
 			<timezone type="America/Paramaribo">
 				<usesMetazone to="1975-11-20 03:30" mzone="Dutch_Guiana"/>
 				<usesMetazone from="1975-11-20 03:30" mzone="Suriname"/>
@@ -653,8 +646,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="America/Punta_Arenas">
 				<usesMetazone to="2016-12-03 23:00" mzone="Chile"/>
 			</timezone>
-			<timezone type="America/Rainy_River">
-				<usesMetazone mzone="America_Central"/>
+			<timezone type="America/Coyhaique">
+				<usesMetazone to="2025-03-20 03:00" mzone="Chile"/>
 			</timezone>
 			<timezone type="America/Rankin_Inlet">
 				<usesMetazone to="2000-10-29 07:00" mzone="America_Central"/>
@@ -679,9 +672,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2013-11-10 04:00" from="2008-06-24 05:00" mzone="Amazon"/>
 				<usesMetazone from="2013-11-10 04:00" mzone="Acre"/>
 			</timezone>
-			<timezone type="America/Santa_Isabel">
-				<usesMetazone mzone="Mexico_Northwest"/>
-			</timezone>
 			<timezone type="America/Santarem">
 				<usesMetazone to="2008-06-24 04:00" mzone="Amazon"/>
 				<usesMetazone from="2008-06-24 04:00" mzone="Brasilia"/>
@@ -700,7 +690,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Scoresbysund">
 				<usesMetazone to="1981-03-29 02:00" mzone="Greenland_Central"/>
-				<usesMetazone from="1981-03-29 02:00" mzone="Greenland_Eastern"/>
+				<usesMetazone to="2024-03-31 01:00" from="1981-03-29 02:00" mzone="Greenland_Eastern"/>
+				<usesMetazone from="2024-03-31 01:00" mzone="Greenland"/>
 			</timezone>
 			<timezone type="America/Sitka">
 				<usesMetazone to="1983-10-30 09:00" mzone="America_Pacific"/>
@@ -734,9 +725,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="America/Thule">
 				<usesMetazone mzone="Atlantic"/>
 			</timezone>
-			<timezone type="America/Thunder_Bay">
-				<usesMetazone mzone="America_Eastern"/>
-			</timezone>
 			<timezone type="America/Tijuana">
 				<usesMetazone mzone="America_Pacific"/>
 			</timezone>
@@ -747,7 +735,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Atlantic"/>
 			</timezone>
 			<timezone type="America/Vancouver">
-				<usesMetazone mzone="America_Pacific"/>
+				<usesMetazone mzone="America_Pacific" stdOffset="-08" dstOffset="-07"/>
 			</timezone>
 			<timezone type="America/Whitehorse">
 				<usesMetazone to="2020-11-01 07:00" mzone="America_Pacific"/>
@@ -758,9 +746,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="America/Yakutat">
 				<usesMetazone from="1983-11-30 09:00" mzone="Alaska"/>
-			</timezone>
-			<timezone type="America/Yellowknife">
-				<usesMetazone mzone="America_Mountain"/>
 			</timezone>
 			<timezone type="Antarctica/Casey">
 				<usesMetazone to="2009-10-17 18:00" mzone="Australia_Western"/>
@@ -774,7 +759,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2019-10-03 19:00" from="2019-03-16 16:00" mzone="Australia_Western"/>
 				<usesMetazone to="2020-03-07 16:00" from="2019-10-03 19:00" mzone="Casey"/>
 				<usesMetazone to="2020-10-03 16:01" from="2020-03-07 16:00" mzone="Australia_Western"/>
-				<usesMetazone from="2020-10-03 16:01" mzone="Casey"/>
+				<usesMetazone to="2021-03-13 13:00" from="2020-10-03 16:01" mzone="Casey"/>
+				<usesMetazone to="2021-10-02 16:01" from="2021-03-13 13:00" mzone="Australia_Western"/>
+				<usesMetazone to="2022-03-12 13:00" from="2021-10-02 16:01" mzone="Casey"/>
+				<usesMetazone to="2022-10-01 16:01" from="2022-03-12 13:00" mzone="Australia_Western"/>
+				<usesMetazone to="2023-03-08 16:00" from="2022-10-01 16:01" mzone="Casey"/>
+				<usesMetazone from="2023-03-08 16:00" mzone="Australia_Western"/>
 			</timezone>
 			<timezone type="Antarctica/Davis">
 				<usesMetazone mzone="Davis"/>
@@ -793,7 +783,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Antarctica/Palmer">
 				<usesMetazone to="1982-05-01 03:00" mzone="Argentina"/>
-				<usesMetazone to="2016-12-03 23:00" from="1982-05-01 03:00" mzone="Chile"/>
+				<usesMetazone to="2016-12-04 03:00" from="1982-05-01 03:00" mzone="Chile"/>
 			</timezone>
 			<timezone type="Antarctica/Rothera">
 				<usesMetazone mzone="Rothera"/>
@@ -815,32 +805,36 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Asia/Almaty">
 				<usesMetazone to="2004-10-30 20:00" mzone="Almaty"/>
-				<usesMetazone from="2004-10-30 20:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 20:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Amman">
 				<usesMetazone to="2022-10-27 22:00" mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Asia/Anadyr">
 				<usesMetazone to="2010-03-27 14:00" mzone="Anadyr"/>
-				<usesMetazone from="2010-03-27 14:00" to="2014-10-25 14:00" mzone="Magadan"/>
-				<usesMetazone from="2014-10-25 14:00" mzone="Anadyr"/>
+				<usesMetazone from="2010-03-27 14:00" to="2011-03-26 15:00" mzone="Magadan"/>
+				<usesMetazone from="2011-03-26 15:00" mzone="Kamchatka" />
 			</timezone>
 			<timezone type="Asia/Aqtau">
 				<usesMetazone to="1991-12-15 19:00" mzone="Shevchenko"/>
 				<usesMetazone to="2004-10-30 22:00" from="1991-12-15 19:00" mzone="Aqtau"/>
-				<usesMetazone from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Aqtobe">
 				<usesMetazone to="1991-12-15 19:00" mzone="Aktyubinsk"/>
 				<usesMetazone to="2004-10-30 21:00" from="1991-12-15 19:00" mzone="Aqtobe"/>
-				<usesMetazone from="2004-10-30 21:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 21:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Ashgabat">
-				<usesMetazone to="1991-10-26 20:00" mzone="Ashkhabad"/>
-				<usesMetazone from="1991-10-26 20:00" mzone="Turkmenistan"/>
+				<usesMetazone to="1992-01-18 22:00" mzone="Ashkhabad"/>
+				<usesMetazone from="1992-01-18 22:00" mzone="Turkmenistan"/>
 			</timezone>
 			<timezone type="Asia/Atyrau">
-				<usesMetazone from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Baghdad">
 				<usesMetazone mzone="Arabian"/>
@@ -850,22 +844,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1972-05-31 20:00" mzone="Arabian"/>
 			</timezone>
 			<timezone type="Asia/Baku">
-				<usesMetazone to="1991-08-29 20:00" mzone="Baku"/>
-				<usesMetazone from="1991-08-29 20:00" mzone="Azerbaijan"/>
+				<usesMetazone to="1991-03-30 22:00" mzone="Baku"/>
+				<usesMetazone from="1991-03-30 22:00" mzone="Azerbaijan"/>
 			</timezone>
 			<timezone type="Asia/Bangkok">
 				<usesMetazone mzone="Indochina"/>
 			</timezone>
-<!-- No mappings for now
 			<timezone type="Asia/Barnaul">
+				<usesMetazone from="2016-03-26 20:00" mzone="Krasnoyarsk"/>
 			</timezone>
--->
 			<timezone type="Asia/Beirut">
 				<usesMetazone mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Asia/Bishkek">
-				<usesMetazone to="1991-08-30 20:00" mzone="Frunze"/>
-				<usesMetazone from="1991-08-30 20:00" mzone="Kyrgystan"/>
+				<usesMetazone to="1991-03-30 20:00" mzone="Frunze"/>
+				<usesMetazone from="1991-03-30 20:00" mzone="Kyrgystan"/>
 			</timezone>
 			<timezone type="Asia/Brunei">
 				<usesMetazone mzone="Brunei"/>
@@ -875,13 +868,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Asia/Chita">
 				<usesMetazone to="2014-10-25 16:00" mzone="Yakutsk"/>
-				<usesMetazone to="2016-03-26 18:00" from="2014-10-25 16:00" mzone="Irkutsk"/>
+				<usesMetazone to="2016-03-26 18:00" from="2014-10-25 17:00" mzone="Irkutsk"/>
 				<usesMetazone from="2016-03-26 18:00" mzone="Yakutsk"/>
-			</timezone>
-			<timezone type="Asia/Choibalsan">
-				<usesMetazone to="1983-03-31 16:00" mzone="Mongolia"/>
-				<usesMetazone to="2008-03-30 15:00" from="1983-03-31 16:00" mzone="Choibalsan"/>
-				<usesMetazone from="2008-03-30 15:00" mzone="Mongolia"/>
 			</timezone>
 			<timezone type="Asia/Colombo">
 				<usesMetazone to="1996-05-24 18:30" mzone="India"/>
@@ -909,6 +897,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Asia/Famagusta">
 				<usesMetazone to="2016-09-07 21:00" mzone="Europe_Eastern"/>
+				<usesMetazone from="2017-10-29 01:00" mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Asia/Gaza">
 				<usesMetazone to="1995-12-31 22:00" mzone="Israel"/>
@@ -954,16 +943,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2011-09-12 13:00" from="2003-12-31 15:00" mzone="Vladivostok"/>
 				<usesMetazone from="2011-09-12 13:00" mzone="Yakutsk"/>
 			</timezone>
-<!-- No mappings for now
-			<timezone type="Asia/Kirov">
+			<timezone type="Europe/Kirov">
+				<usesMetazone from="2014-10-25 22:00" mzone="Moscow" />
 			</timezone>
--->
 			<timezone type="Asia/Krasnoyarsk">
 				<usesMetazone mzone="Krasnoyarsk"/>
 			</timezone>
 			<timezone type="Asia/Kuala_Lumpur">
-				<usesMetazone to="1981-12-31 16:30" mzone="Malaya"/>
-				<usesMetazone from="1981-12-31 16:30" mzone="Malaysia"/>
+				<usesMetazone to="1981-12-31 16:00" mzone="Malaya"/>
+				<usesMetazone from="1981-12-31 16:00" mzone="Malaysia"/>
 			</timezone>
 			<timezone type="Asia/Kuching">
 				<usesMetazone to="1981-12-31 16:00" mzone="Borneo"/>
@@ -997,7 +985,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="2014-10-25 19:00" mzone="Krasnoyarsk"/>
 			</timezone>
 			<timezone type="Asia/Novosibirsk">
-				<usesMetazone mzone="Novosibirsk"/>
+				<usesMetazone to="2016-07-23 20:00" mzone="Novosibirsk"/>
+				<usesMetazone from="2016-07-23 20:00" mzone="Krasnoyarsk"/>
 			</timezone>
 			<timezone type="Asia/Omsk">
 				<usesMetazone mzone="Omsk"/>
@@ -1005,7 +994,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Asia/Oral">
 				<usesMetazone to="1991-12-15 20:00" mzone="Uralsk"/>
 				<usesMetazone to="2004-10-30 22:00" from="1991-12-15 20:00" mzone="Oral"/>
-				<usesMetazone from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 22:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Phnom_Penh">
 				<usesMetazone mzone="Indochina"/>
@@ -1024,13 +1014,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1972-05-31 20:00" mzone="Arabian"/>
 			</timezone>
 			<timezone type="Asia/Qostanay">
-				<usesMetazone from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Qyzylorda">
 				<usesMetazone to="1991-12-15 19:00" mzone="Kizilorda"/>
 				<usesMetazone to="2004-10-30 21:00" from="1991-12-15 19:00" mzone="Qyzylorda"/>
 				<usesMetazone to="2018-12-20 18:00" from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
-				<usesMetazone from="2018-12-20 18:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone to="2024-02-29 18:00" from="2018-12-20 18:00" mzone="Kazakhstan_Western"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan"/>
 			</timezone>
 			<timezone type="Asia/Rangoon">
 				<usesMetazone mzone="Myanmar"/>
@@ -1042,7 +1034,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1975-06-12 16:00" mzone="Indochina"/>
 			</timezone>
 			<timezone type="Asia/Sakhalin">
-				<usesMetazone mzone="Sakhalin"/>
+				<usesMetazone to="2014-10-25 15:00" mzone="Sakhalin"/>
+				<usesMetazone from="2014-10-25 15:00" to="2016-03-26 16:00" mzone="Magadan"/>
+				<usesMetazone from="2016-04-26 16:00" mzone="Magadan"/>
 			</timezone>
 			<timezone type="Asia/Samarkand">
 				<usesMetazone to="1981-09-30 18:00" mzone="Samarkand"/>
@@ -1061,17 +1055,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Asia/Srednekolymsk">
 				<usesMetazone to="2014-10-25 14:00" mzone="Magadan"/>
+				<usesMetazone from="2016-04-23 16:00" mzone="Magadan" />
 			</timezone>
 			<timezone type="Asia/Taipei">
 				<usesMetazone mzone="Taipei"/>
 			</timezone>
 			<timezone type="Asia/Tashkent">
-				<usesMetazone to="1991-08-31 18:00" mzone="Tashkent"/>
-				<usesMetazone from="1991-08-31 18:00" mzone="Uzbekistan"/>
+				<usesMetazone to="1991-03-30 20:00" mzone="Tashkent"/>
+				<usesMetazone from="1991-03-30 20:00" mzone="Uzbekistan"/>
 			</timezone>
 			<timezone type="Asia/Tbilisi">
-				<usesMetazone to="1991-04-08 20:00" mzone="Tbilisi"/>
-				<usesMetazone from="1991-04-08 20:00" mzone="Georgia"/>
+				<usesMetazone to="1991-03-30 22:00" mzone="Tbilisi"/>
+				<usesMetazone from="1991-03-30 22:00" mzone="Georgia"/>
 			</timezone>
 			<timezone type="Asia/Tehran">
 				<usesMetazone mzone="Iran"/>
@@ -1083,10 +1078,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Asia/Tokyo">
 				<usesMetazone mzone="Japan"/>
 			</timezone>
-<!-- No mappings for now
 			<timezone type="Asia/Tomsk">
+				<usesMetazone from="2016-05-28 20:00" mzone="Krasnoyarsk"/>
 			</timezone>
--->
 			<timezone type="Asia/Ulaanbaatar">
 				<usesMetazone mzone="Mongolia"/>
 			</timezone>
@@ -1112,13 +1106,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1992-01-18 22:00" mzone="Yekaterinburg"/>
 			</timezone>
 			<timezone type="Asia/Yerevan">
-				<usesMetazone to="1991-09-22 20:00" mzone="Yerevan"/>
-				<usesMetazone from="1991-09-22 20:00" mzone="Armenia"/>
+				<usesMetazone to="1991-03-30 22:00" mzone="Yerevan"/>
+				<usesMetazone from="1991-03-30 22:00" mzone="Armenia"/>
 			</timezone>
 			<timezone type="Atlantic/Azores">
-				<usesMetazone to="1992-09-27 02:00" mzone="Azores"/>
-				<usesMetazone to="1993-03-28 01:00" from="1992-09-27 02:00" mzone="Europe_Western"/>
-				<usesMetazone from="1993-03-28 01:00" mzone="Azores"/>
+				<usesMetazone to="1992-12-27 02:00" mzone="Azores"/>
+				<usesMetazone to="1993-06-17 01:00" from="1992-12-27 02:00" mzone="Europe_Western"/>
+				<usesMetazone from="1993-06-17 01:00" mzone="Azores"/>
 			</timezone>
 			<timezone type="Atlantic/Bermuda">
 				<usesMetazone mzone="Atlantic"/>
@@ -1156,9 +1150,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Australia/Broken_Hill">
 				<usesMetazone mzone="Australia_Central"/>
 			</timezone>
-			<timezone type="Australia/Currie">
-				<usesMetazone mzone="Australia_Eastern"/>
-			</timezone>
 			<timezone type="Australia/Darwin">
 				<usesMetazone mzone="Australia_Central"/>
 			</timezone>
@@ -1184,14 +1175,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Australia/Sydney">
 				<usesMetazone mzone="Australia_Eastern"/>
 			</timezone>
-			<timezone type="CST6CDT">
-				<usesMetazone mzone="America_Central"/>
-			</timezone>
 			<timezone type="Etc/GMT">
 				<usesMetazone mzone="GMT"/>
-			</timezone>
-			<timezone type="EST5EDT">
-				<usesMetazone mzone="America_Eastern"/>
 			</timezone>
 			<timezone type="Europe/Amsterdam">
 				<usesMetazone mzone="Europe_Central"/>
@@ -1201,6 +1186,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Europe/Astrakhan">
 				<usesMetazone to="2016-03-26 23:00" from="1992-03-28 22:00" mzone="Moscow"/>
+				<usesMetazone from="2016-03-26 23:00" mzone="Samara"/>
 			</timezone>
 			<timezone type="Europe/Athens">
 				<usesMetazone mzone="Europe_Eastern"/>
@@ -1227,15 +1213,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Europe_Central"/>
 			</timezone>
 			<timezone type="Europe/Chisinau">
-				<usesMetazone to="1990-05-05 21:00" mzone="Moscow"/>
-				<usesMetazone from="1990-05-05 21:00" mzone="Europe_Eastern"/>
+				<usesMetazone to="1990-05-05 22:00" mzone="Moscow"/>
+				<usesMetazone from="1990-05-05 22:00" mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Europe/Copenhagen">
 				<usesMetazone mzone="Europe_Central"/>
 			</timezone>
 			<timezone type="Europe/Dublin">
-				<usesMetazone mzone="Irish" to="1971-10-31 02:00"/>
-				<usesMetazone mzone="GMT" from="1971-10-31 02:00"/>
+				<usesMetazone mzone="Irish" to="1971-10-31 02:00" stdOffset="+00" dstOffset="+01"/>
+				<usesMetazone mzone="GMT" from="1971-10-31 02:00" stdOffset="+00" dstOffset="+01"/>
 			</timezone>
 			<timezone type="Europe/Gibraltar">
 				<usesMetazone mzone="Europe_Central"/>
@@ -1253,8 +1239,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Europe/Istanbul">
 				<usesMetazone to="1978-06-28 21:00" mzone="Europe_Eastern"/>
-				<usesMetazone to="1985-04-19 21:00" from="1978-06-28 21:00" mzone="Turkey"/>
-				<usesMetazone to="2016-09-06 21:00" from="1985-04-19 21:00" mzone="Europe_Eastern"/>
+				<usesMetazone to="1984-10-31 23:00" from="1978-06-28 21:00" mzone="Turkey"/>
+				<usesMetazone to="2016-09-06 21:00" from="1984-10-31 23:00" mzone="Europe_Eastern"/>
 				<usesMetazone from="2016-09-06 21:00" mzone="Turkey"/>
 			</timezone>
 			<timezone type="Europe/Jersey">
@@ -1343,6 +1329,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Europe/Saratov">
 				<usesMetazone to="2016-12-03 23:00" from="1992-03-28 22:00" mzone="Moscow"/>
+				<usesMetazone from="2016-12-03 23:00" mzone="Samara"/>
 			</timezone>
 			<timezone type="Europe/Simferopol">
 				<usesMetazone to="1990-06-30 23:00" mzone="Moscow"/>
@@ -1369,10 +1356,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Europe/Ulyanovsk">
 				<usesMetazone to="2016-03-26 23:00" from="1992-01-19 00:00" mzone="Moscow"/>
-			</timezone>
-			<timezone type="Europe/Uzhgorod">
-				<usesMetazone to="1990-06-30 22:00" mzone="Moscow"/>
-				<usesMetazone from="1990-06-30 22:00" mzone="Europe_Eastern"/>
+				<usesMetazone from="2016-03-26 23:00" mzone="Samara"/>
 			</timezone>
 			<timezone type="Europe/Vaduz">
 				<usesMetazone mzone="Europe_Central"/>
@@ -1390,17 +1374,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1999-10-31 01:00" mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Europe/Volgograd">
-				<usesMetazone mzone="Volgograd"/>
+				<usesMetazone to="2020-12-26 22:00" mzone="Volgograd"/>
+				<usesMetazone from="2020-12-26 22:00" mzone="Moscow" />
 			</timezone>
 			<timezone type="Europe/Warsaw">
 				<usesMetazone mzone="Europe_Central"/>
 			</timezone>
 			<timezone type="Europe/Zagreb">
 				<usesMetazone mzone="Europe_Central"/>
-			</timezone>
-			<timezone type="Europe/Zaporozhye">
-				<usesMetazone to="1990-06-30 22:00" mzone="Moscow"/>
-				<usesMetazone from="1990-06-30 22:00" mzone="Europe_Eastern"/>
 			</timezone>
 			<timezone type="Europe/Zurich">
 				<usesMetazone mzone="Europe_Central"/>
@@ -1437,9 +1418,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Indian/Reunion">
 				<usesMetazone mzone="Reunion"/>
-			</timezone>
-			<timezone type="MST7MDT">
-				<usesMetazone mzone="America_Mountain"/>
 			</timezone>
 			<timezone type="Pacific/Apia">
 				<usesMetazone mzone="Apia"/>
@@ -1486,12 +1464,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="2000-12-22 14:00" mzone="Chamorro"/>
 			</timezone>
 			<timezone type="Pacific/Honolulu">
-				<usesMetazone to="1983-10-30 11:00" mzone="Alaska_Hawaii"/>
-				<usesMetazone from="1983-10-30 11:00" mzone="Hawaii_Aleutian"/>
-			</timezone>
-			<timezone type="Pacific/Johnston">
-				<usesMetazone to="1983-10-30 11:00" mzone="Alaska_Hawaii"/>
-				<usesMetazone from="1983-10-30 11:00" mzone="Hawaii_Aleutian"/>
+				<usesMetazone mzone="Hawaii"/>
 			</timezone>
 			<timezone type="Pacific/Kiritimati">
 				<usesMetazone mzone="Line_Islands"/>
@@ -1566,9 +1539,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<timezone type="Pacific/Wallis">
 				<usesMetazone mzone="Wallis"/>
 			</timezone>
-			<timezone type="PST8PDT">
-				<usesMetazone mzone="America_Pacific"/>
-			</timezone>
 		</metazoneInfo>
 
 		<mapTimezones type="metazones" typeVersion="2018e">
@@ -1629,7 +1599,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="America_Eastern" territory="PA" type="America/Panama"/>
 			<mapZone other="America_Mountain" territory="001" type="America/Denver"/>
 			<mapZone other="America_Mountain" territory="CA" type="America/Edmonton"/>
-			<mapZone other="America_Mountain" territory="MX" type="America/Hermosillo"/>
 			<mapZone other="America_Pacific" territory="001" type="America/Los_Angeles"/>
 			<mapZone other="America_Pacific" territory="CA" type="America/Vancouver"/>
 			<mapZone other="America_Pacific" territory="MX" type="America/Tijuana"/>
@@ -1692,7 +1661,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Chatham" territory="001" type="Pacific/Chatham"/>
 			<mapZone other="Chile" territory="001" type="America/Santiago"/>
 			<mapZone other="China" territory="001" type="Asia/Shanghai"/>
-			<mapZone other="Choibalsan" territory="001" type="Asia/Choibalsan"/>
 			<mapZone other="Christmas" territory="001" type="Indian/Christmas"/>
 			<mapZone other="Cocos" territory="001" type="Indian/Cocos"/>
 			<mapZone other="Colombia" territory="001" type="America/Bogota"/>
@@ -1776,6 +1744,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="GMT" territory="SN" type="Africa/Dakar"/>
 			<mapZone other="GMT" territory="TG" type="Africa/Lome"/>
 			<mapZone other="Goose_Bay" territory="001" type="America/Goose_Bay"/>
+			<mapZone other="Greenland" territory="001" type="America/Godthab"/>
 			<mapZone other="Greenland_Central" territory="001" type="America/Scoresbysund"/>
 			<mapZone other="Greenland_Eastern" territory="001" type="America/Scoresbysund"/>
 			<mapZone other="Greenland_Western" territory="001" type="America/Godthab"/>
@@ -1783,7 +1752,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Gulf" territory="001" type="Asia/Dubai"/>
 			<mapZone other="Gulf" territory="OM" type="Asia/Muscat"/>
 			<mapZone other="Guyana" territory="001" type="America/Guyana"/>
-			<mapZone other="Hawaii_Aleutian" territory="001" type="Pacific/Honolulu"/>
+			<mapZone other="Hawaii_Aleutian" territory="001" type="America/Adak"/>
+			<mapZone other="Hawaii" territory="001" type="Pacific/Honolulu"/>
 			<mapZone other="Hong_Kong" territory="001" type="Asia/Hong_Kong"/>
 			<mapZone other="Hovd" territory="001" type="Asia/Hovd"/>
 			<mapZone other="India" territory="001" type="Asia/Calcutta"/>
@@ -1802,6 +1772,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Japan" territory="001" type="Asia/Tokyo"/>
 			<mapZone other="Kamchatka" territory="001" type="Asia/Kamchatka"/>
 			<mapZone other="Karachi" territory="001" type="Asia/Karachi"/>
+			<mapZone other="Kazakhstan" territory="001" type="Asia/Almaty"/>
 			<mapZone other="Kazakhstan_Eastern" territory="001" type="Asia/Almaty"/>
 			<mapZone other="Kazakhstan_Western" territory="001" type="Asia/Aqtobe"/>
 			<mapZone other="Kizilorda" territory="001" type="Asia/Qyzylorda"/>
@@ -1816,7 +1787,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Line_Islands" territory="001" type="Pacific/Kiritimati"/>
 			<mapZone other="Lord_Howe" territory="001" type="Australia/Lord_Howe"/>
 			<mapZone other="Macau" territory="001" type="Asia/Macau"/>
-			<mapZone other="Macquarie" territory="001" type="Antarctica/Macquarie"/>
 			<mapZone other="Magadan" territory="001" type="Asia/Magadan"/>
 			<mapZone other="Malaya" territory="001" type="Asia/Kuala_Lumpur"/>
 			<mapZone other="Malaysia" territory="001" type="Asia/Kuching"/>
@@ -1825,7 +1795,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Marshall_Islands" territory="001" type="Pacific/Majuro"/>
 			<mapZone other="Mauritius" territory="001" type="Indian/Mauritius"/>
 			<mapZone other="Mawson" territory="001" type="Antarctica/Mawson"/>
-			<mapZone other="Mexico_Northwest" territory="001" type="America/Santa_Isabel"/>
 			<mapZone other="Mexico_Pacific" territory="001" type="America/Mazatlan"/>
 			<mapZone other="Mongolia" territory="001" type="Asia/Ulaanbaatar"/>
 			<mapZone other="Moscow" territory="001" type="Europe/Moscow"/>
@@ -1937,7 +1906,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazoneId shortId="chat" longId="Chatham" />
 			<metazoneId shortId="chil" longId="Chile" />
 			<metazoneId shortId="chin" longId="China" />
-			<metazoneId shortId="choi" longId="Choibalsan" />
 			<metazoneId shortId="chri" longId="Christmas" />
 			<metazoneId shortId="coco" longId="Cocos" />
 			<metazoneId shortId="colo" longId="Colombia" />
@@ -1962,11 +1930,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazoneId shortId="giis" longId="Gilbert_Islands" />
 			<metazoneId shortId="mgmt" longId="GMT" />
 			<metazoneId shortId="grea" longId="Greenland_Eastern" />
+			<metazoneId shortId="gree" longId="Greenland" />
 			<metazoneId shortId="grwe" longId="Greenland_Western" />
 			<metazoneId shortId="guam" longId="Guam" />
 			<metazoneId shortId="gulf" longId="Gulf" />
 			<metazoneId shortId="guya" longId="Guyana" />
 			<metazoneId shortId="haal" longId="Hawaii_Aleutian" />
+			<metazoneId shortId="hwai" longId="Hawaii" />
 			<metazoneId shortId="hoko" longId="Hong_Kong" />
 			<metazoneId shortId="hovd" longId="Hovd" />
 			<metazoneId shortId="indi" longId="India" />
@@ -1980,6 +1950,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazoneId shortId="isra" longId="Israel" />
 			<metazoneId shortId="japa" longId="Japan" />
 			<metazoneId shortId="kamc" longId="Kamchatka" />
+			<metazoneId shortId="kaza" longId="Kazakhstan" />
 			<metazoneId shortId="kaea" longId="Kazakhstan_Eastern" />
 			<metazoneId shortId="kawe" longId="Kazakhstan_Western" />
 			<metazoneId shortId="kore" longId="Korea" />
@@ -1990,7 +1961,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazoneId shortId="liis" longId="Line_Islands" />
 			<metazoneId shortId="loho" longId="Lord_Howe" />
 			<metazoneId shortId="maca" longId="Macau" />
-			<metazoneId shortId="macq" longId="Macquarie" />
 			<metazoneId shortId="maga" longId="Magadan" />
 			<metazoneId shortId="mala" longId="Malaysia" />
 			<metazoneId shortId="mald" longId="Maldives" />
@@ -1998,7 +1968,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazoneId shortId="mais" longId="Marshall_Islands" />
 			<metazoneId shortId="maur" longId="Mauritius" />
 			<metazoneId shortId="maws" longId="Mawson" />
-			<metazoneId shortId="meno" longId="Mexico_Northwest" />
 			<metazoneId shortId="mepa" longId="Mexico_Pacific" />
 			<metazoneId shortId="mong" longId="Mongolia" />
 			<metazoneId shortId="mosc" longId="Moscow" />

@@ -76,7 +76,7 @@ public abstract class Directive implements ModuleElement.Directive {
 
         @Override
         public String toString() {
-            return String.format("ACC_%s (0x%04x", name(), value);
+            return String.format("ACC_%s (0x%04x)", name(), value);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.File;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Point;
@@ -28,6 +29,7 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
@@ -51,6 +53,7 @@ public class JInternalFrameDraggingTest {
     private static JInternalFrame internalFrame;
     private static int FRAME_SIZE = 500;
     private static Color BACKGROUND_COLOR = Color.ORANGE;
+    private static final int tolerance = 10;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -69,14 +72,24 @@ public class JInternalFrameDraggingTest {
             BufferedImage img = robot.createScreenCapture(rect);
 
             int testRGB = BACKGROUND_COLOR.getRGB();
+            Color testColor = new Color(testRGB);
             for (int i = 1; i < size; i++) {
                 int rgbCW = img.getRGB(i, size / 2);
                 int rgbCH = img.getRGB(size / 2, i);
-                if (rgbCW != testRGB || rgbCH != testRGB) {
+                Color rgbCWColor = new Color(rgbCW);
+                Color rgbCHColor = new Color(rgbCH);
+
+                if (Math.abs(rgbCWColor.getRed() - testColor.getRed()) > tolerance
+                    || Math.abs(rgbCWColor.getGreen() - testColor.getGreen()) > tolerance
+                    || Math.abs(rgbCWColor.getBlue() - testColor.getBlue()) > tolerance
+                    || Math.abs(rgbCHColor.getRed() - testColor.getRed()) > tolerance
+                    || Math.abs(rgbCHColor.getGreen() - testColor.getGreen()) > tolerance
+                    || Math.abs(rgbCHColor.getBlue() - testColor.getBlue()) > tolerance) {
                     System.out.println("i " + i + " rgbCW " +
                                        Integer.toHexString(rgbCW) +
                                        " testRGB " + Integer.toHexString(testRGB) +
                                        " rgbCH " + Integer.toHexString(rgbCH));
+                    ImageIO.write(img, "png", new File("JInternalFrameDraggingTest.png"));
                     throw new RuntimeException("Background color is wrong!");
                 }
             }

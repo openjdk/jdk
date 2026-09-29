@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,9 @@
  * questions.
  */
 
-import java.security.Policy;
 
 /**
- *
- *
- * @author huizhe.wang@oracle.com
+ * Test base for the Extension Function tests.
  */
 public class TestBase {
     public static boolean isWindows = false;
@@ -37,9 +34,7 @@ public class TestBase {
     };
 
     String filepath;
-    boolean hasSM;
     String curDir;
-    Policy origPolicy;
     String testName;
     static String errMessage;
 
@@ -54,28 +49,15 @@ public class TestBase {
 
     //junit @Override
     protected void setUp() {
-        if (System.getSecurityManager() != null) {
-            hasSM = true;
-            System.setSecurityManager(null);
-        }
-
         filepath = System.getProperty("test.src");
         if (filepath == null) {
             //current directory
             filepath = System.getProperty("user.dir");
         }
-        origPolicy = Policy.getPolicy();
-
     }
 
     //junit @Override
     public void tearDown() {
-        // turn off security manager and restore policy
-        System.setSecurityManager(null);
-        Policy.setPolicy(origPolicy);
-        if (hasSM) {
-            System.setSecurityManager(new SecurityManager());
-        }
         System.out.println("\nNumber of tests passed: " + passed);
         System.out.println("Number of tests failed: " + failed + "\n");
 

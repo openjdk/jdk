@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -34,8 +33,12 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
+#include "oops/fieldInfo.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "oops/valueKlass.inline.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -83,14 +86,14 @@ const char* KlassInfoEntry::name() const {
   if (_klass->name() != nullptr) {
     name = _klass->external_name();
   } else {
-    if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
-    if (_klass == Universe::charArrayKlassObj())         name = "<charArrayKlass>";         else
-    if (_klass == Universe::floatArrayKlassObj())        name = "<floatArrayKlass>";        else
-    if (_klass == Universe::doubleArrayKlassObj())       name = "<doubleArrayKlass>";       else
-    if (_klass == Universe::byteArrayKlassObj())         name = "<byteArrayKlass>";         else
-    if (_klass == Universe::shortArrayKlassObj())        name = "<shortArrayKlass>";        else
-    if (_klass == Universe::intArrayKlassObj())          name = "<intArrayKlass>";          else
-    if (_klass == Universe::longArrayKlassObj())         name = "<longArrayKlass>";         else
+    if (_klass == Universe::boolArrayKlass())         name = "<boolArrayKlass>";         else
+    if (_klass == Universe::charArrayKlass())         name = "<charArrayKlass>";         else
+    if (_klass == Universe::floatArrayKlass())        name = "<floatArrayKlass>";        else
+    if (_klass == Universe::doubleArrayKlass())       name = "<doubleArrayKlass>";       else
+    if (_klass == Universe::byteArrayKlass())         name = "<byteArrayKlass>";         else
+    if (_klass == Universe::shortArrayKlass())        name = "<shortArrayKlass>";        else
+    if (_klass == Universe::intArrayKlass())          name = "<intArrayKlass>";          else
+    if (_klass == Universe::longArrayKlass())         name = "<longArrayKlass>";         else
       name = "<no name>";
   }
   return name;
@@ -170,7 +173,7 @@ public:
 
 KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _size_of_instances_in_words = 0;
-  _ref = (HeapWord*) Universe::boolArrayKlassObj();
+  _ref = (uintptr_t) Universe::boolArrayKlass();
   _buckets =
     (KlassInfoBucket*)  AllocateHeap(sizeof(KlassInfoBucket) * _num_buckets,
        mtInternal, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
@@ -190,13 +193,13 @@ KlassInfoTable::~KlassInfoTable() {
     for (int index = 0; index < _num_buckets; index++) {
       _buckets[index].empty();
     }
-    FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets);
+    FREE_C_HEAP_ARRAY(_buckets);
     _buckets = nullptr;
   }
 }
 
 uint KlassInfoTable::hash(const Klass* p) {
-  return (uint)(((uintptr_t)p - (uintptr_t)_ref) >> 2);
+  return (uint)(((uintptr_t)p - _ref) >> 2);
 }
 
 KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
@@ -365,6 +368,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
     } else {
       // We are only printing the hierarchy of a specific class.
       if (strcmp(classname, cie->klass()->external_name()) == 0) {
+        assert(cie->klass()->is_instance_klass(), "elements array contains only instance klasses");
         KlassHierarchy::set_do_print_for_class_hierarchy(cie, &cit, print_subclasses);
       }
     }
@@ -403,7 +407,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
 void KlassHierarchy::set_do_print_for_class_hierarchy(KlassInfoEntry* cie, KlassInfoTable* cit,
                                                       bool print_subclasses) {
   // Set do_print for all superclasses of this class.
-  Klass* super = ((InstanceKlass*)cie->klass())->java_super();
+  InstanceKlass* super = InstanceKlass::cast(cie->klass())->super();
   while (super != nullptr) {
     KlassInfoEntry* super_cie = cit->lookup(super);
     super_cie->set_do_print(true);
@@ -509,6 +513,131 @@ class HistoClosure : public KlassInfoClosure {
   }
 };
 
+class FindClassByNameClosure : public KlassInfoClosure {
+ private:
+  GrowableArray<Klass*>* _klasses;
+  Symbol* _classname;
+ public:
+  FindClassByNameClosure(GrowableArray<Klass*>* klasses, Symbol* classname) :
+    _klasses(klasses), _classname(classname) { }
+
+  void do_cinfo(KlassInfoEntry* cie) {
+    if (cie->klass()->name() == _classname) {
+      _klasses->append(cie->klass());
+    }
+  }
+};
+
+class FieldDesc {
+private:
+  Symbol* _name;
+  Symbol* _signature;
+  int _offset;
+  int _index;
+  InstanceKlass* _holder;
+  AccessFlags _access_flags;
+  FieldInfo::FieldFlags _field_flags;
+ public:
+  FieldDesc() : _name(nullptr), _signature(nullptr), _offset(-1), _index(-1), _holder(nullptr),
+                _access_flags(AccessFlags()), _field_flags(FieldInfo::FieldFlags((u4)0)) { }
+
+  FieldDesc(fieldDescriptor& fd) : _name(fd.name()), _signature(fd.signature()), _offset(fd.offset()),
+                                   _index(fd.index()), _holder(fd.field_holder()),
+                                   _access_flags(fd.access_flags()), _field_flags(fd.field_flags()) { }
+
+  const Symbol* name() { return _name;}
+  const Symbol* signature() { return _signature; }
+  int offset() const { return _offset; }
+  int index() const { return _index; }
+  const InstanceKlass* holder() { return _holder; }
+  const AccessFlags& access_flags() { return _access_flags; }
+  bool is_null_free_value_type() const { return _field_flags.is_null_free_value_type(); }
+};
+
+static int compare_offset(FieldDesc* f1, FieldDesc* f2) {
+   return f1->offset() > f2->offset() ? 1 : -1;
+}
+
+static void print_field(outputStream* st, int level, int offset, FieldDesc& fd, bool is_value_type, bool is_flat ) {
+  const char* flat_field_msg = is_flat ? "flat" : "";
+  st->print_cr("  @ %d %*s \"%s\" %s %s %s",
+      offset, level * 3, "",
+      fd.name()->as_C_string(),
+      fd.signature()->as_C_string(),
+      is_value_type ? " // value type " : "",
+      flat_field_msg);
+}
+
+static void print_flat_field(outputStream* st, int level, int offset, InstanceKlass* klass) {
+  assert(klass->is_value_klass(), "Only value types can be flat");
+  ValueKlass* vklass = ValueKlass::cast(klass);
+  GrowableArray<FieldDesc>* fields = new (mtServiceability) GrowableArray<FieldDesc>(100, mtServiceability);
+  for (AllFieldStream fd(klass); !fd.done(); fd.next()) {
+    if (!fd.access_flags().is_static()) {
+      fields->append(FieldDesc(fd.field_descriptor()));
+    }
+  }
+  fields->sort(compare_offset);
+  for(int i = 0; i < fields->length(); i++) {
+    FieldDesc fd = fields->at(i);
+    int offset2 = offset + fd.offset() - vklass->payload_offset();
+    print_field(st, level, offset2, fd,
+        fd.is_null_free_value_type(), fd.holder()->field_is_flat(fd.index()));
+    if (fd.holder()->field_is_flat(fd.index())) {
+      print_flat_field(st, level + 1, offset2 ,
+          InstanceKlass::cast(fd.holder()->get_value_type_field_klass(fd.index())));
+    }
+  }
+}
+
+void ClassPrintLayout::class_print_layout(outputStream* st, char* class_name) {
+  KlassInfoTable cit(true);
+  if (cit.allocation_failed()) {
+    st->print_cr("ERROR: Ran out of C-heap; hierarchy not generated");
+    return;
+  }
+
+  ResourceMark rm;
+  char* normalized_name = ResourceArea::strdup(class_name);
+  for (char* p = normalized_name; *p != '\0'; p++) {
+    if (*p == JVM_SIGNATURE_DOT) {
+      *p = JVM_SIGNATURE_SLASH;
+    }
+  }
+
+  Symbol* classname = SymbolTable::probe(normalized_name, (int)strlen(normalized_name));
+
+  GrowableArray<Klass*>* klasses = new (mtServiceability) GrowableArray<Klass*>(100, mtServiceability);
+
+  FindClassByNameClosure fbnc(klasses, classname);
+  cit.iterate(&fbnc);
+
+  for(int i = 0; i < klasses->length(); i++) {
+    Klass* klass = klasses->at(i);
+    if (!klass->is_instance_klass()) continue;  // Skip
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+    ResourceMark rm;
+    st->print_cr("Class %s [@%s]:", klass->external_name(),
+                 klass->class_loader_data()->loader_name());
+    GrowableArray<FieldDesc>* fields = new (mtServiceability) GrowableArray<FieldDesc>(100, mtServiceability);
+    for (AllFieldStream fd(ik); !fd.done(); fd.next()) {
+      if (!fd.access_flags().is_static()) {
+        fields->append(FieldDesc(fd.field_descriptor()));
+      }
+    }
+    fields->sort(compare_offset);
+    for(int i = 0; i < fields->length(); i++) {
+      FieldDesc fd = fields->at(i);
+      print_field(st, 0, fd.offset(), fd, fd.is_null_free_value_type(), fd.holder()->field_is_flat(fd.index()));
+      if (fd.holder()->field_is_flat(fd.index())) {
+        print_flat_field(st, 1, fd.offset(),
+            InstanceKlass::cast(fd.holder()->get_value_type_field_klass(fd.index())));
+      }
+    }
+  }
+  st->cr();
+}
+
 class RecordInstanceClosure : public ObjectClosure {
  private:
   KlassInfoTable* _cit;
@@ -539,7 +668,7 @@ class RecordInstanceClosure : public ObjectClosure {
 void ParHeapInspectTask::work(uint worker_id) {
   uintx missed_count = 0;
   bool merge_success = true;
-  if (!Atomic::load(&_success)) {
+  if (!AtomicAccess::load(&_success)) {
     // other worker has failed on parallel iteration.
     return;
   }
@@ -547,7 +676,7 @@ void ParHeapInspectTask::work(uint worker_id) {
   KlassInfoTable cit(false);
   if (cit.allocation_failed()) {
     // fail to allocate memory, stop parallel mode
-    Atomic::store(&_success, false);
+    AtomicAccess::store(&_success, false);
     return;
   }
   RecordInstanceClosure ric(&cit, _filter);
@@ -558,9 +687,9 @@ void ParHeapInspectTask::work(uint worker_id) {
     merge_success = _shared_cit->merge(&cit);
   }
   if (merge_success) {
-    Atomic::add(&_missed_count, missed_count);
+    AtomicAccess::add(&_missed_count, missed_count);
   } else {
-    Atomic::store(&_success, false);
+    AtomicAccess::store(&_success, false);
   }
 }
 
@@ -592,7 +721,7 @@ void HeapInspection::heap_inspection(outputStream* st, WorkerThreads* workers) {
     // populate table with object allocation info
     uintx missed_count = populate_table(&cit, nullptr, workers);
     if (missed_count != 0) {
-      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted " UINTX_FORMAT
+      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted %zu"
                                " total instances in data below",
                                missed_count);
     }

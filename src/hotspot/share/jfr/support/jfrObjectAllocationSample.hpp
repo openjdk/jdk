@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@
 
 #include "memory/allStatic.hpp"
 
+class JavaThread;
 class Klass;
-class Thread;
 
 class JfrObjectAllocationSample : AllStatic {
   friend class JfrAllocationTracer;
-  static void send_event(const Klass* klass, size_t alloc_size, bool outside_tlab, Thread* thread);
+  static void send_event(const Klass* klass, size_t alloc_size, bool outside_tlab, JavaThread* jt);
 };
 
 #endif // SHARE_JFR_SUPPORT_JFROBJECTALLOCATIONSAMPLE_HPP

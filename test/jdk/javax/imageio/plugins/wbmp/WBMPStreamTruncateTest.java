@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,6 @@ public class WBMPStreamTruncateTest
     static final int height = 100;
     public static void main(String[] args) throws IOException
     {
-        String sep = System.getProperty("file.separator");
-        String dir = System.getProperty("test.src", ".");
-        String filePath = dir+sep;
         BufferedImage srcImage = new
                 BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY);
         Graphics2D g = (Graphics2D) srcImage.getGraphics();
@@ -57,7 +54,7 @@ public class WBMPStreamTruncateTest
         g.dispose();
         // create WBMP image
         File imageFile = File.
-                createTempFile("test", ".wbmp", new File(filePath));
+                createTempFile("test", ".wbmp", new File("./"));
         imageFile.deleteOnExit();
         ImageIO.write(srcImage, "wbmp", imageFile);
         BufferedImage testImg =

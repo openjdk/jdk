@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,15 @@ public class HeapInfoTest {
     public void run(CommandExecutor executor) {
         String cmd = "GC.heap_info";
         OutputAnalyzer output = executor.execute(cmd);
-        output.shouldContain("Metaspace");
+
+        // All GCs have different strategies for printing similar information,
+        // which makes it hard to grep for anything substantial. However, all
+        // GCs print the string "used", so lets check for that to see if the
+        // jcmd printed something at all.
+        output.shouldContain("used");
+
+        output.shouldNotContain("Unknown diagnostic command");
+        output.shouldHaveExitValue(0);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.javap;
 
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +63,7 @@ public class StackMapWriter extends InstructionDetailWriter {
     }
 
     void setStackMap(CodeAttribute code) {
-        StackMapTableAttribute attr = code.findAttribute(Attributes.STACK_MAP_TABLE)
+        StackMapTableAttribute attr = code.findAttribute(Attributes.stackMapTable())
                 .orElse(null);
         if (attr == null) {
             map = null;
@@ -98,8 +99,27 @@ public class StackMapWriter extends InstructionDetailWriter {
         if (m != null) {
             print("StackMap locals: ", m.locals(), true);
             print("StackMap stack: ", m.stack(), false);
+            if (m.locals().contains(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
+                printFields("StackMap unset fields: ", m.unsetFields());
+            }
         }
 
+    }
+
+    void printFields(String label, List<NameAndTypeEntry> entries) {
+        print(label);
+        boolean first = true;
+        for (var e : entries) {
+            if (!first) {
+                print(", ");
+            } else {
+                first = false;
+            }
+            print(e::name);
+            print(":");
+            print(e::type);
+        }
+        println();
     }
 
     void print(String label, List<StackMapFrameInfo.VerificationTypeInfo> entries,
@@ -122,25 +142,25 @@ public class StackMapWriter extends InstructionDetailWriter {
         switch (entry) {
             case StackMapFrameInfo.SimpleVerificationTypeInfo s -> {
                 switch (s) {
-                    case ITEM_TOP ->
+                    case TOP ->
                         print("top");
 
-                    case ITEM_INTEGER ->
+                    case INTEGER ->
                         print("int");
 
-                    case ITEM_FLOAT ->
+                    case FLOAT ->
                         print("float");
 
-                    case ITEM_LONG ->
+                    case LONG ->
                         print("long");
 
-                    case ITEM_DOUBLE ->
+                    case DOUBLE ->
                         print("double");
 
-                    case ITEM_NULL ->
+                    case NULL ->
                         print("null");
 
-                    case ITEM_UNINITIALIZED_THIS ->
+                    case UNINITIALIZED_THIS ->
                         print("uninit_this");
                 }
             }

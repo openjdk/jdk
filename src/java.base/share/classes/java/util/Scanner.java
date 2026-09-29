@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
@@ -78,12 +78,25 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     }
  * }
  *
- * <p>As another example, this code allows {@code long} types to be
+ * <p>This code allows {@code long} types to be
  * assigned from entries in a file {@code myNumbers}:
  * {@snippet :
  *      Scanner sc = new Scanner(new File("myNumbers"));
  *      while (sc.hasNextLong()) {
  *          long aLong = sc.nextLong();
+ *      }
+ * }
+ *
+ * <p>This code uses a {@code Scanner} to read lines from {@link System#in}. The
+ * {@code Scanner} uses the system property value of
+ * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}. Specifying
+ * the charset explicitly is important when reading from {@code System.in}, as it
+ * may differ from the {@link Charset#defaultCharset() default charset} depending
+ * on the host environment or user configuration:
+ * {@snippet :
+ *      Scanner sc = new Scanner(System.in, System.getProperty("stdin.encoding"));
+ *      while (sc.hasNextLine()) {
+ *          String aLine = sc.nextLine();
  *      }
  * }
  *
@@ -787,7 +800,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @param  source A string to scan
      */
     public Scanner(String source) {
-        this(new StringReader(source), WHITESPACE_PATTERN);
+        this(Reader.of(source), WHITESPACE_PATTERN);
     }
 
     /**

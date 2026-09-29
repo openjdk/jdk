@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,20 +40,19 @@
  * @run main/othervm -XX:StartFlightRecording PrintClasses
  */
 
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 
 public class PrintClasses {
   public static void main(String args[]) throws Exception {
-    var pid = Long.toString(ProcessHandle.current().pid());
     var pb = new ProcessBuilder();
 
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.classes"});
+    pb.command(new PidJcmdExecutor().getCommandLine("VM.classes"));
     var output = new OutputAnalyzer(pb.start());
     output.shouldNotContain("instance size");
     output.shouldContain(PrintClasses.class.getSimpleName());
 
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.classes", "-verbose"});
+    pb.command(new PidJcmdExecutor().getCommandLine("VM.classes", "-verbose"));
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("instance size");
     output.shouldContain(PrintClasses.class.getSimpleName());

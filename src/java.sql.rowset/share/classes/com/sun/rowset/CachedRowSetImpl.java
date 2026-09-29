@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,12 @@ import java.io.*;
 import java.math.*;
 import java.util.*;
 import java.text.*;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import javax.sql.rowset.*;
 import javax.sql.rowset.spi.*;
 import javax.sql.rowset.serial.*;
 import com.sun.rowset.internal.*;
 import com.sun.rowset.providers.*;
-import sun.reflect.misc.ReflectUtil;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -325,6 +321,9 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
     private boolean updateOnInsert;
 
+    private static final String MAX_ROW_WARNING =
+            "Populating rows setting has exceeded max row setting";
+
 
 
     /**
@@ -357,7 +356,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * <P>
      * @throws SQLException if an error occurs
      */
-    @SuppressWarnings("removal")
     public CachedRowSetImpl() throws SQLException {
 
         try {
@@ -367,16 +365,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         }
 
         // set the Reader, this maybe overridden latter
-        try {
-            provider = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                @Override
-                public SyncProvider run() throws SyncFactoryException {
-                    return SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
-                }
-            }, null, new RuntimePermission("accessClassInPackage.com.sun.rowset.providers"));
-        } catch (PrivilegedActionException pae) {
-            throw (SyncFactoryException) pae.getException();
-        }
+        provider = SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
 
         if (!(provider instanceof RIOptimisticProvider)) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.invalidp").toString());
@@ -396,11 +385,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         // insert row setup
         onInsertRow = false;
         insertRow = null;
-
-        // set the warnings
-        sqlwarn = new SQLWarning();
-        rowsetWarning = new RowSetWarning();
-
     }
 
     /**
@@ -662,14 +646,15 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         mRows = this.getMaxRows();
         rowsFetched = 0;
         currentRow = null;
+        boolean exceededMax = false;
 
         while ( data.next()) {
 
             currentRow = new Row(numCols);
 
-            if ( rowsFetched > mRows && mRows > 0) {
-                rowsetWarning.setNextWarning(new RowSetWarning("Populating rows "
-                + "setting has exceeded max row setting"));
+            if (rowsFetched > mRows && mRows > 0 && !exceededMax) {
+                exceededMax = true;
+                addRowSetWarning(MAX_ROW_WARNING);
             }
             for ( i = 1; i <= numCols; i++) {
                 /*
@@ -2976,7 +2961,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 // create new instance of the class
                 SQLData obj = null;
                 try {
-                    ReflectUtil.checkPackageAccess(c);
                     @SuppressWarnings("deprecation")
                     Object tmp = c.newInstance();
                     obj = (SQLData) tmp;
@@ -5726,7 +5710,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 // create new instance of the class
                 SQLData obj = null;
                 try {
-                    ReflectUtil.checkPackageAccess(c);
                     @SuppressWarnings("deprecation")
                     Object tmp = c.newInstance();
                     obj = (SQLData) tmp;
@@ -6825,6 +6808,18 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         return rowsetWarning;
     }
 
+    /**
+     * Adds a RowSetWarning with the specified reason.
+     * If there is no root warning yet, one is created, otherwise the warning
+     * is chained to an existing warning chain.
+     */
+    private void addRowSetWarning(String reason) {
+        if (rowsetWarning == null) {
+            rowsetWarning = new RowSetWarning(reason);
+        } else {
+            rowsetWarning.setNextWarning(new RowSetWarning(reason));
+        }
+    }
 
     /**
      * The function tries to isolate the tablename when only setCommand
@@ -7338,16 +7333,14 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
             currentRow = new Row(numCols);
           if(pageSize == 0){
-            if ( rowsFetched >= mRows && mRows > 0) {
-                rowsetWarning.setNextException(new SQLException("Populating rows "
-                + "setting has exceeded max row setting"));
+            if (rowsFetched >= mRows && mRows > 0) {
+                addRowSetWarning(MAX_ROW_WARNING);
                 break;
             }
           }
           else {
-              if ( (rowsFetched >= pageSize) ||( maxRowsreached >= mRows && mRows > 0)) {
-                rowsetWarning.setNextException(new SQLException("Populating rows "
-                + "setting has exceeded max row setting"));
+              if ((rowsFetched >= pageSize) || ( maxRowsreached >= mRows && mRows > 0)) {
+                addRowSetWarning(MAX_ROW_WARNING);
                 break;
             }
           }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import jdk.dynalink.linker.GuardingDynamicLinker;
 
 /**
  * Thrown at the invocation if the call site can not be linked by any available {@link GuardingDynamicLinker}.
+ * @since 9
  */
 public class NoSuchDynamicMethodException extends RuntimeException {
     private static final long serialVersionUID = 1L;

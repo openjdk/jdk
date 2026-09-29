@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * site. Instances of these requests will be constructed and passed to all
  * {@link GuardingDynamicLinker} objects managed by the {@link DynamicLinker}
  * that is trying to link the call site.
+ * @since 9
  */
 public interface LinkRequest {
     /**

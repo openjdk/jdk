@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,7 +516,7 @@ public class WindowsKeybindings {
                         "KP_DOWN", "selectNextRow",
                         "shift DOWN", "selectNextRowExtendSelection",
                         "shift KP_DOWN", "selectNextRowExtendSelection",
-                        "ctrl shift DOWN", "selectNextRowExtendSelection",
+                        "ctrl shift DOWN", "selectLastRowExtendSelection",
                         "ctrl shift KP_DOWN", "selectNextRowExtendSelection",
                         "ctrl DOWN", "selectNextRowChangeLead",
                         "ctrl KP_DOWN", "selectNextRowChangeLead",
@@ -524,7 +524,7 @@ public class WindowsKeybindings {
                         "KP_UP", "selectPreviousRow",
                         "shift UP", "selectPreviousRowExtendSelection",
                         "shift KP_UP", "selectPreviousRowExtendSelection",
-                        "ctrl shift UP", "selectPreviousRowExtendSelection",
+                        "ctrl shift UP", "selectFirstRowExtendSelection",
                         "ctrl shift KP_UP", "selectPreviousRowExtendSelection",
                         "ctrl UP", "selectPreviousRowChangeLead",
                         "ctrl KP_UP", "selectPreviousRowChangeLead",

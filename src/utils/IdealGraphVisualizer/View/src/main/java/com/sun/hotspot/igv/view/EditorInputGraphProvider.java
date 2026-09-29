@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,9 +73,9 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     }
 
     @Override
-    public void clearSelectedNodes() {
+    public void clearSelectedElements() {
         if (editor != null && EditorTopComponent.isOpen(editor)) {
-            editor.clearSelectedNodes();
+            editor.clearSelectedElements();
             editor.requestActive();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -39,7 +38,9 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/refArrayOop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -55,19 +56,20 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/classLoadingService.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/finalizerService.hpp"
-#include "services/writeableFlags.hpp"
+#include "services/gcNotifier.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
-#include "services/gcNotifier.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
 #include "services/threadService.hpp"
+#include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
@@ -149,9 +151,8 @@ void Management::init() {
 }
 
 void Management::initialize(TRAPS) {
-  if (UseNotificationThread) {
-    NotificationThread::initialize();
-  }
+  NotificationThread::initialize();
+
   if (ManagementServer) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
@@ -161,7 +162,6 @@ void Management::initialize(TRAPS) {
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_agent_Agent(),
                                                    loader,
-                                                   Handle(),
                                                    THREAD);
     if (k == nullptr) {
       vm_exit_during_initialization("Management agent initialization failure: "
@@ -685,7 +685,7 @@ JVM_ENTRY(jlong, jmm_SetPoolThreshold(JNIEnv* env, jobject obj, jmmThresholdType
 
   if ((size_t)threshold > max_uintx) {
     stringStream st;
-    st.print("Invalid valid threshold value. Threshold value (" JLONG_FORMAT ") > max value of size_t (" UINTX_FORMAT ")", threshold, max_uintx);
+    st.print("Invalid valid threshold value. Threshold value (" JLONG_FORMAT ") > max value of size_t (%zu)", threshold, max_uintx);
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), st.as_string(), -1);
   }
 
@@ -885,11 +885,26 @@ static jint get_num_flags() {
   for (int i = 0; i < nFlags; i++) {
     JVMFlag* flag = &JVMFlag::flags[i];
     // Exclude the locked (diagnostic, experimental) flags
-    if (flag->is_unlocked() || flag->is_unlocker()) {
+    if (flag->is_unlocked()) {
       count++;
     }
   }
   return count;
+}
+
+static jlong get_gc_cpu_time() {
+  if (!os::is_thread_cpu_time_supported()) {
+    return -1;
+  }
+
+  {
+    MutexLocker hl(Heap_lock);
+    if (Universe::heap()->is_shutting_down()) {
+      return -1;
+    }
+
+    return CPUTimeUsage::GC::total();
+  }
 }
 
 static jlong get_long_attribute(jmmLongAttribute att) {
@@ -917,6 +932,9 @@ static jlong get_long_attribute(jmmLongAttribute att) {
 
   case JMM_JVM_UPTIME_MS:
     return Management::ticks_to_ms(os::elapsed_counter());
+
+  case JMM_TOTAL_GC_CPU_TIME:
+    return get_gc_cpu_time();
 
   case JMM_COMPILE_TOTAL_TIME_MS:
     return Management::ticks_to_ms(CompileBroker::total_compilation_ticks());
@@ -978,7 +996,7 @@ static jlong get_long_attribute(jmmLongAttribute att) {
     return ClassLoadingService::class_method_data_size();
 
   case JMM_OS_MEM_TOTAL_PHYSICAL_BYTES:
-    return os::physical_memory();
+    return static_cast<jlong>(os::physical_memory());
 
   default:
     return -1;
@@ -1130,6 +1148,7 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
         // create dummy snapshot
         dump_result.add_thread_snapshot();
       } else {
+        assert(dump_result.t_list()->includes(jt), "Must be protected");
         dump_result.add_thread_snapshot(jt);
       }
     }
@@ -1427,18 +1446,19 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   // last flag entry is always null, so subtract 1
   int nFlags = (int) JVMFlag::numFlags - 1;
   // allocate a temp array
-  objArrayOop r = oopFactory::new_objArray(vmClasses::String_klass(),
-                                           nFlags, CHECK_NULL);
-  objArrayHandle flags_ah(THREAD, r);
+  refArrayOop r = oopFactory::new_refArray(vmClasses::String_klass(),
+                                           nFlags,
+                                           CHECK_NULL);
+  refArrayHandle flags_ah(THREAD, r);
   int num_entries = 0;
   for (int i = 0; i < nFlags; i++) {
     JVMFlag* flag = &JVMFlag::flags[i];
-    // Exclude notproduct and develop flags in product builds.
+    // Exclude develop flags in product builds.
     if (flag->is_constant_in_binary()) {
       continue;
     }
     // Exclude the locked (experimental, diagnostic) flags
-    if (flag->is_unlocked() || flag->is_unlocker()) {
+    if (flag->is_unlocked()) {
       Handle s = java_lang_String::create_from_str(flag->name(), CHECK_NULL);
       flags_ah->obj_at_put(num_entries, s());
       num_entries++;
@@ -1447,7 +1467,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
 
   if (num_entries < nFlags) {
     // Return array of right length
-    objArrayOop res = oopFactory::new_objArray(vmClasses::String_klass(), num_entries, CHECK_NULL);
+    refArrayOop res = oopFactory::new_refArray(vmClasses::String_klass(), num_entries, CHECK_NULL);
     for(int i = 0; i < num_entries; i++) {
       res->obj_at_put(i, flags_ah->obj_at(i));
     }
@@ -1460,7 +1480,7 @@ JVM_END
 // Utility function used by jmm_GetVMGlobals.  Returns false if flag type
 // can't be determined, true otherwise.  If false is returned, then *global
 // will be incomplete and invalid.
-bool add_global_entry(Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
+static bool add_global_entry(Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
   Handle flag_name;
   if (name() == nullptr) {
     flag_name = java_lang_String::create_from_str(flag->name(), CHECK_false);
@@ -1553,10 +1573,10 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
 
   if (names != nullptr) {
     // return the requested globals
-    objArrayOop ta = objArrayOop(JNIHandles::resolve_non_null(names));
-    objArrayHandle names_ah(THREAD, ta);
+    refArrayOop ta = oop_cast<refArrayOop>(JNIHandles::resolve_non_null(names));
+    refArrayHandle names_ah(THREAD, ta);
     // Make sure we have a String array
-    Klass* element_klass = ObjArrayKlass::cast(names_ah->klass())->element_klass();
+    Klass* element_klass = names_ah->klass()->element_klass();
     if (element_klass != vmClasses::String_klass()) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                  "Array element type is not String class", 0);
@@ -1590,12 +1610,12 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     int num_entries = 0;
     for (int i = 0; i < nFlags && num_entries < count;  i++) {
       JVMFlag* flag = &JVMFlag::flags[i];
-      // Exclude notproduct and develop flags in product builds.
+      // Exclude develop flags in product builds.
       if (flag->is_constant_in_binary()) {
         continue;
       }
       // Exclude the locked (diagnostic, experimental) flags
-      if ((flag->is_unlocked() || flag->is_unlocker()) &&
+      if (flag->is_unlocked() &&
           add_global_entry(null_h, &globals[num_entries], flag, THREAD)) {
         num_entries++;
       }
@@ -1653,7 +1673,7 @@ ThreadTimesClosure::ThreadTimesClosure(objArrayHandle names,
   assert(times() != nullptr, "times was null");
   _names_strings = names;
   _names_len = names->length();
-  _names_chars = NEW_C_HEAP_ARRAY(char*, _names_len, mtInternal);
+  _names_chars = NEW_C_HEAP_ARRAY(char*, _names_len, mtServiceability);
   _times = times;
   _times_len = times->length();
   _count = 0;
@@ -1679,7 +1699,7 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
   ResourceMark rm; // thread->name() uses ResourceArea
 
   assert(thread->name() != nullptr, "All threads should have a name");
-  _names_chars[_count] = os::strdup_check_oom(thread->name());
+  _names_chars[_count] = os::strdup_check_oom(thread->name(), mtServiceability);
   _times->long_at_put(_count, os::is_thread_cpu_time_supported() ?
                         os::thread_cpu_time(thread) : -1);
   _count++;
@@ -1698,7 +1718,7 @@ ThreadTimesClosure::~ThreadTimesClosure() {
   for (int i = 0; i < _count; i++) {
     os::free(_names_chars[i]);
   }
-  FREE_C_HEAP_ARRAY(char *, _names_chars);
+  FREE_C_HEAP_ARRAY(_names_chars);
 }
 
 // Fills names with VM internal thread names and times with the corresponding
@@ -1821,7 +1841,7 @@ JVM_END
 // of a given length and return the objArrayOop
 static objArrayOop get_memory_usage_objArray(jobjectArray array, int length, TRAPS) {
   if (array == nullptr) {
-    THROW_(vmSymbols::java_lang_NullPointerException(), 0);
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
 
   objArrayOop oa = objArrayOop(JNIHandles::resolve_non_null(array));
@@ -1829,16 +1849,16 @@ static objArrayOop get_memory_usage_objArray(jobjectArray array, int length, TRA
 
   // array must be of the given length
   if (length != array_h->length()) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "The length of the given MemoryUsage array does not match the number of memory pools.", 0);
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "The length of the given MemoryUsage array does not match the number of memory pools.");
   }
 
   // check if the element of array is of type MemoryUsage class
   Klass* usage_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_NULL);
   Klass* element_klass = ObjArrayKlass::cast(array_h->klass())->element_klass();
   if (element_klass != usage_klass) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "The element type is not MemoryUsage class", 0);
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "The element type is not MemoryUsage class");
   }
 
   return array_h();
@@ -1980,11 +2000,11 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
 
   ResourceMark rm(THREAD);
 
-  objArrayOop ca = objArrayOop(JNIHandles::resolve_non_null(cmds));
-  objArrayHandle cmds_ah(THREAD, ca);
+  refArrayOop ca = oop_cast<refArrayOop>(JNIHandles::resolve_non_null(cmds));
+  refArrayHandle cmds_ah(THREAD, ca);
 
   // Make sure we have a String array
-  Klass* element_klass = ObjArrayKlass::cast(cmds_ah->klass())->element_klass();
+  Klass* element_klass = cmds_ah->klass()->element_klass();
   if (element_klass != vmClasses::String_klass()) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class");
@@ -2015,12 +2035,12 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
     infoArray[i].name = info->name();
     infoArray[i].description = info->description();
     infoArray[i].impact = info->impact();
-    JavaPermission p = info->permission();
-    infoArray[i].permission_class = p._class;
-    infoArray[i].permission_name = p._name;
-    infoArray[i].permission_action = p._action;
     infoArray[i].num_arguments = info->num_arguments();
-    infoArray[i].enabled = info->is_enabled();
+
+    // All registered DCmds are always enabled. We set the dcmdInfo::enabled
+    // field to true to be compatible with the Java API
+    // com.sun.management.internal.DiagnosticCommandInfo.
+    infoArray[i].enabled = true;
   }
 JVM_END
 
@@ -2108,12 +2128,12 @@ JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
 
     // We keep a high water mark to ensure monotonicity in case threads counted
     // on a previous call end up in state (2).
-    static jlong high_water_result = 0;
+    static uint64_t high_water_result = 0;
 
     JavaThreadIteratorWithHandle jtiwh;
-    jlong result = ThreadService::exited_allocated_bytes();
+    uint64_t result = ThreadService::exited_allocated_bytes();
     for (; JavaThread* thread = jtiwh.next();) {
-      jlong size = thread->cooked_allocated_bytes();
+      uint64_t size = thread->cooked_allocated_bytes();
       result += size;
     }
 
@@ -2128,7 +2148,7 @@ JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
         high_water_result = result;
       }
     }
-    return result;
+    return checked_cast<jlong>(result);
 JVM_END
 
 // Gets the amount of memory allocated on the Java heap for a single thread.
@@ -2140,13 +2160,13 @@ JVM_ENTRY(jlong, jmm_GetOneThreadAllocatedMemory(JNIEnv *env, jlong thread_id))
   }
 
   if (thread_id == 0) { // current thread
-    return thread->cooked_allocated_bytes();
+    return checked_cast<jlong>(thread->cooked_allocated_bytes());
   }
 
   ThreadsListHandle tlh;
   JavaThread* java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
   if (is_platform_thread(java_thread)) {
-    return java_thread->cooked_allocated_bytes();
+    return checked_cast<jlong>(java_thread->cooked_allocated_bytes());
   }
   return -1;
 JVM_END

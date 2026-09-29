@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.BindException;
-import java.net.NetPermission;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.UnsupportedAddressTypeException;
@@ -52,30 +51,8 @@ class UnixDomainSockets {
 
     private static final String tempDir = UnixDomainSocketsUtil.getTempDir();
 
-    private static final NetPermission accessUnixDomainSocket =
-            new NetPermission("accessUnixDomainSocket");
-
     static boolean isSupported() {
         return supported;
-    }
-
-    static void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(accessUnixDomainSocket);
-    }
-
-    static UnixDomainSocketAddress getRevealedLocalAddress(SocketAddress sa) {
-        UnixDomainSocketAddress addr = (UnixDomainSocketAddress) sa;
-        try {
-            checkPermission();
-            // Security check passed
-        } catch (SecurityException e) {
-            // Return unnamed address only if security check fails
-            addr = unnamed();
-        }
-        return addr;
     }
 
     static UnixDomainSocketAddress localAddress(FileDescriptor fd) throws IOException {
@@ -84,11 +61,6 @@ class UnixDomainSockets {
     }
 
     private static native byte[] localAddress0(FileDescriptor fd) throws IOException;
-
-    @SuppressWarnings("removal")
-    static String getRevealedLocalAddressAsString(SocketAddress sa) {
-        return (System.getSecurityManager() != null) ? sa.toString() : "";
-    }
 
     static UnixDomainSocketAddress checkAddress(SocketAddress sa) {
         if (sa == null)

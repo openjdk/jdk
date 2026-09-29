@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8227415 8254975 8270056
- * @run testng/othervm p.ProtectedMethodInOtherPackage
+ * @run junit/othervm p.ProtectedMethodInOtherPackage
  * @summary method reference to a protected method inherited from its
  *          superclass in a different runtime package where
  *          lambda proxy class has no access to it.
@@ -47,12 +47,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Function;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class ProtectedMethodInOtherPackage  {
     @Test
-    public static void remotePackageSameLoader() {
+    public void remotePackageSameLoader() {
         Sub_I sub = new Sub_I();
         sub.test(Paths.get("test"));
     }
@@ -76,14 +76,14 @@ public class ProtectedMethodInOtherPackage  {
     }
 
     @Test
-    public static void splitPackage() throws Throwable {
+    public void splitPackage() throws Throwable {
         ClassLoader parent = new Loader("loader-A", null, A.class);
         ClassLoader loader = new Loader("loader-B", parent, B.class);
         Class<?> aClass = Class.forName(A.class.getName(), false, loader);
         Class<?> bClass = Class.forName(B.class.getName(), false, loader);
-        assertTrue(aClass.getClassLoader() == parent);
-        assertTrue(bClass.getClassLoader() == loader);
-        assertEquals(aClass.getPackageName(), bClass.getPackageName());
+        assertSame(parent, aClass.getClassLoader());
+        assertSame(loader, bClass.getClassLoader());
+        assertEquals(bClass.getPackageName(), aClass.getPackageName());
 
         Object b = bClass.getDeclaredConstructor().newInstance();
 
@@ -102,14 +102,14 @@ public class ProtectedMethodInOtherPackage  {
     }
 
     @Test
-    public static void protectedStaticMethodInSplitPackage() throws Throwable {
+    public void protectedStaticMethodInSplitPackage() throws Throwable {
         ClassLoader parent = new Loader("loader-A1", null, A1.class);
         ClassLoader loader = new Loader("loader-B1", parent, B1.class);
         Class<?> aClass1 = Class.forName(A1.class.getName(), false, loader);
         Class<?> bClass1 = Class.forName(B1.class.getName(), false, loader);
-        assertTrue(aClass1.getClassLoader() == parent);
-        assertTrue(bClass1.getClassLoader() == loader);
-        assertEquals(aClass1.getPackageName(), bClass1.getPackageName());
+        assertSame(parent, aClass1.getClassLoader());
+        assertSame(loader, bClass1.getClassLoader());
+        assertEquals(bClass1.getPackageName(), aClass1.getPackageName());
 
         // verify subclass can access a static protected method inherited from
         // its superclass in a split package

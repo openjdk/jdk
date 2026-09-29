@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -45,9 +44,10 @@ int MachOper::reg(PhaseRegAlloc *ra_, const Node *node, int idx) const {
 }
 intptr_t  MachOper::constant() const { return 0x00; }
 relocInfo::relocType MachOper::constant_reloc() const { return relocInfo::none; }
-jdouble MachOper::constantD() const { ShouldNotReachHere(); return 0.0; }
-jfloat  MachOper::constantF() const { ShouldNotReachHere(); return 0.0; }
-jlong   MachOper::constantL() const { ShouldNotReachHere(); return CONST64(0) ; }
+jdouble MachOper::constantD() const { ShouldNotReachHere(); }
+jfloat  MachOper::constantF() const { ShouldNotReachHere(); }
+jshort  MachOper::constantH() const { ShouldNotReachHere(); }
+jlong   MachOper::constantL() const { ShouldNotReachHere(); }
 TypeOopPtr *MachOper::oop() const { return nullptr; }
 int MachOper::ccode() const { return 0x00; }
 // A zero, default, indicates this value is not needed.
@@ -62,8 +62,8 @@ int MachOper::index_position() const { return -1; }  // no index input
 // Check for PC-Relative displacement
 relocInfo::relocType MachOper::disp_reloc() const { return relocInfo::none; }
 // Return the label
-Label*   MachOper::label()  const { ShouldNotReachHere(); return 0; }
-intptr_t MachOper::method() const { ShouldNotReachHere(); return 0; }
+Label*   MachOper::label()  const { ShouldNotReachHere(); }
+intptr_t MachOper::method() const { ShouldNotReachHere(); }
 
 
 //------------------------------negate-----------------------------------------
@@ -80,7 +80,6 @@ const Type *MachOper::type() const {
 //------------------------------in_RegMask-------------------------------------
 const RegMask *MachOper::in_RegMask(int index) const {
   ShouldNotReachHere();
-  return nullptr;
 }
 
 //------------------------------dump_spec--------------------------------------
@@ -93,14 +92,12 @@ void MachOper::dump_spec(outputStream *st) const { }
 // Print any per-operand special info
 uint MachOper::hash() const {
   ShouldNotCallThis();
-  return 5;
 }
 
 //------------------------------cmp--------------------------------------------
 // Print any per-operand special info
 bool MachOper::cmp( const MachOper &oper ) const {
   ShouldNotCallThis();
-  return opcode() == oper.opcode();
 }
 
 //------------------------------hash-------------------------------------------
@@ -132,7 +129,7 @@ bool methodOper::cmp( const MachOper &oper ) const {
 //------------------------------MachNode---------------------------------------
 
 //------------------------------emit-------------------------------------------
-void MachNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   #ifdef ASSERT
   tty->print("missing MachNode emit function: ");
   dump();
@@ -207,7 +204,6 @@ void MachNode::fill_new_machnode(MachNode* node) const {
 // Return an equivalent instruction using memory for cisc_operand position
 MachNode *MachNode::cisc_version(int offset) {
   ShouldNotCallThis();
-  return nullptr;
 }
 
 void MachNode::use_cisc_RegMask() {
@@ -357,6 +353,13 @@ const class TypePtr *MachNode::adr_type() const {
     return adr_type;      // get_base_and_disp has the answer
   }
 
+#ifdef ASSERT
+  if (base != nullptr && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_VerifyVectorAlignment) {
+    // For VerifyVectorAlignment we just pass the type through
+    return base->bottom_type()->is_ptr();
+  }
+#endif
+
   // Direct addressing modes have no base node, simply an indirect
   // offset, which is always to raw memory.
   // %%%%% Someday we'd like to allow constant oop offsets which
@@ -388,7 +391,14 @@ const class TypePtr *MachNode::adr_type() const {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }
-  if (t->isa_intptr_t() && offset != 0 && offset != Type::OffsetBot) {
+
+  if (t->isa_intptr_t() &&
+#if !defined(AARCH64)
+      // AArch64 supports the addressing mode:
+      // [base, 0], in which [base] is converted from a long value
+      offset != 0 &&
+#endif
+      offset != Type::OffsetBot) {
     // We cannot assert that the offset does not look oop-ish here.
     // Depending on the heap layout the cardmark base could land
     // inside some oopish region.  It definitely does for Win2K.
@@ -405,6 +415,22 @@ const class TypePtr *MachNode::adr_type() const {
     return TypePtr::BOTTOM;
   }
   assert(tp->base() != Type::AnyPtr, "not a bare pointer");
+
+  if (tp->isa_aryptr()) {
+    // In the case of a flat value type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    if (offset == Type::OffsetBot) {
+      Node* base;
+      Node* index;
+      const MachOper* oper = memory_inputs(base, index);
+      if (oper != (MachOper*)-1) {
+        offset = oper->constant_disp();
+        return tp->is_aryptr()->add_field_offset_and_offset(offset)->add_offset(Type::OffsetBot);
+      }
+    }
+    return tp->is_aryptr()->add_field_offset_and_offset(offset);
+  }
 
   return tp->add_offset(offset);
 }
@@ -450,6 +476,13 @@ int MachNode::operand_index(Node* def) const {
   return -1;
 }
 
+int MachNode::operand_num_edges(uint oper_index) const {
+  if (num_opnds() > oper_index) {
+    return _opnds[oper_index]->num_edges();
+  }
+  return 0;
+}
+
 //------------------------------peephole---------------------------------------
 // Apply peephole rule(s) to this instruction
 int MachNode::peephole(Block *block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc *ra_) {
@@ -470,6 +503,11 @@ void MachNode::method_set( intptr_t addr ) {
 
 //------------------------------rematerialize----------------------------------
 bool MachNode::rematerialize() const {
+  // Never rematerialize CastI2N because it might "hide" narrow oops from a safepoint
+  if (ideal_Opcode() == Op_CastI2N) {
+    return false;
+  }
+
   // Temps are always rematerializable
   if (is_MachTemp()) return true;
 
@@ -515,7 +553,7 @@ bool MachNode::rematerialize() const {
   uint idx = oper_input_base();
   if (req() > idx) {
     const RegMask &rm = in_RegMask(idx);
-    if (rm.is_NotEmpty() && rm.is_bound(ideal_reg())) {
+    if (!rm.is_empty() && rm.is_bound(ideal_reg())) {
       return false;
     }
   }
@@ -541,6 +579,15 @@ void MachNode::dump_spec(outputStream *st) const {
     if( C->alias_type(t)->is_volatile() )
       st->print(" Volatile!");
   }
+  if (barrier_data() != 0) {
+    st->print(" barrier(");
+    BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
+    st->print(")");
+  }
+  if (_bottom_type != nullptr) {
+    st->print(" ");
+    _bottom_type->dump_on(st);
+  }
 }
 
 //------------------------------dump_format------------------------------------
@@ -549,23 +596,6 @@ void MachNode::dump_format(PhaseRegAlloc *ra, outputStream *st) const {
   format(ra, st); // access to virtual
 }
 #endif
-
-//=============================================================================
-#ifndef PRODUCT
-void MachTypeNode::dump_spec(outputStream *st) const {
-  if (_bottom_type != nullptr) {
-    _bottom_type->dump_on(st);
-  } else {
-    st->print(" null");
-  }
-  if (barrier_data() != 0) {
-    st->print(" barrier(");
-    BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
-    st->print(")");
-  }
-}
-#endif
-
 
 //=============================================================================
 int MachConstantNode::constant_offset() {
@@ -597,7 +627,7 @@ void MachNullCheckNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void MachNullCheckNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachNullCheckNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // only emits entries in the null-pointer exception handler table
 }
 void MachNullCheckNode::label_set(Label* label, uint block_num) {
@@ -608,8 +638,11 @@ void MachNullCheckNode::save_label( Label** label, uint* block_num ) {
 }
 
 const RegMask &MachNullCheckNode::in_RegMask( uint idx ) const {
-  if( idx == 0 ) return RegMask::Empty;
-  else return in(1)->as_Mach()->out_RegMask();
+  if (idx == 0) {
+    return RegMask::EMPTY;
+  } else {
+    return in(1)->as_Mach()->out_RegMask();
+  }
 }
 
 //=============================================================================
@@ -698,8 +731,8 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
 
 bool MachCallNode::cmp( const Node &n ) const
 { return _tf == ((MachCallNode&)n)._tf; }
-const Type *MachCallNode::bottom_type() const { return tf()->range(); }
-const Type* MachCallNode::Value(PhaseGVN* phase) const { return tf()->range(); }
+const Type *MachCallNode::bottom_type() const { return tf()->range_cc(); }
+const Type* MachCallNode::Value(PhaseGVN* phase) const { return tf()->range_cc(); }
 
 #ifndef PRODUCT
 void MachCallNode::dump_spec(outputStream *st) const {
@@ -710,9 +743,8 @@ void MachCallNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-#ifndef _LP64
 bool MachCallNode::return_value_is_used() const {
-  if (tf()->range()->cnt() == TypeFunc::Parms) {
+  if (tf()->range_sig()->cnt() == TypeFunc::Parms) {
     // void return
     return false;
   }
@@ -727,22 +759,30 @@ bool MachCallNode::return_value_is_used() const {
   }
   return false;
 }
-#endif
 
 // Similar to cousin class CallNode::returns_pointer
 // Because this is used in deoptimization, we want the type info, not the data
 // flow info; the interpreter will "use" things that are dead to the optimizer.
 bool MachCallNode::returns_pointer() const {
-  const TypeTuple *r = tf()->range();
+  const TypeTuple *r = tf()->range_sig();
   return (r->cnt() > TypeFunc::Parms &&
           r->field_at(TypeFunc::Parms)->isa_ptr());
+}
+
+bool MachCallNode::returns_scalarized() const {
+  return tf()->returns_value_type_as_fields();
 }
 
 //------------------------------Registers--------------------------------------
 const RegMask &MachCallNode::in_RegMask(uint idx) const {
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
-  if (idx < tf()->domain()->cnt()) {
+  if (entry_point() == nullptr && idx == TypeFunc::Parms) {
+    // Null entry point is a special cast where the target of the call
+    // is in a register.
+    return MachNode::in_RegMask(idx);
+  }
+  if (idx < tf()->domain_sig()->cnt()) {
     return _in_rms[idx];
   }
   if (idx == mach_constant_base_node_input()) {
@@ -761,8 +801,6 @@ bool MachCallJavaNode::cmp( const Node &n ) const {
 }
 #ifndef PRODUCT
 void MachCallJavaNode::dump_spec(outputStream *st) const {
-  if (_method_handle_invoke)
-    st->print("MethodHandle ");
   if (_method) {
     _method->print_short_name(st);
     st->print(" ");
@@ -775,7 +813,7 @@ void MachCallJavaNode::dump_spec(outputStream *st) const {
 const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
-  if (idx < tf()->domain()->cnt()) {
+  if (idx < tf()->domain_cc()->cnt()) {
     return _in_rms[idx];
   }
   if (idx == mach_constant_base_node_input()) {
@@ -783,10 +821,7 @@ const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
   }
   // Values outside the domain represent debug info
   Matcher* m = Compile::current()->matcher();
-  // If this call is a MethodHandle invoke we have to use a different
-  // debugmask which does not include the register we use to save the
-  // SP over MH invokes.
-  RegMask** debugmask = _method_handle_invoke ? m->idealreg2mhdebugmask : m->idealreg2debugmask;
+  RegMask** debugmask = m->idealreg2debugmask;
   return *debugmask[in(idx)->ideal_reg()];
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.security.AccessController;
-
-import sun.security.action.GetPropertyAction;
 
 /**
  * Printer allows you to set up global debugging status and print
@@ -66,9 +63,7 @@ final class Printer {
      * Returns {@code true} if the build of the current jdk is "internal".
      */
     private static boolean isBuildInternal() {
-        @SuppressWarnings("removal")
-        String javaVersion = AccessController.doPrivileged(
-                new GetPropertyAction("java.version"));
+        String javaVersion = System.getProperty("java.version");
         return javaVersion != null && javaVersion.contains("internal");
     }
 

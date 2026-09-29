@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,10 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import org.testng.annotations.Test;
 import jdk.internal.net.http.common.SubscriberWrapper;
 
-@Test
+import org.junit.jupiter.api.Test;
+
 public class WrapperTest {
     static final int LO_PRI = 1;
     static final int HI_PRI = 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,15 @@
  * @test
  * @bug 8052406
  * @summary SSLv2Hello protocol may be filter out unexpectedly
+ * @library /test/lib
  * @run main/othervm ProtocolFilter
  */
 
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class ProtocolFilter {
 
@@ -156,6 +159,8 @@ public class ProtocolFilter {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        // Re-enable TLS_RSA_* since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +
                 "/" + keyStoreFile;

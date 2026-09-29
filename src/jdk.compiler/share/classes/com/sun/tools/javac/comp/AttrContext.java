@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ public class AttrContext {
      */
     int staticLevel = 0;
 
-    /** Are we in the 'prologue' part of a constructor, prior to an explicit this()/super()?
+    /** Early construction context.
      */
-    boolean ctorPrologue = false;
+    EarlyConstructionContext earlyContext = EarlyConstructionContext.NONE;
 
     /** Are we evaluating the selector of a `super' or type name?
      */
@@ -80,9 +80,9 @@ public class AttrContext {
     boolean isAnonymousDiamond = false;
 
     /**
-     *  Is this an attribution environment for an instance creation expression?
+     *  Is this an attribution environment for an anonymous instance creation expression?
      */
-    boolean isNewClass = false;
+    boolean isAnonymousNewClass = false;
 
     /** Indicate if the type being visited is a service implementation
      */
@@ -91,6 +91,10 @@ public class AttrContext {
     /** Indicate protected access should be unconditionally allowed.
      */
     boolean allowProtectedAccess = false;
+
+    /** Are we attributing a permits clause?
+     */
+    boolean isPermitsClause = false;
 
     /** Are arguments to current function applications boxed into an array for varargs?
      */
@@ -132,7 +136,7 @@ public class AttrContext {
         AttrContext info = new AttrContext();
         info.scope = scope;
         info.staticLevel = staticLevel;
-        info.ctorPrologue = ctorPrologue;
+        info.earlyContext = earlyContext;
         info.selectSuper = selectSuper;
         info.pendingResolutionPhase = pendingResolutionPhase;
         info.lint = lint;
@@ -145,10 +149,11 @@ public class AttrContext {
         info.isSerializableLambda = isSerializableLambda;
         info.attributionMode = attributionMode;
         info.isAnonymousDiamond = isAnonymousDiamond;
-        info.isNewClass = isNewClass;
+        info.isAnonymousNewClass = isAnonymousNewClass;
         info.preferredTreeForDiagnostics = preferredTreeForDiagnostics;
         info.visitingServiceImplementation = visitingServiceImplementation;
         info.allowProtectedAccess = allowProtectedAccess;
+        info.isPermitsClause = isPermitsClause;
         return info;
     }
 

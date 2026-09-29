@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,13 @@ package com.sun.tools.javac.launcher;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.code.Preview;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.resources.LauncherProperties.Errors;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
+import com.sun.tools.javac.util.Log;
 
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.NestingKind;
-import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -112,10 +110,9 @@ final class MemoryContext {
      * Any messages generated during compilation will be written to the stream
      * provided when this object was created.
      *
-     * @return the list of top-level types defined in the source file
      * @throws Fault if any compilation errors occur, or if no class was found
      */
-    List<String> compileProgram() throws Fault {
+    void compileProgram() throws Fault {
         var units = new ArrayList<JavaFileObject>();
         units.add(descriptor.fileObject());
         if (descriptor.isModular()) {
@@ -124,37 +121,15 @@ final class MemoryContext {
         }
         var opts = options.forProgramCompilation();
         var context = new Context();
-        MemoryPreview.registerInstance(context);
         var task = compiler.getTask(out, memoryFileManager, null, opts, null, units, context);
-        var fileUri = descriptor.fileObject().toUri();
-        var names = new ArrayList<String>();
-        task.addTaskListener(new TaskListener() {
-            @Override
-            public void started(TaskEvent event) {
-                if (event.getKind() != TaskEvent.Kind.ANALYZE) return;
-                TypeElement element = event.getTypeElement();
-                if (element.getNestingKind() != NestingKind.TOP_LEVEL) return;
-                JavaFileObject source = event.getSourceFile();
-                if (source == null) return;
-                if (!source.toUri().equals(fileUri)) return;
-                ElementKind kind = element.getKind();
-                if (kind != ElementKind.CLASS
-                        && kind != ElementKind.ENUM
-                        && kind != ElementKind.INTERFACE
-                        && kind != ElementKind.RECORD)
-                    return;
-                var name = element.getQualifiedName().toString();
-                names.add(name);
-            }
-        });
+
+        // This suppresses diagnostics like "Note: Recompile with -Xlint:preview for details."
+        Log.instance(context).suppressAggregatedWarningNotes(LintCategory.PREVIEW);
+
         var ok = task.call();
         if (!ok) {
             throw new Fault(Errors.CompilationFailed);
         }
-        if (names.isEmpty()) {
-            throw new Fault(Errors.NoClass);
-        }
-        return List.copyOf(names);
     }
 
     /**
@@ -170,11 +145,22 @@ final class MemoryContext {
      *         if no source file was found for the given name
      */
     byte[] compileJavaFileByName(String name) {
+        // Initially, determine existing directory from class name.
+        // [pack$age . ] na$me [ $ enclo$ed [$ dee$per] ]
+        var lastDot = name.lastIndexOf(".");
+        var packageName = lastDot == -1 ? "" : name.substring(0, lastDot);
+        var packagePath = descriptor.sourceRootPath().resolve(packageName.replace('.', '/'));
+        // Trivial case: no matching directory exists
+        if (!Files.isDirectory(packagePath)) return null;
+
         // Determine source file from class name.
-        var firstDollarSign = name.indexOf('$'); // [package . ] name [ $ enclosed [$ deeper] ]
-        var packageAndClassName = firstDollarSign == -1 ? name : name.substring(0, firstDollarSign);
-        var path = packageAndClassName.replace('.', '/') + ".java";
-        var file = descriptor.sourceRootPath().resolve(path);
+        var candidate = name.substring(lastDot + 1, name.length()); // "na$me$enclo$ed$dee$per"
+        // For each `$` in the name try to find the first matching compilation unit.
+        while (candidate.contains("$")) {
+            if (Files.exists(packagePath.resolve(candidate + ".java"))) break;
+            candidate = candidate.substring(0, candidate.lastIndexOf("$"));
+        }
+        var file = packagePath.resolve(candidate + ".java");
 
         // Trivial case: no matching source file exists
         if (!Files.exists(file)) return null;
@@ -202,10 +188,9 @@ final class MemoryContext {
      * @param parent the class loader to be used as the parent loader
      * @param mainClassName the fully-qualified name of the application class to load
      * @return class loader object able to find and load the desired class
-     * @throws ClassNotFoundException if the class cannot be located
      * @throws Fault if a modular application class is in the unnamed package
      */
-    ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws ClassNotFoundException, Fault {
+    ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws Fault {
         var moduleInfoBytes = inMemoryClasses.get("module-info");
         if (moduleInfoBytes == null) {
             // Trivial case: no compiled module descriptor available, no extra module layer required
@@ -227,7 +212,9 @@ final class MemoryContext {
         var modulePathModules = modulePathFinder.findAll().stream().map(ModuleReference::descriptor).map(ModuleDescriptor::name).toList();
         if (!modulePathModules.isEmpty()) {
             var modulePathConfiguration = bootLayer.configuration().resolveAndBind(modulePathFinder, ModuleFinder.of(), Set.copyOf(modulePathModules));
-            var modulePathLayer = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent).layer();
+            var modulePathController = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent);
+            enableNativeAccess(modulePathController, false);
+            var modulePathLayer = modulePathController.layer();
             parentLayer = modulePathLayer;
             parentLoader = modulePathLayer.findLoader(modulePathModules.getFirst());
         }
@@ -238,14 +225,11 @@ final class MemoryContext {
         var memoryConfig = parentLayer.configuration().resolveAndBind(memoryFinder, ModuleFinder.of(), Set.of(applicationModule.name()));
         var memoryClassLoader = new MemoryClassLoader(inMemoryClasses, parentLoader, applicationModule, descriptor, this::compileJavaFileByName);
         var memoryController = ModuleLayer.defineModules(memoryConfig, List.of(parentLayer), __ -> memoryClassLoader);
-        var memoryLayer = memoryController.layer();
 
-        // Make application class accessible from the calling (unnamed) module, that loaded this class.
-        var module = memoryLayer.findModule(applicationModule.name()).orElseThrow();
-        var mainClassNamePackageName = mainClassName.substring(0, lastDotInMainClassName);
-        memoryController.addOpens(module, mainClassNamePackageName, getClass().getModule());
+        // Configure native access for the modular application.
+        enableNativeAccess(memoryController, true);
 
-        return memoryLayer.findLoader(applicationModule.name());
+        return memoryClassLoader;
     }
 
     private static ModuleFinder createModuleFinderFromModulePath() {
@@ -257,18 +241,30 @@ final class MemoryContext {
         return ModuleFinder.of(paths.toArray(Path[]::new));
     }
 
-    static class MemoryPreview extends Preview {
-        static void registerInstance(Context context) {
-            context.put(previewKey, (Factory<Preview>)MemoryPreview::new);
-        }
-
-        MemoryPreview(Context context) {
-            super(context);
-        }
-
-        @Override
-        public void reportDeferredDiagnostics() {
-            // suppress diagnostics like "Note: Recompile with -Xlint:preview for details."
+    /**
+     * Grants native access to modules selected using the --enable-native-access
+     * command line option.
+     */
+    @SuppressWarnings("restricted")
+    private void enableNativeAccess(ModuleLayer.Controller controller, boolean shouldWarn) {
+        var layer = controller.layer();
+        for (var name : options.enableNativeAccessForModules()) {
+            if (name.equals("ALL-UNNAMED")) {
+                continue; // was taken care of by module bootstrap
+            }
+            var found = layer.findModule(name);
+            if (found.isEmpty()) {
+                if (shouldWarn) {
+                    // same message as ModuleBootstrap.warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
+                    out.println("WARNING: Unknown module: " + name + " specified to --enable-native-access");
+                }
+                continue;
+            }
+            var module = found.get();
+            if (module.isNativeAccessEnabled()) {
+                continue;
+            }
+            controller.enableNativeAccess(module);
         }
     }
 }

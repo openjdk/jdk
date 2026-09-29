@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,17 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 
+class SmallRegisterMap;
+
 // Java frames don't have callee saved registers (except for rbp), so we can use a smaller RegisterMap
-class SmallRegisterMap {
-public:
-  static constexpr SmallRegisterMap* instance = nullptr;
-private:
+template <bool IncludeArgs>
+class SmallRegisterMapType {
+  friend SmallRegisterMap;
+
+  constexpr SmallRegisterMapType() = default;
+  ~SmallRegisterMapType() = default;
+  NONCOPYABLE(SmallRegisterMapType);
+
   static void assert_is_rbp(VMReg r) NOT_DEBUG_RETURN
                                      DEBUG_ONLY({ assert(r == rbp->as_VMReg() || r == rbp->as_VMReg()->next(), "Reg: %s", r->name()); })
 public:
@@ -46,17 +52,6 @@ public:
     map->set_include_argument_oops(this->include_argument_oops());
     frame::update_map_with_saved_link(map, (intptr_t**)sp - frame::sender_sp_offset);
     return map;
-  }
-
-  SmallRegisterMap() {}
-
-  SmallRegisterMap(const RegisterMap* map) {
-  #ifdef ASSERT
-    for(int i = 0; i < RegisterMap::reg_count; i++) {
-      VMReg r = VMRegImpl::as_VMReg(i);
-      if (map->location(r, (intptr_t*)nullptr) != nullptr) assert_is_rbp(r);
-    }
-  #endif
   }
 
   inline address location(VMReg reg, intptr_t* sp) const {
@@ -75,7 +70,7 @@ public:
 
   bool update_map()    const { return false; }
   bool walk_cont()     const { return false; }
-  bool include_argument_oops() const { return false; }
+  bool include_argument_oops() const { return IncludeArgs; }
   void set_include_argument_oops(bool f)  {}
   bool in_cont()       const { return false; }
   stackChunkHandle stack_chunk() const { return stackChunkHandle(); }

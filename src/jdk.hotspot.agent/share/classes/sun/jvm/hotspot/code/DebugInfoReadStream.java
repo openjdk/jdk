@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,22 @@ public class DebugInfoReadStream extends CompressedReadStream {
       }
     }
     ObjectValue result = new ObjectValue(id);
+    // Cache the object since an object field could reference it.
+    objectPool.add(result);
+    result.readObject(this);
+    return result;
+  }
+
+  ScopeValue readObjectMergeValue() {
+    int id = readInt();
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(objectPool != null, "object pool does not exist");
+      for (Iterator itr = objectPool.iterator(); itr.hasNext();) {
+        ObjectValue ov = (ObjectValue) itr.next();
+        Assert.that(ov.id() != id, "should not be read twice");
+      }
+    }
+    ObjectValue result = new ObjectMergeValue(id);
     // Cache the object since an object field could reference it.
     objectPool.add(result);
     result.readObject(this);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,11 +38,11 @@ class TestMap {
   const size_t _len;
   char* _arr;
 public:
-  TestMap(size_t len) : _len(len), _arr(NULL) {
+  TestMap(size_t len) : _len(len), _arr(nullptr) {
     _arr = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     memset(_arr, 0, _len);
   }
-  ~TestMap() { FREE_C_HEAP_ARRAY(char, _arr); }
+  ~TestMap() { FREE_C_HEAP_ARRAY(_arr); }
 
   int get_num_set(size_t from, size_t to) const {
     int result = 0;
@@ -145,12 +145,12 @@ void mark_range(MetaWord* p, size_t word_size);
 void check_marked_range(const MetaWord* p, size_t word_size);
 
 //////////////////////////////////////////////////////////
-// Some helpers to avoid typing out those annoying casts for NULL
+// Some helpers to avoid typing out those annoying casts for nullptr
 
-#define ASSERT_NOT_NULL(ptr)      ASSERT_NE((void*)NULL, (void*)ptr)
-#define ASSERT_NULL(ptr)          ASSERT_EQ((void*)NULL, (void*)ptr)
-#define EXPECT_NOT_NULL(ptr)      EXPECT_NE((void*)NULL, (void*)ptr)
-#define EXPECT_NULL(ptr)          EXPECT_EQ((void*)NULL, (void*)ptr)
+#define ASSERT_NOT_NULL(ptr)      ASSERT_NE(nullptr, (void*)ptr)
+#define ASSERT_NULL(ptr)          ASSERT_EQ(nullptr, (void*)ptr)
+#define EXPECT_NOT_NULL(ptr)      EXPECT_NE(nullptr, (void*)ptr)
+#define EXPECT_NULL(ptr)          EXPECT_EQ(nullptr, (void*)ptr)
 
 #define ASSERT_0(v)               ASSERT_EQ((intptr_t)0, (intptr_t)v)
 #define ASSERT_NOT_0(v)           ASSERT_NE((intptr_t)0, (intptr_t)v)
@@ -188,17 +188,17 @@ class FeederBuffer {
 
 public:
 
-  FeederBuffer(size_t size) : _buf(NULL), _cap(size), _used(0) {
+  FeederBuffer(size_t size) : _buf(nullptr), _cap(size), _used(0) {
     _buf = NEW_C_HEAP_ARRAY(MetaWord, _cap, mtInternal);
   }
 
   ~FeederBuffer() {
-    FREE_C_HEAP_ARRAY(MetaWord, _buf);
+    FREE_C_HEAP_ARRAY(_buf);
   }
 
   MetaWord* get(size_t word_size) {
     if (_used + word_size > _cap) {
-      return NULL;
+      return nullptr;
     }
     MetaWord* p = _buf + _used;
     _used += word_size;

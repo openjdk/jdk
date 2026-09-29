@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1007,9 +1007,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat draft="provisional">час: {0}</regionFormat>
 			<regionFormat type="daylight" draft="provisional">летні час: {0}</regionFormat>
 			<regionFormat type="standard" draft="provisional">змоўчны час: {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity draft="provisional">Санта-Ісабэль</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard draft="provisional">унівэрсальны каардынаваны час</standard>
@@ -1044,9 +1041,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity draft="provisional">Мэльбурн</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity draft="provisional">Кэры</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
 				<exemplarCity draft="provisional">Сіднэй</exemplarCity>
@@ -1107,9 +1101,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Winnipeg">
 				<exemplarCity draft="provisional">Вініпэг</exemplarCity>
-			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity draft="provisional">Рэйні-Рывэр</exemplarCity>
 			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity draft="provisional">Ранкін-Інлэт</exemplarCity>
@@ -1370,13 +1361,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard draft="provisional">Аўганістанскі час</standard>
 				</long>
 			</metazone>
-			<metazone type="Africa_Western">
-				<long>
-					<generic draft="provisional">Заходнеафрыканскі час</generic>
-					<standard draft="provisional">Заходнеафрыканскі змоўчны час</standard>
-					<daylight draft="provisional">Заходнеафрыканскі летні час</daylight>
-				</long>
-			</metazone>
 			<metazone type="Alaska">
 				<long>
 					<generic draft="provisional">Час Аляскі</generic>
@@ -1555,13 +1539,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="provisional">Летні час Кітаю</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic draft="provisional">Час Чайбалсану</generic>
-					<standard draft="provisional">Змоўчны час Чайбалсану</standard>
-					<daylight draft="provisional">Летні час Чайбалсану</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard draft="provisional">Час вострава Раства</standard>
@@ -1686,6 +1663,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard draft="provisional">Час Пэрсыдзкага заліву</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="provisional">Гавайска-Алэвуцкі змоўчны час</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic draft="provisional">Гавайска-Алевуцкі час</generic>
@@ -1808,13 +1790,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard draft="provisional">Час станцыі Мосан</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="provisional">Паўночна-заходні Мэксыканскі час</generic>
-					<standard draft="provisional">Паўночна-заходні Мэксыканскі змоўчны час</standard>
-					<daylight draft="provisional">Паўночна-заходні Мэксыканскі летні час</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -32,15 +32,7 @@ import java.util.List;
 import javax.crypto.SecretKey;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
-import com.sun.org.apache.xml.internal.security.keys.content.DEREncodedKeyValue;
-import com.sun.org.apache.xml.internal.security.keys.content.KeyInfoReference;
-import com.sun.org.apache.xml.internal.security.keys.content.KeyName;
-import com.sun.org.apache.xml.internal.security.keys.content.KeyValue;
-import com.sun.org.apache.xml.internal.security.keys.content.MgmtData;
-import com.sun.org.apache.xml.internal.security.keys.content.PGPData;
-import com.sun.org.apache.xml.internal.security.keys.content.RetrievalMethod;
-import com.sun.org.apache.xml.internal.security.keys.content.SPKIData;
-import com.sun.org.apache.xml.internal.security.keys.content.X509Data;
+import com.sun.org.apache.xml.internal.security.keys.content.*;
 import com.sun.org.apache.xml.internal.security.keys.content.keyvalues.DSAKeyValue;
 import com.sun.org.apache.xml.internal.security.keys.content.keyvalues.RSAKeyValue;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolver;
@@ -50,7 +42,6 @@ import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.ElementProxy;
-import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -88,7 +79,7 @@ import org.w3c.dom.Node;
  * contains the corresponding type.
  *
  */
-public class KeyInfo extends SignatureElementProxy {
+public class KeyInfo extends ElementProxy {
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(KeyInfo.class);
@@ -231,12 +222,24 @@ public class KeyInfo extends SignatureElementProxy {
     }
 
     /**
-     * Method add
+     * Method adds public key encoded as KeyValue. If public key type is not supported by KeyValue, then
+     * DEREncodedKeyValue is used. If public key type is not supported by DEREncodedKeyValue, then
+     * IllegalArgumentException is thrown.
      *
-     * @param pk
+     * @param pk public key to be added to KeyInfo
      */
-    public void add(PublicKey pk) {
-        this.add(new KeyValue(getDocument(), pk));
+    public void add(PublicKey pk)  {
+
+        if (KeyValue.isSupportedKeyType(pk)) {
+            this.add(new KeyValue(getDocument(), pk));
+            return;
+        }
+
+        try {
+            this.add(new DEREncodedKeyValue(getDocument(), pk));
+        } catch (XMLSecurityException ex) {
+            throw new IllegalArgumentException(ex);
+        }
     }
 
     /**
@@ -772,6 +775,7 @@ public class KeyInfo extends SignatureElementProxy {
         return this.lengthKeyInfoReference() > 0;
     }
 
+
     /**
      * This method returns the public key.
      *
@@ -1187,5 +1191,11 @@ public class KeyInfo extends SignatureElementProxy {
     @Override
     public String getBaseLocalName() {
         return Constants._TAG_KEYINFO;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getBaseNamespace() {
+        return Constants.SignatureSpecNS;
     }
 }

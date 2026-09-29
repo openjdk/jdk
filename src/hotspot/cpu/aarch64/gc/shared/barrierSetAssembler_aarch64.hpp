@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,24 +30,24 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
+#ifdef COMPILER2
+#include "opto/optoreg.hpp"
+
+class BarrierStubC2;
+class Node;
+#endif // COMPILER2
 
 enum class NMethodPatchingType {
   stw_instruction_and_data_patch,
-  conc_instruction_and_data_patch,
-  conc_data_patch
+  conc_instruction_and_data_patch
 };
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
-private:
-  void incr_allocated_bytes(MacroAssembler* masm,
-                            Register var_size_in_bytes, int con_size_in_bytes,
-                            Register t1 = noreg);
-
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register start, Register count, Register tmp, RegSet saved_regs) {}
+                                  Register start, Register count, Register tmp) {}
 
   virtual void copy_load_at(MacroAssembler* masm,
                             DecoratorSet decorators,
@@ -99,6 +99,9 @@ public:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
+  virtual void flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                               Register src, Register dst, Register value_field_layout_info);
+
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
@@ -129,6 +132,58 @@ public:
   static address patching_epoch_addr();
   static void clear_patching_epoch();
   static void increment_patching_epoch();
+
+  // See AS_NO_KEEPALIVE for peek semantics
+  // weak_handle and obj may alias
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Register tmp, Label& slow_path);
+
+#ifdef COMPILER2
+  OptoReg::Name encode_float_vector_register_size(const Node* node,
+                                                  OptoReg::Name opto_reg);
+  OptoReg::Name refine_register(const Node* node,
+                                OptoReg::Name opto_reg);
+#endif // COMPILER2
 };
+
+#ifdef COMPILER2
+
+// This class saves and restores the registers that need to be preserved across
+// the runtime call represented by a given C2 barrier stub. Use as follows:
+// {
+//   SaveLiveRegisters save(masm, stub);
+//   ..
+//   __ blr(...);
+//   ..
+// }
+class SaveLiveRegisters {
+private:
+  struct RegisterData {
+    VMReg _reg;
+    int   _slots; // slots occupied once pushed into stack
+
+    // Used by GrowableArray::find()
+    bool operator == (const RegisterData& other) {
+      return _reg == other._reg;
+    }
+  };
+
+  MacroAssembler* const _masm;
+  RegSet                _gp_regs;
+  FloatRegSet           _fp_regs;
+  FloatRegSet           _neon_regs;
+  FloatRegSet           _sve_regs;
+  PRegSet               _p_regs;
+
+  static enum RC rc_class(VMReg reg);
+  static bool is_same_register(VMReg reg1, VMReg reg2);
+  static int decode_float_vector_register_size(OptoReg::Name opto_reg);
+
+public:
+  void initialize(BarrierStubC2* stub);
+  SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub);
+  ~SaveLiveRegisters();
+};
+
+#endif // COMPILER2
 
 #endif // CPU_AARCH64_GC_SHARED_BARRIERSETASSEMBLER_AARCH64_HPP

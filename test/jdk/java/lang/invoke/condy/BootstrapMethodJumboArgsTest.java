@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,10 @@
  * @summary Test bootstrap methods throwing an exception
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @enablePreview
- * @run testng BootstrapMethodJumboArgsTest
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 BootstrapMethodJumboArgsTest
+ * @run junit BootstrapMethodJumboArgsTest
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 BootstrapMethodJumboArgsTest
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
 
 import java.lang.invoke.ConstantCallSite;
@@ -43,6 +40,10 @@ import java.lang.invoke.MethodType;
 import java.util.stream.IntStream;
 
 import static java.lang.invoke.MethodType.methodType;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class BootstrapMethodJumboArgsTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -94,7 +95,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assert.assertEquals(actual, expected);
+            assertArrayEquals(expected, actual);
         }
 
         {
@@ -104,7 +105,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assert.assertEquals(actual, expected);
+            assertArrayEquals(expected, actual);
         }
 
         {
@@ -114,7 +115,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assert.assertEquals(actual, expected);
+            assertArrayEquals(expected, actual);
         }
     }
 
@@ -129,7 +130,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assert.assertEquals(actual, expected);
+            assertArrayEquals(expected, actual);
         }
 
         {
@@ -139,7 +140,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assert.assertEquals(actual, expected);
+            assertArrayEquals(expected, actual);
         }
 
         {
@@ -149,7 +150,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assert.assertEquals(actual, expected);
+            assertArrayEquals(expected, actual);
         }
     }
 }

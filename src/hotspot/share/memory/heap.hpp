@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,10 @@
 #include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
+
+class ReservedSpace;
 
 // Blocks
 
@@ -38,8 +40,8 @@ class HeapBlock {
 
  public:
   struct Header {
-    size_t  _length;                             // the length in segments
-    bool    _used;                               // Used bit
+    uint32_t  _length;                           // the length in segments
+    bool      _used;                             // Used bit
   };
 
  protected:
@@ -51,9 +53,11 @@ class HeapBlock {
 
  public:
   // Initialization
-  void initialize(size_t length)                 { _header._length = length; set_used(); }
+  void initialize(size_t length)                 { set_length(length); set_used(); }
   // Merging/splitting
-  void set_length(size_t length)                 { _header._length = length; }
+  void set_length(size_t length)                 {
+    _header._length = checked_cast<uint32_t>(length);
+  }
 
   // Accessors
   void* allocated_space() const                  { return (void*)(this + 1); }
@@ -66,7 +70,6 @@ class HeapBlock {
 };
 
 class FreeBlock: public HeapBlock {
-  friend class VMStructs;
  protected:
   FreeBlock* _link;
 
@@ -142,9 +145,6 @@ class CodeHeap : public CHeapObj<mtCode> {
   void*      next_used(HeapBlock* b) const;
   HeapBlock* block_start(void* p) const;
 
-  // to perform additional actions on creation of executable code
-  void on_code_mapping(char* base, size_t size);
-
  public:
   CodeHeap(const char* name, const CodeBlobType code_blob_type);
 
@@ -212,7 +212,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   int         adapter_count()                    { return _adapter_count; }
   void    set_adapter_count(int count)           {        _adapter_count = count; }
   int         full_count()                       { return _full_count; }
-  int         report_full()                      { return Atomic::add(&_full_count, 1); }
+  int         report_full()                      { return AtomicAccess::add(&_full_count, 1); }
 
 private:
   size_t heap_unallocated_capacity() const;

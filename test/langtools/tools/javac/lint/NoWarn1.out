@@ -1,2 +1,5 @@
-NoWarn.java:13:11: compiler.warn.inexact.non-varargs.call: java.lang.Object, java.lang.Object[]
-1 warning
+NoWarn.java:16:13: compiler.warn.sun.proprietary: sun.misc.Unsafe
+NoWarn.java:17:32: compiler.warn.diamond.redundant.args
+- compiler.note.unchecked.filename: NoWarn.java
+- compiler.note.unchecked.recompile
+2 warnings

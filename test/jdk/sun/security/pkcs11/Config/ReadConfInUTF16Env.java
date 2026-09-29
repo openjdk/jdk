@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  */
 
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 import org.testng.annotations.Test;
 
 import java.security.Provider;
@@ -40,15 +41,14 @@ public class ReadConfInUTF16Env {
     public void testReadConfInUTF16Env() throws Exception {
         String[] testCommand = new String[] { "-Dfile.encoding=UTF-16",
                 TestSunPKCS11Provider.class.getName()};
-        ProcessTools.executeTestJvm(testCommand).shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(testCommand).shouldHaveExitValue(0);
     }
 
     static class TestSunPKCS11Provider {
         public static void main(String[] args) throws Exception {
             Provider p = Security.getProvider("SunPKCS11");
             if (p == null) {
-                System.out.println("Skipping test - no PKCS11 provider available");
-                return;
+                throw new SkippedException("No PKCS11 provider available");
             }
             System.out.println(p.getName());
         }

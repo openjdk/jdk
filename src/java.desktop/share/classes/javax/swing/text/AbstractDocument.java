@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,14 +147,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         if (defaultI18NProperty == null) {
             // determine default setting for i18n support
-            @SuppressWarnings("removal")
-            String o = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getProperty(I18NProperty);
-                    }
-                }
-            );
+            String o = System.getProperty(I18NProperty);
             if (o != null) {
                 defaultI18NProperty = Boolean.valueOf(o);
             } else {
@@ -415,7 +408,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
     /**
      * This allows the model to be safely rendered in the presence
-     * of currency, if the model supports being updated asynchronously.
+     * of concurrency, if the model supports being updated asynchronously.
      * The given runnable will be executed in a way that allows it
      * to safely read the model with no changes while the runnable
      * is being executed.  The runnable itself may <em>not</em>

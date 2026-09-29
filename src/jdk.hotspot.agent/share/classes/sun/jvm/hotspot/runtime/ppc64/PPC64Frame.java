@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,24 +85,6 @@ public class PPC64Frame extends Frame {
   private PPC64Frame() {
   }
 
-  private void adjustForDeopt() {
-    if ( pc != null) {
-      // Look for a deopt pc and if it is deopted convert to original pc
-      CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
-      if (cb != null && cb.isJavaMethod()) {
-        NMethod nm = (NMethod) cb;
-        if (pc.equals(nm.deoptHandlerBegin())) {
-          if (Assert.ASSERTS_ENABLED) {
-            Assert.that(this.getUnextendedSP() != null, "null SP in Java frame");
-          }
-          // adjust pc if frame is deoptimized.
-          pc = this.getUnextendedSP().getAddressAt(nm.origPCOffset());
-          deoptimized = true;
-        }
-      }
-    }
-  }
-
   public PPC64Frame(Address raw_sp, Address raw_fp, Address pc) {
     this.raw_sp = raw_sp;
     this.raw_unextendedSP = raw_sp;
@@ -116,7 +98,6 @@ public class PPC64Frame extends Frame {
     } else {
       this.pc = pc;
     }
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -136,7 +117,6 @@ public class PPC64Frame extends Frame {
       this.raw_fp = raw_fp;
     }
     this.pc = raw_sp.getAddressAt(2 * VM.getVM().getAddressSize());
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -160,7 +140,6 @@ public class PPC64Frame extends Frame {
     } else {
       this.pc = pc;
     }
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -218,6 +197,11 @@ public class PPC64Frame extends Frame {
   public Address getFP() { return raw_fp; }
   public Address getSP() { return raw_sp; }
   public Address getID() { return raw_sp; }
+
+  @Override
+  public void setSP(Address newSP) {
+    raw_sp = newSP;
+  }
 
   // FIXME: not implemented yet (should be done for Solaris/PPC64)
   public boolean isSignalHandlerFrameDbg() { return false; }
@@ -279,7 +263,11 @@ public class PPC64Frame extends Frame {
     }
 
     if (cb != null) {
-      return senderForCompiledFrame(map, cb);
+      if (cb.isUpcallStub()) {
+        return senderForUpcallStub(map, (UpcallStub)cb);
+      } else if (cb.getFrameSize() > 0) {
+        return senderForCompiledFrame(map, cb);
+      }
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -314,11 +302,34 @@ public class PPC64Frame extends Frame {
     return fr;
   }
 
-  //------------------------------------------------------------------------------
-  // frame::adjust_unextended_sp
-  private void adjustUnextendedSP() {
-    raw_unextendedSP = getFP();
+  private Frame senderForUpcallStub(PPC64RegisterMap map, UpcallStub stub) {
+    if (DEBUG) {
+      System.out.println("senderForUpcallStub");
+    }
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(map != null, "map must be set");
+    }
+
+    var lastJavaFP = stub.getLastJavaFP(this); // This will be null
+    var lastJavaSP = stub.getLastJavaSP(this);
+    var lastJavaPC = stub.getLastJavaPC(this);
+
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(lastJavaSP.greaterThan(getSP()), "must be above this frame on stack");
+    }
+    PPC64Frame fr;
+    if (lastJavaPC != null) {
+      fr = new PPC64Frame(lastJavaSP, lastJavaFP, lastJavaPC);
+    } else {
+      fr = new PPC64Frame(lastJavaSP, lastJavaFP);
+    }
+    map.clear();
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(map.getIncludeArgumentOops(), "should be set by clear");
+    }
+    return fr;
   }
+
   private Frame senderForInterpreterFrame(PPC64RegisterMap map) {
     if (DEBUG) {
       System.out.println("senderForInterpreterFrame");
@@ -328,7 +339,6 @@ public class PPC64Frame extends Frame {
 
     return new PPC64Frame(sp, unextendedSP, getLink(), getSenderPC());
   }
-
 
   private Frame senderForCompiledFrame(PPC64RegisterMap map, CodeBlob cb) {
     if (DEBUG) {
@@ -360,6 +370,22 @@ public class PPC64Frame extends Frame {
       if (cb.getOopMaps() != null) {
         ImmutableOopMapSet.updateRegisterMap(this, cb, map, true);
       }
+    }
+
+    if (Continuation.isReturnBarrierEntry(senderPC)) {
+      // We assume WalkContinuation is "WalkContinuation::skip".
+      // It is same with c'tor arguments of RegisterMap in frame::next_frame().
+      //
+      // HotSpot code in cpu/ppc/frame_ppc.inline.hpp:
+      //
+      //   if (Continuation::is_return_barrier_entry(sender_pc)) {
+      //     if (map->walk_cont()) { // about to walk into an h-stack
+      //       return Continuation::top_frame(*this, map);
+      //     } else {
+      //       return Continuation::continuation_bottom_sender(map->thread(), *this, l_sender_sp);
+      //     }
+      //   }
+      return Continuation.continuationBottomSender(map.getThread(), this, senderSP);
     }
 
     return new PPC64Frame(senderSP, getLink(), senderPC);

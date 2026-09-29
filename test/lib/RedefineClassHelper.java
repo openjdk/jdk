@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,17 @@
  * questions.
  */
 
-import java.lang.instrument.Instrumentation;
+import java.io.InputStream;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodModel;
+import java.lang.constant.ClassDesc;
 import java.lang.instrument.ClassDefinition;
+import java.lang.instrument.Instrumentation;
+import java.util.function.Predicate;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
@@ -33,6 +42,7 @@ import jdk.test.lib.helpers.ClassFileInstaller;
  *
  * See sample test in test/testlibrary_tests/RedefineClassTest.java
  */
+
 public class RedefineClassHelper {
 
     public static Instrumentation instrumentation;
@@ -61,11 +71,77 @@ public class RedefineClassHelper {
         instrumentation.redefineClasses(new ClassDefinition(clazz, bytecode));
     }
 
+    private static byte[] getBytecodes(Class<?> clazz) throws Exception {
+        return getBytecodes(clazz.getClassLoader(), clazz.getName());
+    }
+
+    private static byte[] getBytecodes(ClassLoader loader, String name) throws Exception {
+        try (InputStream is = loader.getResourceAsStream(name + ".class")) {
+            byte[] buf = is.readAllBytes();
+            System.out.println("sizeof(" + name + ".class) == " + buf.length);
+            return buf;
+        }
+    }
+
+    /*
+     * Copy the class defined by `bytes`, replacing the name of the class with `newClassName`,
+     * so that both old and new classes can be compiled by jtreg for the test.
+     *
+     * @param bytes read from the original class file.
+     * @param newClassName new class name for the returned class representation
+     * @return a copy of the class represented by `bytes` but with the name `newClassName`
+     */
+    public static byte[] replaceClassName(byte[] bytes, String newClassName) throws Exception {
+        ClassModel classModel = ClassFile.of().parse(bytes);
+        return ClassFile.of().build(ClassDesc.of(newClassName), classModel::forEach);
+    }
+
+    /*
+     * Replace class name in bytecodes to the class we're trying to redefine, so that both
+     * old and new classes can be compiled with jtreg for the test.
+     *
+     * @param loader ClassLoader to find the bytes for the old class.
+     * @param oldClassName old class name.
+     * @param newClassName new class name to replace with old class name.
+     * @return a copy of the class represented by `bytes` but with the name `newClassName`
+     */
+    public static byte[] replaceClassName(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
+        byte[] buf = getBytecodes(loader, oldClassName);
+        return replaceClassName(buf, newClassName);
+    }
+
+    /*
+     * For the given <code>clazz</code>, use <xform> to replace the code body of the methods that are
+     * selected by <code>filter</code>.
+     *
+     * @param clazz the class to redefine
+     * @param filter the Predicate to choose the method(s) to redefine
+     * @param xform used for generating new method bodies
+     *
+     * Example:
+     *
+     * RedefineClassHelper.redefineMethodBodies(ShouldBeTransformed.class,
+     *                                          (MethodModel method) -> method.methodName().equalsString("toString"),
+     *                                          (CodeBuilder builder, CodeElement element) -> {
+     *                                              builder.ldc("YYYY");
+     *                                              builder.areturn();
+     *                                          });
+     */
+    public static void redefineMethodBodies(Class<?> clazz, Predicate<MethodModel> filter, CodeTransform xform) throws Exception {
+        byte[] bytecodes = RedefineClassHelper.getBytecodes(clazz);
+        ClassFile cf = ClassFile.of();
+        ClassModel model = cf.parse(bytecodes);
+
+        ClassTransform transform =
+            ClassTransform.transformingMethodBodies(filter, xform);
+        redefineClass(clazz, cf.transformClass(model, transform));
+    }
+
     /**
      * Main method to be invoked before test to create the redefineagent.jar
      */
     public static void main(String[] args) throws Exception {
-        String manifest = "Premain-Class: RedefineClassHelper\nCan-Redefine-Classes: true\n";
+        String manifest = "Premain-Class: RedefineClassHelper\nCan-Redefine-Classes: true\nCan-Retransform-Classes: true\n";
         ClassFileInstaller.writeJar("redefineagent.jar", ClassFileInstaller.Manifest.fromString(manifest), "RedefineClassHelper");
     }
 }

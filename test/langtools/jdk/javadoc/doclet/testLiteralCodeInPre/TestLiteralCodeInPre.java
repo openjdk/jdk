@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002387 8014636 8078320 8175200 8186332
+ * @bug      8002387 8014636 8078320 8175200 8186332 8352249 8352389
  * @summary  Improve rendered HTML formatting for {@code}
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -70,45 +70,42 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 """
                     typical_usage_code</span>()</div>
                     <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                     Example:  <pre><code>
-                       line 0 @Override
-                       line 1 &lt;T&gt; void m(T t) {
-                       line 2     // do something with T
-                       line 3 }
-                     </code></pre>
-                     and so it goes.</div>""",
+                    Example:  <pre><code>  line 0 @Override
+                      line 1 &lt;T&gt; void m(T t) {
+                      line 2     // do something with T
+                      line 3 }
+                    </code></pre>
+                    and so it goes.</div>""",
                 """
                     typical_usage_literal</span>()</div>
                     <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                     Example:  <pre>
-                       line 0 @Override
-                       line 1 &lt;T&gt; void m(T t) {
-                       line 2     // do something with T
-                       line 3 }
-                     </pre>
-                     and so it goes.</div>""",
+                    Example:  <pre>  line 0 @Override
+                      line 1 &lt;T&gt; void m(T t) {
+                      line 2     // do something with T
+                      line 3 }
+                    </pre>
+                    and so it goes.</div>""",
                 """
                     recommended_usage_literal</span>()</div>
                     <div class="block">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                     Example:  <pre>
-                       line 0 @Override
-                       line 1 &lt;T&gt; void m(T t) {
-                       line 2     // do something with T
-                       line 3 } </pre>
-                     and so it goes.</div>""",
+                    Example:  <pre>  line 0 @Override
+                      line 1 &lt;T&gt; void m(T t) {
+                      line 2     // do something with T
+                      line 3 } </pre>
+                    and so it goes.</div>""",
                 """
                     <div class="block">Test for html in pre, note the spaces
-                     <PRE>
-                     <b>id           </b>
-                     </PRE></div>""",
+                    <PRE>
+                    <b>id           </b>
+                    </PRE></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">void</span>&nbsp;<span class="element-name">htmlAttrInPre1</span>()</\
                     div>
                     <div class="block">More html tag outliers.
-                     <pre>
-                     @Override
-                     <code> some.function() </code>
-                     </pre></div>""");
+                    <pre>
+                    @Override
+                    <code> some.function() </code>
+                    </pre></div>""");
     }
 }

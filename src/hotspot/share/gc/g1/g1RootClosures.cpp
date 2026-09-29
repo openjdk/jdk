@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1SharedClosures.hpp"
@@ -42,8 +42,8 @@ public:
   CLDClosure* weak_clds()             { return &_closures._clds; }
   CLDClosure* strong_clds()           { return &_closures._clds; }
 
-  CodeBlobClosure* strong_codeblobs()      { return &_closures._codeblobs; }
-  CodeBlobClosure* weak_codeblobs()        { return &_closures._codeblobs; }
+  NMethodClosure* strong_nmethods()   { return &_closures._nmethods; }
+  NMethodClosure* weak_nmethods()     { return &_closures._nmethods; }
 };
 
 // Closures used during concurrent start.
@@ -65,15 +65,15 @@ public:
   CLDClosure* weak_clds()             { return &_weak._clds; }
   CLDClosure* strong_clds()           { return &_strong._clds; }
 
-  CodeBlobClosure* strong_codeblobs()      { return &_strong._codeblobs; }
-  CodeBlobClosure* weak_codeblobs()        { return &_weak._codeblobs; }
+  NMethodClosure* strong_nmethods()   { return &_strong._nmethods; }
+  NMethodClosure* weak_nmethods()     { return &_weak._nmethods; }
 };
 
 G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1CollectedHeap* g1h,
                                                                          G1ParScanThreadState* pss,
                                                                          bool process_only_dirty_klasses) {
   G1EvacuationRootClosures* res = nullptr;
-  if (g1h->collector_state()->in_concurrent_start_gc()) {
+  if (g1h->collector_state()->is_in_concurrent_start_gc()) {
     if (ClassUnloadingWithConcurrentMark) {
       res = new G1ConcurrentStartMarkClosures<false>(g1h, pss);
     } else {

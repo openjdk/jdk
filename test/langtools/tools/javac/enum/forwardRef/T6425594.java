@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug     6424491
  * @summary javac accepts illegal forward references
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile/fail/ref=T6425594.out -XDrawDiagnostics -XDuseBeforeDeclarationWarning T6425594.java
  */
 

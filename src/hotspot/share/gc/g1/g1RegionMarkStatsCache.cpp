@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -30,17 +29,16 @@
 
 G1RegionMarkStatsCache::G1RegionMarkStatsCache(G1RegionMarkStats* target, uint num_cache_entries) :
   _target(target),
+  _cache(NEW_C_HEAP_ARRAY(G1RegionMarkStatsCacheEntry, num_cache_entries, mtGC)),
   _num_cache_entries(num_cache_entries),
   _num_cache_entries_mask(_num_cache_entries - 1) {
 
   guarantee(is_power_of_2(num_cache_entries),
             "Number of cache entries must be power of two, but is %u", num_cache_entries);
-  _cache = NEW_C_HEAP_ARRAY(G1RegionMarkStatsCacheEntry, _num_cache_entries, mtGC);
-  reset();
 }
 
 G1RegionMarkStatsCache::~G1RegionMarkStatsCache() {
-  FREE_C_HEAP_ARRAY(G1RegionMarkStatsCacheEntry, _cache);
+  FREE_C_HEAP_ARRAY(_cache);
 }
 
 void G1RegionMarkStatsCache::add_live_words(oop obj) {

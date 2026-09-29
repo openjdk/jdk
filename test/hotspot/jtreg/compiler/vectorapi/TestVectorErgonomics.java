@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,43 +37,43 @@ import jdk.test.lib.process.ProcessTools;
 public class TestVectorErgonomics {
 
     public static void main(String[] args) throws Throwable {
-        ProcessTools.executeTestJvm("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
-                                    "-XX:+EnableVectorReboxing", "-Xlog:compilation", "-version")
+        ProcessTools.executeTestJava("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
+                                     "-XX:+EnableVectorReboxing", "-Xlog:compilation", "-version")
                     .shouldHaveExitValue(0)
                     .shouldContain("EnableVectorReboxing=true");
 
-        ProcessTools.executeTestJvm("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
-                                    "-XX:+EnableVectorAggressiveReboxing", "-Xlog:compilation", "-version")
+        ProcessTools.executeTestJava("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
+                                     "-XX:+EnableVectorAggressiveReboxing", "-Xlog:compilation", "-version")
                     .shouldHaveExitValue(0)
                     .shouldContain("EnableVectorAggressiveReboxing=true");
 
-        ProcessTools.executeTestJvm("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
-                                    "-XX:-EnableVectorReboxing", "-Xlog:compilation", "-version")
+        ProcessTools.executeTestJava("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
+                                     "-XX:-EnableVectorReboxing", "-Xlog:compilation", "-version")
                     .shouldHaveExitValue(0)
                     .shouldContain("EnableVectorReboxing=false")
                     .shouldContain("EnableVectorAggressiveReboxing=false");
 
-        ProcessTools.executeTestJvm("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
-                                    "-XX:-EnableVectorAggressiveReboxing", "-Xlog:compilation", "-version")
+        ProcessTools.executeTestJava("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
+                                     "-XX:-EnableVectorAggressiveReboxing", "-Xlog:compilation", "-version")
                     .shouldHaveExitValue(0)
                     .shouldContain("EnableVectorAggressiveReboxing=false");
 
-        ProcessTools.executeTestJvm("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
-                                    "-XX:-EnableVectorSupport", "-Xlog:compilation", "-version")
+        ProcessTools.executeTestJava("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
+                                     "-XX:-EnableVectorSupport", "-Xlog:compilation", "-version")
                     .shouldHaveExitValue(0)
                     .shouldContain("EnableVectorSupport=false")
                     .shouldContain("EnableVectorReboxing=false")
                     .shouldContain("EnableVectorAggressiveReboxing=false");
 
-        ProcessTools.executeTestJvm("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
-                                    "-XX:-EnableVectorSupport", "-XX:+EnableVectorReboxing", "-Xlog:compilation", "-version")
+        ProcessTools.executeTestJava("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
+                                     "-XX:-EnableVectorSupport", "-XX:+EnableVectorReboxing", "-Xlog:compilation", "-version")
                     .shouldHaveExitValue(0)
                     .shouldContain("EnableVectorSupport=false")
                     .shouldContain("EnableVectorReboxing=false")
                     .shouldContain("EnableVectorAggressiveReboxing=false");
 
-        ProcessTools.executeTestJvm("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
-                                    "-XX:-EnableVectorSupport", "-XX:+EnableVectorAggressiveReboxing", "-Xlog:compilation", "-version")
+        ProcessTools.executeTestJava("--add-modules=jdk.incubator.vector", "-XX:+UnlockExperimentalVMOptions",
+                                     "-XX:-EnableVectorSupport", "-XX:+EnableVectorAggressiveReboxing", "-Xlog:compilation", "-version")
                     .shouldHaveExitValue(0)
                     .shouldContain("EnableVectorSupport=false")
                     .shouldContain("EnableVectorReboxing=false")

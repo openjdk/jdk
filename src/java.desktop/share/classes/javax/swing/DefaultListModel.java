@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,6 +530,8 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      *
      * @param c the collection which contains the elements to add
      * @throws NullPointerException if {@code c} is null
+     *
+     * @since 11
      */
     public void addAll(Collection<? extends E> c) {
         if (c.isEmpty()) {
@@ -552,6 +554,8 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      * @throws ArrayIndexOutOfBoundsException if {@code index} does not
      * fall within the range of number of elements currently held
      * @throws NullPointerException if {@code c} is null
+     *
+     * @since 11
      */
     public void addAll(int index, Collection<? extends E> c) {
         if (index < 0 || index > getSize()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,15 @@ public class MFLNTest extends SSLEngineTestCase {
     public static void main(String[] args) {
         setUpAndStartKDCIfNeeded();
         System.setProperty("jsse.enableMFLNExtension", "true");
-        for (int mfl = 4096; mfl >= 256; mfl /= 2) {
+        String testMode = System.getProperty("test.mode", "norm");
+        int mflLen;
+        if (testMode.equals("norm_sni")) {
+            mflLen = 512;
+        } else {
+            mflLen = 256;
+        }
+
+        for (int mfl = 4096; mfl >= mflLen; mfl /= 2) {
             System.out.println("=============================================="
                     + "==============");
             System.out.printf("Testsing DTLS handshake with MFL = %d%n", mfl);

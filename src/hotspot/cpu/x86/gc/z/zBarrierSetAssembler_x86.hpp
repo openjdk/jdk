@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ private:
   GrowableArrayCHeap<address, mtGC> _store_good_relocations;
 
 public:
-  static const int32_t _zpointer_address_mask = 0xFFFF0000;
+  static const int32_t ZPointerAddressMask = 0xFFFF0000;
 
   ZBarrierSetAssembler();
 
@@ -73,8 +73,7 @@ public:
                        BasicType type,
                        Register dst,
                        Address src,
-                       Register tmp1,
-                       Register tmp_thread);
+                       Register tmp1);
 
   virtual void store_at(MacroAssembler* masm,
                         DecoratorSet decorators,
@@ -164,14 +163,13 @@ public:
 #endif // COMPILER1
 
 #ifdef COMPILER2
-  OptoReg::Name refine_register(const Node* node,
-                                OptoReg::Name opto_reg);
-
   void generate_c2_load_barrier_stub(MacroAssembler* masm,
                                      ZLoadBarrierStubC2* stub) const;
   void generate_c2_store_barrier_stub(MacroAssembler* masm,
                                       ZStoreBarrierStubC2* stub) const;
 #endif // COMPILER2
+
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slow_path);
 
   void store_barrier_fast(MacroAssembler* masm,
                           Address ref_addr,
@@ -191,9 +189,13 @@ public:
                             Label& slow_path,
                             Label& slow_path_continuation) const;
 
-  void patch_barrier_relocation(address addr, int format);
+  void patch_barrier_relocation(address addr, int format, bool log = false);
 
   void patch_barriers();
+
+  void register_reloc_addresses(GrowableArray<address> &entries, int begin, int count);
+
+  void retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries);
 
   void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };

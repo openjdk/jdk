@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  * @library /test/lib
  * @requires vm.flagless
  * @requires vm.debug
+ * @comment ASAN grabs SIGFPE earlier than vm signal handler
+ * @requires !vm.asan
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  *          java.management

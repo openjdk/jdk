@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,24 +76,49 @@ public abstract class ThreadContainer extends StackableScope {
     public abstract Stream<Thread> threads();
 
     /**
-     * Invoked by Thread::start before the given Thread is started.
+     * Invoked by {@code add} to add a thread to this container before it starts.
      */
-    public void onStart(Thread thread) {
-        // do nothing
+    protected void onStart(Thread thread) {
     }
 
     /**
-     * Invoked when a Thread terminates or starting it fails.
-     *
-     * For a platform thread, this method is invoked by the thread itself when it
-     * terminates. For a virtual thread, this method is invoked on its carrier
-     * after the virtual thread has terminated.
-     *
-     * If starting the Thread failed then this method is invoked on the thread
-     * that invoked onStart.
+     * Invoked by {@code remove} to remove a thread from this container when it
+     * terminates (or failed to start).
      */
-    public void onExit(Thread thread) {
-        // do nothing
+    protected void onExit(Thread thread) {
+    }
+
+    /**
+     * Adds a thread to this container. This method should be invoked before the
+     * thread executes.
+     */
+    public final void add(Thread thread) {
+        // Prevent a virtual thread from being preempted as this could potentially
+        // deadlock when scheduled to continue and all carriers are blocked adding
+        // or removing virtual threads.
+        ContinuationSupport.pinIfSupported();
+        try {
+            onStart(thread);
+        } finally {
+            ContinuationSupport.unpinIfSupported();
+        }
+    }
+
+    /**
+     * Remove a thread from this container. This method can be invoked by the thread
+     * itself as it terminates, or it can be invoked by another thread after the given
+     * thread has terminated (or failed to start).
+     */
+    public final void remove(Thread thread) {
+        // Prevent a virtual thread from being preempted as this could potentially
+        // deadlock when scheduled to continue and all carriers are blocked adding
+        // or removing virtual threads.
+        ContinuationSupport.pinIfSupported();
+        try {
+            onExit(thread);
+        } finally {
+            ContinuationSupport.unpinIfSupported();
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,9 @@ $(eval $(call VerifyVariable,TEST_IMAGE_DIR))
 $(eval $(call VerifyVariable,MAKE))
 $(eval $(call VerifyVariable,BASH))
 
+include $(TOPDIR)/make/conf/version-numbers.conf
+VERSION_FEATURE := $(DEFAULT_VERSION_FEATURE)
+
 ################################################################################
 # The "human readable" name of this configuration
 CONF_NAME := run-test-prebuilt
@@ -63,16 +66,16 @@ TEST_JOBS ?= 0
 
 # Use hard-coded values for java flags (one size, fits all!)
 JAVA_FLAGS := -Duser.language=en -Duser.country=US
-JAVA_FLAGS_BIG := -Xms64M -Xmx1600M
-JAVA_FLAGS_SMALL := -XX:+UseSerialGC -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+JAVA_FLAGS_BIG := -Xms64M -Xmx2048M
+JAVA_FLAGS_SMALL := -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
 BUILDJDK_JAVA_FLAGS_SMALL := -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
 BUILD_JAVA_FLAGS := $(JAVA_FLAGS_BIG)
 
 ################################################################################
 # Hard-coded values copied from spec.gmk.in.
-X:=
-SPACE:=$(X) $(X)
-COMMA:=,
+X :=
+SPACE := $(X) $(X)
+COMMA := ,
 MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
     MAKE_LOG_FLAGS="$(MAKE_LOG_FLAGS)" LOG_LEVEL=$(LOG_LEVEL)
 BASH_ARGS := -o pipefail -e
@@ -177,6 +180,18 @@ ifeq ($(OPENJDK_BUILD_OS), windows)
   PATHTOOL := cygpath
 endif
 
-################################################################################
-# Simple macros from spec.gmk.in
-SHARED_LIBRARY=$(LIBRARY_PREFIX)$1$(SHARED_LIBRARY_SUFFIX)
+# These settings are needed to run testing with jvmti agent
+ifeq ($(OPENJDK_BUILD_OS), linux)
+  LIBRARY_PREFIX := lib
+  SHARED_LIBRARY_SUFFIX := .so
+endif
+
+ifeq ($(OPENJDK_BUILD_OS), windows)
+  LIBRARY_PREFIX :=
+  SHARED_LIBRARY_SUFFIX := .dll
+endif
+
+ifeq ($(OPENJDK_BUILD_OS), macosx)
+  LIBRARY_PREFIX := lib
+  SHARED_LIBRARY_SUFFIX := .dylib
+endif

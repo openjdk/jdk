@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
 
 import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.StandardOpenOption.*;
@@ -64,6 +65,7 @@ public class TestHelper {
     static final File TEST_CLASSES_DIR;
     static final File TEST_SOURCES_DIR;
 
+    static final String NL = System.getProperty("line.separator");
     static final String JAVAHOME = System.getProperty("java.home");
     static final String JAVA_BIN;
     static final String JAVA_LIB;
@@ -287,17 +289,21 @@ public class TestHelper {
      */
     static void createJar(String mEntry, File jarName, File mainClass,
             String... mainDefs) throws FileNotFoundException {
+        String source =
+                Arrays.stream(mainDefs != null ? mainDefs : new String[0])
+                      .collect(Collectors.joining(NL,
+                                                  "public class Foo {" + NL,
+                                                  "}" + NL));
+        createJarForSource(mEntry, jarName, mainClass, source);
+    }
+
+    static void createJarForSource(String mEntry, File jarName, File mainClass,
+            String source) throws FileNotFoundException {
         if (jarName.exists()) {
             jarName.delete();
         }
         try (PrintStream ps = new PrintStream(new FileOutputStream(mainClass + ".java"))) {
-            ps.println("public class Foo {");
-            if (mainDefs != null) {
-                for (String x : mainDefs) {
-                    ps.println(x);
-                }
-            }
-            ps.println("}");
+            ps.println(source);
         }
 
         String compileArgs[] = {

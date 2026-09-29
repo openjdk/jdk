@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package compiler.lib.ir_framework.shared;
  * Exception that is thrown if there is an internal error in the framework. This is most likely an indicator of a bug
  * in the framework.
  */
+@SuppressWarnings("serial")
 public class TestFrameworkException extends RuntimeException {
     public TestFrameworkException(String message) {
         super("Internal Test Framework exception - please file a bug:" + System.lineSeparator() + message);

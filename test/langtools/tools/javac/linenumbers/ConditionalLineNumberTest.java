@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8034091
  * @summary Add LineNumberTable attributes for conditional operator (?:) split across several lines.
- * @enablePreview
  */
 
 import java.lang.classfile.*;
@@ -54,7 +53,7 @@ public class ConditionalLineNumberTest {
         ClassModel self = ClassFile.of().parse(ConditionalLineNumberTest.class.getResourceAsStream("ConditionalLineNumberTest.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if (m.methodName().equalsString("method")) {
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
                 assert code_attribute != null;
                 for (Attribute<?> at : code_attribute.attributes()) {
                     if (at instanceof LineNumberTableAttribute) {

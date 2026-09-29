@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_GraphBuilder.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_Optimizer.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/resourceArea.hpp"
@@ -143,9 +142,10 @@ IRScope::IRScope(Compilation* compilation, IRScope* caller, int caller_bci, ciMe
   _xhandlers          = new XHandlers(method);
   _number_of_locks    = 0;
   _monitor_pairing_ok = method->has_balanced_monitors();
-  _wrote_final        = false;
+  _wrote_non_strict_final = false;
   _wrote_fields       = false;
   _wrote_volatile     = false;
+  _wrote_stable       = false;
   _start              = nullptr;
 
   if (osr_bci != -1) {
@@ -171,6 +171,9 @@ int IRScope::max_stack() const {
 
 
 bool IRScopeDebugInfo::should_reexecute() {
+  if (_should_reexecute) {
+    return true;
+  }
   ciMethod* cur_method = scope()->method();
   int       cur_bci    = bci();
   if (cur_method != nullptr && cur_bci != SynchronizationEntryBCI) {
@@ -190,7 +193,6 @@ CodeEmitInfo::CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers, boo
   , _exception_handlers(exception_handlers)
   , _oop_map(nullptr)
   , _stack(stack)
-  , _is_method_handle_invoke(false)
   , _deoptimize_on_exception(deoptimize_on_exception)
   , _force_reexecute(false) {
   assert(_stack != nullptr, "must be non null");
@@ -203,7 +205,6 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack)
   , _exception_handlers(nullptr)
   , _oop_map(nullptr)
   , _stack(stack == nullptr ? info->_stack : stack)
-  , _is_method_handle_invoke(info->_is_method_handle_invoke)
   , _deoptimize_on_exception(info->_deoptimize_on_exception)
   , _force_reexecute(info->_force_reexecute) {
 
@@ -214,11 +215,11 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack)
 }
 
 
-void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_offset) {
+void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool maybe_return_as_fields) {
   // record the safepoint before recording the debug info for enclosing scopes
   recorder->add_safepoint(pc_offset, _oop_map->deep_copy());
   bool reexecute = _force_reexecute || _scope_debug_info->should_reexecute();
-  _scope_debug_info->record_debug_info(recorder, pc_offset, reexecute, _is_method_handle_invoke);
+  _scope_debug_info->record_debug_info(recorder, pc_offset, reexecute, maybe_return_as_fields);
   recorder->end_safepoint(pc_offset);
 }
 
@@ -306,22 +307,22 @@ void IR::eliminate_null_checks() {
   }
 }
 
-
-static int sort_pairs(BlockPair** a, BlockPair** b) {
-  if ((*a)->from() == (*b)->from()) {
-    return (*a)->to()->block_id() - (*b)->to()->block_id();
-  } else {
-    return (*a)->from()->block_id() - (*b)->from()->block_id();
-  }
-}
-
-
+// The functionality of this class is to insert a new block between
+// the 'from' and 'to' block of a critical edge.
+// It first collects the block pairs, and then processes them.
+//
+// Some instructions may introduce more than one edge between two blocks.
+// By checking if the current 'to' block sets critical_edge_split_flag
+// (all new blocks set this flag) we can avoid repeated processing.
+// This is why BlockPair contains the index rather than the original 'to' block.
 class CriticalEdgeFinder: public BlockClosure {
   BlockPairList blocks;
-  IR*       _ir;
 
  public:
-  CriticalEdgeFinder(IR* ir): _ir(ir) {}
+  CriticalEdgeFinder(IR* ir) {
+    ir->iterate_preorder(this);
+  }
+
   void block_do(BlockBegin* bb) {
     BlockEnd* be = bb->end();
     int nos = be->number_of_sux();
@@ -329,20 +330,22 @@ class CriticalEdgeFinder: public BlockClosure {
       for (int i = 0; i < nos; i++) {
         BlockBegin* sux = be->sux_at(i);
         if (sux->number_of_preds() >= 2) {
-          blocks.append(new BlockPair(bb, sux));
+          blocks.append(new BlockPair(bb, i));
         }
       }
     }
   }
 
   void split_edges() {
-    BlockPair* last_pair = nullptr;
-    blocks.sort(sort_pairs);
     for (int i = 0; i < blocks.length(); i++) {
       BlockPair* pair = blocks.at(i);
-      if (last_pair != nullptr && pair->is_same(last_pair)) continue;
       BlockBegin* from = pair->from();
-      BlockBegin* to = pair->to();
+      int index = pair->index();
+      BlockBegin* to = from->end()->sux_at(index);
+      if (to->is_set(BlockBegin::critical_edge_split_flag)) {
+        // inserted
+        continue;
+      }
       BlockBegin* split = from->insert_block_between(to);
 #ifndef PRODUCT
       if ((PrintIR || PrintIR1) && Verbose) {
@@ -350,15 +353,12 @@ class CriticalEdgeFinder: public BlockClosure {
                       from->block_id(), to->block_id(), split->block_id());
       }
 #endif
-      last_pair = pair;
     }
   }
 };
 
 void IR::split_critical_edges() {
   CriticalEdgeFinder cef(this);
-
-  iterate_preorder(&cef);
   cef.split_edges();
 }
 

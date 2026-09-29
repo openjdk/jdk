@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,19 +46,11 @@
  */
 
 /*
- * @test id=with_ZGC_Singlegen
- * @requires vm.gc.ZSinglegen
+ * @test id=with_ZGC
+ * @requires vm.gc.Z
  * @bug 8198540
  * @summary Test TypeConverterFactory is not leaking class loaders (Z GC)
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational TypeConverterFactoryRetentionTests
- */
-
-/*
- * @test id=with_ZGC_Generational
- * @requires vm.gc.ZGenerational
- * @bug 8198540
- * @summary Test TypeConverterFactory is not leaking class loaders (Z GC)
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational TypeConverterFactoryRetentionTests
+ * @run main/othervm -XX:+UseZGC TypeConverterFactoryRetentionTests
  */
 
 /*

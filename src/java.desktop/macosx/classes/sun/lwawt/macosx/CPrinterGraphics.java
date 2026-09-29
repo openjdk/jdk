@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.awt.image.*;
 import java.awt.print.*;
 import sun.print.*;
 
-public class CPrinterGraphics extends ProxyGraphics2D {
+public final class CPrinterGraphics extends ProxyGraphics2D {
     // NOTE: This is a ProxyGraphics2D, and not a PathGraphics. However
     // the RasterPrinterJob, upon which CPrinterJob is based, refers to
     // PathGraphics. However, this is not a code path that will be
@@ -43,6 +43,7 @@ public class CPrinterGraphics extends ProxyGraphics2D {
         super(graphics, printerJob);
     }
 
+    @Override
     public boolean drawImage(Image img, int x, int y,
                  Color bgcolor,
                  ImageObserver observer) {
@@ -52,6 +53,7 @@ public class CPrinterGraphics extends ProxyGraphics2D {
         return getDelegate().drawImage(img, x, y, bgcolor, observer);
     }
 
+    @Override
     public boolean drawImage(Image img, int x, int y,
                  int width, int height,
                  Color bgcolor,
@@ -62,6 +64,7 @@ public class CPrinterGraphics extends ProxyGraphics2D {
         return getDelegate().drawImage(img, x, y, width, height, bgcolor, observer);
     }
 
+    @Override
     public boolean drawImage(Image img,
                  int dx1, int dy1, int dx2, int dy2,
                  int sx1, int sy1, int sx2, int sy2,
@@ -71,5 +74,17 @@ public class CPrinterGraphics extends ProxyGraphics2D {
         // a problem with CPrinterSurfaceData (and the decision method,
         // needToCopyBgColorImage, is private instead of protected!)
         return getDelegate().drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
+    }
+
+    @Override
+    public void drawString(String str, int x, int y) {
+        str = RasterPrinterJob.removeControlChars(str);
+        super.drawString(str, x, y);
+    }
+
+    @Override
+    public void drawString(String str, float x, float y) {
+        str = RasterPrinterJob.removeControlChars(str);
+        super.drawString(str, x, y);
     }
 }

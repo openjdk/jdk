@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ public class Test4628062 {
     private static final int[] HMACSHA512_256_SIZES = { 32 };
 
     public boolean execute(String algo, int[] keySizes) throws Exception {
-        KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
+        KeyGenerator kg = KeyGenerator.getInstance(algo,
+                System.getProperty("test.provider.name", "SunJCE"));
 
         // TEST FIX 4628062
         Key keyWithDefaultSize = kg.generateKey();

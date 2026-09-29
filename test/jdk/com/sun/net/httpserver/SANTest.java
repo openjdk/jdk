@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,18 @@
  *          java.base/sun.net.www.http
  *          java.base/sun.net.www
  *          java.base/sun.net
+ *          java.base/jdk.internal.net.quic
+ *          java.net.http/jdk.internal.net.http.quic
+ *          java.net.http/jdk.internal.net.http.quic.packets
+ *          java.net.http/jdk.internal.net.http.quic.frames
+ *          java.net.http/jdk.internal.net.http.quic.streams
+ *          java.net.http/jdk.internal.net.http.http3.streams
+ *          java.net.http/jdk.internal.net.http.http3.frames
+ *          java.net.http/jdk.internal.net.http.http3
+ *          java.net.http/jdk.internal.net.http.qpack
+ *          java.net.http/jdk.internal.net.http.qpack.readers
+ *          java.net.http/jdk.internal.net.http.qpack.writers
+ *          java.base/jdk.internal.util
  *
  * @run main/othervm SANTest
  * @summary Update SimpleSSLContext keystore to use SANs for localhost IP addresses
@@ -61,7 +73,7 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
  */
 public class SANTest implements HttpServerAdapters {
 
-    static SSLContext ctx;
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
 
     static HttpServer getHttpsServer(InetSocketAddress addr, Executor exec, SSLContext ctx) throws Exception {
         HttpsServer server = HttpsServer.create(addr, 0);
@@ -110,7 +122,6 @@ public class SANTest implements HttpServerAdapters {
         ExecutorService executor=null;
         try {
             System.out.print ("SANTest: ");
-            ctx = new SimpleSSLContext().get();
             executor = Executors.newCachedThreadPool();
 
             InetAddress l1 = InetAddress.getByName("::1");

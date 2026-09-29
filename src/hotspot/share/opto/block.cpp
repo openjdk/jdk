@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "opto/block.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
@@ -38,9 +37,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-void Block_Array::grow( uint i ) {
-  assert(i >= Max(), "must be an overflow");
-  debug_only(_limit = i+1);
+void Block_Array::grow(uint i) {
+  assert(i >= Max(), "Should have been checked before, use maybe_grow?");
+  DEBUG_ONLY(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
     _size = 1;
@@ -178,10 +177,13 @@ int Block::is_Empty() const {
     return success_result;
   }
 
-  // Ideal nodes are allowable in empty blocks: skip them  Only MachNodes
-  // turn directly into code, because only MachNodes have non-trivial
-  // emit() functions.
-  while ((end_idx > 0) && !get_node(end_idx)->is_Mach()) {
+  // Ideal nodes (except BoxLock) are allowable in empty blocks: skip them. Only
+  // Mach and BoxLock nodes turn directly into code via emit().
+  // Keep ReachabilityFence for diagnostic purposes.
+  while ((end_idx > 0) &&
+         !get_node(end_idx)->is_Mach() &&
+         !get_node(end_idx)->is_BoxLock() &&
+         !get_node(end_idx)->is_ReachabilityFence()) {
     end_idx--;
   }
 
@@ -374,6 +376,7 @@ void Block::dump(const PhaseCFG* cfg) const {
 PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 : Phase(CFG)
 , _root(root)
+, _blocks(arena)
 , _block_arena(arena)
 , _regalloc(nullptr)
 , _scheduling_for_pressure(false)
@@ -394,7 +397,10 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   Node *x = new GotoNode(nullptr);
   x->init_req(0, x);
   _goto = matcher.match_tree(x);
-  assert(_goto != nullptr, "");
+  assert(_goto != nullptr || C->failure_is_artificial(), "");
+  if (C->failing()) {
+    return;
+  }
   _goto->set_req(0,_goto);
 
   // Build the CFG in Reverse Post Order
@@ -1348,6 +1354,9 @@ void PhaseCFG::verify() const {
       verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
@@ -1417,11 +1426,11 @@ UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_A
 }
 
 void UnionFind::extend( uint from_idx, uint to_idx ) {
-  _nesting.check();
+  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   if( from_idx >= _max ) {
     uint size = 16;
     while( size <= from_idx ) size <<=1;
-    _indices = REALLOC_RESOURCE_ARRAY( uint, _indices, _max, size );
+    _indices = REALLOC_RESOURCE_ARRAY( _indices, _max, size );
     _max = size;
   }
   while( _cnt <= from_idx ) _indices[_cnt++] = 0;
@@ -1603,7 +1612,8 @@ void PhaseBlockLayout::find_edges() {
           Block *target = b->non_connector_successor(j);
           float freq = b->_freq * b->succ_prob(j);
           int from_pct = (int) ((100 * freq) / b->_freq);
-          int to_pct = (int) ((100 * freq) / target->_freq);
+          float f_to_pct = (100 * freq) / target->_freq;
+          int to_pct = (f_to_pct < 100.0) ? (int)f_to_pct : 100;
           edges->append(new CFGEdge(b, target, freq, from_pct, to_pct));
         }
       }

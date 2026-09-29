@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 
@@ -69,8 +68,8 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 
     frame ret_frame(ret_sp, ret_fp, addr);
     if (!ret_frame.safe_for_sender(this)) {
-#if COMPILER2_OR_JVMCI
-      // C2 and JVMCI use ebp as a general register see if null fp helps
+#ifdef COMPILER2
+      // C2 uses ebp as a general register see if null fp helps
       frame ret_frame2(ret_sp, nullptr, addr);
       if (!ret_frame2.safe_for_sender(this)) {
         // nothing else to try if the frame isn't good
@@ -80,7 +79,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 #else
       // nothing else to try if the frame isn't good
       return false;
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
     }
     *fr_addr = ret_frame;
     return true;

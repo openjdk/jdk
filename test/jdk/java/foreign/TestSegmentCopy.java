@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,12 @@
 
 /*
  * @test
- * @run testng TestSegmentCopy
+ * @run junit TestSegmentCopy
  */
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -38,18 +37,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntFunction;
 
-import org.testng.SkipException;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSegmentCopy {
 
     static final int TEST_BYTE_SIZE = 16;
 
-    @Test(dataProvider = "segmentKinds")
+    @ParameterizedTest
+    @MethodSource("segmentKinds")
     public void testByteCopy(SegmentKind kind1, SegmentKind kind2) {
         MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
         MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
@@ -76,34 +80,145 @@ public class TestSegmentCopy {
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "segmentKinds")
+    @ParameterizedTest
+    @MethodSource("conjunctSegments")
+    public void testCopy5ArgInvariants(MemorySegment src, MemorySegment dst) {
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, 0, dst, 0, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, -1, dst, 0, src.byteSize()));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, 0, dst, -1, src.byteSize()));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, 1, dst, 0, src.byteSize()));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, 0, dst, 1, src.byteSize()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("conjunctSegments")
+    public void testConjunctCopy7ArgRight(MemorySegment src, MemorySegment dst) {
+        testConjunctCopy(src, 0, dst, 1, CopyOp.of7Arg());
+    }
+
+    @ParameterizedTest
+    @MethodSource("conjunctSegments")
+    public void testConjunctCopy5ArgRight(MemorySegment src, MemorySegment dst) {
+        testConjunctCopy(src, 0, dst, 1, CopyOp.of5Arg());
+    }
+
+    @ParameterizedTest
+    @MethodSource("conjunctSegments")
+    public void testConjunctCopy7ArgLeft(MemorySegment src, MemorySegment dst) {
+        testConjunctCopy(src, 1, dst, 0, CopyOp.of7Arg());
+    }
+
+    @ParameterizedTest
+    @MethodSource("conjunctSegments")
+    public void testConjunctCopy5ArgLeft(MemorySegment src, MemorySegment dst) {
+        testConjunctCopy(src, 1, dst, 0, CopyOp.of5Arg());
+    }
+
+    void testConjunctCopy(MemorySegment src, long srcOffset, MemorySegment dst, long dstOffset, CopyOp op) {
+        if (src.byteSize() < 4 || src.address() != dst.address()) {
+            // Only test larger segments where the skew is zero
+            return;
+        }
+
+        try (var arena = Arena.ofConfined()) {
+            // Create a disjoint segment for expected behavior
+            MemorySegment disjoint = arena.allocate(dst.byteSize());
+            disjoint.copyFrom(src);
+            op.copy(src, srcOffset, disjoint, dstOffset, 3);
+            byte[] expected = disjoint.toArray(JAVA_BYTE);
+
+            // Do a conjoint copy
+            op.copy(src, srcOffset, dst, dstOffset, 3);
+            byte[] actual = dst.toArray(JAVA_BYTE);
+
+            assertArrayEquals(expected, actual);
+        }
+    }
+
+    @FunctionalInterface
+    interface CopyOp {
+        void copy(MemorySegment src, long srcOffset, MemorySegment dst, long dstOffset, long bytes);
+
+        static CopyOp of5Arg() {
+            return MemorySegment::copy;
+        }
+
+        static CopyOp of7Arg() {
+            return (MemorySegment src, long srcOffset, MemorySegment dst, long dstOffset, long bytes) ->
+                    MemorySegment.copy(src, JAVA_BYTE, srcOffset, dst, JAVA_BYTE, dstOffset, bytes);
+        }
+
+    }
+
+    @ParameterizedTest
+    @MethodSource("segmentKinds")
+    public void testByteCopySizes(SegmentKind kind1, SegmentKind kind2) {
+
+        record Offsets(int src, int dst){}
+
+        for (Offsets offsets : List.of(new Offsets(3, 7), new Offsets(7, 3))) {
+            for (int size = 0; size < 513; size++) {
+                MemorySegment src = kind1.makeSegment(size + offsets.src());
+                MemorySegment dst = kind2.makeSegment(size + offsets.dst());
+                //prepare source slice
+                for (int i = 0; i < size; i++) {
+                    src.set(JAVA_BYTE, i + offsets.src(), (byte) i);
+                }
+                //perform copy
+                MemorySegment.copy(src, offsets.src(), dst, offsets.dst(), size);
+                //check that copy actually worked
+                for (int i = 0; i < size; i++) {
+                    assertEquals((byte) i, dst.get(JAVA_BYTE, i + offsets.dst()));
+                }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("segmentKinds")
     public void testReadOnlyCopy(SegmentKind kind1, SegmentKind kind2) {
         MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
         MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
         // check failure with read-only dest
-        MemorySegment.copy(s1, Type.BYTE.layout, 0, s2.asReadOnly(), Type.BYTE.layout, 0, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(s1, Type.BYTE.layout, 0, s2.asReadOnly(), Type.BYTE.layout, 0, 0);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Attempt to write a read-only segment.*")
+    @Test
+    public void testClosedZeroLengthCopy() {
+        MemorySegment closed;
+        try (Arena arena = Arena.ofConfined()) {
+            closed = arena.allocate(4, 1);
+        }
+        var alive = MemorySegment.ofArray(new byte[4]);
+        assertThrows(IllegalStateException.class, () -> MemorySegment.copy(closed, 0, alive, 0, 0));
+        assertThrows(IllegalStateException.class, () -> MemorySegment.copy(alive, 0, closed, 0, 0));
+    }
+
+    @Test
     public void badCopy6Arg() {
         try (Arena scope = Arena.ofConfined()) {
             MemorySegment dest = scope.allocate(ValueLayout.JAVA_INT).asReadOnly();
-            MemorySegment.copy(new int[1],0, dest, ValueLayout.JAVA_INT, 0 ,1); // should throw
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+                MemorySegment.copy(new int[1],0, dest, ValueLayout.JAVA_INT, 0 ,1);
+            });
+            assertTrue(e.getMessage().matches(".*Attempt to write a read-only segment.*"));
         }
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class, dataProvider = "types")
+    @ParameterizedTest
+    @MethodSource("types")
     public void testBadOverflow(Type type) {
-        if (type.layout.byteSize() > 1) {
-            MemorySegment segment = MemorySegment.ofArray(new byte[100]);
+        Assumptions.assumeTrue(type.layout.byteSize() > 1, "Byte layouts do not overflow");
+        MemorySegment segment = MemorySegment.ofArray(new byte[100]);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.copy(segment, type.layout, 0, segment, type.layout, 0, Long.MAX_VALUE);
-        } else {
-            throw new SkipException("Byte layouts do not overflow");
-        }
+        });
     }
 
-    @Test(dataProvider = "segmentKindsAndTypes")
+    @ParameterizedTest
+    @MethodSource("segmentKindsAndTypes")
     public void testElementCopy(SegmentKind kind1, SegmentKind kind2, Type type1, Type type2) {
         MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
         MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
@@ -133,16 +248,80 @@ public class TestSegmentCopy {
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testHyperAlignedSrc() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(segment, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(segment, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testHyperAlignedDst() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, segment, 0, 4);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, segment, 0, 4);
+        });
+    }
+
+    @Test
+    public void testCopy5ArgWithNegativeValues() {
+        MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, -1, dst, 0, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, 0, dst, -1, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, 0, dst, 0, -1)
+        );
+    }
+
+    @Test
+    public void testCopy7ArgWithNegativeValues() {
+        MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, -1, dst, JAVA_BYTE, 0, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, 0, dst, JAVA_BYTE, -1, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, 0, dst, JAVA_BYTE, 0, -1)
+        );
+    }
+
+    @Test
+    public void testCopyFromArrayWithNegativeValues() {
+        MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        byte[] dst = new byte[] {1, 2, 3, 4};
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, -1, dst, 0, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, 0, dst, -1, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, 0, dst, 0, -1)
+        );
+    }
+
+    @Test
+    public void testCopyToArrayWithNegativeValues() {
+        byte[] src = new byte[] {1, 2, 3, 4};
+        MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, -1, dst, JAVA_BYTE, 0, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, 0, dst, JAVA_BYTE, -1, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, 0, dst, JAVA_BYTE, 0, -1)
+        );
     }
 
     enum Type {
@@ -187,7 +366,7 @@ public class TestSegmentCopy {
         }
 
         void check(MemorySegment segment, long offset, int index, int val) {
-            assertEquals(handle().get(segment, offset + (index * size())), valueConverter.apply(val));
+            assertEquals(valueConverter.apply(val), handle().get(segment, offset + (index * size())));
         }
     }
 
@@ -206,7 +385,6 @@ public class TestSegmentCopy {
         }
     }
 
-    @DataProvider
     static Object[][] segmentKinds() {
         List<Object[]> cases = new ArrayList<>();
         for (SegmentKind kind1 : SegmentKind.values()) {
@@ -217,14 +395,33 @@ public class TestSegmentCopy {
         return cases.toArray(Object[][]::new);
     }
 
-    @DataProvider
+    static Object[][] conjunctSegments() {
+        List<Object[]> cases = new ArrayList<>();
+        for (SegmentKind kind : SegmentKind.values()) {
+            // Different paths might be taken in the implementation depending on the
+            // size, type, and address of the underlying segments.
+            for (int len : new int[]{0, 1, 7, 512}) {
+                for (int offset : new int[]{-1, 0, 1}) {
+                    MemorySegment segment = kind.makeSegment(len + 2);
+                    MemorySegment src = segment.asSlice(1 + offset, len);
+                    MemorySegment dst = segment.asSlice(1, len);
+                    for (int i = 0; i < len; i++) {
+                        src.set(JAVA_BYTE, i, (byte) i);
+                    }
+                    // src = 0, 1, ... , len-1
+                    cases.add(new Object[]{src, dst});
+                }
+            }
+        }
+        return cases.toArray(Object[][]::new);
+    }
+
     static Object[][] types() {
         return Arrays.stream(Type.values())
                 .map(t -> new Object[] { t })
                 .toArray(Object[][]::new);
     }
 
-    @DataProvider
     static Object[][] segmentKindsAndTypes() {
         List<Object[]> cases = new ArrayList<>();
         for (Object[] segmentKinds : segmentKinds()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,11 @@ import java.util.Arrays;
  * @summary Test that, when using a larger object alignment, ZGC arraycopy
  *          barriers are only applied to actual OOPs, and not to object
  *          alignment padding words.
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @run main/othervm -Xbatch -XX:-TieredCompilation
  *                   -XX:CompileOnly=compiler.gcbarriers.TestArrayCopyWithLargeObjectAlignment::*
  *                   -XX:ObjectAlignmentInBytes=16
- *                   -XX:+UseZGC -XX:+ZGenerational
+ *                   -XX:+UseZGC
  *                   compiler.gcbarriers.TestArrayCopyWithLargeObjectAlignment
  */
 

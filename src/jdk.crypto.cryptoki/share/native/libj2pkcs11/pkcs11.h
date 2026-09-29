@@ -1,8 +1,12 @@
-/* Copyright (c) OASIS Open 2016-2019. All Rights Reserved.
- * Distributed under the terms of the OASIS IPR Policy,
+/* Copyright (c) OASIS Open 2016,2019,2024. All Rights Reserved./
+ * /Distributed under the terms of the OASIS IPR Policy,
  * [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY
  * IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A
  * PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.
+ */
+
+/* Latest version of the specification:
+ * http://docs.oasis-open.org/pkcs11/pkcs11-base/v3.2/pkcs11-base-v3.2.html
  */
 
 #ifndef _PKCS11_H_
@@ -47,7 +51,7 @@ extern "C" {
  *
  * typedef CK_BYTE CK_PTR CK_BYTE_PTR;
  *
- * If you're using windows, it might be defined by:
+ * If you're using Windows, it might be defined by:
  *
  * #define CK_PTR *
  *
@@ -65,7 +69,7 @@ extern "C" {
  *   CK_VOID_PTR pReserved
  * );
  *
- * If you're using Windows to declare a function in a Win32 cryptoki .dll,
+ * If you're using Windows to declare a function in a Win32 Cryptoki .dll,
  * it might be defined by:
  *
  * #define CK_DECLARE_FUNCTION(returnType, name) \
@@ -201,6 +205,21 @@ extern "C" {
 #define CK_PKCS11_FUNCTION_INFO(name) \
   __PASTE(CK_,name) name;
 
+/* Create the 3.2 Function list */
+struct CK_FUNCTION_LIST_3_2 {
+
+  CK_VERSION    version;  /* Cryptoki version */
+
+/* Pile all the function pointers into the CK_FUNCTION_LIST. */
+/* pkcs11f.h has all the information about the Cryptoki
+ * function prototypes.
+ */
+#include "pkcs11f.h"
+
+};
+
+#define CK_PKCS11_3_0_ONLY 1   /* don't include the 3.2 and later functions */
+
 /* Create the 3.0 Function list */
 struct CK_FUNCTION_LIST_3_0 {
 
@@ -214,7 +233,9 @@ struct CK_FUNCTION_LIST_3_0 {
 
 };
 
-#define CK_PKCS11_2_0_ONLY 1
+#undef CK_PKCS11_3_0_ONLY
+
+#define CK_PKCS11_2_0_ONLY 1   /* don't include the 3.0 and later functions */
 
 /* Continue to define the old CK_FUNCTION_LIST */
 struct CK_FUNCTION_LIST {
@@ -240,5 +261,4 @@ struct CK_FUNCTION_LIST {
 #endif
 
 #endif /* _PKCS11_H_ */
-
 

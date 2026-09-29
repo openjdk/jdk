@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
+#define SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
+
+#include "gc/g1/g1CollectionSet.hpp"
+
+#include "gc/g1/g1CardSetGroup.inline.hpp"
+
+template <class CardOrRangeVisitor>
+inline void G1CollectionSet::merge_collection_set_card_set_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
+  uint offset = _selected_groups_inc_part_start;
+  if (offset == 0) {
+    _g1h->young_regions_card_set_group()->iterate_for_merge(cl);
+  }
+
+  const uint next_selected_group_increment = num_selected_groups_in_increment();
+  if (next_selected_group_increment == 0) {
+    return;
+  }
+
+  uint start_pos = (uint)((uint64_t)worker_id * next_selected_group_increment / num_workers);
+  uint cur_pos = start_pos;
+  do {
+    _selected_groups.at(offset + cur_pos)->iterate_for_merge(cl);
+    cur_pos++;
+    if (cur_pos == next_selected_group_increment) {
+      cur_pos = 0;
+    }
+  } while (cur_pos != start_pos);
+}
+#endif /* SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP */

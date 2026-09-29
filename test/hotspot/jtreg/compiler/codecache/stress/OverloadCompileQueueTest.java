@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
  *                   -XX:CompileCommand=exclude,java.lang.Thread::sleepNanos
  *                   -XX:CompileCommand=exclude,java.lang.Thread::beforeSleep
  *                   -XX:CompileCommand=exclude,java.lang.Thread::afterSleep
+ *                   -XX:CompileCommand=exclude,java.util.concurrent.TimeUnit::toNanos
  *                   -XX:CompileCommand=exclude,java.lang.Math::min
  *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
@@ -52,6 +53,7 @@
  *                   -XX:CompileCommand=exclude,java.lang.Thread::sleepNanos
  *                   -XX:CompileCommand=exclude,java.lang.Thread::beforeSleep
  *                   -XX:CompileCommand=exclude,java.lang.Thread::afterSleep
+ *                   -XX:CompileCommand=exclude,java.util.concurrent.TimeUnit::toNanos
  *                   -XX:CompileCommand=exclude,java.lang.Math::min
  *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
@@ -110,9 +112,9 @@ public class OverloadCompileQueueTest implements Runnable {
             AVAILABLE_LEVELS = IntStream
                     .rangeClosed(LEVEL_SIMPLE, TIERED_STOP_AT_LEVEL)
                     .toArray();
-        } else if (Platform.isServer() && !Platform.isEmulatedClient()) {
+        } else if (Platform.isServer()) {
             AVAILABLE_LEVELS = new int[] { LEVEL_FULL_OPTIMIZATION };
-        } else if (Platform.isClient() || Platform.isMinimal() || Platform.isEmulatedClient()) {
+        } else if (Platform.isClient() || Platform.isMinimal()) {
             AVAILABLE_LEVELS = new int[] { LEVEL_SIMPLE };
         } else {
             throw new Error("TESTBUG: unknown VM: " + Platform.vmName);

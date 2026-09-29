@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,46 +39,43 @@ class DatagramDispatcher extends UnixDispatcher {
         IOUtil.load();
     }
 
+    @Override
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return read0(fd, address, len);
     }
 
+    @Override
     long readv(FileDescriptor fd, long address, int len) throws IOException {
         return readv0(fd, address, len);
     }
 
+    @Override
     int write(FileDescriptor fd, long address, int len) throws IOException {
         return write0(fd, address, len);
     }
 
+    @Override
     long writev(FileDescriptor fd, long address, int len) throws IOException {
         return writev0(fd, address, len);
     }
 
-    void close(FileDescriptor fd) throws IOException {
-        close0(fd);
-    }
-
-    void preClose(FileDescriptor fd) throws IOException {
-        preClose0(fd);
-    }
-
+    @Override
     void dup(FileDescriptor fd1, FileDescriptor fd2) throws IOException {
         dup0(fd1, fd2);
     }
 
-    static native int read0(FileDescriptor fd, long address, int len)
+    private static native int read0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native long readv0(FileDescriptor fd, long address, int len)
+    private static native long readv0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native int write0(FileDescriptor fd, long address, int len)
+    private static native int write0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native long writev0(FileDescriptor fd, long address, int len)
+    private static native long writev0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native void dup0(FileDescriptor fd1, FileDescriptor fd2)
+    private static native void dup0(FileDescriptor fd1, FileDescriptor fd2)
         throws IOException;
 }

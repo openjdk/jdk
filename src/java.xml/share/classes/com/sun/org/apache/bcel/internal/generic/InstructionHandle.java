@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -38,7 +38,7 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
  * @see Instruction
  * @see BranchHandle
  * @see InstructionList
- * @LastModified: May 2021
+ * @LastModified: Sept 2025
  */
 public class InstructionHandle {
 
@@ -118,7 +118,7 @@ public class InstructionHandle {
         if (targeters == null) {
             targeters = new HashSet<>();
         }
-        // if(!targeters.contains(t))
+        // if (!targeters.contains(t))
         targeters.add(t);
     }
 
@@ -135,15 +135,12 @@ public class InstructionHandle {
     }
 
     /**
-     * Get attribute of an instruction handle.
+     * Gets attribute of an instruction handle.
      *
      * @param key the key object to store/retrieve the attribute
      */
     public Object getAttribute(final Object key) {
-        if (attributes != null) {
-            return attributes.get(key);
-        }
-        return null;
+        return attributes != null ? attributes.get(key) : null;
     }
 
     /**
@@ -247,7 +244,7 @@ public class InstructionHandle {
     }
 
     /**
-     * Set the position, i.e., the byte code offset of the contained instruction.
+     * Sets the position, i.e., the byte code offset of the contained instruction.
      */
     void setPosition(final int pos) {
         i_position = pos;

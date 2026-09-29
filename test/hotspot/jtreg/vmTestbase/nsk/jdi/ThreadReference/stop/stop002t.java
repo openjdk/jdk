@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,10 @@ public class stop002t {
     private IOPipe pipe;
     volatile boolean stopLooping1 = false;
     volatile boolean stopLooping2 = false;
+    volatile boolean gotOpaqueFrameException = false;
     volatile static int testNumReady = 0;
     static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
+    static Thread testThread = null;
 
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
@@ -54,7 +56,8 @@ public class stop002t {
         log = argHandler.createDebugeeLog();
         pipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(stop002.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(stop002.DEBUGGEE_THRNAME);
 
         // non-throwable object which will be used by debugger
         // as wrong parameter of JDI method ThreadReference.stop()
@@ -117,8 +120,6 @@ public class stop002t {
                 return Consts.TEST_FAILED;
             }
         } catch (Throwable t) {
-            // Call Thread.interrupted(). Workaround for JDK-8306324
-            log.display("TEST #3: interrupted = " + Thread.interrupted());
             // We don't expect the exception to be thrown when in vthread mode.
             if (!vthreadMode && t instanceof MyThrowable) {
                 log.display("TEST #3: Caught expected exception while in loop: " + t);
@@ -139,8 +140,19 @@ public class stop002t {
                 testNumReady = 4; // signal debugger side of test that we are ready
                 stopMeHere++; stopMeHere--;
             }
-            log.complain("TEST #4: Failed to throw expected exception");
-            return Consts.TEST_FAILED;
+            if (vthreadMode) {
+                if (gotOpaqueFrameException) {
+                    // Exception not required when in vthread mode if OpaqueFrameException thrown
+                    log.display("TEST #4: threw OpaqueFrameException while in vthread mode");
+                } else {
+                    log.complain("TEST #4: Failed to throw expected exception and " +
+                                 "failed to throw debugger side OpaqueFrameException");
+                    return Consts.TEST_FAILED;
+                }
+            } else {
+                log.complain("TEST #4: Failed to throw expected exception");
+                return Consts.TEST_FAILED;
+            }
         } catch (Throwable t) {
             // Call Thread.interrupted(). Workaround for JDK-8306324
             log.display("TEST #4: interrupted = " + Thread.interrupted());
@@ -180,7 +192,7 @@ public class stop002t {
             log.display("TEST #5: interrupted = " + Thread.interrupted());
             // We don't expect the exception to be thrown when in vthread mode.
             if (!vthreadMode && t instanceof MyThrowable) {
-                log.display("TEST #5: Caught expected exception while in loop: " + t);
+                log.display("TEST #5: Caught expected exception while in sleep: " + t);
             } else {
                 log.complain("TEST #5: Unexpected exception caught: " + t);
                 t.printStackTrace();

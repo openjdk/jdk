@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,23 +30,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.xml.transform.Source;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-
-import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
+import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8167179
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.NamespacePrefixTest
  * @run testng/othervm transform.NamespacePrefixTest
  * @summary This class tests the generation of namespace prefixes
  */
@@ -84,11 +80,11 @@ public class NamespacePrefixTest {
             EXECUTOR.execute(new TransformerThread(tmpl.newTransformer(), id));
         }
         // Initiate shutdown of previously submitted task
-        runWithAllPerm(EXECUTOR::shutdown);
+        EXECUTOR.shutdown();
         // Wait for termination of submitted tasks
         if (!EXECUTOR.awaitTermination(THREADS_COUNT, TimeUnit.SECONDS)) {
             // If not all tasks terminates during the time out force them to shutdown
-            runWithAllPerm(EXECUTOR::shutdownNow);
+            EXECUTOR.shutdown();
         }
         // Check if all transformation threads generated the correct namespace prefix
         assertTrue(concurrentTestPassed.get());

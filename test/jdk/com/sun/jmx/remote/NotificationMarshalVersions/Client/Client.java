@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,12 @@ import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
+import jdk.test.lib.Utils;
 
 public class Client {
+
+    public static final int COUNTER_TIMEOUT_SECONDS = 30;
+
     public static void run(String url) throws Exception {
         final int notifEmittedCnt = 10;
         final CountDownLatch counter = new CountDownLatch(notifEmittedCnt);
@@ -84,8 +88,8 @@ public class Client {
         System.out.println();
         try {
             System.out.println("waiting for " + notifEmittedCnt + " notifications to arrive");
-            if (!counter.await(30, TimeUnit.SECONDS)) {
-                throw new InterruptedException();
+            if (!counter.await(Utils.adjustTimeout(COUNTER_TIMEOUT_SECONDS), TimeUnit.SECONDS)) {
+                throw new Error("Client: Counter await expired");
             }
             if (duplNotification.get()) {
                 System.out.println("ERROR: received duplicated notifications");
@@ -94,7 +98,7 @@ public class Client {
             System.out.println("\nshutting down client");
         } catch (InterruptedException e) {
             System.out.println("ERROR: notification processing thread interrupted");
-            throw new Error("notification thread interrupted unexpectedly");
+            throw new Error("notification thread interrupted unexpectedly", e);
         }
     }
 }

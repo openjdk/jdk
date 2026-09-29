@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,11 @@ public class clsunload001 {
     /**
      * Start test from command line.
      */
-    public static void main(String argv[]) {
-        System.exit(run(argv,System.out) + JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+        int result = run(argv, System.out);
+        if (result != 0) {
+            throw new RuntimeException("Test failed");
+        }
     }
 
     /**
@@ -438,7 +441,7 @@ public class clsunload001 {
             if (eventKind == JDWP.EventKind.VM_DEATH) {
                 log.display("Got VM_DEATH event while waiting for tested event");
                 dead = true;
-                log.println("No CLASS_UNLOAD event occured at all so treat test as PASSED");
+                log.display("No CLASS_UNLOAD event occured at all so treat test as PASSED");
                 return;
             }
 

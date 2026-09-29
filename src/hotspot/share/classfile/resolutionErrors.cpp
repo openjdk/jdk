@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "memory/allocation.hpp"
 #include "oops/constantPool.hpp"
@@ -31,7 +30,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 class ResolutionErrorKey {
   ConstantPool* _cpool;
@@ -54,7 +53,7 @@ class ResolutionErrorKey {
   }
 };
 
-using InternalResolutionErrorTable = ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
+using InternalResolutionErrorTable = HashTable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
                   ResolutionErrorKey::hash,
                   ResolutionErrorKey::equals>;
 
@@ -66,15 +65,15 @@ void ResolutionErrorTable::initialize() {
 
 // create new error entry
 void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_index,
-                                     Symbol* error, Symbol* message,
-                                     Symbol* cause, Symbol* cause_msg)
+                                     Symbol* error, const char* message,
+                                     Symbol* cause, const char* cause_msg)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(!pool.is_null() && error != nullptr, "adding null obj");
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
-  _resolution_error_table->put(key, entry);
+  _resolution_error_table->put_when_absent(key, entry);
 }
 
 // create new nest host error entry
@@ -86,7 +85,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
-  _resolution_error_table->put(key, entry);
+  _resolution_error_table->put_when_absent(key, entry);
 }
 
 // find entry in the table
@@ -97,31 +96,42 @@ ResolutionErrorEntry* ResolutionErrorTable::find_entry(const constantPoolHandle&
   return entry == nullptr ? nullptr : *entry;
 }
 
-ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, Symbol* message,
-      Symbol* cause, Symbol* cause_msg):
+ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, const char* message,
+                                           Symbol* cause, const char* cause_msg):
         _error(error),
-        _message(message),
+        _message(message != nullptr ? os::strdup(message) : nullptr),
         _cause(cause),
-        _cause_msg(cause_msg),
+        _cause_msg(cause_msg != nullptr ? os::strdup(cause_msg) : nullptr),
         _nest_host_error(nullptr) {
 
   Symbol::maybe_increment_refcount(_error);
-  Symbol::maybe_increment_refcount(_message);
   Symbol::maybe_increment_refcount(_cause);
-  Symbol::maybe_increment_refcount(_cause_msg);
 }
 
 ResolutionErrorEntry::~ResolutionErrorEntry() {
   // decrement error refcount
   Symbol::maybe_decrement_refcount(_error);
-  Symbol::maybe_decrement_refcount(_message);
   Symbol::maybe_decrement_refcount(_cause);
-  Symbol::maybe_decrement_refcount(_cause_msg);
+
+  if (_message != nullptr) {
+    FREE_C_HEAP_ARRAY(_message);
+  }
+
+  if (_cause_msg != nullptr) {
+    FREE_C_HEAP_ARRAY(_cause_msg);
+  }
 
   if (nest_host_error() != nullptr) {
-    FREE_C_HEAP_ARRAY(char, nest_host_error());
+    FREE_C_HEAP_ARRAY(nest_host_error());
   }
 }
+
+void ResolutionErrorEntry::set_nest_host_error(const char* message) {
+  assert(_nest_host_error == nullptr, "caller should have checked");
+  assert_lock_strong(SystemDictionary_lock);
+  _nest_host_error = message;
+}
+
 
 class ResolutionErrorDeleteIterate : StackObj {
   ConstantPool* p;

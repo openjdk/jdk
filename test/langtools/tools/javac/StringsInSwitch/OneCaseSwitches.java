@@ -4,7 +4,6 @@
  * @summary Positive tests for strings in switch with few alternatives.
  * @compile          OneCaseSwitches.java
  * @run main OneCaseSwitches
- * @author  Joseph D. Darcy
  */
 
 import java.lang.reflect.*;

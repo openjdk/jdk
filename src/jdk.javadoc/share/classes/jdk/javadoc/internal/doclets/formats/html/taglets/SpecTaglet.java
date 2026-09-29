@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,26 +30,24 @@ import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SpecTree;
-import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * A taglet that represents the {@code @spec} tag.
@@ -122,14 +120,7 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
         Content label = htmlWriter.commentTagsToContent(holder, specTreeLabel, tagletWriter.context.isFirstSentence);
         return getExternalSpecContent(holder, specTree, specTreeURL,
-                textOf(specTreeLabel).replaceAll("\\s+", " "), label);
-    }
-
-    private String textOf(List<? extends DocTree> trees) {
-        return trees.stream()
-                .filter(dt -> dt instanceof TextTree)
-                .map(dt -> ((TextTree) dt).getBody().trim())
-                .collect(Collectors.joining(" "));
+                utils.normalizeWhitespace(label.stripTags().toString()), label);
     }
 
     Content getExternalSpecContent(Element holder,
@@ -151,7 +142,7 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         Content titleWithAnchor = tagletWriter.createAnchorAndSearchIndex(holder,
                 searchText,
                 title,
-                resources.getText("doclet.External_Specification"),
+                "",
                 docTree);
 
         if (specURI == null) {

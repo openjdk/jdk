@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,25 +30,16 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.security.CodeSigner;
-import java.security.cert.Certificate;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import sun.net.www.ParseUtil;
 
 /* URL jar file is a common JarFile subtype used for JarURLConnection */
 public class URLJarFile extends JarFile {
-
-    /*
-     * Interface to be able to call retrieve() in plugin if
-     * this variable is set.
-     */
-    private static URLJarFileCallBack callback = null;
 
     /* Controller of the Jar File's closing */
     private URLJarFileCloseController closeController = null;
@@ -57,12 +48,8 @@ public class URLJarFile extends JarFile {
     private Attributes superAttr;
     private Map<String, Attributes> superEntries;
 
-    static JarFile getJarFile(URL url) throws IOException {
-        return getJarFile(url, null);
-    }
-
     static JarFile getJarFile(URL url, URLJarFileCloseController closeController) throws IOException {
-        if (isFileURL(url)) {
+        if (ParseUtil.isLocalFileURL(url)) {
             Runtime.Version version = "runtime".equals(url.getRef())
                     ? JarFile.runtimeVersion()
                     : JarFile.baseVersion();
@@ -70,23 +57,6 @@ public class URLJarFile extends JarFile {
         } else {
             return retrieve(url, closeController);
         }
-    }
-
-    /*
-     * Changed modifier from private to public in order to be able
-     * to instantiate URLJarFile from sun.plugin package.
-     */
-    public URLJarFile(File file) throws IOException {
-        this(file, null);
-    }
-
-    /*
-     * Changed modifier from private to public in order to be able
-     * to instantiate URLJarFile from sun.plugin package.
-     */
-    public URLJarFile(File file, URLJarFileCloseController closeController) throws IOException {
-        super(file, true, ZipFile.OPEN_READ | ZipFile.OPEN_DELETE);
-        this.closeController = closeController;
     }
 
     private URLJarFile(File file, URLJarFileCloseController closeController, Runtime.Version version)
@@ -99,20 +69,6 @@ public class URLJarFile extends JarFile {
             throws IOException {
         super(new File(ParseUtil.decode(url.getFile())), true, ZipFile.OPEN_READ, version);
         this.closeController = closeController;
-    }
-
-    static boolean isFileURL(URL url) {
-        if (url.getProtocol().equalsIgnoreCase("file")) {
-            /*
-             * Consider this a 'file' only if it's a LOCAL file, because
-             * 'file:' URLs can be accessible through ftp.
-             */
-            String host = url.getHost();
-            if (host == null || host.isEmpty() || host.equals("~") ||
-                host.equalsIgnoreCase("localhost"))
-                return true;
-        }
-        return false;
     }
 
     /**
@@ -186,64 +142,27 @@ public class URLJarFile extends JarFile {
      * Given a URL, retrieves a JAR file, caches it to disk, and creates a
      * cached JAR file object.
      */
-    @SuppressWarnings("removal")
     private static JarFile retrieve(final URL url, final URLJarFileCloseController closeController) throws IOException {
-        /*
-         * See if interface is set, then call retrieve function of the class
-         * that implements URLJarFileCallBack interface (sun.plugin - to
-         * handle the cache failure for JARJAR file.)
-         */
-        if (callback != null)
-        {
-            return callback.retrieve(url);
-        }
-
-        else
-        {
-
-            JarFile result = null;
-            Runtime.Version version = "runtime".equals(url.getRef())
-                    ? JarFile.runtimeVersion()
-                    : JarFile.baseVersion();
-
-            /* get the stream before asserting privileges */
-            try (final InputStream in = url.openConnection().getInputStream()) {
-                result = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<>() {
-                        public JarFile run() throws IOException {
-                            Path tmpFile = Files.createTempFile("jar_cache", null);
-                            try {
-                                Files.copy(in, tmpFile, StandardCopyOption.REPLACE_EXISTING);
-                                JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController, version);
-                                tmpFile.toFile().deleteOnExit();
-                                return jarFile;
-                            } catch (Throwable thr) {
-                                try {
-                                    Files.delete(tmpFile);
-                                } catch (IOException ioe) {
-                                    thr.addSuppressed(ioe);
-                                }
-                                throw thr;
-                            }
-                        }
-                    });
-            } catch (PrivilegedActionException pae) {
-                throw (IOException) pae.getException();
+        Runtime.Version version = "runtime".equals(url.getRef())
+                ? JarFile.runtimeVersion()
+                : JarFile.baseVersion();
+        try (final InputStream in = url.openConnection().getInputStream()) {
+            Path tmpFile = Files.createTempFile("jar_cache", null);
+            try {
+                Files.copy(in, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController, version);
+                tmpFile.toFile().deleteOnExit();
+                return jarFile;
+            } catch (Throwable thr) {
+                try {
+                    Files.delete(tmpFile);
+                } catch (IOException ioe) {
+                    thr.addSuppressed(ioe);
+                }
+                throw thr;
             }
-
-            return result;
         }
     }
-
-    /*
-     * Set the call back interface to call retrieve function in sun.plugin
-     * package if plugin is running.
-     */
-    public static void setCallBack(URLJarFileCallBack cb)
-    {
-        callback = cb;
-    }
-
 
     private class URLJarFileEntry extends JarEntry {
         private final JarEntry je;
@@ -253,6 +172,7 @@ public class URLJarFile extends JarFile {
             this.je = je;
         }
 
+        @Override
         public Attributes getAttributes() throws IOException {
             if (URLJarFile.this.isSuperMan()) {
                 Map<String, Attributes> e = URLJarFile.this.superEntries;
@@ -265,14 +185,28 @@ public class URLJarFile extends JarFile {
             return null;
         }
 
-        public java.security.cert.Certificate[] getCertificates() {
-            Certificate[] certs = je.getCertificates();
-            return certs == null? null: certs.clone();
+        @Override
+        public Certificate[] getCertificates() {
+            // super.getCertificates() returns Certificates that were
+            // captured by reading the "JarEntry.certs" field when
+            // the super instance was created. Some JarEntry
+            // implementations (like java.util.jar.JarFile$JarFileEntry)
+            // compute certificates lazily, so we explicitly
+            // call getCertificates() on the underlying JarEntry instead of
+            // super.getCertificates()
+            return je.getCertificates();
         }
 
+        @Override
         public CodeSigner[] getCodeSigners() {
-            CodeSigner[] csg = je.getCodeSigners();
-            return csg == null? null: csg.clone();
+            // super.getCodeSigners() returns CodeSigners that were
+            // captured by reading the "JarEntry.signers" field when
+            // the super instance was created. Some JarEntry
+            // implementations (like java.util.jar.JarFile$JarFileEntry)
+            // compute codesigners lazily, so we explicitly
+            // call getCodeSigners() on the underlying JarEntry instead of
+            // super.getCodeSigners()
+            return je.getCodeSigners();
         }
     }
 

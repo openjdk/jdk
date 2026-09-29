@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,8 @@ import java.time.zone.ZoneRules;
 import java.util.Comparator;
 import java.util.Objects;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A date-time with an offset from UTC/Greenwich in the ISO-8601 calendar system,
  * such as {@code 2007-12-03T10:15:30+01:00}.
@@ -114,11 +116,18 @@ import java.util.Objects;
  * more detail, or when communicating to a database or in a network protocol.
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code OffsetDateTime} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -126,7 +135,8 @@ import java.util.Objects;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class OffsetDateTime
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class OffsetDateTime
         implements Temporal, TemporalAdjuster, Comparable<OffsetDateTime>, Serializable {
 
     /**
@@ -190,11 +200,11 @@ public final class OffsetDateTime
     private static final long serialVersionUID = 2287754244819255394L;
 
     /**
-     * The local date-time.
+     * @serial The local date-time.
      */
     private final LocalDateTime dateTime;
     /**
-     * The offset from UTC/Greenwich.
+     * @serial The offset from UTC/Greenwich.
      */
     private final ZoneOffset offset;
 
@@ -1923,7 +1933,10 @@ public final class OffsetDateTime
      */
     @Override
     public String toString() {
-        return dateTime.toString() + offset.toString();
+        var offsetStr = offset.toString();
+        var buf = new StringBuilder(29 + offsetStr.length());
+        DateTimeHelper.formatTo(buf, dateTime);
+        return buf.append(offsetStr).toString();
     }
 
     //-----------------------------------------------------------------------
@@ -1951,6 +1964,7 @@ public final class OffsetDateTime
      * @throws InvalidObjectException always
      */
     @java.io.Serial
+    @SuppressWarnings("serial") // this method is not invoked for value classes
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

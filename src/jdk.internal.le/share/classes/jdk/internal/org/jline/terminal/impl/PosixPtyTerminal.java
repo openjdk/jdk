@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -38,15 +38,34 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
     private Thread outputPumpThread;
     private boolean paused = true;
 
-    public PosixPtyTerminal(String name, String type, Pty pty, InputStream in, OutputStream out, Charset encoding) throws IOException {
+    public PosixPtyTerminal(String name, String type, Pty pty, InputStream in, OutputStream out, Charset encoding)
+            throws IOException {
         this(name, type, pty, in, out, encoding, SignalHandler.SIG_DFL);
     }
 
-    public PosixPtyTerminal(String name, String type, Pty pty, InputStream in, OutputStream out, Charset encoding, SignalHandler signalHandler) throws IOException {
+    public PosixPtyTerminal(
+            String name,
+            String type,
+            Pty pty,
+            InputStream in,
+            OutputStream out,
+            Charset encoding,
+            SignalHandler signalHandler)
+            throws IOException {
         this(name, type, pty, in, out, encoding, signalHandler, false);
     }
 
-    public PosixPtyTerminal(String name, String type, Pty pty, InputStream in, OutputStream out, Charset encoding, SignalHandler signalHandler, boolean paused) throws IOException {
+    @SuppressWarnings("this-escape")
+    public PosixPtyTerminal(
+            String name,
+            String type,
+            Pty pty,
+            InputStream in,
+            OutputStream out,
+            Charset encoding,
+            SignalHandler signalHandler,
+            boolean paused)
+            throws IOException {
         super(name, type, pty, encoding, signalHandler);
         this.in = Objects.requireNonNull(in);
         this.out = Objects.requireNonNull(out);
@@ -113,7 +132,7 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
         if (p1 != null) {
             p1.join();
         }
-        if (p2 !=null) {
+        if (p2 != null) {
             p2.join();
         }
     }
@@ -167,7 +186,7 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
 
     private void pumpIn() {
         try {
-            for (;;) {
+            for (; ; ) {
                 synchronized (lock) {
                     if (paused) {
                         inputPumpThread = null;
@@ -193,7 +212,7 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
 
     private void pumpOut() {
         try {
-            for (;;) {
+            for (; ; ) {
                 synchronized (lock) {
                     if (paused) {
                         outputPumpThread = null;
@@ -221,5 +240,4 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
             // Ignore
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ package jdk.dynalink;
  * {@code GET:PROPERTY|ELEMENT}), and finally we will refer to named operations
  * by separating the base operation and the name with the colon character (e.g.
  * {@code GET:PROPERTY|ELEMENT:color}).
+ * @since 9
  */
 public interface Operation {
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethodData.hpp"
+#include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodData.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "runtime/deoptimization.hpp"
 #include "utilities/copy.hpp"
 
@@ -54,6 +56,11 @@ ciMethodData::ciMethodData(MethodData* md)
   _invocation_counter(0),
   _orig() {}
 
+
+static bool is_klass_loaded(Klass* k) {
+  return TrainingData::is_klass_loaded(k);
+}
+
 // Check for entries that reference an unloaded method
 class PrepareExtraDataClosure : public CleanExtraDataClosure {
   MethodData*            _mdo;
@@ -68,7 +75,8 @@ public:
   { }
 
   bool is_live(Method* m) {
-    if (!m->method_holder()->is_loader_alive()) {
+    Klass* holder = m->method_holder();
+    if (holder == nullptr || !holder->is_loader_present_and_alive() || !is_klass_loaded(holder)) {
       return false;
     }
     if (CURRENT_ENV->cached_metadata(m) == nullptr) {
@@ -87,8 +95,18 @@ public:
       // Preparation finished iff all Methods* were already cached.
       return true;
     }
-    // Holding locks through safepoints is bad practice.
-    MutexUnlocker mu(_mdo->extra_data_lock());
+    // We are currently holding the extra_data_lock and ensuring
+    // no safepoint breaks the lock.
+    _mdo->check_extra_data_locked();
+
+    // We now want to cache some method data. This could cause a safepoint.
+    // We temporarily release the lock and allow safepoints, and revert that
+    // at the end of the scope. This is safe, since we currently do not hold
+    // any extra_method_data: finish is called only after clean_extra_data,
+    // and the outer scope that first aquired the lock should not hold any
+    // extra_method_data while cleaning is performed, as the offsets can change.
+    MutexUnlocker mu(_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     for (int i = 0; i < _uncached_methods.length(); ++i) {
       if (has_safepointed()) {
         // The metadata in the growable array might contain stale
@@ -123,7 +141,10 @@ void ciMethodData::prepare_metadata() {
 
 void ciMethodData::load_remaining_extra_data() {
   MethodData* mdo = get_MethodData();
-  MutexLocker ml(mdo->extra_data_lock());
+
+  // Lock to read ProfileData, and ensure lock is not unintentionally broken by a safepoint
+  MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   // Deferred metadata cleaning due to concurrent class unloading.
   prepare_metadata();
   // After metadata preparation, there is no stale metadata,
@@ -219,7 +240,7 @@ bool ciMethodData::load_data() {
 #ifndef ZERO
   // Some Zero platforms do not have expected alignment, and do not use
   // this code. static_assert would still fire and fail for them.
-  static_assert(sizeof(_orig) % HeapWordSize == 0, "align");
+  static_assert(sizeof(_orig) % HeapWordSize == 0);
 #endif
   Copy::disjoint_words_atomic((HeapWord*) &mdo->_compiler_counters,
                               (HeapWord*) &_orig,
@@ -290,7 +311,7 @@ bool ciMethodData::load_data() {
 void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
   for (uint row = 0; row < row_limit(); row++) {
     Klass* k = data->as_ReceiverTypeData()->receiver(row);
-    if (k != nullptr) {
+    if (k != nullptr && k->class_loader_data() != nullptr && is_klass_loaded(k)) {
       if (k->is_loader_alive()) {
         ciKlass* klass = CURRENT_ENV->get_klass(k);
         set_receiver(row, klass);
@@ -308,7 +329,7 @@ void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries
   for (int i = 0; i < number_of_entries(); i++) {
     intptr_t k = entries->type(i);
     Klass* klass = (Klass*)klass_part(k);
-    if (klass != nullptr && !klass->is_loader_alive()) {
+    if (klass == nullptr || !klass->is_loader_present_and_alive() || !is_klass_loaded(klass)) {
       // With concurrent class unloading, the MDO could have stale metadata; override it
       TypeStackSlotEntries::set_type(i, TypeStackSlotEntries::with_status((Klass*)nullptr, k));
     } else {
@@ -317,12 +338,12 @@ void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries
   }
 }
 
-void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
+void ciSingleTypeEntry::translate_type_data_from(const SingleTypeEntry* ret) {
   intptr_t k = ret->type();
   Klass* klass = (Klass*)klass_part(k);
-  if (klass != nullptr && !klass->is_loader_alive()) {
+  if (klass == nullptr || !klass->is_loader_present_and_alive() || !is_klass_loaded(klass)) {
     // With concurrent class unloading, the MDO could have stale metadata; override it
-    set_type(ReturnTypeEntry::with_status((Klass*)nullptr, k));
+    set_type(SingleTypeEntry::with_status((Klass*)nullptr, k));
   } else {
     set_type(translate_klass(k));
   }
@@ -373,6 +394,12 @@ ciProfileData* ciMethodData::data_from(DataLayout* data_layout) {
     return new ciVirtualCallTypeData(data_layout);
   case DataLayout::parameters_type_data_tag:
     return new ciParametersTypeData(data_layout);
+  case DataLayout::array_store_data_tag:
+    return new ciArrayStoreData(data_layout);
+  case DataLayout::array_load_data_tag:
+    return new ciArrayLoadData(data_layout);
+  case DataLayout::acmp_data_tag:
+    return new ciACmpData(data_layout);
   };
 }
 
@@ -517,8 +544,8 @@ void ciMethodData::clear_escape_info() {
   if (mdo != nullptr) {
     mdo->clear_escape_info();
     ArgInfoData *aid = arg_info();
-    int arg_count = (aid == nullptr) ? 0 : aid->number_of_args();
-    for (int i = 0; i < arg_count; i++) {
+    int arg_size = (aid == nullptr) ? 0 : aid->size_of_args();
+    for (int i = 0; i < arg_size; i++) {
       set_arg_modified(i, 0);
     }
   }
@@ -534,8 +561,8 @@ void ciMethodData::update_escape_info() {
     mdo->set_arg_local(_arg_local);
     mdo->set_arg_stack(_arg_stack);
     mdo->set_arg_returned(_arg_returned);
-    int arg_count = mdo->method()->size_of_parameters();
-    for (int i = 0; i < arg_count; i++) {
+    int arg_size = mdo->method()->size_of_parameters();
+    for (int i = 0; i < arg_size; i++) {
       mdo->set_arg_modified(i, arg_modified(i));
     }
   }
@@ -562,6 +589,9 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_CallTypeData()) {
@@ -586,6 +616,9 @@ void ciMethodData::set_return_type(int bci, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_CallTypeData()) {
@@ -626,7 +659,7 @@ void ciMethodData::set_arg_modified(int arg, uint val) {
   ArgInfoData *aid = arg_info();
   if (aid == nullptr)
     return;
-  assert(arg >= 0 && arg < aid->number_of_args(), "valid argument number");
+  assert(arg >= 0 && arg < aid->size_of_args(), "valid argument number");
   aid->set_arg_modified(arg, val);
 }
 
@@ -646,7 +679,7 @@ uint ciMethodData::arg_modified(int arg) const {
   ArgInfoData *aid = arg_info();
   if (aid == nullptr)
     return 0;
-  assert(arg >= 0 && arg < aid->number_of_args(), "valid argument number");
+  assert(arg >= 0 && arg < aid->size_of_args(), "valid argument number");
   return aid->arg_modified(arg);
 }
 
@@ -689,8 +722,15 @@ void ciMethodData::dump_replay_data_type_helper(outputStream* out, int round, in
     if (round == 0) {
       count++;
     } else {
-      out->print(" %d %s", (int)(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)),
-                           CURRENT_ENV->replay_name(k));
+      if (k->is_obj_array_klass()) {
+        // We also record the array property to load the correct array class during replay compilation.
+        const ArrayProperties array_properties = k->as_obj_array_klass()->properties();
+        out->print(" %d %s %d", static_cast<int>(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)),
+                                      CURRENT_ENV->replay_name(k), array_properties.value());
+      } else {
+        out->print(" %d %s", static_cast<int>(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)),
+                             CURRENT_ENV->replay_name(k));
+      }
     }
   }
 }
@@ -765,7 +805,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
     // We could use INTPTR_FORMAT here but that's zero justified
     // which makes comparing it with the SA version of this output
     // harder. data()'s element type is intptr_t.
-    out->print(" " INTX_FORMAT_X, data()[i]);
+    out->print(" 0x%zx", data()[i]);
   }
 
   // The MDO contained oop references as ciObjects, so scan for those
@@ -784,12 +824,29 @@ void ciMethodData::dump_replay_data(outputStream* out) {
           ciVirtualCallTypeData* call_type_data = (ciVirtualCallTypeData*)pdata;
           dump_replay_data_call_type_helper<ciVirtualCallTypeData>(out, round, count, call_type_data);
         }
+      } else if (pdata->is_CallTypeData()) {
+        ciCallTypeData* call_type_data = (ciCallTypeData*)pdata;
+        dump_replay_data_call_type_helper<ciCallTypeData>(out, round, count, call_type_data);
+      } else if (pdata->is_ArrayStoreData()) {
+        ciArrayStoreData* array_store_data = (ciArrayStoreData*)pdata;
+        dump_replay_data_type_helper(out, round, count, array_store_data, ciArrayStoreData::array_offset(),
+                                     array_store_data->array()->valid_type());
+        dump_replay_data_receiver_type_helper<ciArrayStoreData>(out, round, count, array_store_data);
+      } else if (pdata->is_ArrayLoadData()) {
+        ciArrayLoadData* array_load_data = (ciArrayLoadData*)pdata;
+        dump_replay_data_type_helper(out, round, count, array_load_data, ciArrayLoadData::array_offset(),
+                                     array_load_data->array()->valid_type());
+        dump_replay_data_type_helper(out, round, count, array_load_data, ciArrayLoadData::element_offset(),
+                                     array_load_data->element()->valid_type());
+      } else if (pdata->is_ACmpData()) {
+        ciACmpData* acmp_data = (ciACmpData*)pdata;
+        dump_replay_data_type_helper(out, round, count, acmp_data, ciACmpData::left_offset(),
+                                     acmp_data->left()->valid_type());
+        dump_replay_data_type_helper(out, round, count, acmp_data, ciACmpData::right_offset(),
+                                     acmp_data->right()->valid_type());
       } else if (pdata->is_ReceiverTypeData()) {
         ciReceiverTypeData* vdata = (ciReceiverTypeData*)pdata;
         dump_replay_data_receiver_type_helper<ciReceiverTypeData>(out, round, count, vdata);
-      } else if (pdata->is_CallTypeData()) {
-          ciCallTypeData* call_type_data = (ciCallTypeData*)pdata;
-          dump_replay_data_call_type_helper<ciCallTypeData>(out, round, count, call_type_data);
       }
     }
     if (parameters != nullptr) {
@@ -872,7 +929,7 @@ void ciTypeStackSlotEntries::print_data_on(outputStream* st) const {
   }
 }
 
-void ciReturnTypeEntry::print_data_on(outputStream* st) const {
+void ciSingleTypeEntry::print_data_on(outputStream* st) const {
   _pd->tab(st);
   st->print("ret ");
   print_ciklass(st, type());
@@ -944,5 +1001,38 @@ void ciSpeculativeTrapData::print_data_on(outputStream* st, const char* extra) c
   tab(st);
   method()->print_short_name(st);
   st->cr();
+}
+
+void ciArrayStoreData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ciArrayStoreData", extra);
+  st->cr();
+  tab(st, true);
+  st->print("array");
+  array()->print_data_on(st);
+  tab(st, true);
+  st->print("element");
+  rtd_super()->print_receiver_data_on(st);
+}
+
+void ciArrayLoadData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ciArrayLoadData", extra);
+  st->cr();
+  tab(st, true);
+  st->print("array");
+  array()->print_data_on(st);
+  tab(st, true);
+  st->print("element");
+  element()->print_data_on(st);
+}
+
+void ciACmpData::print_data_on(outputStream* st, const char* extra) const {
+  BranchData::print_data_on(st, extra);
+  st->cr();
+  tab(st, true);
+  st->print("left");
+  left()->print_data_on(st);
+  tab(st, true);
+  st->print("right");
+  right()->print_data_on(st);
 }
 #endif

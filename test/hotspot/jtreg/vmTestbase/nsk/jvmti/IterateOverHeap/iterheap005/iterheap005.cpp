@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -33,7 +33,7 @@ extern "C" {
 
 static jlong timeout = 0;
 static int fakeUserData = 0, objCounter = 0;
-static jvmtiEnv* st_jvmti = NULL;
+static jvmtiEnv* st_jvmti = nullptr;
 
 /* ============================================================================= */
 
@@ -44,7 +44,7 @@ heapObjectCallback(jlong class_tag,
                    void* user_data) {
 
     const char* name = "monitorName";
-    jrawMonitorID monitor_ptr = NULL;
+    jrawMonitorID monitor_ptr = nullptr;
 
     /*  Check RawMonitor functions for first 10 objects */
     if (objCounter >= 10) return JVMTI_ITERATION_ABORT;
@@ -150,7 +150,7 @@ JNIEXPORT jint JNI_OnLoad_iterheap005(JavaVM *jvm, char *options, void *reserved
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -158,7 +158,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* save pointer to environment to use it in callbacks */
@@ -175,7 +175,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

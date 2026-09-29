@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class TestBadFormat {
         expectTestFormatException(BadWarmup.class);
         expectTestFormatException(BadBaseTests.class);
         expectTestFormatException(BadRunTests.class);
+        expectTestFormatException(BadSetupTest.class);
         expectTestFormatException(BadCheckTest.class);
         expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadIRAnnotations.class);
@@ -205,57 +206,57 @@ class BadArgumentsAnnotation {
     public void checkNoArgAnnotation2() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argNumberMismatch(int a, int b) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argNumberMismatch2() {}
 
     @Test
-    @Arguments(Argument.NUMBER_42)
+    @Arguments(values = Argument.NUMBER_42)
     public void notBoolean(boolean a) {}
 
     @Test
-    @Arguments(Argument.NUMBER_MINUS_42)
+    @Arguments(values = Argument.NUMBER_MINUS_42)
     public void notBoolean2(boolean a) {}
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void notNumber(int a) {}
 
     @Test
-    @Arguments(Argument.FALSE)
+    @Arguments(values = Argument.FALSE)
     public void notNumber2(int a) {}
 
     @Test
-    @Arguments(Argument.BOOLEAN_TOGGLE_FIRST_TRUE)
+    @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_TRUE)
     public void notNumber3(int a) {}
 
     @Test
-    @Arguments(Argument.BOOLEAN_TOGGLE_FIRST_FALSE)
+    @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_FALSE)
     public void notNumber4(int a) {}
 
     @Test
-    @Arguments({Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.TRUE})
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.TRUE})
     public void notNumber5(boolean a, int b) {}
 
     @FailCount(2)
     @Test
-    @Arguments({Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.NUMBER_42})
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.NUMBER_42})
     public void notNumber6(int a, boolean b) {}
 
     @FailCount(2)
     @Test
-    @Arguments({Argument.MIN, Argument.MAX})
+    @Arguments(values = {Argument.MIN, Argument.MAX})
     public void notNumber7(boolean a, boolean b) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void missingDefaultConstructor(ClassNoDefaultConstructor a) {}
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void wrongArgumentNumberWithRun(Object o1, Object o2) {
     }
 
@@ -265,7 +266,7 @@ class BadArgumentsAnnotation {
     }
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void wrongArgumentNumberWithCheck(Object o1, Object o2) {
     }
 
@@ -275,18 +276,19 @@ class BadArgumentsAnnotation {
     }
 }
 
+// Since all the methods are failing, the class doesn't specify any @Test methods, which is another failure.
+@ClassFail
 class BadOverloadedMethod {
 
-    @FailCount(0) // Combined with both sameName() below
     @Test
     public void sameName() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void sameName(boolean a) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void sameName(double a) {}
 }
 
@@ -488,21 +490,21 @@ class BadWarmup {
 
 class BadBaseTests {
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public TestInfo cannotUseTestInfoAsParameterOrReturn(TestInfo info) {
         return null;
     }
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public RunInfo cannotUseRunInfoAsParameterOrReturn(RunInfo info) {
         return null;
     }
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public AbstractInfo cannotUseAbstractInfoAsParameterOrReturn(AbstractInfo info) {
         return null;
@@ -531,7 +533,7 @@ class BadRunTests {
     public void noTestExists() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argTest(int x) {}
 
     @FailCount(0) // Combined with argTest()
@@ -578,7 +580,7 @@ class BadRunTests {
     @Test
     public void testInvalidRunWithArgAnnotation() {}
 
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @Run(test = "testInvalidRunWithArgAnnotation")
     public void invalidRunWithArgAnnotation(RunInfo info) {}
 
@@ -621,6 +623,74 @@ class BadRunTests {
     @FailCount(0)
     @Run(test = {"testInvalidReuse2", "testInvalidReuse3"})
     public void runInvalidReuse2() {}
+}
+
+class BadSetupTest {
+    // ----------- Bad Combinations of Annotations -----------------
+    @Setup
+    @Test
+    public Object[] badSetupTestAnnotation() {
+      return new Object[]{1, 2, 3};
+    }
+
+    @NoFail
+    @Test
+    public void testForBadSetupCheckAnnotation() {}
+
+    @Setup
+    @Check(test = "testForBadSetupCheckAnnotation")
+    public void badSetupCheckAnnotation() {}
+
+    @Setup
+    @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    public void badSetupArgumentsAnnotation(int a, int b) {}
+
+    @NoFail
+    @Test
+    public void testForBadSetupRunAnnotation() {}
+
+    @Setup
+    @Run(test = "testForBadSetupRunAnnotation")
+    public void badSetupRunAnnotation() {}
+
+    // ----------- Useless but ok: Setup Without Test Method -----
+    @NoFail
+    @Setup
+    public void setupWithNoTest() {}
+
+    // ----------- Bad: Test where Setup Method does not exist ---
+    @Test
+    @Arguments(setup = "nonExistingMethod")
+    public void testWithNonExistingMethod() {}
+
+    // ----------- Bad Arguments Annotation ----------------------
+    @NoFail
+    @Setup
+    public Object[] setupForTestSetupAndValues() {
+        return new Object[]{1, 2};
+    }
+
+    @Test
+    @Arguments(setup = "setupForTestSetupAndValues",
+               values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    public void testSetupAndValues(int a, int b) {}
+
+    // ----------- Overloaded Setup Method ----------------------
+    @NoFail
+    @Setup
+    Object[] setupOverloaded() {
+        return new Object[]{3, 2, 1};
+    }
+
+    @Setup
+    Object[] setupOverloaded(SetupInfo info) {
+        return new Object[]{1, 2, 3};
+    }
+
+    @NoFail
+    @Test
+    @Arguments(setup = "setupOverloaded")
+    void testOverloaded(int a, int b, int c) {}
 }
 
 class BadCheckTest {
@@ -702,7 +772,7 @@ class BadCheckTest {
     @Test
     public void testInvalidRunWithArgAnnotation() {}
 
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @Check(test = "testInvalidRunWithArgAnnotation")
     public void invalidRunWithArgAnnotation(TestInfo info) {}
 }
@@ -774,12 +844,11 @@ class BadIRAnnotations {
     public void mustSpecifyAtLeastOneConstraint3() {
     }
 
-    @FailCount(3)
+    @FailCount(2)
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"UseTLAB", "true"})
     @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
         applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"TLABRefillWasteFraction", "50"},
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"},
         applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
         applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
     public void onlyOneApply() {}
@@ -819,43 +888,6 @@ class BadIRAnnotations {
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "=<34"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<"})
     public void applyIfFaultyComparator() {}
-
-    @FailCount(3)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "50", "UseTLAB"})
-    public void applyIfNotTooManyFlags() {}
-
-    @FailCount(2)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"Bla"})
-    public void applyIfNotMissingValue() {}
-
-    @FailCount(2)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"PrintIdealGraphFilee", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"Bla", "foo"})
-    public void applyIfNotUnknownFlag() {}
-
-    @FailCount(5)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"PrintIdealGraphFile", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"UseTLAB", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {" ", " "})
-    public void applyIfNotEmptyValue() {}
-
-    @FailCount(5)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "!== 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "<<= 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "<"})
-    public void applyIfNotFaultyComparator() {}
-
 
     @FailCount(2)
     @Test
@@ -1055,8 +1087,8 @@ class BadIRAnnotationsAfterTestVM {
 
     @Test
     @FailCount(8)
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"})
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}) // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"}, applyIf = {"MaxVectorSize", "> 0"}) // valid, but only if MaxVectorSize > 0, otherwise, a violation is reported
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}, applyIf = {"MaxVectorSize", "> 0"}) // valid, but only if MaxVectorSize > 0, otherwise, a violation is reported
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0"}) // valid
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "", "> 0"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "xxx", "> 0"})
@@ -1094,15 +1126,17 @@ class BadIRNodeForPhase {
     public void duplicatedPhase() {}
 
     @Test
-    @FailCount(4)
-    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
+    @FailCount(6)
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})  // FINAL_CODE not available
+    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)  // PRINT_IDEAL not available
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING})  // works
     @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY})  // PRINT_OPTO_ASSEMBLY not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})  // FINAL_CODE not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)  // PRINT_IDEAL not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING})  // works
     @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY})  // PRINT_OPTO_ASSEMBLY not available
     public void alloc() {}
 
     @Test

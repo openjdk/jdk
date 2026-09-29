@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,7 +30,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.NodeTest;
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  * @author Morten Jorgensen
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2024
  */
 public abstract class Type implements Constants {
     public static final Type Int        = new IntType();
@@ -65,10 +65,6 @@ public abstract class Type implements Constants {
             return Type.ObjectString;
         }
         else {
-            //
-            @SuppressWarnings("removal")
-            java.security.AccessControlContext acc = java.security.AccessController.getContext();
-            acc.checkPermission(new RuntimePermission("getContextClassLoader"));
             return new ObjectType(javaClassName);
         }
     }

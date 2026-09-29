@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.GSSCaller;
 
@@ -47,9 +46,6 @@ import sun.security.krb5.PrincipalName;
  */
 public class Krb5Util {
 
-    static final boolean DEBUG = GetBooleanAction
-            .privilegedGetProperty("sun.security.krb5.debug");
-
     /**
      * Default constructor
      */
@@ -63,7 +59,6 @@ public class Krb5Util {
     static KerberosTicket getServiceTicket(GSSCaller caller,
             String clientPrincipal, String serverPrincipal) {
         // Try to get ticket from current Subject
-        @SuppressWarnings("removal")
         Subject currSubj = Subject.current();
         KerberosTicket ticket =
             SubjectComber.find(currSubj, serverPrincipal, clientPrincipal,
@@ -190,5 +185,20 @@ public class Krb5Util {
     public static EncryptionKey[] keysFromJavaxKeyTab(
             KeyTab ktab, PrincipalName cname) {
         return snapshotFromJavaxKeyTab(ktab).readServiceKeys(cname);
+    }
+
+    public static String keyInfo(byte[] data) {
+        if (data == null) {
+            return "null key";
+        } else if (data.length == 0) {
+            return "empty key";
+        } else {
+            for (byte b : data) {
+                if (b != 0) {
+                    return data.length + "-byte key";
+                }
+            }
+            return data.length + "-byte zero key";
+        }
     }
 }

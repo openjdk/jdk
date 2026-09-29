@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4395196 4930708 4900884 4890240 8008577
+ * @bug 4395196 4930708 4900884 4890240 8008577 8174269
  * @modules jdk.localedata
  * @summary verify the ko DateFormat
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4395196
+ * @run main Bug4395196
  */
 
 import java.text.DateFormat;
@@ -46,25 +46,25 @@ public class Bug4395196
                 DateFormat df =
                    DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.SHORT,loc);
                 SimpleDateFormat sdf = new SimpleDateFormat("",loc);
-                sdf.applyPattern("yyyy. M. d a h:mm");
+                sdf.applyPattern("y. M. d. a h:mm");
                 if( !sdf.format(now).equals(df.format(now))){
                  result++;
                  System.out.println("error at " + sdf.format(now));
                  }
                 df =  DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.MEDIUM,loc);
-                sdf.applyPattern("yyyy'\ub144' M'\uc6d4' d'\uc77c' '('EE')' a h:mm:ss");
+                sdf.applyPattern("y\ub144 M\uc6d4 d\uc77c a h:mm:ss");
                 if( !sdf.format(now).equals(df.format(now))){
                  result++;
                  System.out.println("error at " + sdf.format(now));
                  }
                 df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.LONG,loc);
-                sdf.applyPattern("yyyy. M. d a h'\uc2dc' mm'\ubd84' ss'\ucd08'");
+                sdf.applyPattern("y. M. d. a h\uc2dc m\ubd84 s\ucd08 z");
                 if( !sdf.format(now).equals(df.format(now))){
                  result++;
                  System.out.println("error at " + sdf.format(now));
                  }
                 df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.FULL,loc);
-                sdf.applyPattern("yy. M. d a h'\uc2dc' mm'\ubd84' ss'\ucd08' z");
+                sdf.applyPattern("yy. M. d. a h\uc2dc m\ubd84 s\ucd08 zzzz");
                 if( !sdf.format(now).equals(df.format(now))){
                  result++;
                  System.out.println("error at " + sdf.format(now));

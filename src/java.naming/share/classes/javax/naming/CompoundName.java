@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,9 +472,9 @@ public class CompoundName implements Name {
       * Implementation note: Currently the syntax properties of suffix
       *  is not used or checked. They might be in the future.
       *
-      * @param n        The non-null components to add.
       * @param posn     The index in this name at which to add the new
       *                 components.  Must be in the range [0,size()].
+      * @param n        The non-null components to add.
       * @return The updated CompoundName, not a new one. Cannot be null.
       * @throws ArrayIndexOutOfBoundsException
       *         If posn is outside the specified range.
@@ -512,9 +512,9 @@ public class CompoundName implements Name {
       * component are shifted up by one (away from index 0)
       * to accommodate the new component.
       *
-      * @param  comp    The non-null component to add.
       * @param  posn    The index at which to add the new component.
       *                 Must be in the range [0,size()].
+      * @param  comp    The non-null component to add.
       * @throws ArrayIndexOutOfBoundsException
       *         If posn is outside the specified range.
       * @return The updated CompoundName, not a new one. Cannot be null.

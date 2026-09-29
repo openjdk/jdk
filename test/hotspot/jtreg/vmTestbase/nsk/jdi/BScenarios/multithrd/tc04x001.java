@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,10 @@ public class tc04x001 {
     }
 
     public static void main(String argv[]) {
-        System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -107,6 +110,11 @@ public class tc04x001 {
             e.printStackTrace();
         } finally {
             debugee.resume();
+            int code = debugee.waitFor();
+            if (code != Consts.JCK_STATUS_BASE) {
+                log.complain("Debugee FAILED with exit code: " + code);
+                exitStatus = Consts.TEST_FAILED;
+            }
         }
         display("Test finished. exitStatus = " + exitStatus);
 
@@ -200,6 +208,14 @@ public class tc04x001 {
         }
         display("\tmethod\t- " + event.location().method().name());
         display("\tline\t- " + event.location().lineNumber());
+
+        // When done() is called we disable the MethodEntryRequest because we don't
+        // want it enabled while the debuggee exits. See JDK-8375076 and JDK-8384569.
+        if (event.method().name().equals("done")) {
+            display("done() called - disabling MethodEntryRequest\n");
+            event.request().disable();
+            return;
+        }
 
         if (!event.method().name().equals(methodName)) {
             display("the event skipped, method - " + event.method().name() + "\n");

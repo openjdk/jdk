@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,8 +472,8 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * @since 9
  */
 public abstract sealed class VarHandle implements Constable
-     permits IndirectVarHandle, LazyInitializingVarHandle,
-             VarHandleSegmentViewBase,
+     permits IndirectVarHandle, LazyInitializingVarHandle, SegmentVarHandle,
+             ArrayVarHandle, VarHandles.StaticFieldVarHandle,
              VarHandleByteArrayAsChars.ByteArrayViewVarHandle,
              VarHandleByteArrayAsDoubles.ByteArrayViewVarHandle,
              VarHandleByteArrayAsFloats.ByteArrayViewVarHandle,
@@ -482,31 +482,24 @@ public abstract sealed class VarHandle implements Constable
              VarHandleByteArrayAsShorts.ByteArrayViewVarHandle,
              VarHandleBooleans.Array,
              VarHandleBooleans.FieldInstanceReadOnly,
-             VarHandleBooleans.FieldStaticReadOnly,
              VarHandleBytes.Array,
              VarHandleBytes.FieldInstanceReadOnly,
-             VarHandleBytes.FieldStaticReadOnly,
              VarHandleChars.Array,
              VarHandleChars.FieldInstanceReadOnly,
-             VarHandleChars.FieldStaticReadOnly,
              VarHandleDoubles.Array,
              VarHandleDoubles.FieldInstanceReadOnly,
-             VarHandleDoubles.FieldStaticReadOnly,
              VarHandleFloats.Array,
              VarHandleFloats.FieldInstanceReadOnly,
-             VarHandleFloats.FieldStaticReadOnly,
              VarHandleInts.Array,
              VarHandleInts.FieldInstanceReadOnly,
-             VarHandleInts.FieldStaticReadOnly,
              VarHandleLongs.Array,
              VarHandleLongs.FieldInstanceReadOnly,
-             VarHandleLongs.FieldStaticReadOnly,
-             VarHandleReferences.Array,
              VarHandleReferences.FieldInstanceReadOnly,
-             VarHandleReferences.FieldStaticReadOnly,
              VarHandleShorts.Array,
              VarHandleShorts.FieldInstanceReadOnly,
-             VarHandleShorts.FieldStaticReadOnly {
+             VarHandleFlatValues.FieldInstanceReadOnly,
+             VarHandleNonAtomicReferences.FieldInstanceReadOnly,
+             VarHandleNonAtomicFlatValues.FieldInstanceReadOnly {
     final VarForm vform;
     final boolean exact;
 
@@ -520,17 +513,21 @@ public abstract sealed class VarHandle implements Constable
     }
 
     /**
-     * Returns the target VarHandle.   Subclasses may override this method to implement
-     * additional logic for example lazily initializing the declaring class of a static field var handle.
+     * A barrier for accessing a target var handle used by static var handle
+     * implementation methods.  This allows initialization barriers and strict
+     * field initialization checks.
+     *
+     * @param reading whether this access performs any read
      */
     @ForceInline
-    VarHandle target() {
-        return asDirect();
+    VarHandle onStaticFieldAccess(boolean reading) {
+        return this;
     }
 
     /**
-     * Returns the direct target VarHandle.   Indirect VarHandle subclasses should implement
-     * this method.
+     * Returns the direct VarHandle, passed into the method handle that perform
+     * conversions or has the actual implementation when this VarHandle is
+     * indirect.
      *
      * @see #getMethodHandle(int)
      * @see #checkAccessModeThenIsDirect(AccessDescriptor)
@@ -2371,9 +2368,9 @@ public abstract sealed class VarHandle implements Constable
          * Returns a {@linkplain VarHandleDesc} corresponding to a {@link VarHandle}
          * for an instance field.
          *
-         * @param name the unqualified name of the field
          * @param declaringClass a {@link ClassDesc} describing the declaring class,
          *                       for field var handles
+         * @param name the unqualified name of the field
          * @param fieldType a {@link ClassDesc} describing the type of the field
          * @return the {@linkplain VarHandleDesc}
          * @throws NullPointerException if any of the arguments are null
@@ -2390,9 +2387,9 @@ public abstract sealed class VarHandle implements Constable
          * Returns a {@linkplain VarHandleDesc} corresponding to a {@link VarHandle}
          * for a static field.
          *
-         * @param name the unqualified name of the field
          * @param declaringClass a {@link ClassDesc} describing the declaring class,
          *                       for field var handles
+         * @param name the unqualified name of the field
          * @param fieldType a {@link ClassDesc} describing the type of the field
          * @return the {@linkplain VarHandleDesc}
          * @throws NullPointerException if any of the arguments are null

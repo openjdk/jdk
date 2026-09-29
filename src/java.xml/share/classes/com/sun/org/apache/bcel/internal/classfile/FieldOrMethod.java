@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,7 +28,7 @@ import java.util.Arrays;
 /**
  * Abstract super class for fields and methods.
  *
- * @LastModified: Jan 2020
+ * @LastModified: Sept 2025
  */
 public abstract class FieldOrMethod extends AccessFlags implements Cloneable, Node {
 
@@ -72,7 +72,7 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
     }
 
     /**
-     * Construct object from file stream.
+     * Constructs object from file stream.
      *
      * @param file Input stream
      * @throws IOException if an I/O error occurs.
@@ -88,7 +88,7 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
     }
 
     /**
-     * Construct object from file stream.
+     * Constructs object from file stream.
      *
      * @param file Input stream
      * @throws IOException if an I/O error occurs.
@@ -137,7 +137,7 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
             Arrays.setAll(c.attributes, i -> attributes[i].copy(constantPool));
             return c;
         } catch (final CloneNotSupportedException e) {
-            throw new IllegalStateException(e);
+            throw new UnsupportedOperationException(e);
         }
     }
 
@@ -152,10 +152,8 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         file.writeShort(name_index);
         file.writeShort(signature_index);
         file.writeShort(attributes_count);
-        if (attributes != null) {
-            for (final Attribute attribute : attributes) {
-                attribute.dump(file);
-            }
+        for (final Attribute attribute : attributes) {
+            attribute.dump(file);
         }
     }
 
@@ -169,6 +167,22 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         }
 
         return annotationEntries;
+    }
+
+    /**
+     * Gets attribute for given tag.
+     * @return Attribute for given tag, null if not found.
+     * Refer to {@link com.sun.org.apache.bcel.internal.Const#ATTR_UNKNOWN} constants named ATTR_* for possible values.
+     * @since 6.10.0
+     */
+    @SuppressWarnings("unchecked")
+    public final <T extends Attribute> T getAttribute(final byte tag) {
+        for (final Attribute attribute : getAttributes()) {
+            if (attribute.getTag() == tag) {
+                return (T) attribute;
+            }
+        }
+        return null;
     }
 
     /**
@@ -221,7 +235,7 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
     }
 
     /**
-     * @return String representation of object's type signature (java style)
+     * @return String representation of object's type signature (Java style)
      */
     public final String getSignature() {
         return constant_pool.getConstantUtf8(signature_index).getBytes();
@@ -238,8 +252,8 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
      * @param attributes Collection of object attributes.
      */
     public final void setAttributes(final Attribute[] attributes) {
-        this.attributes = attributes;
-        this.attributes_count = attributes != null ? attributes.length : 0; // init deprecated field
+        this.attributes = attributes != null ? attributes : Attribute.EMPTY_ARRAY;
+        this.attributes_count = this.attributes.length; // init deprecated field
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -63,7 +62,7 @@ CollectorCounters::CollectorCounters(const char* name, int ordinal) {
 }
 
 CollectorCounters::~CollectorCounters() {
-  FREE_C_HEAP_ARRAY(char, _name_space);
+  FREE_C_HEAP_ARRAY(_name_space);
 }
 
 TraceCollectorStats::TraceCollectorStats(CollectorCounters* c) :

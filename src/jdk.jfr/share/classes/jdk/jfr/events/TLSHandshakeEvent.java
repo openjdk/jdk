@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,9 @@ import jdk.jfr.internal.RemoveFields;
 @Label("TLS Handshake")
 @Name("jdk.TLSHandshake")
 @Description("Parameters used in TLS Handshake")
-@MirrorEvent(className = "jdk.internal.event.TLSHandshakeEvent")
 @RemoveFields("duration")
 @StackFilter("sun.security.ssl.Finished::recordEvent")
-public final class TLSHandshakeEvent extends AbstractJDKEvent {
+public final class TLSHandshakeEvent extends MirrorEvent {
     @Label("Peer Host")
     public String peerHost;
 
@@ -52,6 +51,9 @@ public final class TLSHandshakeEvent extends AbstractJDKEvent {
 
     @Label("Cipher Suite")
     public String cipherSuite;
+
+    @Label("Named Group")
+    public String namedGroup;
 
     @Label("Certificate Id")
     @Description("Peer Certificate Id")

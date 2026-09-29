@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class MatMul {
     }
 
     public int run() {
-        log = new Log(System.out, verbose);
+        log = new Log(System.out);
         log.display("Parallel matrix multiplication test");
 
         Matrix a = Matrix.randomMatrix(dim);

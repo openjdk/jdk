@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -69,7 +69,7 @@ public class VectorReductionFloatingMinMax {
     }
 
     @Benchmark
-    @Fork(jvmArgsPrepend = {"-XX:-SuperWordLoopUnrollAnalysis"})
+    @Fork(jvmArgs = {"-XX:-SuperWordLoopUnrollAnalysis"})
     public void maxRedF(Blackhole bh) {
         float max = 0.0f;
         for (int i = 0; i < COUNT_FLOAT; i++) {
@@ -79,7 +79,7 @@ public class VectorReductionFloatingMinMax {
     }
 
     @Benchmark
-    @Fork(jvmArgsPrepend = {"-XX:-SuperWordLoopUnrollAnalysis"})
+    @Fork(jvmArgs = {"-XX:-SuperWordLoopUnrollAnalysis"})
     public void minRedF(Blackhole bh) {
         float min = 0.0f;
         for (int i = 0; i < COUNT_FLOAT; i++) {

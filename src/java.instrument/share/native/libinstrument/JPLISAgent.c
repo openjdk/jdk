@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -780,7 +780,7 @@ getModuleObject(jvmtiEnv*               jvmti,
     jobject moduleObject = NULL;
 
     /* find last slash in the class name */
-    char* last_slash = (cname == NULL) ? NULL : strrchr(cname, '/');
+    const char* last_slash = (cname == NULL) ? NULL : strrchr(cname, '/');
     int len = (last_slash == NULL) ? 0 : (int)(last_slash - cname);
     char* pkg_name_buf = (char*)malloc(len + 1);
 

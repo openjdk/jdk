@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,23 @@
 
 /*
  * @test
- * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188 8151743 8196027 8182765
- *           8196200 8196202 8223378 8258659 8261976
+ * @bug      7025314 8023700 7198273 8025633 8026567 8081854 8196027 8182765
+ *           8196200 8196202 8223378 8258659 8261976 8320458 8329537 8350638
+ *           8342705 8371021 8373526 8384065 8376208
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox javadoc.tester.*
+ * @build    toolbox.ToolBox javadoc.tester.* builder.ClassBuilder
  * @run main TestNavigation
  */
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import javadoc.tester.JavadocTester;
+import builder.ClassBuilder;
 import toolbox.ToolBox;
 
 public class TestNavigation extends JavadocTester {
@@ -53,28 +55,119 @@ public class TestNavigation extends JavadocTester {
     }
 
     @Test
-    public void test(Path ignore) {
-        javadoc("-d", "out",
+    public void testOverview(Path base) {
+        javadoc("-d", base.resolve("api").toString(),
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
         checkSubNav();
 
+        checkOutput("index.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li class="nav-bar-cell1-rev">Overview</li>
+                    <li><a href="pkg/package-tree.html">Tree</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#overview">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <div id="theme-panel">
+                    <div class="panel-heading">Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name\
+                    ="theme" value="theme-light"><span>Light</span></label><label for="theme-dark"><\
+                    input type="radio" id="theme-dark" disabled name="theme" value="theme-dark"><spa\
+                    n>Dark</span></label><label for="theme-os"><input type="radio" id="theme-os" dis\
+                    abled name="theme" value="theme-os"><span>System Setting</span></label></div>
+                    <div><label for="underline-links"><input type="checkbox" id="underline-links" di\
+                    sabled onclick><span>Underline links in text</span></label></div>
+                    <button id="theme-panel-close-button"></button></div>
+                    <script type="text/javascript">initTheme();
+                    </script>""");
+
+        checkOutput("pkg/package-summary.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="../index.html">Overview</a></li>
+                    <li class="nav-bar-cell1-rev">Package</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#package">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents</div>
+                    """);
+
         checkOutput("pkg/A.html", true,
                 """
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
-                    <li><a href="../index.html">Overview</a></li>""");
+                    <li><a href="../index.html">Overview</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """);
 
         checkOutput("pkg/C.html", true,
                 """
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
-                    <li><a href="../index.html">Overview</a></li>""");
+                    <li><a href="../index.html">Overview</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """);
 
         checkOutput("pkg/E.html", true,
                 """
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
-                    <li><a href="../index.html">Overview</a></li>""");
+                    <li><a href="../index.html">Overview</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """);
 
         checkOutput("pkg/I.html", true,
                 // Test for 4664607
@@ -84,83 +177,44 @@ public class TestNavigation extends JavadocTester {
                     """,
                 """
                     <li><a href="../index.html">Overview</a></li>""");
-
-        // Remaining tests check for additional padding to offset the fixed navigation bar.
-        checkOutput("pkg/A.html", true,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
-                    </header>
-                    <main role="main">
-                    <!-- ======== START OF CLASS DATA ======== -->""");
-
-        checkOutput("pkg/package-summary.html", true,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
-                    </header>
-                    <main role="main">
-                    <div class="header">""");
-    }
-
-    // Test for checking additional padding to offset the fixed navigation bar in HTML5.
-    @Test
-    public void test1(Path ignore) {
-        javadoc("-d", "out-1",
-                "-html5",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-        checkSubNav();
-
-        checkOutput("pkg/A.html", true,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
-                    </header>
-                    <main role="main">
-                    <!-- ======== START OF CLASS DATA ======== -->""");
-
-        checkOutput("pkg/package-summary.html", true,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
-                    """);
-    }
-
-    // Test to make sure that no extra padding for nav bar gets generated if -nonavbar is specified.
-    @Test
-    public void test2(Path ignore) {
-        javadoc("-d", "out-2",
-                "-nonavbar",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-        checkSubNav();
-
-        checkOutput("pkg/A.html", false,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    </div>
-                    <div class="skip-nav"><a id="skip-navbar-top"></a></div>
-                    </nav>
-                    </header>
-                    <!-- ======== START OF CLASS DATA ======== -->""");
-
-        checkOutput("pkg/package-summary.html", false,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    </div>
-                    <div class="skip-nav"><a id="skip-navbar-top"></a></div>
-                    </nav>""");
     }
 
     @Test
-    public void test3(Path base) throws IOException {
+    public void testNavLinks(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 """
                     package pkg1; public class A {
+                        /**
+                         * Empty ctor
+                         */
+                        public A() {}
+
+                        /**
+                         * Single param ctor
+                         */
+                        public A(int i) {}
+
+                        /**
+                         * A ctor with many params
+                         */
+                        public A(int i, int j, int x, int y, String s, boolean b) {}
+
+                        /**
+                         * A method without parameters
+                         */
+                        public void noParams() {}
+
+                        /**
+                         * A method with a single parameter
+                         */
+                        public void oneParam(String s) {}
+
+                        /**
+                         * A method with lots of parameters
+                         */
+                        public void manyParams(String s, int i, int j, boolean b, double d, double e) {}
+
                         /**
                          * Class with members.
                          */
@@ -201,57 +255,154 @@ public class TestNavigation extends JavadocTester {
                     package pkg1; public interface InterfaceWithNoMembers {
                     }""");
 
-        javadoc("-d", "out-3",
+        javadoc("-d", base.resolve("api").toString(),
                 "-sourcepath", src.toString(),
                 "pkg1");
         checkExit(Exit.OK);
 
+        checkOrder("pkg1/A.html",
+                """
+                    <ol class="toc-list" tabindex="-1">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">A()</a></li>
+                    <li><a href="#%3Cinit%3E(int)" tabindex="0">A(<wbr>int)</a></li>
+                    <li><a href="#%3Cinit%3E(int,int,int,int,java.lang.String,boolean)" tabindex="0">A(<wbr>int, int, int, int, String, boolean)</a></li>
+                    </ol>
+                    </li>
+                    <li><a href="#method-detail" tabindex="0">Method Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#noParams()" tabindex="0">noParams()</a></li>
+                    <li><a href="#oneParam(java.lang.String)" tabindex="0">oneParam(<wbr>String)</a></li>
+                    <li><a href="#manyParams(java.lang.String,int,int,boolean,double,double)" tabindex="0">manyParams(<wbr>String, int, int, boolean, double, double)</a></li>
+                    </ol>
+                    </li>
+                    </ol>""");
+
         checkOrder("pkg1/A.X.html",
-                "Summary",
                 """
-                    <li><a href="#nested-class-summary">Nested</a>&nbsp;|&nbsp;</li>""",
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html" title="Package pkg1">pkg1</a></li>
+                    <li><a href="A.html" title="Class A">A</a></li>
+                    <li><a href="A.X.html" title="Class A.X" class="current-selection">X</a></li>
+                    </ol>""",
                 """
-                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """,
                 """
-                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#method-summary">Method</a></li>""");
+                    <ol class="toc-list" tabindex="-1">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
+                    <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#field-detail" tabindex="0">Field Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#field" tabindex="0">field</a></li>
+                    </ol>
+                    </li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">X()</a></li>
+                    </ol>
+                    </li>
+                    <li><a href="#method-detail" tabindex="0">Method Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#method()" tabindex="0">method()</a></li>
+                    </ol>
+                    </li>
+                    </ol>""");
 
         checkOrder("pkg1/A.Y.html",
-                "Summary",
                 """
-                    <li><a href="#nested-class-summary">Nested</a>&nbsp;|&nbsp;</li>""",
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html" title="Package pkg1">pkg1</a></li>
+                    <li><a href="A.html" title="Class A">A</a></li>
+                    <li><a href="A.Y.html" title="Class A.Y" class="current-selection">Y</a></li>
+                    </ol>""",
                 """
-                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """,
                 """
-                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#method-summary">Method</a></li>""");
+                    <ol class="toc-list" tabindex="-1">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
+                    <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">Y()</a></li>
+                    </ol>
+                    </li>
+                    </ol>""");
 
         checkOrder("pkg1/A.X.IC.html",
-                "Summary",
-                "<li>Nested&nbsp;|&nbsp;</li>",
-                "<li>Field&nbsp;|&nbsp;</li>",
                 """
-                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html" title="Package pkg1">pkg1</a></li>
+                    <li><a href="A.html" title="Class A">A</a></li>
+                    <li><a href="A.X.html" title="Class A.X">X</a></li>
+                    <li><a href="A.X.IC.html" title="Class A.X.IC" class="current-selection">IC</a></li>
+                    </ol>""",
                 """
-                    <li><a href="#method-summary">Method</a></li>""");
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """,
+                """
+                    <ol class="toc-list" tabindex="-1">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">IC()</a></li>
+                    </ol>
+                    </li>
+                    </ol>""");
 
         checkOrder("pkg1/C.html",
-                "Summary",
-                "<li>Nested&nbsp;|&nbsp;</li>",
-                "<li>Field&nbsp;|&nbsp;</li>",
                 """
-                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#method-summary">Method</a></li>""");
+                    <ol class="toc-list" tabindex="-1">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">C()</a></li>
+                    </ol>
+                    </li>
+                    </ol>""");
 
         checkOrder("pkg1/InterfaceWithNoMembers.html",
-                "Summary",
-                "<li>Nested&nbsp;|&nbsp;</li>",
-                "<li>Field&nbsp;|&nbsp;</li>",
-                "<li>Constr&nbsp;|&nbsp;</li>",
-                "<li>Method</li>");
+                """
+                    <ol class="toc-list" tabindex="-1">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    </ol>""");
     }
 
     private void checkSubNav() {
@@ -301,4 +452,128 @@ public class TestNavigation extends JavadocTester {
                     <script type="text/javascript"><!--
                       allClassesLink = document.getElementById("allclasses_navbar_bottom");""");
     }
+
+    @Test
+    public void testSinglePackage(Path base) {
+        javadoc("-d", base.resolve("api").toString(),
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+        checkSubNav();
+
+        checkOutput("index.html", true,
+                """
+                    <meta http-equiv="Refresh" content="0;pkg/package-summary.html">""",
+                """
+                 <p><a href="pkg/package-summary.html">pkg/package-summary.html</a></p>""");
+
+        checkOutput("pkg/package-summary.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li class="nav-bar-cell1-rev">Package</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#package">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""");
+
+        checkOutput("pkg/A.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""");
+
+        checkOutput("pkg/C.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""");
+
+        checkOutput("pkg/E.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""");
+
+        checkOutput("pkg/I.html", true,
+                // Test for 4664607
+                """
+                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    """,
+                """
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>""");
+    }
+
+    @Test
+    public void testUnnamedPackage(Path base) throws Exception {
+        Path src = Files.createDirectories(base.resolve("src"));
+        new ClassBuilder(tb, "C")
+                .setModifiers("public", "class")
+                .write(src);
+
+        javadoc("-d", base.resolve("api").toString(),
+                src.resolve("C.java").toString());
+        checkExit(Exit.OK);
+
+        checkOutput("index.html", true,
+                """
+                    <script type="text/javascript">window.location.replace('package-summary.html')</script>
+                    <noscript>
+                    <meta http-equiv="Refresh" content="0;package-summary.html">
+                    </noscript>""");
+
+        checkOutput("package-summary.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li class="nav-bar-cell1-rev">Package</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#package">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html" title="Unnamed Package" class="current-selection">Unnamed Package</a></li>
+                    </ol>""");
+
+        checkOutput("C.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html" title="Unnamed Package">Unnamed Package</a></li>
+                    <li><a href="C.html" title="Class C" class="current-selection">C</a></li>
+                    </ol>""");
+    }
+
 }

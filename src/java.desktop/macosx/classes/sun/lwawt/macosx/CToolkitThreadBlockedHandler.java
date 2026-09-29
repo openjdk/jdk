@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ final class CToolkitThreadBlockedHandler extends Mutex implements ToolkitThreadB
         this.processEvents = true;
     }
 
+    @Override
     public void enter() {
         if (!isOwned()) {
             throw new IllegalMonitorStateException();
@@ -47,6 +48,7 @@ final class CToolkitThreadBlockedHandler extends Mutex implements ToolkitThreadB
         lock();
     }
 
+    @Override
     public void exit() {
         if (!isOwned()) {
             throw new IllegalMonitorStateException();

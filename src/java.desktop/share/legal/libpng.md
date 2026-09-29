@@ -1,4 +1,4 @@
-## libpng v1.6.40
+## libpng v1.6.58
 
 ### libpng License
 <pre>
@@ -9,11 +9,11 @@ COPYRIGHT NOTICE, DISCLAIMER, and LICENSE
 PNG Reference Library License version 2
 ---------------------------------------
 
-Copyright (c) 1995-2023 The PNG Reference Library Authors.
-Copyright (c) 2018-2023 Cosmin Truta
-Copyright (c) 1998-2018 Glenn Randers-Pehrson
-Copyright (c) 1996-1997 Andreas Dilger
-Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
+Copyright (C) 1995-2026 The PNG Reference Library Authors.
+Copyright (C) 2018-2026 Cosmin Truta
+Copyright (C) 1998-2018 Glenn Randers-Pehrson
+Copyright (C) 1996-1997 Andreas Dilger
+Copyright (C) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
 
 The software is supplied "as is", without warranty of any kind,
 express or implied, including, without limitation, the warranties
@@ -157,7 +157,10 @@ PNG REFERENCE LIBRARY AUTHORS
 This is the list of PNG Reference Library ("libpng") Contributing
 Authors, for copyright and licensing purposes.
 
+ * Adam Richter
+ * Alexander Smorkalov
  * Andreas Dilger
+ * Chris Blume
  * Cosmin Truta
  * Dave Martindale
  * Eric S. Raymond
@@ -165,42 +168,64 @@ Authors, for copyright and licensing purposes.
  * Glenn Randers-Pehrson
  * Greg Roelofs
  * Guy Eric Schalnat
+ * Halil Oktay
  * James Yu
  * John Bowler
+ * Joshua Inscoe
  * Kevin Bracey
+ * Lucas Chollet
  * Magnus Holmgren
  * Mandar Sahastrabuddhe
+ * Manfred Schlaegl
  * Mans Rullgard
  * Matt Sarett
  * Mike Klein
+ * Mohammad Seet
  * Pascal Massimino
  * Paul Schmidt
+ * Petr Simecek
  * Philippe Antoine
  * Qiang Zhou
  * Sam Bushell
  * Samuel Williams
  * Simon-Pierre Cadieux
+ * Taegu Ha (하태구)
  * Tim Wegner
+ * Tobias Stoeckmann
  * Tom Lane
  * Tom Tanner
  * Vadim Barkov
  * Willem van Schaik
+ * Yuelin Wang (王跃林)
  * Zhijie Liang
+ * Apple Inc.
+    - Zixu Wang (王子旭)
  * Arm Holdings
-   - Richard Townsend
- * Google Inc.
-   - Dan Field
-   - Leon Scroggins III
-   - Matt Sarett
-   - Mike Klein
-   - Sami Boukortt
-   - Wan-Teh Chang
+    - Richard Townsend
+ * Google LLC
+    - Dan Field
+    - Dragoș Tiselice
+    - Leon Scroggins III
+    - Matt Sarett
+    - Mike Klein
+    - Sami Boukortt
+    - Wan-Teh Chang
+ * Loongson Technology Corporation Ltd.
+    - GuXiWei (顾希伟)
+    - JinBo (金波)
+    - ZhangLixia (张利霞)
+ * Samsung Group
+    - Filip Wasil
+ * SpacemiT Hangzhou Technology, Co.
+    - Liang Junzhao (梁俊钊)
 
 The build projects, the build scripts, the test scripts, and other
-files in the "ci", "projects", "scripts" and "tests" directories, have
+files in the "projects", "scripts" and "tests" directories, have
 other copyright owners, but are released under the libpng license.
 
-Some files in the "contrib" directory, and some tools-generated files
-that are distributed with libpng, have other copyright owners, and are
-released under other open source licenses.
+Some files in the "ci" and "contrib" directories, as well as some
+of the tools-generated files that are distributed with libpng, have
+other copyright owners, and are released under other open source
+licenses.
 ```
+

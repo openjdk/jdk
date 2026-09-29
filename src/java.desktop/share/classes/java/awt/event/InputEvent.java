@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.Serial;
 import java.util.Arrays;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -310,12 +309,6 @@ public abstract sealed class InputEvent extends ComponentEvent
      */
     int modifiers;
 
-    /*
-     * A flag that indicates that this instance can be used to access
-     * the system clipboard.
-     */
-    private transient boolean canAccessSystemClipboard;
-
     static {
         /* ensure that the necessary native libraries are loaded */
         NativeLibLoader.loadLibraries();
@@ -328,15 +321,6 @@ public abstract sealed class InputEvent extends ComponentEvent
                     return InputEvent.getButtonDownMasks();
                 }
 
-                public boolean canAccessSystemClipboard(InputEvent event) {
-                    return event.canAccessSystemClipboard;
-                }
-
-                @Override
-                public void setCanAccessSystemClipboard(InputEvent event,
-                        boolean canAccessSystemClipboard) {
-                    event.canAccessSystemClipboard = canAccessSystemClipboard;
-                }
             });
     }
 
@@ -381,30 +365,6 @@ public abstract sealed class InputEvent extends ComponentEvent
         super(source, id);
         this.when = when;
         this.modifiers = modifiers;
-        canAccessSystemClipboard = canAccessSystemClipboard();
-    }
-
-    private boolean canAccessSystemClipboard() {
-        boolean b = false;
-
-        if (!GraphicsEnvironment.isHeadless()) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-                    b = true;
-                } catch (SecurityException se) {
-                    if (logger.isLoggable(PlatformLogger.Level.FINE)) {
-                        logger.fine("InputEvent.canAccessSystemClipboard() got SecurityException ", se);
-                    }
-                }
-            } else {
-                b = true;
-            }
-        }
-
-        return b;
     }
 
     /**

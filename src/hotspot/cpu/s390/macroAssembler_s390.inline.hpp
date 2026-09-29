@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,7 +75,7 @@ inline void MacroAssembler::load_address(Register d, const Address &a) {
   } else if (Displacement::is_validDisp(a.disp())) {
     z_lay(d, a.disp(), a.indexOrR0(), a.baseOrR0());
   } else {
-    guarantee(false, "displacement = " SIZE_FORMAT_X ", out of range for LA/LAY", a.disp());
+    guarantee(false, "displacement = 0x%zx, out of range for LA/LAY", a.disp());
   }
 }
 
@@ -295,16 +295,16 @@ inline void MacroAssembler::set_last_Java_frame_static(Register last_Java_sp, Re
   set_last_Java_frame(last_Java_sp, last_Java_pc, false);
 }
 
-inline void MacroAssembler::reset_last_Java_frame(void) {
-  reset_last_Java_frame(true);
+inline void MacroAssembler::reset_last_Java_frame(bool check_last_java_sp) {
+  reset_last_Java_frame(check_last_java_sp, true);
 }
 
-inline void MacroAssembler::reset_last_Java_frame_static(void) {
-  reset_last_Java_frame(false);
+inline void MacroAssembler::reset_last_Java_frame_static(bool check_last_java_sp) {
+  reset_last_Java_frame(check_last_java_sp, false);
 }
 
-inline void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1) {
-  set_top_ijava_frame_at_SP_as_last_Java_frame(sp, tmp1, true);
+inline void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, Label *jpc) {
+  set_top_ijava_frame_at_SP_as_last_Java_frame(sp, tmp1, true, jpc);
 }
 
 inline void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame_static(Register sp, Register tmp1) {

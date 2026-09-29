@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,8 @@ public:
   Dict        _allocClass;         // Dictionary of allocation classes
 
   static int  _reg_ctr;         // Register counter
+  static int  words_for_regs(); // Compute the least number of words required for
+                                // registers in register masks.
   static int  RegMask_Size();   // Compute RegMask size
 
   // Public Methods
@@ -123,6 +125,7 @@ public:
 
   void dump();                     // Debug printer
   void output(FILE *fp);           // Write info to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 //------------------------------RegDef-----------------------------------------
@@ -199,6 +202,7 @@ public:
 
   void dump();                  // Debug printer
   void output(FILE *fp);        // Write info to output files
+  virtual void forms_do(FormClosure* f);
 
   virtual bool has_stack_version() {
     return _stack_or_reg;
@@ -305,6 +309,11 @@ public:
   char* condition_code() {
     return _condition_code;
   }
+
+  virtual void forms_do(FormClosure* f) {
+    if (_rclasses[0]) f->do_form(_rclasses[0]);
+    if (_rclasses[1]) f->do_form(_rclasses[1]);
+  }
 };
 
 //------------------------------AllocClass-------------------------------------
@@ -325,6 +334,7 @@ public:
 
   void dump();                  // Debug printer
   void output(FILE *fp);        // Write info to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 
@@ -337,7 +347,6 @@ public:
   // Public Data
   char *_sync_stack_slots;
   char *_inline_cache_reg;
-  char *_interpreter_frame_pointer_reg;
   char *_cisc_spilling_operand_name;
   char *_frame_pointer;
   char *_c_frame_pointer;
@@ -378,11 +387,7 @@ public:
   FormDict   _classdict;          // Class Name -> PipeClassForm mapping
   int        _classcnt;           // Number of classes
 
-  NameList   _noplist;            // List of NOP instructions
-  int        _nopcnt;             // Number of nop instructions
-
   bool       _variableSizeInstrs; // Indicates if this architecture has variable sized instructions
-  bool       _branchHasDelaySlot; // Indicates that branches have delay slot instructions
   int        _maxInstrsPerBundle; // Indicates the maximum number of instructions for ILP
   int        _maxBundlesPerCycle; // Indicates the maximum number of bundles for ILP
   int        _instrUnitSize;      // The minimum instruction unit size, in bytes
@@ -494,7 +499,6 @@ public:
   int               _fixed_latency;     // Always takes this number of cycles
   int               _instruction_count; // Number of instructions in first bundle
   bool              _has_multiple_bundles;  // Indicates if 1 or multiple bundles
-  bool              _has_branch_delay_slot; // Has branch delay slot as last instruction
   bool              _force_serialization;   // This node serializes relative to surrounding nodes
   bool              _may_have_no_code;      // This node may generate no code based on register allocation
 
@@ -513,13 +517,11 @@ public:
 
   void setInstructionCount(int i)    { _instruction_count = i; }
   void setMultipleBundles(bool b)    { _has_multiple_bundles = b; }
-  void setBranchDelay(bool s)        { _has_branch_delay_slot = s; }
   void setForceSerialization(bool s) { _force_serialization = s; }
   void setMayHaveNoCode(bool s)      { _may_have_no_code = s; }
 
   int  InstructionCount()   const { return _instruction_count; }
   bool hasMultipleBundles() const { return _has_multiple_bundles; }
-  bool hasBranchDelay()     const { return _has_branch_delay_slot; }
   bool forceSerialization() const { return _force_serialization; }
   bool mayHaveNoCode()      const { return _may_have_no_code; }
 
@@ -568,6 +570,7 @@ public:
 
   void dump();                     // Debug printer
   void output(FILE *fp);           // Write info to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 class PeepPredicate : public Form {

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +26,13 @@
 #ifndef SHARE_UTILITIES_BYTESWAP_HPP
 #define SHARE_UTILITIES_BYTESWAP_HPP
 
+#include "cppstdlib/cstddef.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <cstddef>
 #include <cstdint>
-#include <type_traits>
 
 template <typename T, size_t N = sizeof(T)>
 struct ByteswapImpl;
@@ -63,7 +65,7 @@ struct ByteswapFallbackImpl;
 template <typename T>
 struct ByteswapFallbackImpl<T, 2> {
   inline constexpr uint16_t operator()(uint16_t x) const {
-    return (((x & UINT16_C(0x00ff)) << 8) | ((x & UINT16_C(0xff00)) >> 8));
+    return checked_cast<uint16_t>(((x & UINT16_C(0x00ff)) << 8) | ((x & UINT16_C(0xff00)) >> 8));
   }
 };
 
@@ -88,7 +90,7 @@ struct ByteswapFallbackImpl<T, 8> {
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
+#if defined(TARGET_COMPILER_gcc)
 
 #if defined(__clang__) || defined(ASSERT)
 
@@ -140,7 +142,7 @@ struct ByteswapImpl : public ByteswapFallbackImpl<T, N> {};
  *****************************************************************************/
 #elif defined(TARGET_COMPILER_visCPP)
 
-#include <cstdlib>
+#include "cppstdlib/cstdlib.hpp"
 
 #pragma intrinsic(_byteswap_ushort)
 #pragma intrinsic(_byteswap_ulong)

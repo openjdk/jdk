@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
 /**
  * @test
  * @bug     8211049
+ * @library /test/lib
  * @summary make sure the supplied SecureRandom object is used
  */
 
 import java.security.*;
 import java.security.interfaces.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestKeyPairGeneratorInit {
 
@@ -45,10 +47,12 @@ public class TestKeyPairGeneratorInit {
     }
 
     public static void main(String[] args) throws Exception {
+        String kpgAlgorithm = "RSA";
         KeyPairGenerator kpg =
-            KeyPairGenerator.getInstance("RSA", "SunRsaSign");
+            KeyPairGenerator.getInstance(kpgAlgorithm,
+                    System.getProperty("test.provider.name", "SunRsaSign"));
         MySecureRandom rnd = new MySecureRandom();
-        kpg.initialize(2048, rnd);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm), rnd);
         System.out.println("Generate keypair then check");
         KeyPair kp = kpg.generateKeyPair();
         if (!rnd.isUsed) {

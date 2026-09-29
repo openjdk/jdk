@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "unittest.hpp"
-
-#include <type_traits>
 
 class EnableIfTest: AllStatic {
   class A: AllStatic {
@@ -40,10 +38,10 @@ class EnableIfTest: AllStatic {
   };
 
   static const bool A_test_true_is_char = sizeof(A::test<true>()) == sizeof(char);
-  STATIC_ASSERT(A_test_true_is_char);
+  static_assert(A_test_true_is_char);
 
   static const bool A_test_false_is_long = sizeof(A::test<false>()) == sizeof(long);
-  STATIC_ASSERT(A_test_false_is_long);
+  static_assert(A_test_false_is_long);
 };
 
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>

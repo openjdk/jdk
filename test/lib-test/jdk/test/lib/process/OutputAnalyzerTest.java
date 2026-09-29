@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,69 @@ public class OutputAnalyzerTest {
         }
 
         {
+            // Multi-line output: OutputAnalyzer uses MULTILINE but not DOTALL, so "." doesn't match newline, but
+            // "^" and "$" matches just after or just before, respectively, a newline.
+            stdout = "aaaaaa\nxxxxxx\n";
+            stderr = "bbbbbb\nyyyyyy\n";
+
+            OutputAnalyzer out = new OutputAnalyzer(stdout, stderr);
+
+            out.shouldMatch("aaa");
+            out.shouldMatch("xxx");
+            out.shouldMatch("bbb");
+            out.shouldMatch("yyy");
+
+            out.stdoutShouldMatch("aaaaaa");
+            out.stdoutShouldMatch("xxxxxx");
+            out.stderrShouldMatch("bbbbbb");
+            out.stderrShouldMatch("yyyyyy");
+
+            out.shouldMatch("^aaaaaa$");
+            out.shouldMatch("^xxxxxx$");
+            out.shouldMatch("^bbbbbb$");
+            out.shouldMatch("^yyyyyy$");
+
+            out.stdoutShouldMatch("^aaaaaa$");
+            out.stdoutShouldMatch("^xxxxxx$");
+            out.stderrShouldMatch("^bbbbbb$");
+            out.stderrShouldMatch("^yyyyyy$");
+
+            out.shouldMatch   ("a.*");
+            out.shouldNotMatch("a.*x");
+            out.shouldMatch   ("b.*");
+            out.shouldNotMatch("b.*y");
+            out.stdoutShouldMatch   ("a.*");
+            out.stdoutShouldNotMatch("a.*x");
+            out.stderrShouldMatch   ("b.*");
+            out.stderrShouldNotMatch("b.*y");
+
+            check(out.matches("^aaaaaa$"));
+            check(out.matches("^yyyyyy$"));
+            check(out.stdoutMatches("^aaaaaa$"));
+            check(out.stderrMatches("^yyyyyy$"));
+
+            check( out.matches("a.*"));
+            check(!out.matches("a.*x"));
+
+            check( out.stdoutMatches("a.*"));
+            check(!out.stdoutMatches("a.*x"));
+
+            check( out.stderrMatches("b.*"));
+            check(!out.stderrMatches("b.*y"));
+
+            // Test the "contains" methods as well
+            check(out.contains("aaa\nxxx"));
+            check(out.contains("bbb\nyyy"));
+            check(out.stdoutContains("aaa\nxxx"));
+            check(out.stderrContains("bbb\nyyy"));
+
+            check(!out.contains("X"));
+            check(!out.contains("X"));
+            check(!out.stdoutContains("X"));
+            check(!out.stderrContains("X"));
+        }
+
+        {
             try {
                 // Verify the exception message
                 OutputAnalyzer out = ProcessTools.executeProcess("true");
@@ -244,4 +307,9 @@ public class OutputAnalyzerTest {
         }
     }
 
+    private static void check(boolean b) {
+        if (!b) {
+            throw new RuntimeException("Check failed");
+        }
+    }
 }

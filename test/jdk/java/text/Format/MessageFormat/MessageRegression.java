@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -114,9 +115,9 @@ public class MessageRegression {
     @Test
     public void Test4058973() {
 
-        MessageFormat fmt = new MessageFormat("{0,choice,0#no files|1#one file|1< {0,number,integer} files}");
+        MessageFormat fmt = new MessageFormat("{0,choice,0.0#no files|1.0#one file|1.0< '{'0,number,integer'}' files}");
         String pat = fmt.toPattern();
-        if (!pat.equals("{0,choice,0.0#no files|1.0#one file|1.0< {0,number,integer} files}")) {
+        if (!pat.equals("{0,choice,0.0#no files|1.0#one file|1.0< '{'0,number,integer'}' files}")) {
             fail("MessageFormat.toPattern failed");
         }
     }
@@ -126,10 +127,8 @@ public class MessageRegression {
     @Test
     public void Test4031438() {
         Locale locale = Locale.getDefault();
-        if (!TestUtils.usesAsciiDigits(locale)) {
-            System.out.println("Skipping this test because locale is " + locale);
-            return;
-        }
+        Assumptions.assumeTrue(TestUtils.usesAsciiDigits(locale),
+                locale + " does not use ASCII digits");
 
         String pattern1 = "Impossible {1} has occurred -- status code is {0} and message is {2}.";
         String pattern2 = "Double '' Quotes {0} test and quoted '{1}' test plus 'other {2} stuff'.";

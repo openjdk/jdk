@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
  * @test
  * @bug 8238231
  * @summary test that DatagramSocket calls java.net.DatagramSocketImpl::create
- * @run testng/othervm TestCreate
+ * @run junit/othervm ${test.main.class}
  */
 
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -44,7 +43,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestCreate {
 
@@ -105,8 +106,6 @@ public class TestCreate {
         @Override protected int peek(InetAddress i) { return 0; }
         @Override protected int peekData(DatagramPacket p) { return 0; }
         @Override protected void receive(DatagramPacket p) { }
-        @Override protected void setTTL(byte ttl) { }
-        @Override protected byte getTTL() { return 0; }
         @Override protected void setTimeToLive(int ttl) { }
         @Override protected int getTimeToLive() { return 0; }
         @Override protected void join(InetAddress inetaddr) { }

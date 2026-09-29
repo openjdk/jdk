@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4923484 8146293
+ * @library /test/lib
  * @summary encryption/decryption test for using OAEPParameterSpec.
  * @author Valerie Peng
  */
@@ -35,6 +36,7 @@ import java.security.spec.MGF1ParameterSpec;
 import javax.crypto.*;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.OAEPParameterSpec;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestOAEPWithParams {
 
@@ -54,11 +56,14 @@ public class TestOAEPWithParams {
     };
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
-        cp = Security.getProvider("SunJCE");
+        cp = Security.getProvider(
+                    System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + cp.getName() + "...");
-        Provider kfp = Security.getProvider("SunRsaSign");
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", kfp);
-        kpg.initialize(768);
+        Provider kfp = Security.getProvider(
+                System.getProperty("test.provider.name", "SunRsaSign"));
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, kfp);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
         privateKey = kp.getPrivate();
         publicKey = kp.getPublic();

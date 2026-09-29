@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    elementFormDefault="qualified"
+    xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/">
+    <xs:import
+        namespace="http://www.w3.org/1999/xhtml/datatypes/"
+        schemaLocation="xhtml-datatypes-1.xsd"/>
+  <xs:annotation>
+    <xs:documentation>
+      This is the Ruby module for XHTML
+      $Id: xhtml-ruby-1.xsd,v 1.7 2010/05/02 17:22:08 ahby Exp $
+    </xs:documentation>
+    <xs:documentation source="xhtml-copyright-1.xsd"/>
+  </xs:annotation>
+
+  <xs:annotation>
+    <xs:documentation>
+      "Ruby" are short runs of text alongside the base text, typically
+      used in East Asian documents to indicate pronunciation or to
+      provide a short annotation. The full specification for Ruby is here:
+      
+        http://www.w3.org/TR/2001/REC-ruby-20010531/
+      
+      This module defines "Ruby " or "complex Ruby" as described
+      in the specification:
+      
+        http://www.w3.org/TR/2001/REC-ruby-20010531/#complex
+    
+      Simple or Basic Ruby are defined in a separate module.
+      
+      This module declares the elements and their attributes used to
+      support complex ruby annotation markup. Elements defined here
+            * ruby, rbc, rtc, rb, rt, rp
+      
+      This module expects the document model to define the
+      following content models
+        + InlNoRuby.mix                 
+    </xs:documentation>
+    <xs:documentation
+         source="http://www.w3.org/TR/2001/REC-ruby-20010531/"/>    
+  </xs:annotation>
+
+  <xs:group name="xhtml.ruby.content.simple">
+      <xs:sequence>
+          <xs:element name="rb" type="xhtml.rb.type"/>
+          <xs:choice>
+              <xs:element name="rt" type="xhtml.rt.type"/>
+              <xs:sequence>
+                  <xs:element name="rp" type="xhtml.rp.type"/>
+                  <xs:element name="rt" type="xhtml.rt.type"/>
+                  <xs:element name="rp" type="xhtml.rp.type"/>
+              </xs:sequence>
+          </xs:choice>
+      </xs:sequence>
+  </xs:group>
+
+  <xs:group name="xhtml.ruby.content.complex">
+    <xs:sequence>
+      <xs:element name="rbc" type="xhtml.rbc.type"/>
+      <xs:element name="rtc" type="xhtml.rtc.type" maxOccurs="2"/>
+    </xs:sequence>
+  </xs:group>
+
+  <!--
+   add to this group any common attributes for all Ruby elements
+  -->
+  <xs:attributeGroup name="xhtml.ruby.common.attrib"/>
+  
+  <xs:group name="xhtml.ruby.content">
+    <xs:choice>
+      <xs:group ref="xhtml.ruby.content.simple"/>
+      <xs:group ref="xhtml.ruby.content.complex"/>
+    </xs:choice>
+  </xs:group>
+
+  <xs:complexType name="xhtml.ruby.type">
+    <xs:group ref="xhtml.ruby.content"/>
+    <xs:attributeGroup ref="xhtml.ruby.common.attrib"/>
+  </xs:complexType>
+
+  <!--
+   rbc (ruby base component) element 
+  -->
+  <xs:attributeGroup name="xhtml.rbc.attlist">
+    <xs:attributeGroup ref="xhtml.ruby.common.attrib"/>
+  </xs:attributeGroup>
+  
+  <xs:group name="xhtml.rbc.content">
+    <xs:sequence>
+      <xs:element name="rb" type="xhtml.rb.type" />
+    </xs:sequence>
+  </xs:group>  
+
+  <xs:complexType name="xhtml.rbc.type">
+    <xs:group ref="xhtml.rbc.content"/>
+    <xs:attributeGroup ref="xhtml.rbc.attlist"/>
+  </xs:complexType>
+
+  <!--
+   rtc (ruby text component) element
+  -->
+  <xs:attributeGroup name="xhtml.rtc.attlist">
+    <xs:attributeGroup ref="xhtml.ruby.common.attrib"/>
+  </xs:attributeGroup>
+  
+  <xs:group name="xhtml.rtc.content">
+    <xs:sequence>
+      <xs:element name="rt" type="xhtml.rt.type" maxOccurs="unbounded"/>
+    </xs:sequence>  
+  </xs:group>    
+
+  <xs:complexType name="xhtml.rtc.type">
+    <xs:group ref="xhtml.rt.content"/>  
+    <xs:attributeGroup ref="xhtml.rtc.attlist"/>
+  </xs:complexType>
+
+  <!--
+   rb (ruby base) element 
+  -->
+  <xs:attributeGroup name="xhtml.rb.attlist">
+    <xs:attributeGroup ref="xhtml.ruby.common.attrib"/>
+  </xs:attributeGroup>
+
+  <xs:group name="xhtml.rb.content">
+    <xs:sequence>
+       <xs:group ref="xhtml.InlNoRuby.mix" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:group>      
+
+  <xs:complexType name="xhtml.rb.type" mixed="true">
+    <xs:group ref="xhtml.rb.content"/>
+    <xs:attributeGroup ref="xhtml.rb.attlist"/>
+  </xs:complexType>
+    
+  <!--
+   rt (ruby text) element 
+  -->
+  <xs:attributeGroup name="xhtml.rt.attlist">
+    <xs:attributeGroup ref="xhtml.ruby.common.attrib"/>
+    <xs:attribute name="rbspan" type="xh11d:Number" default="1"/>
+  </xs:attributeGroup>
+
+  <xs:group name="xhtml.rt.content">
+    <xs:sequence>
+       <xs:group ref="xhtml.InlNoRuby.mix" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:group>      
+  
+  <xs:complexType name="xhtml.rt.type" mixed="true">
+    <xs:group ref="xhtml.rt.content"/>  
+    <xs:attributeGroup ref="xhtml.rt.attlist"/>
+  </xs:complexType>
+
+  <!-- rp (ruby parenthesis) element  -->
+  <xs:attributeGroup name="xhtml.rp.attlist">
+    <xs:attributeGroup ref="xhtml.ruby.common.attrib"/>
+  </xs:attributeGroup>
+  
+  <xs:group name="xhtml.rp.content">
+    <xs:sequence/>
+  </xs:group>      
+  
+
+  <xs:complexType name="xhtml.rp.type" mixed="true">
+    <xs:group ref="xhtml.rp.content"/>
+    <xs:attributeGroup ref="xhtml.rp.attlist"/>
+  </xs:complexType>
+
+</xs:schema>

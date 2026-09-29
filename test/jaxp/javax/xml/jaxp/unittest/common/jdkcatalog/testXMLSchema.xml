@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="{{targetNamespace}} {{SCHEMA_LOCATION}}"
+           xmlns:xs="{{targetNamespace}}">
+    <xs:element name="example" type="xs:string" />
+</xs:schema>

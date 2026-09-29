@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,11 @@ Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
 }
 
 JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_shouldShutdownWriteBeforeClose0(JNIEnv *env, jclass clazz) {
+    return JNI_TRUE;
+}
+
+JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_shouldSetBothIPv4AndIPv6Options0(JNIEnv* env, jclass cl)
 {
     /* Set both IPv4 and IPv6 socket options when setting IPPROTO_IPV6 options */
@@ -153,25 +158,19 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     int domain = (preferIPv6) ? AF_INET6 : AF_INET;
 
     s = socket(domain, (stream ? SOCK_STREAM : SOCK_DGRAM), 0);
-    if (s != INVALID_SOCKET) {
-        SetHandleInformation((HANDLE)s, HANDLE_FLAG_INHERIT, 0);
-
-        /* Attempt to disable IPV6_V6ONLY to ensure dual-socket support; ignore errors */
-        if (domain == AF_INET6) {
-            int opt = 0;
-            setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY,
-                       (const char *)&opt, sizeof(opt));
-        }
-
-        /* Disable WSAECONNRESET errors for initially unconnected UDP sockets */
-        if (!stream) {
-            setConnectionReset(s, FALSE);
-        }
-
-    } else {
+    if (s == INVALID_SOCKET) {
         NET_ThrowNew(env, WSAGetLastError(), "socket");
+        return IOS_THROWN;
+    }
+    SetHandleInformation((HANDLE)s, HANDLE_FLAG_INHERIT, 0);
+
+    /* Attempt to disable IPV6_V6ONLY to ensure dual-socket support; ignore errors */
+    if (domain == AF_INET6 && ipv4_available()) {
+        int opt = 0;
+        setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&opt, sizeof(opt));
     }
 
+    /* Enable SIO_LOOPBACK_FAST_PATH on TCP sockets if possible */
     if (stream && fastLoopback) {
         static int loopback_available = 1;
         if (loopback_available) {
@@ -181,9 +180,16 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
                     loopback_available = 0;
                 } else {
                     NET_ThrowNew(env, rv, "fastLoopback");
+                    closesocket(s);
+                    return IOS_THROWN;
                 }
             }
         }
+    }
+
+    /* Disable WSAECONNRESET errors for initially unconnected UDP sockets */
+    if (!stream) {
+        setConnectionReset(s, FALSE);
     }
 
     return (jint)s;
@@ -209,6 +215,13 @@ Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jobject fdo, jboolean prefe
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_listen(JNIEnv *env, jclass cl, jobject fdo, jint backlog)
 {
+    /*
+     * Use SOMAXCONN_HINT when backlog larger than 200. It will adjust the value
+     * to be within the range (200, 65535).
+     */
+    if (backlog > 200) {
+        backlog = SOMAXCONN_HINT(backlog);
+    }
     if (listen(fdval(env,fdo), backlog) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "listen");
     }
@@ -278,15 +291,19 @@ Java_sun_nio_ch_Net_accept(JNIEnv *env, jclass clazz, jobject fdo, jobject newfd
         JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
         return IOS_THROWN;
     }
-
     SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
     setfdval(env, newfdo, newfd);
 
     remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
-    CHECK_NULL_RETURN(remote_ia, IOS_THROWN);
-
+    if (remote_ia == NULL) {
+        closesocket(newfd);
+        return IOS_THROWN;
+    }
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, remote_ia, remote_port);
-    CHECK_NULL_RETURN(isa, IOS_THROWN);
+    if (isa == NULL) {
+        closesocket(newfd);
+        return IOS_THROWN;
+    }
     (*env)->SetObjectArrayElement(env, isaa, 0, isa);
 
     return 1;
@@ -721,7 +738,7 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong tim
                 NET_ThrowNew(env, lastError, "getsockopt");
             }
         } else if (optError != NO_ERROR) {
-            NET_ThrowNew(env, optError, "getsockopt");
+            NET_ThrowNew(env, optError, NULL);
         }
         return JNI_FALSE;
     }

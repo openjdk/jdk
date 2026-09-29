@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -39,6 +38,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -51,7 +51,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
 
   ClassLoaderData* null_loader_data = ClassLoaderData::the_null_class_loader_data();
 
-  TypeArrayKlass* ak = TypeArrayKlass::allocate(null_loader_data, type, sym, CHECK_NULL);
+  TypeArrayKlass* ak = TypeArrayKlass::allocate_klass(null_loader_data, type, sym, CHECK_NULL);
 
   // Call complete_create_array_klass after all instance variables have been initialized.
   complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_moduleEntry(), CHECK_NULL);
@@ -66,7 +66,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   return ak;
 }
 
-TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS) {
+TypeArrayKlass* TypeArrayKlass::allocate_klass(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS) {
   assert(TypeArrayKlass::header_size() <= InstanceKlass::header_size(),
       "array klasses must be same size as InstanceKlass");
 
@@ -75,7 +75,15 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
   return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
 }
 
-TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, Kind) {
+u2 TypeArrayKlass::compute_modifier_flags() const {
+  u2 identity_flag = (Arguments::is_valhalla_enabled()) ? JVM_ACC_IDENTITY : 0;
+
+  return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC
+                    | identity_flag;
+}
+
+TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name)
+    : ArrayKlass(1, name, Kind, ArrayProperties::Default()) {
   set_layout_helper(array_layout_helper(type));
   assert(is_array_klass(), "sanity");
   assert(is_typeArray_klass(), "sanity");
@@ -91,14 +99,13 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   check_array_allocation_length(length, max_length(), CHECK_NULL);
   size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
   return (typeArrayOop)Universe::heap()->array_allocate(this, size, length,
-                                                        do_zero, CHECK_NULL);
+                                                        do_zero, THREAD);
 }
 
 oop TypeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
-  // For typeArrays this is only called for the last dimension
   assert(rank == 1, "just checking");
   int length = *last_size;
-  return allocate(length, THREAD);
+  return allocate_instance(length, THREAD);
 }
 
 
@@ -171,7 +178,8 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 }
 
 size_t TypeArrayKlass::oop_size(oop obj) const {
-  assert(obj->is_typeArray(),"must be a type array");
+  // In this assert, we cannot safely access the Klass* with compact headers.
+  assert(UseCompactObjectHeaders || obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
   return t->object_size(this);
 }

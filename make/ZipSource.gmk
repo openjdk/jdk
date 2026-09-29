@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,47 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
-include JavaCompilation.gmk
+################################################################################
+
 include Modules.gmk
+include ZipArchive.gmk
 
 SRC_ZIP_WORK_DIR := $(SUPPORT_OUTPUTDIR)/src
 $(if $(filter $(TOPDIR)/%, $(SUPPORT_OUTPUTDIR)), $(eval SRC_ZIP_BASE := $(TOPDIR)), $(eval SRC_ZIP_BASE := $(SUPPORT_OUTPUTDIR)))
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, ZipSource.gmk))
-
 ################################################################################
 # Create the directory structure for src.zip using symlinks.
-# <module>/<package>/<file>.java
+#   <module>/<package>/<file>.java
+# or:
+#   <module>/META-INF/preview/<package>/<file>.java
+# for preview enabled sources.
+#
+# Generate the src dirs in the first make invocation and then call this makefile
+# again to create src.zip.
 
 ALL_MODULES := $(FindAllModules)
 
-# Generate the src dirs in the first make invocation and then call this makefile
-# again to create src.zip.
+# Module source directories ($d) are things like (but not limited to):
+# - $TOPDIR/src/<module>/share/classes
+# - $SUPPORT_OUTPUTDIR/gensrc/<module>
+#
+# A symbolic link is created for each directory. For example:
+# - $TOPDIR/src/<module>/share/classes
+# is linked from:
+# - $SRC_ZIP_WORK_DIR/src/<module>/share/classes/<module>
+#
+# Each link has the form:
+# - $SRC_ZIP_WORK_DIR/<link-dir>/<module>
+# and always has the name of its module (even if the module already appears in <link-dir>.
+#
+# Then the contents of all link parent directories are given as ZIP includes:
+# - $SRC_ZIP_WORK_DIR/<link-dir>
+# results in ZIP file entries starting:
+# - <module>/...
+# where multiple source links/directories can contribute to the same module's sources.
+#
 $(foreach m, $(ALL_MODULES), \
   $(foreach d, $(call FindModuleSrcDirs, $m), \
     $(eval $d_TARGET := $(SRC_ZIP_WORK_DIR)/$(patsubst $(TOPDIR)/%,%,$(patsubst $(SUPPORT_OUTPUTDIR)/%,%,$d))/$m) \
@@ -51,6 +71,36 @@ $(foreach m, $(ALL_MODULES), \
       $(eval $$($d_TARGET): $d ; \
           $$(if $(filter $(SRC_ZIP_BASE)/%, $d), $$(link-file-relative), $$(link-file-absolute)) \
       ) \
+    ) \
+    $(eval SRC_ZIP_SRCS += $$($d_TARGET)) \
+    $(eval SRC_ZIP_SRCS_$m += $$($d_TARGET)) \
+  ) \
+)
+
+# Preview source directories are currently limited to:
+# - $SUPPORT_OUTPUTDIR/gensrc-valueclasses/<module>
+# If this is changed, the 'patsubst' rewriting will need updating.
+#
+# The difficulty with this case is that we need to have a directory of the form:
+# - $SRC_ZIP_WORK_DIR/<link-dir>/<module>
+# containing (either directly or via symbolic linking) a `META-INF/preview`
+# subdirectory which then contains the sources.
+#
+# The easiest way to achieve this is to symbolically link:
+# - $SRC_ZIP_WORK_DIR/<link-dir>/<module>/META-INF/preview
+# and then use the parent directory:
+# - $SRC_ZIP_WORK_DIR/<link-dir>/<module>
+# as the actual target for the ZIP file generation. However, this requires
+# an extra rule to associate the symbolic link and the parent directory.
+#
+$(foreach m, $(ALL_MODULES), \
+  $(foreach d, $(call FindModulePreviewSrcDirs, $m), \
+    $(eval $d_TARGET := $(SRC_ZIP_WORK_DIR)/$(patsubst $(SUPPORT_OUTPUTDIR)/%,%,$d)/$m) \
+    $(if $(SRC_GENERATED), , \
+      $(eval $$($d_TARGET)/META-INF/preview: $d ; \
+          $$(if $(filter $(SRC_ZIP_BASE)/%, $d), $$(link-file-relative), $$(link-file-absolute)) \
+      ) \
+      $(eval $$($d_TARGET): $$($d_TARGET)/META-INF/preview) \
     ) \
     $(eval SRC_ZIP_SRCS += $$($d_TARGET)) \
     $(eval SRC_ZIP_SRCS_$m += $$($d_TARGET)) \
@@ -95,8 +145,8 @@ zip: $(SRC_ZIP_SRCS)
 
 TARGETS += zip
 
+.PHONY: zip
+
 ################################################################################
 
-all: $(TARGETS)
-
-.PHONY: default all zip
+include MakeFileEnd.gmk

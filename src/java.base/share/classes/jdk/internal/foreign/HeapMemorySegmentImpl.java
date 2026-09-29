@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,15 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.ValueBased;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
+
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
-
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Implementation for heap memory segments. A heap memory segment is composed by an offset and
@@ -49,9 +50,6 @@ import jdk.internal.vm.annotation.ForceInline;
 abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     // Constants defining the maximum alignment supported by various kinds of heap arrays.
-    // While for most arrays, the maximum alignment is constant (the size, in bytes, of the array elements),
-    // note that the alignment of a long[]/double[] depends on the platform: it's 4-byte on x86, but 8 bytes on x64
-    // (as specified by the JAVA_LONG layout constant).
 
     private static final long MAX_ALIGN_BYTE_ARRAY = ValueLayout.JAVA_BYTE.byteAlignment();
     private static final long MAX_ALIGN_SHORT_ARRAY = ValueLayout.JAVA_SHORT.byteAlignment();
@@ -81,6 +79,13 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
+    public final long maxByteAlignment() {
+        return address() == 0
+            ? maxAlignMask()
+            : Math.min(maxAlignMask(), Long.lowestOneBit(address()));
+    }
+
+    @Override
     abstract HeapMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope);
 
     @Override
@@ -89,11 +94,12 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
         }
         JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
-        return nioAccess.newHeapByteBuffer(baseByte, (int)offset - Utils.BaseAndScale.BYTE.base(), (int) byteSize(), null);
+        return nioAccess.newHeapByteBuffer(baseByte, (int)(offset - Utils.BaseAndScale.BYTE.base()), (int) byteSize(), null);
     }
 
     // factories
 
+    @ValueBased
     public static final class OfByte extends HeapMemorySegmentImpl {
 
         OfByte(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
@@ -121,6 +127,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
     }
 
+    @ValueBased
     public static final class OfChar extends HeapMemorySegmentImpl {
 
         OfChar(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
@@ -148,6 +155,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
     }
 
+    @ValueBased
     public static final class OfShort extends HeapMemorySegmentImpl {
 
         OfShort(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
@@ -175,6 +183,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
     }
 
+    @ValueBased
     public static final class OfInt extends HeapMemorySegmentImpl {
 
         OfInt(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
@@ -202,6 +211,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
     }
 
+    @ValueBased
     public static final class OfLong extends HeapMemorySegmentImpl {
 
         OfLong(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
@@ -229,6 +239,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
     }
 
+    @ValueBased
     public static final class OfFloat extends HeapMemorySegmentImpl {
 
         OfFloat(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
@@ -256,6 +267,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
     }
 
+    @ValueBased
     public static final class OfDouble extends HeapMemorySegmentImpl {
 
         OfDouble(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {

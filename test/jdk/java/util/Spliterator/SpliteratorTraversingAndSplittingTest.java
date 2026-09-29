@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,15 @@
  * @test
  * @summary Spliterator traversing and splitting tests
  * @library /lib/testlibrary/bootlib
+ * @modules java.base/jdk.internal.misc
  * @build java.base/java.util.SpliteratorOfIntDataBuilder
  *        java.base/java.util.SpliteratorTestHelper
  * @run testng SpliteratorTraversingAndSplittingTest
- * @bug 8020016 8071477 8072784 8169838
+ * @run testng/othervm --enable-preview SpliteratorTraversingAndSplittingTest
+ * @bug 8020016 8071477 8072784 8169838 8336672
  */
+
+import jdk.internal.misc.PreviewFeatures;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -126,12 +130,19 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
 
         List<T> exp;
 
+        List<T> expRev;
+
         Map<T, T> mExp;
+
+        Map<T, T> mExpRev;
 
         SpliteratorDataBuilder(List<Object[]> data, List<T> exp) {
             this.data = data;
             this.exp = exp;
+            this.expRev = new ArrayList<>(exp);
+            Collections.reverse(this.expRev);
             this.mExp = createMap(exp);
+            this.mExpRev = createMap(expRev);
         }
 
         Map<T, T> createMap(List<T> l) {
@@ -166,10 +177,21 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
             addMap(m, description);
         }
 
+        void addDescendingMap(Function<Map<T, T>, ? extends Map<T, T>> m) {
+            String description = "new " + m.apply(Collections.<T, T>emptyMap()).getClass().getName();
+            addDescendingMap(m, description);
+        }
+
         void addMap(Function<Map<T, T>, ? extends Map<T, T>> m, String description) {
             add(description + ".keySet().spliterator()", () -> m.apply(mExp).keySet().spliterator());
             add(description + ".values().spliterator()", () -> m.apply(mExp).values().spliterator());
             add(description + ".entrySet().spliterator()", mExp.entrySet(), () -> m.apply(mExp).entrySet().spliterator());
+        }
+
+        void addDescendingMap(Function<Map<T, T>, ? extends Map<T, T>> m, String description) {
+            add(description + ".keySet().spliterator()", expRev, () -> m.apply(mExp).keySet().spliterator());
+            add(description + ".values().spliterator()", expRev, () -> m.apply(mExp).values().spliterator());
+            add(description + ".entrySet().spliterator()", mExpRev.entrySet(), () -> m.apply(mExp).entrySet().spliterator());
         }
 
         StringBuilder joiner(String description) {
@@ -628,19 +650,28 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
 
             db.addMap(IdentityHashMap::new);
 
-            db.addMap(WeakHashMap::new);
+            if (!PreviewFeatures.isEnabled()) {
+                // With --enable-preview, WeakHashmap is not tested with Integer, a value class
+                db.addMap(WeakHashMap::new);
 
-            db.addMap(m -> {
-                // Create a Map ensuring that for large sizes
-                // buckets will be consist of 2 or more entries
-                WeakHashMap<Integer, Integer> cm = new WeakHashMap<>(1, m.size() + 1);
-                for (Map.Entry<Integer, Integer> e : m.entrySet())
-                    cm.put(e.getKey(), e.getValue());
-                return cm;
-            }, "new java.util.WeakHashMap(1, size + 1)");
+                db.addMap(m -> {
+                    // Create a Map ensuring that for large sizes
+                    // buckets will consist of 2 or more entries
+                    WeakHashMap<Integer, Integer> cm = new WeakHashMap<>(1, m.size() + 1);
+                    for (Map.Entry<Integer, Integer> e : m.entrySet())
+                        cm.put(e.getKey(), e.getValue());
+                    return cm;
+                }, "new java.util.WeakHashMap(1, size + 1)");
+            }
 
-            // @@@  Descending maps etc
             db.addMap(TreeMap::new);
+            db.addMap(m -> new TreeMap<>(m).tailMap(Integer.MIN_VALUE));
+            db.addMap(m -> new TreeMap<>(m).headMap(Integer.MAX_VALUE));
+            db.addMap(m -> new TreeMap<>(m).subMap(Integer.MIN_VALUE, Integer.MAX_VALUE));
+            db.addDescendingMap(m -> new TreeMap<>(m).descendingMap());
+            db.addDescendingMap(m -> new TreeMap<>(m).descendingMap().tailMap(Integer.MAX_VALUE));
+            db.addDescendingMap(m -> new TreeMap<>(m).descendingMap().headMap(Integer.MIN_VALUE));
+            db.addDescendingMap(m -> new TreeMap<>(m).descendingMap().subMap(Integer.MAX_VALUE, Integer.MIN_VALUE));
 
             db.addMap(ConcurrentHashMap::new);
 

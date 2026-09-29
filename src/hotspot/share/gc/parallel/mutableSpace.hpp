@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -46,44 +47,38 @@ class WorkerThreads;
 // Invariant: bottom() <= top() <= end()
 // top() and end() are exclusive.
 
-class MutableSpaceMangler;
-
 class MutableSpace: public CHeapObj<mtGC> {
   friend class VMStructs;
 
-  // Helper for mangling unused space in debug builds
-  MutableSpaceMangler* _mangler;
   // The last region which page had been setup to be interleaved.
   MemRegion _last_setup_region;
-  size_t _alignment;
+  size_t _page_size;
   HeapWord* _bottom;
-  HeapWord* volatile _top;
-  HeapWord* _end;
+  Atomic<HeapWord*> _top;
+  Atomic<HeapWord*> _end;
 
-  MutableSpaceMangler* mangler() { return _mangler; }
-
-  void numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space);
+  void numa_setup_pages(MemRegion mr, bool clear_space);
 
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
 
- public:
-  virtual ~MutableSpace();
+protected:
+  size_t page_size() const                 { return _page_size;         }
+
+  Atomic<HeapWord*>* top_addr()            { return &_top;              }
+
+public:
+  virtual ~MutableSpace() = default;
   MutableSpace(size_t page_size);
 
   // Accessors
   HeapWord* bottom() const                 { return _bottom; }
-  HeapWord* top() const                    { return _top;    }
-  HeapWord* end() const                    { return _end; }
+  HeapWord* top() const                    { return _top.load_relaxed(); }
+  HeapWord* end() const                    { return _end.load_relaxed(); }
 
   void set_bottom(HeapWord* value)         { _bottom = value; }
-  virtual void set_top(HeapWord* value)    { _top = value;   }
-  void set_end(HeapWord* value)            { _end = value; }
-
-  HeapWord* volatile* top_addr()           { return &_top; }
-  HeapWord** end_addr()                    { return &_end; }
-
-  size_t alignment()                       { return _alignment; }
+  virtual void set_top(HeapWord* value)    { _top.store_relaxed(value); }
+  void set_end(HeapWord* value)            { _end.store_relaxed(value); }
 
   MemRegion region() const { return MemRegion(bottom(), end()); }
 
@@ -107,45 +102,31 @@ class MutableSpace: public CHeapObj<mtGC> {
   virtual void update() { }
   virtual void accumulate_statistics() { }
 
-  // Methods used in mangling.  See descriptions under SpaceMangler.
   virtual void mangle_unused_area() PRODUCT_RETURN;
-  virtual void mangle_unused_area_complete() PRODUCT_RETURN;
-  virtual void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
-  virtual void check_mangled_unused_area_complete() PRODUCT_RETURN;
-  virtual void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
-
-  // Used to save the space's current top for later use during mangling.
-  virtual void set_top_for_allocations() PRODUCT_RETURN;
+  virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
 
   virtual void ensure_parsability() { }
-
-  virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
 
   // Boolean queries.
   bool is_empty() const              { return used_in_words() == 0; }
   bool not_empty() const             { return used_in_words() > 0; }
-  bool contains(const void* p) const { return _bottom <= p && p < _end; }
+  bool contains(const void* p) const { return _bottom <= p && p < end(); }
 
   // Size computations.  Sizes are in bytes.
   size_t used_in_bytes() const                { return used_in_words() * HeapWordSize; }
   size_t free_in_bytes() const                { return free_in_words() * HeapWordSize; }
 
   // Size computations.  Sizes are in heapwords.
-  virtual size_t used_in_words() const                    { return pointer_delta(top(), bottom()); }
-  virtual size_t free_in_words() const                    { return pointer_delta(end(),    top()); }
-  virtual size_t tlab_capacity(Thread* thr) const         { return capacity_in_bytes();            }
-  virtual size_t tlab_used(Thread* thr) const             { return used_in_bytes();                }
-  virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
+  virtual size_t used_in_words() const         { return pointer_delta(top(), bottom()); }
+  virtual size_t free_in_words() const         { return pointer_delta(end(),    top()); }
+  virtual size_t tlab_capacity() const         { return capacity_in_bytes();            }
+  virtual size_t tlab_used() const             { return used_in_bytes();                }
+  virtual size_t unsafe_max_tlab_alloc() const { return free_in_bytes();                }
 
   // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);
   // Optional deallocation. Used in NUMA-allocator.
   bool cas_deallocate(HeapWord *obj, size_t size);
-  // Return true if this space needs to be expanded in order to satisfy an
-  // allocation request of the indicated size.  Concurrent allocations and
-  // resizes may change the result of a later call.  Used by oldgen allocator.
-  // precondition: holding PSOldGenExpand_lock
-  bool needs_expand(size_t word_size) const;
 
   // Iteration.
   void oop_iterate(OopIterateClosure* cl);
@@ -153,7 +134,7 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   // Debugging
   virtual void print() const;
-  virtual void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st, const char* prefix) const;
   virtual void print_short() const;
   virtual void print_short_on(outputStream* st) const;
   virtual void verify();

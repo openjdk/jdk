@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,8 @@ public class SameDHKeyStressTest {
         Key[] keyArchives = new Key[numParties];
         try {
             // generate AlogirhtmParameterSpec
-            AlgorithmParameterGenerator apg = AlgorithmParameterGenerator.getInstance("DH","SunJCE");
+            AlgorithmParameterGenerator apg = AlgorithmParameterGenerator.getInstance("DH",
+                                            System.getProperty("test.provider.name", "SunJCE"));
             AlgorithmParameterSpec aps = new DHGenParameterSpec(512, 64);
             apg.init(aps);
             DHParameterSpec spec = apg.generateParameters().
@@ -139,8 +140,10 @@ class KAParticipant {
     public KAParticipant(String pName, String algo) throws NoSuchAlgorithmException, NoSuchProviderException {
         name = pName;
         algorithm = algo;
-        keyGen = KeyPairGenerator.getInstance(algo,"SunJCE");
-        ka = KeyAgreement.getInstance(algo,"SunJCE");
+        keyGen = KeyPairGenerator.getInstance(algo,
+                    System.getProperty("test.provider.name", "SunJCE"));
+        ka = KeyAgreement.getInstance(algo,
+                    System.getProperty("test.provider.name", "SunJCE"));
     }
 
     public void initialize(AlgorithmParameterSpec spec) throws InvalidAlgorithmParameterException, InvalidKeyException {

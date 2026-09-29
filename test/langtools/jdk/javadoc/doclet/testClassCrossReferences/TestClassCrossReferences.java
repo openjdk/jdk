@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4652655 4857717 8025633 8026567 8071982 8164407 8182765 8205593 8240169
+ *      8369531
  * @summary This test verifies that class cross references work properly.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -58,18 +59,18 @@ public class TestClassCrossReferences extends JavadocTester {
                 "<a href=\"" + uri + """
                     java/math/package-summary.html" class="external-link"><code>Link to math package</code></a>""",
                 "<a href=\"" + uri + """
-                    javax/swing/text/AbstractDocument.AttributeContext.html" title="class or interfa\
-                    ce in javax.swing.text" class="external-link"><code>Link to AttributeContext inn\
-                    erclass</code></a>""",
+                    javax/swing/text/AbstractDocument.AttributeContext.html" title="interface in jav\
+                    ax.swing.text" class="external-link"><code>Link to AttributeContext innerclass</\
+                    code></a>""",
                 "<a href=\"" + uri + """
-                    java/math/BigDecimal.html" title="class or interface in java.math" class="extern\
-                    al-link"><code>Link to external class BigDecimal</code></a>""",
+                    java/math/BigDecimal.html" title="class in java.math" class="external-link"><cod\
+                    e>Link to external class BigDecimal</code></a>""",
                 "<a href=\"" + uri + """
-                    java/math/BigInteger.html#gcd-java.math.BigInteger-" title="class or interface i\
-                    n java.math" class="external-link"><code>Link to external member gcd</code></a>""",
+                    java/math/BigInteger.html#gcd-java.math.BigInteger-" class="external-link"><code\
+                    >Link to external member gcd</code></a>""",
                 "<a href=\"" + uri + """
-                    javax/tools/SimpleJavaFileObject.html#uri" title="class or interface in javax.to\
-                    ols" class="external-link"><code>Link to external member URI</code></a>""",
+                    javax/tools/SimpleJavaFileObject.html#uri" class="external-link"><code>Link to e\
+                    xternal member URI</code></a>""",
                 """
                     <dl class="notes">
                     <dt>Overrides:</dt>
@@ -95,18 +96,18 @@ public class TestClassCrossReferences extends JavadocTester {
                 "<a href=\"" + uri + """
                     java/math/package-summary.html" class="external-link"><code>Link to math package</code></a>""",
                 "<a href=\"" + uri + """
-                    javax/swing/text/AbstractDocument.AttributeContext.html" title="class or interfa\
-                    ce in javax.swing.text" class="external-link"><code>Link to AttributeContext inn\
-                    erclass</code></a>""",
+                    javax/swing/text/AbstractDocument.AttributeContext.html" title="interface in jav\
+                    ax.swing.text" class="external-link"><code>Link to AttributeContext innerclass</\
+                    code></a>""",
                 "<a href=\"" + uri + """
-                    java/math/BigDecimal.html" title="class or interface in java.math" class="extern\
-                    al-link"><code>Link to external class BigDecimal</code></a>""",
+                    java/math/BigDecimal.html" title="class in java.math" class="external-link"><cod\
+                    e>Link to external class BigDecimal</code></a>""",
                 "<a href=\"" + uri + """
-                    java/math/BigInteger.html#gcd-java.math.BigInteger-" title="class or interface i\
-                    n java.math" class="external-link"><code>Link to external member gcd</code></a>""",
+                    java/math/BigInteger.html#gcd-java.math.BigInteger-" class="external-link"><code\
+                    >Link to external member gcd</code></a>""",
                 "<a href=\"" + uri + """
-                    javax/tools/SimpleJavaFileObject.html#uri" title="class or interface in javax.to\
-                    ols" class="external-link"><code>Link to external member URI</code></a>""",
+                    javax/tools/SimpleJavaFileObject.html#uri" class="external-link"><code>Link to e\
+                    xternal member URI</code></a>""",
                 """
                     <dl class="notes">
                     <dt>Overrides:</dt>

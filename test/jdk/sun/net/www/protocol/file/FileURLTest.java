@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 4474391
  * @summary url: file:///D|/Projects/tmp/test.html: urlConnection.getInputStream() broken.
+ * @requires os.family == "windows"
  */
 import java.io.*;
 import java.net.*;
@@ -33,10 +34,7 @@ public class FileURLTest {
 
     public static void main(String [] args)
     {
-        String name = System.getProperty("os.name");
-        if (name.startsWith("Windows")) {
             String urlStr = "file:///C|/nonexisted.txt";
-
             try {
                 URL url = new URL(urlStr);
                 URLConnection urlConnection = url.openConnection();
@@ -49,6 +47,5 @@ public class FileURLTest {
                     throw new RuntimeException("Can't handle '|' in place of ':' in file urls");
                 }
             }
-        }
     }
 }

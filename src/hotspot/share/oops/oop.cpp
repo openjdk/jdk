@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -43,8 +42,6 @@
 void oopDesc::print_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
-  } else if (*((juint*)this) == badMetaWordVal) {
-    st->print_cr("BAD META WORD");
   } else {
     klass()->oop_print_on(cast_to_oop(this), st);
   }
@@ -58,8 +55,6 @@ void oopDesc::print_address_on(outputStream* st) const {
 void oopDesc::print_name_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
-  } else if (*((juint*)this) == badMetaWordVal) {
-    st->print_cr("BAD META WORD");
   } else {
     st->print_cr("%s", klass()->external_name());
   }
@@ -88,11 +83,23 @@ char* oopDesc::print_value_string() {
 
 void oopDesc::print_value_on(outputStream* st) const {
   oop obj = const_cast<oopDesc*>(this);
-  if (java_lang_String::is_instance(obj)) {
+  // We can't use java_lang_String::is_instance since that has klass assertions enabled.
+  // If the klass is garbage we want to just fail the check and continue printing, as
+  // opposed to aborting the VM entirely.
+  if (obj != nullptr && obj->klass_without_asserts() == vmClasses::String_klass()) {
     java_lang_String::print(obj, st);
     print_address_on(st);
   } else {
-    klass()->oop_print_value_on(obj, st);
+    Klass* k = klass_without_asserts();
+    if (k == nullptr) {
+      st->print("null klass");
+    } else if (!Metaspace::contains(k)) {
+      st->print("klass not in Metaspace");
+    } else if (!k->is_klass()) {
+      st->print("klass not a Klass");
+    } else {
+      k->oop_print_value_on(obj, st);
+    }
   }
 }
 
@@ -108,34 +115,40 @@ void oopDesc::verify(oopDesc* oop_desc) {
   verify_on(tty, oop_desc);
 }
 
-intptr_t oopDesc::slow_identity_hash() {
-  // slow case; we have to acquire the micro lock in order to locate the header
-  Thread* current = Thread::current();
-  return ObjectSynchronizer::FastHashCode(current, this);
+intptr_t oopDesc::slow_identity_hash(markWord current_mark, Thread* current) {
+  precond(!current_mark.has_hash());
+
+  assert(!is_value(), "slow_identity_hash should not be called for value objects");
+
+  // Calculate the new hash
+  const intptr_t new_hash = ObjectSynchronizer::get_next_hash(current, this);
+
+  markWord mark = current_mark;
+  while (true) {
+    const markWord old_mark = mark;
+    const markWord new_mark = mark.copy_set_hash(new_hash);
+
+    // Try to install the hash
+    mark = cas_set_mark(new_mark, old_mark, memory_order_relaxed);
+    if (old_mark == mark) {
+      // CAS succeded, return the installed hash
+      return new_hash;
+    } else if (mark.has_hash()) {
+      // Another thread installed a hash, return the installed hash
+      return mark.hash();
+    }
+    // CAS failed, retry
+  }
 }
 
 // used only for asserts and guarantees
-bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
-  if (!Universe::heap()->is_oop(obj)) {
-    return false;
-  }
-
-  // Header verification: the mark is typically non-zero. If we're
-  // at a safepoint, it must not be zero, except when using the new lightweight locking.
-  // Outside of a safepoint, the header could be changing (for example,
-  // another thread could be inflating a lock on this object).
-  if (ignore_mark_word) {
-    return true;
-  }
-  if (obj->mark().value() != 0) {
-    return true;
-  }
-  return LockingMode == LM_LIGHTWEIGHT || !SafepointSynchronize::is_at_safepoint();
+bool oopDesc::is_oop(oop obj) {
+  return Universe::heap()->is_oop(obj);
 }
 
 // used only for asserts and guarantees
-bool oopDesc::is_oop_or_null(oop obj, bool ignore_mark_word) {
-  return obj == nullptr ? true : is_oop(obj, ignore_mark_word);
+bool oopDesc::is_oop_or_null(oop obj) {
+  return obj == nullptr ? true : is_oop(obj);
 }
 
 VerifyOopClosure VerifyOopClosure::verify_oop;
@@ -149,35 +162,21 @@ void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); 
 void VerifyOopClosure::do_oop(narrowOop* p) { VerifyOopClosure::do_oop_work(p); }
 
 // type test operations that doesn't require inclusion of oop.inline.hpp.
-bool oopDesc::is_instance_noinline()    const { return is_instance();    }
-bool oopDesc::is_instanceRef_noinline() const { return is_instanceRef(); }
-bool oopDesc::is_stackChunk_noinline()  const { return is_stackChunk();  }
-bool oopDesc::is_array_noinline()       const { return is_array();       }
-bool oopDesc::is_objArray_noinline()    const { return is_objArray();    }
-bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
-
-bool oopDesc::has_klass_gap() {
-  // Only has a klass gap when compressed class pointers are used.
-  return UseCompressedClassPointers;
-}
+bool oopDesc::is_instance_noinline()        const { return is_instance();         }
+bool oopDesc::is_instanceRef_noinline()     const { return is_instanceRef();      }
+bool oopDesc::is_stackChunk_noinline()      const { return is_stackChunk();       }
+bool oopDesc::is_array_noinline()           const { return is_array();            }
+bool oopDesc::is_objArray_noinline()        const { return is_objArray();         }
+bool oopDesc::is_refArray_noinline()        const { return is_refArray();         }
+bool oopDesc::is_typeArray_noinline()       const { return is_typeArray();        }
+bool oopDesc::is_flatArray_noinline()       const { return is_flatArray();        }
 
 #if INCLUDE_CDS_JAVA_HEAP
 void oopDesc::set_narrow_klass(narrowKlass nk) {
   assert(CDSConfig::is_dumping_heap(), "Used by CDS only. Do not abuse!");
-  assert(UseCompressedClassPointers, "must be");
-  _metadata._compressed_klass = nk;
+  _compressed_klass = nk;
 }
 #endif
-
-void* oopDesc::load_klass_raw(oop obj) {
-  if (UseCompressedClassPointers) {
-    narrowKlass narrow_klass = obj->_metadata._compressed_klass;
-    if (narrow_klass == 0) return nullptr;
-    return (void*)CompressedKlassPointers::decode_raw(narrow_klass);
-  } else {
-    return obj->_metadata._klass;
-  }
-}
 
 void* oopDesc::load_oop_raw(oop obj, int offset) {
   uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
@@ -192,54 +191,43 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
 
 oop oopDesc::obj_field_acquire(int offset) const                      { return HeapAccess<MO_ACQUIRE>::oop_load_at(as_oop(), offset); }
 
-void oopDesc::obj_field_put_raw(int offset, oop value)                { assert(!(UseZGC && ZGenerational), "Generational ZGC must use store barriers");
+void oopDesc::obj_field_put_raw(int offset, oop value)                { assert(!UseZGC, "ZGC must use store barriers");
                                                                         RawAccess<>::oop_store_at(as_oop(), offset, value); }
 void oopDesc::release_obj_field_put(int offset, oop value)            { HeapAccess<MO_RELEASE>::oop_store_at(as_oop(), offset, value); }
 void oopDesc::obj_field_put_volatile(int offset, oop value)           { HeapAccess<MO_SEQ_CST>::oop_store_at(as_oop(), offset, value); }
 
 address oopDesc::address_field(int offset) const                      { return *field_addr<address>(offset); }
-address oopDesc::address_field_acquire(int offset) const              { return Atomic::load_acquire(field_addr<address>(offset)); }
+address oopDesc::address_field_acquire(int offset) const              { return AtomicAccess::load_acquire(field_addr<address>(offset)); }
 
 void oopDesc::address_field_put(int offset, address value)            { *field_addr<address>(offset) = value; }
-void oopDesc::release_address_field_put(int offset, address value)    { Atomic::release_store(field_addr<address>(offset), value); }
+void oopDesc::release_address_field_put(int offset, address value)    { AtomicAccess::release_store(field_addr<address>(offset), value); }
 
 Metadata* oopDesc::metadata_field(int offset) const                   { return *field_addr<Metadata*>(offset); }
 void oopDesc::metadata_field_put(int offset, Metadata* value)         { *field_addr<Metadata*>(offset) = value; }
 
-Metadata* oopDesc::metadata_field_acquire(int offset) const           { return Atomic::load_acquire(field_addr<Metadata*>(offset)); }
-void oopDesc::release_metadata_field_put(int offset, Metadata* value) { Atomic::release_store(field_addr<Metadata*>(offset), value); }
+Metadata* oopDesc::metadata_field_acquire(int offset) const           { return AtomicAccess::load_acquire(field_addr<Metadata*>(offset)); }
+void oopDesc::release_metadata_field_put(int offset, Metadata* value) { AtomicAccess::release_store(field_addr<Metadata*>(offset), value); }
 
-jbyte oopDesc::byte_field_acquire(int offset) const                   { return Atomic::load_acquire(field_addr<jbyte>(offset)); }
-void oopDesc::release_byte_field_put(int offset, jbyte value)         { Atomic::release_store(field_addr<jbyte>(offset), value); }
+jbyte oopDesc::byte_field_acquire(int offset) const                   { return AtomicAccess::load_acquire(field_addr<jbyte>(offset)); }
+void oopDesc::release_byte_field_put(int offset, jbyte value)         { AtomicAccess::release_store(field_addr<jbyte>(offset), value); }
 
-jchar oopDesc::char_field_acquire(int offset) const                   { return Atomic::load_acquire(field_addr<jchar>(offset)); }
-void oopDesc::release_char_field_put(int offset, jchar value)         { Atomic::release_store(field_addr<jchar>(offset), value); }
+jchar oopDesc::char_field_acquire(int offset) const                   { return AtomicAccess::load_acquire(field_addr<jchar>(offset)); }
+void oopDesc::release_char_field_put(int offset, jchar value)         { AtomicAccess::release_store(field_addr<jchar>(offset), value); }
 
-jboolean oopDesc::bool_field_acquire(int offset) const                { return Atomic::load_acquire(field_addr<jboolean>(offset)); }
-void oopDesc::release_bool_field_put(int offset, jboolean value)      { Atomic::release_store(field_addr<jboolean>(offset), jboolean(value & 1)); }
+jboolean oopDesc::bool_field_acquire(int offset) const                { return AtomicAccess::load_acquire(field_addr<jboolean>(offset)); }
+void oopDesc::release_bool_field_put(int offset, jboolean value)      { AtomicAccess::release_store(field_addr<jboolean>(offset), jboolean(value & 1)); }
 
-jint oopDesc::int_field_acquire(int offset) const                     { return Atomic::load_acquire(field_addr<jint>(offset)); }
-void oopDesc::release_int_field_put(int offset, jint value)           { Atomic::release_store(field_addr<jint>(offset), value); }
+jint oopDesc::int_field_acquire(int offset) const                     { return AtomicAccess::load_acquire(field_addr<jint>(offset)); }
+void oopDesc::release_int_field_put(int offset, jint value)           { AtomicAccess::release_store(field_addr<jint>(offset), value); }
 
-jshort oopDesc::short_field_acquire(int offset) const                 { return Atomic::load_acquire(field_addr<jshort>(offset)); }
-void oopDesc::release_short_field_put(int offset, jshort value)       { Atomic::release_store(field_addr<jshort>(offset), value); }
+jshort oopDesc::short_field_acquire(int offset) const                 { return AtomicAccess::load_acquire(field_addr<jshort>(offset)); }
+void oopDesc::release_short_field_put(int offset, jshort value)       { AtomicAccess::release_store(field_addr<jshort>(offset), value); }
 
-jlong oopDesc::long_field_acquire(int offset) const                   { return Atomic::load_acquire(field_addr<jlong>(offset)); }
-void oopDesc::release_long_field_put(int offset, jlong value)         { Atomic::release_store(field_addr<jlong>(offset), value); }
+jlong oopDesc::long_field_acquire(int offset) const                   { return AtomicAccess::load_acquire(field_addr<jlong>(offset)); }
+void oopDesc::release_long_field_put(int offset, jlong value)         { AtomicAccess::release_store(field_addr<jlong>(offset), value); }
 
-jfloat oopDesc::float_field_acquire(int offset) const                 { return Atomic::load_acquire(field_addr<jfloat>(offset)); }
-void oopDesc::release_float_field_put(int offset, jfloat value)       { Atomic::release_store(field_addr<jfloat>(offset), value); }
+jfloat oopDesc::float_field_acquire(int offset) const                 { return AtomicAccess::load_acquire(field_addr<jfloat>(offset)); }
+void oopDesc::release_float_field_put(int offset, jfloat value)       { AtomicAccess::release_store(field_addr<jfloat>(offset), value); }
 
-jdouble oopDesc::double_field_acquire(int offset) const               { return Atomic::load_acquire(field_addr<jdouble>(offset)); }
-void oopDesc::release_double_field_put(int offset, jdouble value)     { Atomic::release_store(field_addr<jdouble>(offset), value); }
-
-#ifdef ASSERT
-bool oopDesc::size_might_change() {
-  // UseParallelGC and UseG1GC can change the length field
-  // of an "old copy" of an object array in the young gen so it indicates
-  // the grey portion of an already copied array. This will cause the first
-  // disjunct below to fail if the two comparands are computed across such
-  // a concurrent change.
-  return Universe::heap()->is_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC);
-}
-#endif
+jdouble oopDesc::double_field_acquire(int offset) const               { return AtomicAccess::load_acquire(field_addr<jdouble>(offset)); }
+void oopDesc::release_double_field_put(int offset, jdouble value)     { AtomicAccess::release_store(field_addr<jdouble>(offset), value); }

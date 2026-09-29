@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public abstract class LocalVariableTestBase extends TestBase {
             String mName = m.methodName().stringValue();
             if (methodName.equals(mName)) {
                 System.out.println("Testing local variable table in method " + mName);
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
                 assert code_attribute != null;
                 List<? extends VariableTable> variableTables = getVariableTables(code_attribute);
                 generalLocalVariableTableCheck(variableTables);

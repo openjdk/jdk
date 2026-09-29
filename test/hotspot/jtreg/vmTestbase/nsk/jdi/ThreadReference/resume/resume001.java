@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,9 @@ public class resume001 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -115,6 +117,7 @@ public class resume001 {
     static int waitTime;
 
     static VirtualMachine      vm            = null;
+    static Debugee             debuggee      = null;
     static EventRequestManager eventRManager = null;
     static EventQueue          eventQueue    = null;
     static EventSet            eventSet      = null;
@@ -134,8 +137,6 @@ public class resume001 {
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
-
-        Debugee debuggee;
 
         argsHandler     = new ArgumentHandler(argv);
         logHandler      = new Log(out, argsHandler);
@@ -165,6 +166,7 @@ public class resume001 {
         }
 
         vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
         log1("      TESTING BEGINS");
@@ -202,9 +204,6 @@ public class resume001 {
             String bpLine2 = "breakpointLineNumber2";
             String bpLine3 = "breakpointLineNumber3";
 
-
-            List            allThreads   = null;
-            ListIterator    listIterator = null;
             List            classes      = null;
 
             BreakpointRequest breakpRequest1 = null;
@@ -218,7 +217,6 @@ public class resume001 {
 
                 log2("getting ThreadReference objects and setting up breakponts");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedclass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -227,19 +225,7 @@ public class resume001 {
                     break label0;
                 }
 
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        thread2 = (ThreadReference) listIterator.next();
-                        if (thread2.name().equals(threadName))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO THREAD2 ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, "test_thread", threadName);
 
                 log2("setting up breakpoints");
 
@@ -334,13 +320,23 @@ public class resume001 {
                     break label1;
                 log2("       thread2 is at breakpoint");
 
-
                 log2("......checking up that thread2.resume() resumes thread2 suspended with VirtualMachine.suspend()");
 
                 log2("       enabling breakpRequest3");
                 breakpRequest3.enable();
+
+                // don't do vm.suspend() until mainThread is waiting
+                line = pipe.readln();
+                if (line.equals("waiting")) {
+                    log2("     : returned string is 'waiting'");
+                } else {
+                    log3("ERROR: returned string is not 'waiting': " + line);
+                    expresult = returnCode4;
+                    break label1;
+                }
                 log2("       suspending the thread2 with vm.suspend()");
                 vm.suspend();
+
                 log2("       first resuming the thread2 with eventSet.resume()");
                 eventSet.resume();
                 log2("       checking up thread's state");
@@ -359,13 +355,17 @@ public class resume001 {
                         break label1;
                 log2("       thread2 is at breakpoint");
 
-
-                log2("      resuming the thread2");
+                log2("       resuming the thread2");
                 thread2.resume();
 
+                log2("       undo the vm.suspend() with vm.resume()");
+                vm.resume();
             }
-            vm.resume();
-            vm.resume();  // for case error when both VirtualMachine and the thread2 were suspended
+            // These are only needed if we break out of the loop due to an error
+            if (expresult != returnCode0) {
+                vm.resume();
+                vm.resume();  // for case error when both VirtualMachine and the thread2 were suspended
+            }
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             log2("     the end of testing");
@@ -485,7 +485,8 @@ public class resume001 {
                 try {
                     eventSet = eventQueue.remove(waitTime*60000);
                     if (eventSet == null) {
-                        log3("ERROR:  timeout for waiting for a BreakpintEvent");
+                        log3("ERROR:  timeout for waiting for a BreakpointEvent");
+                        debuggee.printThreadsInfo(vm);
                         returnCode = returnCode3;
                         break labelBP;
                     }

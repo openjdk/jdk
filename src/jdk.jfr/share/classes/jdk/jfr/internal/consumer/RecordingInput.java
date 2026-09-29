@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
-import jdk.jfr.internal.util.Utils;
+
+import jdk.jfr.internal.management.HiddenWait;
 
 public final class RecordingInput implements DataInput, AutoCloseable {
 
@@ -66,7 +67,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         }
     }
     private final int blockSize;
-    private final FileAccess fileAccess;
+    private final HiddenWait threadSleeper = new HiddenWait();
     private long pollCount = 1000;
     private RandomAccessFile file;
     private String filename;
@@ -76,29 +77,28 @@ public final class RecordingInput implements DataInput, AutoCloseable {
     private long size = -1; // Fail fast if setSize(...) has not been called
                             // before parsing
 
-    RecordingInput(File f, FileAccess fileAccess, int blockSize) throws IOException {
+    RecordingInput(File f, int blockSize) throws IOException {
         this.blockSize = blockSize;
-        this.fileAccess = fileAccess;
         initialize(f);
     }
 
     private void initialize(File f) throws IOException {
-        this.filename = fileAccess.getAbsolutePath(f);
-        this.file = fileAccess.openRAF(f, "r");
+        this.filename = f.getAbsolutePath();
+        this.file = new RandomAccessFile(f, "r");
         this.position = 0;
         this.size = -1;
         this.currentBlock.reset();
         previousBlock.reset();
-        if (fileAccess.length(f) < 8) {
-            throw new IOException("Not a valid Flight Recorder file. File length is only " + fileAccess.length(f) + " bytes.");
+        if (f.length() < 8) {
+            throw new IOException("Not a valid Flight Recorder file. File length is only " + f.length() + " bytes.");
         }
     }
 
-    public RecordingInput(File f, FileAccess fileAccess) throws IOException {
-        this(f, fileAccess, DEFAULT_BLOCK_SIZE);
+    public RecordingInput(File f) throws IOException {
+        this(f, DEFAULT_BLOCK_SIZE);
     }
 
-    void positionPhysical(long position) throws IOException {
+    public void positionPhysical(long position) throws IOException {
         file.seek(position);
     }
 
@@ -108,6 +108,10 @@ public final class RecordingInput implements DataInput, AutoCloseable {
 
     long readPhysicalLong() throws IOException {
         return file.readLong();
+    }
+
+    public void readPhysicalFully(byte[] dest, int offset, int length) throws IOException {
+        file.readFully(dest, offset, length);
     }
 
     @Override
@@ -453,6 +457,6 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         if (pollCount < 0) {
             throw new IOException("Recording file is stuck in locked stream state.");
         }
-        Utils.takeNap(1);
+        threadSleeper.takeNap(1);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,6 @@ import java.util.Objects;
  * }</pre>
  *
  * </ul>
- * @param <E> the boxed version of {@code ETYPE},
- *           the element type of a vector
  *
  * <h2>Value-based classes and identity operations</h2>
  *
@@ -128,9 +126,12 @@ import java.util.Objects;
  * {@code static final} constants, but storing them in other Java
  * fields or in array elements, while semantically valid, may incur
  * performance penalties.
+ *
+ * @param <E> the boxed version of {@code ETYPE},
+ *           the element type of a vector
  */
 @SuppressWarnings("exports")
-public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport.VectorMask<E> {
+public abstract sealed class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport.VectorMask<E> permits AbstractMask {
     VectorMask(boolean[] bits) { super(bits); }
 
     /**
@@ -206,7 +207,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
         int laneCount = vsp.laneCount();
         offset = VectorIntrinsics.checkFromIndexSize(offset, laneCount, bits.length);
         return VectorSupport.load(
-                vsp.maskType(), vsp.elementType(), laneCount,
+                vsp.maskType(), vsp.laneTypeOrdinal(), laneCount,
                 bits, (long) offset + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, false,
                 bits, offset, vsp,
                 (c, idx, s)
@@ -239,7 +240,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public static <E> VectorMask<E> fromLong(VectorSpecies<E> species, long bits) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
         bits = bits & (0xFFFFFFFFFFFFFFFFL >>> (64 - vsp.laneCount()));
-        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.elementType(), vsp.laneCount(), bits,
+        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.laneTypeOrdinal(), vsp.laneCount(), bits,
                                              VectorSupport.MODE_BITS_COERCED_LONG_TO_MASK, vsp,
                                              (m, s) -> {
                                                  if (m == (m >> 1)) {
@@ -341,9 +342,9 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public abstract boolean anyTrue();
 
     /**
-     * Returns {@code true} if all of the mask lanes are set.
+     * Returns {@code true} if all the mask lanes are set.
      *
-     * @return {@code true} if all of the mask lanes are set, otherwise
+     * @return {@code true} if all the mask lanes are set, otherwise
      * {@code false}.
      */
     public abstract boolean allTrue();
@@ -527,7 +528,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * For each mask lane, where {@code N} is the mask lane index, if
      * the mask lane is set at {@code N} then the specific non-default
      * value {@code -1} is placed into the resulting vector at lane
-     * index {@code N}.  Otherwise the default element value {@code 0}
+     * index {@code N}.  Otherwise, the default element value {@code 0}
      * is placed into the resulting vector at lane index {@code N}.
      *
      * Whether the element type ({@code ETYPE}) of this mask is
@@ -544,13 +545,10 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * {@code ETYPE} value and the {@code ETYPE} value representing
      * {@code -1}, respectively.
      *
-     * @apiNote For the sake of static type checking, users may wish
-     * to check the resulting vector against the expected integral
-     * lane type or species.  If the mask is for a float-point
-     * species, then the resulting vector will have the same shape and
-     * lane size, but an integral type.  If the mask is for an
-     * integral species, the resulting vector will be of exactly that
-     * species.
+     * @apiNote The returned vector has the same species as this mask.
+     * For a floating-point species, a set mask lane is represented in
+     * the returned vector by the floating-point value {@code -1},
+     * rather than by setting all bits of the corresponding vector lane.
      *
      * @return a vector representation of this mask
      * @see Vector#check(Class)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -79,10 +79,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     jstring jGetFunctionList) {
 
     void *hModule;
-    int i;
-    CK_ULONG ulCount = 0;
-    CK_C_GetInterfaceList C_GetInterfaceList = NULL;
-    CK_INTERFACE_PTR iList = NULL;
     CK_C_GetInterface C_GetInterface = NULL;
     CK_INTERFACE_PTR interface = NULL;
     CK_C_GetFunctionList C_GetFunctionList = NULL;
@@ -103,7 +99,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     /*
      * Load the PKCS #11 DLL
      */
-    dlerror(); /* clear any old error message not fetched */
 #ifdef DEBUG
     hModule = dlopen(libraryNameStr, RTLD_NOW);
 #else
@@ -124,31 +119,33 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         goto cleanup;
     }
 
-    // clear any old error message not fetched
-    dlerror();
-
 #ifdef DEBUG
-    C_GetInterfaceList = (CK_C_GetInterfaceList) dlsym(hModule,
-            "C_GetInterfaceList");
+    CK_C_GetInterfaceList C_GetInterfaceList = (CK_C_GetInterfaceList) dlsym(hModule, "C_GetInterfaceList");
     if (C_GetInterfaceList != NULL) {
+        CK_ULONG ulCount = 0;
         TRACE0("Connect: Found C_GetInterfaceList func\n");
         rv = (C_GetInterfaceList)(NULL, &ulCount);
         if (rv == CKR_OK) {
             TRACE1("Connect: interface list size %ld \n", ulCount);
             // retrieve available interfaces and report their info
-            iList = (CK_INTERFACE_PTR)
-                malloc(ulCount*sizeof(CK_INTERFACE));
-            rv = C_GetInterfaceList(iList, &ulCount);
-            if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
-                TRACE0("Connect: error polling interface list\n");
-                goto cleanup;
-            }
-            for (i=0; i < (int)ulCount; i++) {
-                TRACE4("Connect: name %s, version %d.%d, flags 0x%lX\n",
-                        iList[i].pInterfaceName,
-                        ((CK_VERSION *)iList[i].pFunctionList)->major,
-                        ((CK_VERSION *)iList[i].pFunctionList)->minor,
-                        iList[i].flags);
+            CK_INTERFACE_PTR iList = (CK_INTERFACE_PTR) malloc(ulCount*sizeof(CK_INTERFACE));
+            if (iList == NULL) {
+                TRACE0("Connect: error allocating interface list\n");
+            } else {
+                rv = C_GetInterfaceList(iList, &ulCount);
+                if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+                    TRACE0("Connect: error polling interface list\n");
+                    free(iList);
+                    goto cleanup;
+                }
+                for (int i=0; i < (int)ulCount; i++) {
+                    TRACE4("Connect: name %s, version %d.%d, flags 0x%lX\n",
+                            iList[i].pInterfaceName,
+                            ((CK_VERSION *)iList[i].pFunctionList)->major,
+                            ((CK_VERSION *)iList[i].pFunctionList)->minor,
+                            iList[i].flags);
+                }
+                free(iList);
             }
         } else {
             TRACE0("Connect: error polling interface list size\n");
@@ -158,47 +155,42 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     }
 #endif
 
-    if (jGetFunctionList != NULL) {
+    // if none specified, then we try 3.0 API first before trying 2.40
+    if (jGetFunctionList == NULL) {
+        C_GetInterface = (CK_C_GetInterface) dlsym(hModule, "C_GetInterface");
+        if (C_GetInterface != NULL) {
+            TRACE0("Connect: Found C_GetInterface func\n");
+            rv = (C_GetInterface)(NULL, NULL, &interface, 0L);
+            // don't use ckAssertReturnValueOK as we want to continue trying
+            // C_GetFunctionList() or method named by "getFunctionListStr"
+            if (rv == CKR_OK && interface != NULL) {
+                goto setModuleData;
+            }
+        }
+        getFunctionListStr = "C_GetFunctionList";
+    } else {
         getFunctionListStr = (*env)->GetStringUTFChars(env,
             jGetFunctionList, 0);
         if (getFunctionListStr == NULL) {
             goto cleanup;
         }
-        C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule,
+    }
+
+    dlerror(); // clear any old error message not fetched
+    C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule,
             getFunctionListStr);
+    if (C_GetFunctionList == NULL) {
         if ((systemErrorMessage = dlerror()) != NULL){
+            TRACE2("Connect: error finding %s func: %s\n", getFunctionListStr,
+                systemErrorMessage);
             p11ThrowIOException(env, systemErrorMessage);
-            goto cleanup;
-        }
-        if (C_GetFunctionList == NULL) {
+        } else {
             TRACE1("Connect: No %s func\n", getFunctionListStr);
             p11ThrowIOException(env, "ERROR: C_GetFunctionList == NULL");
-            goto cleanup;
         }
-        TRACE1("Connect: Found %s func\n", getFunctionListStr);
-    } else {
-        // if none specified, then we try 3.0 API first before trying 2.40
-        C_GetInterface = (CK_C_GetInterface) dlsym(hModule, "C_GetInterface");
-        if ((C_GetInterface != NULL) && (dlerror() == NULL)) {
-            TRACE0("Connect: Found C_GetInterface func\n");
-            rv = (C_GetInterface)(NULL, NULL, &interface, 0L);
-            if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
-                goto setModuleData;
-            }
-        }
-        C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule,
-                "C_GetFunctionList");
-        if ((systemErrorMessage = dlerror()) != NULL){
-            p11ThrowIOException(env, systemErrorMessage);
-            goto cleanup;
-        }
-        if (C_GetFunctionList == NULL) {
-            TRACE0("Connect: No C_GetFunctionList func\n");
-            p11ThrowIOException(env, "ERROR: C_GetFunctionList == NULL");
-            goto cleanup;
-        }
-        TRACE0("Connect: Found C_GetFunctionList func\n");
+        goto cleanup;
     }
+    TRACE1("Connect: Found %s func\n", getFunctionListStr);
 
 setModuleData:
     /*
@@ -219,15 +211,13 @@ setModuleData:
         }
     } else if (interface != NULL) {
         moduleData->ckFunctionListPtr = interface->pFunctionList;
-        if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3) {
-            moduleData->ckFunctionList30Ptr = interface->pFunctionList;
-        }
     } else {
         // should never happen
         p11ThrowIOException(env, "ERROR: No function list ptr found");
         goto cleanup;
     }
-    if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3) {
+    if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3 &&
+            interface != NULL) {
         moduleData->ckFunctionList30Ptr = interface->pFunctionList;
     } else {
         moduleData->ckFunctionList30Ptr = NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,11 +162,11 @@ class GDIHashtable : public Hashtable {
     GDIHashtable(const char* name, void (*deleteProc)(void*) = NULL,
                    int initialCapacity = 29, float loadFactor = 0.75) :
         Hashtable(name, deleteProc, initialCapacity, loadFactor) {
-        manager.add(this);
+        manager().add(this);
     }
 
     ~GDIHashtable() {
-        manager.remove(this);
+        manager().remove(this);
     }
 
     /**
@@ -192,14 +192,17 @@ class GDIHashtable : public Hashtable {
     /**
      * Flushes all existing GDIHashtable instances.
      */
-    INLINE static void flushAll() { manager.flushAll(); }
+    INLINE static void flushAll() { manager().flushAll(); }
 
-    INLINE CriticalSection& getManagerLock() { return manager.getLock(); }
+    INLINE CriticalSection& getManagerLock() { return manager().getLock(); }
 
  private:
 
-    static BatchDestructionManager manager;
+    static BatchDestructionManager& manager() {
+        static BatchDestructionManager manager;
 
+        return manager;
+    }
 };
 
 #endif // GDIHASHTABLE_H

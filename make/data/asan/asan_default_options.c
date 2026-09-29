@@ -67,6 +67,8 @@ ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* CDECL __asan_default_opt
 #endif
     "print_suppressions=0,"
     "handle_segv=0,"
+    // A lot of libjsig related tests fail because of the link order check; so better avoid it
+    "verify_asan_link_order=0,"
     // See https://github.com/google/sanitizers/issues/1322. Hopefully this is resolved
     // at some point and we can remove this option.
     "intercept_tls_get_addr=0";

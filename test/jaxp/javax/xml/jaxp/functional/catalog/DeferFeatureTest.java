@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,47 +23,43 @@
 
 package catalog;
 
-import static catalog.CatalogTestUtils.DEFER_FALSE;
-import static catalog.CatalogTestUtils.DEFER_TRUE;
-import static catalog.CatalogTestUtils.getCatalogPath;
-import static javax.xml.catalog.CatalogFeatures.Feature.DEFER;
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
-import static jaxp.library.JAXPTestUtilities.tryRunWithAllPerm;
-
-import java.lang.reflect.Method;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
+import java.lang.reflect.Method;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import static catalog.CatalogTestUtils.DEFER_FALSE;
+import static catalog.CatalogTestUtils.DEFER_TRUE;
+import static catalog.CatalogTestUtils.getCatalogPath;
+import static javax.xml.catalog.CatalogFeatures.Feature.DEFER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 8077931 8176405
  * @library /javax/xml/jaxp/libs
  * @modules java.xml/javax.xml.catalog:open
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.DeferFeatureTest
- * @run testng/othervm catalog.DeferFeatureTest
+ * @run junit/othervm catalog.DeferFeatureTest
  * @summary This case tests whether the catalogs specified in delegateSystem,
  *          delegatePublic, delegateURI and nextCatalog entries are used lazily
  *          in resolution via defer feature.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class DeferFeatureTest {
 
-    @Test(dataProvider = "catalog-countOfLoadedCatalogFile")
+    @ParameterizedTest
+    @MethodSource("deferData")
     public void testDeferFeature(Catalog catalog, int catalogCount)
             throws Exception {
-        Assert.assertEquals(loadedCatalogCount(catalog), catalogCount);
+        assertEquals(catalogCount, loadedCatalogCount(catalog));
     }
 
-    @Test(dataProvider = "testDeferFeatureByResolve")
+    @ParameterizedTest
+    @MethodSource("deferByResolveData")
     public void testDeferFeatureByResolve(Catalog catalog, int catalogCount)
             throws Exception {
         CatalogResolver cr = createResolver(catalog);
@@ -72,43 +68,41 @@ public class DeferFeatureTest {
             cr.resolveEntity("-//REMOTE//DTD ALICE DOCALICE", "http://remote/dtd/alice/");
         } catch (CatalogException ce) {}
 
-        Assert.assertEquals(loadedCatalogCount(catalog), catalogCount);
+        assertEquals(catalogCount, loadedCatalogCount(catalog));
     }
 
-    @DataProvider(name = "catalog-countOfLoadedCatalogFile")
-    public Object[][] data() {
-        return new Object[][]{
-            // By default, alternative catalogs are not loaded.
-            {createCatalog(CatalogFeatures.defaults()), 1},
-            // Alternative catalogs are not loaded when DEFER is set to true.
-            {createCatalog(createDeferFeature(DEFER_TRUE)), 1},
-            // The 3 alternative catalogs are pre-loaded along with the parent
-            //when DEFER is set to false.
-            {createCatalog(createDeferFeature(DEFER_FALSE)), 4}};
+    public static Object[][] deferData() {
+        return new Object[][] {
+                // By default, alternative catalogs are not loaded.
+                { createCatalog(CatalogFeatures.defaults()), 1 },
+                // Alternative catalogs are not loaded when DEFER is set to true.
+                { createCatalog(createDeferFeature(DEFER_TRUE)), 1 },
+                // The 3 alternative catalogs are pre-loaded along with the parent
+                //when DEFER is set to false.
+                { createCatalog(createDeferFeature(DEFER_FALSE)), 4 } };
     }
 
-    @DataProvider(name = "testDeferFeatureByResolve")
-    public Object[][] getData() {
-        return new Object[][]{
-            {createCatalog(createDeferFeature(DEFER_TRUE)), 4}
+    public static Object[][] deferByResolveData() {
+        return new Object[][] {
+                { createCatalog(createDeferFeature(DEFER_TRUE)), 4 }
         };
     }
 
-    private CatalogFeatures createDeferFeature(String defer) {
+    private static CatalogFeatures createDeferFeature(String defer) {
         return CatalogFeatures.builder().with(DEFER, defer).build();
     }
 
-    private Catalog createCatalog(CatalogFeatures feature) {
+    private static Catalog createCatalog(CatalogFeatures feature) {
         return CatalogManager.catalog(feature, getCatalogPath("deferFeature.xml"));
     }
 
-    private CatalogResolver createResolver(Catalog catalog) {
+    private static CatalogResolver createResolver(Catalog catalog) {
         return CatalogManager.catalogResolver(catalog);
     }
 
-    private int loadedCatalogCount(Catalog catalog) throws Exception {
-        Method method = tryRunWithAllPerm(() -> catalog.getClass().getDeclaredMethod("loadedCatalogCount"));
-        runWithAllPerm(() -> method.setAccessible(true));
+    private static int loadedCatalogCount(Catalog catalog) throws Exception {
+        Method method = catalog.getClass().getDeclaredMethod("loadedCatalogCount");
+        method.setAccessible(true);
         return (int) method.invoke(catalog);
     }
 }

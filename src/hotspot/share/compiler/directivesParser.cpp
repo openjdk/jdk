@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "runtime/os.hpp"
+
 #include <string.h>
 
 void DirectivesParser::push_tmp(CompilerDirectives* dir) {
@@ -196,7 +198,7 @@ bool DirectivesParser::push_key(const char* str, size_t len) {
     strncpy(s, str, len);
     s[len] = '\0';
     error(KEY_ERROR, "No such key: '%s'.", s);
-    FREE_C_HEAP_ARRAY(char, s);
+    FREE_C_HEAP_ARRAY(s);
     return false;
   }
 
@@ -335,6 +337,26 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
           if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
           }
+        }
+#if !defined(PRODUCT) && defined(COMPILER2)
+        else if (strncmp(option_key->name, "TraceAutoVectorization", 22) == 0) {
+          TraceAutoVectorizationTagValidator validator(s, false);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_trace_auto_vectorization_tags(validator.tags());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutoVectorization: %s", validator.what());
+          }
+        } else if (strncmp(option_key->name, "TraceMergeStores", 16) == 0) {
+          TraceMergeStores::TagValidator validator(s, false);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_trace_merge_stores_tags(validator.tags());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceMergeStores: %s", validator.what());
+          }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
           PhaseNameValidator validator(s);
 
@@ -345,9 +367,10 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
           }
         }
+#endif
 
         if (!valid) {
-          FREE_C_HEAP_ARRAY(char, s);
+          FREE_C_HEAP_ARRAY(s);
           return false;
         }
         (set->*test)((void *)&s);  // Takes ownership.
@@ -417,7 +440,7 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
         assert (error_msg != nullptr, "Must have valid error message");
         error(VALUE_ERROR, "Method pattern error: %s", error_msg);
       }
-      FREE_C_HEAP_ARRAY(char, s);
+      FREE_C_HEAP_ARRAY(s);
     }
     break;
 
@@ -449,7 +472,7 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
           error(VALUE_ERROR, "Method pattern error: %s", error_msg);
         }
       }
-      FREE_C_HEAP_ARRAY(char, s);
+      FREE_C_HEAP_ARRAY(s);
     }
     break;
 
@@ -599,4 +622,3 @@ bool DirectivesParser::callback(JSON_TYPE t, JSON_VAL* v, uint rlimit) {
     }
   }
 }
-

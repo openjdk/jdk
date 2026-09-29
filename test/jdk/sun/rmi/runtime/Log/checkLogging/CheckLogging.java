@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary
- * @run main/othervm -Djava.security.manager=allow CheckLogging
+ * @run main/othervm CheckLogging
  */
 
 import java.util.logging.Level;
@@ -192,28 +192,12 @@ public class CheckLogging {
         verifyLog(serverCallLog, "bingo");
     }
 
-    private static void checkPermissions() {
-        SecurityException ex = null;
-        try {
-            // should fail for lack of LoggingPermission "control"
-            RemoteServer.setLog(System.err);
-        } catch (SecurityException e) {
-            System.err.println("security excepton caught correctly");
-            ex = e;
-        }
-        if (ex == null) {
-            TestLibrary.bomb("able to set log without permission");
-        }
-    }
-
     public static void main(String[] args) {
         try {
             checkServerCallLog();
 
             if (!usingOld) {
                 verifyLog(clientCallOut, "outbound call");
-                System.setSecurityManager(new java.lang.SecurityManager());
-                checkPermissions();
             }
             System.err.println("TEST PASSED");
 

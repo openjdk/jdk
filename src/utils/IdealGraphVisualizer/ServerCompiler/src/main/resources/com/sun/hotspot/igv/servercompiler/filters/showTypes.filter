@@ -9,7 +9,7 @@
 //   "[5:]Class"
 function simplify_reference_type(type) {
   // Clean up interface lists in reference types.
-  var m = /(.*)\(.*\)(.*)/.exec(type);
+  var m = /(.*) \([^\)]*\)(.*)/.exec(type);
   if (m != null && typeof m[1] != 'undefined' && typeof m[2] != 'undefined') {
     type = m[1] + m[2];
   }
@@ -23,6 +23,7 @@ function simplify_reference_type(type) {
 
 // Remove fixed input types for calls and simplify references.
 function simplifyType(type) {
+  var original_type = type;
   var callTypeStart = "{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address";
   if (type.startsWith(callTypeStart)) {
     // Exclude types of the first five outputs of call-like nodes.
@@ -40,12 +41,24 @@ function simplifyType(type) {
     type = simplify_reference_type(type);
   }
   type = type.replace(">=", "≥").replace("<=", "≤");
+  if (original_type.indexOf("(flat in array)") !== -1) {
+    // Always append "flat in array" property last if found in original type.
+    type += " (flat in array)";
+  }
   return type;
 }
 
 // Merge a possibly existing extra label, bottom type, and phase type into a
-// new, single extra label.
-function mergeAndAppendTypeInfo(extra_label, bottom_type, phase_type) {
+// new, single extra label. For memory nodes, add an extra label with the memory
+// slice, extracted from the dump_spec field.
+function mergeAndAppendTypeInfo(extra_label, bottom_type, phase_type, category, dump_spec) {
+  new_extra_label = extra_label == null ? "" : (extra_label + " ");
+  if (category == "memory") {
+    m = /idx=([^\s]+);/.exec(dump_spec);
+    if (m != null) {
+      return new_extra_label + "mem: " + m[1];
+    }
+  }
   if (phase_type == null && bottom_type == null) {
     return extra_label;
   }
@@ -62,11 +75,10 @@ function mergeAndAppendTypeInfo(extra_label, bottom_type, phase_type) {
     type += "B: ";
     type += simplifyType(bottom_type);
   }
-  new_extra_label = extra_label == null ? "" : (extra_label + " ");
   return new_extra_label + type;
 }
 
 editProperty(not(or([matches("bottom_type", "bottom"),
                      matches("bottom_type", "abIO")])),
-             ["extra_label", "bottom_type", "phase_type"], "extra_label",
-             function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1], propertyValues[2]);});
+             ["extra_label", "bottom_type", "phase_type", "category", "dump_spec"], "extra_label",
+             function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1], propertyValues[2], propertyValues[3], propertyValues[4]);});

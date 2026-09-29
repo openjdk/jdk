@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "utilities/bitMap.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -44,13 +44,13 @@ inline void BitMap::clear_bit(idx_t bit) {
 
 inline BitMap::bm_word_t BitMap::load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order) {
   if (memory_order == memory_order_relaxed || memory_order == memory_order_release) {
-    return Atomic::load(addr);
+    return AtomicAccess::load(addr);
   } else {
     assert(memory_order == memory_order_acq_rel ||
            memory_order == memory_order_acquire ||
            memory_order == memory_order_conservative,
            "unexpected memory ordering");
-    return Atomic::load_acquire(addr);
+    return AtomicAccess::load_acquire(addr);
   }
 }
 
@@ -74,7 +74,7 @@ inline bool BitMap::par_set_bit(idx_t bit, atomic_memory_order memory_order) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val, memory_order);
     if (cur_val == old_val) {
       return true;      // Success.
     }
@@ -93,7 +93,7 @@ inline bool BitMap::par_clear_bit(idx_t bit, atomic_memory_order memory_order) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val, memory_order);
     if (cur_val == old_val) {
       return true;      // Success.
     }
@@ -196,7 +196,7 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 
 template<BitMap::bm_word_t flip, bool aligned_right>
 inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
-  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  static_assert(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(beg, end);
   assert(!aligned_right || is_aligned(end, BitsPerWord), "end not aligned");
 
@@ -240,7 +240,7 @@ inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
 
 template<BitMap::bm_word_t flip, bool aligned_left>
 inline BitMap::idx_t BitMap::find_last_bit_impl(idx_t beg, idx_t end) const {
-  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  static_assert(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(beg, end);
   assert(!aligned_left || is_aligned(beg, BitsPerWord), "beg not aligned");
 

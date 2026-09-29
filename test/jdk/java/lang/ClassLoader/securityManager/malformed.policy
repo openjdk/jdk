@@ -1,4 +1,0 @@
-grant {
-    xyz;
-    permission java.util.PropertyPermission "test.src", "read";
-}

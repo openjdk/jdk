@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,17 @@
  * @bug        8245694
  * @summary    tests the entrySet() method of Properties class
  * @author     Yu Li
- * @run testng PropertiesEntrySetTest
+ * @run junit PropertiesEntrySetTest
  */
 
-import org.testng.annotations.Test;
 
 import java.util.Properties;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class PropertiesEntrySetTest {
 
@@ -99,13 +99,13 @@ public class PropertiesEntrySetTest {
     public void testToString() {
         Properties a = new Properties();
         var aEntrySet = a.entrySet();
-        assertEquals(aEntrySet.toString(), "[]");
+        assertEquals("[]", aEntrySet.toString());
 
         a.setProperty("p1", "1");
-        assertEquals(aEntrySet.toString(), "[p1=1]");
+        assertEquals("[p1=1]", aEntrySet.toString());
 
         a.setProperty("p2", "2");
-        assertEquals(aEntrySet.size(), 2);
+        assertEquals(2, aEntrySet.size());
         assertTrue(aEntrySet.toString().trim().startsWith("["));
         assertTrue(aEntrySet.toString().contains("p1=1"));
         assertTrue(aEntrySet.toString().contains("p2=2"));
@@ -115,18 +115,18 @@ public class PropertiesEntrySetTest {
         b.setProperty("p2", "2");
         b.setProperty("p1", "1");
         var bEntrySet = b.entrySet();
-        assertEquals(bEntrySet.size(), 2);
+        assertEquals(2, bEntrySet.size());
         assertTrue(bEntrySet.toString().trim().startsWith("["));
         assertTrue(bEntrySet.toString().contains("p1=1"));
         assertTrue(bEntrySet.toString().contains("p2=2"));
         assertTrue(bEntrySet.toString().trim().endsWith("]"));
 
         b.setProperty("p0", "0");
-        assertEquals(bEntrySet.size(), 3);
+        assertEquals(3, bEntrySet.size());
         assertTrue(bEntrySet.toString().contains("p0=0"));
 
         b.remove("p1");
-        assertEquals(bEntrySet.size(), 2);
+        assertEquals(2, bEntrySet.size());
         assertFalse(bEntrySet.toString().contains("p1=1"));
         assertTrue(bEntrySet.toString().trim().startsWith("["));
         assertTrue(bEntrySet.toString().contains("p0=0"));
@@ -134,7 +134,7 @@ public class PropertiesEntrySetTest {
         assertTrue(bEntrySet.toString().trim().endsWith("]"));
 
         b.remove("p0", "0");
-        assertEquals(bEntrySet.size(), 1);
+        assertEquals(1, bEntrySet.size());
         assertFalse(bEntrySet.toString().contains("p0=0"));
         assertTrue(bEntrySet.toString().trim().startsWith("["));
         assertTrue(bEntrySet.toString().contains("p2=2"));
@@ -151,13 +151,13 @@ public class PropertiesEntrySetTest {
         a.setProperty("p1", "1");
         a.setProperty("p2", "2");
         var aEntrySet = a.entrySet();
-        assertEquals(aEntrySet.size(), 2);
+        assertEquals(2, aEntrySet.size());
 
         var i = aEntrySet.iterator();
         var e1 = i.next();
         i.remove();
         assertFalse(aEntrySet.contains(e1));
-        assertEquals(aEntrySet.size(), 1);
+        assertEquals(1, aEntrySet.size());
 
         var e2 = i.next();
         aEntrySet.remove(e2);
@@ -172,14 +172,14 @@ public class PropertiesEntrySetTest {
         var bEntrySet = b.entrySet();
 
         assertFalse(bEntrySet.containsAll(aEntrySet));
-        assertEquals(bEntrySet.size(), 2);
+        assertEquals(2, bEntrySet.size());
 
         assertTrue(bEntrySet.removeAll(aEntrySet));
-        assertEquals(bEntrySet.size(), 1);
+        assertEquals(1, bEntrySet.size());
 
         assertTrue(bEntrySet.retainAll(aEntrySet));
         assertTrue(bEntrySet.isEmpty());
-        assertEquals(aEntrySet.size(), 2);
+        assertEquals(2, aEntrySet.size());
 
         aEntrySet.clear();
         assertTrue(aEntrySet.isEmpty());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6336968
+ * @bug 6336968 8359809
  * @summary Test adding non-Attribute values to an AttributeList.
  * @author Eamonn McManus
  */
@@ -38,28 +38,14 @@ public class AttributeListTypeSafeTest {
     private static String failure;
 
     public static void main(String[] args) throws Exception {
-        // Test calling asList after adding non-Attribute by various means
+        // Test adding non-Attribute by various means
         for (Op op : Op.values()) {
             AttributeList alist = new AttributeList();
-            alist.add(new Attribute("foo", "bar"));
-            doOp(alist, op);
-            String what = "asList() after calling " + op + " with non-Attribute";
+            alist.add(new Attribute("foo", "bar")); // Add actual Attribute
+            alist.add(null);
+            String what = "Using " + op + " with non-Attribute";
             try {
-                List<Attribute> lista = alist.asList();
-                fail(what + ": succeeded but should not have");
-            } catch (IllegalArgumentException e) {
-                System.out.println("OK: " + what + ": got IllegalArgumentException");
-            }
-        }
-
-        // Test adding non-Attribute by various means after calling asList
-        for (Op op : Op.values()) {
-            AttributeList alist = new AttributeList();
-            List<Attribute> lista = alist.asList();
-            lista.add(new Attribute("foo", "bar"));
-            String what = op + " with non-Attribute after calling asList()";
-            try {
-                doOp(alist, op);
+                doOp(alist, op); // Add some other non-Attribute, should fail
                 fail(what + ": succeeded but should not have");
             } catch (IllegalArgumentException e) {
                 System.out.println("OK: " + what + ": got IllegalArgumentException");

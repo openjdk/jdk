@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #include <stdlib.h>
 
 #include "jvmti.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "agent_common.h"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "agent_common.hpp"
 
 extern "C" {
 
@@ -81,7 +81,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   int invocations = 0;
 
   NSK_DISPLAY0("Waiting debugee.\n");
-  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, nullptr))) {
     return;
   }
   if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout))) {
@@ -95,7 +95,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   primitive_callbacks.heap_iteration_callback = &heap_callback;
 
   NSK_DISPLAY0("Iterating over reachable objects.\n");
-  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, NULL, &primitive_callbacks, &invocations))) {
+  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, nullptr, &primitive_callbacks, &invocations))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -127,7 +127,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks event_callbacks;
 
   jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
-  if (!NSK_VERIFY(jvmti != NULL)) {
+  if (!NSK_VERIFY(jvmti != nullptr)) {
     return JNI_ERR;
   }
 
@@ -148,7 +148,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agent, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agent, nullptr))) {
     return JNI_ERR;
   }
 

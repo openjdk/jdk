@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 
-#include "precompiled.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"
@@ -44,8 +43,8 @@ int64_t JfrStackFilterRegistry::add(jobjectArray classes, jobjectArray methods, 
   Symbol** method_names = JfrJavaSupport::symbol_array(methods, jt, &m_size, true);
   assert(method_names != nullptr, "invariant");
   if (c_size != m_size) {
-    FREE_C_HEAP_ARRAY(Symbol*, class_names);
-    FREE_C_HEAP_ARRAY(Symbol*, method_names);
+    FREE_C_HEAP_ARRAY(class_names);
+    FREE_C_HEAP_ARRAY(method_names);
     JfrJavaSupport::throw_internal_error("Method array size doesn't match class array size", jt);
     return STACK_FILTER_ERROR_CODE;
   }
@@ -78,9 +77,7 @@ int64_t JfrStackFilterRegistry::add(const JfrStackFilter* filter) {
 }
 
 const JfrStackFilter* JfrStackFilterRegistry::lookup(int64_t id) {
-  if (id < 0) {
-    return nullptr;
-  }
+  assert(id >= 0, "invariant");
   assert(range_check(id), "invariant");
   return _elements[id];
 }

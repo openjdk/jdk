@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 
 class ClassLoaderData;
 class InstanceKlass;
-class MetaspaceClosure;
 
 class vmClasses : AllStatic {
   friend class VMStructs;
@@ -95,7 +94,6 @@ public:
     return &_klasses[as_int(id)];
   }
 
-  static void metaspace_pointers_do(MetaspaceClosure* it);
   static void resolve_all(TRAPS);
 
   static BasicType box_klass_type(Klass* k);  // inverse of box_klass
@@ -104,12 +102,6 @@ public:
     assert((uint)t < T_VOID+1, "range check");
     return check_klass(_box_klasses[t]);
   }
-
-  static bool Object_klass_loaded()         { return is_loaded(VM_CLASS_AT(Object_klass));             }
-  static bool Class_klass_loaded()          { return is_loaded(VM_CLASS_AT(Class_klass));              }
-  static bool Cloneable_klass_loaded()      { return is_loaded(VM_CLASS_AT(Cloneable_klass));          }
-  static bool Parameter_klass_loaded()      { return is_loaded(VM_CLASS_AT(reflect_Parameter_klass));  }
-  static bool ClassLoader_klass_loaded()    { return is_loaded(VM_CLASS_AT(ClassLoader_klass));        }
 };
 
 #endif // SHARE_CLASSFILE_VMCLASSES_HPP

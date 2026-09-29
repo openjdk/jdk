@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,13 @@
 package org.openjdk.bench.java.net;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
@@ -52,56 +49,31 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 public class SocketChannelConnectionSetup {
 
     private ServerSocketChannel ssc;
+
+    private Path sscFilePath;
+
     private SocketChannel s1, s2;
 
-    private static volatile String tempDir;
-    private static final AtomicInteger count = new AtomicInteger(0);
-    private volatile Path socket;
-
-    @Param({"inet", "unix"})
-    private volatile String family;
-
-    static {
-        try {
-            Path p = Files.createTempDirectory("readWriteTest");
-            tempDir = p.toString();
-        } catch (IOException e) {
-            tempDir = null;
-        }
-    }
-
-    private ServerSocketChannel getServerSocketChannel() throws IOException {
-        if (family.equals("inet"))
-            return getInetServerSocketChannel();
-        else if (family.equals("unix"))
-            return getUnixServerSocketChannel();
-        throw new InternalError();
-    }
-
-
-    private ServerSocketChannel getInetServerSocketChannel() throws IOException {
-        InetAddress iaddr = InetAddress.getLoopbackAddress();
-        return ServerSocketChannel.open().bind(null);
-    }
-
-    private ServerSocketChannel getUnixServerSocketChannel() throws IOException {
-        int next = count.incrementAndGet();
-        socket = Paths.get(tempDir, Integer.toString(next));
-        UnixDomainSocketAddress addr = UnixDomainSocketAddress.of(socket);
-        return ServerSocketChannel.open(StandardProtocolFamily.UNIX).bind(addr);
-    }
+    @Param({"INET", "UNIX"})
+    private String family;
 
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
-        ssc = getServerSocketChannel();
+        StandardProtocolFamily typedFamily = StandardProtocolFamily.valueOf(family);
+        ssc = ServerSocketChannel.open(typedFamily).bind(null);
+        // Record the UDS file path right after binding, as the socket may be
+        // closed later due to a failure, and subsequent calls to `getPath()`
+        // will throw.
+        sscFilePath = ssc.getLocalAddress() instanceof UnixDomainSocketAddress udsChannel
+                ? udsChannel.getPath()
+                : null;
     }
 
     @TearDown(Level.Trial)
-    public void afterRun() throws IOException, InterruptedException {
+    public void afterRun() throws Exception {
         ssc.close();
-        if (family.equals("unix")) {
-            Files.delete(socket);
-            Files.delete(Path.of(tempDir));
+        if (sscFilePath != null) {
+            Files.delete(sscFilePath);
         }
     }
 
@@ -125,7 +97,7 @@ public class SocketChannelConnectionSetup {
 
         opt = new OptionsBuilder()
                 .include(org.openjdk.bench.java.net.SocketChannelConnectionSetup.class.getSimpleName())
-                .jvmArgsPrepend("-Djdk.net.useFastTcpLoopback=true")
+                .jvmArgs("-Djdk.net.useFastTcpLoopback=true")
                 .warmupForks(1)
                 .forks(2)
                 .build();

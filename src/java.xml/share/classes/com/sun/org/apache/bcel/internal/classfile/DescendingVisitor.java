@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,12 +22,13 @@ package com.sun.org.apache.bcel.internal.classfile;
 import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Stream;
+import jdk.xml.internal.Utils;
 
 /**
- * Traverses a JavaClass with another Visitor object 'piggy-backed' that is
- * applied to all components of a JavaClass object. I.e. this class supplies the
- * traversal strategy, other classes can make use of it.
+ * Traverses a JavaClass with another Visitor object 'piggy-backed' that is applied to all components of a JavaClass
+ * object. I.e. this class supplies the traversal strategy, other classes can make use of it.
  *
+ * @LastModified: Sept 2025
  */
 public class DescendingVisitor implements Visitor {
     private final JavaClass clazz;
@@ -46,7 +47,7 @@ public class DescendingVisitor implements Visitor {
     }
 
     private <E extends Node> void accept(final E[] node) {
-        Stream.of(node).forEach(e -> e.accept(this));
+        Utils.streamOfIfNonNull(node).forEach(e -> e.accept(this));
     }
 
     /**
@@ -508,6 +509,21 @@ public class DescendingVisitor implements Visitor {
     }
 
     @Override
+    public void visitRecord(final Record record) {
+        stack.push(record);
+        record.accept(visitor);
+        accept(record.getComponents());
+        stack.pop();
+    }
+
+    @Override
+    public void visitRecordComponent(final RecordComponentInfo recordComponentInfo) {
+        stack.push(recordComponentInfo);
+        recordComponentInfo.accept(visitor);
+        stack.pop();
+    }
+
+    @Override
     public void visitSignature(final Signature attribute) {
         stack.push(attribute);
         attribute.accept(visitor);
@@ -533,6 +549,20 @@ public class DescendingVisitor implements Visitor {
     public void visitStackMapEntry(final StackMapEntry var) {
         stack.push(var);
         var.accept(visitor);
+        accept(var.getTypesOfLocals());
+        accept(var.getTypesOfStackItems());
+        stack.pop();
+    }
+
+    /**
+     * Visits a {@link StackMapType} object.
+     * @param var object to visit
+     * @since 6.8.0
+     */
+    @Override
+    public void visitStackMapType(final StackMapType var) {
+        stack.push(var);
+        var.accept(visitor);
         stack.pop();
     }
 
@@ -549,4 +579,5 @@ public class DescendingVisitor implements Visitor {
         attribute.accept(visitor);
         stack.pop();
     }
+
 }

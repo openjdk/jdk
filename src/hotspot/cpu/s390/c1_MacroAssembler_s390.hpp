@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,14 @@
   // locking
   // Rmark        : Used to hold locked markWord to be CASed into obj, contents destroyed.
   // Roop         : Must point to the object to lock, contents preserved.
-  // Rbox         : Must point to the displaced header location, contents preserved.
+  // Rbox         : Must point to the object monitor cache location, contents preserved.
   // Z_R1_scratch : Used as temp and will be killed
   void lock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case);
 
   // unlocking
   // Rmark        : Used to hold original markWord to be CASed back into obj, contents destroyed.
   // Roop         : Must point to the object to lock, contents preserved.
-  // Rbox         : Must point to the displaced header location, contents destroyed.
+  // Rbox         : Must point to the object monitor cache location, contents destroyed.
   // Z_R1_scratch : Used as temp and will be killed
   void unlock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case);
 
@@ -86,10 +86,11 @@
     Register len,                      // array length
     Register t1,                       // temp register
     Register t2,                       // temp register
-    int      hdr_size,                 // object header size in words
+    int      base_offset_in_bytes,     // elements offset in bytes
     int      elt_size,                 // element size in bytes
     Register klass,                    // object klass
-    Label&   slow_case                 // Continuation point if fast allocation fails.
+    Label&   slow_case,                // Continuation point if fast allocation fails.
+    bool     zero_array                // zero the allocated array or not
   );
 
   // Invalidates registers in this window.

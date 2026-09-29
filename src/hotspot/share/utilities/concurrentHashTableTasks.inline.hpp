@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,21 @@
 // No concurrentHashTableTasks.hpp
 
 #include "runtime/atomic.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // This inline file contains BulkDeleteTask and GrowTasks which are both bucket
 // operations, which they are serialized with each other.
 
 // Base class for pause and/or parallel bulk operations.
-template <typename CONFIG, MEMFLAGS F>
-class ConcurrentHashTable<CONFIG, F>::BucketsOperation {
+template <typename CONFIG, MemTag MT>
+class ConcurrentHashTable<CONFIG, MT>::BucketsOperation {
  protected:
-  ConcurrentHashTable<CONFIG, F>* _cht;
+  ConcurrentHashTable<CONFIG, MT>* _cht;
 
   class InternalTableClaimer {
-    volatile size_t _next;
+    Atomic<size_t> _next;
     size_t _limit;
     size_t _size;
 
@@ -56,14 +57,14 @@ public:
 
     void set(size_t claim_size, InternalTable* table) {
       assert(table != nullptr, "precondition");
-      _next = 0;
+      _next.store_relaxed(0);
       _limit = table->_size;
       _size  = MIN2(claim_size, _limit);
     }
 
     bool claim(size_t* start, size_t* stop) {
-      if (Atomic::load(&_next) < _limit) {
-        size_t claimed = Atomic::fetch_then_add(&_next, _size);
+      if (_next.load_relaxed() < _limit) {
+        size_t claimed = _next.fetch_then_add(_size);
         if (claimed < _limit) {
           *start = claimed;
           *stop  = MIN2(claimed + _size, _limit);
@@ -78,7 +79,7 @@ public:
     }
 
     bool have_more_work() {
-      return Atomic::load_acquire(&_next) >= _limit;
+      return _next.load_acquire() >= _limit;
     }
   };
 
@@ -88,7 +89,7 @@ public:
   InternalTableClaimer _table_claimer;
   bool _is_mt;
 
-  BucketsOperation(ConcurrentHashTable<CONFIG, F>* cht, bool is_mt = false)
+  BucketsOperation(ConcurrentHashTable<CONFIG, MT>* cht, bool is_mt = false)
     : _cht(cht), _table_claimer(DEFAULT_TASK_SIZE_LOG2, _cht->_table), _is_mt(is_mt) {}
 
   // Returns true if you succeeded to claim the range start -> (stop-1).
@@ -108,13 +109,13 @@ public:
   }
 
   void thread_owns_resize_lock(Thread* thread) {
-    assert(BucketsOperation::_cht->_resize_lock_owner == thread,
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() == thread,
            "Should be locked by me");
     assert(BucketsOperation::_cht->_resize_lock->owned_by_self(),
            "Operations lock not held");
   }
   void thread_owns_only_state_lock(Thread* thread) {
-    assert(BucketsOperation::_cht->_resize_lock_owner == thread,
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() == thread,
            "Should be locked by me");
     assert(!BucketsOperation::_cht->_resize_lock->owned_by_self(),
            "Operations lock held");
@@ -122,7 +123,7 @@ public:
   void thread_do_not_own_resize_lock(Thread* thread) {
     assert(!BucketsOperation::_cht->_resize_lock->owned_by_self(),
            "Operations lock held");
-    assert(BucketsOperation::_cht->_resize_lock_owner != thread,
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() != thread,
            "Should not be locked by me");
   }
 
@@ -146,12 +147,12 @@ public:
 };
 
 // For doing pausable/parallel bulk delete.
-template <typename CONFIG, MEMFLAGS F>
-class ConcurrentHashTable<CONFIG, F>::BulkDeleteTask :
+template <typename CONFIG, MemTag MT>
+class ConcurrentHashTable<CONFIG, MT>::BulkDeleteTask :
   public BucketsOperation
 {
  public:
-  BulkDeleteTask(ConcurrentHashTable<CONFIG, F>* cht, bool is_mt = false)
+  BulkDeleteTask(ConcurrentHashTable<CONFIG, MT>* cht, bool is_mt = false)
     : BucketsOperation(cht, is_mt) {
   }
   // Before start prepare must be called.
@@ -169,7 +170,7 @@ class ConcurrentHashTable<CONFIG, F>::BulkDeleteTask :
   template <typename EVALUATE_FUNC, typename DELETE_FUNC>
   bool do_task(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f) {
     size_t start, stop;
-    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() != nullptr,
            "Should be locked");
     if (!this->claim(&start, &stop)) {
       return false;
@@ -177,7 +178,7 @@ class ConcurrentHashTable<CONFIG, F>::BulkDeleteTask :
     BucketsOperation::_cht->do_bulk_delete_locked_for(thread, start, stop,
                                                       eval_f, del_f,
                                                       BucketsOperation::_is_mt);
-    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() != nullptr,
            "Should be locked");
     return true;
   }
@@ -190,12 +191,12 @@ class ConcurrentHashTable<CONFIG, F>::BulkDeleteTask :
   }
 };
 
-template <typename CONFIG, MEMFLAGS F>
-class ConcurrentHashTable<CONFIG, F>::GrowTask :
+template <typename CONFIG, MemTag MT>
+class ConcurrentHashTable<CONFIG, MT>::GrowTask :
   public BucketsOperation
 {
  public:
-  GrowTask(ConcurrentHashTable<CONFIG, F>* cht) : BucketsOperation(cht) {
+  GrowTask(ConcurrentHashTable<CONFIG, MT>* cht) : BucketsOperation(cht) {
   }
   // Before start prepare must be called.
   bool prepare(Thread* thread) {
@@ -210,13 +211,13 @@ class ConcurrentHashTable<CONFIG, F>::GrowTask :
   // Re-sizes a portion of the table. Returns true if there is more work.
   bool do_task(Thread* thread) {
     size_t start, stop;
-    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() != nullptr,
            "Should be locked");
     if (!this->claim(&start, &stop)) {
       return false;
     }
     BucketsOperation::_cht->internal_grow_range(thread, start, stop);
-    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() != nullptr,
            "Should be locked");
     return true;
   }
@@ -229,8 +230,52 @@ class ConcurrentHashTable<CONFIG, F>::GrowTask :
   }
 };
 
-template <typename CONFIG, MEMFLAGS F>
-class ConcurrentHashTable<CONFIG, F>::ScanTask :
+template <typename CONFIG, MemTag MT>
+class ConcurrentHashTable<CONFIG, MT>::StatisticsTask :
+  public BucketsOperation
+{
+  NumberSeq _summary;
+  size_t    _literal_bytes;
+ public:
+  StatisticsTask(ConcurrentHashTable<CONFIG, MT>* cht) : BucketsOperation(cht), _literal_bytes(0) { }
+
+  // Before start prepare must be called.
+  bool prepare(Thread* thread) {
+    bool lock = BucketsOperation::_cht->try_resize_lock(thread);
+    if (!lock) {
+      return false;
+    }
+
+    this->setup(thread);
+    return true;
+  }
+
+  // Scans part of the table adding to statistics.
+  template <typename VALUE_SIZE_FUNC>
+  bool do_task(Thread* thread, VALUE_SIZE_FUNC& sz) {
+    size_t start, stop;
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() != nullptr,
+           "Should be locked");
+    if (!this->claim(&start, &stop)) {
+      return false;
+    }
+    BucketsOperation::_cht->internal_statistics_range(thread, start, stop, sz, _summary, _literal_bytes);
+    assert(BucketsOperation::_cht->_resize_lock_owner.load_relaxed() != nullptr,
+           "Should be locked");
+    return true;
+  }
+
+  // Must be called after do_task returns false.
+  TableStatistics done(Thread* thread) {
+    this->thread_owns_resize_lock(thread);
+    TableStatistics ts = BucketsOperation::_cht->internal_statistics_epilog(thread, _summary, _literal_bytes);
+    this->thread_do_not_own_resize_lock(thread);
+    return ts;
+  }
+};
+
+template <typename CONFIG, MemTag MT>
+class ConcurrentHashTable<CONFIG, MT>::ScanTask :
   public BucketsOperation
 {
   // If there is a paused resize, we need to scan items already
@@ -255,11 +300,11 @@ class ConcurrentHashTable<CONFIG, F>::ScanTask :
   }
 
  public:
-  ScanTask(ConcurrentHashTable<CONFIG, F>* cht, size_t claim_size) : BucketsOperation(cht), _new_table_claimer() {
+  ScanTask(ConcurrentHashTable<CONFIG, MT>* cht, size_t claim_size) : BucketsOperation(cht), _new_table_claimer() {
     set(cht, claim_size);
   }
 
-  void set(ConcurrentHashTable<CONFIG, F>* cht, size_t claim_size) {
+  void set(ConcurrentHashTable<CONFIG, MT>* cht, size_t claim_size) {
     this->_table_claimer.set(claim_size, cht->get_table());
 
     InternalTable* new_table = cht->get_new_table();

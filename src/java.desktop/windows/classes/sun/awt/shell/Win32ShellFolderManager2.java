@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,9 +42,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
-import sun.awt.OSInfo;
 import sun.awt.util.ThreadGroupUtils;
 import sun.util.logging.PlatformLogger;
 
@@ -79,6 +75,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         sun.awt.windows.WToolkit.loadLibraries();
     }
 
+    @Override
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {
         try {
             return createShellFolder(getDesktop(), file);
@@ -169,9 +166,6 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         if (desktop == null) {
             try {
                 desktop = new Win32ShellFolder2(DESKTOP);
-            } catch (final SecurityException ignored) {
-                // Ignore, the message may have sensitive information, not
-                // accessible other ways
             } catch (IOException | InterruptedException e) {
                 if (log.isLoggable(PlatformLogger.Level.WARNING)) {
                     log.warning("Cannot access 'Desktop'", e);
@@ -185,9 +179,6 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         if (drives == null) {
             try {
                 drives = new Win32ShellFolder2(DRIVES);
-            } catch (final SecurityException ignored) {
-                // Ignore, the message may have sensitive information, not
-                // accessible other ways
             } catch (IOException | InterruptedException e) {
                 if (log.isLoggable(PlatformLogger.Level.WARNING)) {
                     log.warning("Cannot access 'Drives'", e);
@@ -204,9 +195,6 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 if (path != null) {
                     recent = createShellFolder(getDesktop(), new File(path));
                 }
-            } catch (final SecurityException ignored) {
-                // Ignore, the message may have sensitive information, not
-                // accessible other ways
             } catch (InterruptedException | IOException e) {
                 if (log.isLoggable(PlatformLogger.Level.WARNING)) {
                     log.warning("Cannot access 'Recent'", e);
@@ -220,9 +208,6 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         if (network == null) {
             try {
                 network = new Win32ShellFolder2(NETWORK);
-            } catch (final SecurityException ignored) {
-                // Ignore, the message may have sensitive information, not
-                // accessible other ways
             } catch (IOException | InterruptedException e) {
                 if (log.isLoggable(PlatformLogger.Level.WARNING)) {
                     log.warning("Cannot access 'Network'", e);
@@ -246,9 +231,6 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                         personal.setIsPersonal();
                     }
                 }
-            } catch (final SecurityException ignored) {
-                // Ignore, the message may have sensitive information, not
-                // accessible other ways
             } catch (InterruptedException | IOException e) {
                 if (log.isLoggable(PlatformLogger.Level.WARNING)) {
                     log.warning("Cannot access 'Personal'", e);
@@ -283,13 +265,14 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
      *
      * @return An Object matching the key string.
      */
+    @Override
     public Object get(String key) {
         if (key.equals("fileChooserDefaultFolder")) {
             File file = getPersonal();
             if (file == null) {
                 file = getDesktop();
             }
-            return checkFile(file);
+            return file;
         } else if (key.equals("roots")) {
             // Should be "History" and "Desktop" ?
             if (roots == null) {
@@ -300,22 +283,22 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                     roots = (File[])super.get(key);
                 }
             }
-            return checkFiles(roots);
+            return roots;
         } else if (key.equals("fileChooserComboBoxFolders")) {
             Win32ShellFolder2 desktop = getDesktop();
 
-            if (desktop != null && checkFile(desktop) != null) {
+            if (desktop != null) {
                 ArrayList<File> folders = new ArrayList<File>();
                 Win32ShellFolder2 drives = getDrives();
 
                 Win32ShellFolder2 recentFolder = getRecent();
-                if (recentFolder != null && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_2000) >= 0) {
+                if (recentFolder != null) {
                     folders.add(recentFolder);
                 }
 
                 folders.add(desktop);
                 // Add all second level folders
-                File[] secondLevelFolders = checkFiles(desktop.listFiles());
+                File[] secondLevelFolders = desktop.listFiles();
                 Arrays.sort(secondLevelFolders);
                 for (File secondLevelFolder : secondLevelFolders) {
                     Win32ShellFolder2 folder = (Win32ShellFolder2) secondLevelFolder;
@@ -323,7 +306,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                         folders.add(folder);
                         // Add third level for "My Computer"
                         if (folder.equals(drives)) {
-                            File[] thirdLevelFolders = checkFiles(folder.listFiles());
+                            File[] thirdLevelFolders = folder.listFiles();
                             if (thirdLevelFolders != null && thirdLevelFolders.length > 0) {
                                 List<File> thirdLevelFoldersList = Arrays.asList(thirdLevelFolders);
 
@@ -333,7 +316,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                         }
                     }
                 }
-                return checkFiles(folders);
+                return folders.toArray(new File[folders.size()]);
             } else {
                 return super.get(key);
             }
@@ -376,7 +359,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                     }
                 }
             }
-            return checkFiles(folders);
+            return folders.toArray(new File[folders.size()]);
         } else if (key.startsWith("fileChooserIcon ")) {
             String name = key.substring(key.indexOf(" ") + 1);
 
@@ -423,72 +406,22 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         return null;
     }
 
-    private static File checkFile(File file) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        return (sm == null || file == null) ? file : checkFile(file, sm);
-    }
-
-    private static File checkFile(File file, @SuppressWarnings("removal") SecurityManager sm) {
-        try {
-            sm.checkRead(file.getPath());
-
-            if (file instanceof Win32ShellFolder2) {
-                Win32ShellFolder2 f = (Win32ShellFolder2)file;
-                if (f.isLink()) {
-                    Win32ShellFolder2 link = (Win32ShellFolder2)f.getLinkLocation();
-                    if (link != null)
-                        sm.checkRead(link.getPath());
-                }
-            }
-            return file;
-        } catch (SecurityException se) {
-            return null;
-        }
-    }
-
-    static File[] checkFiles(File[] files) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null || files == null || files.length == 0) {
-            return files;
-        }
-        return checkFiles(Arrays.stream(files), sm);
-    }
-
-    private static File[] checkFiles(List<File> files) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null || files.isEmpty()) {
-            return files.toArray(new File[files.size()]);
-        }
-        return checkFiles(files.stream(), sm);
-    }
-
-    private static File[] checkFiles(Stream<File> filesStream, @SuppressWarnings("removal") SecurityManager sm) {
-        return filesStream.filter((file) -> checkFile(file, sm) != null)
-                .toArray(File[]::new);
-    }
-
     /**
      * Does {@code dir} represent a "computer" such as a node on the network, or
      * "My Computer" on the desktop.
      */
+    @Override
     public boolean isComputerNode(final File dir) {
         if (dir != null && dir == getDrives()) {
             return true;
         } else {
-            @SuppressWarnings("removal")
-            String path = AccessController.doPrivileged(new PrivilegedAction<String>() {
-                public String run() {
-                    return dir.getAbsolutePath();
-                }
-            });
+            String path = dir.getAbsolutePath();
 
             return (path.startsWith("\\\\") && path.indexOf("\\", 2) < 0);      //Network path
         }
     }
 
+    @Override
     public boolean isFileSystemRoot(File dir) {
         //Note: Removable drives don't "exist" but are listed in "My Computer"
         if (dir != null) {
@@ -522,7 +455,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         boolean special1 = sf1.isSpecial();
         boolean special2 = sf2.isSpecial();
 
-        if (special1 || special2) {
+        if (special1 && special2) {
             if (topFolderList == null) {
                 ArrayList<Win32ShellFolder2> tmpTopFolderList = new ArrayList<>();
                 tmpTopFolderList.add(Win32ShellFolderManager2.getPersonal());
@@ -569,28 +502,21 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         return new ComInvoker();
     }
 
-    private static class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
+    private static final class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
         private static Thread comThread;
 
-        @SuppressWarnings("removal")
         private ComInvoker() {
             super(1, 1, 0, TimeUnit.DAYS, new LinkedBlockingQueue<>());
             allowCoreThreadTimeOut(false);
             setThreadFactory(this);
-            final Runnable shutdownHook = () -> AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                shutdownNow();
-                return null;
-            });
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                Thread t = new Thread(
-                        ThreadGroupUtils.getRootThreadGroup(), shutdownHook,
-                        "ShellFolder", 0, false);
-                Runtime.getRuntime().addShutdownHook(t);
-                return null;
-            });
+            final Runnable shutdownHook = () -> shutdownNow();
+            Thread t = new Thread(
+                    ThreadGroupUtils.getRootThreadGroup(), shutdownHook,
+                    "ShellFolder", 0, false);
+            Runtime.getRuntime().addShutdownHook(t);
         }
 
-        @SuppressWarnings("removal")
+        @Override
         public synchronized Thread newThread(final Runnable task) {
             final Runnable comRun = new Runnable() {
                 public void run() {
@@ -602,27 +528,23 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                     }
                 }
             };
-            comThread = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                String name = "Swing-Shell";
-                 /* The thread must be a member of a thread group
-                  * which will not get GCed before VM exit.
-                  * Make its parent the top-level thread group.
-                  */
-                Thread thread = new Thread(
-                        ThreadGroupUtils.getRootThreadGroup(), comRun, name,
-                        0, false);
-                thread.setDaemon(true);
-                /* This is important, since this thread running at lower priority
-                   leads to memory consumption when listDrives() function is called
-                   repeatedly.
-                 */
-                thread.setPriority(Thread.MAX_PRIORITY);
-                return thread;
-            });
+            /* The thread must be a member of a thread group
+             * which will not get GCed before VM exit.
+             * Make its parent the top-level thread group.
+             */
+            comThread = new Thread(
+                    ThreadGroupUtils.getRootThreadGroup(), comRun, "Swing-Shell",
+                    0, false);
+            comThread.setDaemon(true);
+            /* This is important, since this thread running at lower priority
+               leads to memory consumption when listDrives() function is called
+               repeatedly.
+             */
+            comThread.setPriority(Thread.MAX_PRIORITY);
             return comThread;
         }
 
-        @SuppressWarnings("removal")
+        @Override
         public <T> T invoke(Callable<T> task) throws Exception {
             if (Thread.currentThread() == comThread) {
                 // if it's already called from the COM
@@ -640,13 +562,8 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 try {
                     return future.get();
                 } catch (InterruptedException e) {
-                    AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                        public Void run() {
-                            future.cancel(true);
+                    future.cancel(true);
 
-                            return null;
-                        }
-                    });
 
                     throw e;
                 } catch (ExecutionException e) {

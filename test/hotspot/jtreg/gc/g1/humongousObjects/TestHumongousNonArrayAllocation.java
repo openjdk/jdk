@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,23 +44,23 @@ import java.nio.file.Paths;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=480 -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation LARGEST_NON_HUMONGOUS
  *
- * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=480 -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation SMALLEST_HUMONGOUS
  *
- * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=480 -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation ONE_REGION_HUMONGOUS
  *
- * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=480 -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation TWO_REGION_HUMONGOUS
  *
- * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/timeout=480 -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation MORE_THAN_TWO_REGION_HUMONGOUS
  *
@@ -82,8 +82,7 @@ public class TestHumongousNonArrayAllocation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final String CLASS_NAME_PREFIX = TestHumongousNonArrayAllocation.class.getSimpleName() + "_";
 
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
-            IllegalAccessException, IOException {
+    public static void main(String[] args) throws Exception {
 
         if (args.length != 1) {
             throw new Error("Test Bug: Expected class name wasn't provided as command line argument");

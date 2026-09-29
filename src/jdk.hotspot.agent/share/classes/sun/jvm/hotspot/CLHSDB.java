@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import sun.jvm.hotspot.*;
 import sun.jvm.hotspot.debugger.*;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 
 public class CLHSDB {
@@ -106,8 +107,8 @@ public class CLHSDB {
             };
 
 
-        BufferedReader in =
-            new BufferedReader(new InputStreamReader(System.in));
+        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, charset));
         CommandProcessor cp = new CommandProcessor(di, in, System.out, System.err);
         cp.run(true);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,9 @@ public class SealedModuleTest {
             Class p2_C2_class = Class.forName("sealedP2.C2");
             throw new RuntimeException("Expected IncompatibleClassChangeError exception not thrown");
         } catch (IncompatibleClassChangeError e) {
-            if (!e.getMessage().contains("cannot inherit from sealed class")) {
+            if (!e.getMessage().equals("Failed same package check: non-public subclass sealedP2.C2 " +
+                                       "is in package 'sealedP2' with classloader 'app', and sealed class " +
+                                       "sealedP1.SuperClass is in package 'sealedP1' with classloader 'app'")) {
                 throw new RuntimeException("Wrong IncompatibleClassChangeError exception thrown: " + e.getMessage());
             }
         }
@@ -86,7 +88,9 @@ public class SealedModuleTest {
             Class p3_C3_class = Class.forName("sealedP3.C3");
             throw new RuntimeException("Expected IncompatibleClassChangeError exception not thrown");
         } catch (IncompatibleClassChangeError e) {
-            if (!e.getMessage().contains("cannot inherit from sealed class")) {
+            if (!e.getMessage().equals("Failed same module check: subclass sealedP3.C3 is in module 'module_two' " +
+                                       "with loader 'app', and sealed class sealedP1.SuperClass is in module " +
+                                       "'module_one' with loader 'app'")) {
                 throw new RuntimeException("Wrong IncompatibleClassChangeError exception thrown: " + e.getMessage());
             }
         }

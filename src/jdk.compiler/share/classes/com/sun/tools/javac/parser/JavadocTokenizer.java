@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@ package com.sun.tools.javac.parser;
 
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.Position;
 
 import java.nio.CharBuffer;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 /**
  * An extension to the base lexical analyzer (JavaTokenizer) that
@@ -170,6 +170,11 @@ public class JavadocTokenizer extends JavaTokenizer {
                 offsetMap.trim();
             }
         }
+
+        @Override
+        public Comment stripIndent() {
+            return StrippedComment.of(this);
+        }
     }
 
     /**
@@ -302,12 +307,13 @@ public class JavadocTokenizer extends JavaTokenizer {
 
             while (need > grow) {
                 grow <<= 1;
+                // Handle overflow.
+                if (grow <= 0) {
+                    throw new IndexOutOfBoundsException();
+                }
             }
 
-            // Handle overflow.
-            if (grow < map.length) {
-                throw new IndexOutOfBoundsException();
-            } else if (grow != map.length) {
+            if (grow != map.length) {
                 map = Arrays.copyOf(map, grow);
             }
         }
@@ -354,4 +360,154 @@ public class JavadocTokenizer extends JavaTokenizer {
             return map[startScaled + POS_OFFSET] + (pos - map[startScaled + SB_OFFSET]);
         }
     }
+
+    /**
+     * A Comment derived from a JavadocComment with leading whitespace removed from all lines.
+     * A new OffsetMap is used in combination with the OffsetMap of the original comment to
+     * translate comment locations to positions in the source file.
+     *
+     * Note: This class assumes new lines are encoded as {@code '\n'}, which is the case
+     * for comments created by {@code JavadocTokenizer}.
+     */
+    static class StrippedComment implements Comment {
+        String text;
+        final OffsetMap strippedMap;
+        final OffsetMap sourceMap;
+        // Copy these fields to not hold a reference to the original comment with its text
+        final JCDiagnostic.DiagnosticPosition diagPos;
+        final CommentStyle style;
+        final boolean deprecated;
+
+        /**
+         * Returns a stripped version of the comment, or the comment itself if there is no
+         * whitespace that can be stripped.
+         *
+         * @param comment the original comment
+         * @return stripped or original comment
+         */
+        static Comment of(JavadocComment comment) {
+            if (comment.getStyle() != CommentStyle.JAVADOC_BLOCK) {
+                return comment;
+            }
+            int indent = getIndent(comment);
+            return indent > 0 ? new StrippedComment(comment, indent) : comment;
+        }
+
+        private StrippedComment(JavadocComment comment, int indent) {
+            this.diagPos = comment.getPos();
+            this.style = comment.getStyle();
+            this.deprecated = comment.isDeprecated();
+            this.strippedMap = new OffsetMap();
+            this.sourceMap = comment.offsetMap;
+            stripComment(comment, indent);
+        }
+
+        /**
+         * Determines the number of leading whitespace characters that can be removed from
+         * all non-blank lines of the original comment.
+         *
+         * @param comment the original comment
+         * @return number of leading whitespace characters that can be reomved
+         */
+        static int getIndent(Comment comment) {
+            String txt = comment.getText();
+            int len = txt.length();
+            int indent = Integer.MAX_VALUE;
+
+            for (int i = 0; i < len; ) {
+                int next;
+                boolean inIndent = true;
+                for (next = i; next < len && txt.charAt(next) != '\n'; next++) {
+                    if (inIndent && !Character.isWhitespace(txt.charAt(next))) {
+                        indent = Math.min(indent, next - i);
+                        inIndent = false;
+                    }
+                }
+                i = next + 1;
+            }
+
+            return indent == Integer.MAX_VALUE ? 0 : indent;
+        }
+
+        /**
+         * Strips {@code indent} whitespace characters from every line of the original comment
+         * and initializes an OffsetMap to translate positions to the original comment's OffsetMap.
+         * This method does not distinguish between blank and non-blank lines except for the fact
+         * that blank lines are not required to contain the number of leading whitespace indicated
+         * by {@indent}.
+         *
+         * @param comment the original comment
+         * @param indent number of whitespace characters to remove from each non-blank line
+         */
+        private void stripComment(JavadocComment comment, int indent) {
+            String txt = comment.getText();
+            int len = txt.length();
+            StringBuilder sb = new StringBuilder(len);
+
+            for (int i = 0; i < len; ) {
+                int startOfLine = i;
+                // Advance till start of stripped line, or \n if line is blank
+                while (startOfLine < len
+                        && startOfLine < i + indent
+                        && txt.charAt(startOfLine) != '\n') {
+                    assert(Character.isWhitespace(txt.charAt(startOfLine)));
+                    startOfLine++;
+                }
+                if (startOfLine == len) {
+                    break;
+                }
+
+                // Copy stripped line (terminated by \n or end of input)
+                i = startOfLine + 1;
+                while (i < len && txt.charAt(i - 1) != '\n') {
+                    i++;
+                }
+                // Add new offset if necessary
+                strippedMap.add(sb.length(), startOfLine);
+                sb.append(txt, startOfLine, i);
+            }
+
+            text = sb.toString();
+            strippedMap.trim();
+        }
+
+        @Override
+        public String getText() {
+            return text;
+        }
+
+        @Override
+        public Comment stripIndent() {
+            return this;
+        }
+
+        @Override
+        public int getSourcePos(int pos) {
+            if (pos == Position.NOPOS) {
+                return Position.NOPOS;
+            }
+
+            if (pos < 0 || pos > text.length()) {
+                throw new StringIndexOutOfBoundsException(String.valueOf(pos));
+            }
+
+            return sourceMap.getSourcePos(strippedMap.getSourcePos(pos));
+        }
+
+        @Override
+        public JCDiagnostic.DiagnosticPosition getPos() {
+            return diagPos;
+        }
+
+        @Override
+        public CommentStyle getStyle() {
+            return style;
+        }
+
+        @Override
+        public boolean isDeprecated() {
+            return deprecated;
+        }
+    }
+
 }

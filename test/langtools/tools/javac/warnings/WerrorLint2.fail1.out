@@ -1,0 +1,4 @@
+WerrorLint2.java:16:30: compiler.warn.empty.if
+- compiler.err.warnings.and.werror
+1 error
+1 warning

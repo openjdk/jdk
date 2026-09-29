@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,18 +48,17 @@ public class TestPinnedObjectTypes {
     }
 
     private static void testPinning(String type, boolean shouldSucceed) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-XX:+WhiteBoxAPI",
-                                                                             "-Xbootclasspath/a:.",
-                                                                             "-XX:-CreateCoredumpOnCrash",
-                                                                             "-Xmx32M",
-                                                                             "-Xmn16M",
-                                                                             "-Xlog:gc",
-                                                                             TestObjectPin.class.getName(),
-                                                                             type);
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+WhiteBoxAPI",
+                                                                    "-Xbootclasspath/a:.",
+                                                                    "-XX:-CreateCoredumpOnCrash",
+                                                                    "-Xmx32M",
+                                                                    "-Xmn16M",
+                                                                    "-Xlog:gc",
+                                                                    TestObjectPin.class.getName(),
+                                                                    type);
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
         if (shouldSucceed) {
           output.shouldHaveExitValue(0);
@@ -84,4 +83,3 @@ class TestObjectPin {
         wb.pinObject(o);
     }
 }
-

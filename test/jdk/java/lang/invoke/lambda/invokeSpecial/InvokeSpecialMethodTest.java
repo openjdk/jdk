@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,10 @@
 /*
  * @test
  * @bug 8274848
- * @run testng InvokeSpecialMethodTest
+ * @run junit InvokeSpecialMethodTest
  * @summary ensure REF_invokeSpecial on a non-private implementation method
  *          behaves as if `super::m` is invoked regardless of its access flag
  */
-
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
@@ -39,7 +35,11 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static java.lang.invoke.MethodType.methodType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class InvokeSpecialMethodTest {
     static class MethodTest {
@@ -95,8 +95,7 @@ public class InvokeSpecialMethodTest {
         String get();
     }
 
-    @DataProvider
-    public Object[][] methodProvider() {
+    public static Object[][] methodProvider() {
         return new Object[][]{
                 {MethodTest.M_PUBLIC, "test_public"},
                 {MethodTest.M_PROTECTED, "test_protected"},
@@ -104,7 +103,8 @@ public class InvokeSpecialMethodTest {
         };
     }
 
-    @Test(dataProvider = "methodProvider")
+    @ParameterizedTest
+    @MethodSource("methodProvider")
     void test(MethodHandle implMethod, String expected) throws Throwable {
         testMetafactory(implMethod, expected);
         testAltMetafactory(implMethod, expected);
@@ -117,7 +117,7 @@ public class InvokeSpecialMethodTest {
         MethodTest o = new MethodTest.SubClass();
         StringFactory factory = (StringFactory) cs.dynamicInvoker().invokeExact(o);
         String actual = factory.get();
-        Assert.assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     static void testAltMetafactory(MethodHandle implMethod, String expected) throws Throwable {
@@ -128,6 +128,6 @@ public class InvokeSpecialMethodTest {
         MethodTest o = new MethodTest.SubClass();
         StringFactory factory = (StringFactory) cs.dynamicInvoker().invokeExact(o);
         String actual = factory.get();
-        Assert.assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 }

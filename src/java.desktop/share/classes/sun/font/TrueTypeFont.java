@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.font;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.geom.Point2D;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
@@ -38,9 +37,6 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -48,7 +44,6 @@ import java.util.Map;
 
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
-import sun.security.action.GetPropertyAction;
 
 /**
  * TrueTypeFont is not called SFntFont because it is not expected
@@ -219,8 +214,8 @@ public class TrueTypeFont extends FileFont {
             }
         } catch (Throwable t) {
             close();
-            if (t instanceof FontFormatException) {
-                throw (FontFormatException)t;
+            if (t instanceof FontFormatException ffe) {
+                throw ffe;
             } else {
                 throw new FontFormatException("Unexpected runtime exception.");
             }
@@ -246,28 +241,15 @@ public class TrueTypeFont extends FileFont {
                 FontUtilities.logInfo("open TTF: " + platName);
             }
             try {
-                @SuppressWarnings("removal")
-                RandomAccessFile raf = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<RandomAccessFile>() {
-                        public RandomAccessFile run() throws FileNotFoundException {
-                            return new RandomAccessFile(platName, "r");
-                    }
-                });
+                RandomAccessFile raf = new RandomAccessFile(platName, "r");
                 disposerRecord.channel = raf.getChannel();
                 fileSize = (int)disposerRecord.channel.size();
                 if (usePool) {
                     FontManager fm = FontManagerFactory.getInstance();
-                    if (fm instanceof SunFontManager) {
-                        ((SunFontManager) fm).addToPool(this);
+                    if (fm instanceof SunFontManager sfm) {
+                        sfm.addToPool(this);
                     }
                 }
-            } catch (PrivilegedActionException e) {
-                close();
-                Throwable reason = e.getCause();
-                if (reason == null) {
-                    reason = e;
-                }
-                throw new FontFormatException(reason.toString());
             } catch (ClosedChannelException e) {
                 /* NIO I/O is interruptible, recurse to retry operation.
                  * The call to channel.size() above can throw this exception.
@@ -526,8 +508,8 @@ public class TrueTypeFont extends FileFont {
             if (FontUtilities.isLogging()) {
                 FontUtilities.logSevere(e.toString());
             }
-            if (e instanceof FontFormatException) {
-                throw (FontFormatException)e;
+            if (e instanceof FontFormatException ffe) {
+                throw ffe;
             } else {
                 throw new FontFormatException(e.toString());
             }
@@ -664,7 +646,6 @@ public class TrueTypeFont extends FileFont {
     };
 
     private static String defaultCodePage = null;
-    @SuppressWarnings("removal")
     static String getCodePage() {
 
         if (defaultCodePage != null) {
@@ -672,8 +653,7 @@ public class TrueTypeFont extends FileFont {
         }
 
         if (FontUtilities.isWindows) {
-            defaultCodePage =
-                AccessController.doPrivileged(new GetPropertyAction("file.encoding"));
+            defaultCodePage = System.getProperty("file.encoding");
         } else {
             if (languages.length != codePages.length) {
                 throw new InternalError("wrong code pages array length");

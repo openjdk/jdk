@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,9 @@ public class thisobject002 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -167,6 +169,7 @@ public class thisobject002 {
         }
 
         VirtualMachine vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
         log1("      TESTING BEGINS");
@@ -203,9 +206,6 @@ public class thisobject002 {
             String bpLine2 = "breakpointLineNumber2";
             //String bpLine3 = "breakpointLineNumber3";
 
-
-            List            allThreads   = null;
-            ListIterator    listIterator = null;
             List            classes      = null;
 
             BreakpointRequest breakpRequest1 = null;
@@ -223,7 +223,6 @@ public class thisobject002 {
 
                 log2("getting ThreadReference object");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedclass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -232,7 +231,7 @@ public class thisobject002 {
                     break label0;
                 }
 
-                thread2 = debuggee.threadByName(threadName);
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, "test_thread", threadName);
 
                 log2("setting up breakpoints");
 

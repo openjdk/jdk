@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -63,7 +63,7 @@ public class CodePointInputMethodDescriptor implements InputMethodDescriptor {
      * Creates a new instance of the Code Point input method.
      *
      * @return a new instance of the Code Point input method
-     * @exception Exception any exception that may occur while creating the
+     * @throws Exception any exception that may occur while creating the
      * input method instance
      */
     public InputMethod createInputMethod() throws Exception {

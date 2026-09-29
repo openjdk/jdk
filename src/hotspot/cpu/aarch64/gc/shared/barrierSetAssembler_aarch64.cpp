@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/barrierSetRuntime.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -34,6 +35,10 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#ifdef COMPILER2
+#include "code/vmreg.inline.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
+#endif // COMPILER2
 
 
 #define __ masm->
@@ -83,22 +88,35 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
                                    Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
+  bool is_not_null = (decorators & IS_NOT_NULL) != 0;
+
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {
-    val = val == noreg ? zr : val;
     if (in_heap) {
-      if (UseCompressedOops) {
-        assert(!dst.uses(val), "not enough registers");
-        if (val != zr) {
-          __ encode_heap_oop(val);
+      if (val == noreg) {
+        assert(!is_not_null, "inconsistent access");
+        if (UseCompressedOops) {
+          __ strw(zr, dst);
+        } else {
+          __ str(zr, dst);
         }
-        __ strw(val, dst);
       } else {
-        __ str(val, dst);
+        if (UseCompressedOops) {
+          assert(!dst.uses(val), "not enough registers");
+          if (is_not_null) {
+            __ encode_heap_oop_not_null(val);
+          } else {
+            __ encode_heap_oop(val);
+          }
+          __ strw(val, dst);
+        } else {
+          __ str(val, dst);
+        }
       }
     } else {
       assert(in_native, "why else?");
+      assert(val != noreg, "not supported");
       __ str(val, dst);
     }
     break;
@@ -116,6 +134,19 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   case T_FLOAT:   __ strs(v0,  dst); break;
   case T_DOUBLE:  __ strd(v0,  dst); break;
   default: Unimplemented();
+  }
+}
+
+void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                                          Register src, Register dst, Register value_field_layout_info) {
+  // flat_field_copy implementation is fairly complex, and there are not any
+  // "short-cuts" to be made from asm. What there is, appears to have the same
+  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
+  // of hand-rolled instructions...
+  if (decorators & IS_DEST_UNINITIALIZED) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, value_field_layout_info);
+  } else {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, value_field_layout_info);
   }
 }
 
@@ -227,7 +258,7 @@ void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::tag_mask == 0b11);
+  static_assert(JNIHandles::tag_mask == 0b11);
   __ andr(obj, obj, ~JNIHandles::tag_mask);
   __ ldr(obj, Address(obj, 0));             // *obj
 }
@@ -265,21 +296,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
   // verify_tlab();
 }
 
-void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
-                                               Register var_size_in_bytes,
-                                               int con_size_in_bytes,
-                                               Register t1) {
-  assert(t1->is_valid(), "need temp reg");
-
-  __ ldr(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-  if (var_size_in_bytes->is_valid()) {
-    __ add(t1, t1, var_size_in_bytes);
-  } else {
-    __ add(t1, t1, con_size_in_bytes);
-  }
-  __ str(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-}
-
 static volatile uint32_t _patching_epoch = 0;
 
 address BarrierSetAssembler::patching_epoch_addr() {
@@ -287,7 +303,7 @@ address BarrierSetAssembler::patching_epoch_addr() {
 }
 
 void BarrierSetAssembler::increment_patching_epoch() {
-  Atomic::inc(&_patching_epoch);
+  AtomicAccess::inc(&_patching_epoch);
 }
 
 void BarrierSetAssembler::clear_patching_epoch() {
@@ -296,10 +312,6 @@ void BarrierSetAssembler::clear_patching_epoch() {
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-
-  if (bs_nm == nullptr) {
-    return;
-  }
 
   Label local_guard;
   Label skip_barrier;
@@ -347,13 +359,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     __ ldr(rscratch2, thread_disarmed_and_epoch_addr);
     __ cmp(rscratch1, rscratch2);
   } else {
-    assert(patching_type == NMethodPatchingType::conc_data_patch, "must be");
-    // Subsequent loads of oops must occur after load of guard value.
-    // BarrierSetNMethod::disarm sets guard with release semantics.
-    __ membar(__ LoadLoad);
-    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
-    __ ldrw(rscratch2, thread_disarmed_addr);
-    __ cmpw(rscratch1, rscratch2);
+    ShouldNotReachHere();
   }
   __ br(condition, barrier_target);
 
@@ -373,11 +379,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == nullptr) {
-    return;
-  }
-
   Label bad_call;
   __ cbz(rmethod, bad_call);
 
@@ -386,7 +387,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ load_method_holder_cld(rscratch1, rmethod);
 
   // Is it a strong CLD?
-  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::keep_alive_offset()));
+  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::keep_alive_ref_count_offset()));
   __ cbnz(rscratch2, method_live);
 
   // Is it a weak but alive CLD?
@@ -405,10 +406,22 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 }
 
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
-  __ mov(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andr(tmp1, obj, tmp2);
-  __ mov(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ ldr(tmp2, Address(tmp2));
+    __ andr(tmp1, obj, tmp2);
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ ldr(tmp2, Address(tmp2));
+  } else
+#endif
+  {
+    __ mov(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andr(tmp1, obj, tmp2);
+    __ mov(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
 
   // Compare tmp1 and tmp2.  We don't use a compare
   // instruction here because the flags register is live.
@@ -416,6 +429,211 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ cbnz(tmp1, error);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj); // get klass
-  __ cbz(obj, error);      // if klass is null it is broken
+  __ load_narrow_klass(tmp1, obj); // get klass
+  __ cbz(tmp1, error);      // if klass is null it is broken
 }
+
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ ldr(obj, Address(weak_handle));
+}
+
+#ifdef COMPILER2
+
+OptoReg::Name BarrierSetAssembler::encode_float_vector_register_size(const Node* node, OptoReg::Name opto_reg) {
+  switch (node->ideal_reg()) {
+    case Op_RegF:
+    case Op_RegI: // RA may place scalar values (Op_RegI/N/L/P) in FP registers when UseFPUForSpilling is enabled
+    case Op_RegN:
+      // No need to refine. The original encoding is already fine to distinguish.
+      assert(opto_reg % 4 == 0, "32-bit register should only occupy a single slot");
+      break;
+    // Use different encoding values of the same fp/vector register to help distinguish different sizes.
+    // Such as V16. The OptoReg::name and its corresponding slot value are
+    // "V16": 64, "V16_H": 65, "V16_J": 66, "V16_K": 67.
+    case Op_RegD:
+    case Op_VecD:
+    case Op_RegL:
+    case Op_RegP:
+      opto_reg &= ~3;
+      opto_reg |= 1;
+      break;
+    case Op_VecX:
+      opto_reg &= ~3;
+      opto_reg |= 2;
+      break;
+    case Op_VecA:
+      opto_reg &= ~3;
+      opto_reg |= 3;
+      break;
+    default:
+      assert(false, "unexpected ideal register");
+      ShouldNotReachHere();
+  }
+  return opto_reg;
+}
+
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
+  }
+
+  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if (vm_reg->is_FloatRegister()) {
+    opto_reg = encode_float_vector_register_size(node, opto_reg);
+  }
+
+  return opto_reg;
+}
+#undef __
+#define __ _masm->
+
+void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
+  int index = -1;
+  GrowableArray<RegisterData> registers;
+  VMReg prev_vm_reg = VMRegImpl::Bad();
+
+  RegMaskIterator rmi(stub->preserve_set());
+  while (rmi.has_next()) {
+    OptoReg::Name opto_reg = rmi.next();
+    VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+
+    if (vm_reg->is_Register()) {
+      // GPR may have one or two slots in regmask
+      // Determine whether the current vm_reg is the same physical register as the previous one
+      if (is_same_register(vm_reg, prev_vm_reg)) {
+        registers.at(index)._slots++;
+      } else {
+        RegisterData reg_data = { vm_reg, 1 };
+        index = registers.append(reg_data);
+      }
+    } else if (vm_reg->is_FloatRegister()) {
+      // We have size encoding in OptoReg of stub->preserve_set()
+      // After encoding, float/neon/sve register has only one slot in regmask
+      // Decode it to get the actual size
+      VMReg vm_reg_base = vm_reg->as_FloatRegister()->as_VMReg();
+      int slots = decode_float_vector_register_size(opto_reg);
+      RegisterData reg_data = { vm_reg_base, slots };
+      index = registers.append(reg_data);
+    } else if (vm_reg->is_PRegister()) {
+      // PRegister has only one slot in regmask
+      RegisterData reg_data = { vm_reg, 1 };
+      index = registers.append(reg_data);
+    } else {
+      assert(false, "Unknown register type");
+      ShouldNotReachHere();
+    }
+    prev_vm_reg = vm_reg;
+  }
+
+  // Record registers that needs to be saved/restored
+  for (GrowableArrayIterator<RegisterData> it = registers.begin(); it != registers.end(); ++it) {
+    RegisterData reg_data = *it;
+    VMReg vm_reg = reg_data._reg;
+    int slots = reg_data._slots;
+    if (vm_reg->is_Register()) {
+      assert(slots == 1 || slots == 2, "Unexpected register save size");
+      _gp_regs += RegSet::of(vm_reg->as_Register());
+    } else if (vm_reg->is_FloatRegister()) {
+      if (slots == 1 || slots == 2) {
+        _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+      } else if (slots == 4) {
+        _neon_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+      } else {
+        assert(slots == Matcher::scalable_vector_reg_size(T_FLOAT), "Unexpected register save size");
+        _sve_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+      }
+    } else {
+      assert(vm_reg->is_PRegister() && slots == 1, "Unknown register type");
+      _p_regs += PRegSet::of(vm_reg->as_PRegister());
+    }
+  }
+
+  // Remove C-ABI SOE registers and scratch regs
+  _gp_regs -= RegSet::range(r19, r30) + RegSet::of(r8, r9);
+
+  // Remove C-ABI SOE fp registers
+  _fp_regs -= FloatRegSet::range(v8, v15);
+}
+
+enum RC SaveLiveRegisters::rc_class(VMReg reg) {
+  if (reg->is_reg()) {
+    if (reg->is_Register()) {
+      return rc_int;
+    } else if (reg->is_FloatRegister()) {
+      return rc_float;
+    } else if (reg->is_PRegister()) {
+      return rc_predicate;
+    }
+  }
+  if (reg->is_stack()) {
+    return rc_stack;
+  }
+  return rc_bad;
+}
+
+bool SaveLiveRegisters::is_same_register(VMReg reg1, VMReg reg2) {
+  if (reg1 == reg2) {
+    return true;
+  }
+  if (rc_class(reg1) == rc_class(reg2)) {
+    if (reg1->is_Register()) {
+      return reg1->as_Register() == reg2->as_Register();
+    } else if (reg1->is_FloatRegister()) {
+      return reg1->as_FloatRegister() == reg2->as_FloatRegister();
+    } else if (reg1->is_PRegister()) {
+      return reg1->as_PRegister() == reg2->as_PRegister();
+    }
+  }
+  return false;
+}
+
+int SaveLiveRegisters::decode_float_vector_register_size(OptoReg::Name opto_reg) {
+  switch (opto_reg & 3) {
+    case 0:
+      return 1;
+    case 1:
+      return 2;
+    case 2:
+      return 4;
+    case 3:
+      return Matcher::scalable_vector_reg_size(T_FLOAT);
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}
+
+SaveLiveRegisters::SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub)
+  : _masm(masm),
+    _gp_regs(),
+    _fp_regs(),
+    _neon_regs(),
+    _sve_regs(),
+    _p_regs() {
+
+  // Figure out what registers to save/restore
+  initialize(stub);
+
+  // Save registers
+  __ push(_gp_regs, sp);
+  __ push_fp(_fp_regs, sp, MacroAssembler::PushPopFp);
+  __ push_fp(_neon_regs, sp, MacroAssembler::PushPopNeon);
+  __ push_fp(_sve_regs, sp, MacroAssembler::PushPopSVE);
+  __ push_p(_p_regs, sp);
+}
+
+SaveLiveRegisters::~SaveLiveRegisters() {
+  // Restore registers
+  __ pop_p(_p_regs, sp);
+  __ pop_fp(_sve_regs, sp, MacroAssembler::PushPopSVE);
+  __ pop_fp(_neon_regs, sp, MacroAssembler::PushPopNeon);
+  __ pop_fp(_fp_regs, sp, MacroAssembler::PushPopFp);
+
+  // External runtime call may clobber ptrue reg
+  __ reinitialize_ptrue();
+
+  __ pop(_gp_regs, sp);
+}
+
+#endif // COMPILER2

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ public class TestOptionsWithRanges {
     public static void main(String[] args) throws Exception {
         int failedTests;
 
-        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap(origin -> (!(origin.contains("develop") || origin.contains("notproduct"))));
+        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap(origin -> (!origin.contains("develop")));
 
         /*
          * Exclude VMThreadStackSize from max range testing, because it will always exit with code 1,
@@ -224,23 +224,14 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("CICompilerCount");
 
         /*
-         * Exclude JVMCI threads counts from testing similar to other threads counts.
-         */
-        excludeTestMaxRange("JVMCIThreads");
-        excludeTestMaxRange("JVMCIHostThreads");
-
-        /*
          * Exclude below options as their maximum value would consume too much memory
          * and would affect other tests that run in parallel.
          */
         excludeTestMaxRange("ConcGCThreads");
         excludeTestMaxRange("G1ConcRefinementThreads");
-        excludeTestMaxRange("G1UpdateBufferSize");
         excludeTestMaxRange("InitialHeapSize");
         excludeTestMaxRange("MaxHeapSize");
-        excludeTestMaxRange("MaxRAM");
         excludeTestMaxRange("NewSize");
-        excludeTestMaxRange("OldSize");
         excludeTestMaxRange("ParallelGCThreads");
         excludeTestMaxRange("TLABSize");
 
@@ -269,6 +260,13 @@ public class TestOptionsWithRanges {
          * refer to CompileThresholdScaling itself.
          */
         excludeTestMaxRange("CompileThresholdScaling");
+
+        /*
+         * Do not test InitiatingHeapOccupancyPercent as it is an
+         * alias that will answer with the string G1IHOP. Remove this
+         * when the alias is removed.
+         */
+        excludeTestRange("InitiatingHeapOccupancyPercent");
 
         List<JVMOption> testSubset = getTestSubset(args);
 

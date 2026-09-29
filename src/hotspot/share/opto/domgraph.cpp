@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -61,9 +60,6 @@ struct Tarjan {
 // Compute the dominator tree of the CFG.  The CFG must already have been
 // constructed.  This is the Lengauer & Tarjan O(E-alpha(E,V)) algorithm.
 void PhaseCFG::build_dominator_tree() {
-  // Pre-grow the blocks array, prior to the ResourceMark kicking in
-  _blocks.map(number_of_blocks(), 0);
-
   ResourceMark rm;
   // Setup mappings from my Graph to Tarjan's stuff and back
   // Note: Tarjan uses 1-based arrays
@@ -237,11 +233,24 @@ uint Block_Stack::most_frequent_successor( Block *b ) {
   case Op_Jump:
   case Op_Root:
   case Op_Goto:
-  case Op_NeverBranch:
     freq_idx = 0;               // fall thru
     break;
+  case Op_NeverBranch: {
+    Node* succ = n->as_NeverBranch()->proj_out(0)->unique_ctrl_out();
+    int succ_idx = 0; // normal case
+    if (succ == b->_succs[1]->head()) {
+      // Edges swapped, rare case. May happen due to an unusual matcher
+      // traversal order for peeled infinite loops.
+      succ_idx = 1;
+    } else {
+      assert(succ == b->_succs[0]->head(), "succ not found");
+    }
+    freq_idx = succ_idx;
+    break;
+  }
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:
@@ -286,8 +295,8 @@ uint PhaseCFG::do_DFS(Tarjan *tarjan, uint rpo_counter) {
 
 void Tarjan::COMPRESS()
 {
-  assert( _ancestor != 0, "" );
-  if( _ancestor->_ancestor != 0 ) {
+  assert( _ancestor != nullptr, "" );
+  if( _ancestor->_ancestor != nullptr ) {
     _ancestor->COMPRESS( );
     if( _ancestor->_label->_semi < _label->_semi )
       _label = _ancestor->_label;
@@ -384,6 +393,25 @@ struct NTarjan {
 #endif
 };
 
+void remove_single_entry_region(NTarjan* t, NTarjan*& tdom, Node*& dom, PhaseIterGVN& igvn) {
+  // remove phis:
+  for (DUIterator_Fast jmax, j = dom->fast_outs(jmax); j < jmax; j++) {
+    Node* use = dom->fast_out(j);
+    if (use->is_Phi()) {
+      igvn.replace_node(use, use->in(1));
+      --j; --jmax;
+    }
+  }
+  // Disconnect region from dominator tree
+  assert(dom->unique_ctrl_out() == t->_control, "expect a single dominated node");
+  tdom = tdom->_dom;
+  t->_dom = tdom;
+  assert(tdom->_control == dom->in(1), "dominator of region with single input should be that input");
+  // and remove it
+  igvn.replace_node(dom, dom->in(1));
+  dom = tdom->_control;
+}
+
 // Compute the dominator tree of the sea of nodes.  This version walks all CFG
 // nodes (using the is_CFG() call) and places them in a dominator tree.  Thus,
 // it needs a count of the CFG nodes for the mapping table. This is the
@@ -393,10 +421,9 @@ void PhaseIdealLoop::Dominators() {
   // Setup mappings from my Graph to Tarjan's stuff and back
   // Note: Tarjan uses 1-based arrays
   NTarjan *ntarjan = NEW_RESOURCE_ARRAY(NTarjan,C->unique()+1);
-  // Initialize _control field for fast reference
-  int i;
-  for( i= C->unique()-1; i>=0; i-- )
-    ntarjan[i]._control = nullptr;
+  // Initialize all fields at once for safety and extra performance.
+  // Among other things, this initializes _control field for fast reference.
+  memset(ntarjan, 0, (C->unique() + 1)*sizeof(NTarjan));
 
   // Store the DFS order for the main loop
   const uint fill_value = max_juint;
@@ -412,6 +439,7 @@ void PhaseIdealLoop::Dominators() {
   ntarjan[0]._size = ntarjan[0]._semi = 0;
   ntarjan[0]._label = &ntarjan[0];
 
+  int i;
   for( i = dfsnum-1; i>1; i-- ) {        // For all nodes in reverse DFS order
     NTarjan *w = &ntarjan[i];            // Get Node from DFS
     assert(w->_control != nullptr,"bad DFS walk");
@@ -486,7 +514,14 @@ void PhaseIdealLoop::Dominators() {
     assert(t->_control != nullptr,"Bad DFS walk");
     NTarjan *tdom = t->_dom;           // Handy access to immediate dominator
     if( tdom )  {                      // Root has no immediate dominator
-      _idom[t->_control->_idx] = tdom->_control; // Set immediate dominator
+      Node* dom = tdom->_control;
+      // The code that removes unreachable loops above could have left a region with a single input. Remove it. Do it
+      // now that we iterate over cfg nodes for the last time (doing it earlier would have left a dead cfg node behind
+      // that code that goes over the dfs list would have had to handle).
+      if (dom != C->root() && dom->is_Region() && dom->req() == 2) {
+        remove_single_entry_region(t, tdom, dom, _igvn);
+      }
+      _idom[t->_control->_idx] = dom; // Set immediate dominator
       t->_dom_next = tdom->_dom_child; // Make me a sibling of parent's child
       tdom->_dom_child = t;            // Make me a child of my parent
     } else
@@ -549,8 +584,8 @@ int NTarjan::DFS( NTarjan *ntarjan, VectorSet &visited, PhaseIdealLoop *pil, uin
 
 void NTarjan::COMPRESS()
 {
-  assert( _ancestor != 0, "" );
-  if( _ancestor->_ancestor != 0 ) {
+  assert( _ancestor != nullptr, "" );
+  if( _ancestor->_ancestor != nullptr ) {
     _ancestor->COMPRESS( );
     if( _ancestor->_label->_semi < _label->_semi )
       _label = _ancestor->_label;

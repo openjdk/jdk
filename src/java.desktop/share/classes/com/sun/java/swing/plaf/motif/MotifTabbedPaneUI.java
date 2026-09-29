@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
 // UI Installation/De-installation
 
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
 
@@ -70,6 +71,7 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
         unselectedTabHighlight = UIManager.getColor("TabbedPane.unselectedTabHighlight");
     }
 
+    @Override
     protected void uninstallDefaults() {
         super.uninstallDefaults();
 
@@ -81,6 +83,7 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
 
 // UI Rendering
 
+   @Override
    protected void paintContentBorderTopEdge(Graphics g, int tabPlacement,
                                             int selectedIndex,
                                             int x, int y, int w, int h) {
@@ -104,6 +107,7 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
         }
     }
 
+    @Override
     protected void paintContentBorderBottomEdge(Graphics g, int tabPlacement,
                                                int selectedIndex,
                                                int x, int y, int w, int h) {
@@ -126,6 +130,7 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
         }
     }
 
+    @Override
     protected void paintContentBorderRightEdge(Graphics g, int tabPlacement,
                                                int selectedIndex,
                                                int x, int y, int w, int h) {
@@ -148,6 +153,7 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
         }
     }
 
+    @Override
     protected void paintTabBackground(Graphics g,
                                       int tabPlacement, int tabIndex,
                                       int x, int y, int w, int h,
@@ -174,6 +180,7 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
 
     }
 
+    @Override
     protected void paintTabBorder(Graphics g,
                                   int tabPlacement, int tabIndex,
                                   int x, int y, int w, int h,
@@ -225,6 +232,7 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
 
     }
 
+    @Override
     protected void paintFocusIndicator(Graphics g, int tabPlacement,
                                        Rectangle[] rects, int tabIndex,
                                        Rectangle iconRect, Rectangle textRect,
@@ -263,10 +271,12 @@ public class MotifTabbedPaneUI extends BasicTabbedPaneUI
         }
     }
 
+    @Override
     protected int getTabRunIndent(int tabPlacement, int run) {
         return run*3;
     }
 
+    @Override
     protected int getTabRunOverlay(int tabPlacement) {
         tabRunOverlay = (tabPlacement == LEFT || tabPlacement == RIGHT)?
             (int)Math.round((float)maxTabWidth * .10) :

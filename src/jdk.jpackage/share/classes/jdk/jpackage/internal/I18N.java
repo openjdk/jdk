@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,36 +24,51 @@
  */
 package jdk.jpackage.internal;
 
+import java.util.List;
+import java.util.Map;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.util.LocalizedExceptionBuilder;
+import jdk.jpackage.internal.util.MultiResourceBundle;
+import jdk.jpackage.internal.util.StringBundle;
 
-import java.util.ResourceBundle;
-
-class I18N {
+final class I18N {
 
     static String getString(String key) {
-        if (PLATFORM.containsKey(key)) {
-            return PLATFORM.getString(key);
-        }
-        return SHARED.getString(key);
+        return BUNDLE.getString(key);
     }
 
-    private static final ResourceBundle SHARED = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.MainResources");
+    static String format(String key, Object ... args) {
+        return BUNDLE.format(key, args);
+    }
 
-    private static final ResourceBundle PLATFORM;
+    static LocalizedExceptionBuilder<?> buildException() {
+        return LocalizedExceptionBuilder.buildLocalizedException(BUNDLE);
+    }
+
+    static ConfigException.Builder buildConfigException() {
+        return ConfigException.build(BUNDLE);
+    }
+
+    static ConfigException.Builder buildConfigException(String msgId, Object ... args) {
+        return ConfigException.build(BUNDLE, msgId, args);
+    }
+
+    static ConfigException.Builder buildConfigException(Throwable t) {
+        return ConfigException.build(BUNDLE, t);
+    }
+
+    private static final StringBundle BUNDLE;
 
     static {
-        if (OperatingSystem.isLinux()) {
-            PLATFORM = ResourceBundle.getBundle(
-                    "jdk.jpackage.internal.resources.LinuxResources");
-        } else if (OperatingSystem.isWindows()) {
-            PLATFORM = ResourceBundle.getBundle(
-                    "jdk.jpackage.internal.resources.WinResources");
-        } else if (OperatingSystem.isMacOS()) {
-            PLATFORM = ResourceBundle.getBundle(
-                    "jdk.jpackage.internal.resources.MacResources");
-        } else {
-            throw new IllegalStateException("Unknown platform");
-        }
+        var prefix = "jdk.jpackage.internal.resources.";
+        BUNDLE = StringBundle.fromResourceBundle(MultiResourceBundle.create(
+                prefix + "MainResources",
+                Map.of(
+                        OperatingSystem.LINUX, List.of(prefix + "LinuxResources"),
+                        OperatingSystem.MACOS, List.of(prefix + "MacResources"),
+                        OperatingSystem.WINDOWS, List.of(prefix + "WinResources", prefix + "WinResourcesNoL10N")
+                )
+        ));
     }
 }

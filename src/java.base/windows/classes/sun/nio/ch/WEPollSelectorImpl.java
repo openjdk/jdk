@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -37,6 +36,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import jdk.internal.misc.Blocker;
 
@@ -89,37 +89,79 @@ class WEPollSelectorImpl extends SelectorImpl {
         WEPoll.ctl(eph, EPOLL_CTL_ADD, fd0Val, WEPoll.EPOLLIN);
     }
 
-    private void ensureOpen() {
-        if (!isOpen())
-            throw new ClosedSelectorException();
-    }
-
     @Override
     protected int doSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
     {
         assert Thread.holdsLock(this);
+        assert timeout >= -1L;
 
-        // epoll_wait timeout is int
-        int to = (int) Math.min(timeout, Integer.MAX_VALUE);
-        boolean blocking = (to != 0);
+        // poll timeout is int
+        int pollTimeout = Math.clamp(timeout, -1, Integer.MAX_VALUE);
+        boolean blocking = (pollTimeout != 0);
 
         int numEntries;
         processUpdateQueue();
         processDeregisterQueue();
         try {
             begin(blocking);
-            long comp = Blocker.begin(blocking);
-            try {
-                numEntries = WEPoll.wait(eph, pollArrayAddress, NUM_EPOLLEVENTS, to);
-            } finally {
-                Blocker.end(comp);
+            if (blocking && Thread.currentThread().isVirtual()) {
+                numEntries = compensatingPoll(pollTimeout);
+            } else {
+                numEntries = poll(pollTimeout);
             }
         } finally {
             end(blocking);
         }
         processDeregisterQueue();
         return processEvents(numEntries, action);
+    }
+
+    /**
+     * Poll for I/O events.
+     */
+    private int poll(int pollTimeout) throws IOException {
+        return WEPoll.wait(eph, pollArrayAddress, NUM_EPOLLEVENTS, pollTimeout);
+    }
+
+    /**
+     * Invoked by a virtual thread to poll for I/O events without releasing its carrier
+     * thread. The Blocker mechanism is used to arrange for a spare carrier thread to
+     * be activated if necessary while the blocking operation is in progress.
+     * The maximum underlying poll is 10s to ensure that the Blocker mechanism keeps
+     * a spare thread available for the entire duration of the poll. This avoids
+     * cases where the keep alive timeout kicks in and the spare terminates while
+     * the poll is in progress.
+     * @param pollTimeout the poll time or -1 to block indefinitely
+     */
+    private int compensatingPoll(int pollTimeout) throws IOException {
+        assert Thread.currentThread().isVirtual() && pollTimeout != 0;
+        long startTime = System.nanoTime();
+
+        // non-blocking
+        int numEntries = poll(0);
+        if (numEntries > 0) {
+            return numEntries;
+        }
+
+        // blocking loop
+        for (;;) {
+            boolean attempted = Blocker.begin();
+            try {
+                long rem = (pollTimeout > 0)
+                    ? pollTimeout - TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)
+                    : Integer.MAX_VALUE;
+                if (rem <= 0) {
+                    return 0;
+                }
+                numEntries = poll(Math.clamp(rem, 1, 10_000));  // max 10s
+                if (numEntries > 0) {
+                    return numEntries;
+                }
+            } finally {
+                Blocker.end(attempted);
+            }
+        }
     }
 
     /**
@@ -228,7 +270,6 @@ class WEPollSelectorImpl extends SelectorImpl {
 
     @Override
     public void setEventOps(SelectionKeyImpl ski) {
-        ensureOpen();
         synchronized (updateLock) {
             updateKeys.addLast(ski);
         }

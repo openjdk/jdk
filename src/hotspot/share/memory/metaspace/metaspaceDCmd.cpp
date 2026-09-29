@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
@@ -59,6 +58,8 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap) :
 }
 
 void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
+  MetaspaceUtils::print_on(output());
+
   // Parse scale value.
   const char* scale_value = _scale.value();
   size_t scale = 0;

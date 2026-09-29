@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,32 @@
  * @test
  * @bug 8255560
  * @summary Class::isRecord should check that the current class is final and not abstract
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @library /test/lib
- * @run testng/othervm IsRecordTest
- * @run testng/othervm/java.security.policy=allPermissions.policy IsRecordTest
+ * @run junit/othervm IsRecordTest
  */
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
 import java.util.List;
 import java.util.Map;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
+
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.test.lib.ByteCodeLoader;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
+import static java.lang.classfile.ClassFile.ACC_FINAL;
+import static java.lang.constant.ConstantDescs.CD_int;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IsRecordTest {
 
-    @DataProvider(name = "scenarios")
-    public Object[][] scenarios() {
+    public static Object[][] scenarios() {
         return new Object[][] {
              // isFinal, isAbstract, extendJLR, withRecAttr, expectIsRecord
              {     false,    false,     false,    true,      false    },
@@ -73,7 +74,8 @@ public class IsRecordTest {
      * iii) direct subclass of j.l.Record (or not), along with the presence or
      * absence of a record attribute.
      */
-    @Test(dataProvider = "scenarios")
+    @ParameterizedTest
+    @MethodSource("scenarios")
     public void testDirectSubClass(boolean isFinal,
                                    boolean isAbstract,
                                    boolean extendsJLR,
@@ -82,17 +84,16 @@ public class IsRecordTest {
         out.println("\n--- testDirectSubClass isFinal=%s, isAbstract=%s, extendsJLR=%s, withRecordAttr=%s, expectIsRecord=%s ---"
                 .formatted(isFinal, isAbstract, extendsJLR, withRecordAttr, expectIsRecord));
 
-        List<RecordComponentEntry> rc = null;
+        List<RecordComponentInfo> rc = null;
         if (withRecordAttr)
-            rc = List.of(new RecordComponentEntry("x", "I"));
+            rc = List.of(RecordComponentInfo.of("x", CD_int));
         String superName = extendsJLR ? "java/lang/Record" : "java/lang/Object";
         var classBytes = generateClassBytes("C", isFinal, isAbstract, superName, rc);
         Class<?> cls = ByteCodeLoader.load("C", classBytes);
         out.println("cls=%s, Record::isAssignable=%s, isRecord=%s"
                 .formatted(cls, Record.class.isAssignableFrom(cls), cls.isRecord()));
-        assertEquals(cls.isRecord(), expectIsRecord);
-        var getRecordComponents = cls.getRecordComponents();
-        assertTrue(expectIsRecord ? getRecordComponents != null : getRecordComponents == null);
+        assertEquals(expectIsRecord, cls.isRecord());
+        assertEquals(expectIsRecord, cls.getRecordComponents() != null);
     }
 
     /**
@@ -100,7 +101,8 @@ public class IsRecordTest {
      * along with the presence or absence of a record attribute, where the class has
      * a superclass whose superclass is j.l.Record.
      */
-    @Test(dataProvider = "scenarios")
+    @ParameterizedTest
+    @MethodSource("scenarios")
     public void testIndirectSubClass(boolean isFinal,
                                      boolean isAbstract,
                                      boolean unused1,
@@ -109,9 +111,9 @@ public class IsRecordTest {
         out.println("\n--- testIndirectSubClass isFinal=%s, isAbstract=%s withRecordAttr=%s ---"
                 .formatted(isFinal, isAbstract, withRecordAttr));
 
-        List<RecordComponentEntry> rc = null;
+        List<RecordComponentInfo> rc = null;
         if (withRecordAttr)
-            rc = List.of(new RecordComponentEntry("x", "I"));
+            rc = List.of(RecordComponentInfo.of("x", CD_int));
         var supFooClassBytes = generateClassBytes("SupFoo", false, isAbstract, "java/lang/Record", rc);
         var subFooClassBytes = generateClassBytes("SubFoo", isFinal, isAbstract, "SupFoo", rc);
         var allClassBytes = Map.of("SupFoo", supFooClassBytes,
@@ -125,8 +127,8 @@ public class IsRecordTest {
                     .formatted(cls, Record.class.isAssignableFrom(cls), cls.isRecord()));
         assertFalse(supFooCls.isRecord());
         assertFalse(subFooCls.isRecord());
-        assertEquals(supFooCls.getRecordComponents(), null);
-        assertEquals(subFooCls.getRecordComponents(), null);
+        assertNull(supFooCls.getRecordComponents());
+        assertNull(subFooCls.getRecordComponents());
     }
 
     /** Tests record-ness properties of traditionally compiled classes. */
@@ -135,23 +137,23 @@ public class IsRecordTest {
         out.println("\n--- testBasicRecords ---");
         record EmptyRecord () { }
         assertTrue(EmptyRecord.class.isRecord());
-        assertEquals(EmptyRecord.class.getRecordComponents().length, 0);
+        assertEquals(0, EmptyRecord.class.getRecordComponents().length);
 
         record FooRecord (int x) { }
         assertTrue(FooRecord.class.isRecord());
-        assertTrue(FooRecord.class.getRecordComponents() != null);
+        assertNotNull(FooRecord.class.getRecordComponents());
 
         final record FinalFooRecord (int x) { }
         assertTrue(FinalFooRecord.class.isRecord());
-        assertTrue(FinalFooRecord.class.getRecordComponents() != null);
+        assertNotNull(FinalFooRecord.class.getRecordComponents());
 
         class A { }
         assertFalse(A.class.isRecord());
-        assertFalse(A.class.getRecordComponents() != null);
+        assertNull(A.class.getRecordComponents());
 
         final class B { }
         assertFalse(B.class.isRecord());
-        assertFalse(B.class.getRecordComponents() != null);
+        assertNull(B.class.getRecordComponents());
     }
 
     // --  infra
@@ -161,29 +163,18 @@ public class IsRecordTest {
                               boolean isFinal,
                               boolean isAbstract,
                               String superName,
-                              List<RecordComponentEntry> components) {
-        ClassWriter cw = new ClassWriter(COMPUTE_MAXS | COMPUTE_FRAMES);
-
-        int access = 0;
-        if (isFinal)
-            access = access | Opcodes.ACC_FINAL;
-        if (isAbstract)
-            access = access | Opcodes.ACC_ABSTRACT;
-
-        cw.visit(Opcodes.V16,
-                 access,
-                 className,
-                 null,
-                 superName,
-                 null);
-
-        if (components != null)
-            components.forEach(rc -> cw.visitRecordComponent(rc.name(), rc.descriptor(), null));
-
-        cw.visitEnd();
-        return cw.toByteArray();
+                              List<RecordComponentInfo> components) {
+        return ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
+            int access = 0;
+            if (isFinal)
+                access = access | ACC_FINAL;
+            if (isAbstract)
+                access = access | ACC_ABSTRACT;
+            clb.withFlags(access);
+            clb.withSuperclass(ClassDesc.ofInternalName(superName));
+            if (components != null)
+                clb.accept(RecordAttribute.of(components));
+        });
     }
-
-    record RecordComponentEntry (String name, String descriptor) { }
 
 }

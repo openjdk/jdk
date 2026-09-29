@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -35,12 +34,13 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/sharedRuntime.hpp"
 
 // Implementation of SignatureIterator
 
@@ -178,7 +178,6 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   }
 
 #if defined(_LP64) && !defined(ZERO)
-  _stack_arg_slots = align_up(_stack_arg_slots, 2);
 #ifdef ASSERT
   int dbg_stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
   assert(_stack_arg_slots == dbg_stack_arg_slots, "fingerprinter: %d full: %d", _stack_arg_slots, dbg_stack_arg_slots);
@@ -235,14 +234,17 @@ void Fingerprinter::do_type_calling_convention(BasicType type) {
   case T_BYTE:
   case T_SHORT:
   case T_INT:
-#if defined(PPC64) || defined(S390)
     if (_int_args < Argument::n_int_register_parameters_j) {
       _int_args++;
     } else {
+#if defined(PPC64) || defined(S390)
       _stack_arg_slots += 1;
+#else
+      _stack_arg_slots = align_up(_stack_arg_slots, 2);
+      _stack_arg_slots += 1;
+#endif // defined(PPC64) || defined(S390)
     }
     break;
-#endif // defined(PPC64) || defined(S390)
   case T_LONG:
   case T_OBJECT:
   case T_ARRAY:
@@ -250,26 +252,27 @@ void Fingerprinter::do_type_calling_convention(BasicType type) {
     if (_int_args < Argument::n_int_register_parameters_j) {
       _int_args++;
     } else {
-      PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
-      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      _stack_arg_slots = align_up(_stack_arg_slots, 2);
       _stack_arg_slots += 2;
     }
     break;
   case T_FLOAT:
-#if defined(PPC64) || defined(S390)
     if (_fp_args < Argument::n_float_register_parameters_j) {
       _fp_args++;
     } else {
+#if defined(PPC64) || defined(S390)
       _stack_arg_slots += 1;
+#else
+      _stack_arg_slots = align_up(_stack_arg_slots, 2);
+      _stack_arg_slots += 1;
+#endif // defined(PPC64) || defined(S390)
     }
     break;
-#endif // defined(PPC64) || defined(S390)
   case T_DOUBLE:
     if (_fp_args < Argument::n_float_register_parameters_j) {
       _fp_args++;
     } else {
-      PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
-      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      _stack_arg_slots = align_up(_stack_arg_slots, 2);
       _stack_arg_slots += 2;
     }
     break;
@@ -498,8 +501,22 @@ Symbol* SignatureStream::find_symbol() {
   return name;
 }
 
-Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
-                                 FailureMode failure_mode, TRAPS) {
+ValueKlass* SignatureStream::as_value_klass(InstanceKlass* holder) {
+  assert(ValueTypePassFieldsAsArgs || ValueTypeReturnedAsFields, "Not needed");
+  ThreadInVMfromUnknown tiv;
+  JavaThread* THREAD = JavaThread::current();
+  HandleMark hm(THREAD);
+  Handle class_loader(THREAD, holder->class_loader());
+  Klass* k = as_klass(class_loader, SignatureStream::CachedOrNull, THREAD);
+  assert(!HAS_PENDING_EXCEPTION, "Should never throw");
+  if (k != nullptr && k->is_value_klass()) {
+    return ValueKlass::cast(k);
+  } else {
+    return nullptr;
+  }
+}
+
+Klass* SignatureStream::as_klass(Handle class_loader, FailureMode failure_mode, TRAPS) {
   if (!is_reference()) {
     return nullptr;
   }
@@ -508,11 +525,11 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
   if (failure_mode == ReturnNull) {
     // Note:  SD::resolve_or_null returns null for most failure modes,
     // but not all.  Circularity errors, invalid PDs, etc., throw.
-    k = SystemDictionary::resolve_or_null(name, class_loader, protection_domain, CHECK_NULL);
+    k = SystemDictionary::resolve_or_null(name, class_loader, CHECK_NULL);
   } else if (failure_mode == CachedOrNull) {
     NoSafepointVerifier nsv;  // no loading, now, we mean it!
     assert(!HAS_PENDING_EXCEPTION, "");
-    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader, protection_domain);
+    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader);
     // SD::find does not trigger loading, so there should be no throws
     // Still, bad things can happen, so we CHECK_NULL and ask callers
     // to do likewise.
@@ -522,18 +539,17 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
     // The test here allows for an additional mode CNFException
     // if callers need to request the reflective error instead.
     bool throw_error = (failure_mode == NCDFError);
-    k = SystemDictionary::resolve_or_fail(name, class_loader, protection_domain, throw_error, CHECK_NULL);
+    k = SystemDictionary::resolve_or_fail(name, class_loader, throw_error, CHECK_NULL);
   }
 
   return k;
 }
 
-oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domain,
-                                    FailureMode failure_mode, TRAPS) {
+oop SignatureStream::as_java_mirror(Handle class_loader, FailureMode failure_mode, TRAPS) {
   if (!is_reference()) {
     return Universe::java_mirror(type());
   }
-  Klass* klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
+  Klass* klass = as_klass(class_loader, failure_mode, CHECK_NULL);
   if (klass == nullptr) {
     return nullptr;
   }
@@ -548,10 +564,8 @@ void SignatureStream::skip_to_return_type() {
 
 ResolvingSignatureStream::ResolvingSignatureStream(Symbol* signature,
                                                    Handle class_loader,
-                                                   Handle protection_domain,
                                                    bool is_method)
-  : SignatureStream(signature, is_method),
-    _class_loader(class_loader), _protection_domain(protection_domain)
+  : SignatureStream(signature, is_method), _class_loader(class_loader)
 {
   initialize_load_origin(nullptr);
 }
@@ -573,7 +587,6 @@ void ResolvingSignatureStream::cache_handles() {
   assert(_load_origin != nullptr, "");
   JavaThread* current = JavaThread::current();
   _class_loader = Handle(current, _load_origin->class_loader());
-  _protection_domain = Handle(current, _load_origin->protection_domain());
 }
 
 #ifdef ASSERT
@@ -596,7 +609,7 @@ bool signature_constants_sane() {
   return true;
 }
 
-bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
+bool SignatureVerifier::is_valid_method_signature(const Symbol* sig) {
   const char* method_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
   ssize_t index = 0;
@@ -619,7 +632,7 @@ bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
   return false;
 }
 
-bool SignatureVerifier::is_valid_type_signature(Symbol* sig) {
+bool SignatureVerifier::is_valid_type_signature(const Symbol* sig) {
   const char* type_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
   return (type_sig != nullptr && len >= 1 &&
@@ -666,3 +679,72 @@ ssize_t SignatureVerifier::is_valid_type(const char* type, ssize_t limit) {
 }
 
 #endif // ASSERT
+
+// Adds an argument to the signature
+void SigEntry::add_entry(GrowableArray<SigEntry>* sig, BasicType bt, Symbol* name, int offset, bool null_marker, bool vt_oop) {
+  sig->append(SigEntry(bt, offset, name, null_marker, vt_oop));
+  if (bt == T_LONG || bt == T_DOUBLE) {
+    sig->append(SigEntry(T_VOID, offset, name, false, false)); // Longs and doubles take two stack slots
+  }
+}
+void SigEntry::add_null_marker(GrowableArray<SigEntry>* sig, Symbol* name, int offset) {
+  sig->append(SigEntry(T_BOOLEAN, offset, name, true, false));
+}
+
+// Returns true if the argument at index 'i' is not a value type delimiter
+bool SigEntry::skip_value_delimiters(const GrowableArray<SigEntry>* sig, int i) {
+  return (sig->at(i)._bt != T_METADATA &&
+          (sig->at(i)._bt != T_VOID || sig->at(i-1)._bt == T_LONG || sig->at(i-1)._bt == T_DOUBLE));
+}
+
+// Fill basic type array from signature array
+int SigEntry::fill_sig_bt(const GrowableArray<SigEntry>* sig, BasicType* sig_bt) {
+  int count = 0;
+  for (int i = 0; i < sig->length(); i++) {
+    if (skip_value_delimiters(sig, i)) {
+      sig_bt[count++] = sig->at(i)._bt;
+    }
+  }
+  return count;
+}
+
+// Create a temporary symbol from the signature array
+TempNewSymbol SigEntry::create_symbol(const GrowableArray<SigEntry>* sig) {
+  ResourceMark rm;
+  int length = sig->length();
+  char* sig_str = NEW_RESOURCE_ARRAY(char, 2*length + 3);
+  int idx = 0;
+  sig_str[idx++] = '(';
+  for (int i = 0; i < length; i++) {
+    BasicType bt = sig->at(i)._bt;
+    if (bt == T_METADATA || bt == T_VOID) {
+      // Ignore
+    } else {
+      if (bt == T_ARRAY) {
+        bt = T_OBJECT; // We don't know the element type, treat as Object
+      }
+      sig_str[idx++] = type2char(bt);
+      if (bt == T_OBJECT) {
+        sig_str[idx++] = ';';
+      }
+    }
+  }
+  sig_str[idx++] = ')';
+  // Add a dummy return type. It won't be used but SignatureStream needs it.
+  sig_str[idx++] = 'V';
+  sig_str[idx++] = '\0';
+  return SymbolTable::new_symbol(sig_str);
+}
+
+void SigEntry::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_name);
+}
+
+void SigEntry::print_on(outputStream* st) const {
+  st->print("SigEntry: type=%d offset=%d null_marker=%d ", _bt, _offset, _null_marker);
+  if (_name != nullptr) {
+    _name->print_on(st);
+  } else {
+    st->print("name=nullptr");
+  }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,5 +40,28 @@
  *      -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
  *      -XX:CompileCommand=compileonly,null::* -Djdk.test.lib.iterations=10
  *      -XX:-SegmentedCodeCache
+ *      compiler.codecache.jmx.UsageThresholdExceededTest
+ */
+
+/*
+ * @test UsageThresholdExceededSeveralTimesTest
+ * @requires vm.compiler2.enabled
+ * @summary verifying that getUsageThresholdCount() returns correct value
+ *     after threshold has been hit several times
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
+ *      -XX:CompileCommand=compileonly,null::* -Djdk.test.lib.iterations=10
+ *      -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *      compiler.codecache.jmx.UsageThresholdExceededTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
+ *      -XX:CompileCommand=compileonly,null::* -Djdk.test.lib.iterations=10
+ *      -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
  *      compiler.codecache.jmx.UsageThresholdExceededTest
  */

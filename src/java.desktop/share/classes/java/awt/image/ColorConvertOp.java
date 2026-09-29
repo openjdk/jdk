@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -684,13 +684,10 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
     private int getRenderingIntent (ICC_Profile profile) {
         byte[] header = profile.getData(ICC_Profile.icSigHead);
         int index = ICC_Profile.icHdrRenderingIntent;
-
-        /* According to ICC spec, only the least-significant 16 bits shall be
-         * used to encode the rendering intent. The most significant 16 bits
-         * shall be set to zero. Thus, we are ignoring two most significant
-         * bytes here.
-         *
-         *  See http://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
+        /*
+         * ICC spec: only the least-significant 16 bits encode the rendering
+         * intent. The most significant 16 bits must be zero and can be ignored.
+         * https://www.color.org/specification/ICC.1-2022-05.pdf, section 7.2.15
          */
         return ((header[index+2] & 0xff) <<  8) |
                 (header[index+3] & 0xff);
@@ -768,7 +765,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
             }
             float[] srcMinVal = new float[iccSrcNumComp];
             float[] srcInvDiffMinMax = new float[iccSrcNumComp];
-            for (int i = 0; i < srcNumComp; i++) {
+            for (int i = 0; i < iccSrcNumComp; i++) {
                 srcMinVal[i] = cs.getMinValue(i);
                 srcInvDiffMinMax[i] = maxNum / (cs.getMaxValue(i) - srcMinVal[i]);
             }
@@ -782,7 +779,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
             }
             float[] dstMinVal = new float[iccDstNumComp];
             float[] dstDiffMinMax = new float[iccDstNumComp];
-            for (int i = 0; i < dstNumComp; i++) {
+            for (int i = 0; i < iccDstNumComp; i++) {
                 dstMinVal[i] = cs.getMinValue(i);
                 dstDiffMinMax[i] = (cs.getMaxValue(i) - dstMinVal[i]) / maxNum;
             }
@@ -811,7 +808,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
                 idx = 0;
                 for (int x = 0; x < w; x++) {
                     pixel = srcRas.getDataElements(x, y, pixel);
-                    color = srcCM.getNormalizedComponents(pixel, color, 0);
+                    color = srcCM.getNormalizedComponents(pixel, null, 0);
                     if (needSrcAlpha) {
                         alpha[x] = color[srcNumComp];
                     }
@@ -835,7 +832,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
                                       dstDiffMinMax[i] + dstMinVal[i];
                     }
                     if (nonICCDst) {
-                        color = srcColorSpace.fromCIEXYZ(dstColor);
+                        color = dstColorSpace.fromCIEXYZ(dstColor);
                         for (int i = 0; i < dstNumComp; i++) {
                             dstColor[i] = color[i];
                         }

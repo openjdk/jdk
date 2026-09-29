@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4951733 6402062
  * @summary Tests FontUIResource encoding
- * @run main/othervm -Djava.security.manager=allow javax_swing_plaf_FontUIResource
+ * @run main/othervm javax_swing_plaf_FontUIResource
  * @author Sergey Malenkov
  */
 
@@ -36,7 +36,7 @@ import javax.swing.plaf.FontUIResource;
 
 public final class javax_swing_plaf_FontUIResource extends AbstractTest<FontUIResource> {
     public static void main(String[] args) {
-        new javax_swing_plaf_FontUIResource().test(true);
+        new javax_swing_plaf_FontUIResource().test();
     }
 
     protected FontUIResource getObject() {

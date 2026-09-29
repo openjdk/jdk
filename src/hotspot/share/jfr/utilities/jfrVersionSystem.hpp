@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,9 +105,9 @@ class JfrVersionSystem : public JfrCHeapObj {
   NodePtr synchronize_with(Type version, NodePtr last) const;
   DEBUG_ONLY(void assert_state(const Node* node) const;)
   struct PaddedTip {
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
     volatile Type _value;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile Type));
+    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(volatile Type));
   };
   PaddedTip _tip;
   NodePtr _head;

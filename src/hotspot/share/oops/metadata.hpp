@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,11 @@ class Metadata : public MetaspaceObj {
   NOT_PRODUCT(int _valid;)
  public:
   NOT_PRODUCT(Metadata() : _valid(0) {})
+
+  // We have to keep the vtable alive under LTGC dead-section removal/LTO
+  // for serviceability tests to work.
+  // This can be done by linker settings or modifications to the Metadata class.
+
   NOT_PRODUCT(bool is_valid() const { return _valid == 0; })
 
   int identity_hash()                { return (int)(uintptr_t)this; }
@@ -48,7 +53,7 @@ class Metadata : public MetaspaceObj {
   virtual int  size()                  const = 0;
   virtual MetaspaceObj::Type type()    const = 0;
   virtual const char* internal_name()  const = 0;
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter) {}
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter) = 0;
 
   void print()       const;
   void print_value() const;
@@ -75,5 +80,14 @@ class Metadata : public MetaspaceObj {
   // and constant pools need to be set, but someday instanceKlasses might also.
   static void mark_on_stack(Metadata* m) { m->set_on_stack(true); }
 };
+
+template <typename M>
+inline void print_on_maybe_null(outputStream* st, const char* str, const M* m) {
+  if (nullptr != m) {
+    st->print_raw(str);
+    m->print_value_on(st);
+    st->cr();
+  }
+}
 
 #endif // SHARE_OOPS_METADATA_HPP

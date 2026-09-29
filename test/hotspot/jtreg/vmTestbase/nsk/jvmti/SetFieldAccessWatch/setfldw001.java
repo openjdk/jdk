@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package nsk.jvmti.SetFieldAccessWatch;
+
+import jdk.test.lib.thread.TestThreadFactory;
 
 import java.io.PrintStream;
 
@@ -62,7 +64,7 @@ public class setfldw001 {
     public static int run(String argv[], PrintStream ref) {
         setfldw001 t = new setfldw001();
         setfldw001a t_a = new setfldw001a();
-        setfldw001b t_b = new setfldw001b();
+        Thread t_b = TestThreadFactory.newThread(new setfldw001b());
         t_b.start();
         synchronized (lock) {
             fld = fld1 + 1;
@@ -111,7 +113,7 @@ class setfldw001a {
     int fld = 2;
 }
 
-class setfldw001b extends Thread {
+class setfldw001b implements Runnable  {
     float fld4 = 6.0f;
     public void run() {
         synchronized (setfldw001.lock) {

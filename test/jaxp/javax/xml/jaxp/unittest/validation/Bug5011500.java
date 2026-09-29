@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.xml.validation.Validator;
 import javax.xml.validation.ValidatorHandler;
 
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
@@ -44,11 +43,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 5011500
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug5011500
  * @run testng/othervm validation.Bug5011500
  * @summary Test ValidatorHanlder and Validator can work for the xml document.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug5011500 {
 
     public static final String XSD = "<?xml version='1.0'?>\n" + "<schema xmlns='http://www.w3.org/2001/XMLSchema'\n" + "        xmlns:test='jaxp13_test'\n"

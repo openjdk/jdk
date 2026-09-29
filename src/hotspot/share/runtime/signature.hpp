@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,9 +26,12 @@
 #ifndef SHARE_RUNTIME_SIGNATURE_HPP
 #define SHARE_RUNTIME_SIGNATURE_HPP
 
+#include "classfile/symbolTable.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/method.hpp"
 
+class MetaspaceClosure;
 
 // Static routines and parsing loops for processing field and method
 // descriptors.  In the HotSpot sources we call them "signatures".
@@ -338,10 +341,13 @@ class Fingerprinter: public SignatureIterator {
   void do_type_calling_convention(BasicType type);
 
   friend class SignatureIterator;  // so do_parameters_on can call do_type
+
   void do_type(BasicType type) {
     assert(fp_is_valid_type(type), "bad parameter type");
-    _accumulator |= ((fingerprint_t)type << _shift_count);
-    _shift_count += fp_parameter_feature_size;
+    if (_param_size <= fp_max_size_of_parameters) {
+      _accumulator |= ((fingerprint_t)type << _shift_count);
+      _shift_count += fp_parameter_feature_size;
+    }
     _param_size += (is_double_word_type(type) ? 2 : 1);
     do_type_calling_convention(type);
   }
@@ -420,7 +426,7 @@ class NativeSignatureIterator: public SignatureIterator {
   bool      is_static() const          { return method()->is_static(); }
   virtual void pass_int()              = 0;
   virtual void pass_long()             = 0;
-  virtual void pass_object()           = 0;  // objects, arrays, inlines
+  virtual void pass_object()           = 0;  // objects, arrays, values
   virtual void pass_float()            = 0;
   virtual void pass_byte()             { pass_int(); };
   virtual void pass_short()            { pass_int(); };
@@ -560,8 +566,50 @@ class SignatureStream : public StackObj {
 
   // free-standing lookups (bring your own CL/PD pair)
   enum FailureMode { ReturnNull, NCDFError, CachedOrNull };
-  Klass* as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
-  oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
+  Klass* as_klass(Handle class_loader, FailureMode failure_mode, TRAPS);
+  ValueKlass* as_value_klass(InstanceKlass* holder);
+  oop as_java_mirror(Handle class_loader, FailureMode failure_mode, TRAPS);
+};
+
+class SigEntry;
+class SigEntryFilter;
+typedef GrowableArrayFilterIterator<SigEntry, SigEntryFilter> ExtendedSignature;
+
+// Used for adapter generation. One SigEntry is used per element of
+// the signature of the method. Value type arguments are treated
+// specially. See comment for ValueKlass::collect_fields().
+class SigEntry {
+ public:
+  BasicType _bt;      // Basic type of the argument
+  bool _null_marker;  // Is it a null marker? For printing
+  bool _vt_oop;       // Is it a possibly null buffer
+  bool _padding;      // Dummy field initialized to zero for padding
+  int _offset;        // Offset of the field in its value class holder for scalarized arguments (-1 otherwise). Used for packing and unpacking.
+  Symbol* _name;      // Symbol for printing
+
+  SigEntry()
+    : _bt(T_ILLEGAL), _null_marker(false), _vt_oop(false), _padding(0), _offset(-1), _name(nullptr)  {}
+
+  SigEntry(BasicType bt, int offset, Symbol* name, bool null_marker, bool vt_oop)
+    : _bt(bt), _null_marker(null_marker), _vt_oop(vt_oop), _padding(0), _offset(offset), _name(name) {}
+
+  static void add_entry(GrowableArray<SigEntry>* sig, BasicType bt, Symbol* name = nullptr, int offset = -1, bool null_marker = false, bool vt_oop = false);
+  static void add_null_marker(GrowableArray<SigEntry>* sig, Symbol* name, int offset);
+  static bool skip_value_delimiters(const GrowableArray<SigEntry>* sig, int i);
+  static int fill_sig_bt(const GrowableArray<SigEntry>* sig, BasicType* sig_bt);
+  static TempNewSymbol create_symbol(const GrowableArray<SigEntry>* sig);
+
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size_in_heapwords() const { return (int)heap_word_size(sizeof(SigEntry)); }
+  MetaspaceClosureType type() const { return MetaspaceClosureType::SigEntryType; }
+  static bool is_read_only_by_default() { return true; }
+
+  void print_on(outputStream* st) const;
+};
+
+class SigEntryFilter {
+public:
+  bool operator()(const SigEntry& entry) { return entry._bt != T_METADATA && entry._bt != T_VOID; }
 };
 
 // Specialized SignatureStream: used for invoking SystemDictionary to either find
@@ -571,7 +619,6 @@ class ResolvingSignatureStream : public SignatureStream {
   Klass*       _load_origin;
   bool         _handles_cached;
   Handle       _class_loader;       // cached when needed
-  Handle       _protection_domain;  // cached when needed
 
   void initialize_load_origin(Klass* load_origin) {
     _load_origin = load_origin;
@@ -587,20 +634,18 @@ class ResolvingSignatureStream : public SignatureStream {
 
  public:
   ResolvingSignatureStream(Symbol* signature, Klass* load_origin, bool is_method = true);
-  ResolvingSignatureStream(Symbol* signature, Handle class_loader, Handle protection_domain, bool is_method = true);
+  ResolvingSignatureStream(Symbol* signature, Handle class_loader, bool is_method = true);
   ResolvingSignatureStream(const Method* method);
 
   Klass* as_klass(FailureMode failure_mode, TRAPS) {
     need_handles();
-    return SignatureStream::as_klass(_class_loader, _protection_domain,
-                                     failure_mode, THREAD);
+    return SignatureStream::as_klass(_class_loader, failure_mode, THREAD);
   }
   oop as_java_mirror(FailureMode failure_mode, TRAPS) {
     if (is_reference()) {
       need_handles();
     }
-    return SignatureStream::as_java_mirror(_class_loader, _protection_domain,
-                                           failure_mode, THREAD);
+    return SignatureStream::as_java_mirror(_class_loader, failure_mode, THREAD);
   }
 };
 
@@ -629,11 +674,11 @@ void SignatureIterator::do_parameters_on(T* callback) {
   }
 }
 
- #ifdef ASSERT
+#ifdef ASSERT
  class SignatureVerifier : public StackObj {
   public:
-    static bool is_valid_method_signature(Symbol* sig);
-    static bool is_valid_type_signature(Symbol* sig);
+    static bool is_valid_method_signature(const Symbol* sig);
+    static bool is_valid_type_signature(const Symbol* sig);
   private:
     static ssize_t is_valid_type(const char*, ssize_t);
 };

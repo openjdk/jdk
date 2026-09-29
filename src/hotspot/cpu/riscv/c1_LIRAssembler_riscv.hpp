@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -43,6 +43,12 @@ private:
 
   Address as_Address(LIR_Address* addr, Register tmp);
 
+  void mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
+               CodeEmitInfo* info, bool wide, bool is_volatile);
+  void load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info);
+  void load_acquire(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
+  void load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
+
   // helper functions which checks for overflow and sets bailout if it
   // occurs.  Always returns a valid embeddable pointer but in the
   // bailout case the pointer won't be to unique storage.
@@ -54,30 +60,26 @@ private:
   Address stack_slot_address(int index, uint shift, int adjust = 0);
 
   // Record the type of the receiver in ReceiverTypeData
-  void type_profile_helper(Register mdo,
-                           ciMethodData *md, ciProfileData *data,
-                           Register recv, Label* update_done);
+  void type_profile_helper(Register mdo, ciMethodData *md,
+                           ciProfileData *data, Register recv);
 
   void casw(Register addr, Register newval, Register cmpval);
   void caswu(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
-  void poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info = nullptr);
-
   void deoptimize_trap(CodeEmitInfo *info);
 
   enum {
-    // See emit_static_call_stub for detail
-    // CompiledStaticCall::to_interp_stub_size() (14) + CompiledStaticCall::to_trampoline_stub_size() (1 + 3 + address)
-    _call_stub_size = 14 * NativeInstruction::instruction_size +
-                      (NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size),
+    // call stub: CompiledDirectCall::to_interp_stub_size() +
+    //            CompiledDirectCall::to_trampoline_stub_size()
+    _call_stub_size = 11 * MacroAssembler::instruction_size +
+                      1 * MacroAssembler::instruction_size + wordSize,
     // See emit_exception_handler for detail
-    // verify_not_null_oop + far_call + should_not_reach_here + invalidate_registers(DEBUG_ONLY)
-    _exception_handler_size = DEBUG_ONLY(584) NOT_DEBUG(548), // or smaller
+    _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175), // or smaller
     // See emit_deopt_handler for detail
-    // auipc (1) + far_jump (6 or 2)
-    _deopt_handler_size = 1 * NativeInstruction::instruction_size +
-                          6 * NativeInstruction::instruction_size // or smaller
+    // far_call (2) + j (1)
+    _deopt_handler_size = 1 * MacroAssembler::instruction_size +
+                          2 * MacroAssembler::instruction_size
   };
 
   void check_conflict(ciKlass* exact_klass, intptr_t current_klass, Register tmp,
@@ -98,7 +100,7 @@ private:
   void typecheck_helper_slowcheck(ciKlass* k, Register obj, Register Rtmp1,
                                   Register k_RInfo, Register klass_RInfo,
                                   Label* failure_target, Label* success_target);
-  void profile_object(ciMethodData* md, ciProfileData* data, Register obj,
+  void profile_object(LIR_OpTypeCheck* op, ciMethodData* md, ciProfileData* data, Register obj,
                       Register k_RInfo, Register klass_RInfo, Label* obj_is_null);
   void typecheck_loaded(LIR_OpTypeCheck* op, ciKlass* k, Register k_RInfo);
 
@@ -116,6 +118,7 @@ private:
   void logic_op_reg(Register dst, Register left, Register right, LIR_Code code);
   void logic_op_imm(Register dst, Register left, int right, LIR_Code code);
 
+  void move(LIR_Opr src, LIR_Opr dst);
 public:
 
   void emit_cmove(LIR_Op4* op);

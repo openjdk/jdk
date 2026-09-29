@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.jfr.internal;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +32,6 @@ import jdk.jfr.Enabled;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.test.WhiteBox;
-import jdk.jfr.internal.util.Utils;
 
 // The Old Object event could have been implemented as a periodic event, but
 // due to chunk rotations and how settings are calculated when multiple recordings
@@ -93,7 +91,7 @@ public final class OldObjectSample {
     }
 
     public static Map<String, String> createSettingsForSnapshot(PlatformRecording recording, Boolean pathToGcRoots) {
-        Map<String, String> settings = new HashMap<>(recording.getSettings());
+        Map<String, String> settings = recording.getSettingsCopy();
         updateSettingPathToGcRoots(settings, pathToGcRoots);
         return settings;
     }

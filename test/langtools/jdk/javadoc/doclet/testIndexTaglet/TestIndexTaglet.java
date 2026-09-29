@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8202462
+ * @bug 8202462 8340565
  * @summary {@index} may cause duplicate labels
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -33,7 +33,6 @@
 
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import builder.ClassBuilder;
 import builder.ClassBuilder.MethodBuilder;
@@ -84,6 +83,21 @@ public class TestIndexTaglet extends JavadocTester {
                 "<h2>Method Summary</h2>\n",
                 """
                     <div class="block">test description with search_phrase_a</div>""");
+
+        checkOrder("search-tags.html",
+                """
+                    <h1>Search Tags</h1>""",
+                """
+                    <div class="caption"><span>Search Tags Summary</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Search Tag</div>
+                    <div class="table-header col-second">Description</div>
+                    <div class="table-header col-last">Defined In</div>""",
+                """
+                    <div class="col-first even-row-color">search_phrase_a</div>
+                    <div class="col-second even-row-color">class a</div>
+                    <div class="col-last even-row-color">
+                    <div class="block"><code><a href="pkg/A.html#search_phrase_a">pkg.A.func(A)</a></code></div>""");
     }
 
     @Test
@@ -130,5 +144,13 @@ public class TestIndexTaglet extends JavadocTester {
                     This is a class. Here is <span id="foo" class="search-tag-result">foo</span>.""",
                 """
                     This is a method. Here is <span id="foo-1" class="search-tag-result">foo</span>.""");
+
+        checkOrder("search-tags.html",
+                """
+                    <div class="col-first even-row-color">foo</div>
+                    <div class="col-second even-row-color">first</div>
+                    <div class="col-last even-row-color">
+                    <div class="block"><code><a href="pkg/A.html#foo">class pkg.A</a></code>, <code\
+                    ><a href="pkg/A.html#foo-1">pkg.A.m()</a></code></div>""");
     }
 }

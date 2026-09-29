@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_C1_C1_CODESTUBS_HPP
 
 #include "c1/c1_FrameMap.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "code/nativeInst.hpp"
@@ -126,36 +126,6 @@ public:
 #endif // PRODUCT
 
 };
-
-class ConversionStub: public CodeStub {
- private:
-  Bytecodes::Code _bytecode;
-  LIR_Opr         _input;
-  LIR_Opr         _result;
-
-  static float float_zero;
-  static double double_zero;
- public:
-  ConversionStub(Bytecodes::Code bytecode, LIR_Opr input, LIR_Opr result)
-    : _bytecode(bytecode), _input(input), _result(result) {
-    NOT_IA32( ShouldNotReachHere(); ) // used only on x86-32
-  }
-
-  Bytecodes::Code bytecode() { return _bytecode; }
-  LIR_Opr         input()    { return _input; }
-  LIR_Opr         result()   { return _result; }
-
-  virtual void emit_code(LIR_Assembler* e);
-  virtual void visit(LIR_OpVisitState* visitor) {
-    visitor->do_slow_case();
-    visitor->do_input(_input);
-    visitor->do_output(_result);
-  }
-#ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("ConversionStub"); }
-#endif // PRODUCT
-};
-
 
 // Throws ArrayIndexOutOfBoundsException by default but can be
 // configured to throw IndexOutOfBoundsException in constructor
@@ -258,16 +228,89 @@ class ImplicitNullCheckStub: public CodeStub {
 };
 
 
+class LoadFlattenedArrayStub: public CodeStub {
+ private:
+  LIR_Opr          _array;
+  LIR_Opr          _index;
+  LIR_Opr          _result;
+  LIR_Opr          _stub_result_reg;
+  CodeEmitInfo*    _info;
+
+ public:
+  LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info);
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const             { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+    visitor->do_input(_array);
+    visitor->do_input(_index);
+    visitor->do_output(_result);
+    if (_stub_result_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_stub_result_reg);
+    }
+  }
+
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("LoadFlattenedArrayStub"); }
+#endif // PRODUCT
+};
+
+
+class StoreFlattenedArrayStub: public CodeStub {
+ private:
+  LIR_Opr          _array;
+  LIR_Opr          _index;
+  LIR_Opr          _value;
+  CodeEmitInfo*    _info;
+
+ public:
+  StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info);
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const             { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+    visitor->do_input(_array);
+    visitor->do_input(_index);
+    visitor->do_input(_value);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("StoreFlattenedArrayStub"); }
+#endif // PRODUCT
+};
+
+class SubstitutabilityCheckStub: public CodeStub {
+ private:
+  LIR_Opr          _left;
+  LIR_Opr          _right;
+  LIR_Opr          _stub_result_reg;
+  CodeEmitInfo*    _info;
+ public:
+  SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info);
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const             { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+    visitor->do_input(_left);
+    visitor->do_input(_right);
+    if (_stub_result_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_stub_result_reg);
+    }
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("SubstitutabilityCheckStub"); }
+#endif // PRODUCT
+};
+
 class NewInstanceStub: public CodeStub {
  private:
   ciInstanceKlass* _klass;
   LIR_Opr          _klass_reg;
   LIR_Opr          _result;
   CodeEmitInfo*    _info;
-  Runtime1::StubID _stub_id;
+  StubId           _stub_id;
 
  public:
-  NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, Runtime1::StubID stub_id);
+  NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, StubId stub_id);
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual void visit(LIR_OpVisitState* visitor) {
@@ -310,9 +353,9 @@ class NewObjectArrayStub: public CodeStub {
   LIR_Opr        _length;
   LIR_Opr        _result;
   CodeEmitInfo*  _info;
-
+  bool           _is_null_free;
  public:
-  NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result, CodeEmitInfo* info);
+  NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result, CodeEmitInfo* info, bool is_null_free = false);
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual void visit(LIR_OpVisitState* visitor) {
@@ -347,11 +390,19 @@ class MonitorAccessStub: public CodeStub {
 class MonitorEnterStub: public MonitorAccessStub {
  private:
   CodeEmitInfo* _info;
+  CodeStub* _throw_ie_stub;
+  LIR_Opr _scratch_reg;
 
  public:
-  MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
+  MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info,
+                   CodeStub* throw_ie_stub = nullptr, LIR_Opr scratch_reg = LIR_OprFact::illegalOpr)
     : MonitorAccessStub(obj_reg, lock_reg) {
     _info = new CodeEmitInfo(info);
+    _scratch_reg = scratch_reg;
+    _throw_ie_stub = throw_ie_stub;
+    if (_throw_ie_stub != nullptr) {
+      assert(_scratch_reg != LIR_OprFact::illegalOpr, "must be");
+    }
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
@@ -361,6 +412,9 @@ class MonitorEnterStub: public MonitorAccessStub {
   virtual void visit(LIR_OpVisitState* visitor) {
     visitor->do_input(_obj_reg);
     visitor->do_input(_lock_reg);
+    if (_scratch_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_scratch_reg);
+    }
     visitor->do_slow_case(_info);
   }
 #ifndef PRODUCT
@@ -371,21 +425,16 @@ class MonitorEnterStub: public MonitorAccessStub {
 
 class MonitorExitStub: public MonitorAccessStub {
  private:
-  bool _compute_lock;
   int  _monitor_ix;
 
  public:
-  MonitorExitStub(LIR_Opr lock_reg, bool compute_lock, int monitor_ix)
+  MonitorExitStub(LIR_Opr lock_reg, int monitor_ix)
     : MonitorAccessStub(LIR_OprFact::illegalOpr, lock_reg),
-      _compute_lock(compute_lock), _monitor_ix(monitor_ix) { }
+      _monitor_ix(monitor_ix) { }
   virtual void emit_code(LIR_Assembler* e);
   virtual void visit(LIR_OpVisitState* visitor) {
     assert(_obj_reg->is_illegal(), "unused");
-    if (_compute_lock) {
-      visitor->do_temp(_lock_reg);
-    } else {
-      visitor->do_input(_lock_reg);
-    }
+    visitor->do_temp(_lock_reg);
   }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("MonitorExitStub"); }
@@ -515,11 +564,11 @@ public:
 class SimpleExceptionStub: public CodeStub {
  private:
   LIR_Opr          _obj;
-  Runtime1::StubID _stub;
+  StubId           _stub;
   CodeEmitInfo*    _info;
 
  public:
-  SimpleExceptionStub(Runtime1::StubID stub, LIR_Opr obj, CodeEmitInfo* info):
+  SimpleExceptionStub(StubId stub, LIR_Opr obj, CodeEmitInfo* info):
     _obj(obj), _stub(stub), _info(info) {
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
@@ -546,7 +595,7 @@ class SimpleExceptionStub: public CodeStub {
 
 class ArrayStoreExceptionStub: public SimpleExceptionStub {
  public:
-  ArrayStoreExceptionStub(LIR_Opr obj, CodeEmitInfo* info): SimpleExceptionStub(Runtime1::throw_array_store_exception_id, obj, info) {}
+  ArrayStoreExceptionStub(LIR_Opr obj, CodeEmitInfo* info): SimpleExceptionStub(StubId::c1_throw_array_store_exception_id, obj, info) {}
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("ArrayStoreExceptionStub"); }
 #endif // PRODUCT

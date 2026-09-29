@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 5009601
  * @summary enum constructors cannot be declared public or protected
- * @author Joseph D. Darcy
  *
  * @compile/fail/ref=EnumProtectedConstructor.out -XDrawDiagnostics EnumProtectedConstructor.java
  */

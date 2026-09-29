@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -32,7 +31,7 @@ static void grow(T*& buffer, size_t& capacity, size_t minimum_length = 0) {
   if (new_size < minimum_length) {
     new_size = minimum_length;
   }
-  buffer = REALLOC_C_HEAP_ARRAY(T, buffer, new_size, mtLogging);
+  buffer = REALLOC_C_HEAP_ARRAY(buffer, new_size, mtLogging);
   capacity = new_size;
 }
 
@@ -49,8 +48,8 @@ LogMessageBuffer::LogMessageBuffer() : _message_buffer_size(0),
 
 LogMessageBuffer::~LogMessageBuffer() {
   if (_allocated) {
-    FREE_C_HEAP_ARRAY(char, _message_buffer);
-    FREE_C_HEAP_ARRAY(LogLine, _lines);
+    FREE_C_HEAP_ARRAY(_message_buffer);
+    FREE_C_HEAP_ARRAY(_lines);
   }
 }
 

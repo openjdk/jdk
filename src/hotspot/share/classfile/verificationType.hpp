@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,10 @@ class ClassVerifier;
 
 class VerificationType {
   private:
-    // Least significant bits of _handle are always 0, so we use these as
-    // the indicator that the _handle is valid.  Otherwise, the _data field
+    // Least significant 2 bits of _sym are always 0, so we use these as
+    // the indicator that _sym is a valid pointer.  Otherwise, the _data field
     // contains encoded data (as specified below).  Should the VM change
-    // and the lower bits on oops aren't 0, the assert in the constructor
+    // and the lower 2 bits of Symbol* aren't 0, the assert in the constructor
     // will catch this and we'll have to add a descriminator tag to this
     // structure.
     union {
@@ -68,9 +68,9 @@ class VerificationType {
 
     // Enum for the _data field
     enum : uint {
-      // Bottom two bits determine if the type is a reference, primitive,
-      // uninitialized or a query-type.
-      TypeMask           = 0x00000003,
+      // Bottom three bits determine if the type is a reference,
+      // primitive, uninitialized or a query-type.
+      TypeMask           = 0x00000007,
 
       // Topmost types encoding
       Reference          = 0x0,        // _sym contains the name
@@ -156,7 +156,7 @@ class VerificationType {
 
   // For reference types, store the actual Symbol
   static VerificationType reference_type(Symbol* sh) {
-      assert(((uintptr_t)sh & 0x3) == 0, "Symbols must be aligned");
+      assert(((uintptr_t)sh & TypeMask) == 0, "Symbols must be aligned");
       // If the above assert fails in the future because oop* isn't aligned,
       // then this type encoding system will have to change to have a tag value
       // to discriminate between oops and primitives.
@@ -185,8 +185,8 @@ class VerificationType {
   bool is_reference() const { return ((_u._data & TypeMask) == Reference); }
   bool is_category1() const {
     // This should return true for all one-word types, which are category1
-    // primitives, and references (including uninitialized refs).  Though
-    // the 'query' types should technically return 'false' here, if we
+    // primitives, references (including uninitialized refs) and value types.
+    // Though the 'query' types should technically return 'false' here, if we
     // allow this to return true, we can perform the test using only
     // 2 operations rather than 8 (3 masks, 3 compares and 2 logical 'ands').
     // Since no one should call this on a query type anyway, this is ok.
@@ -288,7 +288,7 @@ class VerificationType {
           if (is_reference() && from.is_reference()) {
             return is_reference_assignable_from(from, context,
                                                 from_field_is_protected,
-                                                THREAD);
+                                                nullptr, THREAD);
           } else {
             return false;
           }
@@ -327,17 +327,24 @@ class VerificationType {
 
   void print_on(outputStream* st) const;
 
- private:
+  bool is_reference_assignable_from(const VerificationType& from, ClassVerifier* context,
+                                    bool from_field_is_protected, bool* this_is_interface, TRAPS) const;
 
-  bool is_reference_assignable_from(
-    const VerificationType&, ClassVerifier*, bool from_field_is_protected,
-    TRAPS) const;
-
- public:
-  static bool resolve_and_check_assignability(InstanceKlass* klass, Symbol* name,
+  static bool resolve_and_check_assignability(InstanceKlass* current_klass, Symbol* target_name,
                                               Symbol* from_name, bool from_field_is_protected,
                                               bool from_is_array, bool from_is_object,
+                                              TRAPS) {
+    return resolve_and_check_assignability(current_klass, target_name, from_name, from_field_is_protected,
+                                           from_is_array, from_is_object, nullptr, THREAD);
+  }
+
+ private:
+  static bool resolve_and_check_assignability(InstanceKlass* current_klass, Symbol* target_name,
+                                              Symbol* from_name, bool from_field_is_protected,
+                                              bool from_is_array, bool from_is_object,
+                                              bool* target_is_interface,
                                               TRAPS);
+
 };
 
 #endif // SHARE_CLASSFILE_VERIFICATIONTYPE_HPP

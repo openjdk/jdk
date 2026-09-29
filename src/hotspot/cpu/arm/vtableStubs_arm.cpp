@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_arm.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/klass.inline.hpp"
@@ -47,10 +46,10 @@
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index);
 #endif
 
-VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
-  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -73,7 +72,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
+  assert(SharedRuntime::name_for_receiver() == R0->as_VMReg(), "receiver expected in R0");
 
   const Register tmp = Rtemp; // Rtemp OK, should be free at call sites
 
@@ -111,16 +110,16 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address ame_addr = __ pc();
   __ ldr(PC, Address(Rmethod, Method::from_compiled_offset()));
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
 }
 
-VtableStub* VtableStubs::create_itable_stub(int itable_index) {
+VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
-  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -142,7 +141,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
+  assert(SharedRuntime::name_for_receiver() == R0->as_VMReg(), "receiver expected in R0");
 
   // R0-R3 / R0-R7 registers hold the arguments and cannot be spoiled
   const Register Rclass  = R4;
@@ -160,7 +159,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(Rclass, R0);
 
   // Receiver subtype check against REFC.
-  __ ldr(Rintf, Address(Ricklass, CompiledICHolder::holder_klass_offset()));
+  __ ldr(Rintf, Address(Ricklass, CompiledICData::itable_refc_klass_offset()));
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              Rclass, Rintf, noreg,
                              // outputs: temp reg1, temp reg2
@@ -171,7 +170,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   start_pc = __ pc();
 
   // Get Method* and entry point for compiler
-  __ ldr(Rintf, Address(Ricklass, CompiledICHolder::holder_metadata_offset()));
+  __ ldr(Rintf, Address(Ricklass, CompiledICData::itable_defc_klass_offset()));
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              Rclass, Rintf, itable_index,
                              // outputs: temp reg1, temp reg2, temp reg3
@@ -206,7 +205,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(SharedRuntime::get_handle_wrong_method_stub() != nullptr, "check initialization order");
   __ jump(SharedRuntime::get_handle_wrong_method_stub(), relocInfo::runtime_call_type, Rtemp);
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;

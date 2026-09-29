@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@
 
   static bool narrow_klass_use_complex_address() {
     NOT_LP64(ShouldNotCallThis());
-    assert(UseCompressedClassPointers, "only for compressed klass code");
     return false;
   }
 
@@ -101,9 +100,6 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = false;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
-
   // Are floats converted to double when stored to stack during deoptimization?
   // ARM does not handle callee-save floats.
   static constexpr bool float_in_double() {
@@ -124,6 +120,11 @@
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return VM_Version::has_simd();
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
+    return false;
   }
 
   // Does the CPU supports vector variable rotate instructions?
@@ -188,6 +189,12 @@
 
   // Is SIMD sort supported for this CPU?
   static bool supports_simd_sort(BasicType bt) {
+    return false;
+  }
+
+  // Return true if VectorSlice is better served by a two source permute than by
+  // the native slice lowering.
+  static bool vector_slice_prefers_select_from_two_vector(BasicType elem_bt, int byte_origin) {
     return false;
   }
 

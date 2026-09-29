@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,26 @@
 
 package sax;
 
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
-
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.io.StringReader;
 
-import org.testng.Assert;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
-import org.xml.sax.InputSource;
-import org.xml.sax.helpers.DefaultHandler;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /*
  * @test
  * @bug 8173390 8176168
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -Djdk.xml.resetSymbolTable=false sax.SymbolTableResetTest
- * @run testng/othervm -Djdk.xml.resetSymbolTable=true sax.SymbolTableResetTest
- * @run testng/othervm -Djdk.xml.resetSymbolTable=false -DrunSecMngr=true -Djava.security.manager=allow sax.SymbolTableResetTest
- * @run testng/othervm -Djdk.xml.resetSymbolTable=true -DrunSecMngr=true -Djava.security.manager=allow sax.SymbolTableResetTest
+ * @run junit/othervm -Djdk.xml.resetSymbolTable=false sax.SymbolTableResetTest
+ * @run junit/othervm -Djdk.xml.resetSymbolTable=true sax.SymbolTableResetTest
  * @summary Test that SAXParser reallocates symbol table during
  *          subsequent parse operations
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class SymbolTableResetTest {
 
     /*
@@ -91,14 +86,14 @@ public class SymbolTableResetTest {
         // Expected result based on system property and feature
         boolean resetExpected = setFeature && value;
         // Indicates if system property is set
-        boolean spSet = runWithAllPerm(() -> System.getProperty(RESET_FEATURE)) != null;
+        boolean spSet = System.getProperty(RESET_FEATURE) != null;
         // Dummy xml input for parser
         String input = "<dummy>Test</dummy>";
 
         // Check if system property is set only when feature setting is not requested
         // and estimate if reset of symbol table is expected
         if (!setFeature && spSet) {
-            resetExpected = runWithAllPerm(() -> Boolean.getBoolean(RESET_FEATURE));
+            resetExpected = Boolean.getBoolean(RESET_FEATURE);
         }
 
         // Create SAXParser and set feature if it is requested
@@ -123,9 +118,9 @@ public class SymbolTableResetTest {
 
         // Check symbol table references after two subsequent parse operations
         if (resetExpected) {
-            Assert.assertNotSame(symTable1, symTable2, "Symbol table references");
+            assertNotSame(symTable1, symTable2, "Symbol table references");
         } else {
-            Assert.assertSame(symTable1, symTable2, "Symbol table references");
+            assertSame(symTable1, symTable2, "Symbol table references");
         }
     }
 

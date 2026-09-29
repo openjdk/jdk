@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,9 @@ public class allthreads001 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -192,8 +194,8 @@ public class allthreads001 {
 
             String threadName = "testedThread";
 
-            // Suspend VM to ensure no new background thread (e.g. JVMCI
-            // compiler thread) is started between two allThreads() calls.
+            // Suspend VM to ensure no new background thread
+            // is started between two allThreads() calls.
             vm.suspend();
             List allThreads1 = vm.allThreads();
             log2("allThreads1.size() = " + allThreads1.size());

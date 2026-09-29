@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 import static javax.lang.model.SourceVersion.*;
 
@@ -97,10 +98,11 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         for (String packageName : packageNames) {
             try {
                 ModuleLayer layer = ModuleLayer.boot();
-                Optional<Module> m = layer.findModule(moduleName);
-                if (!m.isPresent())
+                // removing dependency on java.util.Optional, valhalla only, to avoid VM warnings
+                Module m = layer.findModule(moduleName).get();
+                if (m == null)
                     throw new Error("module not found: " + moduleName);
-                m.get().addExports(packageName, getClass().getModule());
+                m.addExports(packageName, getClass().getModule());
             } catch (Exception e) {
                 throw new Error("failed to add exports for " + moduleName + "/" + packageName);
             }
@@ -112,8 +114,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
      * corresponding platform visitor type.
      */
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static abstract class AbstractAnnotationValueVisitor<R, P> extends AbstractAnnotationValueVisitor14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static abstract class AbstractAnnotationValueVisitor<R, P> extends AbstractAnnotationValueVisitorPreview<R, P> {
 
         /**
          * Constructor for concrete subclasses to call.
@@ -123,8 +126,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static abstract class AbstractElementVisitor<R, P> extends AbstractElementVisitor14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static abstract class AbstractElementVisitor<R, P> extends AbstractElementVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses to call.
          */
@@ -133,8 +137,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static abstract class AbstractTypeVisitor<R, P> extends AbstractTypeVisitor14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static abstract class AbstractTypeVisitor<R, P> extends AbstractTypeVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses to call.
          */
@@ -143,8 +148,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static class ElementKindVisitor<R, P> extends ElementKindVisitor14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static class ElementKindVisitor<R, P> extends ElementKindVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -164,8 +170,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static class ElementScanner<R, P> extends ElementScanner14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static class ElementScanner<R, P> extends ElementScannerPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -183,8 +190,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static class SimpleAnnotationValueVisitor<R, P> extends SimpleAnnotationValueVisitor14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static class SimpleAnnotationValueVisitor<R, P> extends SimpleAnnotationValueVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -204,8 +212,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static class SimpleElementVisitor<R, P> extends SimpleElementVisitor14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static class SimpleElementVisitor<R, P> extends SimpleElementVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -225,8 +234,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static class SimpleTypeVisitor<R, P> extends SimpleTypeVisitor14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static class SimpleTypeVisitor<R, P> extends SimpleTypeVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses; uses {@code null} for the
          * default value.
@@ -246,8 +256,9 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         }
     }
 
-    @SupportedSourceVersion(RELEASE_23)
-    public static class TypeKindVisitor<R, P> extends TypeKindVisitor14<R, P> {
+    @SupportedSourceVersion(RELEASE_28)
+    @SuppressWarnings("preview")
+    public static class TypeKindVisitor<R, P> extends TypeKindVisitorPreview<R, P> {
         /**
          * Constructor for concrete subclasses to call; uses {@code null}
          * for the default value.
@@ -321,5 +332,74 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
 
         @Override
         public boolean isFunctionalInterface(TypeElement type) {return false;}
+    }
+
+    /**
+     * Vacuous implementation of javax.lang.model.util.Types to aid
+     * in test development. Methods with defaults in the interface are
+     * *not* overridden to allow them to be tested.
+     */
+    public static class VacuousTypes implements Types {
+        public VacuousTypes() {}
+
+        @Override
+        public Element asElement(TypeMirror t) {return null;}
+
+        @Override
+        public boolean isSameType(TypeMirror t1, TypeMirror t2) {return false;}
+
+        @Override
+        public boolean isSubtype(TypeMirror t1, TypeMirror t2) {return false;};
+
+        @Override
+        public boolean isAssignable(TypeMirror t1, TypeMirror t2) {return false;};
+
+        @Override
+        public boolean contains(TypeMirror t1, TypeMirror t2) {return false;};
+
+        @Override
+        public boolean isSubsignature(ExecutableType m1, ExecutableType m2) {return false;}
+
+        @Override
+        public List<? extends TypeMirror> directSupertypes(TypeMirror t) {return null;}
+
+        @Override
+        public TypeMirror erasure(TypeMirror t) {return null;}
+
+        @Override
+        public TypeElement boxedClass(PrimitiveType p) {return null;}
+
+        @Override
+        public PrimitiveType unboxedType(TypeMirror t) {return null;}
+
+        @Override
+        public TypeMirror capture(TypeMirror t) {return null;}
+
+        @Override
+        public PrimitiveType getPrimitiveType(TypeKind kind) {return null;}
+
+        @Override
+        public NullType getNullType() {return null;}
+
+        @Override
+        public NoType getNoType(TypeKind kind) {return null;}
+
+        @Override
+        public ArrayType getArrayType(TypeMirror componentType) {return null;}
+
+        @Override
+        public WildcardType getWildcardType(TypeMirror extendsBound,
+                                 TypeMirror superBound) {return null;}
+
+        @Override
+        public DeclaredType getDeclaredType(TypeElement typeElem, TypeMirror... typeArgs) {return null;}
+
+
+        @Override
+        public DeclaredType getDeclaredType(DeclaredType containing,
+                                 TypeElement typeElem, TypeMirror... typeArgs) {return null;}
+
+        @Override
+        public TypeMirror asMemberOf(DeclaredType containing, Element element) {return null;}
     }
 }

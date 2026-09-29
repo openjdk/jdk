@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,8 @@ class ClassesByName2Targ {
             Thread one = DebuggeeWrapper.newThread (() -> {
                         try {
                             java.security.KeyPairGenerator keyGen =
-                                java.security.KeyPairGenerator.getInstance("DSA", "SUN");
+                                    java.security.KeyPairGenerator.getInstance("DSA",
+                                            System.getProperty("test.provider.name", "SUN"));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -136,6 +137,10 @@ public class ClassesByName2Test extends TestScaffold {
         }
     }
 
+    private static boolean isHiddenClass(String className) {
+        return className.contains("/");
+    }
+
     protected void runTests() throws Exception {
         BreakpointEvent bpe = startToMain("ClassesByName2Targ");
 
@@ -159,6 +164,13 @@ public class ClassesByName2Test extends TestScaffold {
             for (Iterator it = all.iterator(); it.hasNext(); ) {
                 ReferenceType cls = (ReferenceType)it.next();
                 String name = cls.name();
+
+                if (isHiddenClass(name)) {
+                    // Hidden classes may have been unloaded by the time classesByName
+                    // is called so we skip those
+                    continue;
+                }
+
                 List found = vm().classesByName(name);
                 if (found.contains(cls)) {
                     //System.out.println("Found class: " + name);

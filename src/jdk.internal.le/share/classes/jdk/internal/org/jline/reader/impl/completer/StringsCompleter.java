@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author or authors.
+ * Copyright (c) 2002-2019, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -27,8 +27,7 @@ import jdk.internal.org.jline.utils.AttributedString;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
  */
-public class StringsCompleter implements Completer
-{
+public class StringsCompleter implements Completer {
     protected Collection<Candidate> candidates;
     protected Supplier<Collection<String>> stringsSupplier;
 
@@ -54,7 +53,7 @@ public class StringsCompleter implements Completer
         }
     }
 
-    public StringsCompleter(Candidate ... candidates) {
+    public StringsCompleter(Candidate... candidates) {
         this(Arrays.asList(candidates));
     }
 

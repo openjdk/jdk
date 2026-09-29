@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,7 @@ public class ClassWriter extends ClassFile {
 
     /** The tags and constants used in compressed stackmap. */
     static final int SAME_FRAME_SIZE = 64;
+    static final int EARLY_LARVAL = 246;
     static final int SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247;
     static final int SAME_FRAME_EXTENDED = 251;
     static final int FULL_FRAME = 255;
@@ -196,7 +197,7 @@ public class ClassWriter extends ClassFile {
         extraAttributeHooks = extraAttributeHooks.prepend(addExtraAttributes);
     }
 
-/******************************************************************
+/* ****************************************************************
  * Diagnostics: dump generated class names and modifiers
  ******************************************************************/
 
@@ -222,7 +223,7 @@ public class ClassWriter extends ClassFile {
         int i = 0;
         long f = flags & StandardFlags;
         while (f != 0) {
-            if ((f & 1) != 0) {
+            if ((f & 1) != 0 && flagName[i] != "") {
                 sbuf.append(" ");
                 sbuf.append(flagName[i]);
             }
@@ -234,10 +235,11 @@ public class ClassWriter extends ClassFile {
     //where
         private static final String[] flagName = {
             "PUBLIC", "PRIVATE", "PROTECTED", "STATIC", "FINAL",
-            "SUPER", "VOLATILE", "TRANSIENT", "NATIVE", "INTERFACE",
+            // the empty position should be for synchronized but right now we don't have any test checking it
+            "", "VOLATILE", "TRANSIENT", "NATIVE", "INTERFACE",
             "ABSTRACT", "STRICTFP"};
 
-/******************************************************************
+/* ****************************************************************
  * Output routines
  ******************************************************************/
 
@@ -259,7 +261,7 @@ public class ClassWriter extends ClassFile {
         buf.elems[adr+3] = (byte)((x      ) & 0xFF);
     }
 
-/******************************************************************
+/* ****************************************************************
  * Writing the Constant Pool
  ******************************************************************/
 
@@ -277,7 +279,7 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-/******************************************************************
+/* ****************************************************************
  * Writing Attributes
  ******************************************************************/
 
@@ -329,7 +331,7 @@ public class ClassWriter extends ClassFile {
         int alenIdx = writeAttr(attributeName);
         ClassSymbol enclClass = c.owner.enclClass();
         MethodSymbol enclMethod =
-            (c.owner.type == null // local to init block
+            ((c.owner.flags() & BLOCK) != 0 // local to init block
              || c.owner.kind != MTH) // or member init
             ? null
             : ((MethodSymbol)c.owner).originalEnclosingMethod();
@@ -480,7 +482,7 @@ public class ClassWriter extends ClassFile {
         return attrCount;
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing Java-language annotations (aka metadata, attributes)
  **********************************************************************/
 
@@ -649,8 +651,16 @@ public class ClassWriter extends ClassFile {
         databuf.appendChar(poolWriter.putDescriptor(c.type));
         databuf.appendChar(c.values.length());
         for (Pair<Symbol.MethodSymbol,Attribute> p : c.values) {
+            checkAnnotationArraySizeInternal(p);
             databuf.appendChar(poolWriter.putName(p.fst.name));
             p.snd.accept(awriter);
+        }
+    }
+
+    private void checkAnnotationArraySizeInternal(Pair<Symbol.MethodSymbol, Attribute> p) {
+        if (p.snd instanceof Attribute.Array arrAttr &&
+                arrAttr.values.length > ClassFile.MAX_ANNOTATIONS) {
+            log.error(Errors.AnnotationArrayTooLarge(p.fst.owner));
         }
     }
 
@@ -741,7 +751,7 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing module attributes
  **********************************************************************/
 
@@ -823,20 +833,24 @@ public class ClassWriter extends ClassFile {
         return 1;
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing Objects
  **********************************************************************/
 
     /** Write "inner classes" attribute.
      */
-    void writeInnerClasses() {
+    void writeInnerClasses(boolean markedPreview) {
         int alenIdx = writeAttr(names.InnerClasses);
         databuf.appendChar(poolWriter.innerClasses.size());
         for (ClassSymbol inner : poolWriter.innerClasses) {
             inner.markAbstractIfNeeded(types);
-            int flags = adjustFlags(inner.flags_field);
+            int flags = adjustFlags(inner, inner.flags_field);
             if ((flags & INTERFACE) != 0) flags |= ABSTRACT; // Interfaces are always ABSTRACT
-            flags &= ~STRICTFP; //inner classes should not have the strictfp flag set.
+            if ((flags & ACC_IDENTITY) != 0) {
+                if (!markedPreview) {
+                    flags &= ~ACC_IDENTITY; // No SUPER for InnerClasses
+                }
+            }
             if (dumpInnerClassModifiers) {
                 PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
                 pw.println("INNERCLASS  " + inner.name);
@@ -851,6 +865,17 @@ public class ClassWriter extends ClassFile {
         }
         endAttr(alenIdx);
     }
+
+     /** Write out "LoadableDescriptors" attribute by enumerating the value classes encountered in field/method descriptors during this compilation.
+      */
+     void writeLoadableDescriptorsAttribute() {
+        int alenIdx = writeAttr(names.LoadableDescriptors);
+        databuf.appendChar(poolWriter.loadableDescriptors.size());
+        for (Symbol c : poolWriter.loadableDescriptors) {
+            databuf.appendChar(poolWriter.putDescriptor(c));
+        }
+        endAttr(alenIdx);
+     }
 
     int writeRecordAttribute(ClassSymbol csym) {
         int alenIdx = writeAttr(names.Record);
@@ -922,11 +947,11 @@ public class ClassWriter extends ClassFile {
     /** Write "PermittedSubclasses" attribute.
      */
     int writePermittedSubclassesIfNeeded(ClassSymbol csym) {
-        if (csym.permitted.nonEmpty()) {
+        if (csym.getPermittedSubclasses().nonEmpty()) {
             int alenIdx = writeAttr(names.PermittedSubclasses);
-            databuf.appendChar(csym.permitted.size());
-            for (Symbol c : csym.permitted) {
-                databuf.appendChar(poolWriter.putClass((ClassSymbol) c));
+            databuf.appendChar(csym.getPermittedSubclasses().size());
+            for (Type t : csym.getPermittedSubclasses()) {
+                databuf.appendChar(poolWriter.putClass((ClassSymbol) t.tsym));
             }
             endAttr(alenIdx);
             return 1;
@@ -965,7 +990,7 @@ public class ClassWriter extends ClassFile {
     /** Write field symbol, entering all references into constant pool.
      */
     void writeField(VarSymbol v) {
-        int flags = adjustFlags(v.flags());
+        int flags = adjustFlags(v, v.flags());
         databuf.appendChar(flags);
         if (dumpFieldModifiers) {
             PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
@@ -974,6 +999,10 @@ public class ClassWriter extends ClassFile {
         }
         databuf.appendChar(poolWriter.putName(v.name));
         databuf.appendChar(poolWriter.putDescriptor(v));
+        Type fldType = v.erasure(types);
+        if (fldType.requiresLoadableDescriptors(v.owner)) {
+            poolWriter.enterLoadableDescriptorsClass(fldType.tsym);
+        }
         int acountIdx = beginAttrs();
         int acount = 0;
         if (v.getConstValue() != null) {
@@ -990,7 +1019,7 @@ public class ClassWriter extends ClassFile {
     /** Write method symbol, entering all references into constant pool.
      */
     void writeMethod(MethodSymbol m) {
-        int flags = adjustFlags(m.flags());
+        int flags = adjustFlags(m, m.flags());
         databuf.appendChar(flags);
         if (dumpMethodModifiers) {
             PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
@@ -999,6 +1028,16 @@ public class ClassWriter extends ClassFile {
         }
         databuf.appendChar(poolWriter.putName(m.name));
         databuf.appendChar(poolWriter.putDescriptor(m));
+        MethodType mtype = (MethodType) m.externalType(types);
+        for (Type t : mtype.getParameterTypes()) {
+            if (t.requiresLoadableDescriptors(m.owner)) {
+                poolWriter.enterLoadableDescriptorsClass(t.tsym);
+            }
+        }
+        Type returnType = mtype.getReturnType();
+        if (returnType.requiresLoadableDescriptors(m.owner)) {
+            poolWriter.enterLoadableDescriptorsClass(returnType.tsym);
+        }
         int acountIdx = beginAttrs();
         int acount = 0;
         if (m.code != null) {
@@ -1096,10 +1135,11 @@ public class ClassWriter extends ClassFile {
         }
 
         // counter for number of generic local variables
-        if (code.varDebugInfo && code.varBufferSize > 0) {
+        int lvtSize = code.getLVTSize();
+        if (code.varDebugInfo && lvtSize > 0) {
             int nGenericVars = 0;
             int alenIdx = writeAttr(names.LocalVariableTable);
-            databuf.appendChar(code.getLVTSize());
+            databuf.appendChar(lvtSize);
             for (int i=0; i<code.varBufferSize; i++) {
                 Code.LocalVar var = code.varBuffer[i];
 
@@ -1289,16 +1329,22 @@ public class ClassWriter extends ClassFile {
     /** An entry in the JSR202 StackMapTable */
     abstract static class StackMapTableFrame {
         abstract int getFrameType();
+        int pc;
+
+        StackMapTableFrame(int pc) {
+            this.pc = pc;
+        }
 
         void write(ClassWriter writer) {
             int frameType = getFrameType();
             writer.databuf.appendByte(frameType);
-            if (writer.debugstackmap) System.out.print(" frame_type=" + frameType);
+            if (writer.debugstackmap) System.out.println(" frame_type=" + frameType + " bytecode offset " + pc);
         }
 
         static class SameFrame extends StackMapTableFrame {
             final int offsetDelta;
-            SameFrame(int offsetDelta) {
+            SameFrame(int pc, int offsetDelta) {
+                super(pc);
                 this.offsetDelta = offsetDelta;
             }
             int getFrameType() {
@@ -1319,7 +1365,8 @@ public class ClassWriter extends ClassFile {
         static class SameLocals1StackItemFrame extends StackMapTableFrame {
             final int offsetDelta;
             final Type stack;
-            SameLocals1StackItemFrame(int offsetDelta, Type stack) {
+            SameLocals1StackItemFrame(int pc, int offsetDelta, Type stack) {
+                super(pc);
                 this.offsetDelta = offsetDelta;
                 this.stack = stack;
             }
@@ -1347,7 +1394,8 @@ public class ClassWriter extends ClassFile {
         static class ChopFrame extends StackMapTableFrame {
             final int frameType;
             final int offsetDelta;
-            ChopFrame(int frameType, int offsetDelta) {
+            ChopFrame(int pc, int frameType, int offsetDelta) {
+                super(pc);
                 this.frameType = frameType;
                 this.offsetDelta = offsetDelta;
             }
@@ -1366,7 +1414,8 @@ public class ClassWriter extends ClassFile {
             final int frameType;
             final int offsetDelta;
             final Type[] locals;
-            AppendFrame(int frameType, int offsetDelta, Type[] locals) {
+            AppendFrame(int pc, int frameType, int offsetDelta, Type[] locals) {
+                super(pc);
                 this.frameType = frameType;
                 this.offsetDelta = offsetDelta;
                 this.locals = locals;
@@ -1390,7 +1439,8 @@ public class ClassWriter extends ClassFile {
             final int offsetDelta;
             final Type[] locals;
             final Type[] stack;
-            FullFrame(int offsetDelta, Type[] locals, Type[] stack) {
+            FullFrame(int pc, int offsetDelta, Type[] locals, Type[] stack) {
+                super(pc);
                 this.offsetDelta = offsetDelta;
                 this.locals = locals;
                 this.stack = stack;
@@ -1419,41 +1469,72 @@ public class ClassWriter extends ClassFile {
             }
         }
 
+        static class EarlyLarvalFrame extends StackMapTableFrame {
+            final StackMapTableFrame base;
+            List<VarSymbol> unsetFields;
+
+            EarlyLarvalFrame(StackMapTableFrame base, List<VarSymbol> unsetFields) {
+                super(base.pc);
+                Assert.check(!(base instanceof EarlyLarvalFrame));
+                this.base = base;
+                this.unsetFields = unsetFields;
+            }
+
+            int getFrameType() { return EARLY_LARVAL; }
+
+            @Override
+            void write(ClassWriter writer) {
+                super.write(writer);
+                writer.databuf.appendChar(unsetFields.size());
+                if (writer.debugstackmap) {
+                    System.out.println("    # writing: EarlyLarval stackmap frame with " + unsetFields.size() + " fields");
+                }
+                for (VarSymbol vsym : unsetFields) {
+                    int index = writer.poolWriter.putNameAndType(vsym);
+                    writer.databuf.appendChar(index);
+                    if (writer.debugstackmap) {
+                        System.out.println("    #writing unset field: " + index + ", with name: " + vsym.name.toString());
+                    }
+                }
+                base.write(writer);
+            }
+        }
+
        /** Compare this frame with the previous frame and produce
         *  an entry of compressed stack map frame. */
         static StackMapTableFrame getInstance(Code.StackMapFrame this_frame,
-                                              int prev_pc,
-                                              Type[] prev_locals,
-                                              Types types) {
+                                              Code.StackMapFrame prevFrame,
+                                              Types types,
+                                              int pc) {
             Type[] locals = this_frame.locals;
             Type[] stack = this_frame.stack;
-            int offset_delta = this_frame.pc - prev_pc - 1;
+            int offset_delta = this_frame.pc - prevFrame.pc - 1;
             if (stack.length == 1) {
-                if (locals.length == prev_locals.length
-                    && compare(prev_locals, locals, types) == 0) {
-                    return new SameLocals1StackItemFrame(offset_delta, stack[0]);
+                if (locals.length == prevFrame.locals.length
+                    && compare(prevFrame.locals, locals, types) == 0) {
+                    return new SameLocals1StackItemFrame(pc, offset_delta, stack[0]);
                 }
             } else if (stack.length == 0) {
-                int diff_length = compare(prev_locals, locals, types);
+                int diff_length = compare(prevFrame.locals, locals, types);
                 if (diff_length == 0) {
-                    return new SameFrame(offset_delta);
+                    return new SameFrame(pc, offset_delta);
                 } else if (-MAX_LOCAL_LENGTH_DIFF < diff_length && diff_length < 0) {
                     // APPEND
                     Type[] local_diff = new Type[-diff_length];
-                    for (int i=prev_locals.length, j=0; i<locals.length; i++,j++) {
+                    for (int i=prevFrame.locals.length, j=0; i<locals.length; i++,j++) {
                         local_diff[j] = locals[i];
                     }
-                    return new AppendFrame(SAME_FRAME_EXTENDED - diff_length,
+                    return new AppendFrame(pc, SAME_FRAME_EXTENDED - diff_length,
                                            offset_delta,
                                            local_diff);
                 } else if (0 < diff_length && diff_length < MAX_LOCAL_LENGTH_DIFF) {
                     // CHOP
-                    return new ChopFrame(SAME_FRAME_EXTENDED - diff_length,
+                    return new ChopFrame(pc, SAME_FRAME_EXTENDED - diff_length,
                                          offset_delta);
                 }
             }
             // FULL_FRAME
-            return new FullFrame(offset_delta, locals, stack);
+            return new FullFrame(pc, offset_delta, locals, stack);
         }
 
         static boolean isInt(Type t) {
@@ -1576,10 +1657,11 @@ public class ClassWriter extends ClassFile {
         if (c.owner.kind == MDL) {
             flags = ACC_MODULE;
         } else {
-            flags = adjustFlags(c.flags() & ~DEFAULT);
+            long originalFlags = c.flags();
+            flags = adjustFlags(c, c.flags() & ~(DEFAULT | STRICTFP));
             if ((flags & PROTECTED) != 0) flags |= PUBLIC;
-            flags = flags & ClassFlags & ~STRICTFP;
-            if ((flags & INTERFACE) == 0) flags |= ACC_SUPER;
+            flags = flags & ClassFlags;
+            flags |= (originalFlags & IDENTITY_TYPE) != 0 ? ACC_IDENTITY : flags;
         }
 
         if (dumpClassModifiers) {
@@ -1673,7 +1755,8 @@ public class ClassWriter extends ClassFile {
         acount += writeExtraAttributes(c);
 
         poolbuf.appendInt(JAVA_MAGIC);
-        if (preview.isEnabled() && preview.usesPreview(c.sourcefile)) {
+        boolean markedPreview = preview.isEnabled() && preview.usesPreview(c.sourcefile);
+        if (markedPreview) {
             poolbuf.appendChar(ClassFile.PREVIEW_MINOR_VERSION);
         } else {
             poolbuf.appendChar(target.minorVersion);
@@ -1701,7 +1784,12 @@ public class ClassWriter extends ClassFile {
         }
 
         if (!poolWriter.innerClasses.isEmpty()) {
-            writeInnerClasses();
+            writeInnerClasses(markedPreview);
+            acount++;
+        }
+
+        if (!poolWriter.loadableDescriptors.isEmpty()) {
+            writeLoadableDescriptorsAttribute();
             acount++;
         }
 
@@ -1735,7 +1823,7 @@ public class ClassWriter extends ClassFile {
         return i;
     }
 
-    int adjustFlags(final long flags) {
+    int adjustFlags(Symbol sym, final long flags) {
         int result = (int)flags;
 
         // Elide strictfp bit in class files
@@ -1748,16 +1836,23 @@ public class ClassWriter extends ClassFile {
             result |= ACC_VARARGS;
         if ((flags & DEFAULT) != 0)
             result &= ~ABSTRACT;
+        if (sym.kind == TYP) {
+            /* flags IDENTITY_TYPE and HAS_INIT share the same value, this is why we need first to double check that
+             * we are dealing with a type
+             */
+            if ((flags & IDENTITY_TYPE) != 0) {
+                result |= ACC_IDENTITY;
+            }
+        }
+        if (sym.kind == VAR) {
+            if ((flags & STRICT) != 0) {
+                result |= ACC_STRICT;
+            }
+        }
         return result;
     }
 
     long getLastModified(FileObject filename) {
-        long mod = 0;
-        try {
-            mod = filename.getLastModified();
-        } catch (SecurityException e) {
-            throw new AssertionError("CRT: couldn't get source file modification date: " + e.getMessage());
-        }
-        return mod;
+        return filename.getLastModified();
     }
 }

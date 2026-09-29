@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,10 @@ class CallGenerator : public ArenaObj {
 
   void do_late_inline_helper();
 
-  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false;  }
-  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return nullptr;}
-  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false;  }
+  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false; }
+  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false; }
+
+  void mark_projs_not_dead_loop_safe(Node* ret) const;
 
  public:
   // Accessors
@@ -75,6 +76,9 @@ class CallGenerator : public ArenaObj {
   // same but for method handle calls
   virtual bool      is_mh_late_inline() const      { return false; }
   virtual bool      is_string_late_inline() const  { return false; }
+  virtual bool      is_vector_late_inline() const  { return false; }
+  virtual bool      is_boxing_late_inline() const  { return false; }
+  virtual bool      is_vector_reboxing_late_inline() const  { return false; }
   virtual bool      is_virtual_late_inline() const { return false; }
 
   // Replace the call with an inline version of the code
@@ -86,6 +90,9 @@ class CallGenerator : public ArenaObj {
   virtual void set_unique_id(jlong id)          { fatal("unique id only for late inlines"); };
   virtual jlong unique_id() const               { fatal("unique id only for late inlines"); return 0; };
 
+  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return nullptr;  }
+
+  virtual ciMethod* callee_method() { ShouldNotReachHere(); }
   virtual void set_callee_method(ciMethod* callee) { ShouldNotReachHere(); }
 
   // Note:  It is possible for a CG to be both inline and virtual.
@@ -139,6 +146,7 @@ class CallGenerator : public ArenaObj {
   static CallGenerator* for_late_inline(ciMethod* m, CallGenerator* inline_cg);
   static CallGenerator* for_mh_late_inline(ciMethod* caller, ciMethod* callee, bool input_not_const);
   static CallGenerator* for_string_late_inline(ciMethod* m, CallGenerator* inline_cg);
+  static CallGenerator* for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, CallGenerator* fallback_cg);
   static CallGenerator* for_boxing_late_inline(ciMethod* m, CallGenerator* inline_cg);
   static CallGenerator* for_vector_reboxing_late_inline(ciMethod* m, CallGenerator* inline_cg);
   static CallGenerator* for_late_inline_virtual(ciMethod* m, int vtable_index, float expected_uses);
@@ -171,28 +179,14 @@ class CallGenerator : public ArenaObj {
                                                  CallGenerator* cg);
   virtual Node* generate_predicate(JVMState* jvms, int predicate) { return nullptr; };
 
-  virtual void print_inlining_late(InliningResult result, const char* msg) { ShouldNotReachHere(); }
-
-  static void print_inlining(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    print_inlining_impl(C, callee, inline_level, bci, InliningResult::SUCCESS, msg);
-  }
-
-  static void print_inlining_failure(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    print_inlining_impl(C, callee, inline_level, bci, InliningResult::FAILURE, msg);
+  static void print_inlining_failure(Compile* C, ciMethod* callee, JVMState* jvms, const char* msg) {
+    C->inline_printer()->record(callee, jvms, InliningResult::FAILURE, msg);
     C->log_inline_failure(msg);
   }
 
   static bool is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m);
   static bool is_inlined_method_handle_intrinsic(ciMethod* caller, int bci, ciMethod* m);
   static bool is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m);
-
-private:
-  static void print_inlining_impl(Compile* C, ciMethod* callee, int inline_level, int bci,
-                                  InliningResult result, const char* msg) {
-    if (C->print_inlining()) {
-      C->print_inlining(callee, inline_level, bci, result, msg);
-    }
-  }
 };
 
 

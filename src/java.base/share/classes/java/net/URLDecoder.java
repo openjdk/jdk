@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.HexFormat;
 import java.util.Objects;
 
 /**
@@ -81,7 +82,7 @@ import java.util.Objects;
  * @since   1.2
  */
 
-public class URLDecoder {
+public final class URLDecoder {
 
     /**
      * Do not call.
@@ -204,11 +205,7 @@ public class URLDecoder {
 
                     while ( ((i+2) < numChars) &&
                             (c=='%')) {
-                        int v = Integer.parseInt(s, i + 1, i + 3, 16);
-                        if (v < 0)
-                            throw new IllegalArgumentException(
-                                    "URLDecoder: Illegal hex characters in escape "
-                                            + "(%) pattern - negative value");
+                        int v = HexFormat.fromHexDigits(s, i + 1, i + 3);
                         bytes[pos++] = (byte) v;
                         i+= 3;
                         if (i < numChars)

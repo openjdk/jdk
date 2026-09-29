@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,11 @@
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestKeyMaterial
- * @run main/othervm -Djava.security.manager=allow TestKeyMaterial sm policy
  */
 
 import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.ProviderException;
 import java.util.Arrays;
@@ -46,6 +44,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import jtreg.SkippedException;
 import sun.security.internal.spec.TlsKeyMaterialParameterSpec;
 import sun.security.internal.spec.TlsKeyMaterialSpec;
 
@@ -61,8 +60,7 @@ public class TestKeyMaterial extends PKCS11Test {
     @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyGenerator", "SunTlsKeyMaterial") == null) {
-            System.out.println("Provider does not support algorithm, skipping");
-            return;
+            throw new SkippedException("Provider does not support algorithm, skipping");
         }
 
         try (BufferedReader reader = Files.newBufferedReader(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -270,7 +270,7 @@ public class J2DAnalyzer {
             } else {
                 double overallscore = totalscore[i]/numtests[i];
                 System.out.println("    Number of tests:  "+numtests[i]);
-                System.out.println("    Overall average:  "+overallscore);
+                System.out.printf( "    Overall average:  %-10.4f%n", overallscore);
                 System.out.println("    Best spread:      "+bestspread[i]+
                                    "% variance");
                 System.out.println("    Worst spread:     "+worstspread[i]+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,7 @@ static float euclidianDistance(float a, float b)
 #define TYPO_LIGA 0x00000002
 #define TYPO_RTL  0x80000000
 
-JDKEXPORT int jdk_hb_shape(
-     float ptSize,
+JDKEXPORT void jdk_hb_shape(
      float *matrix,
      void* pFace,
      unsigned short *chars,
@@ -92,23 +91,18 @@ JDKEXPORT int jdk_hb_shape(
      int featureCount = 0;
      char* kern = (flags & TYPO_KERN) ? "kern" : "-kern";
      char* liga = (flags & TYPO_LIGA) ? "liga" : "-liga";
-     int ret;
      unsigned int buflen;
-
-     float devScale = 1.0f;
-     if (getenv("HB_NODEVTX") != NULL) {
-         float xPtSize = euclidianDistance(matrix[0], matrix[1]);
-         float yPtSize = euclidianDistance(matrix[2], matrix[3]);
-         devScale = xPtSize / ptSize;
-     }
+     float xPtSize = euclidianDistance(matrix[0], matrix[1]);
+     float yPtSize = euclidianDistance(matrix[2], matrix[3]);
 
      hbface = (hb_face_t*)pFace;
      hbfont = jdk_font_create_hbp(hbface,
-                                  ptSize, devScale, NULL,
+                                  xPtSize, yPtSize,
                                   font_funcs);
 
      buffer = hb_buffer_create();
      hb_buffer_set_script(buffer, getHBScriptCode(script));
+     hb_buffer_set_invisible_glyph(buffer, INVISIBLE_GLYPH_ID);
      hb_buffer_set_language(buffer,
                             hb_ot_tag_to_language(HB_OT_TAG_DEFAULT_LANGUAGE));
      if ((flags & TYPO_RTL) != 0) {
@@ -132,8 +126,8 @@ JDKEXPORT int jdk_hb_shape(
      glyphInfo = hb_buffer_get_glyph_infos(buffer, 0);
      glyphPos = hb_buffer_get_glyph_positions(buffer, &buflen);
 
-     ret = (*store_layout_results_fn)
-               (slot, baseIndex, offset, startX, startY, devScale,
+     (*store_layout_results_fn)
+               (slot, baseIndex, offset, startX, startY,
                 charCount, glyphCount, glyphInfo, glyphPos);
 
      hb_buffer_destroy (buffer);
@@ -141,5 +135,5 @@ JDKEXPORT int jdk_hb_shape(
      if (features != NULL) {
          free(features);
      }
-     return ret;
+     return;
 }

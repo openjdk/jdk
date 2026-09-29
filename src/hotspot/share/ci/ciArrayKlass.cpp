@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "memory/universe.hpp"
+#include "oops/arrayKlass.hpp"
 
 // ciArrayKlass
 //
@@ -97,11 +97,37 @@ bool ciArrayKlass::is_leaf_type() {
 // ciArrayKlass::make
 //
 // Make an array klass of the specified element type.
-ciArrayKlass* ciArrayKlass::make(ciType* element_type) {
+ciArrayKlass* ciArrayKlass::make(ciType* element_type, bool null_free, bool atomic, bool refined_type) {
   if (element_type->is_primitive_type()) {
     return ciTypeArrayKlass::make(element_type->basic_type());
   } else {
-    return ciObjArrayKlass::make(element_type->as_klass());
+    return ciObjArrayKlass::make(element_type->as_klass(), refined_type, null_free, atomic);
   }
 }
 
+int ciArrayKlass::array_header_in_bytes() {
+  return get_ArrayKlass()->array_header_in_bytes();
+}
+
+ciInstance* ciArrayKlass::component_mirror_instance() const {
+  GUARDED_VM_ENTRY(
+    oop component_mirror = ArrayKlass::cast(get_Klass())->component_mirror();
+    return CURRENT_ENV->get_instance(component_mirror);
+  )
+}
+
+bool ciArrayKlass::is_elem_null_free() const {
+  ArrayProperties props = properties();
+  assert(props.is_valid(), "meaningless");
+  return props.is_null_restricted();
+}
+
+bool ciArrayKlass::is_elem_atomic() const {
+  ArrayProperties props = properties();
+  assert(props.is_valid(), "meaningless");
+  return !props.is_non_atomic();
+}
+
+ArrayProperties ciArrayKlass::properties() const {
+  GUARDED_VM_ENTRY(return ArrayKlass::cast(get_Klass())->properties();)
+}

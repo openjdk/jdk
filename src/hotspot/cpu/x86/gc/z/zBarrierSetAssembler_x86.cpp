@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/compileTask.hpp"
@@ -32,6 +32,7 @@
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -79,15 +80,48 @@ private:
 
   void save() {
     MacroAssembler* masm = _masm;
-    __ push(rax);
-    __ push(rcx);
-    __ push(rdx);
-    __ push(rdi);
-    __ push(rsi);
-    __ push(r8);
-    __ push(r9);
-    __ push(r10);
-    __ push(r11);
+    if (VM_Version::supports_apx_f()) {
+      if (_result != rax) {
+        __ pushp(rax);
+      }
+      __ pushp(rcx);
+      // Save current stack pointer into rcx
+      __ movptr(rcx, rsp);
+      // Align stack pointer to 16 byte boundary. This is hard constraint
+      // for push2/pop2 with PPX hints.
+      __ andptr(rsp, -StackAlignmentInBytes);
+      // Push original stack pointer.
+      __ push(rcx);
+      // Restore the original contents of RCX register.
+      __ movptr(rcx, Address(rcx));
+      // Now push remaining caller save GPRs and EGPRs on 16B aligned stack.
+      // Note: For PPX to work properly, a PPX-marked PUSH2 (respectively, POP2) should always
+      // be matched with a PPX-marked POP2 (PUSH2), not with two PPX-marked POPs (PUSHs).
+      __ pushp(rdx);
+      __ push2p(rdi, rsi);
+      __ push2p(r8, r9);
+      __ push2p(r10, r11);
+      __ push2p(r16, r17);
+      __ push2p(r18, r19);
+      __ push2p(r20, r21);
+      __ push2p(r22, r23);
+      __ push2p(r24, r25);
+      __ push2p(r26, r27);
+      __ push2p(r28, r29);
+      __ push2p(r30, r31);
+    } else {
+      if (_result != rax) {
+        __ push(rax);
+      }
+      __ push(rcx);
+      __ push(rdx);
+      __ push(rdi);
+      __ push(rsi);
+      __ push(r8);
+      __ push(r9);
+      __ push(r10);
+      __ push(r11);
+    }
 
     if (_xmm_spill_size != 0) {
       __ subptr(rsp, _xmm_spill_size);
@@ -140,21 +174,43 @@ private:
       __ addptr(rsp, _xmm_spill_size);
     }
 
-    __ pop(r11);
-    __ pop(r10);
-    __ pop(r9);
-    __ pop(r8);
-    __ pop(rsi);
-    __ pop(rdi);
-    __ pop(rdx);
-    __ pop(rcx);
-    if (_result == noreg) {
-      __ pop(rax);
-    } else if (_result == rax) {
-      __ addptr(rsp, wordSize);
+    if (VM_Version::supports_apx_f()) {
+      __ pop2p(r31, r30);
+      __ pop2p(r29, r28);
+      __ pop2p(r27, r26);
+      __ pop2p(r25, r24);
+      __ pop2p(r23, r22);
+      __ pop2p(r21, r20);
+      __ pop2p(r19, r18);
+      __ pop2p(r17, r16);
+      __ pop2p(r11, r10);
+      __ pop2p(r9, r8);
+      __ pop2p(rsi, rdi);
+      __ popp(rdx);
+      // Re-instantiate original stack pointer.
+      __ movptr(rsp, Address(rsp));
+      __ popp(rcx);
+      if (_result != rax) {
+        if (_result != noreg) {
+          __ movptr(_result, rax);
+        }
+        __ popp(rax);
+      }
     } else {
-      __ movptr(_result, rax);
-      __ pop(rax);
+      __ pop(r11);
+      __ pop(r10);
+      __ pop(r9);
+      __ pop(r8);
+      __ pop(rsi);
+      __ pop(rdi);
+      __ pop(rdx);
+      __ pop(rcx);
+      if (_result != rax) {
+        if (_result != noreg) {
+          __ movptr(_result, rax);
+        }
+        __ pop(rax);
+      }
     }
   }
 
@@ -221,11 +277,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    BasicType type,
                                    Register dst,
                                    Address src,
-                                   Register tmp1,
-                                   Register tmp_thread) {
+                                   Register tmp1) {
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
     return;
   }
 
@@ -235,7 +290,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   Register scratch = tmp1;
   if (tmp1 == noreg) {
     scratch = r12;
-    __ push(scratch);
+    __ push_ppx(scratch);
   }
 
   assert_different_registers(dst, scratch);
@@ -295,7 +350,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Restore scratch register
   if (tmp1 == noreg) {
-    __ pop(scratch);
+    __ pop_ppx(scratch);
   }
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::load_at");
@@ -356,15 +411,19 @@ static void emit_store_fast_path_check_c2(MacroAssembler* masm, Address ref_addr
   // This is a JCC erratum mitigation wrapper for calling the inner check
   int size = store_fast_path_check_size(masm, ref_addr, is_atomic, medium_path);
   // Emit JCC erratum mitigation nops with the right size
-  IntelJccErratumAlignment intel_alignment(*masm, size);
+  IntelJccErratumAlignment intel_alignment(masm, size);
   // Emit the JCC erratum mitigation guarded code
   emit_store_fast_path_check(masm, ref_addr, is_atomic, medium_path);
 #endif
 }
 
 static bool is_c2_compilation() {
+#ifdef COMPILER2
   CompileTask* task = ciEnv::current()->task();
   return task != nullptr && is_c2_compile(task->comp_level());
+#else
+  return false;
+#endif
 }
 
 void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
@@ -405,10 +464,10 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ movptr(rnew_zpointer, rnew_zaddress);
     }
     assert_different_registers(rcx, rnew_zpointer);
-    __ push(rcx);
+    __ push_ppx(rcx);
     __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shlq(rnew_zpointer);
-    __ pop(rcx);
+    __ pop_ppx(rcx);
     __ orq(rnew_zpointer, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
@@ -426,7 +485,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ jcc(Assembler::equal, slow_path);
 
   Register tmp2 = r15_thread;
-  __ push(tmp2);
+  __ push_ppx(tmp2);
 
   // Bump the pointer
   __ movq(tmp2, Address(tmp1, ZStoreBarrierBuffer::current_offset()));
@@ -444,7 +503,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ movptr(tmp1, Address(tmp1, 0));
   __ movptr(Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())), tmp1);
 
-  __ pop(tmp2);
+  __ pop_ppx(tmp2);
 }
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
@@ -471,9 +530,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
-    __ push(rax);
-    __ push(rbx);
-    __ push(rcx);
+    __ push_ppx(rax);
+    __ push_ppx(rbx);
+    __ push_ppx(rcx);
 
     __ lea(rcx, ref_addr);
     __ xorq(rax, rax);
@@ -482,9 +541,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ lock();
     __ cmpxchgq(rbx, Address(rcx, 0));
 
-    __ pop(rcx);
-    __ pop(rbx);
-    __ pop(rax);
+    __ pop_ppx(rcx);
+    __ pop_ppx(rbx);
+    __ pop_ppx(rax);
 
     __ jcc(Assembler::notEqual, slow_path);
 
@@ -526,10 +585,10 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       } else {
         __ movptr(tmp1, src);
       }
-      __ push(rcx);
+      __ push_ppx(rcx);
       __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
       __ shlq(tmp1);
-      __ pop(rcx);
+      __ pop_ppx(rcx);
       __ orq(tmp1, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
     } else {
       Label done;
@@ -636,7 +695,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
 
   // Remove metadata bits so that the store side (vectorized or non-vectorized) can
   // inject the store-good color with an or instruction.
-  __ andq(dst, _zpointer_address_mask);
+  __ andq(dst, ZPointerAddressMask);
 
   if ((decorators & ARRAYCOPY_CHECKCAST) != 0) {
     // The checkcast arraycopy needs to be able to dereference the oops in order to perform a typechecks.
@@ -950,10 +1009,10 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
     __ shrq(tmp);
     __ movptr(obj, tmp);
   } else {
-    __ push(rcx);
+    __ push_ppx(rcx);
     __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(obj);
-    __ pop(rcx);
+    __ pop_ppx(rcx);
   }
 
   __ bind(done);
@@ -1032,7 +1091,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Save rax unless it is the result or tmp register
   if (ref != rax && tmp != rax) {
-    __ push(rax);
+    __ push_ppx(rax);
   }
 
   // Setup arguments and call runtime stub
@@ -1052,7 +1111,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Restore rax unless it is the result or tmp register
   if (ref != rax && tmp != rax) {
-    __ pop(rax);
+    __ pop_ppx(rax);
   }
 
   // Stub exit
@@ -1156,287 +1215,8 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
 
 #ifdef COMPILER2
 
-OptoReg::Name ZBarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
-  if (!OptoReg::is_reg(opto_reg)) {
-    return OptoReg::Bad;
-  }
-
-  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
-  if (vm_reg->is_XMMRegister()) {
-    opto_reg &= ~15;
-    switch (node->ideal_reg()) {
-      case Op_VecX:
-        opto_reg |= 2;
-        break;
-      case Op_VecY:
-        opto_reg |= 4;
-        break;
-      case Op_VecZ:
-        opto_reg |= 8;
-        break;
-      default:
-        opto_reg |= 1;
-        break;
-    }
-  }
-
-  return opto_reg;
-}
-
-// We use the vec_spill_helper from the x86.ad file to avoid reinventing this wheel
-extern void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
-                            int stack_offset, int reg, uint ireg, outputStream* st);
-
 #undef __
 #define __ _masm->
-
-class ZSaveLiveRegisters {
-private:
-  struct XMMRegisterData {
-    XMMRegister _reg;
-    int         _size;
-
-    // Used by GrowableArray::find()
-    bool operator == (const XMMRegisterData& other) {
-      return _reg == other._reg;
-    }
-  };
-
-  MacroAssembler* const          _masm;
-  GrowableArray<Register>        _gp_registers;
-  GrowableArray<KRegister>       _opmask_registers;
-  GrowableArray<XMMRegisterData> _xmm_registers;
-  int                            _spill_size;
-  int                            _spill_offset;
-
-  static int xmm_compare_register_size(XMMRegisterData* left, XMMRegisterData* right) {
-    if (left->_size == right->_size) {
-      return 0;
-    }
-
-    return (left->_size < right->_size) ? -1 : 1;
-  }
-
-  static int xmm_slot_size(OptoReg::Name opto_reg) {
-    // The low order 4 bytes denote what size of the XMM register is live
-    return (opto_reg & 15) << 3;
-  }
-
-  static uint xmm_ideal_reg_for_size(int reg_size) {
-    switch (reg_size) {
-    case 8:
-      return Op_VecD;
-    case 16:
-      return Op_VecX;
-    case 32:
-      return Op_VecY;
-    case 64:
-      return Op_VecZ;
-    default:
-      fatal("Invalid register size %d", reg_size);
-      return 0;
-    }
-  }
-
-  bool xmm_needs_vzeroupper() const {
-    return _xmm_registers.is_nonempty() && _xmm_registers.at(0)._size > 16;
-  }
-
-  void xmm_register_save(const XMMRegisterData& reg_data) {
-    const OptoReg::Name opto_reg = OptoReg::as_OptoReg(reg_data._reg->as_VMReg());
-    const uint ideal_reg = xmm_ideal_reg_for_size(reg_data._size);
-    _spill_offset -= reg_data._size;
-    vec_spill_helper(__ code(), false /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
-  }
-
-  void xmm_register_restore(const XMMRegisterData& reg_data) {
-    const OptoReg::Name opto_reg = OptoReg::as_OptoReg(reg_data._reg->as_VMReg());
-    const uint ideal_reg = xmm_ideal_reg_for_size(reg_data._size);
-    vec_spill_helper(__ code(), true /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
-    _spill_offset += reg_data._size;
-  }
-
-  void gp_register_save(Register reg) {
-    _spill_offset -= 8;
-    __ movq(Address(rsp, _spill_offset), reg);
-  }
-
-  void opmask_register_save(KRegister reg) {
-    _spill_offset -= 8;
-    __ kmov(Address(rsp, _spill_offset), reg);
-  }
-
-  void gp_register_restore(Register reg) {
-    __ movq(reg, Address(rsp, _spill_offset));
-    _spill_offset += 8;
-  }
-
-  void opmask_register_restore(KRegister reg) {
-    __ kmov(reg, Address(rsp, _spill_offset));
-    _spill_offset += 8;
-  }
-
-  void initialize(ZBarrierStubC2* stub) {
-    // Create mask of caller saved registers that need to
-    // be saved/restored if live
-    RegMask caller_saved;
-    caller_saved.Insert(OptoReg::as_OptoReg(rax->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(rcx->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(rdx->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(rsi->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(rdi->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r8->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r9->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r10->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r11->as_VMReg()));
-
-    if (stub->result() != noreg) {
-      caller_saved.Remove(OptoReg::as_OptoReg(stub->result()->as_VMReg()));
-    }
-
-    // Create mask of live registers
-    RegMask live = stub->live();
-
-    int gp_spill_size = 0;
-    int opmask_spill_size = 0;
-    int xmm_spill_size = 0;
-
-    // Record registers that needs to be saved/restored
-    RegMaskIterator rmi(live);
-    while (rmi.has_next()) {
-      const OptoReg::Name opto_reg = rmi.next();
-      const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
-
-      if (vm_reg->is_Register()) {
-        if (caller_saved.Member(opto_reg)) {
-          _gp_registers.append(vm_reg->as_Register());
-          gp_spill_size += 8;
-        }
-      } else if (vm_reg->is_KRegister()) {
-        // All opmask registers are caller saved, thus spill the ones
-        // which are live.
-        if (_opmask_registers.find(vm_reg->as_KRegister()) == -1) {
-          _opmask_registers.append(vm_reg->as_KRegister());
-          opmask_spill_size += 8;
-        }
-      } else if (vm_reg->is_XMMRegister()) {
-        // We encode in the low order 4 bits of the opto_reg, how large part of the register is live
-        const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~15);
-        const int reg_size = xmm_slot_size(opto_reg);
-        const XMMRegisterData reg_data = { vm_reg_base->as_XMMRegister(), reg_size };
-        const int reg_index = _xmm_registers.find(reg_data);
-        if (reg_index == -1) {
-          // Not previously appended
-          _xmm_registers.append(reg_data);
-          xmm_spill_size += reg_size;
-        } else {
-          // Previously appended, update size
-          const int reg_size_prev = _xmm_registers.at(reg_index)._size;
-          if (reg_size > reg_size_prev) {
-            _xmm_registers.at_put(reg_index, reg_data);
-            xmm_spill_size += reg_size - reg_size_prev;
-          }
-        }
-      } else {
-        fatal("Unexpected register type");
-      }
-    }
-
-    // Sort by size, largest first
-    _xmm_registers.sort(xmm_compare_register_size);
-
-    // On Windows, the caller reserves stack space for spilling register arguments
-    const int arg_spill_size = frame::arg_reg_save_area_bytes;
-
-    // Stack pointer must be 16 bytes aligned for the call
-    _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + opmask_spill_size + arg_spill_size, 16);
-  }
-
-public:
-  ZSaveLiveRegisters(MacroAssembler* masm, ZBarrierStubC2* stub)
-    : _masm(masm),
-      _gp_registers(),
-      _opmask_registers(),
-      _xmm_registers(),
-      _spill_size(0),
-      _spill_offset(0) {
-
-    //
-    // Stack layout after registers have been spilled:
-    //
-    // | ...            | original rsp, 16 bytes aligned
-    // ------------------
-    // | zmm0 high      |
-    // | ...            |
-    // | zmm0 low       | 16 bytes aligned
-    // | ...            |
-    // | ymm1 high      |
-    // | ...            |
-    // | ymm1 low       | 16 bytes aligned
-    // | ...            |
-    // | xmmN high      |
-    // | ...            |
-    // | xmmN low       | 8 bytes aligned
-    // | reg0           | 8 bytes aligned
-    // | reg1           |
-    // | ...            |
-    // | regN           | new rsp, if 16 bytes aligned
-    // | <padding>      | else new rsp, 16 bytes aligned
-    // ------------------
-    //
-
-    // Figure out what registers to save/restore
-    initialize(stub);
-
-    // Allocate stack space
-    if (_spill_size > 0) {
-      __ subptr(rsp, _spill_size);
-    }
-
-    // Save XMM/YMM/ZMM registers
-    for (int i = 0; i < _xmm_registers.length(); i++) {
-      xmm_register_save(_xmm_registers.at(i));
-    }
-
-    if (xmm_needs_vzeroupper()) {
-      __ vzeroupper();
-    }
-
-    // Save general purpose registers
-    for (int i = 0; i < _gp_registers.length(); i++) {
-      gp_register_save(_gp_registers.at(i));
-    }
-
-    // Save opmask registers
-    for (int i = 0; i < _opmask_registers.length(); i++) {
-      opmask_register_save(_opmask_registers.at(i));
-    }
-  }
-
-  ~ZSaveLiveRegisters() {
-    // Restore opmask registers
-    for (int i = _opmask_registers.length() - 1; i >= 0; i--) {
-      opmask_register_restore(_opmask_registers.at(i));
-    }
-
-    // Restore general purpose registers
-    for (int i = _gp_registers.length() - 1; i >= 0; i--) {
-      gp_register_restore(_gp_registers.at(i));
-    }
-
-    __ vzeroupper();
-
-    // Restore XMM/YMM/ZMM registers
-    for (int i = _xmm_registers.length() - 1; i >= 0; i--) {
-      xmm_register_restore(_xmm_registers.at(i));
-    }
-
-    // Free stack space
-    if (_spill_size > 0) {
-      __ addptr(rsp, _spill_size);
-    }
-  }
-};
 
 class ZSetupArguments {
 private:
@@ -1502,7 +1282,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   __ movptr(stub->ref(), stub->ref_addr());
 
   {
-    ZSaveLiveRegisters save_live_registers(masm, stub);
+    SaveLiveRegisters save_live_registers(masm, stub);
     ZSetupArguments setup_arguments(masm, stub);
     __ call(RuntimeAddress(stub->slow_path()));
   }
@@ -1532,13 +1312,15 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ bind(slow);
 
   {
-    ZSaveLiveRegisters save_live_registers(masm, stub);
+    SaveLiveRegisters save_live_registers(masm, stub);
     __ lea(c_rarg0, stub->ref_addr());
 
     if (stub->is_native()) {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
     } else if (stub->is_atomic()) {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
+    } else if (stub->is_nokeepalive()) {
+      __ call(RuntimeAddress(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr()));
     } else {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
     }
@@ -1548,8 +1330,25 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ jmp(slow_continuation);
 }
 
-#undef __
 #endif // COMPILER2
+
+#undef __
+#define __ masm->
+
+void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slow_path) {
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ testptr(obj, Address(r15_thread, ZThreadLocalData::mark_bad_mask_offset()));
+  __ jcc(Assembler::notZero, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
+  __ shrq(obj, barrier_Relocation::unpatched);
+}
+
+#undef __
 
 static int patch_barrier_relocation_offset(int format) {
   switch (format) {
@@ -1598,12 +1397,21 @@ static uint16_t patch_barrier_relocation_value(int format) {
   }
 }
 
-void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format, bool log) {
   const int offset = patch_barrier_relocation_offset(format);
   const uint16_t value = patch_barrier_relocation_value(format);
   uint8_t* const patch_addr = (uint8_t*)addr + offset;
+  if (log) {
+    log_trace(aot, codecache, stubs)("patching address " INTPTR_FORMAT " offset %d value 0x%x", p2i(addr), offset, value);
+  }
   if (format == ZBarrierRelocationFormatLoadGoodBeforeShl) {
-    *patch_addr = (uint8_t)value;
+    if (VM_Version::supports_apx_f()) {
+      NativeInstruction* instruction = nativeInstruction_at(addr);
+      uint8_t* const rex2_patch_addr = patch_addr + (instruction->has_rex2_prefix() ? 1 : 0);
+      *rex2_patch_addr = (uint8_t)value;
+    } else {
+      *patch_addr = (uint8_t)value;
+    }
   } else {
     *(uint16_t*)patch_addr = value;
   }
@@ -1624,12 +1432,81 @@ void ZBarrierSetAssembler::patch_barriers() {
   }
 }
 
-
 #undef __
 #define __ masm->
 
+void ZBarrierSetAssembler::register_reloc_addresses(GrowableArray<address> &entries, int begin, int count) {
+  int formats[] = {
+    ZBarrierRelocationFormatLoadBadAfterTest,
+    ZBarrierRelocationFormatStoreBadAfterTest,
+    ZBarrierRelocationFormatStoreGoodAfterOr,
+    -1
+  };
+  int format_idx = 0;
+  int format = formats[format_idx++];
+  for (int i = begin; i < begin + count; i++) {
+    address addr = entries.at(i);
+    // reloc addresses occur in 3 groups terminated with a nullptr
+    if (addr == nullptr) {
+      assert(format_idx < (int)(sizeof(formats) / sizeof(formats[0])),
+             "too many reloc groups");
+      format = formats[format_idx++];
+    } else {
+      switch(format) {
+      case ZBarrierRelocationFormatLoadBadAfterTest:
+        _load_bad_relocations.append(addr);
+        break;
+      case ZBarrierRelocationFormatStoreBadAfterTest:
+        _store_bad_relocations.append(addr);
+        break;
+      case ZBarrierRelocationFormatStoreGoodAfterOr:
+        _store_good_relocations.append(addr);
+        break;
+      default:
+        ShouldNotReachHere();
+        break;
+      }
+      patch_barrier_relocation(addr, format, true);
+    }
+  }
+  assert(format == -1, "unterminated format list");
+}
+
+void ZBarrierSetAssembler::retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries) {
+  assert(start != nullptr, "start address must not be null");
+  assert(end != nullptr, "start address must not be null");
+  assert(start < end, "stub range must not be empty");
+  for (int i = 0; i < _load_bad_relocations.length(); i++) {
+    address addr = _load_bad_relocations.at(i);
+    assert(addr != nullptr, "load bad reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+  for (int i = 0; i < _store_bad_relocations.length(); i++) {
+    address addr = _store_bad_relocations.at(i);
+    assert(addr != nullptr, "store bad reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+  for (int i = 0; i < _store_good_relocations.length(); i++) {
+    address addr = _store_good_relocations.at(i);
+    assert(addr != nullptr, "store good reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+}
+
+// Add indirection for AOT code patching
+address ZPointerLoadShiftTableAddr = (address)&ZPointerLoadShiftTable;
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored
   // and after being colored. Therefore, we must deal with colored oops as well.
   Label done;
@@ -1660,17 +1537,19 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ andq(tmp1, tmp2);
   __ shrq(tmp1, ZPointerRemappedShift);
   __ andq(tmp1, (1 << ZPointerRemappedBits) - 1);
-  __ lea(tmp2, ExternalAddress((address)&ZPointerLoadShiftTable));
-
+  // This code is not critical - it is used only for VerifyOops in debug VM.
+  // Use inderection by defult without AOT specific code.
+  __ lea(tmp2, ExternalAddress((address)&ZPointerLoadShiftTableAddr));
+  __ movptr(tmp2, Address(tmp2));
   // Uncolor presumed zpointer
   assert(obj != rcx, "bad choice of register");
   if (rcx != tmp1 && rcx != tmp2) {
-    __ push(rcx);
+    __ push_ppx(rcx);
   }
   __ movl(rcx, Address(tmp2, tmp1, Address::times_4, 0));
   __ shrq(obj);
   if (rcx != tmp1 && rcx != tmp2) {
-    __ pop(rcx);
+    __ pop_ppx(rcx);
   }
 
   __ jmp(check_zaddress);
@@ -1678,16 +1557,27 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ bind(check_oop);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(tmp1, obj, tmp2);  // get klass
-  __ testptr(tmp1, tmp1);
+  __ load_narrow_klass(tmp1, obj); // get narrow klass
+  __ testl(tmp1, tmp1);
   __ jcc(Assembler::zero, error); // if klass is null it is broken
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(tmp1, tmp2);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ movptr(tmp2, Address(tmp2));
+    __ andptr(tmp1, tmp2);
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ movptr(tmp2, Address(tmp2));
+  } else
+#endif
+  {
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andptr(tmp1, tmp2);
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmpptr(tmp1, tmp2);
   __ jcc(Assembler::notZero, error);
 

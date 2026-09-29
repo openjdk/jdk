@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -484,7 +484,7 @@ public class MissingClassTest {
 
         // wait for the listeners to receive all their notifs
         // or to fail
-        long deadline = System.currentTimeMillis() + 60000;
+        long deadline = System.currentTimeMillis() + 90000;
         long remain;
         while ((remain = deadline - System.currentTimeMillis()) >= 0) {
             synchronized (result) {

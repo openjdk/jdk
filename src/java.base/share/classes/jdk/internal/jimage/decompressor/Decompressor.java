@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,11 @@
  */
 package jdk.internal.jimage.decompressor;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import jdk.internal.jimage.decompressor.ResourceDecompressor.StringsProvider;
 
 /**
@@ -75,17 +72,8 @@ public final class Decompressor {
                     if (pluginName == null) {
                         throw new IOException("Plugin name not found");
                     }
-                    String storedContent = header.getStoredContent(provider);
-                    Properties props = new Properties();
-                    if (storedContent != null) {
-                        try (ByteArrayInputStream stream
-                                = new ByteArrayInputStream(storedContent.
-                                        getBytes(StandardCharsets.UTF_8));) {
-                            props.loadFromXML(stream);
-                        }
-                    }
                     decompressor = ResourceDecompressorRepository.
-                            newResourceDecompressor(props, pluginName);
+                            newResourceDecompressor(pluginName);
                     if (decompressor == null) {
                         throw new IOException("Plugin not found: " + pluginName);
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,10 @@ public class SunJCEGetInstance {
         Cipher jce;
 
         try{
+            String providerName = System.getProperty("test.provider.name", "SunJCE");
             // Remove SunJCE from Provider list
-            Provider prov = Security.getProvider("SunJCE");
-            Security.removeProvider("SunJCE");
+            Provider prov = Security.getProvider(providerName);
+            Security.removeProvider(providerName);
             // Create our own instance of SunJCE provider.  Purposefully not
             // using SunJCE.getInstance() so we can have our own instance
             // for the test.

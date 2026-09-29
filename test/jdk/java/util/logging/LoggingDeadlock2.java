@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,7 +309,7 @@ public class LoggingDeadlock2 {
             errAccumulator.join();
 
             out = outAccumulator.result();
-            err = errAccumulator.result();
+            err = errAccumulator.result().replaceAll(".* VM warning:.* deprecated.*\\R", "");
         } catch (Throwable t) {
             throwable = t;
         }

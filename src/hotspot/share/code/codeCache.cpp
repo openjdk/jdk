@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
 #include "code/dependencyContext.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
+#include "code/vtableStubs.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -39,12 +38,14 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.inline.hpp"
@@ -52,7 +53,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -62,10 +63,12 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
@@ -161,160 +164,227 @@ class CodeBlob_sizes {
 
 // Iterate over all CodeHeaps
 #define FOR_ALL_HEAPS(heap) for (GrowableArrayIterator<CodeHeap*> heap = _heaps->begin(); heap != _heaps->end(); ++heap)
-#define FOR_ALL_NMETHOD_HEAPS(heap) for (GrowableArrayIterator<CodeHeap*> heap = _nmethod_heaps->begin(); heap != _nmethod_heaps->end(); ++heap)
 #define FOR_ALL_ALLOCABLE_HEAPS(heap) for (GrowableArrayIterator<CodeHeap*> heap = _allocable_heaps->begin(); heap != _allocable_heaps->end(); ++heap)
 
 // Iterate over all CodeBlobs (cb) on the given CodeHeap
 #define FOR_ALL_BLOBS(cb, heap) for (CodeBlob* cb = first_blob(heap); cb != nullptr; cb = next_blob(heap, cb))
 
-address CodeCache::_low_bound = 0;
-address CodeCache::_high_bound = 0;
+address CodeCache::_low_bound = nullptr;
+address CodeCache::_high_bound = nullptr;
 volatile int CodeCache::_number_of_nmethods_with_dependencies = 0;
 ExceptionCache* volatile CodeCache::_exception_cache_purge_list = nullptr;
 
 // Initialize arrays of CodeHeap subsets
 GrowableArray<CodeHeap*>* CodeCache::_heaps = new(mtCode) GrowableArray<CodeHeap*> (static_cast<int>(CodeBlobType::All), mtCode);
-GrowableArray<CodeHeap*>* CodeCache::_compiled_heaps = new(mtCode) GrowableArray<CodeHeap*> (static_cast<int>(CodeBlobType::All), mtCode);
 GrowableArray<CodeHeap*>* CodeCache::_nmethod_heaps = new(mtCode) GrowableArray<CodeHeap*> (static_cast<int>(CodeBlobType::All), mtCode);
 GrowableArray<CodeHeap*>* CodeCache::_allocable_heaps = new(mtCode) GrowableArray<CodeHeap*> (static_cast<int>(CodeBlobType::All), mtCode);
 
-void CodeCache::check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, size_t non_profiled_size, size_t cache_size, bool all_set) {
-  size_t total_size = non_nmethod_size + profiled_size + non_profiled_size;
-  // Prepare error message
-  const char* error = "Invalid code heap sizes";
-  err_msg message("NonNMethodCodeHeapSize (" SIZE_FORMAT "K) + ProfiledCodeHeapSize (" SIZE_FORMAT "K)"
-                  " + NonProfiledCodeHeapSize (" SIZE_FORMAT "K) = " SIZE_FORMAT "K",
-          non_nmethod_size/K, profiled_size/K, non_profiled_size/K, total_size/K);
-
-  if (total_size > cache_size) {
-    // Some code heap sizes were explicitly set: total_size must be <= cache_size
-    message.append(" is greater than ReservedCodeCacheSize (" SIZE_FORMAT "K).", cache_size/K);
-    vm_exit_during_initialization(error, message);
-  } else if (all_set && total_size != cache_size) {
-    // All code heap sizes were explicitly set: total_size must equal cache_size
-    message.append(" is not equal to ReservedCodeCacheSize (" SIZE_FORMAT "K).", cache_size/K);
-    vm_exit_during_initialization(error, message);
+static void check_min_size(const char* codeheap, size_t size, size_t required_size) {
+  if (size < required_size) {
+    log_debug(codecache)("Code heap (%s) size %zuK below required minimal size %zuK",
+                         codeheap, size/K, required_size/K);
+    err_msg title("Not enough space in %s to run VM", codeheap);
+    err_msg message("%zuK < %zuK", size/K, required_size/K);
+    vm_exit_during_initialization(title, message);
   }
 }
 
+struct CodeHeapInfo {
+  size_t size;
+  bool set;
+  bool enabled;
+};
+
+static void set_size_of_unset_code_heap(CodeHeapInfo* heap, size_t available_size, size_t used_size, size_t min_size) {
+  assert(!heap->set, "sanity");
+  heap->size = (available_size > (used_size + min_size)) ? (available_size - used_size) : min_size;
+}
+
 void CodeCache::initialize_heaps() {
-  bool non_nmethod_set      = FLAG_IS_CMDLINE(NonNMethodCodeHeapSize);
-  bool profiled_set         = FLAG_IS_CMDLINE(ProfiledCodeHeapSize);
-  bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
-  const size_t ps           = page_size(false, 8);
-  const size_t min_size     = MAX2(os::vm_allocation_granularity(), ps);
-  const size_t cache_size   = ReservedCodeCacheSize;
-  size_t non_nmethod_size   = NonNMethodCodeHeapSize;
-  size_t profiled_size      = ProfiledCodeHeapSize;
-  size_t non_profiled_size  = NonProfiledCodeHeapSize;
-  // Check if total size set via command line flags exceeds the reserved size
-  check_heap_sizes((non_nmethod_set  ? non_nmethod_size  : min_size),
-                   (profiled_set     ? profiled_size     : min_size),
-                   (non_profiled_set ? non_profiled_size : min_size),
-                   cache_size,
-                   non_nmethod_set && profiled_set && non_profiled_set);
 
-  // Determine size of compiler buffers
-  size_t code_buffers_size = 0;
-#ifdef COMPILER1
-  // C1 temporary code buffers (see Compiler::init_buffer_blob())
-  const int c1_count = CompilationPolicy::c1_count();
-  code_buffers_size += c1_count * Compiler::code_buffer_size();
-#endif
-#ifdef COMPILER2
-  // C2 scratch buffers (see Compile::init_scratch_buffer_blob())
-  const int c2_count = CompilationPolicy::c2_count();
-  // Initial size of constant table (this may be increased if a compiled method needs more space)
-  code_buffers_size += c2_count * C2Compiler::initial_code_buffer_size();
-#endif
+  CodeHeapInfo non_nmethod = {NonNMethodCodeHeapSize, FLAG_IS_CMDLINE(NonNMethodCodeHeapSize), true};
+  CodeHeapInfo profiled = {ProfiledCodeHeapSize, FLAG_IS_CMDLINE(ProfiledCodeHeapSize), true};
+  CodeHeapInfo non_profiled = {NonProfiledCodeHeapSize, FLAG_IS_CMDLINE(NonProfiledCodeHeapSize), true};
+  CodeHeapInfo hot = {HotCodeHeapSize, FLAG_IS_CMDLINE(HotCodeHeapSize), true};
 
-  // Increase default non_nmethod_size to account for compiler buffers
-  if (!non_nmethod_set) {
-    non_nmethod_size += code_buffers_size;
+  const bool cache_size_set   = FLAG_IS_CMDLINE(ReservedCodeCacheSize);
+  const size_t ps             = page_size(false, 8);
+  const size_t min_size       = MAX2(os::vm_allocation_granularity(), ps);
+  const size_t min_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3); // Make sure we have enough space for VM internal code
+  size_t cache_size           = align_up(ReservedCodeCacheSize, min_size);
+
+  // Prerequisites
+  if (!heap_available(CodeBlobType::MethodProfiled)) {
+    // For compatibility reasons, disabled tiered compilation overrides
+    // segment size even if it is set explicitly.
+    non_profiled.size += profiled.size;
+    // Profiled code heap is not available, forcibly set size to 0
+    profiled.size = 0;
+    profiled.set = true;
+    profiled.enabled = false;
   }
-  // Calculate default CodeHeap sizes if not set by user
-  if (!non_nmethod_set && !profiled_set && !non_profiled_set) {
-    // Leave room for the other two parts of the code cache
-    const size_t max_non_nmethod_size = cache_size - 2 * min_size;
-    // Check if we have enough space for the non-nmethod code heap
-    if (max_non_nmethod_size >= non_nmethod_size) {
-      // Use the default value for non_nmethod_size and one half of the
-      // remaining size for non-profiled and one half for profiled methods
-      size_t remaining_size = cache_size - non_nmethod_size;
-      profiled_size = remaining_size / 2;
-      non_profiled_size = remaining_size - profiled_size;
-    } else {
-      // Use all space for the non-nmethod heap and set other heaps to minimal size
-      non_nmethod_size = max_non_nmethod_size;
-      profiled_size = min_size;
-      non_profiled_size = min_size;
+
+  if (!heap_available(CodeBlobType::MethodHot)) {
+    hot.size = 0;
+    hot.set = true;
+    hot.enabled = false;
+  }
+
+  assert(heap_available(CodeBlobType::MethodNonProfiled), "MethodNonProfiled heap is always available for segmented code heap");
+
+  uint64_t compiler_buffer_size_uint64 = 0;
+  COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c1_count() * Compiler::code_buffer_size());
+  COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
+  if (compiler_buffer_size_uint64 > (uint64_t)CODE_CACHE_SIZE_LIMIT) {
+    err_msg msg("CICompilerCount is too large (%" PRIdPTR "): compiler buffer size exceeds the CodeCache size limit", CICompilerCount);
+    vm_exit_during_initialization(msg);
+  }
+  size_t compiler_buffer_size = integer_cast_permit_tautology<size_t>(compiler_buffer_size_uint64);
+
+  if (!non_nmethod.set) {
+    non_nmethod.size += compiler_buffer_size;
+  }
+
+  if (!profiled.set && !non_profiled.set) {
+    non_profiled.size = profiled.size = (cache_size > non_nmethod.size + 2 * min_size) ?
+                                        (cache_size - non_nmethod.size) / 2 : min_size;
+  }
+
+  if (profiled.set && !non_profiled.set) {
+    set_size_of_unset_code_heap(&non_profiled, cache_size, non_nmethod.size + profiled.size, min_size);
+  }
+
+  if (!profiled.set && non_profiled.set && hot.set) {
+    set_size_of_unset_code_heap(&profiled, cache_size, non_nmethod.size + non_profiled.size + hot.size, min_size);
+  }
+
+  if (hot.enabled) {
+    if (!hot.set) {
+      assert(hot.size == 0, "must be calculated during heaps initialization");
+      // An application usually has ~20% hot code which is mostly non-profiled code.
+      // We set the hot code heap size to 20% of the non-profiled code heap.
+      hot.size = MAX2(non_profiled.size / 5, min_size);
+
+      if (non_profiled.set) {
+        err_msg msg("Must manually set HotCodeHeapSize when NonProfiledCodeHeapSize is set");
+        vm_exit_during_initialization("Invalid code heap sizes", msg);
+      }
+
+      non_profiled.size -= hot.size;
     }
-  } else if (!non_nmethod_set || !profiled_set || !non_profiled_set) {
-    // The user explicitly set some code heap sizes. Increase or decrease the (default)
-    // sizes of the other code heaps accordingly. First adapt non-profiled and profiled
-    // code heap sizes and then only change non-nmethod code heap size if still necessary.
-    intx diff_size = cache_size - (non_nmethod_size + profiled_size + non_profiled_size);
-    if (non_profiled_set) {
-      if (!profiled_set) {
-        // Adapt size of profiled code heap
-        if (diff_size < 0 && ((intx)profiled_size + diff_size) <= 0) {
-          // Not enough space available, set to minimum size
-          diff_size += profiled_size - min_size;
-          profiled_size = min_size;
-        } else {
-          profiled_size += diff_size;
-          diff_size = 0;
+
+    if (hot.size > non_profiled.size) {
+      err_msg msg("Hot (%zuK) exceeds NonProfiled (%zuK).",
+              hot.size / K, non_profiled.size / K);
+      vm_exit_during_initialization("Invalid code heap sizes", msg);
+    }
+  }
+
+  // Compatibility.
+  size_t non_nmethod_min_size = min_cache_size + compiler_buffer_size;
+  if (!non_nmethod.set && profiled.set && non_profiled.set && hot.set) {
+    set_size_of_unset_code_heap(&non_nmethod, cache_size, profiled.size + non_profiled.size + hot.size, non_nmethod_min_size);
+  }
+
+  // Note: if large page support is enabled, min_size is at least the large
+  // page size. This ensures that the code cache is covered by large pages.
+  non_nmethod.size = align_up(non_nmethod.size, min_size);
+  profiled.size = align_up(profiled.size, min_size);
+  non_profiled.size = align_up(non_profiled.size, min_size);
+  hot.size = align_up(hot.size, min_size);
+
+  size_t aligned_total = non_nmethod.size + profiled.size + non_profiled.size + hot.size;
+  if (!cache_size_set) {
+    // If ReservedCodeCacheSize is explicitly set and exceeds CODE_CACHE_SIZE_LIMIT,
+    // it is rejected by flag validation elsewhere. Here we only handle the case
+    // where ReservedCodeCacheSize is not set explicitly, but the computed segmented
+    // sizes (after alignment) exceed the platform limit.
+    if (aligned_total > CODE_CACHE_SIZE_LIMIT) {
+      err_msg message("ReservedCodeCacheSize (%zuK), Max (%zuK)."
+                      "Segments: NonNMethod (%zuK), NonProfiled (%zuK), Profiled (%zuK), Hot (%zuK).",
+                      aligned_total/K, CODE_CACHE_SIZE_LIMIT/K,
+                      non_nmethod.size/K, non_profiled.size/K, profiled.size/K, hot.size/K);
+      vm_exit_during_initialization("Code cache size exceeds platform limit", message);
+    }
+    if (aligned_total != cache_size) {
+      log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
+                          "%zuK NonProfiled %zuK Profiled %zuK Hot %zuK = %zuK",
+                          cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, hot.size/K, aligned_total/K);
+      // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
+      cache_size = aligned_total;
+    }
+  } else {
+    check_min_size("reserved code cache", cache_size, min_cache_size);
+    // ReservedCodeCacheSize was set explicitly, so treat it as a hard cap.
+    // If alignment causes the total to exceed the cap, shrink unset heaps
+    // in min_size steps, never below their minimum sizes.
+    //
+    // A total smaller than cache_size typically happens when all segment sizes
+    // are explicitly set. In that case there is nothing to adjust, so we
+    // only validate the sizes.
+    if (aligned_total > cache_size) {
+      size_t delta = (aligned_total - cache_size) / min_size;
+      while (delta > 0) {
+        size_t start_delta = delta;
+        // Do not shrink the non-nmethod heap here: running out of non-nmethod space
+        // is more critical and may lead to unrecoverable VM errors.
+        if (non_profiled.enabled && !non_profiled.set && non_profiled.size > min_size) {
+          non_profiled.size -= min_size;
+          if (--delta == 0) break;
+        }
+        if (profiled.enabled && !profiled.set && profiled.size > min_size) {
+          profiled.size -= min_size;
+          if (--delta == 0) break;
+        }
+        if (hot.enabled && !hot.set && hot.size > min_size) {
+          hot.size -= min_size;
+          delta--;
+        }
+        if (delta == start_delta) {
+          break;
         }
       }
-    } else if (profiled_set) {
-      // Adapt size of non-profiled code heap
-      if (diff_size < 0 && ((intx)non_profiled_size + diff_size) <= 0) {
-        // Not enough space available, set to minimum size
-        diff_size += non_profiled_size - min_size;
-        non_profiled_size = min_size;
-      } else {
-        non_profiled_size += diff_size;
-        diff_size = 0;
-      }
-    } else if (non_nmethod_set) {
-      // Distribute remaining size between profiled and non-profiled code heaps
-      diff_size = cache_size - non_nmethod_size;
-      profiled_size = diff_size / 2;
-      non_profiled_size = diff_size - profiled_size;
-      diff_size = 0;
-    }
-    if (diff_size != 0) {
-      // Use non-nmethod code heap for remaining space requirements
-      assert(!non_nmethod_set && ((intx)non_nmethod_size + diff_size) > 0, "sanity");
-      non_nmethod_size += diff_size;
+      aligned_total = non_nmethod.size + profiled.size + non_profiled.size + hot.size;
     }
   }
 
-  // We do not need the profiled CodeHeap, use all space for the non-profiled CodeHeap
-  if (!heap_available(CodeBlobType::MethodProfiled)) {
-    non_profiled_size += profiled_size;
-    profiled_size = 0;
+  log_debug(codecache)("Initializing code heaps ReservedCodeCache %zuK NonNMethod %zuK"
+                       " NonProfiled %zuK Profiled %zuK Hot %zuK",
+                       cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, hot.size/K);
+
+  // Validation
+  // Check minimal required sizes
+  check_min_size("non-nmethod code heap", non_nmethod.size, non_nmethod_min_size);
+  if (profiled.enabled) {
+    check_min_size("profiled code heap", profiled.size, min_size);
   }
-  // We do not need the non-profiled CodeHeap, use all space for the non-nmethod CodeHeap
-  if (!heap_available(CodeBlobType::MethodNonProfiled)) {
-    non_nmethod_size += non_profiled_size;
-    non_profiled_size = 0;
+  if (non_profiled.enabled) { // non_profiled.enabled is always ON for segmented code heap, leave it checked for clarity
+    check_min_size("non-profiled code heap", non_profiled.size, min_size);
   }
-  // Make sure we have enough space for VM internal code
-  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
-  if (non_nmethod_size < min_code_cache_size) {
-    vm_exit_during_initialization(err_msg(
-        "Not enough space in non-nmethod code heap to run VM: " SIZE_FORMAT "K < " SIZE_FORMAT "K",
-        non_nmethod_size/K, min_code_cache_size/K));
+  if (hot.enabled) {
+    check_min_size("hot code heap", hot.size, min_size);
   }
 
-  // Verify sizes and update flag values
-  assert(non_profiled_size + profiled_size + non_nmethod_size == cache_size, "Invalid code heap sizes");
-  FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod_size);
-  FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
-  FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
+  // ReservedCodeCacheSize was set explicitly, so report an error and abort if it doesn't match the segment sizes
+  if (aligned_total != cache_size && cache_size_set) {
+    err_msg message("NonNMethodCodeHeapSize (%zuK)", non_nmethod.size/K);
+    if (profiled.enabled) {
+      message.append(" + ProfiledCodeHeapSize (%zuK)", profiled.size/K);
+    }
+    if (non_profiled.enabled) {
+      message.append(" + NonProfiledCodeHeapSize (%zuK)", non_profiled.size/K);
+    }
+    if (hot.enabled) {
+      message.append(" + HotCodeHeapSize (%zuK)", hot.size/K);
+    }
+    message.append(" = %zuK", aligned_total/K);
+    message.append((aligned_total > cache_size) ? " is greater than " : " is less than ");
+    message.append("ReservedCodeCacheSize (%zuK).", cache_size/K);
 
-  // Print warning if using large pages but not able to use the size given
+    vm_exit_during_initialization("Invalid code heap sizes", message);
+  }
+
+  // Compatibility. Print warning if using large pages but not able to use the size given
   if (UseLargePages) {
     const size_t lg_ps = page_size(false, 1);
     if (ps < lg_ps) {
@@ -324,56 +394,57 @@ void CodeCache::initialize_heaps() {
     }
   }
 
-  // Note: if large page support is enabled, min_size is at least the large
-  // page size. This ensures that the code cache is covered by large pages.
-  non_nmethod_size = align_up(non_nmethod_size, min_size);
-  profiled_size    = align_down(profiled_size, min_size);
-  non_profiled_size = align_down(non_profiled_size, min_size);
+  FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
+  FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled.size);
+  FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled.size);
+  FLAG_SET_ERGO(HotCodeHeapSize, hot.size);
+  FLAG_SET_ERGO(ReservedCodeCacheSize, cache_size);
 
-  // Reserve one continuous chunk of memory for CodeHeaps and split it into
-  // parts for the individual heaps. The memory layout looks like this:
-  // ---------- high -----------
-  //    Non-profiled nmethods
-  //         Non-nmethods
-  //      Profiled nmethods
-  // ---------- low ------------
-  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
-  ReservedSpace profiled_space      = rs.first_part(profiled_size);
-  ReservedSpace rest                = rs.last_part(profiled_size);
-  ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
-  ReservedSpace non_profiled_space  = rest.last_part(non_nmethod_size);
+  ReservedSpace rs = reserve_heap_memory(cache_size, ps);
 
   // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
   LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
 
+  size_t offset = 0;
+  if (profiled.enabled) {
+    ReservedSpace profiled_space = rs.partition(offset, profiled.size);
+    offset += profiled.size;
+    // Tier 2 and tier 3 (profiled) methods
+    add_heap(profiled_space, "CodeHeap 'profiled nmethods'", CodeBlobType::MethodProfiled);
+  }
+
+  ReservedSpace non_method_space = rs.partition(offset, non_nmethod.size);
+  offset += non_nmethod.size;
   // Non-nmethods (stubs, adapters, ...)
   add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);
-  // Tier 2 and tier 3 (profiled) methods
-  add_heap(profiled_space, "CodeHeap 'profiled nmethods'", CodeBlobType::MethodProfiled);
-  // Tier 1 and tier 4 (non-profiled) methods and native methods
-  add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", CodeBlobType::MethodNonProfiled);
-}
 
-size_t CodeCache::page_size(bool aligned, size_t min_pages) {
-  if (os::can_execute_large_page_memory()) {
-    if (InitialCodeCacheSize < ReservedCodeCacheSize) {
-      // Make sure that the page size allows for an incremental commit of the reserved space
-      min_pages = MAX2(min_pages, (size_t)8);
-    }
-    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
-                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
-  } else {
-    return os::vm_page_size();
+  if (hot.enabled) {
+    ReservedSpace hot_space = rs.partition(offset, hot.size);
+    offset += hot.size;
+    // Nmethods known to be always hot.
+    add_heap(hot_space, "CodeHeap 'hot nmethods'", CodeBlobType::MethodHot);
+  }
+
+  if (non_profiled.enabled) {
+    ReservedSpace non_profiled_space  = rs.partition(offset, non_profiled.size);
+    // Tier 1 and tier 4 (non-profiled) methods and native methods
+    add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", CodeBlobType::MethodNonProfiled);
   }
 }
 
-ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
+size_t CodeCache::page_size(bool aligned, size_t min_pages) {
+  return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
+                   os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
+}
+
+ReservedSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
+
+  ReservedSpace rs = CodeMemoryReserver::reserve(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
+    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (%zuK)",
                                           rs_size/K));
   }
 
@@ -392,16 +463,25 @@ bool CodeCache::heap_available(CodeBlobType code_blob_type) {
     // Interpreter only: we don't need any method code heaps
     return (code_blob_type == CodeBlobType::NonNMethod);
   } else if (CompilerConfig::is_c1_profiling()) {
-    // Tiered compilation: use all code heaps
+    // Tiered compilation: use all code heaps including
+    // the hot code heap when it is present.
+
+    if (COMPILER2_PRESENT(!HotCodeHeap &&) (code_blob_type == CodeBlobType::MethodHot)) {
+      return false;
+    }
+
     return (code_blob_type < CodeBlobType::All);
   } else {
     // No TieredCompilation: we only need the non-nmethod and non-profiled code heap
+    // and the hot code heap if it is requested.
     return (code_blob_type == CodeBlobType::NonNMethod) ||
-           (code_blob_type == CodeBlobType::MethodNonProfiled);
+           (code_blob_type == CodeBlobType::MethodNonProfiled)
+           COMPILER2_PRESENT(|| ((code_blob_type == CodeBlobType::MethodHot) && HotCodeHeap));
   }
 }
 
-const char* CodeCache::get_code_heap_flag_name(CodeBlobType code_blob_type) {
+// Returns the name of the VM option to set the size of the corresponding CodeHeap
+static const char* get_code_heap_flag_name(CodeBlobType code_blob_type) {
   switch(code_blob_type) {
   case CodeBlobType::NonNMethod:
     return "NonNMethodCodeHeapSize";
@@ -411,6 +491,9 @@ const char* CodeCache::get_code_heap_flag_name(CodeBlobType code_blob_type) {
     break;
   case CodeBlobType::MethodProfiled:
     return "ProfiledCodeHeapSize";
+    break;
+  case CodeBlobType::MethodHot:
+    return "HotCodeHeapSize";
     break;
   default:
     ShouldNotReachHere();
@@ -432,9 +515,6 @@ void CodeCache::add_heap(CodeHeap* heap) {
   _heaps->insert_sorted<code_heap_compare>(heap);
 
   CodeBlobType type = heap->code_blob_type();
-  if (code_blob_type_accepts_compiled(type)) {
-    _compiled_heaps->insert_sorted<code_heap_compare>(heap);
-  }
   if (code_blob_type_accepts_nmethod(type)) {
     _nmethod_heaps->insert_sorted<code_heap_compare>(heap);
   }
@@ -454,10 +534,10 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, CodeBlobType code_b
   add_heap(heap);
 
   // Reserve Space
-  size_t size_initial = MIN2((size_t)InitialCodeCacheSize, rs.size());
-  size_initial = align_up(size_initial, os::vm_page_size());
+  size_t size_initial = MIN2(InitialCodeCacheSize, rs.size());
+  size_initial = align_up(size_initial, rs.page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (" SIZE_FORMAT "K)",
+    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (%zuK)",
                                           heap->name(), size_initial/K));
   }
 
@@ -514,6 +594,27 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
   return (CodeBlob*)heap->next(cb);
 }
 
+static int report_code_heap_full_event(CodeBlobType code_blob_type) {
+  CodeHeap* heap = CodeCache::get_code_heap(code_blob_type);
+  assert(heap != nullptr, "heap is null");
+  int full_count = heap->report_full();
+  EventCodeCacheFull event;
+  if (event.should_commit()) {
+    event.set_codeBlobType((u1)code_blob_type);
+    event.set_startAddress((u8)heap->low_boundary());
+    event.set_commitedTopAddress((u8)heap->high());
+    event.set_reservedTopAddress((u8)heap->high_boundary());
+    event.set_entryCount(heap->blob_count());
+    event.set_methodCount(heap->nmethod_count());
+    event.set_adaptorCount(heap->adapter_count());
+    event.set_unallocatedCapacity(heap->unallocated_capacity());
+    event.set_fullCount(full_count);
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
+  }
+  return full_count;
+}
+
 /**
  * Do not seize the CodeCache lock here--if the caller has not
  * already done so, we are going to lose bigtime, since the code
@@ -531,7 +632,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
 
   // Get CodeHeap for the given CodeBlobType
   CodeHeap* heap = get_code_heap(code_blob_type);
-  assert(heap != nullptr, "heap is null");
+  assert(heap != nullptr, "No heap for given code_blob_type (%d), heap is null", (int)code_blob_type);
 
   while (true) {
     cb = (CodeBlob*)heap->allocate(size);
@@ -573,6 +674,8 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       if (handle_alloc_failure) {
         MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
         CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      } else if (orig_code_blob_type == CodeBlobType::MethodHot) {
+        report_code_heap_full_event(orig_code_blob_type);
       }
       return nullptr;
     } else {
@@ -585,7 +688,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       } else {
         tty->print("CodeCache");
       }
-      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (" SSIZE_FORMAT " bytes)",
+      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (%zd bytes)",
                     (intptr_t)heap->low_boundary(), (intptr_t)heap->high(),
                     (address)heap->high() - (address)heap->low_boundary());
     }
@@ -601,7 +704,7 @@ void CodeCache::free(CodeBlob* cb) {
   if (cb->is_nmethod()) {
     heap->set_nmethod_count(heap->nmethod_count() - 1);
     if (((nmethod *)cb)->has_dependencies()) {
-      Atomic::dec(&_number_of_nmethods_with_dependencies);
+      AtomicAccess::dec(&_number_of_nmethods_with_dependencies);
     }
   }
   if (cb->is_adapter_blob()) {
@@ -637,7 +740,7 @@ void CodeCache::commit(CodeBlob* cb) {
   if (cb->is_nmethod()) {
     heap->set_nmethod_count(heap->nmethod_count() + 1);
     if (((nmethod *)cb)->has_dependencies()) {
-      Atomic::inc(&_number_of_nmethods_with_dependencies);
+      AtomicAccess::inc(&_number_of_nmethods_with_dependencies);
     }
   }
   if (cb->is_adapter_blob()) {
@@ -677,7 +780,7 @@ CodeBlob* CodeCache::find_blob(void* start) {
 
 nmethod* CodeCache::find_nmethod(void* start) {
   CodeBlob* cb = find_blob(start);
-  assert(cb->is_nmethod(), "did not find an nmethod");
+  assert(cb == nullptr || cb->is_nmethod(), "did not find an nmethod");
   return (nmethod*)cb;
 }
 
@@ -692,15 +795,23 @@ void CodeCache::blobs_do(void f(CodeBlob* nm)) {
 
 void CodeCache::nmethods_do(void f(nmethod* nm)) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     f(iter.method());
   }
 }
 
+void CodeCache::nmethods_do(NMethodClosure* cl) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  NMethodIterator iter(NMethodIterator::all);
+  while(iter.next()) {
+    cl->do_nmethod(iter.method());
+  }
+}
+
 void CodeCache::metadata_do(MetadataClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     iter.method()->metadata_do(f);
   }
@@ -724,7 +835,8 @@ void CodeCache::update_cold_gc_count() {
   size_t used = max - free;
   double gc_interval = time - last_time;
 
-  _unloading_threshold_gc_requested = false;
+  AtomicAccess::store(&_unloading_threshold_gc_state, UnloadingRequestState::Idle);
+
   _last_unloading_time = time;
   _last_unloading_used = used;
 
@@ -799,7 +911,7 @@ void CodeCache::gc_on_allocation() {
   double free_ratio = double(free) / double(max);
   if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (Atomic::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_state, UnloadingRequestState::Idle, UnloadingRequestState::Active) == UnloadingRequestState::Idle) {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_aggressive);
     }
@@ -825,7 +937,7 @@ void CodeCache::gc_on_allocation() {
   // it is eventually invoked to avoid trouble.
   if (allocated_since_last_ratio > threshold) {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (Atomic::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_state, UnloadingRequestState::Idle, UnloadingRequestState::Active) == UnloadingRequestState::Idle) {
       log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
                           threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_threshold);
@@ -845,7 +957,7 @@ uint64_t CodeCache::_cold_gc_count = INT_MAX;
 
 double CodeCache::_last_unloading_time = 0.0;
 size_t CodeCache::_last_unloading_used = 0;
-volatile bool CodeCache::_unloading_threshold_gc_requested = false;
+volatile CodeCache::UnloadingRequestState CodeCache::_unloading_threshold_gc_state = UnloadingRequestState::Idle;
 TruncatedSeq CodeCache::_unloading_gc_intervals(10 /* samples */);
 TruncatedSeq CodeCache::_unloading_allocation_rates(10 /* samples */);
 
@@ -880,61 +992,45 @@ void CodeCache::on_gc_marking_cycle_finish() {
   update_cold_gc_count();
 }
 
+void CodeCache::defer_unloading_gc_request() {
+  assert_at_safepoint();
+  assert(_unloading_threshold_gc_state == UnloadingRequestState::Active, "only defer active requests");
+  AtomicAccess::store(&_unloading_threshold_gc_state, UnloadingRequestState::Deferred);
+}
+
+void CodeCache::clear_deferred_unloading_gc_request() {
+  // Codecache marking may still be active after aborting gc marking, so we can not
+  // use is_marking_active() to check whether we are in the correct state to clear
+  // the deferred state.
+  // Requests are only deferred outside GC marking, and only cleared after
+  // at the end of whitebox, we can just clear it if it was Deferred.
+  AtomicAccess::cmpxchg(&_unloading_threshold_gc_state,
+                        UnloadingRequestState::Deferred,
+                        UnloadingRequestState::Idle);
+}
+
 void CodeCache::arm_all_nmethods() {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->arm_all_nmethods();
-  }
+  BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 }
 
 // Mark nmethods for unloading if they contain otherwise unreachable oops.
 void CodeCache::do_unloading(bool unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
-  CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     iter.method()->do_unloading(unloading_occurred);
   }
 }
 
-void CodeCache::blobs_do(CodeBlobClosure* f) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  FOR_ALL_ALLOCABLE_HEAPS(heap) {
-    FOR_ALL_BLOBS(cb, *heap) {
-      f->do_code_blob(cb);
-#ifdef ASSERT
-      if (cb->is_nmethod()) {
-        Universe::heap()->verify_nmethod((nmethod*)cb);
-      }
-#endif //ASSERT
-    }
-  }
-}
-
 void CodeCache::verify_clean_inline_caches() {
 #ifdef ASSERT
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  if (!VerifyInlineCaches) return;
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     nm->verify_clean_inline_caches();
     nm->verify();
   }
-#endif
-}
-
-void CodeCache::verify_icholder_relocations() {
-#ifdef ASSERT
-  // make sure that we aren't leaking icholders
-  int count = 0;
-  FOR_ALL_HEAPS(heap) {
-    FOR_ALL_BLOBS(cb, *heap) {
-      CompiledMethod *nm = cb->as_compiled_method_or_null();
-      if (nm != nullptr) {
-        count += nm->verify_icholder_relocations();
-      }
-    }
-  }
-  assert(count + InlineCacheBuffer::pending_icholder_count() + CompiledICHolder::live_not_claimed_count() ==
-         CompiledICHolder::live_count(), "must agree");
 #endif
 }
 
@@ -945,9 +1041,9 @@ void CodeCache::release_exception_cache(ExceptionCache* entry) {
     delete entry;
   } else {
     for (;;) {
-      ExceptionCache* purge_list_head = Atomic::load(&_exception_cache_purge_list);
+      ExceptionCache* purge_list_head = AtomicAccess::load(&_exception_cache_purge_list);
       entry->set_purge_list_next(purge_list_head);
-      if (Atomic::cmpxchg(&_exception_cache_purge_list, purge_list_head, entry) == purge_list_head) {
+      if (AtomicAccess::cmpxchg(&_exception_cache_purge_list, purge_list_head, entry) == purge_list_head) {
         break;
       }
     }
@@ -1008,7 +1104,7 @@ CodeCache::UnlinkingScope::~UnlinkingScope() {
 void CodeCache::verify_oops() {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   VerifyOopClosure voc;
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     nm->oops_do(&voc);
@@ -1036,8 +1132,8 @@ int CodeCache::nmethod_count(CodeBlobType code_blob_type) {
 
 int CodeCache::nmethod_count() {
   int count = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
-    count += (*heap)->nmethod_count();
+  for (CodeHeap* heap : *_nmethod_heaps) {
+    count += heap->nmethod_count();
   }
   return count;
 }
@@ -1106,8 +1202,8 @@ size_t CodeCache::max_distance_to_non_nmethod() {
     CodeHeap* blob = get_code_heap(CodeBlobType::NonNMethod);
     // the max distance is minimized by placing the NonNMethod segment
     // in between MethodProfiled and MethodNonProfiled segments
-    size_t dist1 = (size_t)blob->high() - (size_t)_low_bound;
-    size_t dist2 = (size_t)_high_bound - (size_t)blob->low();
+    size_t dist1 = (size_t)blob->high_boundary() - (size_t)_low_bound;
+    size_t dist2 = (size_t)_high_bound - (size_t)blob->low_boundary();
     return dist1 > dist2 ? dist1 : dist2;
   }
 }
@@ -1153,9 +1249,9 @@ size_t CodeCache::freelists_length() {
 void icache_init();
 
 void CodeCache::initialize() {
-  assert(CodeCacheSegmentSize >= (uintx)CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
+  assert(CodeCacheSegmentSize >= CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
 #ifdef COMPILER2
-  assert(CodeCacheSegmentSize >= (uintx)OptoLoopAlignment,  "CodeCacheSegmentSize must be large enough to align inner loops");
+  assert(CodeCacheSegmentSize >= (size_t)OptoLoopAlignment,  "CodeCacheSegmentSize must be large enough to align inner loops");
 #endif
   assert(CodeCacheSegmentSize >= sizeof(jdouble),    "CodeCacheSegmentSize must be large enough to align constants");
   // This was originally just a check of the alignment, causing failure, instead, round
@@ -1171,7 +1267,11 @@ void CodeCache::initialize() {
     FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
     FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, 8));
+
+    // If InitialCodeCacheSize is equal to ReservedCodeCacheSize, then it's more likely
+    // users want to use the largest available page.
+    const size_t min_pages = (InitialCodeCacheSize == ReservedCodeCacheSize) ? 1 : 8;
+    ReservedSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
@@ -1194,12 +1294,12 @@ void codeCache_init() {
 //------------------------------------------------------------------------------------------------
 
 bool CodeCache::has_nmethods_with_dependencies() {
-  return Atomic::load_acquire(&_number_of_nmethods_with_dependencies) != 0;
+  return AtomicAccess::load_acquire(&_number_of_nmethods_with_dependencies) != 0;
 }
 
 void CodeCache::clear_inline_caches() {
   assert_locked_or_safepoint(CodeCache_lock);
-  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     iter.method()->clear_inline_caches();
   }
@@ -1208,7 +1308,7 @@ void CodeCache::clear_inline_caches() {
 // Only used by whitebox API
 void CodeCache::cleanup_inline_caches_whitebox() {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     iter.method()->cleanup_inline_caches_whitebox();
   }
@@ -1227,7 +1327,7 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   FlagSetting fs(Dependencies::_verify_in_progress, true);
 
-  typedef ResourceHashtable<DependencySignature, int, 11027,
+  typedef HashTable<DependencySignature, int, 11027,
                             AnyObj::RESOURCE_AREA, mtInternal,
                             &DependencySignature::hash,
                             &DependencySignature::equals> DepTable;
@@ -1236,7 +1336,7 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
 
   // Iterate over live nmethods and check dependencies of all nmethods that are not
   // marked for deoptimization. A particular dependency is only checked once.
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Only notify for live nmethods
@@ -1292,38 +1392,32 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassD
 #endif
 }
 
-CompiledMethod* CodeCache::find_compiled(void* start) {
-  CodeBlob *cb = find_blob(start);
-  assert(cb == nullptr || cb->is_compiled(), "did not find an compiled_method");
-  return (CompiledMethod*)cb;
-}
-
 #if INCLUDE_JVMTI
 // RedefineClasses support for saving nmethods that are dependent on "old" methods.
 // We don't really expect this table to grow very large.  If it does, it can become a hashtable.
-static GrowableArray<CompiledMethod*>* old_compiled_method_table = nullptr;
+static GrowableArray<nmethod*>* old_nmethod_table = nullptr;
 
-static void add_to_old_table(CompiledMethod* c) {
-  if (old_compiled_method_table == nullptr) {
-    old_compiled_method_table = new (mtCode) GrowableArray<CompiledMethod*>(100, mtCode);
+static void add_to_old_table(nmethod* c) {
+  if (old_nmethod_table == nullptr) {
+    old_nmethod_table = new (mtCode) GrowableArray<nmethod*>(100, mtCode);
   }
-  old_compiled_method_table->push(c);
+  old_nmethod_table->push(c);
 }
 
 static void reset_old_method_table() {
-  if (old_compiled_method_table != nullptr) {
-    delete old_compiled_method_table;
-    old_compiled_method_table = nullptr;
+  if (old_nmethod_table != nullptr) {
+    delete old_nmethod_table;
+    old_nmethod_table = nullptr;
   }
 }
 
 // Remove this method when flushed.
-void CodeCache::unregister_old_nmethod(CompiledMethod* c) {
+void CodeCache::unregister_old_nmethod(nmethod* c) {
   assert_lock_strong(CodeCache_lock);
-  if (old_compiled_method_table != nullptr) {
-    int index = old_compiled_method_table->find(c);
+  if (old_nmethod_table != nullptr) {
+    int index = old_nmethod_table->find(c);
     if (index != -1) {
-      old_compiled_method_table->delete_at(index);
+      old_nmethod_table->delete_at(index);
     }
   }
 }
@@ -1331,13 +1425,13 @@ void CodeCache::unregister_old_nmethod(CompiledMethod* c) {
 void CodeCache::old_nmethods_do(MetadataClosure* f) {
   // Walk old method table and mark those on stack.
   int length = 0;
-  if (old_compiled_method_table != nullptr) {
-    length = old_compiled_method_table->length();
+  if (old_nmethod_table != nullptr) {
+    length = old_nmethod_table->length();
     for (int i = 0; i < length; i++) {
       // Walk all methods saved on the last pass.  Concurrent class unloading may
       // also be looking at this method's metadata, so don't delete it yet if
       // it is marked as unloaded.
-      old_compiled_method_table->at(i)->metadata_do(f);
+      old_nmethod_table->at(i)->metadata_do(f);
     }
   }
   log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);
@@ -1350,9 +1444,9 @@ void CodeCache::mark_dependents_for_evol_deoptimization(DeoptimizationScope* deo
   // So delete old method table and create a new one.
   reset_old_method_table();
 
-  CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
-    CompiledMethod* nm = iter.method();
+    nmethod* nm = iter.method();
     // Walk all alive nmethods to check for old Methods.
     // This includes methods whose inline caches point to old methods, so
     // inline cache clearing is unnecessary.
@@ -1365,9 +1459,9 @@ void CodeCache::mark_dependents_for_evol_deoptimization(DeoptimizationScope* deo
 
 void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* deopt_scope) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-  CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
-    CompiledMethod* nm = iter.method();
+    nmethod* nm = iter.method();
     if (!nm->method()->is_method_handle_intrinsic()) {
       if (nm->can_be_deoptimized()) {
         deopt_scope->mark(nm);
@@ -1384,9 +1478,9 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* d
 // Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
-    CompiledMethod* nm = iter.method();
+    nmethod* nm = iter.method();
     if (!nm->is_native_method()) {
       deopt_scope->mark(nm);
     }
@@ -1396,9 +1490,9 @@ void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_
 void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method* dependee) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
-    CompiledMethod* nm = iter.method();
+    nmethod* nm = iter.method();
     if (nm->is_dependent_on_method(dependee)) {
       deopt_scope->mark(nm);
     }
@@ -1406,11 +1500,11 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method
 }
 
 void CodeCache::make_marked_nmethods_deoptimized() {
-  RelaxedCompiledMethodIterator iter(RelaxedCompiledMethodIterator::only_not_unloading);
+  RelaxedNMethodIterator iter(RelaxedNMethodIterator::not_unloading);
   while(iter.next()) {
-    CompiledMethod* nm = iter.method();
+    nmethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
-      nm->make_not_entrant();
+      nm->make_not_entrant(nmethod::InvalidationReason::MARKED_FOR_DEOPTIMIZATION);
       nm->make_deoptimized();
     }
   }
@@ -1459,11 +1553,7 @@ void CodeCache::verify() {
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
-  // Get nmethod heap for the given CodeBlobType and build CodeCacheFull event
-  CodeHeap* heap = get_code_heap(code_blob_type);
-  assert(heap != nullptr, "heap is null");
-
-  int full_count = heap->report_full();
+  int full_count = report_code_heap_full_event(code_blob_type);
 
   if ((full_count == 1) || print) {
     // Not yet reported for this heap, report
@@ -1507,21 +1597,6 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
       }
     }
   }
-
-  EventCodeCacheFull event;
-  if (event.should_commit()) {
-    event.set_codeBlobType((u1)code_blob_type);
-    event.set_startAddress((u8)heap->low_boundary());
-    event.set_commitedTopAddress((u8)heap->high());
-    event.set_reservedTopAddress((u8)heap->high_boundary());
-    event.set_entryCount(heap->blob_count());
-    event.set_methodCount(heap->nmethod_count());
-    event.set_adaptorCount(heap->adapter_count());
-    event.set_unallocatedCapacity(heap->unallocated_capacity());
-    event.set_fullCount(heap->full_count());
-    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
-    event.commit();
-  }
 }
 PRAGMA_DIAG_POP
 
@@ -1536,10 +1611,10 @@ void CodeCache::print_memory_overhead() {
   }
   // Print bytes that are allocated in the freelist
   ttyLocker ttl;
-  tty->print_cr("Number of elements in freelist: " SSIZE_FORMAT,       freelists_length());
-  tty->print_cr("Allocated in freelist:          " SSIZE_FORMAT "kB",  bytes_allocated_in_freelists()/K);
-  tty->print_cr("Unused bytes in CodeBlobs:      " SSIZE_FORMAT "kB",  (wasted_bytes/K));
-  tty->print_cr("Segment map size:               " SSIZE_FORMAT "kB",  allocated_segments()/K); // 1 byte per segment
+  tty->print_cr("Number of elements in freelist: %zd",       freelists_length());
+  tty->print_cr("Allocated in freelist:          %zdkB",  bytes_allocated_in_freelists()/K);
+  tty->print_cr("Unused bytes in CodeBlobs:      %zdkB",  (wasted_bytes/K));
+  tty->print_cr("Segment map size:               %zdkB",  allocated_segments()/K); // 1 byte per segment
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1562,9 +1637,14 @@ void CodeCache::print_trace(const char* event, CodeBlob* cb, uint size) {
 void CodeCache::print_internals() {
   int nmethodCount = 0;
   int runtimeStubCount = 0;
+  int upcallStubCount = 0;
   int adapterCount = 0;
+  int mhAdapterCount = 0;
+  int vtableBlobCount = 0;
   int deoptimizationStubCount = 0;
   int uncommonTrapStubCount = 0;
+  int exceptionStubCount = 0;
+  int safepointStubCount = 0;
   int bufferBlobCount = 0;
   int total = 0;
   int nmethodNotEntrant = 0;
@@ -1601,12 +1681,22 @@ void CodeCache::print_internals() {
         }
       } else if (cb->is_runtime_stub()) {
         runtimeStubCount++;
+      } else if (cb->is_upcall_stub()) {
+        upcallStubCount++;
       } else if (cb->is_deoptimization_stub()) {
         deoptimizationStubCount++;
       } else if (cb->is_uncommon_trap_stub()) {
         uncommonTrapStubCount++;
+      } else if (cb->is_exception_stub()) {
+        exceptionStubCount++;
+      } else if (cb->is_safepoint_stub()) {
+        safepointStubCount++;
       } else if (cb->is_adapter_blob()) {
         adapterCount++;
+      } else if (cb->is_method_handles_adapter_blob()) {
+        mhAdapterCount++;
+      } else if (cb->is_vtable_blob()) {
+        vtableBlobCount++;
       } else if (cb->is_buffer_blob()) {
         bufferBlobCount++;
       }
@@ -1618,7 +1708,7 @@ void CodeCache::print_internals() {
   int *buckets = NEW_C_HEAP_ARRAY(int, bucketLimit, mtCode);
   memset(buckets, 0, sizeof(int) * bucketLimit);
 
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
     if(nm->method() != nullptr && nm->is_java_method()) {
@@ -1633,10 +1723,15 @@ void CodeCache::print_internals() {
   tty->print_cr("\tjava: %d",nmethodJava);
   tty->print_cr("\tnative: %d",nmethodNative);
   tty->print_cr("runtime_stubs: %d",runtimeStubCount);
+  tty->print_cr("upcall_stubs: %d",upcallStubCount);
   tty->print_cr("adapters: %d",adapterCount);
+  tty->print_cr("MH adapters: %d",mhAdapterCount);
+  tty->print_cr("VTables: %d",vtableBlobCount);
   tty->print_cr("buffer blobs: %d",bufferBlobCount);
   tty->print_cr("deoptimization_stubs: %d",deoptimizationStubCount);
   tty->print_cr("uncommon_traps: %d",uncommonTrapStubCount);
+  tty->print_cr("exception_stubs: %d",exceptionStubCount);
+  tty->print_cr("safepoint_stubs: %d",safepointStubCount);
   tty->print_cr("\nnmethod size distribution");
   tty->print_cr("-------------------------------------------------");
 
@@ -1648,7 +1743,7 @@ void CodeCache::print_internals() {
     }
   }
 
-  FREE_C_HEAP_ARRAY(int, buckets);
+  FREE_C_HEAP_ARRAY(buckets);
   print_memory_overhead();
 }
 
@@ -1662,9 +1757,14 @@ void CodeCache::print() {
 
   CodeBlob_sizes live[CompLevel_full_optimization + 1];
   CodeBlob_sizes runtimeStub;
+  CodeBlob_sizes upcallStub;
   CodeBlob_sizes uncommonTrapStub;
   CodeBlob_sizes deoptimizationStub;
+  CodeBlob_sizes exceptionStub;
+  CodeBlob_sizes safepointStub;
   CodeBlob_sizes adapter;
+  CodeBlob_sizes mhAdapter;
+  CodeBlob_sizes vtableBlob;
   CodeBlob_sizes bufferBlob;
   CodeBlob_sizes other;
 
@@ -1676,12 +1776,22 @@ void CodeCache::print() {
         live[level].add(cb);
       } else if (cb->is_runtime_stub()) {
         runtimeStub.add(cb);
+      } else if (cb->is_upcall_stub()) {
+        upcallStub.add(cb);
       } else if (cb->is_deoptimization_stub()) {
         deoptimizationStub.add(cb);
       } else if (cb->is_uncommon_trap_stub()) {
         uncommonTrapStub.add(cb);
+      } else if (cb->is_exception_stub()) {
+        exceptionStub.add(cb);
+      } else if (cb->is_safepoint_stub()) {
+        safepointStub.add(cb);
       } else if (cb->is_adapter_blob()) {
         adapter.add(cb);
+      } else if (cb->is_method_handles_adapter_blob()) {
+        mhAdapter.add(cb);
+      } else if (cb->is_vtable_blob()) {
+        vtableBlob.add(cb);
       } else if (cb->is_buffer_blob()) {
         bufferBlob.add(cb);
       } else {
@@ -1712,9 +1822,14 @@ void CodeCache::print() {
     const CodeBlob_sizes* sizes;
   } non_nmethod_blobs[] = {
     { "runtime",        &runtimeStub },
+    { "upcall",         &upcallStub },
     { "uncommon trap",  &uncommonTrapStub },
     { "deoptimization", &deoptimizationStub },
+    { "exception",      &exceptionStub },
+    { "safepoint",      &safepointStub },
     { "adapter",        &adapter },
+    { "mh_adapter",     &mhAdapter },
+    { "vtable",         &vtableBlob },
     { "buffer blob",    &bufferBlob },
     { "other",          &other },
   };
@@ -1751,7 +1866,15 @@ void CodeCache::print() {
 }
 
 void CodeCache::print_summary(outputStream* st, bool detailed) {
+  int total_blob_count = 0;
+  int total_nmethod_count = 0;
+  int total_adapter_count = 0;
   int full_count = 0;
+  julong total_used = 0;
+  julong total_max_used = 0;
+  julong total_free = 0;
+  julong total_size = 0;
+
   FOR_ALL_HEAPS(heap_iterator) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
@@ -1760,48 +1883,64 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     } else {
       st->print("CodeCache:");
     }
-    st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
-                 "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
-                 total/K, (total - heap->unallocated_capacity())/K,
-                 heap->max_allocated_capacity()/K, heap->unallocated_capacity()/K);
+    size_t size = total/K;
+    size_t used = (total - heap->unallocated_capacity())/K;
+    size_t max_used = heap->max_allocated_capacity()/K;
+    size_t free = heap->unallocated_capacity()/K;
+    total_size += size;
+    total_used += used;
+    total_max_used += max_used;
+    total_free += free;
+    st->print_cr(" size=%zuKb used=%zu"
+                 "Kb max_used=%zuKb free=%zuKb",
+                 size, used, max_used, free);
 
     if (detailed) {
       st->print_cr(" bounds [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT "]",
                    p2i(heap->low_boundary()),
                    p2i(heap->high()),
                    p2i(heap->high_boundary()));
-
-      full_count += get_codemem_full_count(heap->code_blob_type());
+      st->print_cr(" blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+                   ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                   heap->blob_count(), heap->nmethod_count(), heap->adapter_count(), heap->full_count());
+      total_blob_count += heap->blob_count();
+      total_nmethod_count += heap->nmethod_count();
+      total_adapter_count += heap->adapter_count();
+      full_count += heap->full_count();
     }
   }
 
   if (detailed) {
-    st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
-                       " adapters=" UINT32_FORMAT,
-                       blob_count(), nmethod_count(), adapter_count());
-    st->print_cr(" compilation: %s", CompileBroker::should_compile_new_jobs() ?
+    if (SegmentedCodeCache) {
+      st->print("CodeCache:");
+      st->print_cr(" size=" JULONG_FORMAT "Kb, used=" JULONG_FORMAT
+                   "Kb, max_used=" JULONG_FORMAT "Kb, free=" JULONG_FORMAT "Kb",
+                   total_size, total_used, total_max_used, total_free);
+      st->print_cr(" total blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+                   ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                   total_blob_count, total_nmethod_count, total_adapter_count, full_count);
+    }
+    st->print_cr("Compilation: %s, stopped_count=%d, restarted_count=%d",
+                 CompileBroker::should_compile_new_jobs() ?
                  "enabled" : Arguments::mode() == Arguments::_int ?
                  "disabled (interpreter mode)" :
-                 "disabled (not enough contiguous free space left)");
-    st->print_cr("              stopped_count=%d, restarted_count=%d",
+                 "disabled (not enough contiguous free space left)",
                  CompileBroker::get_total_compiler_stopped_count(),
                  CompileBroker::get_total_compiler_restarted_count());
-    st->print_cr(" full_count=%d", full_count);
   }
 }
 
 void CodeCache::print_codelist(outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
+  NMethodIterator iter(NMethodIterator::not_unloading);
   while (iter.next()) {
-    CompiledMethod* cm = iter.method();
+    nmethod* nm = iter.method();
     ResourceMark rm;
-    char* method_name = cm->method()->name_and_sig_as_C_string();
+    char* method_name = nm->method()->name_and_sig_as_C_string();
     st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
-                 cm->compile_id(), cm->comp_level(), cm->get_state(),
-                 method_name,
-                 (intptr_t)cm->header_begin(), (intptr_t)cm->code_begin(), (intptr_t)cm->code_end());
+                 nm->compile_id(), nm->comp_level(), nm->get_state(), method_name,
+                 (intptr_t)nm->header_begin(), (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
   }
 }
 
@@ -1813,36 +1952,73 @@ void CodeCache::print_layout(outputStream* st) {
 
 void CodeCache::log_state(outputStream* st) {
   st->print(" total_blobs='" UINT32_FORMAT "' nmethods='" UINT32_FORMAT "'"
-            " adapters='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
+            " adapters='" UINT32_FORMAT "' free_code_cache='%zu'",
             blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map() {
+static bool is_stub_code_blob(CodeBlob* cb) {
+  if (!cb->is_buffer_blob()) {
+    return false;
+  }
+  for (StubCodeDesc* d = StubCodeDesc::first(); d != nullptr; d = StubCodeDesc::next(d)) {
+    if (cb->code_contains(d->begin())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
-  // Perf expects to find the map file at /tmp/perf-<pid>.map.
-  char fname[32];
-  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
-
-  fileStream fs(fname, "w");
+  char fname[JVM_MAXPATHLEN];
+  if (filename == nullptr) {
+    // Invocation outside of jcmd requires pid substitution.
+    if (!Arguments::copy_expand_pid(DEFAULT_PERFMAP_FILENAME,
+                                    strlen(DEFAULT_PERFMAP_FILENAME),
+                                    fname, JVM_MAXPATHLEN)) {
+      st->print_cr("Warning: Not writing perf map as pid substitution failed.");
+      return;
+    }
+    filename = fname;
+  }
+  fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", fname);
+    st->print_cr("Warning: Failed to create %s for perf map", filename);
     return;
   }
 
-  AllCodeBlobsIterator iter(AllCodeBlobsIterator::only_not_unloading);
+  AllCodeBlobsIterator iter(AllCodeBlobsIterator::not_unloading);
   while (iter.next()) {
     CodeBlob *cb = iter.method();
+    if (is_stub_code_blob(cb) || cb->is_vtable_blob()) {
+      // Individual stub routines and vtable stubs are dumped after the main loop.
+      continue;
+    }
     ResourceMark rm;
-    const char* method_name =
-      cb->is_compiled() ? cb->as_compiled_method()->method()->external_name()
-                        : cb->name();
+    const char* method_name = nullptr;
+    if (cb->is_nmethod()) {
+      nmethod* nm = cb->as_nmethod();
+      method_name = nm->method()->external_name();
+    } else {
+      method_name = cb->name();
+    }
     fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
-                (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
-                method_name);
+                (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(), method_name);
   }
+  for (StubCodeDesc* d = StubCodeDesc::first(); d != nullptr; d = StubCodeDesc::next(d)) {
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s %s",
+                (intptr_t)d->begin(), (intptr_t)d->size_in_bytes(),
+                d->group(), d->name());
+  }
+  VtableStubs::vtable_stub_do([&](VtableStub* s) {
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s [%d]",
+                (intptr_t)s->code_begin(),
+                (intptr_t)s->code_size(),
+                s->is_vtable_stub() ? "vtable stub" : "itable stub",
+                s->index());
+  });
 }
 #endif // LINUX
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8149411 8007632
  * @summary Get AES key from keystore (uses SecretKeySpec not SecretKeyFactory)
+ * @library /test/lib
  * @run main P12SecretKey pkcs12 AES 128
  * @run main P12SecretKey pkcs12 DES 56
  * @run main P12SecretKey pkcs12 DESede 168
@@ -34,11 +35,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.KeyStore;
-import java.security.cert.CertificateException;
 import java.util.Arrays;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+
+import static jdk.test.lib.Utils.createTempFile;
 
 public class P12SecretKey {
 
@@ -65,7 +67,14 @@ public class P12SecretKey {
         KeyStore.ProtectionParameter kspp = new KeyStore.PasswordProtection(pw);
         ks.setEntry(ALIAS, ske, kspp);
 
-        File ksFile = File.createTempFile("test", ".test");
+        // temporary files are created in scratch directory
+        final File ksFile = createTempFile(
+                String.format("%s-%s-%d-",
+                                keystoreType,
+                                algName,
+                                keySize),
+                ".ks").toFile();
+
         try (FileOutputStream fos = new FileOutputStream(ksFile)) {
             ks.store(fos, pw);
             fos.flush();
@@ -76,13 +85,13 @@ public class P12SecretKey {
             KeyStore ks2 = KeyStore.getInstance(keystoreType);
             ks2.load(fis, pw);
             KeyStore.Entry entry = ks2.getEntry(ALIAS, kspp);
-            SecretKey keyIn = ((KeyStore.SecretKeyEntry)entry).getSecretKey();
+            SecretKey keyIn = ((KeyStore.SecretKeyEntry) entry).getSecretKey();
             if (Arrays.equals(key.getEncoded(), keyIn.getEncoded())) {
                 System.err.println("OK: worked just fine with " + keystoreType +
                                    " keystore");
             } else {
-                System.err.println("ERROR: keys are NOT equal after storing in "
-                                   + keystoreType + " keystore");
+                throw new RuntimeException("ERROR: keys are NOT equal after storing in "
+                                           + keystoreType + " keystore");
             }
         }
     }

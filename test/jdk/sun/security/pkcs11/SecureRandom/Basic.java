@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm Basic
- * @run main/othervm -Djava.security.manager=allow Basic sm
  */
+
+import jtreg.SkippedException;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -45,9 +46,8 @@ public class Basic extends PKCS11Test {
         try {
             random = SecureRandom.getInstance("PKCS11");
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Provider " + p + " does not support SecureRandom, skipping");
             e.printStackTrace();
-            return;
+            throw new SkippedException("Provider " + p + " does not support SecureRandom, skipping", e);
         }
         byte[] b = new byte[32];
         random.nextBytes(b);

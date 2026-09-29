@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <!-- Catalog for testing the JDKCatalog
+    -->
+    <systemSuffix systemIdSuffix="testDatatypes.xsd" uri="testDatatypes.xsd"/>
+    <systemSuffix systemIdSuffix="testXML.xsd" uri="testXML.xsd"/>
+
+</catalog>

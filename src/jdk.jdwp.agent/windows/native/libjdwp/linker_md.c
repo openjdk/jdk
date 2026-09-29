@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ static void dll_build_name(char* buffer, size_t buflen,
     path = strtok_s(paths_copy, PATH_SEPARATOR, &next_token);
 
     while (path != NULL) {
-        size_t result_len = (size_t)_snprintf(buffer, buflen, "%s\\%s.dll", path, fname);
+        size_t result_len = (size_t) snprintf(buffer, buflen, "%s\\%s.dll", path, fname);
         if (result_len >= buflen) {
             EXIT_ERROR(JVMTI_ERROR_INVALID_LOCATION, "One or more of the library paths supplied to jdwp, "
                                                      "likely by sun.boot.library.path, is too long.");

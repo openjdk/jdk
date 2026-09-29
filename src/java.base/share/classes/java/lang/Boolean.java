@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,19 @@
 
 package java.lang;
 
+import jdk.internal.value.Deserializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
 import java.util.Optional;
 
-import static java.lang.constant.ConstantDescs.BSM_GET_STATIC_FINAL;
-import static java.lang.constant.ConstantDescs.CD_Boolean;
-
 /**
- * The Boolean class wraps a value of the primitive type
- * {@code boolean} in an object. An object of type
- * {@code Boolean} contains a single field whose type is
- * {@code boolean}.
+ * The {@code Boolean} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code boolean}. An object of type {@code Boolean} contains a
+ * single field whose type is {@code boolean}.
  *
  * <p>In addition, this class provides many methods for
  * converting a {@code boolean} to a {@code String} and a
@@ -49,17 +46,26 @@ import static java.lang.constant.ConstantDescs.CD_Boolean;
  * {@code boolean}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Boolean} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @author  Arthur van Hoff
  * @since   1.0
  */
 @jdk.internal.ValueBased
-public final class Boolean implements java.io.Serializable,
-                                      Comparable<Boolean>, Constable
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Boolean
+        implements java.io.Serializable, Comparable<Boolean>, Constable
 {
     /**
      * The {@code Boolean} object corresponding to the primitive
@@ -78,8 +84,7 @@ public final class Boolean implements java.io.Serializable,
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Boolean> TYPE = (Class<Boolean>) Class.getPrimitiveClass("boolean");
+    public static final Class<Boolean> TYPE = Class.getPrimitiveClass("boolean");
 
     /**
      * The value of the Boolean.
@@ -105,7 +110,8 @@ public final class Boolean implements java.io.Serializable,
      * Also consider using the final fields {@link #TRUE} and {@link #FALSE}
      * if possible.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
+    @Deserializer("value")
     public Boolean(boolean value) {
         this.value = value;
     }
@@ -125,7 +131,7 @@ public final class Boolean implements java.io.Serializable,
      * {@code boolean} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Boolean} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Boolean(String s) {
         this(parseBoolean(s));
     }
@@ -162,13 +168,26 @@ public final class Boolean implements java.io.Serializable,
 
     /**
      * Returns a {@code Boolean} instance representing the specified
-     * {@code boolean} value.  If the specified {@code boolean} value
-     * is {@code true}, this method returns {@code Boolean.TRUE};
-     * if it is {@code false}, this method returns {@code Boolean.FALSE}.
-     * If a new {@code Boolean} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Boolean(boolean)}, as this method is likely to yield
-     * significantly better space and time performance.
+     * {@code boolean} value.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Boolean} is an identity class.
+     *              If the specified {@code boolean} value is {@code true},
+     *              this method returns {@code Boolean.TRUE}; if it is
+     *              {@code false}, this method returns {@code Boolean.FALSE}.
+     *              If a new {@code Boolean} instance is not required, this
+     *              method should generally be used in preference to the
+     *              constructor {@link #Boolean(boolean)}, as this method is
+     *              likely to yield significantly better space and time
+     *              performance.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Boolean} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  b a boolean value.
      * @return a {@code Boolean} instance representing {@code b}.
@@ -255,8 +274,8 @@ public final class Boolean implements java.io.Serializable,
      *          same value; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Boolean) {
-            return value == ((Boolean)obj).booleanValue();
+        if (obj instanceof Boolean b) {
+            return value == b.booleanValue();
         }
         return false;
     }
@@ -272,18 +291,11 @@ public final class Boolean implements java.io.Serializable,
      *
      * @param   name   the system property name.
      * @return  the {@code boolean} value of the system property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
     public static boolean getBoolean(String name) {
-        boolean result = false;
-        try {
-            result = parseBoolean(System.getProperty(name));
-        } catch (IllegalArgumentException | NullPointerException e) {
-        }
-        return result;
+        return name != null && !name.isEmpty() && parseBoolean(System.getProperty(name));
     }
 
     /**

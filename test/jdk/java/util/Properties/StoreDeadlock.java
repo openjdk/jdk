@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6199320
+ * @bug 6199320 8347841
  * @summary Properties.store() causes deadlock when concurrently calling TimeZone apis
  * @run main/timeout=20 StoreDeadlock
  * @author Xueming Shen
@@ -59,7 +59,7 @@ public class StoreDeadlock {
     }
     class Thread2 extends Thread {
         public void run() {
-            System.out.println("tz=" + TimeZone.getTimeZone("PST"));
+            System.out.println("tz=" + TimeZone.getTimeZone("America/Los_Angeles"));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,27 @@
 
 /*
  * @test
- * @bug 8282929
- * @summary Verifies that toLocalizedPattern() method correctly returns
- *          monetary symbols in a currency formatter
- * @run testng ToLocalizedPatternTest
+ * @bug 8282929 8326908
+ * @summary Verify DecimalFormat::toLocalizedPattern correctness.
+ * @run junit ToLocalizedPatternTest
  */
 
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
-@Test
 public class ToLocalizedPatternTest {
     private static final char MONETARY_GROUPING = 'g';
     private static final char MONETARY_DECIMAL = 'd';
 
-    public void testToLocalizedPattern() {
+    // Verifies that the toLocalizedPattern() method correctly returns
+    // monetary symbols for a currency formatter.
+    @Test
+    public void monetarySymbolsTest() {
         var dfs = new DecimalFormatSymbols(Locale.US);
 
         // Customize the decimal format symbols
@@ -57,5 +59,18 @@ public class ToLocalizedPatternTest {
             cf.toPattern()
                .replace(',', MONETARY_GROUPING)
                .replace('.', MONETARY_DECIMAL));
+    }
+
+    // Verify some common symbols are enforced with the DFS
+    @Test
+    public void useDFSWhenLocalizedTest() {
+        DecimalFormatSymbols dfs = new DecimalFormatSymbols();
+        dfs.setGroupingSeparator('a');
+        dfs.setDecimalSeparator('b');
+        dfs.setDigit('c');
+        dfs.setZeroDigit('d');
+        // Create a DecimalFormat that utilizes the above symbols
+        DecimalFormat dFmt = new DecimalFormat("###,##0.###", dfs);
+        assertEquals("caccdbccc", dFmt.toLocalizedPattern());
     }
 }

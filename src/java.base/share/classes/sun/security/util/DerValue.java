@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ public class DerValue {
 
     /** The tag class types */
     public static final byte TAG_UNIVERSAL = (byte)0x000;
+    public static final byte TAG_CONSTRUCT = (byte)0x020;
     public static final byte TAG_APPLICATION = (byte)0x040;
     public static final byte TAG_CONTEXT = (byte)0x080;
     public static final byte TAG_PRIVATE = (byte)0x0c0;
@@ -155,6 +156,9 @@ public class DerValue {
      * "SET OF" (one to N members, order does not matter).
      */
     public static final byte    tag_SetOf = 0x31;
+
+    // Max nested depth for constructed data
+    private static final int MAX_CONSTRUCTED_NEST = 30;
 
     // This class is mostly immutable except that:
     //
@@ -340,6 +344,7 @@ public class DerValue {
      *
      * This is a public constructor.
      */
+    @SuppressWarnings("this-escape")
     public DerValue(byte[] encoding) throws IOException {
         this(encoding.clone(), 0, encoding.length, true, false);
     }
@@ -487,6 +492,7 @@ public class DerValue {
      * @param in the input stream holding a single DER datum,
      *  which may be followed by additional data
      */
+    @SuppressWarnings("this-escape")
     public DerValue(InputStream in) throws IOException {
         this(in, true);
     }
@@ -561,6 +567,14 @@ public class DerValue {
      * @return the octet string held in this DER value
      */
     public byte[] getOctetString() throws IOException {
+        return getOctetString(0);
+    }
+
+    private byte[] getOctetString(int limit) throws IOException {
+        if (++limit > MAX_CONSTRUCTED_NEST) {
+            throw new IOException("Nested OctetString limit reached ("
+                + MAX_CONSTRUCTED_NEST + ").");
+        }
 
         if (tag != tag_OctetString && !isConstructed(tag_OctetString)) {
             throw new IOException(
@@ -579,7 +593,7 @@ public class DerValue {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             DerInputStream dis = data();
             while (dis.available() > 0) {
-                bout.write(dis.getDerValue().getOctetString());
+                bout.write(dis.getDerValue().getOctetString(limit));
             }
             return bout.toByteArray();
         }
@@ -855,6 +869,22 @@ public class DerValue {
     public String getUniversalString() throws IOException {
         return readStringInternal(tag_UniversalString, new UTF_32BE());
     }
+
+    /**
+     * Checks that the BMPString does not contain any surrogate characters,
+     * which are outside the Basic Multilingual Plane.
+     *
+     * @throws IOException if illegal characters are detected
+     */
+    public void validateBMPString() throws IOException {
+        String bmpString = getBMPString();
+        for (int i = 0; i < bmpString.length(); i++) {
+            if (Character.isSurrogate(bmpString.charAt(i))) {
+                throw new IOException(
+                    "Illegal character in BMPString, index: " + i);
+            }
+         }
+     }
 
     /**
      * Reads the ASN.1 NULL value
@@ -1265,7 +1295,7 @@ public class DerValue {
      */
     @Override
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(buffer, start, end - start, tag, ArraysSupport.T_BYTE);
+        return ArraysSupport.hashCode(buffer, start, end - start, tag);
     }
 
     /**

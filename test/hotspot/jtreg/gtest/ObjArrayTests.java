@@ -1,0 +1,64 @@
+/*
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+/*
+ * This tests object array sizes by running gtests with different settings.
+ */
+
+/* @test id=with-coops
+ * @summary Run object array size tests with compressed oops
+ * @library /test/lib
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:+UseCompressedOops -XX:ObjectAlignmentInBytes=8
+ */
+
+/* @test id=no-coops
+ * @summary Run object array size tests without compressed oops
+ * @library /test/lib
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:-UseCompressedOops -XX:ObjectAlignmentInBytes=8
+ */
+
+/* @test id=with-coops-medium-align
+ * @summary Run object array size tests with compressed oops
+ * @library /test/lib
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:+UseCompressedOops -XX:ObjectAlignmentInBytes=16
+ */
+
+/* @test id=no-coops-medium-align
+ * @summary Run object array size tests without compressed oops
+ * @library /test/lib
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:-UseCompressedOops -XX:ObjectAlignmentInBytes=16
+ */
+
+/* @test id=with-coops-large-align
+ * @summary Run object array size tests with compressed oops
+ * @library /test/lib
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:+UseCompressedOops -XX:ObjectAlignmentInBytes=256
+ */
+
+/* @test id=no-coops-large-align
+ * @summary Run object array size tests without compressed oops
+ * @library /test/lib
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:-UseCompressedOops -XX:ObjectAlignmentInBytes=256
+ */

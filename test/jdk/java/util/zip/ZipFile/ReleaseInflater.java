@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,74 @@
  * @bug 4214795
  * @summary Make sure the same inflater will only be recycled
  *          once.
+ * @run junit ReleaseInflater
  */
 
-import java.io.*;
-import java.util.zip.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReleaseInflater {
 
-    public static void main(String[] args) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src"),
-                                          "input.jar"));
-        ZipEntry e = zf.getEntry("ReleaseInflater.java");
+    // ZIP file produced in this test
+    private Path zip = Path.of("release-inflater.zip");
 
-        InputStream in1 = zf.getInputStream(e);
-        // close the stream, the inflater will be released
-        in1.close();
-        // close the stream again, should be no-op
-        in1.close();
+    /**
+     * Create a sample ZIP file for use by tests
+     * @param name name of the ZIP file to create
+     * @return a sample ZIP file
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @BeforeEach
+    public void setUp() throws IOException {
+        try (ZipOutputStream zo = new ZipOutputStream(Files.newOutputStream(zip))) {
+            zo.putNextEntry(new ZipEntry("file.txt"));
+            zo.write("helloworld".getBytes(StandardCharsets.UTF_8));
+        }
+    }
 
-        // create two new streams, allocating inflaters
-        InputStream in2 = zf.getInputStream(e);
-        InputStream in3 = zf.getInputStream(e);
+    /**
+     * Delete the ZIP and JAR files produced after each test method
+     * @throws IOException if an unexpected IOException occurs
+     */
 
-        // check to see if they influence each other
-        if (in2.read() != in3.read()) {
-            throw new Exception("Stream is corrupted!");
+    @AfterEach
+    public void cleanup() throws IOException {
+        Files.deleteIfExists(zip);
+    }
+
+    /**
+     * Verify that the same Inflater is not recycled across input streams
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void recycleInflaterOnlyOnce() throws IOException {
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+            ZipEntry e = zf.getEntry("file.txt");
+
+            InputStream in1 = zf.getInputStream(e);
+            // close the stream, the inflater will be released
+            in1.close();
+            // close the stream again, should be no-op
+            in1.close();
+
+            // create two new streams, allocating inflaters
+            InputStream in2 = zf.getInputStream(e);
+            InputStream in3 = zf.getInputStream(e);
+
+            // check to see if they influence each other
+            assertEquals(in2.read(), in3.read(), "Stream is corrupted!");
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8076221 8211883 8163327 8279164
+ * @bug 8076221 8211883 8163327 8279164 8245545
  * @summary Check if weak cipher suites are disabled
  * @library /javax/net/ssl/templates
  * @modules jdk.crypto.ec
- * @run main/othervm DisabledAlgorithms default
- * @run main/othervm DisabledAlgorithms empty
+ * @run main/othervm/timeout=480 DisabledAlgorithms default
+ * @run main/othervm/timeout=480 DisabledAlgorithms empty
  */
 
 import java.io.BufferedInputStream;
@@ -36,8 +36,10 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.security.Security;
 import java.util.concurrent.TimeUnit;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
@@ -55,6 +57,8 @@ import javax.net.ssl.SSLSocketFactory;
  * that the handshake cannot complete successfully.
  */
 public class DisabledAlgorithms {
+
+    private static final int SOCKET_TIMEOUT_MILLIS = 10_000;
 
     public static final SSLContextTemplate.Cert[] CERTIFICATES = {
             SSLContextTemplate.Cert.EE_DSA_SHA1_1024,
@@ -124,7 +128,13 @@ public class DisabledAlgorithms {
             "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
             "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
             "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA"
+            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_RSA_WITH_AES_256_CBC_SHA256",
+            "TLS_RSA_WITH_AES_128_CBC_SHA256",
+            "TLS_RSA_WITH_AES_256_CBC_SHA",
+            "TLS_RSA_WITH_AES_128_CBC_SHA"
     };
 
     public static void main(String[] args) throws Exception {
@@ -133,15 +143,15 @@ public class DisabledAlgorithms {
         }
 
         switch (args[0]) {
-            case "default":
+            case "default" -> {
                 // use default jdk.tls.disabledAlgorithms
                 System.out.println("jdk.tls.disabledAlgorithms = "
                         + Security.getProperty("jdk.tls.disabledAlgorithms"));
 
                 // check that disabled cipher suites can't be used by default
                 checkFailure(DISABLED_CIPHERSUITES);
-                break;
-            case "empty":
+            }
+            case "empty" -> {
                 // reset jdk.tls.disabledAlgorithms
                 Security.setProperty("jdk.tls.disabledAlgorithms", "");
                 System.out.println("jdk.tls.disabledAlgorithms = "
@@ -156,9 +166,8 @@ public class DisabledAlgorithms {
                 // check that disabled cipher suites can be used if
                 // jdk.{tls,certpath}.disabledAlgorithms is empty
                 checkSuccess(DISABLED_CIPHERSUITES);
-                break;
-            default:
-                throw new RuntimeException("Wrong parameter: " + args[0]);
+            }
+            default -> throw new RuntimeException("Wrong parameter: " + args[0]);
         }
 
         System.out.println("Test passed");
@@ -264,7 +273,7 @@ public class DisabledAlgorithms {
                     DisabledAlgorithms.CERTIFICATES, getServerContextParameters());
             SSLServerSocketFactory ssf = context.getServerSocketFactory();
             SSLServerSocket ssocket = (SSLServerSocket)
-                    ssf.createServerSocket(0);
+                    ssf.createServerSocket(0, 0, InetAddress.getLoopbackAddress());
 
             if (ciphersuites != null) {
                 System.out.println("Server: enable cipher suites: "
@@ -281,7 +290,10 @@ public class DisabledAlgorithms {
             running = true;
             while (!stopped) {
                 try (SSLSocket socket = (SSLSocket) ssocket.accept()) {
-                    System.out.println("Server: accepted client connection");
+                    System.out.println("Server: accepted client connection from "
+                        + socket.getRemoteSocketAddress());
+                    socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+                    socket.startHandshake();
                     InputStream in = socket.getInputStream();
                     OutputStream out = socket.getOutputStream();
                     int b = in.read();
@@ -301,7 +313,6 @@ public class DisabledAlgorithms {
                                 + e);
                         e.printStackTrace();
                         otherError = true;
-                        stopped = true;
                     } else {
                         System.out.println("Server: run: " + e);
                         System.out.println("The exception above occurred "
@@ -361,7 +372,9 @@ public class DisabledAlgorithms {
             SSLContext context = createSSLContext(DisabledAlgorithms.CERTIFICATES,
                     null, getClientContextParameters());
             SSLSocketFactory ssf = context.getSocketFactory();
-            SSLSocket socket = (SSLSocket) ssf.createSocket("localhost", port);
+            SSLSocket socket = (SSLSocket) ssf.createSocket(
+                InetAddress.getLoopbackAddress(), port);
+            socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
 
             if (ciphersuite != null) {
                 System.out.println("Client: enable cipher suite: "
@@ -373,6 +386,7 @@ public class DisabledAlgorithms {
 
         void connect() throws IOException {
             System.out.println("Client: connect to server");
+            socket.startHandshake();
             try (
                     BufferedInputStream bis = new BufferedInputStream(
                             socket.getInputStream());

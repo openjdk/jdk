@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,13 +23,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -39,11 +39,16 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/flatArrayOop.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -53,10 +58,10 @@
 #include "runtime/os.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/timerTrace.hpp"
 #include "services/heapDumper.hpp"
 #include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
@@ -389,7 +394,7 @@ enum {
 
 // Supports I/O operations for a dump
 // Base class for dump and parallel dump
-class AbstractDumpWriter : public CHeapObj<mtInternal> {
+class AbstractDumpWriter : public CHeapObj<mtServiceability> {
  protected:
   enum {
     io_buffer_max_size = 1*M,
@@ -437,6 +442,7 @@ class AbstractDumpWriter : public CHeapObj<mtInternal> {
   void write_u4(u4 x);
   void write_u8(u8 x);
   void write_objectID(oop o);
+  void write_objectID(uintptr_t id);
   void write_rootID(oop* p);
   void write_symbolID(Symbol* o);
   void write_classID(Klass* k);
@@ -455,7 +461,7 @@ class AbstractDumpWriter : public CHeapObj<mtInternal> {
 void AbstractDumpWriter::write_fast(const void* s, size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
   assert(buffer_size() - position() >= len, "Must fit");
-  debug_only(_sub_record_left -= len);
+  DEBUG_ONLY(_sub_record_left -= len);
   memcpy(buffer() + position(), s, len);
   set_position(position() + len);
 }
@@ -467,7 +473,7 @@ bool AbstractDumpWriter::can_write_fast(size_t len) {
 // write raw bytes
 void AbstractDumpWriter::write_raw(const void* s, size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
-  debug_only(_sub_record_left -= len);
+  DEBUG_ONLY(_sub_record_left -= len);
 
   // flush buffer to make room.
   while (len > buffer_size() - position()) {
@@ -521,6 +527,10 @@ void AbstractDumpWriter::write_address(address a) {
 
 void AbstractDumpWriter::write_objectID(oop o) {
   write_address(cast_from_oop<address>(o));
+}
+
+void AbstractDumpWriter::write_objectID(uintptr_t id) {
+  write_address((address)id);
 }
 
 void AbstractDumpWriter::write_rootID(oop* p) {
@@ -591,8 +601,8 @@ void AbstractDumpWriter::start_sub_record(u1 tag, u4 len) {
     return;
   }
 
-  debug_only(_sub_record_left = len);
-  debug_only(_sub_record_ended = false);
+  DEBUG_ONLY(_sub_record_left = len);
+  DEBUG_ONLY(_sub_record_ended = false);
 
   write_u1(tag);
 }
@@ -601,7 +611,7 @@ void AbstractDumpWriter::end_sub_record() {
   assert(_in_dump_segment, "must be in dump segment");
   assert(_sub_record_left == 0, "sub-record not written completely");
   assert(!_sub_record_ended, "Must not have ended yet");
-  debug_only(_sub_record_ended = true);
+  DEBUG_ONLY(_sub_record_ended = true);
 }
 
 // Supports I/O operations for a dump
@@ -626,17 +636,21 @@ public:
   DumpWriter(const char* path, bool overwrite, AbstractCompressor* compressor);
   ~DumpWriter();
   julong bytes_written() const override        { return (julong) _bytes_written; }
-  void set_bytes_written(julong bytes_written) { _bytes_written = bytes_written; }
   char const* error() const override           { return _error; }
   void set_error(const char* error)            { _error = (char*)error; }
   bool has_error() const                       { return _error != nullptr; }
   const char* get_file_path() const            { return _writer->get_file_path(); }
   AbstractCompressor* compressor()             { return _compressor; }
-  void set_compressor(AbstractCompressor* p)   { _compressor = p; }
   bool is_overwrite() const                    { return _writer->is_overwrite(); }
-  int get_fd() const                           { return _writer->get_fd(); }
 
   void flush() override;
+
+private:
+  // internals for DumpMerger
+  friend class DumpMerger;
+  void set_bytes_written(julong bytes_written) { _bytes_written = bytes_written; }
+  int get_fd() const                           { return _writer->get_fd(); }
+  void set_compressor(AbstractCompressor* p)   { _compressor = p; }
 };
 
 DumpWriter::DumpWriter(const char* path, bool overwrite, AbstractCompressor* compressor) :
@@ -652,15 +666,15 @@ DumpWriter::DumpWriter(const char* path, bool overwrite, AbstractCompressor* com
   _tmp_size(0) {
   _error = (char*)_writer->open_writer();
   if (_error == nullptr) {
-    _buffer = (char*)os::malloc(io_buffer_max_size, mtInternal);
+    _buffer = (char*)os::malloc(io_buffer_max_size, mtServiceability);
     if (compressor != nullptr) {
       _error = (char*)_compressor->init(io_buffer_max_size, &_out_size, &_tmp_size);
       if (_error == nullptr) {
         if (_out_size > 0) {
-          _out_buffer = (char*)os::malloc(_out_size, mtInternal);
+          _out_buffer = (char*)os::malloc(_out_size, mtServiceability);
         }
         if (_tmp_size > 0) {
-          _tmp_buffer = (char*)os::malloc(_tmp_size, mtInternal);
+          _tmp_buffer = (char*)os::malloc(_tmp_size, mtServiceability);
         }
       }
     }
@@ -680,7 +694,7 @@ DumpWriter::~DumpWriter(){
   if (_tmp_buffer != nullptr) {
     os::free(_tmp_buffer);
   }
-  if (_writer != NULL) {
+  if (_writer != nullptr) {
     delete _writer;
   }
   _bytes_written = -1;
@@ -724,6 +738,8 @@ void DumpWriter::do_compress() {
 
 class DumperClassCacheTable;
 class DumperClassCacheTableEntry;
+class DumperFlatObject;
+class DumperFlatObjectList;
 
 // Support class with a collection of functions used when dumping the heap
 class DumperSupport : AllStatic {
@@ -740,7 +756,7 @@ class DumperSupport : AllStatic {
   static u4 sig2size(Symbol* sig);
 
   // returns the size of the instance of the given class
-  static u4 instance_size(InstanceKlass* ik, DumperClassCacheTableEntry* class_cache_entry = nullptr);
+  static u4 instance_size(InstanceKlass* ik);
 
   // dump a jfloat
   static void dump_float(AbstractDumpWriter* writer, jfloat f);
@@ -752,21 +768,23 @@ class DumperSupport : AllStatic {
   static u4 get_static_fields_size(InstanceKlass* ik, u2& field_count);
   // dumps static fields of the given class
   static void dump_static_fields(AbstractDumpWriter* writer, Klass* k);
-  // dump the raw values of the instance fields of the given object
-  static void dump_instance_fields(AbstractDumpWriter* writer, oop o, DumperClassCacheTableEntry* class_cache_entry);
+  // dump the raw values of the instance fields of the given object, fills flat_fields
+  static void dump_instance_fields(AbstractDumpWriter* writer, oop o, int offset,
+                                   DumperClassCacheTableEntry* class_cache_entry, DumperFlatObjectList* flat_fields);
   // get the count of the instance fields for a given class
   static u2 get_instance_fields_count(InstanceKlass* ik);
   // dumps the definition of the instance fields for a given class
-  static void dump_instance_field_descriptors(AbstractDumpWriter* writer, Klass* k);
-  // creates HPROF_GC_INSTANCE_DUMP record for the given object
-  static void dump_instance(AbstractDumpWriter* writer, oop o, DumperClassCacheTable* class_cache);
+  static void dump_instance_field_descriptors(AbstractDumpWriter* writer, InstanceKlass* k);
+  // creates HPROF_GC_INSTANCE_DUMP record for the given object, fills flat_fields
+  static void dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop o, int offset, InstanceKlass* ik,
+                            DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_fields);
   // creates HPROF_GC_CLASS_DUMP record for the given instance class
-  static void dump_instance_class(AbstractDumpWriter* writer, Klass* k);
+  static void dump_instance_class(AbstractDumpWriter* writer, InstanceKlass* ik);
   // creates HPROF_GC_CLASS_DUMP record for a given array class
   static void dump_array_class(AbstractDumpWriter* writer, Klass* k);
 
-  // creates HPROF_GC_OBJ_ARRAY_DUMP record for the given object array
-  static void dump_object_array(AbstractDumpWriter* writer, objArrayOop array);
+  // creates HPROF_GC_OBJ_ARRAY_DUMP record for the given object array, fills flat_elements if the object is flat array
+  static void dump_object_array(AbstractDumpWriter* writer, objArrayOop array, DumperFlatObjectList* flat_elements);
   // creates HPROF_GC_PRIM_ARRAY_DUMP record for the given type array
   static void dump_prim_array(AbstractDumpWriter* writer, typeArrayOop array);
   // create HPROF_FRAME record for the given method and bci
@@ -790,17 +808,26 @@ class DumperSupport : AllStatic {
   }
 
   static void report_dormant_archived_object(oop o, oop ref_obj) {
-    if (log_is_enabled(Trace, cds, heap)) {
+    if (log_is_enabled(Trace, aot, heap)) {
       ResourceMark rm;
       if (ref_obj != nullptr) {
-        log_trace(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
+        log_trace(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
                   p2i(o), o->klass()->external_name(),
                   p2i(ref_obj), ref_obj->klass()->external_name());
       } else {
-        log_trace(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)",
+        log_trace(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)",
                   p2i(o), o->klass()->external_name());
       }
     }
+  }
+
+  // Direct instances of ObjArrayKlass represent the Java types that Java code can see.
+  // RefArrayKlass/FlatArrayKlass describe different implementations of the arrays, filter them out to avoid duplicates.
+  static bool filter_out_klass(Klass* k) {
+    if (k->is_objArray_klass() && k->kind() != Klass::KlassKind::ObjArrayKlassKind) {
+      return true;
+    }
+    return false;
   }
 };
 
@@ -810,24 +837,61 @@ class DumperSupport : AllStatic {
 //
 class DumperClassCacheTableEntry : public CHeapObj<mtServiceability> {
   friend class DumperClassCacheTable;
+public:
+  class FieldDescriptor {
+  private:
+    char _sigs_start;
+    int _offset;
+    ValueKlass* _value_klass; // nullptr for heap object
+    LayoutKind _layout_kind;
+  public:
+    FieldDescriptor(): _sigs_start(0), _offset(0), _value_klass(nullptr), _layout_kind(LayoutKind::UNKNOWN) {}
+
+    template<typename FieldStreamType>
+    FieldDescriptor(const FieldStreamType& field)
+      : _sigs_start(field.signature()->char_at(0)), _offset(field.offset())
+    {
+      if (field.is_flat()) {
+        const fieldDescriptor& fd = field.field_descriptor();
+        InstanceKlass* holder_klass = fd.field_holder();
+        ValueFieldLayoutInfo* layout_info = holder_klass->value_field_layout_info_adr(fd.index());
+        _value_klass = layout_info->klass();
+        _layout_kind = layout_info->kind();
+      } else {
+        _value_klass = nullptr;
+        _layout_kind = LayoutKind::REFERENCE;
+      }
+    }
+
+    char sig_start() const            { return _sigs_start; }
+    int offset() const                { return _offset; }
+    bool is_flat() const              { return _value_klass != nullptr; }
+    ValueKlass* value_klass() const   { return _value_klass; }
+    LayoutKind layout_kind() const    { return _layout_kind; }
+    bool is_flat_nullable() const     { return LayoutKindHelper::is_nullable_flat(_layout_kind); }
+  };
+
 private:
-  GrowableArray<char> _sigs_start;
-  GrowableArray<int> _offsets;
+  GrowableArray<FieldDescriptor> _fields;
   u4 _instance_size;
-  int _entries;
 
 public:
-  DumperClassCacheTableEntry() : _instance_size(0), _entries(0) {};
+  DumperClassCacheTableEntry(): _instance_size(0) {}
 
-  int field_count()             { return _entries; }
-  char sig_start(int field_idx) { return _sigs_start.at(field_idx); }
-  int offset(int field_idx)     { return _offsets.at(field_idx); }
-  u4 instance_size()            { return _instance_size; }
+  template<typename FieldStreamType>
+  void add_field(const FieldStreamType& field) {
+    _fields.push(FieldDescriptor(field));
+    _instance_size += DumperSupport::sig2size(field.signature());
+  }
+
+  const FieldDescriptor& field(int index) const { return _fields.at(index); }
+  int field_count() const { return _fields.length(); }
+  u4 instance_size() const { return _instance_size; }
 };
 
 class DumperClassCacheTable {
 private:
-  // ResourceHashtable SIZE is specified at compile time so we
+  // HashTable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
   static constexpr size_t TABLE_SIZE = 1031;
 
@@ -837,8 +901,8 @@ private:
   // sized table from overloading.
   static constexpr int CACHE_TOP = 256;
 
-  typedef ResourceHashtable<InstanceKlass*, DumperClassCacheTableEntry*,
-                            TABLE_SIZE, AnyObj::C_HEAP, mtServiceability> PtrTable;
+  typedef HashTable<InstanceKlass*, DumperClassCacheTableEntry*,
+                    TABLE_SIZE, AnyObj::C_HEAP, mtServiceability> PtrTable;
   PtrTable* _ptrs;
 
   // Single-slot cache to handle the major case of objects of the same
@@ -869,11 +933,7 @@ public:
       entry = new DumperClassCacheTableEntry();
       for (HierarchicalFieldStream<JavaFieldStream> fld(ik); !fld.done(); fld.next()) {
         if (!fld.access_flags().is_static()) {
-          Symbol* sig = fld.signature();
-          entry->_sigs_start.push(sig->char_at(0));
-          entry->_offsets.push(fld.offset());
-          entry->_entries++;
-          entry->_instance_size += DumperSupport::sig2size(sig);
+          entry->add_field(fld);
         }
       }
 
@@ -901,6 +961,70 @@ public:
   ~DumperClassCacheTable() {
     unlink_all(_ptrs);
     delete _ptrs;
+  }
+};
+
+// Describes flat object (flat field or element of flat array) in the holder oop
+class DumperFlatObject: public CHeapObj<mtServiceability> {
+  friend class DumperFlatObjectList;
+private:
+  DumperFlatObject* _next;
+
+  const uintptr_t _id; // object id
+
+  const int _offset;
+  ValueKlass* const _value_klass;
+
+public:
+  DumperFlatObject(uintptr_t id, int offset, ValueKlass* value_klass)
+    : _next(nullptr), _id(id), _offset(offset), _value_klass(value_klass) {
+  }
+
+  uintptr_t object_id()       const { return _id; }
+  int offset()                const { return _offset; }
+  ValueKlass* value_klass() const { return _value_klass; }
+};
+
+class FlatObjectIdProvider {
+public:
+  virtual uintptr_t get_id() = 0;
+};
+
+// Simple FIFO.
+class DumperFlatObjectList {
+private:
+  FlatObjectIdProvider* _id_provider;
+  DumperFlatObject* _head;
+  DumperFlatObject* _tail;
+
+  void push(DumperFlatObject* obj) {
+    if (_head == nullptr) {
+      _head = _tail = obj;
+    } else {
+      assert(_tail != nullptr, "must be");
+      _tail->_next = obj;
+      _tail = obj;
+    }
+  }
+
+public:
+  DumperFlatObjectList(FlatObjectIdProvider* id_provider): _id_provider(id_provider), _head(nullptr), _tail(nullptr) {}
+
+  bool is_empty() const { return _head == nullptr; }
+
+  uintptr_t push(int offset, ValueKlass* value_klass) {
+    uintptr_t id = _id_provider->get_id();
+    DumperFlatObject* obj = new DumperFlatObject(id, offset, value_klass);
+    push(obj);
+    return id;
+  }
+
+  DumperFlatObject* pop() {
+    assert(!is_empty(), "sanity");
+    DumperFlatObject* element = _head;
+    _head = element->_next;
+    element->_next = nullptr;
+    return element;
   }
 };
 
@@ -1042,18 +1166,14 @@ void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop 
 }
 
 // returns the size of the instance of the given class
-u4 DumperSupport::instance_size(InstanceKlass* ik, DumperClassCacheTableEntry* class_cache_entry) {
-  if (class_cache_entry != nullptr) {
-    return class_cache_entry->instance_size();
-  } else {
-    u4 size = 0;
-    for (HierarchicalFieldStream<JavaFieldStream> fld(ik); !fld.done(); fld.next()) {
-      if (!fld.access_flags().is_static()) {
-        size += sig2size(fld.signature());
-      }
+u4 DumperSupport::instance_size(InstanceKlass* ik) {
+  u4 size = 0;
+  for (HierarchicalFieldStream<JavaFieldStream> fld(ik); !fld.done(); fld.next()) {
+    if (!fld.access_flags().is_static()) {
+      size += sig2size(fld.signature());
     }
-    return size;
   }
+  return size;
 }
 
 u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
@@ -1062,6 +1182,8 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
 
   for (JavaFieldStream fldc(ik); !fldc.done(); fldc.next()) {
     if (fldc.access_flags().is_static()) {
+      assert(!fldc.is_flat(), "static fields cannot be flat");
+
       field_count++;
       size += sig2size(fldc.signature());
     }
@@ -1085,6 +1207,14 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
     }
   }
 
+  // Also provide a pointer to the init_lock if present, so there aren't unreferenced int[0]
+  // arrays.
+  oop init_lock = ik->init_lock();
+  if (init_lock != nullptr) {
+    field_count++;
+    size += sizeof(address);
+  }
+
   // We write the value itself plus a name and a one byte type tag per field.
   return checked_cast<u4>(size + field_count * (sizeof(address) + 1));
 }
@@ -1096,6 +1226,8 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
   // dump the field descriptors and raw values
   for (JavaFieldStream fld(ik); !fld.done(); fld.next()) {
     if (fld.access_flags().is_static()) {
+      assert(!fld.is_flat(), "static fields cannot be flat");
+
       Symbol* sig = fld.signature();
 
       writer->write_symbolID(fld.name());   // name
@@ -1122,31 +1254,54 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
       prev = prev->previous_versions();
     }
   }
-}
 
-// dump the raw values of the instance fields of the given object
-void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, DumperClassCacheTableEntry* class_cache_entry) {
-  assert(class_cache_entry != nullptr, "Pre-condition: must be provided");
-  for (int idx = 0; idx < class_cache_entry->field_count(); idx++) {
-    dump_field_value(writer, class_cache_entry->sig_start(idx), o, class_cache_entry->offset(idx));
+  // Add init lock to the end if the class is not yet initialized
+  oop init_lock = ik->init_lock();
+  if (init_lock != nullptr) {
+    writer->write_symbolID(vmSymbols::init_lock_name());         // name
+    writer->write_u1(sig2tag(vmSymbols::int_array_signature())); // type
+    writer->write_objectID(init_lock);
   }
 }
 
-// dumps the definition of the instance fields for a given class
+// dump the raw values of the instance fields of the given object, fills flat_fields
+void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, int offset,
+                                         DumperClassCacheTableEntry* class_cache_entry, DumperFlatObjectList* flat_fields) {
+  assert(class_cache_entry != nullptr, "Pre-condition: must be provided");
+  for (int idx = 0; idx < class_cache_entry->field_count(); idx++) {
+    const DumperClassCacheTableEntry::FieldDescriptor& field = class_cache_entry->field(idx);
+    int field_offset = offset + field.offset();
+    if (field.is_flat()) {
+      // check for possible nulls
+      if (field.is_flat_nullable()) {
+        if (field.value_klass()->is_payload_marked_as_null(o, field_offset)) {
+          writer->write_objectID(nullptr);
+          continue;
+        }
+      }
+      uintptr_t object_id = flat_fields->push(field_offset, field.value_klass());
+      writer->write_objectID(object_id);
+    } else {
+      dump_field_value(writer, field.sig_start(), o, field_offset);
+    }
+  }
+}
+
+// gets the count of the instance fields for a given class
 u2 DumperSupport::get_instance_fields_count(InstanceKlass* ik) {
   u2 field_count = 0;
 
   for (JavaFieldStream fldc(ik); !fldc.done(); fldc.next()) {
-    if (!fldc.access_flags().is_static()) field_count++;
+    if (!fldc.access_flags().is_static()) {
+      field_count++;
+    }
   }
 
   return field_count;
 }
 
 // dumps the definition of the instance fields for a given class
-void DumperSupport::dump_instance_field_descriptors(AbstractDumpWriter* writer, Klass* k) {
-  InstanceKlass* ik = InstanceKlass::cast(k);
-
+void DumperSupport::dump_instance_field_descriptors(AbstractDumpWriter* writer, InstanceKlass* ik) {
   // dump the field descriptors
   for (JavaFieldStream fld(ik); !fld.done(); fld.next()) {
     if (!fld.access_flags().is_static()) {
@@ -1159,16 +1314,15 @@ void DumperSupport::dump_instance_field_descriptors(AbstractDumpWriter* writer, 
 }
 
 // creates HPROF_GC_INSTANCE_DUMP record for the given object
-void DumperSupport::dump_instance(AbstractDumpWriter* writer, oop o, DumperClassCacheTable* class_cache) {
-  InstanceKlass* ik = InstanceKlass::cast(o->klass());
-
+void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop o, int offset, InstanceKlass* ik,
+                                  DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_fields) {
   DumperClassCacheTableEntry* cache_entry = class_cache->lookup_or_create(ik);
 
-  u4 is = instance_size(ik, cache_entry);
+  u4 is = cache_entry->instance_size();
   u4 size = 1 + sizeof(address) + 4 + sizeof(address) + 4 + is;
 
   writer->start_sub_record(HPROF_GC_INSTANCE_DUMP, size);
-  writer->write_objectID(o);
+  writer->write_objectID(id);
   writer->write_u4(STACK_TRACE_ID);
 
   // class ID
@@ -1178,15 +1332,19 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, oop o, DumperClass
   writer->write_u4(is);
 
   // field values
-  dump_instance_fields(writer, o, cache_entry);
+  if (offset != 0) {
+    // the object itself if flattened, so all fields are stored without headers
+    ValueKlass* value_klass = ValueKlass::cast(ik);
+    offset -= value_klass->payload_offset();
+  }
+
+  dump_instance_fields(writer, o, offset, cache_entry, flat_fields);
 
   writer->end_sub_record();
 }
 
 // creates HPROF_GC_CLASS_DUMP record for the given instance class
-void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, Klass* k) {
-  InstanceKlass* ik = InstanceKlass::cast(k);
-
+void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, InstanceKlass* ik) {
   // We can safepoint and do a heap dump at a point where we have a Klass,
   // but no java mirror class has been setup for it. So we need to check
   // that the class is at least loaded, to avoid crash from a null mirror.
@@ -1207,11 +1365,11 @@ void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, Klass* k) {
   writer->write_u4(STACK_TRACE_ID);
 
   // super class ID
-  InstanceKlass* java_super = ik->java_super();
-  if (java_super == nullptr) {
+  InstanceKlass* super = ik->super();
+  if (super == nullptr) {
     writer->write_objectID(oop(nullptr));
   } else {
-    writer->write_classID(java_super);
+    writer->write_classID(super);
   }
 
   writer->write_objectID(ik->class_loader());
@@ -1279,12 +1437,12 @@ void DumperSupport::dump_array_class(AbstractDumpWriter* writer, Klass* k) {
 // which means we need to truncate arrays that are too long.
 int DumperSupport::calculate_array_max_length(AbstractDumpWriter* writer, arrayOop array, short header_size) {
   BasicType type = ArrayKlass::cast(array->klass())->element_type();
-  assert(type >= T_BOOLEAN && type <= T_OBJECT, "invalid array element type");
+  assert((type >= T_BOOLEAN && type <= T_OBJECT) || type == T_FLAT_ELEMENT, "invalid array element type");
 
   int length = array->length();
 
   int type_size;
-  if (type == T_OBJECT) {
+  if (type == T_OBJECT || type == T_FLAT_ELEMENT) {
     type_size = sizeof(address);
   } else {
     type_size = type2aelembytes(type);
@@ -1304,7 +1462,7 @@ int DumperSupport::calculate_array_max_length(AbstractDumpWriter* writer, arrayO
 }
 
 // creates HPROF_GC_OBJ_ARRAY_DUMP record for the given object array
-void DumperSupport::dump_object_array(AbstractDumpWriter* writer, objArrayOop array) {
+void DumperSupport::dump_object_array(AbstractDumpWriter* writer, objArrayOop array, DumperFlatObjectList* flat_elements) {
   // sizeof(u1) + 2 * sizeof(u4) + sizeof(objectID) + sizeof(classID)
   short header_size = 1 + 2 * 4 + 2 * sizeof(address);
   int length = calculate_array_max_length(writer, array, header_size);
@@ -1319,10 +1477,34 @@ void DumperSupport::dump_object_array(AbstractDumpWriter* writer, objArrayOop ar
   writer->write_classID(array->klass());
 
   // [id]* elements
-  for (int index = 0; index < length; index++) {
-    oop o = array->obj_at(index);
-    o = mask_dormant_archived_object(o, array);
-    writer->write_objectID(o);
+  if (array->is_flatArray()) {
+    flatArrayOop farray = flatArrayOop(array);
+    FlatArrayKlass* fak = farray->klass();
+
+    ValueKlass* vk = fak->element_klass();
+    bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+
+    for (int index = 0; index < length; index++) {
+      address addr = (address)farray->value_at_addr(index, fak->layout_helper());
+      // check for null
+      if (need_null_check) {
+        if (vk->is_payload_marked_as_null(addr)) {
+          writer->write_objectID(nullptr);
+          continue;
+        }
+      }
+      // offset in the array oop
+      int offset = (int)(addr - cast_from_oop<address>(farray));
+      uintptr_t object_id = flat_elements->push(offset, vk);
+      writer->write_objectID(object_id);
+    }
+  } else {
+    refArrayOop rarray = oop_cast<refArrayOop>(array);
+    for (int index = 0; index < length; index++) {
+      oop o = rarray->obj_at(index);
+      o = mask_dormant_archived_object(o, array);
+      writer->write_objectID(o);
+    }
   }
 
   writer->end_sub_record();
@@ -1484,11 +1666,49 @@ class ClassDumper : public KlassClosure {
   ClassDumper(AbstractDumpWriter* writer) : _writer(writer) {}
 
   void do_klass(Klass* k) {
+    if (DumperSupport::filter_out_klass(k)) {
+      return;
+    }
     if (k->is_instance_klass()) {
-      DumperSupport::dump_instance_class(writer(), k);
+      DumperSupport::dump_instance_class(writer(), InstanceKlass::cast(k));
     } else {
       DumperSupport::dump_array_class(writer(), k);
     }
+  }
+};
+
+// Support class used to generate HPROF_LOAD_CLASS records
+
+class LoadedClassDumper : public LockedClassesDo {
+ private:
+  AbstractDumpWriter* _writer;
+  GrowableArray<Klass*>* _klass_map;
+  u4 _class_serial_num;
+  AbstractDumpWriter* writer() const { return _writer; }
+  void add_class_serial_number(Klass* k, int serial_num) {
+    _klass_map->at_put_grow(serial_num, k);
+  }
+ public:
+  LoadedClassDumper(AbstractDumpWriter* writer, GrowableArray<Klass*>* klass_map)
+    : _writer(writer), _klass_map(klass_map), _class_serial_num(0) {}
+
+  void do_klass(Klass* k) {
+    if (DumperSupport::filter_out_klass(k)) {
+      return;
+    }
+    // len of HPROF_LOAD_CLASS record
+    u4 remaining = 2 * oopSize + 2 * sizeof(u4);
+    DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
+    // class serial number is just a number
+    writer()->write_u4(++_class_serial_num);
+    // class ID
+    writer()->write_classID(k);
+    // add the Klass* and class serial number pair
+    add_class_serial_number(k, _class_serial_num);
+    writer()->write_u4(STACK_TRACE_ID);
+    // class name ID
+    Symbol* name = k->name();
+    writer()->write_symbolID(name);
   }
 };
 
@@ -1614,7 +1834,7 @@ void JavaStackRefDumper::dump_java_stack_refs(StackValueCollection* values) {
 // Class to collect, store and dump thread-related data:
 // - HPROF_TRACE and HPROF_FRAME records;
 // - HPROF_GC_ROOT_THREAD_OBJ/HPROF_GC_ROOT_JAVA_FRAME/HPROF_GC_ROOT_JNI_LOCAL subrecords.
-class ThreadDumper : public CHeapObj<mtInternal> {
+class ThreadDumper : public CHeapObj<mtServiceability> {
 public:
   enum class ThreadType { Platform, MountedVirtual, UnmountedVirtual };
 
@@ -1641,7 +1861,26 @@ public:
         && java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::TERMINATED;
   }
 
+  static bool is_vthread_mounted(oop vt) {
+    // The code should be consistent with the "mounted virtual thread" case
+    // (VM_HeapDumper::dump_stack_traces(), ThreadDumper::get_top_frame()).
+    // I.e. virtual thread is mounted if its carrierThread is not null
+    // and is_vthread_mounted() for the carrier thread returns true.
+    oop carrier_thread = java_lang_VirtualThread::carrier_thread(vt);
+    if (carrier_thread == nullptr) {
+      return false;
+    }
+    JavaThread* java_thread = java_lang_Thread::thread(carrier_thread);
+    return java_thread->is_vthread_mounted();
+  }
+
   ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop);
+  ~ThreadDumper() {
+    for (int index = 0; index < _frames->length(); index++) {
+      delete _frames->at(index);
+    }
+    delete _frames;
+  }
 
   // affects frame_count
   void add_oom_frame(Method* oome_constructor) {
@@ -1651,8 +1890,8 @@ public:
 
   void init_serial_nums(volatile int* thread_counter, volatile int* frame_counter) {
     assert(_start_frame_serial_num == 0, "already initialized");
-    _thread_serial_num = Atomic::fetch_then_add(thread_counter, 1);
-    _start_frame_serial_num = Atomic::fetch_then_add(frame_counter, frame_count());
+    _thread_serial_num = AtomicAccess::fetch_then_add(thread_counter, 1);
+    _start_frame_serial_num = AtomicAccess::fetch_then_add(frame_counter, frame_count());
   }
 
   bool oom_thread() const {
@@ -1810,9 +2049,12 @@ void ThreadDumper::dump_stack_refs(AbstractDumpWriter * writer) {
         // native frame
         blk.set_frame_number(depth);
         if (is_top_frame) {
-          // JNI locals for the top frame.
-          assert(_java_thread != nullptr, "impossible for unmounted vthread");
-          _java_thread->active_handles()->oops_do(&blk);
+          // JNI locals for the top frame if mounted
+          assert(_java_thread != nullptr || jvf->method()->is_synchronized()
+                 || jvf->method()->is_object_wait0(), "impossible for unmounted vthread");
+          if (_java_thread != nullptr) {
+            _java_thread->active_handles()->oops_do(&blk);
+          }
         } else {
           if (last_entry_frame != nullptr) {
             // JNI locals for the entry frame
@@ -1879,6 +2121,50 @@ vframe* ThreadDumper::get_top_frame() const {
   return nullptr;
 }
 
+class FlatObjectDumper: public FlatObjectIdProvider {
+private:
+  volatile uintptr_t _id_counter;
+public:
+  FlatObjectDumper(): _id_counter(0) {
+  }
+
+  void dump_flat_objects(AbstractDumpWriter* writer, oop holder,
+                         DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_objects);
+
+  // FlatObjectIdProvider implementation
+  virtual uintptr_t get_id() override {
+    // need to protect against overflow, so use instead of fetch_then_add
+    const uintptr_t max_value = (uintptr_t)-1;
+    uintptr_t old_value = AtomicAccess::load(&_id_counter);
+    while (old_value != max_value) {
+      uintptr_t new_value = old_value + 1;
+      // to avoid conflicts with oop addresses skip aligned values
+      if ((new_value & MinObjAlignmentInBytesMask) == 0) {
+        new_value++;
+      }
+      uintptr_t value = AtomicAccess::cmpxchg(&_id_counter, old_value, new_value);
+      if (value == old_value) {
+        // success
+        return new_value;
+      }
+      old_value = value;
+    }
+    // if we are here, maximum id value is reached
+    return max_value;
+  }
+
+};
+
+void FlatObjectDumper::dump_flat_objects(AbstractDumpWriter* writer, oop holder,
+                                         DumperClassCacheTable* class_cache, DumperFlatObjectList* flat_objects) {
+  // DumperSupport::dump_instance can add entries to flat_objects
+  while (!flat_objects->is_empty()) {
+    DumperFlatObject* obj = flat_objects->pop();
+    DumperSupport::dump_instance(writer, obj->object_id(), holder, obj->offset(), obj->value_klass(), class_cache, flat_objects);
+    delete obj;
+  }
+}
+
 // Callback to dump thread-related data for unmounted virtual threads;
 // implemented by VM_HeapDumper.
 class UnmountedVThreadDumper {
@@ -1892,12 +2178,14 @@ class HeapObjectDumper : public ObjectClosure {
   AbstractDumpWriter* _writer;
   AbstractDumpWriter* writer()                  { return _writer; }
   UnmountedVThreadDumper* _vthread_dumper;
+  FlatObjectDumper* _flat_dumper;
+  bool _skip_filler_objects;
 
   DumperClassCacheTable _class_cache;
 
  public:
-  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper)
-    : _writer(writer), _vthread_dumper(vthread_dumper) {}
+  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper, bool skip_filler_objects)
+    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper), _skip_filler_objects(skip_filler_objects) {}
 
   // called for each object in the heap
   void do_object(oop o);
@@ -1911,19 +2199,42 @@ void HeapObjectDumper::do_object(oop o) {
     }
   }
 
+  if (_skip_filler_objects && CollectedHeap::is_filler_object(o)) {
+    return;
+  }
+
   if (DumperSupport::mask_dormant_archived_object(o, nullptr) == nullptr) {
     return;
   }
 
   if (o->is_instance()) {
+    DumperFlatObjectList flat_fields(_flat_dumper);
     // create a HPROF_GC_INSTANCE record for each object
-    DumperSupport::dump_instance(writer(), o, &_class_cache);
-    if (java_lang_VirtualThread::is_instance(o) && ThreadDumper::should_dump_vthread(o)) {
+    DumperSupport::dump_instance(writer(),
+                                 cast_from_oop<uintptr_t>(o), // object_id is the address
+                                 o, 0,                        // for heap instance holder is oop, offset is 0
+                                 InstanceKlass::cast(o->klass()),
+                                 &_class_cache, &flat_fields);
+
+    // if there are flattened fields, dump them
+    if (!flat_fields.is_empty()) {
+      _flat_dumper->dump_flat_objects(writer(), o, &_class_cache, &flat_fields);
+    }
+
+    // If we encounter an unmounted virtual thread it needs to be dumped explicitly
+    // (mounted virtual threads are dumped with their carriers).
+    if (java_lang_VirtualThread::is_instance(o)
+        && ThreadDumper::should_dump_vthread(o) && !ThreadDumper::is_vthread_mounted(o)) {
       _vthread_dumper->dump_vthread(o, writer());
     }
   } else if (o->is_objArray()) {
+    DumperFlatObjectList flat_elements(_flat_dumper);
     // create a HPROF_GC_OBJ_ARRAY_DUMP record for each object array
-    DumperSupport::dump_object_array(writer(), objArrayOop(o));
+    DumperSupport::dump_object_array(writer(), objArrayOop(o), &flat_elements);
+    // if this is flat array, dump its elements
+    if (!flat_elements.is_empty()) {
+      _flat_dumper->dump_flat_objects(writer(), o, &_class_cache, &flat_elements);
+    }
   } else if (o->is_typeArray()) {
     // create a HPROF_GC_PRIM_ARRAY_DUMP record for each type array
     DumperSupport::dump_prim_array(writer(), typeArrayOop(o));
@@ -1931,7 +2242,7 @@ void HeapObjectDumper::do_object(oop o) {
 }
 
 // The dumper controller for parallel heap dump
-class DumperController : public CHeapObj<mtInternal> {
+class DumperController : public CHeapObj<mtServiceability> {
  private:
    Monitor* _lock;
    Mutex* _global_writer_lock;
@@ -2036,7 +2347,7 @@ char* DumpMerger::get_writer_path(const char* base_path, int seq) {
   char* path = NEW_RESOURCE_ARRAY(char, buf_size);
   memset(path, 0, buf_size);
 
-  os::snprintf(path, buf_size, "%s.p%d", base_path, seq);
+  os::snprintf_checked(path, buf_size, "%s.p%d", base_path, seq);
 
   return path;
 }
@@ -2110,13 +2421,14 @@ void DumpMerger::merge_file(const char* path) {
 
   jlong total = 0;
   size_t cnt = 0;
-  char read_buf[4096];
-  while ((cnt = segment_fs.read(read_buf, 1, 4096)) != 0) {
-    _writer->write_raw(read_buf, cnt);
+
+  // Use _writer buffer for reading.
+  while ((cnt = segment_fs.read(_writer->buffer(), 1, _writer->buffer_size())) != 0) {
+    _writer->set_position(cnt);
+    _writer->flush();
     total += cnt;
   }
 
-  _writer->flush();
   if (segment_fs.fileSize() != total) {
     set_error("Merged heap dump is incomplete");
   }
@@ -2150,26 +2462,10 @@ void DumpMerger::do_merge() {
   merge_done();
 }
 
-// The VM operation wraps DumpMerger so that it could be performed by VM thread
-class VM_HeapDumpMerge : public VM_Operation {
-private:
-  DumpMerger* _merger;
-public:
-  VM_HeapDumpMerge(DumpMerger* merger) : _merger(merger) {}
-  VMOp_Type type() const { return VMOp_HeapDumpMerge; }
-  // heap dump merge could happen outside safepoint
-  virtual bool evaluate_at_safepoint() const { return false; }
-  void doit() {
-    _merger->do_merge();
-  }
-};
-
 // The VM operation that performs the heap dump
 class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public UnmountedVThreadDumper {
  private:
-  static VM_HeapDumper*   _global_dumper;
-  static DumpWriter*      _global_writer;
-  DumpWriter*             _local_writer;
+  DumpWriter*             _writer;
   JavaThread*             _oome_thread;
   Method*                 _oome_constructor;
   bool                    _gc_before_heap_dump;
@@ -2186,41 +2482,24 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   DumperController*       _dumper_controller;
   ParallelObjectIterator* _poi;
 
+  // flat value object support
+  FlatObjectDumper        _flat_dumper;
+
   // Dumper id of VMDumper thread.
   static const int VMDumperId = 0;
   // VM dumper dumps both heap and non-heap data, other dumpers dump heap-only data.
   static bool is_vm_dumper(int dumper_id) { return dumper_id == VMDumperId; }
   // the 1st dumper calling get_next_dumper_id becomes VM dumper
   int get_next_dumper_id() {
-    return Atomic::fetch_then_add(&_dump_seq, 1);
+    return AtomicAccess::fetch_then_add(&_dump_seq, 1);
   }
 
-  // accessors and setters
-  static VM_HeapDumper* dumper()         {  assert(_global_dumper != nullptr, "Error"); return _global_dumper; }
-  static DumpWriter* writer()            {  assert(_global_writer != nullptr, "Error"); return _global_writer; }
-
-  void set_global_dumper() {
-    assert(_global_dumper == nullptr, "Error");
-    _global_dumper = this;
-  }
-  void set_global_writer() {
-    assert(_global_writer == nullptr, "Error");
-    _global_writer = _local_writer;
-  }
-  void clear_global_dumper() { _global_dumper = nullptr; }
-  void clear_global_writer() { _global_writer = nullptr; }
+  DumpWriter* writer() const { return _writer; }
 
   bool skip_operation() const;
 
-  // writes a HPROF_LOAD_CLASS record to global writer
-  static void do_load_class(Klass* k);
-
   // HPROF_GC_ROOT_THREAD_OBJ records for platform and mounted virtual threads
   void dump_threads(AbstractDumpWriter* writer);
-
-  void add_class_serial_number(Klass* k, int serial_num) {
-    _klass_map->at_put_grow(serial_num, k);
-  }
 
   bool is_oom_thread(JavaThread* thread) const {
     return thread == _oome_thread && _oome_constructor != nullptr;
@@ -2236,7 +2515,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
                     0 /* total full collections, dummy, ignored */,
                     gc_before_heap_dump),
     WorkerTask("dump heap") {
-    _local_writer = writer;
+    _writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
     _klass_map = new (mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
 
@@ -2268,7 +2547,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
       for (int i = 0; i < _thread_dumpers_count; i++) {
         delete _thread_dumpers[i];
       }
-      FREE_C_HEAP_ARRAY(ThreadDumper*, _thread_dumpers);
+      FREE_C_HEAP_ARRAY(_thread_dumpers);
     }
 
     if (_dumper_controller != nullptr) {
@@ -2290,9 +2569,6 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   void dump_vthread(oop vt, AbstractDumpWriter* segment_writer);
 };
 
-VM_HeapDumper* VM_HeapDumper::_global_dumper = nullptr;
-DumpWriter*    VM_HeapDumper::_global_writer = nullptr;
-
 bool VM_HeapDumper::skip_operation() const {
   return false;
 }
@@ -2306,31 +2582,6 @@ void DumperSupport::end_of_dump(AbstractDumpWriter* writer) {
   writer->write_u4(0);
 }
 
-// writes a HPROF_LOAD_CLASS record for the class
-void VM_HeapDumper::do_load_class(Klass* k) {
-  static u4 class_serial_num = 0;
-
-  // len of HPROF_LOAD_CLASS record
-  u4 remaining = 2*oopSize + 2*sizeof(u4);
-
-  DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
-
-  // class serial number is just a number
-  writer()->write_u4(++class_serial_num);
-
-  // class ID
-  writer()->write_classID(k);
-
-  // add the Klass* and class serial number pair
-  dumper()->add_class_serial_number(k, class_serial_num);
-
-  writer()->write_u4(STACK_TRACE_ID);
-
-  // class name ID
-  Symbol* name = k->name();
-  writer()->write_symbolID(name);
-}
-
 // Write a HPROF_GC_ROOT_THREAD_OBJ record for platform/carrier and mounted virtual threads.
 // Then walk the stack so that locals and JNI locals are dumped.
 void VM_HeapDumper::dump_threads(AbstractDumpWriter* writer) {
@@ -2341,11 +2592,10 @@ void VM_HeapDumper::dump_threads(AbstractDumpWriter* writer) {
 }
 
 bool VM_HeapDumper::doit_prologue() {
-  if (_gc_before_heap_dump && UseZGC) {
-    // ZGC cannot perform a synchronous GC cycle from within the VM thread.
-    // So ZCollectedHeap::collect_as_vm_thread() is a noop. To respect the
-    // _gc_before_heap_dump flag a synchronous GC cycle is performed from
-    // the caller thread in the prologue.
+  if (_gc_before_heap_dump && (UseZGC || UseShenandoahGC)) {
+    // ZGC and Shenandoah cannot perform a synchronous GC cycle from within the VM thread.
+    // So collect_as_vm_thread() is a noop. To respect the _gc_before_heap_dump flag a
+    // synchronous GC cycle is performed from the caller thread in the prologue.
     Universe::heap()->collect(GCCause::_heap_dump);
   }
   return VM_GC_Operation::doit_prologue();
@@ -2407,11 +2657,6 @@ void VM_HeapDumper::doit() {
     }
   }
 
-  // At this point we should be the only dumper active, so
-  // the following should be safe.
-  set_global_dumper();
-  set_global_writer();
-
   WorkerThreads* workers = ch->safepoint_workers();
   prepare_parallel_dump(workers);
 
@@ -2423,10 +2668,6 @@ void VM_HeapDumper::doit() {
     workers->run_task(this, _num_dumper_threads);
     _poi = nullptr;
   }
-
-  // Now we clear the global variables, so that a future dumper can run.
-  clear_global_dumper();
-  clear_global_writer();
 }
 
 void VM_HeapDumper::work(uint worker_id) {
@@ -2457,8 +2698,8 @@ void VM_HeapDumper::work(uint worker_id) {
 
     // write HPROF_LOAD_CLASS records
     {
-      LockedClassesDo locked_load_classes(&do_load_class);
-      ClassLoaderDataGraph::classes_do(&locked_load_classes);
+      LoadedClassDumper loaded_class_dumper(writer(), _klass_map);
+      ClassLoaderDataGraph::classes_do(&loaded_class_dumper);
     }
 
     // write HPROF_FRAME and HPROF_TRACE records
@@ -2508,7 +2749,8 @@ void VM_HeapDumper::work(uint worker_id) {
     // of the heap dump.
 
     TraceTime timer(is_parallel_dump() ? "Dump heap objects in parallel" : "Dump heap objects", TRACETIME_LOG(Info, heapdump));
-    HeapObjectDumper obj_dumper(&segment_writer, this);
+    bool skip_filler_objects = _gc_before_heap_dump;
+    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper, skip_filler_objects);
     if (!is_parallel_dump()) {
       Universe::heap()->object_iterate(&obj_dumper);
     } else {
@@ -2541,7 +2783,7 @@ void VM_HeapDumper::dump_stack_traces(AbstractDumpWriter* writer) {
   writer->write_u4(0);                    // frame count
 
   // max number if every platform thread is carrier with mounted virtual thread
-  _thread_dumpers = NEW_C_HEAP_ARRAY(ThreadDumper*, Threads::number_of_threads() * 2, mtInternal);
+  _thread_dumpers = NEW_C_HEAP_ARRAY(ThreadDumper*, Threads::number_of_threads() * 2, mtServiceability);
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread * thread = jtiwh.next(); ) {
     if (ThreadDumper::should_dump_pthread(thread)) {
@@ -2602,6 +2844,21 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     out->print_cr("Dumping heap to %s ...", path);
     timer()->start();
   }
+
+  if (_oome && num_dump_threads > 1) {
+    // Each additional parallel writer requires several MB of internal memory
+    // (DumpWriter buffer, DumperClassCacheTable, GZipCompressor buffers).
+    // For the OOM handling we may already be limited in memory.
+    // Lets ensure we have at least 20MB per thread.
+    physical_memory_size_type free_memory = 0;
+    // Return value ignored - defaulting to 0 on failure.
+    (void)os::free_memory(free_memory);
+    julong max_threads = free_memory / (20 * M);
+    if (num_dump_threads > max_threads) {
+      num_dump_threads = MAX2<uint>(1, (uint)max_threads);
+    }
+  }
+
   // create JFR event
   EventHeapDump event;
 
@@ -2643,17 +2900,10 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   //          This is done by DumpMerger, which is performed outside safepoint
 
   DumpMerger merger(path, &writer, dumper.dump_seq());
-  Thread* current_thread = Thread::current();
-  if (current_thread->is_AttachListener_thread()) {
-    // perform heapdump file merge operation in the current thread prevents us
-    // from occupying the VM Thread, which in turn affects the occurrence of
-    // GC and other VM operations.
-    merger.do_merge();
-  } else {
-    // otherwise, performs it by VM thread
-    VM_HeapDumpMerge op(&merger);
-    VMThread::execute(&op);
-  }
+  // Perform heapdump file merge operation in the current thread prevents us
+  // from occupying the VM Thread, which in turn affects the occurrence of
+  // GC and other VM operations.
+  merger.do_merge();
   if (writer.error() != nullptr) {
     set_error(writer.error());
   }
@@ -2668,7 +2918,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     event.set_compression(compression);
     event.commit();
   } else {
-    log_debug(cds, heap)("Error %s while dumping heap", error());
+    log_debug(aot, heap)("Error %s while dumping heap", error());
   }
 
   // print message in interactive case
@@ -2700,8 +2950,7 @@ HeapDumper::~HeapDumper() {
 // returns the error string (resource allocated), or null
 char* HeapDumper::error_as_C_string() const {
   if (error() != nullptr) {
-    char* str = NEW_RESOURCE_ARRAY(char, strlen(error())+1);
-    strcpy(str, error());
+    char* str = ResourceArea::strdup(error());
     return str;
   } else {
     return nullptr;
@@ -2716,7 +2965,7 @@ void HeapDumper::set_error(char const* error) {
   if (error == nullptr) {
     _error = nullptr;
   } else {
-    _error = os::strdup(error);
+    _error = os::strdup(error, mtServiceability);
     assert(_error != nullptr, "allocation failure");
   }
 }
@@ -2739,71 +2988,45 @@ void HeapDumper::dump_heap() {
 void HeapDumper::dump_heap(bool oome) {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   static uint dump_file_seq = 0;
-  char* my_path;
+  char my_path[JVM_MAXPATHLEN];
   const int max_digit_chars = 20;
-
-  const char* dump_file_name = "java_pid";
-  const char* dump_file_ext  = HeapDumpGzipLevel > 0 ? ".hprof.gz" : ".hprof";
+  const char* dump_file_name = HeapDumpGzipLevel > 0 ? "java_pid%p.hprof.gz" : "java_pid%p.hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
   // dump file name or a directory where dump file is created.
   if (dump_file_seq == 0) { // first time in, we initialize base_path
-    // Calculate potentially longest base path and check if we have enough
-    // allocated statically.
-    const size_t total_length =
-                      (HeapDumpPath == nullptr ? 0 : strlen(HeapDumpPath)) +
-                      strlen(os::file_separator()) + max_digit_chars +
-                      strlen(dump_file_name) + strlen(dump_file_ext) + 1;
-    if (total_length > sizeof(base_path)) {
+    // Set base path (name or directory, default or custom, without seq no), doing %p substitution.
+    const char *path_src = (HeapDumpPath != nullptr && HeapDumpPath[0] != '\0') ? HeapDumpPath : dump_file_name;
+    if (!Arguments::copy_expand_pid(path_src, strlen(path_src), base_path, JVM_MAXPATHLEN - max_digit_chars)) {
       warning("Cannot create heap dump file.  HeapDumpPath is too long.");
       return;
     }
-
-    bool use_default_filename = true;
-    if (HeapDumpPath == nullptr || HeapDumpPath[0] == '\0') {
-      // HeapDumpPath=<file> not specified
-    } else {
-      strcpy(base_path, HeapDumpPath);
-      // check if the path is a directory (must exist)
-      DIR* dir = os::opendir(base_path);
-      if (dir == nullptr) {
-        use_default_filename = false;
-      } else {
-        // HeapDumpPath specified a directory. We append a file separator
-        // (if needed).
-        os::closedir(dir);
-        size_t fs_len = strlen(os::file_separator());
-        if (strlen(base_path) >= fs_len) {
-          char* end = base_path;
-          end += (strlen(base_path) - fs_len);
-          if (strcmp(end, os::file_separator()) != 0) {
-            strcat(base_path, os::file_separator());
-          }
+    // Check if the path is an existing directory
+    DIR* dir = os::opendir(base_path);
+    if (dir != nullptr) {
+      os::closedir(dir);
+      // Path is a directory.  Append a file separator (if needed).
+      size_t fs_len = strlen(os::file_separator());
+      if (strlen(base_path) >= fs_len) {
+        char* end = base_path;
+        end += (strlen(base_path) - fs_len);
+        if (strcmp(end, os::file_separator()) != 0) {
+          strcat(base_path, os::file_separator());
         }
       }
+      // Then add the default name, with %p substitution.  Use my_path temporarily.
+      if (!Arguments::copy_expand_pid(dump_file_name, strlen(dump_file_name), my_path, JVM_MAXPATHLEN - max_digit_chars)) {
+        warning("Cannot create heap dump file.  HeapDumpPath is too long.");
+        return;
+      }
+      const size_t dlen = strlen(base_path);
+      jio_snprintf(&base_path[dlen], sizeof(base_path) - dlen, "%s", my_path);
     }
-    // If HeapDumpPath wasn't a file name then we append the default name
-    if (use_default_filename) {
-      const size_t dlen = strlen(base_path);  // if heap dump dir specified
-      jio_snprintf(&base_path[dlen], sizeof(base_path)-dlen, "%s%d%s",
-                   dump_file_name, os::current_process_id(), dump_file_ext);
-    }
-    const size_t len = strlen(base_path) + 1;
-    my_path = (char*)os::malloc(len, mtInternal);
-    if (my_path == nullptr) {
-      warning("Cannot create heap dump file.  Out of system memory.");
-      return;
-    }
-    strncpy(my_path, base_path, len);
+    strncpy(my_path, base_path, JVM_MAXPATHLEN);
   } else {
     // Append a sequence number id for dumps following the first
     const size_t len = strlen(base_path) + max_digit_chars + 2; // for '.' and \0
-    my_path = (char*)os::malloc(len, mtInternal);
-    if (my_path == nullptr) {
-      warning("Cannot create heap dump file.  Out of system memory.");
-      return;
-    }
     jio_snprintf(my_path, len, "%s.%d", base_path, dump_file_seq);
   }
   dump_file_seq++;   // increment seq number for next time we dump
@@ -2811,5 +3034,4 @@ void HeapDumper::dump_heap(bool oome) {
   HeapDumper dumper(false /* no GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
   dumper.dump(my_path, tty, HeapDumpGzipLevel);
-  os::free(my_path);
 }

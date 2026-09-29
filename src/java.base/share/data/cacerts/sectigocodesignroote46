@@ -1,0 +1,21 @@
+Owner: CN=Sectigo Public Code Signing Root E46, O=Sectigo Limited, C=GB
+Issuer: CN=Sectigo Public Code Signing Root E46, O=Sectigo Limited, C=GB
+Serial number: 50249ba2ef8ea6bf6c2c1f1a6385d4c3
+Valid from: Mon Mar 22 00:00:00 GMT 2021 until: Wed Mar 21 23:59:59 GMT 2046
+Signature algorithm name: SHA384withECDSA
+Subject Public Key Algorithm: 384-bit EC (secp384r1) key
+Version: 3
+-----BEGIN CERTIFICATE-----
+MIICKDCCAa+gAwIBAgIQUCSbou+Opr9sLB8aY4XUwzAKBggqhkjOPQQDAzBWMQsw
+CQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMS0wKwYDVQQDEyRT
+ZWN0aWdvIFB1YmxpYyBDb2RlIFNpZ25pbmcgUm9vdCBFNDYwHhcNMjEwMzIyMDAw
+MDAwWhcNNDYwMzIxMjM1OTU5WjBWMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2Vj
+dGlnbyBMaW1pdGVkMS0wKwYDVQQDEyRTZWN0aWdvIFB1YmxpYyBDb2RlIFNpZ25p
+bmcgUm9vdCBFNDYwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAQIMoEDH487om+BR4zl
+e7m6wWmyW0nAKLkUWG8kM85Qm3PZO8FoOZx6Yc5c0iJHRKuAhanllayqrmZYhlan
+uIODzLTRDqlR+EtnOX+MubY5aDSPGUq6jiHrQrisVp0J3AejQjBAMB0GA1UdDgQW
+BBTPfSygkHqYHd22XoXC4NoVcdLlXjAOBgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/
+BAUwAwEB/zAKBggqhkjOPQQDAwNnADBkAjACd++zAerlV83j8HflRwwwlLmgchbs
+aGX/4g44dv/oG8KfzCVTRg6sZHMobtK0IqYCMGk5W6+oBFyZMtOebrSwXs8lGjll
+/zHz43Zy8DMXO+iiqzSEwWGneZ6KupkGGqfVKw==
+-----END CERTIFICATE-----

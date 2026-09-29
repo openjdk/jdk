@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,50 @@
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceClosure.hpp"
 
 template <typename T>
 inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw() {
   size_t word_size = Array::size(length);
   return (void*) Metaspace::allocate(loader_data, word_size,
                                      MetaspaceObj::array_type(sizeof(T)), THREAD);
+}
+
+template <typename T>
+inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length) throw() {
+  size_t word_size = Array::size(length);
+  return (void*) Metaspace::allocate(loader_data, word_size,
+                                     MetaspaceObj::array_type(sizeof(T)));
+}
+
+template <typename T>
+inline void* Array<T>::operator new(size_t size, int length, MemTag flags) throw() {
+  size = Array::size(length) * BytesPerWord;
+  void* p = AllocateHeap(size * BytesPerWord, flags);
+  memset(p, 0, size);
+  return p;
+}
+
+// E.g., Array<Annotation>
+template <typename T>
+template <typename U, ENABLE_IF_SDEFN(!std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(U))>
+void Array<T>::metaspace_pointers_do_impl(MetaspaceClosure* it) {
+  log_trace(aot)("Iter(MSOArray): %p [%d]", this, length());
+  for (int i = 0; i < length(); i++) {
+    T* elm = adr_at(i);
+    elm->metaspace_pointers_do(it);
+  }
+}
+
+// E.g., Array<Klass*>
+template <typename T>
+template <typename U, ENABLE_IF_SDEFN(std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(typename std::remove_pointer<U>::type))>
+void Array<T>::metaspace_pointers_do_impl(MetaspaceClosure* it) {
+  log_trace(aot)("Iter(MSOPtrArray): %p [%d]", this, length());
+  for (int i = 0; i < length(); i++) {
+    T* mpp = adr_at(i);
+    it->push(mpp);
+  }
 }
 
 #endif // SHARE_OOPS_ARRAY_INLINE_HPP

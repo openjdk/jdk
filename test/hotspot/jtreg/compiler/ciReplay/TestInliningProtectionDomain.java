@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@
  * @summary Testing that ciReplay inlining does not fail with unresolved signature classes.
  * @requires vm.flightRecorder != true & vm.compMode != "Xint" & vm.compMode != "Xcomp" & vm.debug == true & vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
- * @run driver compiler.ciReplay.TestInliningProtectionDomain
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      ${test.main.class}
  */
 
 package compiler.ciReplay;
@@ -61,13 +64,13 @@ public class TestInliningProtectionDomain extends InliningBase {
         boolean inlineFails = testClass == ProtectionDomainTestNoOtherCompilationPrivate.class;
         int inlineeCount = inlineFails ? 1 : 5;
 
-        List<InlineEntry> inlineesNormal = parseLogFile(LOG_FILE_NORMAL, entryString, "compile_id='" + getCompileIdFromFile(getReplayFileName()), inlineeCount);
+        List<InlineEntry> inlineesNormal = parseLogFile(LOG_FILE_NORMAL, entryString, "compile_id='" + getCompileIdFromFile(getReplayFileName()) + "'", inlineeCount);
         List<InlineEntry> inlineesReplay = parseLogFile(LOG_FILE_REPLAY, entryString, "test ()V", inlineeCount);
         verifyLists(inlineesNormal, inlineesReplay, inlineeCount);
 
         if (inlineFails) {
             Asserts.assertTrue(inlineesNormal.get(0).compare("compiler.ciReplay.ProtectionDomainTestNoOtherCompilationPrivate", "bar", inlineesNormal.get(0).isUnloadedSignatureClasses()));
-            Asserts.assertTrue(inlineesReplay.get(0).compare("compiler.ciReplay.ProtectionDomainTestNoOtherCompilationPrivate", "bar", inlineesReplay.get(0).isDisallowedByReplay()));
+            Asserts.assertTrue(inlineesReplay.get(0).compare("compiler.ciReplay.ProtectionDomainTestNoOtherCompilationPrivate", "bar", inlineesReplay.get(0).isUnloadedSignatureClasses()));
         } else {
             Asserts.assertTrue(inlineesNormal.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesNormal.get(4).isNormalInline()));
             Asserts.assertTrue(inlineesReplay.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesReplay.get(4).isForcedByReplay() || inlineesReplay.get(4).isForcedIncrementalInlineByReplay()));
@@ -89,9 +92,9 @@ class ProtectionDomainTestCompiledBefore {
         bar();
     }
 
-    // Integer should be resolved for the protection domain of this class because the separate compilation of bar() in
+    // SigType should be resolved for the protection domain of this class because the separate compilation of bar() in
     // the normal run will resolve all classes in the signature. Inlining succeeds.
-    private static Integer bar() {
+    private static SigType bar() {
         InliningFoo.foo();
         return null;
     }
@@ -108,10 +111,10 @@ class ProtectionDomainTestNoOtherCompilationPublic {
         bar(); // Not compiled before separately
     }
 
-    // Integer should be resolved for the protection domain of this class because getDeclaredMethods is called in normal run
+    // SigType should be resolved for the protection domain of this class because getDeclaredMethods is called in normal run
     // when validating main() method. In this process, all public methods of this class are visited and its signature classes
     // are resolved. Inlining of bar() succeeds.
-    public static Integer bar() {
+    public static SigType bar() {
         InliningFoo.foo();
         return null;
     }
@@ -128,12 +131,12 @@ class ProtectionDomainTestNoOtherCompilationPrivate {
         bar(); // Not compiled before separately
     }
 
-    // Integer should be unresolved for the protection domain of this class even though getDeclaredMethods is called in normal
+    // SigType should be unresolved for the protection domain of this class even though getDeclaredMethods is called in normal
     // run when validating main() method. In this process, only public methods of this class are visited and its signature
     // classes are resolved. Since this method is private, the signature classes are not resolved for this protection domain.
     // Inlining of bar() should fail in normal run with "unresolved signature classes". Therefore, replay compilation should
     // also not inline bar().
-    private static Integer bar() {
+    private static SigType bar() {
         InliningFoo.foo();
         return null;
     }
@@ -150,7 +153,7 @@ class ProtectionDomainTestNoOtherCompilationPrivateString {
         bar(); // Not compiled before separately
     }
 
-    // Integer should be resovled for the protection domain of this class because getDeclaredMethods is called in normal run
+    // String should be resolved for the protection domain of this class because getDeclaredMethods is called in normal run
     // when validating main() method. In this process, public methods of this class are visited and its signature classes
     // are resolved. bar() is private and not visited in this process (i.e. no resolution of String). But since main()
     // has String[] as parameter, the String class will be resolved for this protection domain. Inlining of bar() succeeds.
@@ -178,3 +181,6 @@ class InliningBar {
 
     private static void bar2() {}
 }
+
+class SigType {}
+

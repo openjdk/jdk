@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,25 @@
 /*
  * @test
  * @summary Testing ClassFile AccessFlags.
+ * @modules java.base/jdk.internal.reflect
  * @run junit AccessFlagsTest
  */
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.AccessFlags;
+
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static org.junit.jupiter.api.Assertions.*;
+
+import jdk.internal.reflect.PreviewAccessFlags;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,39 +52,96 @@ class AccessFlagsTest {
     @ParameterizedTest
     @EnumSource(names = { "CLASS", "METHOD", "FIELD" })
     void testRandomAccessFlagsConverions(AccessFlag.Location ctx) {
-        IntFunction<AccessFlags> intFactory = switch (ctx) {
-            case CLASS -> AccessFlags::ofClass;
-            case METHOD -> AccessFlags::ofMethod;
-            case FIELD -> AccessFlags::ofField;
-            default -> null;
+        interface IntFlagsFactory {
+            AccessFlags create(int flags, boolean preview);
+        }
+        interface SymbolicFlagsFactory {
+            AccessFlags create(AccessFlag[] flags, boolean preview);
+        }
+        IntFlagsFactory intFactory = switch (ctx) {
+            case CLASS -> (v, preview) -> {
+                var bytes = ClassFile.of().build(ClassDesc.of("Test"), clb -> {
+                    if (preview) {
+                        clb.withVersion(ClassFile.latestMajorVersion(), ClassFile.PREVIEW_MINOR_VERSION);
+                    }
+                    clb.withFlags(v);
+                });
+                return ClassFile.of().parse(bytes).flags();
+            };
+            case METHOD -> (v, preview) -> {
+                var bytes = ClassFile.of().build(ClassDesc.of("Test"), clb -> {
+                    if (preview) {
+                        clb.withVersion(ClassFile.latestMajorVersion(), ClassFile.PREVIEW_MINOR_VERSION);
+                    }
+                    clb.withMethod("test", MTD_void, v & ACC_STATIC, mb -> mb.withFlags(v));
+                });
+                return ClassFile.of().parse(bytes).methods().getFirst().flags();
+            };
+            case FIELD -> (v, preview) -> {
+                var bytes = ClassFile.of().build(ClassDesc.of("Test"), clb -> {
+                    if (preview) {
+                        clb.withVersion(ClassFile.latestMajorVersion(), ClassFile.PREVIEW_MINOR_VERSION);
+                    }
+                    clb.withField("test", CD_int, fb -> fb.withFlags(v));
+                });
+                return ClassFile.of().parse(bytes).fields().getFirst().flags();
+            };
+            default -> fail();
         };
-        Function<AccessFlag[], AccessFlags> flagsFactory = switch (ctx) {
-            case CLASS -> AccessFlags::ofClass;
-            case METHOD -> AccessFlags::ofMethod;
-            case FIELD -> AccessFlags::ofField;
-            default -> null;
+        SymbolicFlagsFactory flagsFactory = switch (ctx) {
+            case CLASS -> (v, preview) -> {
+                var bytes = ClassFile.of().build(ClassDesc.of("Test"), clb -> {
+                    if (preview) {
+                        clb.withVersion(ClassFile.latestMajorVersion(), ClassFile.PREVIEW_MINOR_VERSION);
+                    }
+                    clb.withFlags(v);
+                });
+                return ClassFile.of().parse(bytes).flags();
+            };
+            case METHOD -> (v, preview) -> {
+                boolean hasStatic = Arrays.stream(v).anyMatch(f -> f == AccessFlag.STATIC);
+                var bytes = ClassFile.of().build(ClassDesc.of("Test"), clb -> {
+                    if (preview) {
+                        clb.withVersion(ClassFile.latestMajorVersion(), ClassFile.PREVIEW_MINOR_VERSION);
+                    }
+                    clb.withMethod("test", MTD_void, hasStatic ? ACC_STATIC : 0, mb -> mb.withFlags(v));
+                });
+                return ClassFile.of().parse(bytes).methods().getFirst().flags();
+            };
+            case FIELD -> (v, preview) -> {
+                var bytes = ClassFile.of().build(ClassDesc.of("Test"), clb -> {
+                    if (preview) {
+                        clb.withVersion(ClassFile.latestMajorVersion(), ClassFile.PREVIEW_MINOR_VERSION);
+                    }
+                    clb.withField("test", CD_int, fb -> fb.withFlags(v));
+                });
+                return ClassFile.of().parse(bytes).fields().getFirst().flags();
+            };
+            default -> fail();
         };
 
-        var allFlags = EnumSet.allOf(AccessFlag.class);
-        allFlags.removeIf(f -> !f.locations().contains(ctx));
+        for (boolean preview : new boolean[] {false, true}) {
+            var allFlags = EnumSet.allOf(AccessFlag.class);
+            allFlags.removeIf(preview ? f -> !PreviewAccessFlags.locations(f).contains(ctx) : f -> !f.locations().contains(ctx));
 
-        var r = new Random(123);
-        for (int i = 0; i < 1000; i++) {
-            var randomFlags = allFlags.stream().filter(f -> r.nextBoolean()).toArray(AccessFlag[]::new);
-            assertEquals(intFactory.apply(flagsFactory.apply(randomFlags).flagsMask()).flags(), Set.of(randomFlags));
+            var r = new Random(123);
+            for (int i = 0; i < 1000; i++) {
+                var randomFlags = allFlags.stream().filter(f -> r.nextBoolean()).toArray(AccessFlag[]::new);
+                assertEquals(intFactory.create(flagsFactory.create(randomFlags, preview).flagsMask(), preview).flags(), Set.of(randomFlags));
 
-            var randomMask = r.nextInt(Short.MAX_VALUE);
-            assertEquals(intFactory.apply(randomMask).flagsMask(), randomMask);
+                var randomMask = r.nextInt(Short.MAX_VALUE);
+                assertEquals(intFactory.create(randomMask, preview).flagsMask(), randomMask);
+            }
         }
     }
 
     @Test
     void testInvalidFlagsUse() {
-        assertAll(
-            () -> assertThrowsForInvalidFlagsUse(AccessFlags::ofClass),
-            () -> assertThrowsForInvalidFlagsUse(AccessFlags::ofField),
-            () -> assertThrowsForInvalidFlagsUse(AccessFlags::ofMethod)
-        );
+        ClassFile.of().build(ClassDesc.of("Test"), clb -> {
+            assertThrowsForInvalidFlagsUse(clb::withFlags);
+            clb.withMethod("test", MTD_void, ACC_STATIC, mb -> assertThrowsForInvalidFlagsUse(mb::withFlags));
+            clb.withField("test", CD_int, fb -> assertThrowsForInvalidFlagsUse(fb::withFlags));
+        });
     }
 
     void assertThrowsForInvalidFlagsUse(Consumer<AccessFlag[]> factory) {

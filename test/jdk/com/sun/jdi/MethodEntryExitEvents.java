@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g MethodEntryExitEvents.java
- * @run driver MethodEntryExitEvents SUSPEND_EVENT_THREAD MethodEntryExitEventsDebugee
- * @run driver MethodEntryExitEvents SUSPEND_NONE MethodEntryExitEventsDebugee
- * @run driver MethodEntryExitEvents SUSPEND_ALL MethodEntryExitEventsDebugee
+ * @run driver/timeout=480 MethodEntryExitEvents SUSPEND_EVENT_THREAD MethodEntryExitEventsDebugee
+ * @run driver/timeout=480 MethodEntryExitEvents SUSPEND_NONE MethodEntryExitEventsDebugee
+ * @run driver/timeout=480 MethodEntryExitEvents SUSPEND_ALL MethodEntryExitEventsDebugee
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

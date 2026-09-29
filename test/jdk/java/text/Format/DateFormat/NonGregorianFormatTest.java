@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4833268 6253991 8008577 8190748
+ * @bug 4833268 6253991 8008577 8190748 8174269
  * @summary Test formatting and parsing with non-Gregorian calendars
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI NonGregorianFormatTest
+ * @run main NonGregorianFormatTest
  */
 
 import java.time.ZoneId;
@@ -39,37 +39,37 @@ public class NonGregorianFormatTest {
 
     @SuppressWarnings("deprecation")
     static final Object[][] JAPANESE_EN = {
-        { "GGGG yyyy MMMM d", "Showa 1 December 31", new Date(1926-1900, DECEMBER, 31) },
-        { "GGGG yyyy MMMM d", "Showa 64 January 6", new Date(1989-1900, JANUARY, 6) },
+        { "GGGG yyyy MMMM d", "Sh\u014dwa 1 December 31", new Date(1926-1900, DECEMBER, 31) },
+        { "GGGG yyyy MMMM d", "Sh\u014dwa 64 January 6", new Date(1989-1900, JANUARY, 6) },
         { "GGGG yyyy MMMM d", "Heisei 1 August 9", new Date(1989-1900, AUGUST, 9) },
         { "GGGG yyyy MMMM d", "Heisei 17 June 10", new Date(2005-1900, JUNE, 10) },
-        { "Gy.MM.dd", "S1.12.31", new Date(1926-1900, DECEMBER, 31) },
-        { "Gy.MM.dd", "S64.01.06", new Date(1989-1900, JANUARY, 6) },
-        { "Gyy.MM.dd", "H01.08.09", new Date(1989-1900, AUGUST, 9) },
-        { "Gy.M.d", "H1.8.9", new Date(1989-1900, AUGUST, 9) },
-        { "Gy.MM.dd", "H17.06.10", new Date(2005-1900, JUNE, 10) },
+        { "Gy.MM.dd", "Sh\u014dwa1.12.31", new Date(1926-1900, DECEMBER, 31) },
+        { "Gy.MM.dd", "Sh\u014dwa64.01.06", new Date(1989-1900, JANUARY, 6) },
+        { "Gyy.MM.dd", "Heisei01.08.09", new Date(1989-1900, AUGUST, 9) },
+        { "Gy.M.d", "Heisei1.8.9", new Date(1989-1900, AUGUST, 9) },
+        { "Gy.MM.dd", "Heisei17.06.10", new Date(2005-1900, JUNE, 10) },
     };
 
     // Invalid dates for parse exception tests
     static final Object[][] EXCEPTION_JAPANESE_EN = {
-        { "GGGG yyyy MMMM d", "Showa 1 December 10" },
-        { "GGGG yyyy MMMM d", "Showa 64 January 16" },
+        { "GGGG yyyy MMMM d", "Sh\u014dwa 1 December 10" },
+        { "GGGG yyyy MMMM d", "Sh\u014dwa 64 January 16" },
         { "GGGG yyyy MMMM d", "Heisei 1 January 1" },
-        { "Gy.MM.dd", "S1.12.10" },
-        { "Gy.MM.dd", "S64.01.16" },
-        { "Gyy.MM.dd", "H01.01.01" },
+        { "Gy.MM.dd", "Sh\u014dwa1.12.10" },
+        { "Gy.MM.dd", "Sh\u014dwa64.01.16" },
+        { "Gyy.MM.dd", "Heisei01.01.01" },
     };
 
     @SuppressWarnings("deprecation")
     static final Object[][] BUDDHIST_EN = {
-        { "GGGG yyyy MMMM d", "B.E. 2469 December 31", new Date(1926-1900, DECEMBER, 31) },
-        { "GGGG yyyy MMMM d", "B.E. 2532 January 6", new Date(1989-1900, JANUARY, 6) },
-        { "GGGG yyyy MMMM d", "B.E. 2532 August 8", new Date(1989-1900, AUGUST, 8) },
-        { "GGGG yyyy MMMM d", "B.E. 2548 June 10", new Date(2005-1900, JUNE, 10) },
-        { "Gyyyy/MM/dd", "B.E.2469/12/31", new Date(1926-1900, DECEMBER, 31) },
-        { "Gyyyy/MM/dd", "B.E.2532/01/06", new Date(1989-1900, JANUARY, 6) },
-        { "Gyyyy/MM/dd", "B.E.2532/08/09", new Date(1989-1900, AUGUST, 9) },
-        { "Gyyyy/MM/dd", "B.E.2548/06/10", new Date(2005-1900, JUNE, 10) },
+        { "GGGG yyyy MMMM d", "BE 2469 December 31", new Date(1926-1900, DECEMBER, 31) },
+        { "GGGG yyyy MMMM d", "BE 2532 January 6", new Date(1989-1900, JANUARY, 6) },
+        { "GGGG yyyy MMMM d", "BE 2532 August 8", new Date(1989-1900, AUGUST, 8) },
+        { "GGGG yyyy MMMM d", "BE 2548 June 10", new Date(2005-1900, JUNE, 10) },
+        { "Gyyyy/MM/dd", "BE2469/12/31", new Date(1926-1900, DECEMBER, 31) },
+        { "Gyyyy/MM/dd", "BE2532/01/06", new Date(1989-1900, JANUARY, 6) },
+        { "Gyyyy/MM/dd", "BE2532/08/09", new Date(1989-1900, AUGUST, 9) },
+        { "Gyyyy/MM/dd", "BE2548/06/10", new Date(2005-1900, JUNE, 10) },
     };
 
     static final String FULL_DATE_FORMAT_JA = "GGGGyyyy'\u5e74'M'\u6708'd'\u65e5'";
@@ -80,11 +80,11 @@ public class NonGregorianFormatTest {
         { FULL_DATE_FORMAT_JA, "\u662d\u548c64\u5e741\u67086\u65e5", new Date(1989-1900, JANUARY, 6) },
         { FULL_DATE_FORMAT_JA, "\u5e73\u6210\u5143\u5e748\u67089\u65e5", new Date(1989-1900, AUGUST, 9) },
         { FULL_DATE_FORMAT_JA, "\u5e73\u621017\u5e746\u670810\u65e5", new Date(2005-1900, JUNE, 10) },
-        { "Gyy.MM.dd", "S01.12.31", new Date(1926-1900, DECEMBER, 31) },
-        { "Gyy.MM.dd", "S64.01.06", new Date(1989-1900, JANUARY, 6) },
-        { "Gyy.MM.dd", "H01.08.09", new Date(1989-1900, AUGUST, 9) },
-        { "Gy.M.d", "H1.8.9", new Date(1989-1900, AUGUST, 9) },
-        { "Gyy.MM.dd", "H17.06.10", new Date(2005-1900, JUNE, 10) },
+        { "Gyy.MM.dd", "\u662d\u548c01.12.31", new Date(1926-1900, DECEMBER, 31) },
+        { "Gyy.MM.dd", "\u662d\u548c64.01.06", new Date(1989-1900, JANUARY, 6) },
+        { "Gyy.MM.dd", "\u5e73\u621001.08.09", new Date(1989-1900, AUGUST, 9) },
+        { "Gy.M.d", "\u5e73\u62101.8.9", new Date(1989-1900, AUGUST, 9) },
+        { "Gyy.MM.dd", "\u5e73\u621017.06.10", new Date(2005-1900, JUNE, 10) },
     };
 
     // Invalid dates for parse exception tests
@@ -92,9 +92,9 @@ public class NonGregorianFormatTest {
         { FULL_DATE_FORMAT_JA, "\u662d\u548c\u5143\u5e7412\u670810\u65e5" },
         { FULL_DATE_FORMAT_JA, "\u662d\u548c64\u5e741\u670816\u65e5" },
         { FULL_DATE_FORMAT_JA, "\u5e73\u6210\u5143\u5e741\u67081\u65e5" },
-        { "Gyy.MM.dd", "S01.12.10" },
-        { "Gyy.MM.dd", "S64.01.16" },
-        { "Gyy.MM.dd", "H01.01.01" },
+        { "Gyy.MM.dd", "\u662d\u548c01.12.10" },
+        { "Gyy.MM.dd", "\u662d\u548c64.01.16" },
+        { "Gyy.MM.dd", "\u5e73\u621001.01.01" },
     };
 
     @SuppressWarnings("deprecation")
@@ -103,10 +103,10 @@ public class NonGregorianFormatTest {
         { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62532\u5e741\u67086\u65e5", new Date(1989-1900, JANUARY, 6) },
         { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62532\u5e748\u67089\u65e5", new Date(1989-1900, AUGUST, 9) },
         { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62548\u5e746\u670810\u65e5", new Date(2005-1900, JUNE, 10) },
-        { "Gyyyy/MM/dd", "B.E.2469/12/31", new Date(1926-1900, DECEMBER, 31) },
-        { "Gyyyy/MM/dd", "B.E.2532/01/06", new Date(1989-1900, JANUARY, 6) },
-        { "Gyyyy/MM/dd", "B.E.2532/08/09", new Date(1989-1900, AUGUST, 9) },
-        { "Gyyyy/MM/dd", "B.E.2548/06/10", new Date(2005-1900, JUNE, 10) },
+        { "Gyyyy/MM/dd", "BE2469/12/31", new Date(1926-1900, DECEMBER, 31) },
+        { "Gyyyy/MM/dd", "BE2532/01/06", new Date(1989-1900, JANUARY, 6) },
+        { "Gyyyy/MM/dd", "BE2532/08/09", new Date(1989-1900, AUGUST, 9) },
+        { "Gyyyy/MM/dd", "BE2548/06/10", new Date(2005-1900, JUNE, 10) },
     };
 
     public static void main(String[] args) throws ParseException {

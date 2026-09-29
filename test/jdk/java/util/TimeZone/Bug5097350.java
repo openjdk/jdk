@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,19 @@
 
 /*
  * @test
- * @bug 5097350
+ * @bug 5097350 8347841 8347955
  * @summary Make sure that TimeZone.getTimeZone returns a clone of a cached TimeZone instance.
  */
 
+import java.time.ZoneId;
 import java.util.*;
-import java.text.*;
+import java.util.function.Predicate;
 
 public class Bug5097350 {
     public static void main(String[] args) {
-        String[] tzids = TimeZone.getAvailableIDs();
+        String[] tzids = TimeZone.availableIDs()
+                .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                .toArray(String[]::new);
         List<String> ids = new ArrayList<>(tzids.length + 10);
         ids.addAll(Arrays.asList(tzids));
         // add some custom ids

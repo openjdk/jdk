@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 // cross platform development for JSR292.
 // Last synchronization: changeset f8c9417e3571
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
@@ -39,6 +38,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -104,14 +104,13 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
   __ andr(temp, temp, (unsigned)java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
   __ cmp(temp, ref_kind);
   __ b(L, eq);
-  { char* buf = NEW_C_HEAP_ARRAY(char, 100, mtInternal);
-  jio_snprintf(buf, 100, "verify_ref_kind expected %x", ref_kind);
+  const char* msg = ref_kind_to_verify_msg(ref_kind);
   if (ref_kind == JVM_REF_invokeVirtual ||
-      ref_kind == JVM_REF_invokeSpecial)
+      ref_kind == JVM_REF_invokeSpecial) {
     // could do this for all ref_kinds, but would explode assembly code size
-    trace_method_handle(_masm, buf);
-  __ stop(buf);
+    trace_method_handle(_masm, msg);
   }
+  __ stop(msg);
   BLOCK_COMMENT("} verify_ref_kind");
   __ bind(L);
 }
@@ -140,7 +139,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, bool for_comp
 
   __ bind(L_no_such_method);
   // throw exception
-  __ jump(StubRoutines::throw_AbstractMethodError_entry(), relocInfo::runtime_call_type, Rtemp);
+  __ jump(SharedRuntime::throw_AbstractMethodError_entry(), relocInfo::runtime_call_type, Rtemp);
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
@@ -461,7 +460,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
-      __ jump(StubRoutines::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, Rtemp);
+      __ jump(SharedRuntime::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, Rtemp);
     }
   }
 }
@@ -496,7 +495,7 @@ void trace_method_handle_stub(const char* adaptername,
   if (!has_mh) {
     mh_reg_name = "R5";
   }
-  log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=(" PTR_FORMAT "+" INTX_FORMAT ") stack_size=" INTX_FORMAT " bp=" PTR_FORMAT,
+  log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=(" PTR_FORMAT "+%zd) stack_size=%zd bp=" PTR_FORMAT,
                           adaptername, mh_reg_name, mh_reg,
                           (intptr_t)entry_sp, (intptr_t)saved_sp - (intptr_t)entry_sp, (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
 

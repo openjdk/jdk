@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+
+    <xs:annotation>
+        <xs:documentation>
+          Editing Elements
+          This is the XML Schema Editing Markup module for XHTML
+
+           * ins, del
+  
+         This module declares element types and attributes used to indicate
+         inserted and deleted content while editing a document.
+
+          $Id: xhtml-edit-1.xsd,v 1.2 2005/09/26 22:54:53 ahby Exp $
+        </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_editmodule"/>
+    </xs:annotation>
+    <xs:attributeGroup name="xhtml.edit.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="cite" type="xh11d:URI"/>
+        <xs:attribute name="datetime" type="xh11d:Datetime"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.edit.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Flow.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.edit.type" mixed="true">
+        <xs:group ref="xhtml.edit.content"/>
+        <xs:attributeGroup ref="xhtml.edit.attlist"/>
+    </xs:complexType>
+</xs:schema>

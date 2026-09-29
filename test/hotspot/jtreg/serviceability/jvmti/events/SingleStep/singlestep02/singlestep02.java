@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,25 @@
  * questions.
  */
 
-import jdk.test.lib.jvmti.DebugeeClass;
 import java.io.*;
 
 /*
  * @test
  *
  * @summary converted from VM Testbase nsk/jvmti/SingleStep/singlestep002.
- * VM Testbase keywords: [jpda, jvmti, onload_only_caps, noras]
- * VM Testbase readme:
- * DESCRIPTION
  *     This test exercises the JVMTI event SingleStep.
- *     It verifies that this event s sent only during the live phase
+ *     It verifies that this event is sent only during the live phase
  *     of VM execution.
  *     The test works as follows. The tested event is enabled in the
  *     'OnLoad' phase. Then all received SingleStep events is checked
  *     to be sent only during the live phase via the GetPhase() call.
- * COMMENTS
  *
- * @library /test/lib
  * @run main/othervm/native -agentlib:singlestep02 singlestep02
  */
 
 public class singlestep02 {
 
-    static {
-        System.loadLibrary("singlestep02");
-    }
-
     public static void main(String[] args) {
-        new singlestep02().runThis(args);
     }
 
-    private int runThis(String argv[]) {
-        return DebugeeClass.TEST_PASSED;
-    }
 }

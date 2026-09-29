@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,15 @@
 #include "code/nmethod.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/klass.hpp"
+#include "oops/flatArrayKlass.inline.hpp"
+#include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
-#include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
+#include "oops/klass.hpp"
 #include "oops/objArrayKlass.inline.hpp"
+#include "oops/refArrayKlass.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -50,8 +52,7 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_cld(ClassLoaderData* cld)
 }
 
 inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
-  ClassLoaderData* cld = k->class_loader_data();
-  ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
+  ClaimMetadataVisitingOopIterateClosure::do_cld(k->class_loader_data());
 }
 
 inline void ClaimMetadataVisitingOopIterateClosure::do_nmethod(nmethod* nm) {
@@ -124,7 +125,7 @@ private:
     void set_resolve_function() {
       // Size requirement to prevent word tearing
       // when functions pointers are updated.
-      STATIC_ASSERT(sizeof(_function[0]) == sizeof(void*));
+      static_assert(sizeof(_function[0]) == sizeof(void*));
       if (UseCompressedOops) {
         _function[KlassType::Kind] = &oop_oop_iterate<KlassType, narrowOop>;
       } else {
@@ -143,12 +144,15 @@ private:
 
     Table(){
       set_init_function<InstanceKlass>();
+      set_init_function<ValueKlass>();
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
+      set_init_function<FlatArrayKlass>();
+      set_init_function<RefArrayKlass>();
     }
   };
 
@@ -206,12 +210,15 @@ private:
 
     Table(){
       set_init_function<InstanceKlass>();
+      set_init_function<ValueKlass>();
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
+      set_init_function<FlatArrayKlass>();
+      set_init_function<RefArrayKlass>();
     }
   };
 
@@ -269,12 +276,15 @@ private:
 
     Table(){
       set_init_function<InstanceKlass>();
+      set_init_function<ValueKlass>();
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
+      set_init_function<FlatArrayKlass>();
+      set_init_function<RefArrayKlass>();
     }
   };
 

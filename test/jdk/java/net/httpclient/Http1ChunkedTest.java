@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  * @bug 8243246
  * @summary Verifies that the HttpClient can accept extensions after
  *          chunk length in a chunked response.
- * @run main/othervm Http1ChunkedTest
+ * @run main/othervm ${test.main.class}
  */
 public class Http1ChunkedTest {
 
@@ -97,7 +97,7 @@ public class Http1ChunkedTest {
                         }
                     }
                     if (!received) {
-                        System.out.printf("%s: Unexpected headers received: dropping request.%n");
+                        System.out.printf("%s: Unexpected headers received: dropping request.%n", name);
                         continue;
                     }
                     OutputStream os = serverConn.getOutputStream();

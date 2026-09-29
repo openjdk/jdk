@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,13 +23,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/jniHandles.hpp"
 
 #define __ masm->
 
@@ -43,10 +43,47 @@
 
 #define TIMES_OOP (UseCompressedOops ? Address::times_4 : Address::times_8)
 
+void CardTableBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                      Register src, Register dst, Register count) {
+  if (is_reference_type(type)) {
+    gen_write_ref_array_pre_barrier(masm, decorators, dst, count);
+  }
+}
+
+void CardTableBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                      Register dst, Register count, bool do_return) {
+  if (is_reference_type(type)) {
+    gen_write_ref_array_post_barrier(masm, decorators, dst, count, do_return);
+  } else {
+    if (do_return) { __ z_br(Z_R14); }
+  }
+}
+
+void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                            const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  if (is_reference_type(type)) {
+    oop_store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  }
+}
+
+void CardTableBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2) {
+  NearLabel done;
+
+  __ z_ltgr(value, value);
+  __ z_bre(done);  // use null as-is.
+
+  __ z_nill(value, ~JNIHandles::tag_mask);
+  __ z_lg(value, 0, value); // Resolve (untagged) jobject.
+
+  __ verify_oop(value, FILE_AND_LINE);
+  __ bind(done);
+}
+
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count,
                                                                     bool do_return) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   NearLabel doXC, done;
   assert_different_registers(Z_R0, Z_R1, addr, count);
@@ -67,7 +104,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ add2reg_with_index(count, -BytesPerHeapOop, count, addr);
 
   // Get base address of card table.
-  __ load_const_optimized(Z_R1, (address)ct->byte_map_base());
+  __ load_const_optimized(Z_R1, (address)ctbs->card_table_base_const());
 
   // count = (count>>shift) - (addr>>shift)
   __ z_srlg(addr,  addr,  CardTable::card_shift());
@@ -141,13 +178,12 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register store_addr, Register tmp) {
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   assert_different_registers(store_addr, tmp);
 
   __ z_srlg(store_addr, store_addr, CardTable::card_shift());
-  __ load_absolute_address(tmp, (address)ct->byte_map_base());
+  __ load_absolute_address(tmp, (address)ctbs->card_table_base_const());
   __ z_agr(store_addr, tmp);
   __ z_mvi(0, store_addr, CardTable::dirty_card_val());
 }

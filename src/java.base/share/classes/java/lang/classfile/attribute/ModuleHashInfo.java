@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,16 @@ package java.lang.classfile.attribute;
 
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.constant.ModuleDesc;
+
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models hash information for a single module in the {@link ModuleHashesAttribute}.
  *
- * @since 22
+ * @see ModuleHashesAttribute#hashes()
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleHashInfo
         permits UnboundAttribute.UnboundModuleHashInfo {
 
@@ -62,8 +62,10 @@ public sealed interface ModuleHashInfo
      * {@return a module hash description}
      * @param moduleDesc the module name
      * @param hash the hash value
+     * @throws IllegalArgumentException if {@code moduleDesc} represents an
+     *         unnamed module
      */
     static ModuleHashInfo of(ModuleDesc moduleDesc, byte[] hash) {
-        return new UnboundAttribute.UnboundModuleHashInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleDesc.name())), hash);
+        return new UnboundAttribute.UnboundModuleHashInfo(TemporaryConstantPool.INSTANCE.moduleEntry(moduleDesc), hash);
     }
 }

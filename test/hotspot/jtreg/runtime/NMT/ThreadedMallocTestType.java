@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,7 +61,7 @@ public class ThreadedMallocTestType {
     // Run 'jcmd <pid> VM.native_memory summary'
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             "Test (reserved=896KB, committed=896KB)",
-            "(malloc=896KB #3) (at peak)"
+            "(malloc=896KB tag=Test #3) (at peak)"
     );
 
     Thread freeThread = new Thread() {
@@ -78,7 +78,7 @@ public class ThreadedMallocTestType {
 
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             "Test (reserved=0KB, committed=0KB)",
-            "(malloc=0KB) (peak=896KB #3)"
+            "(malloc=0KB tag=Test) (peak=896KB #3)"
     );
   }
 }

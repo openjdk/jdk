@@ -2,7 +2,7 @@
  * @test    /nodynamiccopyright/
  * @bug     5073060
  * @summary Package private members not found for intersection types
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile/fail/ref=Neg.out -XDrawDiagnostics NegHelper.java Neg.java
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,6 @@ class InlineTableSizes : StackObj {
 
 class ConstMethod : public MetaspaceObj {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 public:
   typedef enum { NORMAL, OVERPASS } MethodType;
@@ -470,7 +469,6 @@ public:
 
   // Deallocation for RedefineClasses
   void deallocate_contents(ClassLoaderData* loader_data);
-  bool is_klass() const { return false; }
   DEBUG_ONLY(bool on_stack() { return false; })
 
   void metaspace_pointers_do(MetaspaceClosure* it);

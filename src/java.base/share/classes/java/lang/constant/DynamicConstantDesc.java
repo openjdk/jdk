@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,15 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
+
 import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_VarHandle;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
-import static java.lang.constant.ConstantUtils.EMPTY_CONSTANTDESC;
-import static java.lang.constant.ConstantUtils.validateMemberName;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static jdk.internal.constant.ConstantUtils.EMPTY_CONSTANTDESC;
+import static jdk.internal.constant.ConstantUtils.validateMemberName;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
@@ -56,6 +58,7 @@ import static java.util.stream.Collectors.joining;
  *
  * @since 12
  */
+@AOTSafeClassInitializer // for PrimitiveClassDescImpl
 public abstract non-sealed class DynamicConstantDesc<T>
         implements ConstantDesc {
 
@@ -87,12 +90,9 @@ public abstract non-sealed class DynamicConstantDesc<T>
                                   ClassDesc constantType,
                                   ConstantDesc... bootstrapArgs) {
         this.bootstrapMethod = requireNonNull(bootstrapMethod);
-        this.constantName = validateMemberName(requireNonNull(constantName), true);
+        this.constantName = validateMemberName(constantName, true);
         this.constantType = requireNonNull(constantType);
-        this.bootstrapArgs = requireNonNull(bootstrapArgs).clone();
-
-        if (constantName.length() == 0)
-            throw new IllegalArgumentException("Illegal invocation name: " + constantName);
+        this.bootstrapArgs = bootstrapArgs.length == 0 ? EMPTY_CONSTANTDESC : bootstrapArgs.clone();
     }
 
     /**
@@ -222,7 +222,7 @@ public abstract non-sealed class DynamicConstantDesc<T>
     }
 
     /**
-     * Returns a {@link MethodHandleDesc} describing the bootstrap method for
+     * Returns a {@link DirectMethodHandleDesc} describing the bootstrap method for
      * this constant.
      *
      * @return the bootstrap method

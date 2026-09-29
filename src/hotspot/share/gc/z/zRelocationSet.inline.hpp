@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,14 @@
 #include "gc/z/zRelocationSet.hpp"
 
 #include "gc/z/zArray.inline.hpp"
+
+inline size_t ZRelocationSet::nforwardings() const {
+  return _nforwardings;
+}
+
+template <bool Parallel>
+inline ZRelocationSetIteratorImpl<Parallel>::ZRelocationSetIteratorImpl()
+  : ZArrayIteratorImpl<ZForwarding*, Parallel>(nullptr, 0) {}
 
 template <bool Parallel>
 inline ZRelocationSetIteratorImpl<Parallel>::ZRelocationSetIteratorImpl(ZRelocationSet* relocation_set)

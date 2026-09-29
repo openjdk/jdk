@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 4993777
  * @summary Tests encoding of multi-dimensional arrays
- * @run main/othervm -Djava.security.manager=allow Test4993777
+ * @run main/othervm Test4993777
  * @author Sergey Malenkov
  */
 
 public final class Test4993777 extends AbstractTest {
     public static void main(String[] args) {
-        new Test4993777().test(true);
+        new Test4993777().test();
     }
 
     protected ArrayBean getObject() {

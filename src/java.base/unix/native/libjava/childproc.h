@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define CHILDPROC_MD_H
 
 #include <sys/types.h>
+#include <stdbool.h>
 
 #ifdef __APPLE__
 #include <crt_externs.h>
@@ -37,8 +38,8 @@
  * The declaration is standardized as part of UNIX98, but there is
  * no standard (not even de-facto) header file where the
  * declaration is to be found.  See:
- * http://www.opengroup.org/onlinepubs/009695399/functions/environ.html
- * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
+ * https://pubs.opengroup.org/onlinepubs/009695399/functions/environ.html
+ * https://pubs.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
  *
  * "All identifiers in this volume of IEEE Std 1003.1-2001, except
  * environ, are defined in at least one of the headers" (!)
@@ -72,19 +73,14 @@ extern char **environ;
 
 #define FAIL_FILENO (STDERR_FILENO + 1)
 
-/* TODO: Refactor. */
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
+/* For POSIX_SPAWN mode */
+#define CHILDENV_FILENO (FAIL_FILENO + 1)
 
 /* These numbers must be the same as the Enum in ProcessImpl.java
  * Must be a better way of doing this.
  */
 #define MODE_FORK 1
 #define MODE_POSIX_SPAWN 2
-#define MODE_VFORK 3
 
 typedef struct _ChildStuff
 {
@@ -114,13 +110,6 @@ typedef struct _SpawnInfo {
     int parentPathvBytes; /* total number of bytes in parentPathv array */
 } SpawnInfo;
 
-/* If ChildStuff.sendAlivePing is true, child shall signal aliveness to
- * the parent the moment it gains consciousness, before any subsequent
- * pre-exec errors could happen.
- * This code must fit into an int and not be a valid errno value on any of
- * our platforms. */
-#define CHILD_IS_ALIVE      65535
-
 /**
  * The cached and split version of the JDK's effective PATH.
  * (We don't support putenv("PATH=...") in native code)
@@ -128,24 +117,11 @@ typedef struct _SpawnInfo {
 extern const char * const *parentPathv;
 
 ssize_t writeFully(int fd, const void *buf, size_t count);
-int restartableDup2(int fd_from, int fd_to);
 int closeSafely(int fd);
-int isAsciiDigit(char c);
-int closeDescriptors(void);
-int moveDescriptor(int fd_from, int fd_to);
 
 int magicNumber();
 ssize_t readFully(int fd, void *buf, size_t nbyte);
 void initVectorFromBlock(const char**vector, const char* block, int count);
-void execve_as_traditional_shell_script(const char *file,
-                                        const char *argv[],
-                                        const char *const envp[]);
-void execve_with_shell_fallback(int mode, const char *file,
-                                const char *argv[],
-                                const char *const envp[]);
-void JDK_execvpe(int mode, const char *file,
-                 const char *argv[],
-                 const char *const envp[]);
 int childProcess(void *arg);
 
 #ifdef DEBUG
@@ -156,6 +132,17 @@ int childProcess(void *arg);
  * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
  */
 void jtregSimulateCrash(pid_t child, int stage);
+/* Helper functions to check the state of fds */
+bool fdIsValid(int fd);
+bool fdIsPipe(int fd);
+bool fdIsCloexec(int fd);
 #endif
 
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#define HAVE_PIPE2
+#else
+// Neither MacOS nor AIX support pipe2, unfortunately
+#undef HAVE_PIPE2
 #endif
+
+#endif /* CHILDPROC_MD_H */

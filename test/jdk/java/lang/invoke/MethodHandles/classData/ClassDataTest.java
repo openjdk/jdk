@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,25 @@
  * @test
  * @bug 8230501
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- * @run testng/othervm ClassDataTest
+ * @run junit/othervm ClassDataTest
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,18 +51,21 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import jdk.internal.org.objectweb.asm.*;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ClassDataTest {
     private static final Lookup LOOKUP = MethodHandles.lookup();
+    private static final ClassDesc CD_ClassDataTest = ClassDataTest.class.describeConstable().orElseThrow();
 
     @Test
     public void testOriginalAccess() throws IllegalAccessException {
@@ -62,10 +73,10 @@ public class ClassDataTest {
         assertTrue(lookup.hasFullPrivilegeAccess());
 
         int value = MethodHandles.classData(lookup, "_", int.class);
-        assertEquals(value, 20);
+        assertEquals(20, value);
 
         Integer i = MethodHandles.classData(lookup, "_", Integer.class);
-        assertEquals(i.intValue(), 20);
+        assertEquals(20, i.intValue());
     }
 
     /*
@@ -76,8 +87,7 @@ public class ClassDataTest {
         assertNull(MethodHandles.classData(LOOKUP, "_", Object.class));
     }
 
-    @DataProvider(name = "teleportedLookup")
-    private Object[][] teleportedLookup() throws ReflectiveOperationException {
+    private static Object[][] teleportedLookup() throws ReflectiveOperationException {
         Lookup lookup = hiddenClass(30);
         Class<?> hc = lookup.lookupClass();
         assertClassData(lookup, 30);
@@ -90,32 +100,33 @@ public class ClassDataTest {
         };
     }
 
-    @Test(dataProvider = "teleportedLookup", expectedExceptions = { IllegalAccessException.class })
+    @ParameterizedTest
+    @MethodSource("teleportedLookup")
     public void illegalAccess(Lookup lookup, int access) throws IllegalAccessException {
         int lookupModes = lookup.lookupModes();
-        assertTrue((lookupModes & ORIGINAL) == 0);
-        assertEquals(lookupModes, access);
-        MethodHandles.classData(lookup, "_", int.class);
+        assertEquals(0, lookupModes & ORIGINAL);
+        assertEquals(access, lookupModes);
+        assertThrows(IllegalAccessException.class, () -> MethodHandles.classData(lookup, "_", int.class));
     }
 
-    @Test(expectedExceptions = { ClassCastException.class })
+    @Test
     public void incorrectType() throws IllegalAccessException {
         Lookup lookup = hiddenClass(20);
-        MethodHandles.classData(lookup, "_", Long.class);
+        assertThrows(ClassCastException.class, () -> MethodHandles.classData(lookup, "_", Long.class));
     }
 
-    @Test(expectedExceptions = { IndexOutOfBoundsException.class })
+    @Test
     public void invalidIndex() throws IllegalAccessException {
         Lookup lookup = hiddenClass(List.of());
-        MethodHandles.classDataAt(lookup, "_", Object.class, 0);
+        assertThrows(IndexOutOfBoundsException.class, () -> MethodHandles.classDataAt(lookup, "_", Object.class, 0));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void unboxNull() throws IllegalAccessException {
         List<Integer> list = new ArrayList<>();
         list.add(null);
         Lookup lookup = hiddenClass(list);
-        MethodHandles.classDataAt(lookup, "_", int.class, 0);
+        assertThrows(NullPointerException.class, () -> MethodHandles.classDataAt(lookup, "_", int.class, 0));
     }
 
     @Test
@@ -123,7 +134,7 @@ public class ClassDataTest {
         List<Object> list = new ArrayList<>();
         list.add(null);
         Lookup lookup = hiddenClass(list);
-        assertTrue(MethodHandles.classDataAt(lookup, "_", Object.class, 0) == null);
+        assertNull(MethodHandles.classDataAt(lookup, "_", Object.class, 0));
     }
 
     @Test
@@ -132,7 +143,7 @@ public class ClassDataTest {
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, int.class).build();
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, 100, true);
         int value = MethodHandles.classData(lookup, "_", int.class);
-        assertEquals(value, 100);
+        assertEquals(100, value);
         // call through condy
         assertClassData(lookup, 100);
     }
@@ -143,7 +154,7 @@ public class ClassDataTest {
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, float.class).build();
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, 0.1234f, true);
         float value = MethodHandles.classData(lookup, "_", float.class);
-        assertEquals(value, 0.1234f);
+        assertEquals(0.1234f, value);
         // call through condy
         assertClassData(lookup, 0.1234f);
     }
@@ -155,7 +166,7 @@ public class ClassDataTest {
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, Class.class).build();
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, hc, true);
         Class<?> value = MethodHandles.classData(lookup, "_", Class.class);
-        assertEquals(value, hc);
+        assertEquals(hc, value);
         // call through condy
         assertClassData(lookup, hc);
     }
@@ -171,7 +182,7 @@ public class ClassDataTest {
         colors[0] = "black";
         // it will get back the modified class data
         String[] value = MethodHandles.classData(lookup, "_", String[].class);
-        assertEquals(value, colors);
+        assertArrayEquals(colors, value);
         // even call through condy as it's not a constant
         assertClassData(lookup, colors);
     }
@@ -184,7 +195,7 @@ public class ClassDataTest {
         int expected = 102;  // element at index=2
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
         int value = MethodHandles.classDataAt(lookup, "_", int.class, 2);
-        assertEquals(value, expected);
+        assertEquals(expected, value);
         // call through condy
         assertClassData(lookup, expected);
     }
@@ -198,7 +209,7 @@ public class ClassDataTest {
         int expected = 101;  // element at index=1
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
         int value = MethodHandles.classDataAt(lookup, "_", int.class, 1);
-        assertEquals(value, expected);
+        assertEquals(expected, value);
         // call through condy
         assertClassData(lookup, expected);
     }
@@ -206,20 +217,12 @@ public class ClassDataTest {
     private static Lookup hiddenClass(int value) {
         ClassByteBuilder builder = new ClassByteBuilder("HC");
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, int.class).build();
-        try {
-            return LOOKUP.defineHiddenClassWithClassData(bytes, value, true);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        return assertDoesNotThrow(() -> LOOKUP.defineHiddenClassWithClassData(bytes, value, true));
     }
     private static Lookup hiddenClass(List<?> list) {
         ClassByteBuilder builder = new ClassByteBuilder("HC");
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, List.class).build();
-        try {
-            return LOOKUP.defineHiddenClassWithClassData(bytes, list, true);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        return assertDoesNotThrow(() -> LOOKUP.defineHiddenClassWithClassData(bytes, list, true));
     }
 
     @Test
@@ -232,7 +235,7 @@ public class ClassDataTest {
         Class<?> hc = hcLookup.lookupClass();
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, hc, true);
         Class<?> value = MethodHandles.classData(lookup, "_", Class.class);
-        assertEquals(value, hc);
+        assertEquals(hc, value);
         // call through condy
         Class<?> c = lookup.lookupClass();
         assertClassData(lookup, c.newInstance(), hc);
@@ -247,7 +250,7 @@ public class ClassDataTest {
         int expected = 102;  // element at index=2
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
         int value = MethodHandles.classDataAt(lookup, "_", int.class, 2);
-        assertEquals(value, expected);
+        assertEquals(expected, value);
         // call through condy
         Class<?> c = lookup.lookupClass();
         assertClassData(lookup, c.newInstance() ,expected);
@@ -275,13 +278,13 @@ public class ClassDataTest {
         Class<?> c = lookup.lookupClass();
         assertClassData(lookup, c.newInstance(), mtype);
         // modify the class data
-        assertTrue(cd.remove(0) == mtype);
+        assertSame(mtype, cd.remove(0));
         cd.add(0,  MethodType.methodType(void.class));
         MethodType newMType = cd.get(0);
         // loading the element using condy returns the original value
         assertClassData(lookup, c.newInstance(), mtype);
         // direct invocation of MethodHandles.classDataAt returns the modified value
-        assertEquals(MethodHandles.classDataAt(lookup, "_", MethodType.class, 0), newMType);
+        assertEquals(newMType, MethodHandles.classDataAt(lookup, "_", MethodType.class, 0));
     }
 
     // helper method to extract from a class data map
@@ -294,15 +297,13 @@ public class ClassDataTest {
     public void classDataMap() throws ReflectiveOperationException {
         ClassByteBuilder builder = new ClassByteBuilder("map");
         // generate classData static method
-        Handle bsm = new Handle(H_INVOKESTATIC, "ClassDataTest", "getClassDataEntry",
-                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;",
-                false);
+        DirectMethodHandleDesc bsm = ConstantDescs.ofConstantBootstrap(CD_ClassDataTest, "getClassDataEntry", CD_Object);
         // generate two accessor methods to get the entries from class data
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, Map.class)
                               .classData(ACC_PUBLIC|ACC_STATIC, "getClass",
-                                         Class.class, new ConstantDynamic("class", Type.getDescriptor(Class.class), bsm))
+                                         Class.class, DynamicConstantDesc.ofNamed(bsm, "class", CD_Class))
                               .classData(ACC_PUBLIC|ACC_STATIC, "getMethod",
-                                         MethodHandle.class, new ConstantDynamic("method", Type.getDescriptor(MethodHandle.class), bsm))
+                                         MethodHandle.class, DynamicConstantDesc.ofNamed(bsm, "method", CD_MethodHandle))
                               .build();
 
         // generate a hidden class
@@ -326,7 +327,7 @@ public class ClassDataTest {
         assertEquals(mh, v1);
     }
 
-    @Test(expectedExceptions = { IllegalArgumentException.class })
+    @Test
     public void nonDefaultName() throws ReflectiveOperationException {
         ClassByteBuilder builder = new ClassByteBuilder("nonDefaultName");
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, Class.class)
@@ -334,7 +335,7 @@ public class ClassDataTest {
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, ClassDataTest.class, true);
         assertClassData(lookup, ClassDataTest.class);
         // throw IAE
-        MethodHandles.classData(lookup, "non_default_name", Class.class);
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.classData(lookup, "non_default_name", Class.class));
     }
 
     static class ClassByteBuilder {
@@ -342,29 +343,28 @@ public class ClassDataTest {
         private static final String MHS_CLS = "java/lang/invoke/MethodHandles";
         private static final String CLASS_DATA_BSM_DESCR =
                 "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;";
-        private final ClassWriter cw;
-        private final String classname;
+        private Consumer<ClassBuilder> cw;
+        private final ClassDesc classname;
 
         /**
          * A builder to generate a class file to access class data
          * @param classname
          */
         ClassByteBuilder(String classname) {
-            this.classname = classname;
-            this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            cw.visit(V14, ACC_FINAL, classname, null, OBJECT_CLS, null);
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, OBJECT_CLS, "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+            this.classname = ClassDesc.ofInternalName(classname);
+            this.cw = clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withFlags(AccessFlag.FINAL);
+                clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
+                    cob.aload(0);
+                    cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                    cob.return_();
+                });
+            };
         }
 
         byte[] build() {
-            cw.visitEnd();
-            byte[] bytes = cw.toByteArray();
+            byte[] bytes = ClassFile.of().build(classname, cw);
             Path p = Paths.get(classname + ".class");
                 try (OutputStream os = Files.newOutputStream(p)) {
                 os.write(bytes);
@@ -378,20 +378,14 @@ public class ClassDataTest {
          * Generate classData method to load class data via condy
          */
         ClassByteBuilder classData(int accessFlags, Class<?> returnType) {
-            MethodType mtype = MethodType.methodType(returnType);
-            MethodVisitor mv = cw.visitMethod(accessFlags,
-                                             "classData",
-                                              mtype.descriptorString(), null, null);
-            mv.visitCode();
-            Handle bsm = new Handle(H_INVOKESTATIC, MHS_CLS, "classData",
-                                    CLASS_DATA_BSM_DESCR,
-                                    false);
-            ConstantDynamic dynamic = new ConstantDynamic("_", Type.getDescriptor(returnType), bsm);
-            mv.visitLdcInsn(dynamic);
-            mv.visitInsn(returnType == int.class ? IRETURN :
-                            (returnType == float.class ? FRETURN : ARETURN));
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+            ClassDesc returnDesc = returnType.describeConstable().orElseThrow();
+            MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
+            cw = cw.andThen(clb -> {
+                clb.withMethodBody("classData", mt, accessFlags, cob -> {
+                    cob.loadConstant(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, returnDesc));
+                    cob.return_(TypeKind.from(returnType));
+                });
+            });
             return this;
         }
 
@@ -399,32 +393,26 @@ public class ClassDataTest {
          * Generate classDataAt method to load an element from class data via condy
          */
         ClassByteBuilder classDataAt(int accessFlags, Class<?> returnType, int index) {
-            MethodType mtype = MethodType.methodType(returnType);
-            MethodVisitor mv = cw.visitMethod(accessFlags,
-                                              "classData",
-                                               mtype.descriptorString(), null, null);
-            mv.visitCode();
-            Handle bsm = new Handle(H_INVOKESTATIC, "java/lang/invoke/MethodHandles", "classDataAt",
-                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;I)Ljava/lang/Object;",
-                        false);
-            ConstantDynamic dynamic = new ConstantDynamic("_", Type.getDescriptor(returnType), bsm, index);
-            mv.visitLdcInsn(dynamic);
-            mv.visitInsn(returnType == int.class? IRETURN : ARETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+            ClassDesc returnDesc = returnType.describeConstable().orElseThrow();
+            MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
+            cw = cw.andThen(clb -> {
+                clb.withMethodBody("classData", mt, accessFlags, cob -> {
+                    cob.loadConstant(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA_AT, DEFAULT_NAME, returnDesc, index));
+                    cob.return_(TypeKind.from(returnType));
+                });
+            });
             return this;
         }
 
-        ClassByteBuilder classData(int accessFlags, String name, Class<?> returnType, ConstantDynamic dynamic) {
-            MethodType mtype = MethodType.methodType(returnType);
-            MethodVisitor mv = cw.visitMethod(accessFlags,
-                                              name,
-                                              mtype.descriptorString(), null, null);
-            mv.visitCode();
-            mv.visitLdcInsn(dynamic);
-            mv.visitInsn(returnType == int.class? IRETURN : ARETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+        ClassByteBuilder classData(int accessFlags, String name, Class<?> returnType, DynamicConstantDesc<?> dynamic) {
+            ClassDesc returnDesc = returnType.describeConstable().orElseThrow();
+            MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
+            cw = cw.andThen(clb -> {
+                clb.withMethodBody(name, mt, accessFlags, cob -> {
+                    cob.loadConstant(dynamic);
+                    cob.return_(TypeKind.from(returnType));
+                });
+            });
             return this;
         }
     }
@@ -433,7 +421,7 @@ public class ClassDataTest {
      * Load an int constant from class data via condy and
      * verify it matches the given value.
      */
-    private void assertClassData(Lookup lookup, int value) throws ReflectiveOperationException {
+    private static void assertClassData(Lookup lookup, int value) throws ReflectiveOperationException {
         Class<?> c = lookup.lookupClass();
         Method m = c.getMethod("classData");
         int v = (int) m.invoke(null);
@@ -444,7 +432,7 @@ public class ClassDataTest {
      * Load an int constant from class data via condy and
      * verify it matches the given value.
      */
-    private void assertClassData(Lookup lookup, Object o, int value) throws ReflectiveOperationException {
+    private static void assertClassData(Lookup lookup, Object o, int value) throws ReflectiveOperationException {
         Class<?> c = lookup.lookupClass();
         Method m = c.getMethod("classData");
         int v = (int) m.invoke(o);
@@ -455,7 +443,7 @@ public class ClassDataTest {
      * Load a float constant from class data via condy and
      * verify it matches the given value.
      */
-    private void assertClassData(Lookup lookup, float value) throws ReflectiveOperationException {
+    private static void assertClassData(Lookup lookup, float value) throws ReflectiveOperationException {
         Class<?> c = lookup.lookupClass();
         Method m = c.getMethod("classData");
         float v = (float) m.invoke(null);
@@ -466,7 +454,7 @@ public class ClassDataTest {
      * Load a Class constant from class data via condy and
      * verify it matches the given value.
      */
-    private void assertClassData(Lookup lookup, Class<?> value) throws ReflectiveOperationException {
+    private static void assertClassData(Lookup lookup, Class<?> value) throws ReflectiveOperationException {
         Class<?> c = lookup.lookupClass();
         Method m = c.getMethod("classData");
         Class<?> v = (Class<?>)m.invoke(null);
@@ -477,7 +465,7 @@ public class ClassDataTest {
      * Load a Class from class data via condy and
      * verify it matches the given value.
      */
-    private void assertClassData(Lookup lookup, Object o, Class<?> value) throws ReflectiveOperationException {
+    private static void assertClassData(Lookup lookup, Object o, Class<?> value) throws ReflectiveOperationException {
         Class<?> c = lookup.lookupClass();
         Method m = c.getMethod("classData");
         Object v = m.invoke(o);
@@ -488,7 +476,7 @@ public class ClassDataTest {
      * Load an Object from class data via condy and
      * verify it matches the given value.
      */
-    private void assertClassData(Lookup lookup, Object value) throws ReflectiveOperationException {
+    private static void assertClassData(Lookup lookup, Object value) throws ReflectiveOperationException {
         Class<?> c = lookup.lookupClass();
         Method m = c.getMethod("classData");
         Object v = m.invoke(null);
@@ -496,10 +484,21 @@ public class ClassDataTest {
     }
 
     /*
+     * Load an Object array from class data via condy and
+     * verify it matches the given value in content.
+     */
+    private static void assertClassData(Lookup lookup, Object[] value) throws ReflectiveOperationException {
+        Class<?> c = lookup.lookupClass();
+        Method m = c.getMethod("classData");
+        Object v = m.invoke(null);
+        assertArrayEquals(value, (Object[]) v);
+    }
+
+    /*
      * Load an Object from class data via condy and
      * verify it matches the given value.
      */
-    private void assertClassData(Lookup lookup, Object o, Object value) throws ReflectiveOperationException {
+    private static void assertClassData(Lookup lookup, Object o, Object value) throws ReflectiveOperationException {
         Class<?> c = lookup.lookupClass();
         Method m = c.getMethod("classData");
         Object v = m.invoke(o);

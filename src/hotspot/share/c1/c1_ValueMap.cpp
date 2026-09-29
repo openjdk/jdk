@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 #ifndef PRODUCT
 
@@ -614,6 +613,8 @@ void GlobalValueNumbering::substitute(Instruction* instr) {
   assert(!instr->has_subst(), "substitution already set");
   Value subst = current_map()->find_insert(instr);
   if (subst != instr) {
+    assert(instr->as_LoadIndexed() == nullptr || !instr->as_LoadIndexed()->should_profile(), "should not be optimized out");
+    assert(instr->as_StoreIndexed() == nullptr, "should not be optimized out");
     assert(!subst->has_subst(), "can't have a substitution");
 
     TRACE_VALUE_NUMBERING(tty->print_cr("substitution for %c%d set to %c%d", instr->type()->tchar(), instr->id(), subst->type()->tchar(), subst->id()));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,12 @@
  * @bug 8226585 8250768
  * @summary Verify behavior w.r.t. preview feature API errors and warnings
  * @library /tools/lib /tools/javac/lib
- * @enablePreview
  * @modules
  *      java.base/jdk.internal.javac
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.util
- *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @run main PreviewErrors
@@ -326,7 +324,9 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                     ok = true;
                     switch (elementType) {
                         case LANGUAGE -> {
-                            if (lint == Lint.ENABLE_PREVIEW) {
+                            if (suppress == Suppress.YES) {
+                                expected = Set.of();
+                            } else if (lint == Lint.ENABLE_PREVIEW) {
                                 expected = Set.of("5:41:compiler.warn.preview.feature.use");
                             } else {
                                 expected = Set.of("-1:-1:compiler.note.preview.filename",

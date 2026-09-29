@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,15 +210,16 @@ bool InstructForm::is_pinned(FormDict &globals) {
   if ( ! _matrule)  return false;
 
   int  index   = 0;
-  if (_matrule->find_type("Goto",          index)) return true;
-  if (_matrule->find_type("If",            index)) return true;
-  if (_matrule->find_type("CountedLoopEnd",index)) return true;
-  if (_matrule->find_type("Return",        index)) return true;
-  if (_matrule->find_type("Rethrow",       index)) return true;
-  if (_matrule->find_type("TailCall",      index)) return true;
-  if (_matrule->find_type("TailJump",      index)) return true;
-  if (_matrule->find_type("Halt",          index)) return true;
-  if (_matrule->find_type("Jump",          index)) return true;
+  if (_matrule->find_type("Goto",             index)) return true;
+  if (_matrule->find_type("If",               index)) return true;
+  if (_matrule->find_type("CountedLoopEnd",   index)) return true;
+  if (_matrule->find_type("Return",           index)) return true;
+  if (_matrule->find_type("Rethrow",          index)) return true;
+  if (_matrule->find_type("TailCall",         index)) return true;
+  if (_matrule->find_type("TailJump",         index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
+  if (_matrule->find_type("Halt",             index)) return true;
+  if (_matrule->find_type("Jump",             index)) return true;
 
   return is_parm(globals);
 }
@@ -228,12 +229,13 @@ bool InstructForm::is_projection(FormDict &globals) {
   if ( ! _matrule)  return false;
 
   int  index   = 0;
-  if (_matrule->find_type("Goto",    index)) return true;
-  if (_matrule->find_type("Return",  index)) return true;
-  if (_matrule->find_type("Rethrow", index)) return true;
-  if (_matrule->find_type("TailCall",index)) return true;
-  if (_matrule->find_type("TailJump",index)) return true;
-  if (_matrule->find_type("Halt",    index)) return true;
+  if (_matrule->find_type("Goto",             index)) return true;
+  if (_matrule->find_type("Return",           index)) return true;
+  if (_matrule->find_type("Rethrow",          index)) return true;
+  if (_matrule->find_type("TailCall",         index)) return true;
+  if (_matrule->find_type("TailJump",         index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
+  if (_matrule->find_type("Halt",             index)) return true;
 
   return false;
 }
@@ -316,13 +318,6 @@ bool InstructForm::is_ideal_if() const {
   return _matrule->is_ideal_if();
 }
 
-// Return 'true' if this instruction matches an ideal 'FastLock' node
-bool InstructForm::is_ideal_fastlock() const {
-  if( _matrule == nullptr ) return false;
-
-  return _matrule->is_ideal_fastlock();
-}
-
 // Return 'true' if this instruction matches an ideal 'MemBarXXX' node
 bool InstructForm::is_ideal_membar() const {
   if( _matrule == nullptr ) return false;
@@ -376,6 +371,7 @@ bool InstructForm::is_ideal_return() const {
   if (_matrule->find_type("Rethrow",index)) return true;
   if (_matrule->find_type("TailCall",index)) return true;
   if (_matrule->find_type("TailJump",index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
 
   return false;
 }
@@ -449,14 +445,6 @@ Form::DataType InstructForm::is_ideal_store() const {
 
   return  _matrule->is_ideal_store();
 }
-
-// Return 'true' if this instruction matches an ideal vector node
-bool InstructForm::is_vector() const {
-  if( _matrule == nullptr ) return false;
-
-  return _matrule->is_vector();
-}
-
 
 // Return the input register that must match the output register
 // If this is not required, return 0
@@ -764,50 +752,6 @@ int InstructForm::memory_operand(FormDict &globals) const {
   return NO_MEMORY_OPERAND;
 }
 
-// This instruction captures the machine-independent bottom_type
-// Expected use is for pointer vs oop determination for LoadP
-bool InstructForm::captures_bottom_type(FormDict &globals) const {
-  if (_matrule && _matrule->_rChild &&
-      (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
-       !strcmp(_matrule->_rChild->_opType,"CastDD")       ||
-       !strcmp(_matrule->_rChild->_opType,"CastFF")       ||
-       !strcmp(_matrule->_rChild->_opType,"CastII")       ||
-       !strcmp(_matrule->_rChild->_opType,"CastLL")       ||
-       !strcmp(_matrule->_rChild->_opType,"CastVV")       ||
-       !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
-       !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
-       !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
-       !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||
-       !strcmp(_matrule->_rChild->_opType,"EncodePKlass") ||
-       !strcmp(_matrule->_rChild->_opType,"LoadN")        ||
-       !strcmp(_matrule->_rChild->_opType,"LoadNKlass")   ||
-       !strcmp(_matrule->_rChild->_opType,"CreateEx")     ||  // type of exception
-       !strcmp(_matrule->_rChild->_opType,"CheckCastPP")  ||
-       !strcmp(_matrule->_rChild->_opType,"GetAndSetP")   ||
-       !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
-       !strcmp(_matrule->_rChild->_opType,"RotateLeft")   ||
-       !strcmp(_matrule->_rChild->_opType,"RotateRight")   ||
-#if INCLUDE_SHENANDOAHGC
-       !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
-       !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
-#endif
-       !strcmp(_matrule->_rChild->_opType,"StrInflatedCopy") ||
-       !strcmp(_matrule->_rChild->_opType,"VectorCmpMasked")||
-       !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
-       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
-       !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
-  else if ( is_ideal_load() == Form::idealP )                return true;
-  else if ( is_ideal_store() != Form::none  )                return true;
-
-  if (needs_base_oop_edge(globals)) return true;
-
-  if (is_vector()) return true;
-  if (is_mach_constant()) return true;
-
-  return  false;
-}
-
-
 // Access instr_cost attribute or return null.
 const char* InstructForm::cost() {
   for (Attribute* cur = _attribs; cur != nullptr; cur = (Attribute*)cur->_next) {
@@ -893,8 +837,13 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       strcmp(_matrule->_opType,"Rethrow"   )==0 ||
       strcmp(_matrule->_opType,"TailCall"  )==0 ||
       strcmp(_matrule->_opType,"TailJump"  )==0 ||
+      strcmp(_matrule->_opType,"ForwardException")==0 ||
       strcmp(_matrule->_opType,"SafePoint" )==0 ||
-      strcmp(_matrule->_opType,"Halt"      )==0 )
+      strcmp(_matrule->_opType,"Halt"      )==0 ||
+      // This is required because PhaseMacroExpand::expand_mh_intrinsic_return() uses
+      // a special version of CallLeafNoFP that takes the target of the call as first
+      // argument
+      strcmp(_matrule->_opType,"CallLeafNoFP")==0)
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
 
   if( _matrule->_rChild &&
@@ -1083,7 +1032,7 @@ uint  InstructForm::reloc(FormDict &globals) {
     } else if ( oper ) {
       // floats and doubles loaded out of method's constant pool require reloc info
       Form::DataType type = oper->is_base_constant(globals);
-      if ( (type == Form::idealF) || (type == Form::idealD) ) {
+      if ( (type == Form::idealH) || (type == Form::idealF) || (type == Form::idealD) ) {
         ++reloc_entries;
       }
     }
@@ -1094,7 +1043,7 @@ uint  InstructForm::reloc(FormDict &globals) {
   // !!!!!
   // Check for any component being an immediate float or double.
   Form::DataType data_type = is_chain_of_constant(globals);
-  if( data_type==idealD || data_type==idealF ) {
+  if( data_type==idealH || data_type==idealD || data_type==idealF ) {
     reloc_entries++;
   }
 
@@ -1162,9 +1111,6 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   else if (is_ideal_goto()) {
     return "MachGotoNode";
   }
-  else if (is_ideal_fastlock()) {
-    return "MachFastLockNode";
-  }
   else if (is_ideal_nop()) {
     return "MachNopNode";
   }
@@ -1176,9 +1122,6 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if (is_mach_constant()) {
     return "MachConstantNode";
-  }
-  else if (captures_bottom_type(globals)) {
-    return "MachTypeNode";
   } else {
     return "MachNode";
   }
@@ -1186,17 +1129,31 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   return nullptr;
 }
 
-// Compare the instruction predicates for textual equality
-bool equivalent_predicates( const InstructForm *instr1, const InstructForm *instr2 ) {
-  const Predicate *pred1  = instr1->_predicate;
-  const Predicate *pred2  = instr2->_predicate;
-  if( pred1 == nullptr && pred2 == nullptr ) {
+// Do the instruction predicates allow target_instr to be replaced by replacement_instr for cisc-spill optimzation.
+static bool has_predicate_subset( const InstructForm *target_instr, const InstructForm *replacement_instr ) {
+  const Predicate *target_p  = target_instr->_predicate;
+  const Predicate *replacement_p  = replacement_instr->_predicate;
+  if( target_p == nullptr && replacement_p == nullptr ) {
     // no predicates means they are identical
     return true;
   }
-  if( pred1 != nullptr && pred2 != nullptr ) {
+
+  #ifdef AMD64
+  // A replacement_instr with no predicate handles a superset of the cases that target_instr handles.
+  // *Except* when target_instr has "predicate(false)", which shouldn't match anything.
+  // This is safe for x86 which only uses such predicates for instructions that should only be expanded
+  // as part of peephole optimizations. It's unclear if this is safe for s390 due to more complex predicates
+  // like "predicate(false && <more expressions>)". For now only enable for x86 (AMD64)
+  #define PREDICATE_FALSE_EXPR "#line 9\nfalse\n#line 9\n"
+
+  if( replacement_p == nullptr && !ADLParser::equivalent_expressions(target_p->_pred, PREDICATE_FALSE_EXPR) ) {
+    return true;
+  }
+  #endif /* AMD64 */
+
+  if( target_p != nullptr && replacement_p != nullptr ) {
     // compare the predicates
-    if (ADLParser::equivalent_expressions(pred1->_pred, pred2->_pred)) {
+    if (ADLParser::equivalent_expressions(target_p->_pred, replacement_p->_pred)) {
       return true;
     }
   }
@@ -1216,8 +1173,8 @@ bool InstructForm::cisc_spills_to(ArchDesc &AD, InstructForm *instr) {
   const char *op_name            = nullptr;
   const char *reg_type           = nullptr;
   FormDict   &globals            = AD.globalNames();
-  cisc_spill_operand = _matrule->matchrule_cisc_spill_match(globals, AD.get_registers(), instr->_matrule, op_name, reg_type);
-  if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != nullptr) && equivalent_predicates(this, instr) ) {
+  cisc_spill_operand = _matrule->matchrule_cisc_spill_match(globals, AD.get_registers(), instr->_matrule, op_name, reg_type, this, instr);
+  if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != nullptr) && has_predicate_subset(this, instr) ) {
     cisc_spill_operand = operand_position(op_name, Component::USE);
     int def_oper  = operand_position(op_name, Component::DEF);
     if( def_oper == NameList::Not_in_list && instr->num_opnds() == num_opnds()) {
@@ -1497,6 +1454,24 @@ void InstructForm::output(FILE *fp) {
   if (_peephole)  _peephole->output(fp);
 }
 
+void InstructForm::forms_do(FormClosure *f) {
+  if (_cisc_spill_alternate) f->do_form(_cisc_spill_alternate);
+  if (_short_branch_form) f->do_form(_short_branch_form);
+  _localNames.forms_do(f);
+  if (_matrule) f->do_form(_matrule);
+  if (_opcode) f->do_form(_opcode);
+  if (_insencode) f->do_form(_insencode);
+  if (_constant) f->do_form(_constant);
+  if (_attribs) f->do_form(_attribs);
+  if (_predicate) f->do_form(_predicate);
+  _effects.forms_do(f);
+  if (_exprule) f->do_form(_exprule);
+  if (_rewrule) f->do_form(_rewrule);
+  if (_format) f->do_form(_format);
+  if (_peephole) f->do_form(_peephole);
+  assert(_components.count() == 0, "skip components");
+}
+
 void MachNodeForm::dump() {
   output(stderr);
 }
@@ -1614,6 +1589,14 @@ void EncodeForm::output(FILE *fp) {          // Write info to output files
   }
   fprintf(fp,"-------------------- end  EncodeForm --------------------\n");
 }
+
+void EncodeForm::forms_do(FormClosure* f) {
+  const char *name;
+  for (_eclasses.reset(); (name = _eclasses.iter()) != nullptr;) {
+    f->do_form((EncClass*)_encClass[name]);
+  }
+}
+
 //------------------------------EncClass---------------------------------------
 EncClass::EncClass(const char *name)
   : _localNames(cmpstr,hashstr, Form::arena), _name(name) {
@@ -1702,6 +1685,15 @@ void EncClass::output(FILE *fp) {
     }
   }
 
+}
+
+void EncClass::forms_do(FormClosure *f) {
+  _parameter_type.reset();
+  const char *type = _parameter_type.iter();
+  for ( ; type != nullptr ; type = _parameter_type.iter() ) {
+    f->do_form_by_name(type);
+  }
+  _localNames.forms_do(f);
 }
 
 //------------------------------Opcode-----------------------------------------
@@ -1814,14 +1806,14 @@ void InsEncode::output(FILE *fp) {
   fprintf(fp,"InsEncode: ");
   _encoding.reset();
 
-  while ( (encoding = (NameAndList*)_encoding.iter()) != 0 ) {
+  while ( (encoding = (NameAndList*)_encoding.iter()) != nullptr ) {
     // Output the encoding being used
     fprintf(fp,"%s(", encoding->name() );
 
     // Output its parameter list, if any
     bool first_param = true;
     encoding->reset();
-    while (  (parameter = encoding->iter()) != 0 ) {
+    while (  (parameter = encoding->iter()) != nullptr ) {
       // Output the ',' between parameters
       if ( ! first_param )  fprintf(fp,", ");
       first_param = false;
@@ -1832,6 +1824,15 @@ void InsEncode::output(FILE *fp) {
   } // done with encodings
 
   fprintf(fp,"\n");
+}
+
+void InsEncode::forms_do(FormClosure *f) {
+  _encoding.reset();
+  NameAndList *encoding = (NameAndList*)_encoding.iter();
+  for( ; encoding != nullptr; encoding = (NameAndList*)_encoding.iter() ) {
+    // just check name, other operands will be checked as instruction parameters
+    f->do_form_by_name(encoding->name());
+  }
 }
 
 //------------------------------Effect-----------------------------------------
@@ -1967,6 +1968,19 @@ void ExpandRule::output(FILE *fp) {         // Write info to output files
   }
 }
 
+void ExpandRule::forms_do(FormClosure *f) {
+  NameAndList *expand_instr = nullptr;
+  // Iterate over the instructions 'node' expands into
+  for(reset_instructions(); (expand_instr = iter_instructions()) != nullptr; ) {
+    f->do_form_by_name(expand_instr->name());
+  }
+  _newopers.reset();
+  const char* oper = _newopers.iter();
+  for(; oper != nullptr; oper = _newopers.iter()) {
+    f->do_form_by_name(oper);
+  }
+}
+
 //------------------------------RewriteRule------------------------------------
 RewriteRule::RewriteRule(char* params, char* block)
   : _tempParams(params), _tempBlock(block) { };  // Constructor
@@ -1981,6 +1995,12 @@ void RewriteRule::output(FILE *fp) {         // Write info to output files
   fprintf(fp,"\nRewrite Rule:\n%s\n%s\n",
           (_tempParams?_tempParams:""),
           (_tempBlock?_tempBlock:""));
+}
+
+void RewriteRule::forms_do(FormClosure *f) {
+  if (_condition) f->do_form(_condition);
+  if (_instrs) f->do_form(_instrs);
+  if (_opers) f->do_form(_opers);
 }
 
 
@@ -2063,6 +2083,13 @@ void OpClassForm::output(FILE *fp) {
     fprintf(fp,"%s, ",name);
   }
   fprintf(fp,"\n");
+}
+
+void OpClassForm::forms_do(FormClosure* f) {
+  const char *name;
+  for(_oplst.reset(); (name = _oplst.iter()) != nullptr;) {
+    f->do_form_by_name(name);
+  }
 }
 
 
@@ -2347,7 +2374,7 @@ const char *OperandForm::constrained_reg_class() const {
 
 // Return the register class associated with 'leaf'.
 const char *OperandForm::in_reg_class(uint leaf, FormDict &globals) {
-  const char *reg_class = nullptr; // "RegMask::Empty";
+  const char* reg_class = nullptr; // "RegMask::EMPTY";
 
   if((_matrule == nullptr) || (_matrule->is_chain_rule(globals))) {
     reg_class = constrained_reg_class();
@@ -2587,6 +2614,7 @@ void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   case Form::idealN: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
   case Form::idealL: fprintf(fp,"  st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", const_index); break;
   case Form::idealF: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
+  case Form::idealH: fprintf(fp,"  st->print(\"#%%d\", _c%d);\n", const_index); break;
   case Form::idealD: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
@@ -2668,6 +2696,7 @@ void OperandForm::access_constant(FILE *fp, FormDict &globals,
   case idealP: fprintf(fp,"_c%d->get_con()",const_index); break;
   case idealL: fprintf(fp,"_c%d",           const_index); break;
   case idealF: fprintf(fp,"_c%d",           const_index); break;
+  case idealH: fprintf(fp,"_c%d",           const_index); break;
   case idealD: fprintf(fp,"_c%d",           const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
@@ -2690,6 +2719,22 @@ void OperandForm::output(FILE *fp) {
   if (_format)     _format->dump();
 }
 
+void OperandForm::forms_do(FormClosure* f) {
+  if (_matrule)    f->do_form(_matrule);
+  if (_interface)  f->do_form(_interface);
+  if (_attribs)    f->do_form(_attribs);
+  if (_predicate)  f->do_form(_predicate);
+  if (_constraint) f->do_form(_constraint);
+  if (_construct)  f->do_form(_construct);
+  if (_format)     f->do_form(_format);
+  _localNames.forms_do(f);
+  const char* opclass = nullptr;
+  for ( _classes.reset(); (opclass = _classes.iter()) != nullptr; ) {
+    f->do_form_by_name(opclass);
+  }
+  assert(_components.count() == 0, "skip _compnets");
+}
+
 //------------------------------Constraint-------------------------------------
 Constraint::Constraint(const char *func, const char *arg)
   : _func(func), _arg(arg) {
@@ -2709,6 +2754,10 @@ void Constraint::dump() {
 void Constraint::output(FILE *fp) {           // Write info to output files
   assert((_func != nullptr && _arg != nullptr),"missing constraint function or arg");
   fprintf(fp,"Constraint: %s ( %s )\n", _func, _arg);
+}
+
+void Constraint::forms_do(FormClosure *f) {
+  f->do_form_by_name(_arg);
 }
 
 //------------------------------Predicate--------------------------------------
@@ -3208,7 +3257,7 @@ void ComponentList::output(FILE *fp) {
 MatchNode::MatchNode(ArchDesc &ad, const char *result, const char *mexpr,
                      const char *opType, MatchNode *lChild, MatchNode *rChild)
   : _AD(ad), _result(result), _name(mexpr), _opType(opType),
-    _lChild(lChild), _rChild(rChild), _internalop(0), _numleaves(0),
+    _lChild(lChild), _rChild(rChild), _internalop(nullptr), _numleaves(0),
     _commutative_id(0) {
   _numleaves = (lChild ? lChild->_numleaves : 0)
                + (rChild ? rChild->_numleaves : 0);
@@ -3217,14 +3266,14 @@ MatchNode::MatchNode(ArchDesc &ad, const char *result, const char *mexpr,
 MatchNode::MatchNode(ArchDesc &ad, MatchNode& mnode)
   : _AD(ad), _result(mnode._result), _name(mnode._name),
     _opType(mnode._opType), _lChild(mnode._lChild), _rChild(mnode._rChild),
-    _internalop(0), _numleaves(mnode._numleaves),
+    _internalop(nullptr), _numleaves(mnode._numleaves),
     _commutative_id(mnode._commutative_id) {
 }
 
 MatchNode::MatchNode(ArchDesc &ad, MatchNode& mnode, int clone)
   : _AD(ad), _result(mnode._result), _name(mnode._name),
     _opType(mnode._opType),
-    _internalop(0), _numleaves(mnode._numleaves),
+    _internalop(nullptr), _numleaves(mnode._numleaves),
     _commutative_id(mnode._commutative_id) {
   if (mnode._lChild) {
     _lChild = new MatchNode(ad, *mnode._lChild, clone);
@@ -3527,7 +3576,7 @@ void MatchNode::dump() {
 }
 
 void MatchNode::output(FILE *fp) {
-  if (_lChild==0 && _rChild==0) {
+  if (_lChild==nullptr && _rChild==nullptr) {
     fprintf(fp," %s",_name);    // operand
   }
   else {
@@ -3538,9 +3587,15 @@ void MatchNode::output(FILE *fp) {
   }
 }
 
+void MatchNode::forms_do(FormClosure *f) {
+  f->do_form_by_name(_name);
+  if (_lChild) f->do_form(_lChild);
+  if (_rChild) f->do_form(_rChild);
+}
+
 int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
-    "StoreI","StoreL","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
+    "StoreI","StoreL","StoreLSpecial","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
@@ -3550,10 +3605,6 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "CompareAndSwapB", "CompareAndSwapS", "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
     "WeakCompareAndSwapB", "WeakCompareAndSwapS", "WeakCompareAndSwapI", "WeakCompareAndSwapL", "WeakCompareAndSwapP", "WeakCompareAndSwapN",
     "CompareAndExchangeB", "CompareAndExchangeS", "CompareAndExchangeI", "CompareAndExchangeL", "CompareAndExchangeP", "CompareAndExchangeN",
-#if INCLUDE_SHENANDOAHGC
-    "ShenandoahCompareAndSwapN", "ShenandoahCompareAndSwapP", "ShenandoahWeakCompareAndSwapP", "ShenandoahWeakCompareAndSwapN", "ShenandoahCompareAndExchangeP", "ShenandoahCompareAndExchangeN",
-#endif
-    "StoreCM",
     "GetAndSetB", "GetAndSetS", "GetAndAddI", "GetAndSetI", "GetAndSetP",
     "GetAndAddB", "GetAndAddS", "GetAndAddL", "GetAndSetL", "GetAndSetN",
     "ClearArray"
@@ -3607,6 +3658,7 @@ int InstructForm::needs_base_oop_edge(FormDict &globals) const {
 }
 
 
+
 //-------------------------cisc spilling methods-------------------------------
 // helper routines and methods for detecting cisc-spilling instructions
 //-------------------------cisc_spill_merge------------------------------------
@@ -3651,7 +3703,8 @@ bool static root_ops_match(FormDict &globals, const char *op1, const char *op2) 
 
 //-------------------------cisc_spill_match_node-------------------------------
 // Recursively check two MatchRules for legal conversion via cisc-spilling
-int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, MatchNode* mRule2, const char* &operand, const char* &reg_type) {
+int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, MatchNode* mRule2, const char* &operand, const char* &reg_type,
+                                InstructForm *from_instr, InstructForm *to_instr) {
   int cisc_spillable  = Maybe_cisc_spillable;
   int left_spillable  = Maybe_cisc_spillable;
   int right_spillable = Maybe_cisc_spillable;
@@ -3667,7 +3720,14 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
   const Form *form  = globals[_opType];
   const Form *form2 = globals[mRule2->_opType];
   if( form == form2 ) {
-    cisc_spillable = Maybe_cisc_spillable;
+    if (form->is_operand()) {
+      // Disallow cisc-spilling if only 1 operand is a DEF, or both are DEFs but at different positions.
+      //     from_instr: andI_rReg_ndd, MatchRule: ( Set dst (AndI  src1 src2) ).       src1: (position(DEF) = -1, position(USE) = 1)
+      //     to_instr: andI_rReg_mem, MatchRule:   ( Set dst (AndI  dst (LoadI  src)) ). dst: (position(DEF) = 0,  position(USE) = 1)
+      if (from_instr->operand_position(this->_name, Component::DEF) != to_instr->operand_position(mRule2->_name, Component::DEF)) {
+        cisc_spillable = Not_cisc_spillable;
+      }
+    }
   } else {
     const InstructForm *form2_inst = form2 ? form2->is_instruction() : nullptr;
     const char *name_left  = mRule2->_lChild ? mRule2->_lChild->_opType : nullptr;
@@ -3714,14 +3774,14 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
     if( (_lChild == nullptr) && (mRule2->_lChild == nullptr) ) {
       left_spillable = Maybe_cisc_spillable;
     } else  if (_lChild != nullptr) {
-      left_spillable = _lChild->cisc_spill_match(globals, registers, mRule2->_lChild, operand, reg_type);
+      left_spillable = _lChild->cisc_spill_match(globals, registers, mRule2->_lChild, operand, reg_type, from_instr, to_instr);
     }
 
     // Check right operands
     if( (_rChild == nullptr) && (mRule2->_rChild == nullptr) ) {
       right_spillable =  Maybe_cisc_spillable;
     } else if (_rChild != nullptr) {
-      right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type);
+      right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type, from_instr, to_instr);
     }
 
     // Combine results of left and right checks
@@ -3737,7 +3797,7 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
 // general recursive checks done in MatchNode
 int  MatchRule::matchrule_cisc_spill_match(FormDict& globals, RegisterForm* registers,
                                            MatchRule* mRule2, const char* &operand,
-                                           const char* &reg_type) {
+                                           const char* &reg_type, InstructForm *from_instr, InstructForm *to_instr) {
   int cisc_spillable  = Maybe_cisc_spillable;
   int left_spillable  = Maybe_cisc_spillable;
   int right_spillable = Maybe_cisc_spillable;
@@ -3767,7 +3827,7 @@ int  MatchRule::matchrule_cisc_spill_match(FormDict& globals, RegisterForm* regi
       assert(0, "_rChild should not be null");
     }
   } else {
-    right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type);
+    right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type, from_instr, to_instr);
   }
 
   // Combine results of left and right checks
@@ -3852,19 +3912,19 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
 // which could be swapped.
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
-    "AddI","AddL","AddF","AddD",
+    "AddI","AddL","AddHF","AddF","AddD",
     "AndI","AndL",
-    "MaxI","MinI","MaxF","MinF","MaxD","MinD",
-    "MulI","MulL","MulF","MulD",
+    "MaxI","MinI","MaxHF","MinHF","MaxF","MinF","MaxD","MinD",
+    "MulI","MulL","MulHF","MulF","MulD",
     "OrI","OrL",
-    "XorI","XorL"
+    "XorI","XorL",
   };
 
   static const char *commut_vector_op_list[] = {
-    "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
-    "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
-    "AndV", "OrV", "XorV",
-    "MaxV", "MinV"
+    "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
+    "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
+    "AndV", "OrV", "XorV", "AndVMask", "OrVMask", "XorVMask",
+    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMaxV", "UMinV",
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
@@ -4092,6 +4152,7 @@ int MatchRule::is_expensive() const {
     if( strcmp(opType,"AtanD")==0 ||
         strcmp(opType,"DivD")==0 ||
         strcmp(opType,"DivF")==0 ||
+        strcmp(opType,"DivHF")==0 ||
         strcmp(opType,"DivI")==0 ||
         strcmp(opType,"Log10D")==0 ||
         strcmp(opType,"ModD")==0 ||
@@ -4099,6 +4160,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ModI")==0 ||
         strcmp(opType,"SqrtD")==0 ||
         strcmp(opType,"SqrtF")==0 ||
+        strcmp(opType,"SqrtHF")==0 ||
         strcmp(opType,"TanD")==0 ||
         strcmp(opType,"ConvD2F")==0 ||
         strcmp(opType,"ConvD2I")==0 ||
@@ -4118,9 +4180,8 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"DecodeNKlass")==0 ||
         strcmp(opType,"FmaD") == 0 ||
         strcmp(opType,"FmaF") == 0 ||
-        strcmp(opType,"RoundDouble")==0 ||
+        strcmp(opType,"FmaHF") == 0 ||
         strcmp(opType,"RoundDoubleMode")==0 ||
-        strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
@@ -4128,11 +4189,13 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
+        strcmp(opType,"AddReductionVHF")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
         strcmp(opType,"AddReductionVD")==0 ||
         strcmp(opType,"MulReductionVI")==0 ||
         strcmp(opType,"MulReductionVL")==0 ||
         strcmp(opType,"MulReductionVF")==0 ||
+        strcmp(opType,"MulReductionVHF")==0 ||
         strcmp(opType,"MulReductionVD")==0 ||
         strcmp(opType,"MinReductionV")==0 ||
         strcmp(opType,"MaxReductionV")==0 ||
@@ -4154,13 +4217,6 @@ bool MatchRule::is_ideal_if() const {
     !strcmp(_opType,"CountedLoopEnd");
 }
 
-bool MatchRule::is_ideal_fastlock() const {
-  if ( _opType && (strcmp(_opType,"Set") == 0) && _rChild ) {
-    return (strcmp(_rChild->_opType,"FastLock") == 0);
-  }
-  return false;
-}
-
 bool MatchRule::is_ideal_membar() const {
   if( !_opType ) return false;
   return
@@ -4171,7 +4227,9 @@ bool MatchRule::is_ideal_membar() const {
     !strcmp(_opType,"LoadFence" ) ||
     !strcmp(_opType,"StoreFence") ||
     !strcmp(_opType,"StoreStoreFence") ||
+    !strcmp(_opType,"MemBarStoreLoad") ||
     !strcmp(_opType,"MemBarVolatile") ||
+    !strcmp(_opType,"MemBarFull") ||
     !strcmp(_opType,"MemBarCPUOrder") ||
     !strcmp(_opType,"MemBarStoreStore") ||
     !strcmp(_opType,"OnSpinWait");
@@ -4228,58 +4286,6 @@ Form::DataType MatchRule::is_ideal_load() const {
   return ideal_load;
 }
 
-bool MatchRule::is_vector() const {
-  static const char *vector_list[] = {
-    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
-    "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
-    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
-    "DivVF","DivVD",
-    "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD","NegVI","NegVL",
-    "SqrtVD","SqrtVF",
-    "AndV" ,"XorV" ,"OrV",
-    "MaxV", "MinV",
-    "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
-    "AddReductionVI", "AddReductionVL",
-    "AddReductionVF", "AddReductionVD",
-    "MulReductionVI", "MulReductionVL",
-    "MulReductionVF", "MulReductionVD",
-    "MaxReductionV", "MinReductionV",
-    "AndReductionV", "OrReductionV", "XorReductionV",
-    "MulAddVS2VI", "MacroLogicV",
-    "LShiftCntV","RShiftCntV",
-    "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
-    "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
-    "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
-    "Replicate","ReverseV","ReverseBytesV",
-    "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
-    "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
-    "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
-    "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
-    "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
-    "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
-    "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
-    "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
-    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
-    // Next are vector mask ops.
-    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
-    "RoundVF", "RoundVD",
-    // Next are not supported currently.
-    "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
-    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"
-  };
-  int cnt = sizeof(vector_list)/sizeof(char*);
-  if (_rChild) {
-    const char  *opType = _rChild->_opType;
-    for (int i=0; i<cnt; i++)
-      if (strcmp(opType,vector_list[i]) == 0)
-        return true;
-  }
-  return false;
-}
-
-
 bool MatchRule::skip_antidep_check() const {
   // Some loads operate on what is effectively immutable memory so we
   // should skip the anti dep computations.  For some of these nodes
@@ -4331,6 +4337,18 @@ void MatchRule::output(FILE *fp) {
   fprintf(fp,"\n   nesting depth = %d\n", _depth);
   if (_result) fprintf(fp,"   Result Type = %s", _result);
   fprintf(fp,"\n");
+}
+
+void MatchRule::forms_do(FormClosure* f) {
+  // keep sync with MatchNode::forms_do
+  f->do_form_by_name(_name);
+  if (_lChild) f->do_form(_lChild);
+  if (_rChild) f->do_form(_rChild);
+
+  // handle next rule
+  if (_next) {
+    f->do_form(_next);
+  }
 }
 
 //------------------------------Attribute--------------------------------------

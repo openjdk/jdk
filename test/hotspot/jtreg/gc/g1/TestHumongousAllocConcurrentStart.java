@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package gc.g1;
  * @bug 7168848
  * @summary G1: humongous object allocations should initiate marking cycles when necessary
  * @requires vm.gc.G1
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -40,21 +41,20 @@ import jdk.test.lib.process.ProcessTools;
 public class TestHumongousAllocConcurrentStart {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to
     // fulfill alignment constraints.
-    private static final int heapSize                       = 224; // MB
-    private static final int heapRegionSize                 = 1;   // MB
-    private static final int initiatingHeapOccupancyPercent = 50;  // %
+    private static final int heapSize       = 224; // MB
+    private static final int heapRegionSize = 1;   // MB
+    private static final int G1IHOP         = 50;  // %
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-XX:+UseG1GC",
             "-Xms" + heapSize + "m",
             "-Xmx" + heapSize + "m",
             "-XX:G1HeapRegionSize=" + heapRegionSize + "m",
-            "-XX:InitiatingHeapOccupancyPercent=" + initiatingHeapOccupancyPercent,
+            "-XX:G1IHOP=" + G1IHOP,
             "-Xlog:gc",
             HumongousObjectAllocator.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Pause Young (Concurrent Start) (G1 Humongous Allocation)");
         output.shouldNotContain("Full GC");
         output.shouldHaveExitValue(0);
@@ -70,7 +70,7 @@ public class TestHumongousAllocConcurrentStart {
 
             // Number of objects to allocate to go above IHOP
             final int humongousObjectAllocations =
-                (int)((heapSize * initiatingHeapOccupancyPercent / 100.0) / heapRegionSize) + 1;
+                (int)((heapSize * G1IHOP / 100.0) / heapRegionSize) + 1;
 
             // Allocate
             for (int i = 1; i <= humongousObjectAllocations; i++) {

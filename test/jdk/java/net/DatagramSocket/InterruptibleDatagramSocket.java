@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import static java.lang.Thread.sleep;
  * @test
  * @summary Check interrupt mechanism for DatagramSocket,
  *      MulticastSocket, and DatagramSocketAdaptor
+ * @library /test/lib
  * @run main InterruptibleDatagramSocket
  */
 
@@ -97,6 +98,10 @@ public class InterruptibleDatagramSocket {
     }
 
     public static void main(String[] args) throws Exception {
+        if (Thread.currentThread().isVirtual()) {
+            throw new jtreg.SkippedException(
+                    "skipping test execution - main thread is a virtual thread");
+        }
         try (DatagramSocket s = new DatagramSocket()) {
             System.out.println("Testing interrupt of DatagramSocket receive " +
                     "on endpoint " + s.getLocalSocketAddress());

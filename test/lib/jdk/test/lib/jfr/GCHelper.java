@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,8 +195,7 @@ public class GCHelper {
                                                            "Survivor",
                                                            "Starts Humongous",
                                                            "Continues Humongous",
-                                                           "Old",
-                                                           "Archive"
+                                                           "Old"
                                                          };
 
         g1HeapRegionTypes = Collections.unmodifiableList(Arrays.asList(g1HeapRegionTypeLiterals));

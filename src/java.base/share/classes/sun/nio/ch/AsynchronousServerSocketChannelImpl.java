@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
 /**
@@ -69,7 +68,7 @@ abstract class AsynchronousServerSocketChannelImpl
 
     AsynchronousServerSocketChannelImpl(AsynchronousChannelGroupImpl group) {
         super(group.provider());
-        this.fd = Net.serverSocket(true);
+        this.fd = Net.serverSocket();
     }
 
     @Override
@@ -150,17 +149,12 @@ abstract class AsynchronousServerSocketChannelImpl
     {
         InetSocketAddress isa = (local == null) ? new InetSocketAddress(0) :
             Net.checkAddress(local);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkListen(isa.getPort());
 
         try {
             begin();
             synchronized (stateLock) {
                 if (localAddress != null)
                     throw new AlreadyBoundException();
-                NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
                 Net.bind(fd, isa.getAddress(), isa.getPort());
                 Net.listen(fd, backlog < 1 ? 50 : backlog);
                 localAddress = Net.localAddress(fd);
@@ -175,7 +169,7 @@ abstract class AsynchronousServerSocketChannelImpl
     public final SocketAddress getLocalAddress() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-        return Net.getRevealedLocalAddress(localAddress);
+        return localAddress;
     }
 
     @Override
@@ -257,7 +251,7 @@ abstract class AsynchronousServerSocketChannelImpl
             if (localAddress == null) {
                 sb.append("unbound");
             } else {
-                sb.append(Net.getRevealedLocalAddressAsString(localAddress));
+                sb.append(localAddress.toString());
             }
         }
         sb.append(']');

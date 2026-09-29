@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,27 +30,13 @@ import java.util.*;
 /**
  * Helper class to ease the work with the lists of atoms.
  */
-class XAtomList {
+final class XAtomList {
     Set<XAtom> atoms = new HashSet<XAtom>();
 
     /**
      * Creates empty list.
      */
     public XAtomList() {
-    }
-
-    /**
-     * Creates instance of XAtomList and initializes it with
-     * the contents pointer by {@code data}.
-     * Uses default display to initialize atoms.
-     */
-    public XAtomList(long data, int count) {
-        init(data, count);
-    }
-    private void init(long data, int count) {
-        for (int i = 0; i < count; i++) {
-            add(new XAtom(XToolkit.getDisplay(), XAtom.getAtom(data+count*XAtom.getAtomSize())));
-        }
     }
 
     /**
@@ -151,6 +137,7 @@ class XAtomList {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("[");

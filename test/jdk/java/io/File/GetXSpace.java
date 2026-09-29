@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 /**
  * @test
- * @bug 4057701 6286712 6364377 8181919
+ * @bug 4057701 6286712 6364377 8181919 8349092
  * @requires (os.family == "linux" | os.family == "mac" |
  *            os.family == "windows")
  * @summary Basic functionality of File.get-X-Space methods.
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
- * @run main/othervm/native -Djava.security.manager=allow GetXSpace
+ * @run main/othervm/native GetXSpace
  */
 
 import java.io.BufferedReader;
@@ -40,24 +40,18 @@ import java.nio.file.Files;
 import java.nio.file.FileStore;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.test.lib.Platform;
 import jdk.test.lib.Platform;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
 
-@SuppressWarnings("removal")
 public class GetXSpace {
     static {
         System.loadLibrary("GetXSpace");
     }
-
-    private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
-                                              new DenyRead() };
 
     private static int fail = 0;
     private static int pass = 0;
@@ -106,10 +100,10 @@ public class GetXSpace {
         private final long free;
         private final long available;
 
-        Space(String name) {
+        Space(String name) throws IOException {
             this.name = name;
             long[] sizes = new long[4];
-            if (getSpace0(name, sizes))
+            if (getSpace(name, sizes))
                 System.err.println("WARNING: total space is estimated");
             this.size = sizes[0];
             this.total = sizes[1];
@@ -164,45 +158,21 @@ public class GetXSpace {
         return al;
     }
 
-    private static void tryCatch(Space s) {
-        out.format("%s:%n", s.name());
-        File f = new File(s.name());
-        SecurityManager sm = System.getSecurityManager();
-        if (sm instanceof Deny) {
-            String fmt = "  %14s: \"%s\" thrown as expected%n";
-            try {
-                f.getTotalSpace();
-                fail(s.name(), SecurityException.class);
-            } catch (SecurityException x) {
-                out.format(fmt, "getTotalSpace", x);
-                pass();
-            }
-            try {
-                f.getFreeSpace();
-                fail(s.name(), SecurityException.class);
-            } catch (SecurityException x) {
-                out.format(fmt, "getFreeSpace", x);
-                pass();
-            }
-            try {
-                f.getUsableSpace();
-                fail(s.name(), SecurityException.class);
-            } catch (SecurityException x) {
-                out.format(fmt, "getUsableSpace", x);
-                pass();
-            }
-        }
-    }
-
-    private static void compare(Space s) {
+    private static void compare(Space s) throws IOException {
         File f = new File(s.name());
         long ts = f.getTotalSpace();
         long fs = f.getFreeSpace();
         long us = f.getUsableSpace();
 
+        // Verify inequalities us <= ts and fs <= ts (JDK-8349092)
+        if (fs > ts)
+            throw new RuntimeException(f + " free space " + fs + " > total space " + ts);
+        if (us > ts)
+            throw new RuntimeException(f + " usable space " + us + " > total space " + ts);
+
         out.format("%s (%d):%n", s.name(), s.size());
         String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";
-        out.format(fmt, "getSpace0", s.total(), s.free(), s.available());
+        out.format(fmt, "getSpace", s.total(), s.free(), s.available());
         out.format(fmt, "getXSpace", ts, fs, us);
 
         // If the file system can dynamically change size, this check will fail.
@@ -286,15 +256,9 @@ public class GetXSpace {
             pass();
         }
 
-        // usable space <= free space
-        if (us > s.free()) {
-            // free and usable change dynamically
-            System.err.println("Warning: us > s.free()");
-            if (1.0 - Math.abs((double)s.free()/(double)us) > 0.01) {
-                fail(s.name() + " usable vs. free space", us, ">", s.free());
-            } else {
-                pass();
-            }
+        // usable space <= total space
+        if (us > s.total()) {
+            fail(s.name() + " usable vs. total space", us, ">", s.total());
         } else {
             pass();
         }
@@ -341,53 +305,7 @@ public class GetXSpace {
         }
     }
 
-    private static class Allow extends SecurityManager {
-        public void checkRead(String file) {}
-        public void checkPermission(Permission p) {}
-        public void checkPermission(Permission p, Object context) {}
-    }
-
-    private static class Deny extends SecurityManager {
-        public void checkPermission(Permission p) {
-            if (p.implies(new RuntimePermission("setSecurityManager"))
-                || p.implies(new RuntimePermission("getProtectionDomain")))
-                return;
-            super.checkPermission(p);
-        }
-
-        public void checkPermission(Permission p, Object context) {
-            if (p.implies(new RuntimePermission("setSecurityManager"))
-                || p.implies(new RuntimePermission("getProtectionDomain")))
-                return;
-            super.checkPermission(p, context);
-        }
-    }
-
-    private static class DenyFSA extends Deny {
-        private String err = "sorry - getFileSystemAttributes";
-
-        public void checkPermission(Permission p) {
-            if (p.implies(new RuntimePermission("getFileSystemAttributes")))
-                throw new SecurityException(err);
-            super.checkPermission(p);
-        }
-
-        public void checkPermission(Permission p, Object context) {
-            if (p.implies(new RuntimePermission("getFileSystemAttributes")))
-                throw new SecurityException(err);
-            super.checkPermission(p, context);
-        }
-    }
-
-    private static class DenyRead extends Deny {
-        private String err = "sorry - checkRead()";
-
-        public void checkRead(String file) {
-            throw new SecurityException(err);
-        }
-    }
-
-    private static int testFile(Path dir) {
+    private static int testFile(Path dir) throws IOException {
         String dirName = dir.toString();
         out.format("--- Testing %s%n", dirName);
         compare(new Space(dir.getRoot().toString()));
@@ -402,10 +320,10 @@ public class GetXSpace {
         return fail != 0 ? 1 : 0;
     }
 
-    private static int testVolumes() {
+    private static int testVolumes() throws IOException {
         out.println("--- Testing volumes");
         // Find all of the partitions on the machine and verify that the sizes
-        // returned by File::getXSpace are equivalent to those from getSpace0
+        // returned by File::getXSpace are equivalent to those from getSpace
         ArrayList<String> l;
         try {
             l = paths();
@@ -418,28 +336,23 @@ public class GetXSpace {
         if (l.size() == 0)
             throw new RuntimeException("no partitions?");
 
-        for (int i = 0; i < sma.length; i++) {
-            System.setSecurityManager(sma[i]);
-            SecurityManager sm = System.getSecurityManager();
-            if (sma[i] != null && sm == null)
-                throw new RuntimeException("Test configuration error "
-                                           + " - can't set security manager");
-
-            out.format("%nSecurityManager = %s%n" ,
-                       (sm == null ? "null" : sm.getClass().getName()));
-            for (var p : l) {
-                Space s = new Space(p);
-                if (sm instanceof Deny) {
-                    tryCatch(s);
-                } else {
-                    compare(s);
-                    compareZeroNonExist();
-                    compareZeroExist();
+        for (var p : l) {
+            Space s;
+            try {
+                s = new Space(p);
+            } catch (IOException x) {
+                // Avoid failing for transient file systems on Windows
+                if (Platform.isWindows()) {
+                    File f = new File(p);
+                    if (!f.exists())
+                        continue;
                 }
+                throw new IOException("Failure for volume " + p, x);
             }
+            compare(s);
+            compareZeroNonExist();
+            compareZeroExist();
         }
-
-        System.setSecurityManager(null);
 
         if (fail != 0) {
             err.format("%d tests: %d failure(s); first: %s%n",
@@ -493,5 +406,18 @@ public class GetXSpace {
     // size[2]  free space:   number of free bytes in the volume
     // size[3]  usable space: number of bytes available to the caller
     //
-    private static native boolean getSpace0(String root, long[] space);
+    private static native boolean getSpace0(String root, long[] space)
+        throws IOException;
+
+    private static boolean getSpace(String root, long[] space)
+        throws IOException {
+        try {
+            return getSpace0(root, space);
+        } catch (IOException e) {
+            File f = new File(root);
+            System.err.printf("getSpace0 failed for %s (%s, %s)%n",
+                              root, f.exists(), f.canRead());
+            throw e;
+        }
+    }
 }

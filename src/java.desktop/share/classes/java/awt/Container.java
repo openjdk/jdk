@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import java.io.PrintWriter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.HashSet;
@@ -62,12 +61,10 @@ import javax.accessibility.AccessibleContext;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
-import sun.awt.AppContext;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
 import sun.awt.dnd.SunDropTargetEvent;
 import sun.java2d.pipe.Region;
-import sun.security.action.GetBooleanAction;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -814,7 +811,6 @@ public class Container extends Component {
      * to new heavyweight parent.
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
     private void reparentTraverse(ContainerPeer parentPeer, Container child) {
         checkTreeLock();
 
@@ -838,7 +834,6 @@ public class Container extends Component {
      * Container must be heavyweight.
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
     private void reparentChild(Component comp) {
         checkTreeLock();
         if (comp == null) {
@@ -1561,8 +1556,8 @@ public class Container extends Component {
      * as a {@code Frame} object) should be used to restore the validity of the
      * component hierarchy.
      * <p>
-     * The {@code Window} class and the {@code Applet} class are the validate
-     * roots in AWT.  Swing introduces more validate roots.
+     * The {@code Window} class is the validate root in AWT.
+     * Swing introduces more validate roots.
      *
      * @return whether this container is a validate root
      * @see #invalidate
@@ -1576,10 +1571,8 @@ public class Container extends Component {
     }
 
     // Don't lazy-read because every app uses invalidate()
-    @SuppressWarnings("removal")
-    private static final boolean isJavaAwtSmartInvalidate
-            = AccessController.doPrivileged(
-                new GetBooleanAction("java.awt.smartInvalidate"));
+    private static final boolean isJavaAwtSmartInvalidate =
+        Boolean.getBoolean("java.awt.smartInvalidate");
 
     /**
      * Invalidates the parent of the container unless the container
@@ -2632,14 +2625,7 @@ public class Container extends Component {
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
-        @SuppressWarnings("removal")
-        PointerInfo pi = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<PointerInfo>() {
-                public PointerInfo run() {
-                    return MouseInfo.getPointerInfo();
-                }
-            }
-        );
+        PointerInfo pi = MouseInfo.getPointerInfo();
         synchronized (getTreeLock()) {
             Component inTheSameWindow = findUnderMouseInWindow(pi);
             if (isSameOrAncestorOf(inTheSameWindow, allowChildren)) {
@@ -2888,13 +2874,8 @@ public class Container extends Component {
      */
 
     transient Component modalComp;
-    transient AppContext modalAppContext;
 
     private void startLWModal() {
-        // Store the app context on which this component is being shown.
-        // Event dispatch thread of this app context will be sleeping until
-        // we wake it by any event from hideAndDisposeHandler().
-        modalAppContext = AppContext.getAppContext();
 
         // keep the KeyEvents from being dispatched
         // until the focus has been transferred
@@ -2959,25 +2940,22 @@ public class Container extends Component {
 
     private void stopLWModal() {
         synchronized (getTreeLock()) {
-            if (modalAppContext != null) {
-                Container nativeContainer = getHeavyweightContainer();
-                if(nativeContainer != null) {
-                    if (this.modalComp !=  null) {
-                        nativeContainer.modalComp = this.modalComp;
-                        this.modalComp = null;
-                        return;
-                    }
-                    else {
-                        nativeContainer.modalComp = null;
-                    }
+            Container nativeContainer = getHeavyweightContainer();
+            if (nativeContainer != null) {
+                if (this.modalComp !=  null) {
+                    nativeContainer.modalComp = this.modalComp;
+                    this.modalComp = null;
+                    return;
                 }
-                // Wake up event dispatch thread on which the dialog was
-                // initially shown
-                SunToolkit.postEvent(modalAppContext,
-                        new PeerEvent(this,
-                                new WakingRunnable(),
-                                PeerEvent.PRIORITY_EVENT));
+                else {
+                    nativeContainer.modalComp = null;
+                }
             }
+            // Wake up event dispatch thread on which the dialog was
+            // initially shown
+            SunToolkit.postEvent(new PeerEvent(this,
+                            new WakingRunnable(),
+                            PeerEvent.PRIORITY_EVENT));
             EventQueue.invokeLater(new WakingRunnable());
             getTreeLock().notifyAll();
         }
@@ -3866,6 +3844,7 @@ public class Container extends Component {
         /**
          * The handler to fire {@code PropertyChange}
          * when children are added or removed
+         * @serial
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         protected ContainerListener accessibleContainerHandler = null;
@@ -4212,7 +4191,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveShowHeavyweightChildren() {
         if (!hasHeavyweightDescendants() || !isVisible()) {
             return;
@@ -4234,7 +4212,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveHideHeavyweightChildren() {
         if (!hasHeavyweightDescendants()) {
             return;
@@ -4256,7 +4233,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveRelocateHeavyweightChildren(Point origin) {
         for (int index = 0; index < getComponentCount(); index++) {
             Component comp = getComponent(index);
@@ -4738,33 +4714,17 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * from other heavyweight containers will generate enter/exit
      * events in this container
      */
-    @SuppressWarnings("removal")
     private void startListeningForOtherDrags() {
         //System.out.println("Adding AWTEventListener");
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>() {
-                public Object run() {
-                    nativeContainer.getToolkit().addAWTEventListener(
-                        LightweightDispatcher.this,
-                        AWTEvent.MOUSE_EVENT_MASK |
-                        AWTEvent.MOUSE_MOTION_EVENT_MASK);
-                    return null;
-                }
-            }
-        );
+        nativeContainer.getToolkit().addAWTEventListener(
+            LightweightDispatcher.this,
+            AWTEvent.MOUSE_EVENT_MASK |
+            AWTEvent.MOUSE_MOTION_EVENT_MASK);
     }
 
-    @SuppressWarnings("removal")
     private void stopListeningForOtherDrags() {
         //System.out.println("Removing AWTEventListener");
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>() {
-                public Object run() {
-                    nativeContainer.getToolkit().removeAWTEventListener(LightweightDispatcher.this);
-                    return null;
-                }
-            }
-        );
+        nativeContainer.getToolkit().removeAWTEventListener(LightweightDispatcher.this);
     }
 
     /*
@@ -4828,34 +4788,12 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
             // translate coordinates to this native container
             final Point ptSrcOrigin = srcComponent.getLocationOnScreen();
 
-            if (AppContext.getAppContext() != nativeContainer.appContext) {
-                final MouseEvent mouseEvent = me;
-                Runnable r = new Runnable() {
-                        public void run() {
-                            if (!nativeContainer.isShowing() ) {
-                                return;
-                            }
-
-                            Point       ptDstOrigin = nativeContainer.getLocationOnScreen();
-                            mouseEvent.translatePoint(ptSrcOrigin.x - ptDstOrigin.x,
-                                              ptSrcOrigin.y - ptDstOrigin.y );
-                            Component targetOver =
-                                nativeContainer.getMouseEventTarget(mouseEvent.getX(),
-                                                                    mouseEvent.getY(),
-                                                                    Container.INCLUDE_SELF);
-                            trackMouseEnterExit(targetOver, mouseEvent);
-                        }
-                    };
-                SunToolkit.executeOnEventHandlerThread(nativeContainer, r);
+            if (!nativeContainer.isShowing()) {
                 return;
-            } else {
-                if (!nativeContainer.isShowing() ) {
-                    return;
-                }
-
-                Point   ptDstOrigin = nativeContainer.getLocationOnScreen();
-                me.translatePoint( ptSrcOrigin.x - ptDstOrigin.x, ptSrcOrigin.y - ptDstOrigin.y );
             }
+
+            Point ptDstOrigin = nativeContainer.getLocationOnScreen();
+            me.translatePoint( ptSrcOrigin.x - ptDstOrigin.x, ptSrcOrigin.y - ptDstOrigin.y );
         }
         //System.out.println("Track event: " + me);
         // feed the 'dragged-over' event directly to the enter/exit
@@ -4936,8 +4874,6 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
                 // avoid recursively calling LightweightDispatcher...
                 ((Container)target).dispatchEventToSelf(retargeted);
             } else {
-                assert AppContext.getAppContext() == target.appContext;
-
                 if (nativeContainer.modalComp != null) {
                     if (((Container)nativeContainer.modalComp).isAncestorOf(target)) {
                         target.dispatchEvent(retargeted);

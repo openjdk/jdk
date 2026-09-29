@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,53 +59,33 @@
   static constexpr bool isSimpleConstant64(jlong value) {
     // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
     //return value == (int) value;  // Cf. storeImmL and immL32.
-
     // Probably always true, even if a temp register is required.
-#ifdef _LP64
     return true;
-#else
-    return false;
-#endif
   }
 
-#ifdef _LP64
   // No additional cost for CMOVL.
   static constexpr int long_cmove_cost() { return 0; }
-#else
-  // Needs 2 CMOV's for longs.
-  static constexpr int long_cmove_cost() { return 1; }
-#endif
 
-#ifdef _LP64
   // No CMOVF/CMOVD with SSE2
   static int float_cmove_cost() { return ConditionalMoveLimit; }
-#else
-  // No CMOVF/CMOVD with SSE/SSE2
-  static int float_cmove_cost() { return (UseSSE>=1) ? ConditionalMoveLimit : 0; }
-#endif
 
   static bool narrow_oop_use_complex_address() {
-    NOT_LP64(ShouldNotCallThis();)
     assert(UseCompressedOops, "only for compressed oops code");
     return (LogMinObjAlignmentInBytes <= 3);
   }
 
   static bool narrow_klass_use_complex_address() {
-    NOT_LP64(ShouldNotCallThis();)
-    assert(UseCompressedClassPointers, "only for compressed klass code");
-    return (LogKlassAlignmentInBytes <= 3);
+    return (CompressedKlassPointers::shift() <= 3);
   }
 
   // Prefer ConN+DecodeN over ConP.
   static bool const_oop_prefer_decode() {
-    NOT_LP64(ShouldNotCallThis();)
     // Prefer ConN+DecodeN over ConP.
     return true;
   }
 
   // Prefer ConP over ConNKlass+DecodeNKlass.
   static bool const_klass_prefer_decode() {
-    NOT_LP64(ShouldNotCallThis();)
     return false;
   }
 
@@ -121,37 +101,28 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-#ifdef _LP64
-  static const bool strict_fp_requires_explicit_rounding = false;
-#else
-  static const bool strict_fp_requires_explicit_rounding = true;
-#endif
-
   // Are floats converted to double when stored to stack during deoptimization?
   // On x64 it is stored without conversion so we can use normal access.
-  // On x32 it is stored with conversion only when FPU is used for floats.
-#ifdef _LP64
   static constexpr bool float_in_double() {
     return false;
   }
-#else
-  static bool float_in_double() {
-    return (UseSSE == 0);
-  }
-#endif
 
   // Do ints take an entire long register or just half?
-#ifdef _LP64
   static const bool int_in_long = true;
-#else
-  static const bool int_in_long = false;
-#endif
-
 
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return (UseAVX >= 2);
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
+    switch(vopc) {
+      case Op_LoadVectorGatherMasked:
+        return is_subword_type(bt) && VM_Version::supports_avx2();
+      default:
+        return false;
+    }
   }
 
   // Does the CPU supports vector variable rotate instructions?
@@ -214,6 +185,9 @@
         return 7;
       case Op_MulVL:
         return VM_Version::supports_avx512vldq() ? 0 : 6;
+      case Op_LoadVectorGather:
+      case Op_LoadVectorGatherMasked:
+        return is_subword_type(ety) ? 50 : 0;
       case Op_VectorCastF2X: // fall through
       case Op_VectorCastD2X:
         return is_floating_point_type(ety) ? 0 : (is_subword_type(ety) ? 35 : 30);
@@ -250,7 +224,7 @@
 
   // Is SIMD sort supported for this CPU?
   static bool supports_simd_sort(BasicType bt) {
-    if (VM_Version::supports_avx512dq()) {
+    if (VM_Version::supports_avx512_simd_sort()) {
       return true;
     }
     else if (VM_Version::supports_avx2() && !is_double_word_type(bt)) {
@@ -259,6 +233,20 @@
     else {
       return false;
     }
+  }
+
+  // Return true if VectorSlice is better served by a two source permute than by
+  // the native slice lowering.
+  static bool vector_slice_prefers_select_from_two_vector(BasicType elem_bt, int byte_origin) {
+    // A subword slice whose byte origin lies in the middle of the vector and is
+    // not four byte aligned needs three shuffles (VALIGND + VALIGND + VPALIGNR),
+    // all contending for the same shuffle port, whereas a two source permute fed
+    // by a loop invariant index vector needs just one.
+    // Wider lane types scale the element origin by 4 or 8 and hence always match
+    // the single VALIGND rule, and origins below 16 or above 48 bytes already
+    // lower to two shuffles. Both beat the permute.
+    return is_subword_type(elem_bt) && byte_origin > 16 && byte_origin < 48 &&
+           (byte_origin & 3) != 0;
   }
 
 #endif // CPU_X86_MATCHER_X86_HPP

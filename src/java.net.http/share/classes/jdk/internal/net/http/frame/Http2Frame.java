@@ -91,8 +91,9 @@ public abstract class Http2Frame {
             case PingFrame.TYPE         -> "PING";
             case PushPromiseFrame.TYPE  -> "PUSH_PROMISE";
             case WindowUpdateFrame.TYPE -> "WINDOW_UPDATE";
+            case AltSvcFrame.TYPE       -> "ALTSVC";
 
-            default -> "UNKNOWN";
+            default                     -> "UNKNOWN";
         };
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 package jdk.jpackage.test;
 
-import java.io.File;
 import java.nio.file.Path;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 
 public final class JavaAppDesc {
@@ -73,9 +74,18 @@ public final class JavaAppDesc {
         return qualifiedClassName;
     }
 
+    public String shortClassName() {
+        return qualifiedClassName.substring(qualifiedClassName.lastIndexOf('.') + 1);
+    }
+
+    Path classNameAsPath(String extension) {
+        final String[] pathComponents = qualifiedClassName.split("\\.");
+        pathComponents[pathComponents.length - 1] = shortClassName() + extension;
+        return Stream.of(pathComponents).map(Path::of).reduce(Path::resolve).get();
+    }
+
     public Path classFilePath() {
-        return Path.of(qualifiedClassName.replace(".", File.separator)
-                + ".class");
+        return classNameAsPath(".class");
     }
 
     public String moduleName() {
@@ -122,6 +132,48 @@ public final class JavaAppDesc {
 
     public boolean isWithMainClass() {
         return withMainClass;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 79 * hash + Objects.hashCode(this.srcJavaPath);
+        hash = 79 * hash + Objects.hashCode(this.qualifiedClassName);
+        hash = 79 * hash + Objects.hashCode(this.moduleName);
+        hash = 79 * hash + Objects.hashCode(this.bundleFileName);
+        hash = 79 * hash + Objects.hashCode(this.moduleVersion);
+        hash = 79 * hash + (this.withMainClass ? 1 : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final JavaAppDesc other = (JavaAppDesc) obj;
+        if (this.withMainClass != other.withMainClass) {
+            return false;
+        }
+        if (!Objects.equals(this.qualifiedClassName, other.qualifiedClassName)) {
+            return false;
+        }
+        if (!Objects.equals(this.moduleName, other.moduleName)) {
+            return false;
+        }
+        if (!Objects.equals(this.bundleFileName, other.bundleFileName)) {
+            return false;
+        }
+        if (!Objects.equals(this.moduleVersion, other.moduleVersion)) {
+            return false;
+        }
+        return Objects.equals(this.srcJavaPath, other.srcJavaPath);
     }
 
     @Override
@@ -216,7 +268,9 @@ public final class JavaAppDesc {
                         components[0].length() - 1);
                 desc.setWithMainClass(true);
             }
-            desc.setClassName(components[0]);
+            if (!components[0].isEmpty()) {
+                desc.setClassName(components[0]);
+            }
             if (components.length == 2) {
                 desc.setModuleVersion(components[1]);
             }

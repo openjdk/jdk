@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
-#include "runtime/os.hpp"
+#include "os_linux.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 
@@ -41,6 +40,8 @@
   #define SYS_membarrier 365
   #elif defined(AARCH64)
   #define SYS_membarrier 283
+  #elif defined(ARM32)
+  #define SYS_membarrier 389
   #elif defined(ALPHA)
   #define SYS_membarrier 517
   #else
@@ -61,6 +62,18 @@ static long membarrier(int cmd, unsigned int flags, int cpu_id) {
 }
 
 bool LinuxSystemMemoryBarrier::initialize() {
+#if defined(RISCV)
+// RISCV port was introduced in kernel 4.4.
+// 4.4 also made membar private expedited mandatory.
+// But RISCV actually don't support it until 6.9.
+  long major, minor, patch;
+  os::Linux::kernel_version(&major, &minor, &patch);
+  if (os::Linux::kernel_version_compare(major, minor, patch, 6, 9, 0) == -1) {
+    log_info(os)("Linux kernel %ld.%ld.%ld does not support MEMBARRIER PRIVATE_EXPEDITED on RISC-V.",
+                 major, minor, patch);
+    return false;
+  }
+#endif
   long ret = membarrier(MEMBARRIER_CMD_QUERY, 0, 0);
   if (ret < 0) {
     log_info(os)("MEMBARRIER_CMD_QUERY unsupported");

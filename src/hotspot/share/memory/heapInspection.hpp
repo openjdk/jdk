@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
+#include "oops/annotations.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
-#include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
 
 class ParallelObjectIterator;
@@ -108,9 +108,8 @@ class KlassInfoTable: public StackObj {
   size_t _size_of_instances_in_words;
 
   // An aligned reference address (typically the least
-  // address in the perm gen) used for hashing klass
-  // objects.
-  HeapWord* _ref;
+  // address in the metaspace) used for hashing klasses.
+  uintptr_t _ref;
 
   KlassInfoBucket* _buckets;
   uint hash(const Klass* p);
@@ -189,6 +188,11 @@ class KlassInfoHisto : public StackObj {
   void add(KlassInfoEntry* cie);
   void print_histo_on(outputStream* st);
   void sort();
+};
+
+class ClassPrintLayout : AllStatic {
+ public:
+  static void class_print_layout(outputStream* st, char* classname);
 };
 
 #endif // INCLUDE_SERVICES

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "jvm.h"
 #include "runtime/javaThread.hpp"
@@ -43,7 +42,7 @@ void GCId::set_printer(GCIdPrinter* printer) {
   _printer = printer;
 }
 
-NamedThread* currentNamedthread() {
+static NamedThread* currentNamedthread() {
   assert(Thread::current()->is_Named_thread(), "This thread must be NamedThread");
   return (NamedThread*)Thread::current();
 }

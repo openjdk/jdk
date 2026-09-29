@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,6 @@ import java.awt.peer.ComponentPeer;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import java.util.EmptyStackException;
 
 import sun.awt.*;
@@ -43,12 +40,8 @@ import sun.util.logging.PlatformLogger;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import java.security.AccessControlContext;
-
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.JavaSecurityAccess;
 
 /**
  * {@code EventQueue} is a platform-independent class
@@ -74,15 +67,6 @@ import jdk.internal.access.JavaSecurityAccess;
  *        {@code AWTEvent}&nbsp;B then event B will not be
  *        dispatched before event A.
  * </dl>
- * <p>
- * Some browsers partition applets in different code bases into
- * separate contexts, and establish walls between these contexts.
- * In such a scenario, there will be one {@code EventQueue}
- * per context. Other browsers place all applets into the same
- * context, implying that there will be only a single, global
- * {@code EventQueue} for all applets. This behavior is
- * implementation-dependent.  Consult your browser's documentation
- * for more information.
  * <p>
  * For information on the threading issues of the event dispatch
  * machinery, see <a href="doc-files/AWTThreadIssues.html#Autoshutdown"
@@ -129,11 +113,11 @@ public class EventQueue {
 
     /*
      * A single lock to synchronize the push()/pop() and related operations with
-     * all the EventQueues from the AppContext. Synchronization on any particular
+     * all the EventQueues. Synchronization on any particular
      * event queue(s) is not enough: we should lock the whole stack.
      */
-    private final Lock pushPopLock;
-    private final Condition pushPopCond;
+    private static final Lock pushPopLock = new ReentrantLock();
+    private static final Condition pushPopCond = pushPopLock.newCondition();
 
     /*
      * Dummy runnable to wake up EDT from getNextEvent() after
@@ -172,11 +156,6 @@ public class EventQueue {
      * a particular ID to be posted to the queue.
      */
     private volatile int waitForID;
-
-    /*
-     * AppContext corresponding to the queue.
-     */
-    private final AppContext appContext;
 
     private final String name = "AWT-EventQueue-" + threadInitNumber.getAndIncrement();
 
@@ -229,13 +208,8 @@ public class EventQueue {
             });
     }
 
-    @SuppressWarnings("removal")
     private static boolean fxAppThreadIsDispatchThread =
-            AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    return "true".equals(System.getProperty("javafx.embed.singleThread"));
-                }
-            });
+            "true".equals(System.getProperty("javafx.embed.singleThread"));
 
     /**
      * Initializes a new instance of {@code EventQueue}.
@@ -244,18 +218,6 @@ public class EventQueue {
         for (int i = 0; i < NUM_PRIORITIES; i++) {
             queues[i] = new Queue();
         }
-        /*
-         * NOTE: if you ever have to start the associated event dispatch
-         * thread at this point, be aware of the following problem:
-         * If this EventQueue instance is created in
-         * SunToolkit.createNewAppContext() the started dispatch thread
-         * may call AppContext.getAppContext() before createNewAppContext()
-         * completes thus causing mess in thread group to appcontext mapping.
-         */
-
-        appContext = AppContext.getAppContext();
-        pushPopLock = (Lock)appContext.get(AppContext.EVENT_QUEUE_LOCK_KEY);
-        pushPopCond = (Condition)appContext.get(AppContext.EVENT_QUEUE_COND_KEY);
     }
 
     /**
@@ -269,7 +231,7 @@ public class EventQueue {
      * @throws NullPointerException if {@code theEvent} is {@code null}
      */
     public void postEvent(AWTEvent theEvent) {
-        SunToolkit.flushPendingEvents(appContext);
+        SunToolkit.flushPendingEvents();
         postEventPrivate(theEvent);
     }
 
@@ -554,7 +516,7 @@ public class EventQueue {
              * of the synchronized block to avoid deadlock when
              * event queues are nested with push()/pop().
              */
-            SunToolkit.flushPendingEvents(appContext);
+            SunToolkit.flushPendingEvents();
             pushPopLock.lock();
             try {
                 AWTEvent event = getNextEventPrivate();
@@ -594,7 +556,7 @@ public class EventQueue {
              * of the synchronized block to avoid deadlock when
              * event queues are nested with push()/pop().
              */
-            SunToolkit.flushPendingEvents(appContext);
+            SunToolkit.flushPendingEvents();
             pushPopLock.lock();
             try {
                 for (int i = 0; i < NUM_PRIORITIES; i++) {
@@ -668,9 +630,6 @@ public class EventQueue {
         return null;
     }
 
-    private static final JavaSecurityAccess javaSecurityAccess =
-        SharedSecrets.getJavaSecurityAccess();
-
     /**
      * Dispatches an event. The manner in which the event is
      * dispatched depends upon the type of the event and the
@@ -711,59 +670,25 @@ public class EventQueue {
      */
     protected void dispatchEvent(final AWTEvent event) {
         final Object src = event.getSource();
-        final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
-            public Void run() {
-                // In case fwDispatcher is installed and we're already on the
-                // dispatch thread (e.g. performing DefaultKeyboardFocusManager.sendMessage),
-                // dispatch the event straight away.
-                if (fwDispatcher == null || isDispatchThreadImpl()) {
-                    dispatchEventImpl(event, src);
-                } else {
-                    fwDispatcher.scheduleDispatch(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (dispatchThread.filterAndCheckEvent(event)) {
-                                dispatchEventImpl(event, src);
-                            }
-                        }
-                    });
-                }
-                return null;
-            }
-        };
-
-        @SuppressWarnings("removal")
-        final AccessControlContext stack = AccessController.getContext();
-        @SuppressWarnings("removal")
-        final AccessControlContext srcAcc = getAccessControlContextFrom(src);
-        @SuppressWarnings("removal")
-        final AccessControlContext eventAcc = event.getAccessControlContext();
-        if (srcAcc == null) {
-            javaSecurityAccess.doIntersectionPrivilege(action, stack, eventAcc);
+        // In case fwDispatcher is installed and we're already on the
+        // dispatch thread (e.g. performing DefaultKeyboardFocusManager.sendMessage),
+        // dispatch the event straight away.
+        if (fwDispatcher == null || isDispatchThreadImpl()) {
+            dispatchEventImpl(event, src);
         } else {
-            javaSecurityAccess.doIntersectionPrivilege(
-                new PrivilegedAction<Void>() {
-                    public Void run() {
-                        javaSecurityAccess.doIntersectionPrivilege(action, eventAcc);
-                        return null;
+            fwDispatcher.scheduleDispatch(new Runnable() {
+                @Override
+                public void run() {
+                    if (dispatchThread.filterAndCheckEvent(event)) {
+                        dispatchEventImpl(event, src);
                     }
-                }, stack, srcAcc);
+                }
+            });
         }
     }
 
-    @SuppressWarnings("removal")
-    private static AccessControlContext getAccessControlContextFrom(Object src) {
-        return src instanceof Component ?
-            ((Component)src).getAccessControlContext() :
-            src instanceof MenuComponent ?
-                ((MenuComponent)src).getAccessControlContext() :
-                src instanceof TrayIcon ?
-                    ((TrayIcon)src).getAccessControlContext() :
-                    null;
-    }
-
     /**
-     * Called from dispatchEvent() under a correct AccessControlContext
+     * Called from dispatchEvent()
      */
     private void dispatchEventImpl(final AWTEvent event, final Object src) {
         event.isPosted = true;
@@ -928,8 +853,10 @@ public class EventQueue {
             newEventQueue.previousQueue = topQueue;
             topQueue.nextQueue = newEventQueue;
 
-            if (appContext.get(AppContext.EVENT_QUEUE_KEY) == topQueue) {
-                appContext.put(AppContext.EVENT_QUEUE_KEY, newEventQueue);
+            synchronized (SunToolkit.class) {
+                if (SunToolkit.getSystemEventQueueImplPP() == topQueue) {
+                    SunToolkit.currentEventQueue = newEventQueue;
+                }
             }
 
             pushPopCond.signalAll();
@@ -988,8 +915,10 @@ public class EventQueue {
                 topQueue.dispatchThread.setEventQueue(prevQueue);
             }
 
-            if (appContext.get(AppContext.EVENT_QUEUE_KEY) == this) {
-                appContext.put(AppContext.EVENT_QUEUE_KEY, prevQueue);
+            synchronized (SunToolkit.class) {
+                if (SunToolkit.getSystemEventQueueImplPP() == this) {
+                    SunToolkit.currentEventQueue = prevQueue;
+                }
             }
 
             // Wake up EDT waiting in getNextEvent(), so it can
@@ -1108,26 +1037,17 @@ public class EventQueue {
         }
     }
 
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("removal")
     final void initDispatchThread() {
         pushPopLock.lock();
         try {
-            if (dispatchThread == null && !threadGroup.isDestroyed() && !appContext.isDisposed()) {
-                dispatchThread = AccessController.doPrivileged(
-                    new PrivilegedAction<EventDispatchThread>() {
-                        public EventDispatchThread run() {
-                            EventDispatchThread t =
-                                new EventDispatchThread(threadGroup,
-                                                        name,
-                                                        EventQueue.this);
-                            t.setContextClassLoader(classLoader);
-                            t.setPriority(Thread.NORM_PRIORITY + 1);
-                            t.setDaemon(false);
-                            AWTAutoShutdown.getInstance().notifyThreadBusy(t);
-                            return t;
-                        }
-                    }
-                );
+            if (dispatchThread == null && !threadGroup.isDestroyed()) {
+                EventDispatchThread t = new EventDispatchThread(threadGroup, name, EventQueue.this);
+                t.setContextClassLoader(classLoader);
+                t.setPriority(Thread.NORM_PRIORITY + 1);
+                t.setDaemon(false);
+                AWTAutoShutdown.getInstance().notifyThreadBusy(t);
+                dispatchThread = t;
                 dispatchThread.start();
             }
         } finally {
@@ -1139,7 +1059,7 @@ public class EventQueue {
         /*
          * Minimize discard possibility for non-posted events
          */
-        SunToolkit.flushPendingEvents(appContext);
+        SunToolkit.flushPendingEvents();
         /*
          * This synchronized block is to secure that the event dispatch
          * thread won't die in the middle of posting a new event to the
@@ -1197,7 +1117,7 @@ public class EventQueue {
      * {@code removeNotify} method.
      */
     final void removeSourceEvents(Object source, boolean removeAllEvents) {
-        SunToolkit.flushPendingEvents(appContext);
+        SunToolkit.flushPendingEvents();
         pushPopLock.lock();
         try {
             for (int i = 0; i < NUM_PRIORITIES; i++) {

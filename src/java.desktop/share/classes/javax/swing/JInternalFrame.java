@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import javax.swing.event.InternalFrameListener;
 import javax.swing.plaf.DesktopIconUI;
 import javax.swing.plaf.InternalFrameUI;
 
-import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -237,17 +236,13 @@ public class JInternalFrame extends JComponent implements
     /** Constrained property name indicating that the internal frame is iconified. */
     public static final String IS_ICON_PROPERTY = "icon";
 
-    private static final Object PROPERTY_CHANGE_LISTENER_KEY =
-        new StringBuilder("InternalFramePropertyChangeListener");
+    private static PropertyChangeListener focusListener;
 
     private static void addPropertyChangeListenerIfNecessary() {
-        if (AppContext.getAppContext().get(PROPERTY_CHANGE_LISTENER_KEY) ==
-            null) {
-            PropertyChangeListener focusListener =
-                new FocusPropertyChangeListener();
-
-            AppContext.getAppContext().put(PROPERTY_CHANGE_LISTENER_KEY,
-                focusListener);
+        synchronized (JInternalFrame.class) {
+            if (focusListener == null) {
+                focusListener = new FocusPropertyChangeListener();
+            }
 
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
                 addPropertyChangeListener(focusListener);
@@ -992,6 +987,9 @@ public class JInternalFrame extends JComponent implements
             = "Indicates whether this internal frame is maximized.")
     public void setMaximum(boolean b) throws PropertyVetoException {
         if (isMaximum == b) {
+            if (!b) {
+                normalBounds = null;
+            }
             return;
         }
 
@@ -1003,6 +1001,9 @@ public class JInternalFrame extends JComponent implements
            get it wrong... See, for example, getNormalBounds() */
         isMaximum = b;
         firePropertyChange(IS_MAXIMUM_PROPERTY, oldValue, newValue);
+        if (!b) {
+            normalBounds = null;
+        }
     }
 
     /**
@@ -1096,12 +1097,8 @@ public class JInternalFrame extends JComponent implements
           fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_ACTIVATED);
         else {
           fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_DEACTIVATED);
-          try {
-              java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+          java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
                                                new sun.awt.UngrabEvent(this));
-          } catch (SecurityException e) {
-              this.dispatchEvent(new sun.awt.UngrabEvent(this));
-          }
         }
         repaint();
     }
@@ -1785,12 +1782,8 @@ public class JInternalFrame extends JComponent implements
           isClosed = true;
         }
         fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_CLOSED);
-        try {
-            java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
-                    new sun.awt.UngrabEvent(this));
-        } catch (SecurityException e) {
-            this.dispatchEvent(new sun.awt.UngrabEvent(this));
-        }
+        java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                new sun.awt.UngrabEvent(this));
     }
 
     /**
@@ -1862,12 +1855,14 @@ public class JInternalFrame extends JComponent implements
 
     /**
      * Gets the warning string that is displayed with this internal frame.
-     * Since an internal frame is always secure (since it's fully
-     * contained within a window that might need a warning string)
-     * this method always returns <code>null</code>.
+     * This method always returns <code>null</code>.
+     * Warning strings are no longer applicable, even to top-level
+     * windows, so this method may be removed in a future release
      * @return    <code>null</code>
      * @see       java.awt.Window#getWarningString
+     * @deprecated since JDK 24
      */
+    @Deprecated(since="24", forRemoval=true)
     @BeanProperty(bound = false)
     public final String getWarningString() {
         return null;

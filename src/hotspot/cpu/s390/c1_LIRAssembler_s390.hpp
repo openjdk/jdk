@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,10 +30,15 @@
 
   // Record the type of the receiver in ReceiverTypeData.
   void type_profile_helper(Register mdo, ciMethodData *md, ciProfileData *data,
-                           Register recv, Register tmp1, Label* update_done);
+                           Register recv, Register tmp1);
   // Setup pointers to MDO, MDO slot, also compute offset bias to access the slot.
   void setup_md_access(ciMethod* method, int bci,
                        ciMethodData*& md, ciProfileData*& data, int& mdo_offset_bias);
+
+  void move(LIR_Opr src, LIR_Opr dst);
+
+  void arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check);
+
  public:
   address emit_call_c(address a);
 
@@ -45,7 +50,7 @@
   }
 
   enum {
-    _call_stub_size = 512, // See Compile::MAX_stubs_size and CompiledStaticCall::emit_to_interp_stub.
+    _call_stub_size = 512, // See Compile::MAX_stubs_size and CompiledDirectCall::emit_to_interp_stub.
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
     _deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)
   };

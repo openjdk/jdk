@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,8 @@ import javax.tools.StandardLocation;
  *
  * In addition, <em>javac</em> also supports other strings that can be used
  * to suppress other kinds of warnings. The following table lists all the
- * strings that can be used with {@code @SuppressWarnings}.
+ * strings that are recognized by <em>javac</em> in {@code @SuppressWarnings}
+ * annotations. Unrecognized strings are ignored.
  *
  * <table class="striped">
  *     <caption>Strings supported by {@code SuppressWarnings}</caption>
@@ -152,7 +153,8 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code auxiliaryclass}       <td>an auxiliary class that is hidden in a source file, and is used
  *                                                      from other files
  * <tr><th scope="row">{@code cast}                 <td>use of unnecessary casts
- * <tr><th scope="row">{@code classfile}            <td>issues related to classfile contents
+ * <tr><th scope="row">{@code dangling-doc-comments} <td>issues related to "dangling" documentation comments,
+ *                                                       not attached to a declaration
  * <tr><th scope="row">{@code deprecation}          <td>use of deprecated items
  * <tr><th scope="row">{@code dep-ann}              <td>items marked as deprecated in a documentation comment but not
  *                                                      using the {@code @Deprecated} annotation
@@ -162,21 +164,21 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code fallthrough}          <td>falling through from one case of a {@code switch} statement to
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
- * <tr><th scope="row">{@code incubating}           <td>use of incubating modules
- * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
+ * <tr><th scope="row">{@code identity}             <td>use of a value-based class where an identity class is expected
+ * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignments or bit shifts
+ *                                                      (more than \u00B131 bits for integers or \u00B163 bits for longs)
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
  *                                                      in exported packages
  * <tr><th scope="row">{@code module}               <td>module system related issues
  * <tr><th scope="row">{@code opens}                <td>issues regarding module opens
  * <tr><th scope="row">{@code overloads}            <td>issues regarding method overloads
  * <tr><th scope="row">{@code overrides}            <td>issues regarding method overrides
- * <tr><th scope="row">{@code path}                 <td>invalid path elements on the command line
  * <tr><th scope="row">{@code preview}              <td>use of preview language features
  * <tr><th scope="row">{@code rawtypes}             <td>use of raw types
  * <tr><th scope="row">{@code removal}              <td>use of API that has been marked for removal
- * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
  * <tr><th scope="row">{@code requires-automatic}   <td>use of automatic modules in the {@code requires} clauses
  * <tr><th scope="row">{@code requires-transitive-automatic} <td>automatic modules in {@code requires transitive}
+ * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
  * <tr><th scope="row">{@code serial}               <td>{@link java.base/java.io.Serializable Serializable} classes
  *                                                      that do not have a {@code serialVersionUID} field, or other
  *                                                      suspect declarations in {@code Serializable} and
@@ -184,7 +186,9 @@ import javax.tools.StandardLocation;
  *                                                      and interfaces
  * <tr><th scope="row">{@code static}               <td>accessing a static member using an instance
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
- * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes
+ * <tr><th scope="row">{@code synchronization}      <td>deprecated alias for {@code identity} with an identical effect.
+ *                                                      Users are encouraged to use {@code identity} instead of
+ *                                                      {@code synchronization} for all current and future uses.
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
  * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
  * <tr><th scope="row">{@code try}                  <td>issues relating to use of {@code try} blocks
@@ -197,6 +201,25 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code doclint:missing}      <td>missing items in documentation comments
  * <tr><th scope="row">{@code doclint:reference}    <td>reference issues found in documentation comments
  * <tr><th scope="row">{@code doclint:syntax}       <td>syntax issues found in documentation comments
+ * </tbody>
+ * </table>
+ *
+ * All of the non-{@code doclint:} strings listed above may also be used with the {@code -Xlint} command line flag.
+ * The {@code -Xlint} flag also supports these strings not supported by {@code @SuppressWarnings}:
+ *
+ * <table class="striped">
+ *     <caption>Strings supported by {@code -Xlint} but not {@code SuppressWarnings}</caption>
+ * <thead>
+ * <tr><th>String<th>Warnings Related To ...
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">{@code classfile}            <td>issues related to classfile contents
+ * <tr><th scope="row">{@code incubating}           <td>use of incubating modules
+ * <tr><th scope="row">{@code options}              <td>issues relating to use of command line options
+ * <tr><th scope="row">{@code output-file-clash}    <td>output files being overwritten due to filename clashes
+ * <tr><th scope="row">{@code path}                 <td>invalid path elements on the command line
+ * <tr><th scope="row">{@code processing}           <td>issues regarding annotation processing
+ * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
  * </tbody>
  * </table>
  *
@@ -231,10 +254,12 @@ module jdk.compiler {
         jdk.javadoc;
     exports com.sun.tools.javac.api to
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.resources to
         jdk.jshell;
     exports com.sun.tools.javac.code to
+        jdk.jdeps,
         jdk.javadoc,
         jdk.jshell;
     exports com.sun.tools.javac.comp to
@@ -251,24 +276,26 @@ module jdk.compiler {
     exports com.sun.tools.javac.model to
         jdk.javadoc;
     exports com.sun.tools.javac.parser to
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.platform to
         jdk.jdeps,
         jdk.javadoc;
     exports com.sun.tools.javac.tree to
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.util to
         jdk.jdeps,
         jdk.javadoc,
-        jdk.jshell;
-    exports jdk.internal.shellsupport.doc to
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
 
     uses javax.annotation.processing.Processor;
     uses com.sun.source.util.Plugin;
     uses com.sun.tools.doclint.DocLint;
     uses com.sun.tools.javac.platform.PlatformProvider;
+    uses com.sun.tools.javac.api.JavacTrees.DocCommentTreeTransformer;
 
     provides java.util.spi.ToolProvider with
         com.sun.tools.javac.main.JavacToolProvider;

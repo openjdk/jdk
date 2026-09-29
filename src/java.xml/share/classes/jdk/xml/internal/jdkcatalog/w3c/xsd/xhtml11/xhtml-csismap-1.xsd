@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+
+    <xs:annotation>
+        <xs:documentation>
+      Client-side Image Maps    
+      This is the XML Schema Client-side Image Maps module for XHTML
+
+        * area, map      
+
+      This module declares elements and attributes to support client-side
+      image maps. 
+      
+      $Id: xhtml-csismap-1.xsd,v 1.3 2009/09/30 15:12:48 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_imapmodule"/>
+    </xs:annotation>
+    <xs:simpleType name="xhtml.Shape.Datatype">
+        <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="rect"/>
+            <xs:enumeration value="circle"/>
+            <xs:enumeration value="poly"/>
+            <xs:enumeration value="default"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="xhtml.Coords.Datatype">
+        <xs:restriction base="xh11d:Text"/>
+    </xs:simpleType>
+    <!-- modify anchor attribute definition list -->
+    <xs:attributeGroup name="xhtml.a.csim.attlist">
+        <xs:attribute name="shape" type="xhtml.Shape.Datatype" default="rect"/>
+        <xs:attribute name="coords" type="xhtml.Coords.Datatype"/>
+    </xs:attributeGroup>
+    <!-- modify img attribute definition list -->
+    <xs:attributeGroup name="xhtml.img.csim.attlist">
+        <xs:attribute name="usemap" type="xh11d:URIREF"/>
+    </xs:attributeGroup>
+    <!-- modify form input attribute definition list -->
+    <xs:attributeGroup name="xhtml.input.csim.attlist">
+        <xs:attribute name="usemap" type="xh11d:URIREF"/>
+    </xs:attributeGroup>
+    <!-- modify object attribute definition list -->
+    <xs:attributeGroup name="xhtml.object.csim.attlist">
+        <xs:attribute name="usemap" type="xh11d:URIREF"/>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="xhtml.area.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="href" type="xh11d:URI"/>
+        <xs:attribute name="shape" type="xhtml.Shape.Datatype" default="rect"/>
+        <xs:attribute name="coords" type="xhtml.Coords.Datatype"/>
+        <xs:attribute name="nohref">
+            <xs:simpleType>
+                <xs:restriction base="xs:NMTOKEN">
+                    <xs:enumeration value="nohref"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="alt" type="xh11d:Text" use="required"/>
+        <xs:attribute name="tabindex" type="xh11d:Number"/>
+        <xs:attribute name="accesskey" type="xh11d:Character"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.area.content">
+        <xs:sequence/>
+    </xs:group>
+    <xs:complexType name="xhtml.area.type">
+        <xs:group ref="xhtml.area.content"/>
+        <xs:attributeGroup ref="xhtml.area.attlist"/>
+    </xs:complexType>
+    <!-- map -->
+    <xs:attributeGroup name="xhtml.map.attlist">
+        <xs:attribute name="id" type="xs:ID" use="required"/>
+        <xs:attributeGroup ref="xhtml.class"/>
+        <xs:attributeGroup ref="xhtml.title"/>
+        <xs:attributeGroup ref="xhtml.Core.extra.attrib"/>
+        <xs:attributeGroup ref="xhtml.I18n.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.map.content">
+        <xs:sequence>
+            <xs:choice maxOccurs="unbounded">
+                <xs:group ref="xhtml.Block.mix"/>
+                <xs:element name="area" type="xhtml.area.type"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.map.type">
+        <xs:group ref="xhtml.map.content"/>
+        <xs:attributeGroup ref="xhtml.map.attlist"/>
+    </xs:complexType>
+</xs:schema>

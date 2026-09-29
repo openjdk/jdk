@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -45,18 +47,15 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
-class WorkerTask;
-class AdaptiveSizePolicy;
-class BarrierSet;
 class GCHeapLog;
 class GCHeapSummary;
+class GCMemoryManager;
+class GCMetaspaceLog;
 class GCTimer;
 class GCTracer;
-class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
 class ReservedHeapSpace;
-class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
@@ -84,23 +83,23 @@ public:
 
 //
 // CollectedHeap
-//   GenCollectedHeap
-//     SerialHeap
+//   SerialHeap
 //   G1CollectedHeap
 //   ParallelScavengeHeap
 //   ShenandoahHeap
 //   ZCollectedHeap
 //
 class CollectedHeap : public CHeapObj<mtGC> {
+  friend class CPUTimeUsage::GC;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
-  friend class IsGCActiveMark; // Block structured external access to _is_gc_active
-  friend class DisableIsGCActiveMark; // Disable current IsGCActiveMark
+  friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
   friend class MemAllocator;
-  friend class ParallelObjectIterator;
 
  private:
-  GCHeapLog* _gc_heap_log;
+  static bool _is_shutting_down;
+
+  GCHeapLog*      _heap_log;
+  GCMetaspaceLog* _metaspace_log;
 
   // Historic gc information
   size_t _capacity_at_last_gc;
@@ -114,7 +113,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Not used by all GCs
   MemRegion _reserved;
 
-  bool _is_gc_active;
+  bool _is_stw_gc_active;
 
   // (Minimum) Alignment reserve for TLABs and PLABs.
   static size_t _lab_alignment_reserve;
@@ -131,8 +130,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
-  NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
-  NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
+  NOT_PRODUCT(Atomic<size_t> _promotion_failure_alot_count;)
+  NOT_PRODUCT(Atomic<size_t> _promotion_failure_alot_gc_number;)
+
+  jlong _vmthread_cpu_time;
 
   // Reason for current garbage collection.  Should be set to
   // a value reflecting no collection between collections.
@@ -151,7 +152,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // returned in actual_size.
   virtual HeapWord* allocate_new_tlab(size_t min_size,
                                       size_t requested_size,
-                                      size_t* actual_size);
+                                      size_t* actual_size) = 0;
 
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
@@ -160,8 +161,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be
   // called to allocate TLABs, only individual objects.
-  virtual HeapWord* mem_allocate(size_t size,
-                                 bool* gc_overhead_limit_was_exceeded) = 0;
+  virtual HeapWord* mem_allocate(size_t size) = 0;
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
@@ -170,7 +170,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
 protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
-  DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
   // Fill with a single array; caller must ensure filler_array_min_size() <=
@@ -183,7 +182,7 @@ protected:
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // Verification functions
-  debug_only(static void check_for_valid_allocation_state();)
+  DEBUG_ONLY(static void check_for_valid_allocation_state();)
 
  public:
   enum Name {
@@ -208,7 +207,13 @@ protected:
     return static_cast<T*>(heap);
   }
 
+  // Print any relevant tracing info that flags imply.
+  // Default implementation does nothing.
+  virtual void print_tracing_info() const = 0;
+
  public:
+  // Stop any onging concurrent work and prepare for exit.
+  virtual void stop() = 0;
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;
@@ -236,17 +241,24 @@ protected:
    */
   virtual jint initialize() = 0;
 
+  // Initialize serviceability support. This should prepare the implementation
+  // for accepting serviceability-related calls, like memory_managers(), memory_pools().
+  virtual void initialize_serviceability() = 0;
+
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() {}
+  static bool is_shutting_down();
+
+  void initiate_shutdown();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
+
+  void add_vmthread_cpu_time(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
@@ -260,11 +272,6 @@ protected:
   size_t free_at_last_gc() const { return _capacity_at_last_gc - _used_at_last_gc; }
   size_t used_at_last_gc() const { return _used_at_last_gc; }
   void update_capacity_and_used_at_gc();
-
-  // Return "true" if the part of the heap that allocates Java
-  // objects has reached the maximal committed limit that it can
-  // reach, without a garbage collection.
-  virtual bool is_maximal_no_gc() const = 0;
 
   // Support for java.lang.Runtime.maxMemory():  return the maximum amount of
   // memory that the vm could make available for storing 'normal' java objects.
@@ -282,7 +289,7 @@ protected:
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == nullptr || is_in(p); })
 
   void set_gc_cause(GCCause::Cause v);
-  GCCause::Cause gc_cause() { return _gc_cause; }
+  GCCause::Cause gc_cause() const { return _gc_cause; }
 
   oop obj_allocate(Klass* klass, size_t size, TRAPS);
   virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
@@ -302,15 +309,14 @@ protected:
   static void fill_with_objects(HeapWord* start, size_t words, bool zap = true);
 
   static void fill_with_object(HeapWord* start, size_t words, bool zap = true);
-  static void fill_with_object(MemRegion region, bool zap = true) {
-    fill_with_object(region.start(), region.word_size(), zap);
-  }
   static void fill_with_object(HeapWord* start, HeapWord* end, bool zap = true) {
     fill_with_object(start, pointer_delta(end, start), zap);
   }
 
+  inline static bool is_filler_object(oop obj);
+
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
-  static constexpr size_t min_dummy_object_size() {
+  static size_t min_dummy_object_size() {
     return oopDesc::header_size();
   }
 
@@ -337,29 +343,19 @@ protected:
   virtual void ensure_parsability(bool retire_tlabs);
 
   // The amount of space available for thread-local allocation buffers.
-  virtual size_t tlab_capacity(Thread *thr) const = 0;
+  virtual size_t tlab_capacity() const = 0;
 
-  // The amount of used space for thread-local allocation buffers for the given thread.
-  virtual size_t tlab_used(Thread *thr) const = 0;
+  // The amount of space used for thread-local allocation buffers.
+  virtual size_t tlab_used() const = 0;
 
   virtual size_t max_tlab_size() const;
 
   // An estimate of the maximum allocation that could be performed
   // for thread-local allocation buffers without triggering any
   // collection or expansion activity.
-  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const {
-    guarantee(false, "thread-local allocation buffers not supported");
-    return 0;
-  }
+  virtual size_t unsafe_max_tlab_alloc() const = 0;
 
-  // If a GC uses a stack watermark barrier, the stack processing is lazy, concurrent,
-  // incremental and cooperative. In order for that to work well, mechanisms that stop
-  // another thread might want to ensure its roots are in a sane state.
-  virtual bool uses_stack_watermark_barrier() const { return false; }
-
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
+  // Perform a collection of the heap of a type depending on the given cause.
   virtual void collect(GCCause::Cause cause) = 0;
 
   // Perform a full collection
@@ -384,10 +380,8 @@ protected:
   // allocated object.
   virtual bool requires_barriers(stackChunkOop obj) const = 0;
 
-  // Returns "true" iff there is a stop-world GC in progress.  (I assume
-  // that it should answer "false" for the concurrent part of a concurrent
-  // collector -- dld).
-  bool is_gc_active() const { return _is_gc_active; }
+  // Returns "true" iff there is a stop-world GC in progress.
+  bool is_stw_gc_active() const { return _is_stw_gc_active; }
 
   // Total number of GC collections (started)
   unsigned int total_collections() const { return _total_collections; }
@@ -397,14 +391,9 @@ protected:
   void increment_total_collections(bool full = false) {
     _total_collections++;
     if (full) {
-      increment_total_full_collections();
+      _total_full_collections++;
     }
   }
-
-  void increment_total_full_collections() { _total_full_collections++; }
-
-  // Return the SoftRefPolicy for the heap;
-  virtual SoftRefPolicy* soft_ref_policy() = 0;
 
   virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
@@ -413,12 +402,10 @@ protected:
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
- protected:
   virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
     return nullptr;
   }
 
- public:
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 
@@ -436,7 +423,7 @@ protected:
   // Generate any dumps preceding or following a full gc
   void full_gc_dump(GCTimer* timer, bool before);
 
-  virtual void initialize_serviceability() = 0;
+  void print_relative_to_gc(GCWhen::Type when) const;
 
  public:
   void pre_full_gc_dump(GCTimer* timer);
@@ -453,20 +440,16 @@ protected:
   // explicitly checks if the given memory location contains a null value.
   virtual bool contains_null(const oop* p) const;
 
-  // Print heap information on the given outputStream.
-  virtual void print_on(outputStream* st) const = 0;
-  // The default behavior is to call print_on() on tty.
+  void print_invocation_on(outputStream* st, const char* type, GCWhen::Type when) const;
+
+  // Print heap information.
+  virtual void print_heap_on(outputStream* st) const = 0;
+
+  // Print additional information about the GC that is not included in print_heap_on().
+  virtual void print_gc_on(outputStream* st) const = 0;
+
+  // The default behavior is to call print_heap_on() and print_gc_on() on tty.
   virtual void print() const;
-
-  // Print more detailed heap information on the given
-  // outputStream. The default behavior is to call print_on(). It is
-  // up to each subclass to override it and add any additional output
-  // it needs.
-  virtual void print_extended_on(outputStream* st) const {
-    print_on(st);
-  }
-
-  virtual void print_on_error(outputStream* st) const;
 
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const = 0;
@@ -474,12 +457,8 @@ protected:
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
-  // Print any relevant tracing info that flags imply.
-  // Default implementation does nothing.
-  virtual void print_tracing_info() const = 0;
-
-  void print_heap_before_gc();
-  void print_heap_after_gc();
+  void print_before_gc() const;
+  void print_after_gc() const;
 
   // Registering and unregistering an nmethod (compiled code) with the heap.
   virtual void register_nmethod(nmethod* nm) = 0;
@@ -519,19 +498,17 @@ protected:
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+  virtual size_t bootstrap_max_memory() const;
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a
-  // promotion failure.  The no-argument version uses
-  // this->_promotion_failure_alot_count as the counter.
-  bool promotion_should_fail(volatile size_t* count);
+  // promotion failure.
   bool promotion_should_fail();
 
   // Reset the PromotionFailureALot counters.  Should be called at the end of a
   // GC in which promotion failure occurred.
-  void reset_promotion_should_fail(volatile size_t* count);
   void reset_promotion_should_fail();
 #endif  // #ifndef PRODUCT
 };

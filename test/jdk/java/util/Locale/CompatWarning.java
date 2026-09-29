@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,14 @@
 
 /*
  * @test
- * @bug 8304982
+ * @bug 8304982 8174269
  * @summary Check if a warning is logged with COMPAT locale provider
  * @run main/othervm -Djava.locale.providers=COMPAT CompatWarning
+ * @run main/othervm -Djava.locale.providers=SPI,COMPAT CompatWarning
+ * @run main/othervm -Djava.locale.providers=COMPAT,SPI CompatWarning
  * @run main/othervm -Djava.locale.providers=JRE CompatWarning
+ * @run main/othervm -Djava.locale.providers=SPI,JRE CompatWarning
+ * @run main/othervm -Djava.locale.providers=JRE,SPI CompatWarning
  */
 
 import java.io.File;
@@ -38,7 +42,7 @@ import java.util.logging.LogRecord;
 
 public class CompatWarning {
     private static final String WARNING =
-            "COMPAT locale provider will be removed in a future release";
+            "COMPAT locale provider has been removed";
     private static boolean logged;
 
     public static void main(String[] args) throws Throwable {

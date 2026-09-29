@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.crypto.provider;
 
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.ShortBufferException;
 
 /**
  * This class represents ciphers in cipher text stealing (CTS) mode.
@@ -153,7 +152,7 @@ final class CipherTextStealing extends CipherBlockChaining {
      *
      * <p>It is also the application's responsibility to make sure that
      * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
+     * (This check is omitted here, to avoid double-checking.)
      *
      * @param cipher the buffer with the input data to be decrypted
      * @param cipherOffset the offset in <code>cipherOffset</code>

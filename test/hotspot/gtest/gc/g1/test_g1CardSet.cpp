@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,16 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "unittest.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -46,11 +46,24 @@ class G1CardSetTest : public ::testing::Test {
     }
   };
 
+  // Verify Full card containers contents (and amount). Assumes that cards returned are in ascending order.
+  class G1VerifyFullCardContainerClosure : public G1CardSet::CardClosure {
+  public:
+    size_t _cur_card;
+
+    G1VerifyFullCardContainerClosure() : _cur_card(0) { }
+
+    void do_card(uint region_idx, uint card_idx) override {
+      ASSERT_TRUE(card_idx == _cur_card);
+      _cur_card++;
+    }
+  };
+
   static WorkerThreads* _workers;
   static uint _max_workers;
 
   static WorkerThreads* workers() {
-    if (_workers == NULL) {
+    if (_workers == nullptr) {
       _max_workers = os::processor_count();
       _workers = new WorkerThreads("G1CardSetTest Workers", _max_workers);
       _workers->initialize_workers();
@@ -71,13 +84,13 @@ public:
   ~G1CardSetTest() { }
 
   static uint next_random(uint& seed, uint i) {
-    // Park–Miller random number generator
+    // Park-Miller random number generator
     seed = (seed * 279470273u) % 0xfffffffb;
     return (seed % i);
   }
 
-  static void cardset_basic_test();
-  static void cardset_mt_test();
+  static void card_set_basic_test();
+  static void card_set_mt_test();
 
   static void add_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards, G1AddCardResult* results);
   static void contains_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards);
@@ -87,7 +100,7 @@ public:
   static void iterate_cards(G1CardSet* card_set, G1CardSet::CardClosure* cl);
 };
 
-WorkerThreads* G1CardSetTest::_workers = NULL;
+WorkerThreads* G1CardSetTest::_workers = nullptr;
 uint G1CardSetTest::_max_workers = 0;
 
 void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards, G1AddCardResult* results) {
@@ -97,7 +110,7 @@ void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* 
     uint card_idx = cards[i] % cards_per_region;
 
     G1AddCardResult res = card_set->add_card(region_idx, card_idx);
-    if (results != NULL) {
+    if (results != nullptr) {
       ASSERT_TRUE(res == results[i]);
     }
   }
@@ -202,7 +215,7 @@ void G1CardSetTest::check_iteration(G1CardSet* card_set, const size_t expected, 
   }
 }
 
-void G1CardSetTest::cardset_basic_test() {
+void G1CardSetTest::card_set_basic_test() {
 
   const uint CardsPerRegion = 2048;
   const double FullCardSetThreshold = 0.8;
@@ -269,7 +282,7 @@ void G1CardSetTest::cardset_basic_test() {
     translate_cards(CardsPerRegion, 100, &cards1[0], 4);
     translate_cards(CardsPerRegion, 990, &cards1[4], 4);
 
-    add_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1), NULL);
+    add_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1), nullptr);
     contains_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1));
     ASSERT_TRUE(card_set.occupied() == ARRAY_SIZE(cards1));
 
@@ -291,7 +304,7 @@ void G1CardSetTest::cardset_basic_test() {
       cards1[i] = i + 3;
       translate_cards(CardsPerRegion, i, &cards1[i], 1);
     }
-    add_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1), NULL);
+    add_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1), nullptr);
     contains_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1));
 
     ASSERT_TRUE(card_set.num_containers() == ARRAY_SIZE(cards1));
@@ -374,9 +387,9 @@ void G1CardSetTest::cardset_basic_test() {
     res = card_set.add_card(99, CardsPerRegion - 2);
     ASSERT_TRUE(res == Found);
 
-    G1CountCardsClosure count_cards;
+    G1VerifyFullCardContainerClosure count_cards;
     card_set.iterate_cards(count_cards);
-    ASSERT_TRUE(count_cards._num_cards == config.max_cards_in_region());
+    ASSERT_TRUE(count_cards._cur_card == config.max_cards_in_region());
 
     card_set.clear();
     ASSERT_TRUE(card_set.occupied() == 0);
@@ -386,8 +399,8 @@ void G1CardSetTest::cardset_basic_test() {
 class G1CardSetMtTestTask : public WorkerTask {
   G1CardSet* _card_set;
 
-  size_t _added;
-  size_t _found;
+  Atomic<size_t> _added;
+  Atomic<size_t> _found;
 
 public:
   G1CardSetMtTestTask(G1CardSet* card_set) :
@@ -414,15 +427,15 @@ public:
         found++;
       }
     }
-    Atomic::add(&_added, added);
-    Atomic::add(&_found, found);
+    _added.add_then_fetch(added);
+    _found.add_then_fetch(found);
   }
 
-  size_t added() const { return _added; }
-  size_t found() const { return _found; }
+  size_t added() const { return _added.load_relaxed(); }
+  size_t found() const { return _found.load_relaxed(); }
 };
 
-void G1CardSetTest::cardset_mt_test() {
+void G1CardSetTest::card_set_mt_test() {
   const uint CardsPerRegion = 16384;
   const double FullCardSetThreshold = 1.0;
   const uint BitmapCoarsenThreshold = 1.0;
@@ -443,7 +456,7 @@ void G1CardSetTest::cardset_mt_test() {
   G1CardSetMtTestTask cl(&card_set);
 
   {
-    GCTraceTime(Error, gc) x("Cardset test");
+    GCTraceTime(Error, gc) x("G1CardSet test");
     _workers->run_task(&cl, num_workers);
   }
 
@@ -479,10 +492,10 @@ void G1CardSetTest::cardset_mt_test() {
   ASSERT_TRUE(count_cards._num_cards <= cl.added());
 }
 
-TEST_VM(G1CardSetTest, basic_cardset_test) {
-  G1CardSetTest::cardset_basic_test();
+TEST_VM(G1CardSetTest, basic_card_set_test) {
+  G1CardSetTest::card_set_basic_test();
 }
 
-TEST_VM(G1CardSetTest, mt_cardset_test) {
-  G1CardSetTest::cardset_mt_test();
+TEST_VM(G1CardSetTest, mt_card_set_test) {
+  G1CardSetTest::card_set_mt_test();
 }

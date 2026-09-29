@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,15 @@ public final class ReferencedKeySet<T> extends AbstractSet<T> {
     final ReferencedKeyMap<T, ReferenceKey<T>> map;
 
     /**
+     * @return a supplier to create a {@code ConcurrentHashMap} appropriate for use in the
+     *         create methods.
+     * @param <E> the type of elements maintained by this set
+     */
+    public static <E> Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> concurrentHashMapSupplier() {
+        return ReferencedKeyMap.concurrentHashMapSupplier();
+    }
+
+    /**
      * Private constructor.
      *
      * @param map     backing map
@@ -97,25 +106,7 @@ public final class ReferencedKeySet<T> extends AbstractSet<T> {
      */
     public static <E> ReferencedKeySet<E>
     create(boolean isSoft, Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> supplier) {
-        return create(isSoft, false, supplier);
-    }
-
-    /**
-     * Create a new {@link ReferencedKeySet} elements.
-     *
-     * @param isSoft          true if {@link SoftReference} elements are to
-     *                        be used, {@link WeakReference} otherwise.
-     * @param useNativeQueue  true if uses NativeReferenceQueue
-     *                        otherwise use {@link ReferenceQueue}.
-     * @param supplier        {@link Supplier} of the backing map
-     *
-     * @return a new set with {@link Reference} elements
-     *
-     * @param <E> the type of elements maintained by this set
-     */
-    public static <E> ReferencedKeySet<E>
-    create(boolean isSoft, boolean useNativeQueue, Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> supplier) {
-         return new ReferencedKeySet<>(ReferencedKeyMap.create(isSoft, useNativeQueue, supplier));
+        return new ReferencedKeySet<>(ReferencedKeyMap.create(isSoft, supplier));
     }
 
     /**
@@ -148,7 +139,7 @@ public final class ReferencedKeySet<T> extends AbstractSet<T> {
 
     @Override
     public boolean add(T e) {
-        return intern(e) == null;
+        return ReferencedKeyMap.internAddKey(map, e);
     }
 
     @Override
@@ -201,5 +192,9 @@ public final class ReferencedKeySet<T> extends AbstractSet<T> {
      */
     public T intern(T e, UnaryOperator<T> interner) {
         return ReferencedKeyMap.intern(map, e, interner);
+    }
+
+    public void prepareForAOTCache() {
+        map.prepareForAOTCache();
     }
 }

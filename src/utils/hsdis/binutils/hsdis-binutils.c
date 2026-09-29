@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -61,14 +61,10 @@
 
 #include <bfd.h>
 #include <dis-asm.h>
+#include <stdbool.h>
 
 #include "hsdis.h"
 
-#ifndef bool
-#define bool int
-#define true 1
-#define false 0
-#endif /*bool*/
 
 /* short names for stuff in hsdis.h */
 typedef decode_instructions_event_callback_ftype  event_callback_t;
@@ -120,10 +116,8 @@ static const char* format_insn_close(const char* close,
                                      disassemble_info* dinfo,
                                      char* buf, size_t bufsize);
 
+JNIEXPORT
 void*
-#ifdef DLL_ENTRY
-  DLL_ENTRY
-#endif
 decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                             unsigned char* buffer, uintptr_t length,
                             event_callback_t  event_callback_arg,  void* event_stream_arg,
@@ -145,10 +139,8 @@ decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
 }
 
 /* This is the compatability interface for older version of hotspot */
+JNIEXPORT
 void*
-#ifdef DLL_ENTRY
-  DLL_ENTRY
-#endif
 decode_instructions(void* start_pv, void* end_pv,
                     event_callback_t  event_callback_arg,  void* event_stream_arg,
                     printf_callback_t printf_callback_arg, void* printf_stream_arg,

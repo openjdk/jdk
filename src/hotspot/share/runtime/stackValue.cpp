@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfo.hpp"
 #include "oops/access.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -31,9 +30,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stackValue.hpp"
-#if INCLUDE_ZGC
-#include "gc/z/zBarrier.inline.hpp"
-#endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif
@@ -41,13 +37,6 @@
 class RegisterMap;
 class SmallRegisterMap;
 
-template StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
-template StackValue* StackValue::create_stack_value(const frame* fr, const SmallRegisterMap* reg_map, ScopeValue* sv);
-
-template<typename RegisterMapT>
-StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
-  return create_stack_value(sv, stack_value_address(fr, reg_map, sv), reg_map);
-}
 
 static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
   if (addr == nullptr) {
@@ -88,7 +77,7 @@ static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
     // stack values. Note: do not heal the location, to avoid accidentally
     // corrupting the stack. Stack watermark barriers are supposed to handle
     // the healing.
-    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, val, (oop*)nullptr);
   }
 #endif
 
@@ -125,7 +114,7 @@ static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_
     // stack values. Note: do not heal the location, to avoid accidentally
     // corrupting the stack. Stack watermark barriers are supposed to handle
     // the healing.
-    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, val, (narrowOop*)nullptr);
   }
 #endif
 
@@ -148,8 +137,12 @@ StackValue* StackValue::create_stack_value_from_narrowOop_location(stackChunkOop
   return new StackValue(h);
 }
 
+template StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
+template StackValue* StackValue::create_stack_value(const frame* fr, const SmallRegisterMapNoArgs* reg_map, ScopeValue* sv);
+
 template<typename RegisterMapT>
-StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, const RegisterMapT* reg_map) {
+StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
+  address value_addr = stack_value_address(fr, reg_map, sv);
   stackChunkOop chunk = reg_map->stack_chunk()();
   if (sv->is_location()) {
     // Stack or register value
@@ -248,8 +241,18 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
     return new StackValue(value.p);
 #endif
   } else if (sv->is_object()) { // Scalar replaced object in compiled frame
-    Handle ov = ((ObjectValue *)sv)->value();
-    return new StackValue(ov, (ov.is_null()) ? 1 : 0);
+    ObjectValue* ov = (ObjectValue *)sv;
+    Handle hdl = ov->value();
+    bool scalar_replaced = hdl.is_null() && ov->is_scalar_replaced();
+    if (ov->has_properties()) {
+      Klass* k = java_lang_Class::as_Klass(ov->klass()->as_ConstantOopReadValue()->value()());
+      if (!k->is_array_klass()) {
+        // Don't treat value type as scalar replaced if it is null
+        jint null_marker = StackValue::create_stack_value(fr, reg_map, ov->properties())->get_jint();
+        scalar_replaced &= (null_marker != 0);
+      }
+    }
+    return new StackValue(hdl, scalar_replaced ? 1 : 0);
   } else if (sv->is_marker()) {
     // Should never need to directly construct a marker.
     ShouldNotReachHere();
@@ -260,7 +263,7 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
 }
 
 template address StackValue::stack_value_address(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
-template address StackValue::stack_value_address(const frame* fr, const SmallRegisterMap* reg_map, ScopeValue* sv);
+template address StackValue::stack_value_address(const frame* fr, const SmallRegisterMapNoArgs* reg_map, ScopeValue* sv);
 
 template<typename RegisterMapT>
 address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
@@ -292,7 +295,7 @@ address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg
   return value_addr;
 }
 
-BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) {
+BasicLock* StackValue::resolve_monitor_lock(const frame& fr, Location location) {
   assert(location.is_stack(), "for now we only look at the stack");
   int word_offset = location.stack_offset() / wordSize;
   // (stack picture)
@@ -303,7 +306,7 @@ BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) 
   // the word_offset is the distance from the stack pointer to the lowest address
   // The frame's original stack pointer, before any extension by its callee
   // (due to Compiler1 linkage on SPARC), must be used.
-  return (BasicLock*) (fr->unextended_sp() + word_offset);
+  return (BasicLock*) (fr.unextended_sp() + word_offset);
 }
 
 

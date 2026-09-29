@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native nsk.stress.strace.strace006
+ * @run main/othervm/native/timeout=480 nsk.stress.strace.strace006
  */
 
 package nsk.stress.strace;

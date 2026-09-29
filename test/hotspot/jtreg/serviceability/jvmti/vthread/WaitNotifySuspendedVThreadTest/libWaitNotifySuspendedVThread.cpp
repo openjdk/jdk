@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 jrawMonitorID monitor;
 jrawMonitorID monitor_completed;
@@ -39,7 +39,7 @@ set_breakpoint(JNIEnv *jni, jclass klass, const char *mname) {
   jmethodID method = find_method(jvmti_env, jni, klass, mname);
   jvmtiError err;
 
-  if (method == NULL) {
+  if (method == nullptr) {
     jni->FatalError("Error in set_breakpoint: not found method");
   }
   err = jvmti_env->SetBreakpoint(method, location);
@@ -56,7 +56,7 @@ Java_WaitNotifySuspendedVThreadTask_setBreakpoint(JNIEnv *jni, jclass klass) {
   set_breakpoint(jni, klass, "methBreakpoint");
 
   // Enable Breakpoint events globally
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   check_jvmti_status(jni, err, "enableEvents: error in JVMTI SetEventNotificationMode: enable BREAKPOINT");
 
   LOG("setBreakpoint: finished\n");
@@ -137,7 +137,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv * jvmti = NULL;
+  jvmtiEnv * jvmti = nullptr;
 
   jvmtiEventCallbacks callbacks;
   jvmtiCapabilities caps;
@@ -145,7 +145,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }

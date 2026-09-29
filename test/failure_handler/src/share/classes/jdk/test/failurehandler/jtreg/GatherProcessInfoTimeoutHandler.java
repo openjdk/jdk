@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,6 @@ import java.nio.file.Path;
  * process and its children.
  */
 public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
-    private static final boolean HAS_NATIVE_LIBRARY;
-    static {
-        boolean value = true;
-        try {
-            System.loadLibrary("timeoutHandler");
-        } catch (UnsatisfiedLinkError ignore) {
-            // not all os need timeoutHandler native-library
-            value = false;
-        }
-        HAS_NATIVE_LIBRARY = value;
-    }
     private static final String LOG_FILENAME = "processes.log";
     private static final String OUTPUT_FILENAME = "processes.html";
 
@@ -80,16 +69,7 @@ public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
         }
         try {
             actionsLog.printf("%s ---%n", name);
-
-            File output = workDir.resolve(OUTPUT_FILENAME).toFile();
-            try {
-                PrintWriter pw = new PrintWriter(new FileWriter(output, true), true);
-                runGatherer(name, workDir, actionsLog, pw, pid);
-            } catch (IOException e) {
-                actionsLog.printf("IOException: cannot open output file[%s] : %s",
-                        output, e.getMessage());
-                e.printStackTrace(actionsLog);
-            }
+            runGatherer(name, actionsLog, pid);
         } finally {
             actionsLog.printf("--- %s%n", name);
             // don't close jtreg log
@@ -101,9 +81,9 @@ public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
         }
     }
 
-    private void runGatherer(String name, Path workDir, PrintWriter log,
-                             PrintWriter out, long pid) {
-        try (HtmlPage html = new HtmlPage(out)) {
+    private void runGatherer(String name, PrintWriter log, long pid) {
+        Path workDir = outputDir.toPath();
+        try (HtmlPage html = new HtmlPage(workDir, OUTPUT_FILENAME, true)) {
             ProcessInfoGatherer gatherer = new GathererFactory(
                     OS.current().family,
                     workDir, log, testJdk.toPath()).getProcessInfoGatherer();

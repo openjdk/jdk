@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,6 @@ final class P11PSSSignature extends SignatureSpi {
             }
         } finally {
             p11Key.releaseKeyID();
-            mechanism.freeHandle();
             session = token.releaseSession(session);
             isActive = false;
         }
@@ -615,7 +614,7 @@ final class P11PSSSignature extends SignatureSpi {
         isActive = true;
         switch (type) {
             case T_UPDATE -> {
-                if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
+                if (!(byteBuffer instanceof DirectBuffer)) {
                     // cannot do better than default impl
                     super.engineUpdate(byteBuffer);
                     return;
@@ -623,7 +622,7 @@ final class P11PSSSignature extends SignatureSpi {
                 int ofs = byteBuffer.position();
                 NIO_ACCESS.acquireSession(byteBuffer);
                 try {
-                    long addr = dByteBuffer.address();
+                    long addr = NIO_ACCESS.getBufferAddress(byteBuffer);
                     if (mode == M_SIGN) {
                         if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                         token.p11.C_SignUpdate
@@ -777,7 +776,7 @@ final class P11PSSSignature extends SignatureSpi {
     protected AlgorithmParameters engineGetParameters() {
         if (this.sigParams != null) {
             try {
-                AlgorithmParameters ap = AlgorithmParameters.getInstance("RSASSA-PSS");
+                AlgorithmParameters ap = AlgorithmParameters.getInstance("RSASSA-PSS", token.provider);
                 ap.init(this.sigParams);
                 return ap;
             } catch (GeneralSecurityException e) {

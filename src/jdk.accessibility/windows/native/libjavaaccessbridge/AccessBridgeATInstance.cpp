@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,8 @@ typedef struct EVENT_STRUCT
 
 
 #include <process.h>
-#define THREAD_PROC unsigned int __stdcall
-typedef unsigned int (__stdcall *THREAD_ROUTINE)(LPVOID lpThreadParameter);
+#define THREAD_PROC unsigned int
+typedef unsigned int (*THREAD_ROUTINE)(LPVOID lpThreadParameter);
 
 static HANDLE BeginThread(THREAD_ROUTINE thread_func,DWORD *id,DWORD param)
 {
@@ -158,7 +158,6 @@ DWORD JavaBridgeThreadId = 0;
 static THREAD_PROC JavaBridgeThread(LPVOID param1)
 {
     MSG msg;
-    DWORD rc = 0;
     while (GetMessage(&msg,        // message structure
                       NULL,                  // handle of window receiving the message
                       0,                  // lowest message to examine
@@ -172,8 +171,8 @@ static THREAD_PROC JavaBridgeThread(LPVOID param1)
                     toCopy.cbData = event_struct->bufsize;
                     toCopy.lpData = event_struct->buffer;
 
-                    LRESULT ret = SendMessage((HWND)ABLongToHandle(event_struct->winAccessBridgeWindow), WM_COPYDATA,
-                                              (WPARAM)event_struct->ourAccessBridgeWindow, (LPARAM) &toCopy);
+                    SendMessage((HWND)ABLongToHandle(event_struct->winAccessBridgeWindow), WM_COPYDATA,
+                                (WPARAM)event_struct->ourAccessBridgeWindow, (LPARAM) &toCopy);
                     delete event_struct->buffer;
                     delete event_struct;
                 }

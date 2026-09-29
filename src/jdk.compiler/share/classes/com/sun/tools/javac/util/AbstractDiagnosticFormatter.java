@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.DiagnosticPart;
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.MultilineLimit;
 import com.sun.tools.javac.api.DiagnosticFormatter.PositionKind;
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Source;
@@ -200,7 +201,10 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             return formatIterable(d, iterable, l);
         }
         else if (arg instanceof Type type) {
-            return printer.visit(type, l);
+            return printer.visit(type.stripMetadata(), l);
+        }
+        else if (arg instanceof JCDiagnostic.AnnotatedType type) {
+            return printer.visit(type.type(), l);
         }
         else if (arg instanceof Symbol symbol) {
             return printer.visit(symbol, l);
@@ -226,6 +230,9 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         else if (arg instanceof Tag tag) {
             return messages.getLocalizedString(l, "compiler.misc.tree.tag." +
                                                   StringUtils.toLowerCase(tag.name()));
+        }
+        else if (arg instanceof Attribute.Compound compound) {
+            return printer.printAnnotation(compound, l);
         }
         else {
             return String.valueOf(arg);

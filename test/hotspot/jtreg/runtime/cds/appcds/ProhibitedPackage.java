@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class ProhibitedPackage {
             // will be ignored during dumping.
             TestCommon.dump(appJar,  classlist, "-Xlog:cds")
                 .shouldContain("Dumping")
-                .shouldContain("[cds] Prohibited package for non-bootstrap classes: java/lang/Prohibited.class")
+                .shouldContain("Prohibited package for non-bootstrap classes: java/lang/Prohibited.class")
                 .shouldHaveExitValue(0);
         }
 
@@ -65,7 +65,7 @@ public class ProhibitedPackage {
                         TestCommon.list("java/lang/Prohibited", "ProhibitedHelper"),
                         "-Xlog:class+load")
             .shouldContain("Dumping")
-            .shouldNotContain("[info][class,load] java.lang.Prohibited source: ")
+            .shouldNotMatch("\\[info *\\]\\[class,load *\\] java.lang.Prohibited source: ")
             .shouldHaveExitValue(0);
 
         // Try loading the class in a prohibited package with various -Xshare

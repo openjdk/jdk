@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,12 @@ public interface OutputBuffer {
   }
 
   /**
+   * Waits for a process to finish, if there is one assocated with
+   * this OutputBuffer.
+   */
+  public void waitFor();
+
+  /**
    * Returns the stdout result
    *
    * @return stdout result
@@ -67,6 +73,13 @@ public interface OutputBuffer {
    * @return stderr result
    */
   public String getStderr();
+
+
+  /**
+   * Returns the exit value
+   *
+   * @return exit value
+   */
   public int getExitValue();
 
   /**
@@ -76,12 +89,20 @@ public interface OutputBuffer {
    */
   public long pid();
 
+  public static OutputBuffer of(Process p, boolean quiet) {
+    return of(p, null, quiet);
+  }
+
   public static OutputBuffer of(Process p, Charset cs) {
-    return new LazyOutputBuffer(p, cs);
+    return of(p, cs, false);
   }
 
   public static OutputBuffer of(Process p) {
-    return new LazyOutputBuffer(p, null);
+    return of(p, null, false);
+  }
+
+  public static OutputBuffer of(Process p, Charset cs, boolean quiet) {
+    return new LazyOutputBuffer(p, cs, quiet);
   }
 
   public static OutputBuffer of(String stdout, String stderr, int exitValue) {
@@ -117,22 +138,51 @@ public interface OutputBuffer {
       }
     }
 
+    private final boolean verbose;
     private final StreamTask outTask;
     private final StreamTask errTask;
     private final Process p;
     private volatile Integer exitValue; // null implies we don't yet know
 
     private final void logProgress(String state) {
+      if (verbose) {
         System.out.println("[" + Instant.now().toString() + "] " + state
-                           + " for process " + p.pid());
+                + " for process " + p.pid());
         System.out.flush();
+      }
     }
 
-    private LazyOutputBuffer(Process p, Charset cs) {
+    private LazyOutputBuffer(Process p, Charset cs, boolean verbose) {
       this.p = p;
+      this.verbose = verbose;
       logProgress("Gathering output");
       outTask = new StreamTask(p.getInputStream(), cs);
       errTask = new StreamTask(p.getErrorStream(), cs);
+    }
+
+    @Override
+    public void waitFor() {
+      if (exitValue != null) {
+        // Already waited for this process
+        return;
+      }
+
+      try {
+          logProgress("Waiting for completion");
+          boolean aborted = true;
+          try {
+              exitValue = p.waitFor();
+              logProgress("Waiting for completion finished");
+              aborted = false;
+          } finally {
+              if (aborted) {
+                  logProgress("Waiting for completion FAILED");
+              }
+          }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new OutputBufferException(e);
+      }
     }
 
     @Override
@@ -147,26 +197,8 @@ public interface OutputBuffer {
 
     @Override
     public int getExitValue() {
-      if (exitValue != null) {
-        return exitValue;
-      }
-      try {
-          logProgress("Waiting for completion");
-          boolean aborted = true;
-          try {
-              exitValue = p.waitFor();
-              logProgress("Waiting for completion finished");
-              aborted = false;
-              return exitValue;
-          } finally {
-              if (aborted) {
-                  logProgress("Waiting for completion FAILED");
-              }
-          }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new OutputBufferException(e);
-      }
+      waitFor();
+      return exitValue;
     }
 
     @Override
@@ -184,6 +216,11 @@ public interface OutputBuffer {
       this.stdout = stdout;
       this.stderr = stderr;
       this.exitValue = exitValue;
+    }
+
+    @Override
+    public void waitFor() {
+      // Nothing to do since this buffer is not associated with a Process.
     }
 
     @Override

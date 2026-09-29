@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,9 @@ public:
 #endif
 };
 
-class ciReturnTypeEntry : public ReturnTypeEntry, ciTypeEntries {
+class ciSingleTypeEntry : public SingleTypeEntry, ciTypeEntries {
 public:
-  void translate_type_data_from(const ReturnTypeEntry* ret);
+  void translate_type_data_from(const SingleTypeEntry* ret);
 
   ciKlass* valid_type() const {
     return valid_ciklass(type());
@@ -146,7 +146,7 @@ public:
   ciCallTypeData(DataLayout* layout) : CallTypeData(layout) {}
 
   ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)CallTypeData::args(); }
-  ciReturnTypeEntry* ret() const { return (ciReturnTypeEntry*)CallTypeData::ret(); }
+  ciSingleTypeEntry* ret() const { return (ciSingleTypeEntry*)CallTypeData::ret(); }
 
   void translate_from(const ProfileData* data) {
     if (has_arguments()) {
@@ -258,7 +258,7 @@ public:
   }
 
   ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)VirtualCallTypeData::args(); }
-  ciReturnTypeEntry* ret() const { return (ciReturnTypeEntry*)VirtualCallTypeData::ret(); }
+  ciSingleTypeEntry* ret() const { return (ciSingleTypeEntry*)VirtualCallTypeData::ret(); }
 
   // Copy & translate from oop based VirtualCallData
   virtual void translate_from(const ProfileData* data) {
@@ -355,6 +355,63 @@ public:
 
   void set_method(ciMethod* m) {
     set_intptr_at(speculative_trap_method, (intptr_t)m);
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
+#endif
+};
+
+class ciArrayStoreData : public ArrayStoreData {
+  // Fake multiple inheritance...  It's a ciReceiverTypeData also.
+  ciReceiverTypeData* rtd_super() const { return (ciReceiverTypeData*) this; }
+
+public:
+  ciArrayStoreData(DataLayout* layout) : ArrayStoreData(layout) {}
+
+  ciSingleTypeEntry* array() const { return (ciSingleTypeEntry*)ArrayStoreData::array(); }
+
+  virtual void translate_from(const ProfileData* data) {
+    array()->translate_type_data_from(data->as_ArrayStoreData()->array());
+    rtd_super()->translate_receiver_data_from(data);
+  }
+
+  ciKlass* receiver(uint row) {
+    return rtd_super()->receiver(row);
+  }
+#ifndef PRODUCT
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
+#endif
+};
+
+class ciArrayLoadData : public ArrayLoadData {
+public:
+  ciArrayLoadData(DataLayout* layout) : ArrayLoadData(layout) {}
+
+  ciSingleTypeEntry* array() const { return (ciSingleTypeEntry*)ArrayLoadData::array(); }
+  ciSingleTypeEntry* element() const { return (ciSingleTypeEntry*)ArrayLoadData::element(); }
+
+  virtual void translate_from(const ProfileData* data) {
+    array()->translate_type_data_from(data->as_ArrayLoadData()->array());
+    element()->translate_type_data_from(data->as_ArrayLoadData()->element());
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
+#endif
+};
+
+
+class ciACmpData : public ACmpData {
+public:
+  ciACmpData(DataLayout* layout) : ACmpData(layout) {}
+
+  ciSingleTypeEntry* left() const { return (ciSingleTypeEntry*)ACmpData::left(); }
+  ciSingleTypeEntry* right() const { return (ciSingleTypeEntry*)ACmpData::right(); }
+
+  virtual void translate_from(const ProfileData* data) {
+    left()->translate_type_data_from(data->as_ACmpData()->left());
+    right()->translate_type_data_from(data->as_ACmpData()->right());
   }
 
 #ifndef PRODUCT
@@ -478,17 +535,6 @@ public:
   bool is_mature() { return _state == mature_state; }
 
   int invocation_count() { return _invocation_counter; }
-
-#if INCLUDE_RTM_OPT
-  // return cached value
-  int rtm_state() {
-    if (is_empty()) {
-      return NoRTM;
-    } else {
-      return get_MethodData()->rtm_state();
-    }
-  }
-#endif
 
   // Transfer information about the method to MethodData*.
   // would_profile means we would like to profile this method,

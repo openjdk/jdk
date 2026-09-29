@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 8231827
  * @summary Ensure the LV table entries are generated for bindings
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g LocalVariableTable.java
  * @run main LocalVariableTable
  */
@@ -87,13 +85,13 @@ public class LocalVariableTable {
             return;
         }
 
-        CodeAttribute code = m.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute code = m.findAttribute(Attributes.code()).orElse(null);
         if (code == null) {
             error("Code attribute not found");
             return;
         }
 
-        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null);
+        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.localVariableTable()).orElse(null);
         if (lvt == null) {
             error("LocalVariableTable attribute not found");
             return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,15 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream toolbox.ToolBox Compiler
- * @run testng ToolLocaleMessageTest
+ * @run junit ToolLocaleMessageTest
  * @key intermittent
  */
 
 import java.util.Locale;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ToolLocaleMessageTest extends ReplToolTesting {
 
     void testLocale(ReplTest... tests) {
@@ -67,12 +66,14 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
         });
     }
 
+    @Test
     public void testTerminate() {
         testLocale(
                 (a) -> assertCommandOK(a, "System.exit(1)", "/reload")
         );
     }
 
+    @Test
     public void testSample() {
         try {
             testLocale(
@@ -98,6 +99,7 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
         }
     }
 
+    @Test
     public void testCommand() {
         try {
             testLocale(
@@ -132,6 +134,7 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
         }
     }
 
+    @Test
     public void testHelp() {
         testLocale(
                 (a) -> assertCommandOK(a, "/help", "/list", "/save", "/set", "[-restore]"),
@@ -153,6 +156,7 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void testFeedbackError() {
         try {
             testLocale(

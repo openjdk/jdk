@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,10 @@
 
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 
-inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
+inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader, bool& created) {
   guarantee(loader() != nullptr && oopDesc::is_oop(loader()), "Loader must be oop");
   // Gets the class loader data out of the java/lang/ClassLoader object, if non-null
   // it's already in the loader_data, so no need to add
@@ -40,32 +40,33 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
   if (loader_data) {
      return loader_data;
   }
+  created = true;
   return ClassLoaderDataGraph::add(loader, false);
 }
 
 size_t ClassLoaderDataGraph::num_instance_classes() {
-  return Atomic::load(&_num_instance_classes);
+  return AtomicAccess::load(&_num_instance_classes);
 }
 
 size_t ClassLoaderDataGraph::num_array_classes() {
-  return Atomic::load(&_num_array_classes);
+  return AtomicAccess::load(&_num_array_classes);
 }
 
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
-  Atomic::add(&_num_instance_classes, count, memory_order_relaxed);
+  AtomicAccess::add(&_num_instance_classes, count, memory_order_relaxed);
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
-  size_t old_count = Atomic::fetch_then_add(&_num_instance_classes, -count, memory_order_relaxed);
+  size_t old_count = AtomicAccess::fetch_then_add(&_num_instance_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
 }
 
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
-  Atomic::add(&_num_array_classes, count, memory_order_relaxed);
+  AtomicAccess::add(&_num_array_classes, count, memory_order_relaxed);
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
-  size_t old_count = Atomic::fetch_then_add(&_num_array_classes, -count, memory_order_relaxed);
+  size_t old_count = AtomicAccess::fetch_then_add(&_num_array_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
 }
 

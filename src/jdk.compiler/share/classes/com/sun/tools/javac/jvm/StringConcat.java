@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
+import static com.sun.tools.javac.tree.JCTree.Tag.LITERAL;
 import static com.sun.tools.javac.tree.JCTree.Tag.PLUS;
 import com.sun.tools.javac.jvm.Items.*;
 
@@ -416,7 +417,7 @@ public abstract class StringConcat {
                 for (JCTree arg : t) {
                     Object constVal = arg.type.constValue();
                     if ("".equals(constVal)) continue;
-                    if (arg.type == syms.botType) {
+                    if (arg.type == syms.botType && arg.hasTag(LITERAL)) {
                         // Concat the null into the recipe right away
                         recipe.append((String) null);
                     } else if (constVal != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import java.util.Objects;
 import javax.security.auth.kerberos.KeyTab;
 import sun.security.jgss.krb5.Krb5Util;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * This class encapsulates a AS-REP message that the KDC sends to the
  * client.
@@ -50,8 +52,6 @@ final class KrbAsRep extends KrbKdcRep {
     private Credentials creds;  // The Credentials provide by the AS-REP
                                 // message, created by initiator after calling
                                 // the decrypt() method
-
-    private boolean DEBUG = Krb5.DEBUG;
 
     KrbAsRep(byte[] ibuf) throws
             KrbException, Asn1Exception, IOException {
@@ -75,8 +75,8 @@ final class KrbAsRep extends KrbKdcRep {
                 // no text sent from server
                 ke = new KrbException(err);
             } else {
-                if (DEBUG) {
-                    System.out.println("KRBError received: " + eText);
+                if (DEBUG != null) {
+                    DEBUG.println("KRBError received: " + eText);
                 }
                 // override default text with server text
                 ke = new KrbException(err, eText);
@@ -175,8 +175,8 @@ final class KrbAsRep extends KrbKdcRep {
                                 enc_part.endtime,
                                 enc_part.renewTill,
                                 enc_part.caddr);
-        if (DEBUG) {
-            System.out.println(">>> KrbAsRep cons in KrbAsReq.getReply " +
+        if (DEBUG != null) {
+            DEBUG.println(">>> KrbAsRep cons in KrbAsReq.getReply " +
                                req.reqBody.cname.getNameString());
         }
     }

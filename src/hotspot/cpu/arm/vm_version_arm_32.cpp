@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
@@ -296,7 +295,7 @@ void VM_Version::initialize() {
                (has_multiprocessing_extensions() ? ", mp_ext" : ""));
 
   // buf is started with ", " or is empty
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
 
   if (has_simd()) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
@@ -351,6 +350,49 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
   }
 
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+  }
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
+  }
+  if (UseArrayFlattening) {
+    warning("UseArrayFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseArrayFlattening, false);
+  }
+  if (UseFieldFlattening) {
+    warning("UseFieldFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseFieldFlattening, false);
+  }
+  if (UseNullFreeNonAtomicValueFlattening) {
+    warning("UseNullFreeNonAtomicValueFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseNullFreeNonAtomicValueFlattening, false);
+  }
+  if (UseNullableAtomicValueFlattening) {
+    warning("UseNullableAtomicValueFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseNullableAtomicValueFlattening, false);
+  }
+  if (UseNullFreeAtomicValueFlattening) {
+    warning("UseNullFreeAtomicValueFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseNullFreeAtomicValueFlattening, false);
+  }
+  if (UseNullableNonAtomicValueFlattening) {
+    warning("UseNullableNonAtomicValueFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseNullableNonAtomicValueFlattening, false);
+  }
+
+#ifdef COMPILER2
+  // No profiling is actually happening, so C2 does not have the data to work from.
+  if (UseArrayLoadStoreProfile) {
+    FLAG_SET_DEFAULT(UseArrayLoadStoreProfile, false);
+  }
+  if (UseACmpProfile) {
+    FLAG_SET_DEFAULT(UseACmpProfile, false);
+  }
+#endif
+
   _is_initialized = true;
 }
 
@@ -363,7 +405,7 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "ARM%d", _arm_arch);
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s", _features_string);
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "ARM%d", _arm_arch);
+  os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s", _cpu_info_string);
   _initialized = true;
 }

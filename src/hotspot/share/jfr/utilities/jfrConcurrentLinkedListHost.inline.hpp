@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 #include "jfr/utilities/jfrRelation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 /*
@@ -67,7 +67,7 @@ Node* find_adjacent(Node* head, const Node* tail, Node** predecessor, VersionHan
   while (true) {
     Node* current = head;
     version_handle->checkout();
-    Node* next = Atomic::load_acquire(&current->_next);
+    Node* next = AtomicAccess::load_acquire(&current->_next);
     do {
       assert(next != nullptr, "invariant");
       Node* const unmasked_next = unmask(next);
@@ -158,7 +158,7 @@ void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::insert_tail
   // Invariant: [predecessor] --> tail
   assert(is_marked_for_insertion(predecessor->_next), "invariant");
   assert(predecessor != head, "invariant");
-  if (Atomic::load_acquire(&last->_next) == predecessor) {
+  if (AtomicAccess::load_acquire(&last->_next) == predecessor) {
     /* Even after we store the new node into the last->_next field, there is no race
        because it is also marked with the insertion bit. */
     last->_next = node;
@@ -225,7 +225,7 @@ typename Client::Node* JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPo
     Identity<Node> excise(successor);
     find_adjacent<Node, VersionHandle, Identity>(head, tail, &predecessor, version_handle, excise);
   }
-  if (last != nullptr && Atomic::load_acquire(&last->_next) == successor) {
+  if (last != nullptr && AtomicAccess::load_acquire(&last->_next) == successor) {
     guarantee(!insert_is_head, "invariant");
     guarantee(successor_next == tail, "invariant");
     LastNode<Node> excise;
@@ -249,7 +249,7 @@ bool JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::in_list(con
   VersionHandle version_handle = _client->get_version_handle();
   const Node* current = head;
   version_handle->checkout();
-  const Node* next = Atomic::load_acquire(&current->_next);
+  const Node* next = AtomicAccess::load_acquire(&current->_next);
   while (true) {
     if (!is_marked_for_removal(next)) {
       if (current == node) {
@@ -274,7 +274,7 @@ inline void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::iter
   VersionHandle version_handle = _client->get_version_handle();
   NodePtr current = head;
   version_handle->checkout();
-  NodePtr next = Atomic::load_acquire(&current->_next);
+  NodePtr next = AtomicAccess::load_acquire(&current->_next);
   while (true) {
     if (!is_marked_for_removal(next)) {
       if (!cb.process(current)) {

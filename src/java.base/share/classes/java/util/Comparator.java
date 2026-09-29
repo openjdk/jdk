@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.function.ToDoubleFunction;
-import java.util.Comparators;
 
 /**
  * A comparison function, which imposes a <i>total ordering</i> on
@@ -187,6 +186,52 @@ public interface Comparator<T> {
      */
     default Comparator<T> reversed() {
         return Collections.reverseOrder(this);
+    }
+
+    /**
+     * Returns the greater of two values according to this comparator.
+     * If the arguments are equal with respect to this comparator,
+     * the {@code o1} argument is returned.
+     *
+     * @implSpec This default implementation behaves as if
+     *           {@code compare(o1, o2) >= 0 ? o1 : o2}.
+     *
+     * @param   o1   an argument.
+     * @param   o2   another argument.
+     * @param   <U> the type of the arguments and the result.
+     * @return  the larger of {@code o1} and {@code o2} according to this comparator.
+     * @throws  NullPointerException if an argument is null and this
+     *          comparator does not permit null arguments
+     * @throws  ClassCastException if the arguments' types prevent them from
+     *          being compared by this comparator.
+     *
+     * @since 26
+     */
+    default <U extends T> U max(U o1, U o2) {
+        return compare(o1, o2) >= 0 ? o1 : o2;
+    }
+
+    /**
+     * Returns the smaller of two values according to this comparator.
+     * If the arguments are equal with respect to this comparator,
+     * the {@code o1} argument is returned.
+     *
+     * @implSpec This default implementation behaves as if
+     *           {@code compare(o1, o2) <= 0 ? o1 : o2}.
+     *
+     * @param   o1   an argument.
+     * @param   o2   another argument.
+     * @param   <U> the type of the arguments and the result.
+     * @return  the smaller of {@code o1} and {@code o2} according to this comparator.
+     * @throws  NullPointerException if an argument is null and this
+     *          comparator does not permit null arguments
+     * @throws  ClassCastException if the arguments' types prevent them from
+     *          being compared by this comparator.
+     *
+     * @since 26
+     */
+    default <U extends T> U min(U o1, U o2) {
+        return compare(o1, o2) <= 0 ? o1 : o2;
     }
 
     /**

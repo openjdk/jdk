@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -37,6 +36,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -74,7 +74,7 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
     Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
   } else if (indy_entry->resolution_failed()) {
-    int encoded_index = ResolutionErrorTable::encode_indy_index(ConstantPool::encode_invokedynamic_index(_indy_index));
+    int encoded_index = ResolutionErrorTable::encode_indy_index(_indy_index);
     ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
     return true;
   } else {
@@ -188,8 +188,8 @@ void BootstrapInfo::resolve_args(TRAPS) {
 
   if (!use_BSCI) {
     // return {arg...}; resolution of arguments is done immediately, before JDK code is called
-    objArrayOop args_oop = oopFactory::new_objArray(vmClasses::Object_klass(), _argc, CHECK);
-    objArrayHandle args(THREAD, args_oop);
+    refArrayOop args_oop = oopFactory::new_refArray(vmClasses::Object_klass(), _argc, CHECK);
+    refArrayHandle args(THREAD, args_oop);
     _pool->copy_bootstrap_arguments_at(_bss_index, 0, _argc, args, 0, true, Handle(), CHECK);
     oop arg_oop = ((_argc == 1) ? args->obj_at(0) : (oop)nullptr);
     // try to discard the singleton array
@@ -271,14 +271,15 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   // the use_BSCI setting.
   if (_arg_values.not_null()) {
     // Find the static arguments within the first element of _arg_values.
-    objArrayOop static_args = (objArrayOop)_arg_values();
+    oop static_args = _arg_values();
     if (!static_args->is_array()) {
       assert(_argc == 1, "Invalid BSM _arg_values for non-array");
       st->print("  resolved arg[0]: "); static_args->print_on(st);
-    } else if (static_args->is_objArray()) {
+    } else if (static_args->is_refArray()) {
+      refArrayOop static_args_array = oop_cast<refArrayOop>(static_args);
       int lines = 0;
       for (int i = 0; i < _argc; i++) {
-        oop x = static_args->obj_at(i);
+        oop x = static_args_array->obj_at(i);
         if (x != nullptr) {
           if (++lines > 6) {
             st->print_cr("  resolved arg[%d]: ...", i);
@@ -292,6 +293,8 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
       assert(tmp_array->length() == 2, "Invalid BSM _arg_values type array");
       st->print_cr("  resolved arg[0]: %d", tmp_array->int_at(0));
       st->print_cr("  resolved arg[1]: %d", tmp_array->int_at(1));
+    } else if (static_args->is_flatArray()) {
+      ShouldNotReachHere();
     }
   }
 }

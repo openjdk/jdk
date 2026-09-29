@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,14 @@
 
 /**
  * @test
- * @bug 8193125 8196623
+ * @bug 8193125 8196623 8335989
  * @summary test modifiers with java.base
  * @library /tools/lib
- * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.jvm
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.platform
- *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main JavaBaseTest
  */
@@ -49,12 +47,15 @@ import java.lang.classfile.attribute.*;
 
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.JDKPlatformProvider;
+import java.util.function.Supplier;
 
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.ToolBox;
 
 public class JavaBaseTest {
+
+    private static final String CURRENT_VERSION = System.getProperty("java.specification.version");
 
     public static void main(String... args) throws Exception {
         JavaBaseTest t = new JavaBaseTest();
@@ -75,13 +76,11 @@ public class JavaBaseTest {
 
     void run() throws Exception {
         Set<String> targets = new LinkedHashSet<>();
-        StreamSupport.stream(new JDKPlatformProvider().getSupportedPlatformNames()
-                                                      .spliterator(),
-                             false)
-                     .filter(p -> Integer.parseInt(p) >= 9)
-                     .forEach(targets::add);
-        //run without --release:
+        targets.add("9");
+        targets.add("10");
+        targets.add("21");
         targets.add("current");
+        targets.add("current-preview");
         for (List<String> mods : modifiers) {
             for (String target : targets) {
                 for (Mode mode : Mode.values()) {
@@ -119,15 +118,43 @@ public class JavaBaseTest {
         tb.writeJavaFiles(src,
                 "module m { requires " + String.join(" ", mods) + " java.base; }");
         Path modules = Files.createDirectories(base.resolve("modules"));
-        boolean expectOK = target.equals("9");
+        boolean expectOK;
 
         JavacTask jct = new JavacTask(tb)
             .outdir(modules);
 
-        if (target.equals("current"))
-            jct.options("-XDrawDiagnostics");
-        else
-            jct.options("-XDrawDiagnostics", "--release", target);
+        List<String> options = new ArrayList<>();
+
+        switch (target) {
+            case "current":
+                options.add("--release");
+                options.add(CURRENT_VERSION);
+                expectOK = true;
+                break;
+            case "current-preview":
+                options.add("--enable-preview");
+                options.add("--release");
+                options.add(CURRENT_VERSION);
+                expectOK = true;
+                break;
+            case "9":
+                options.add("--release");
+                options.add(target);
+                expectOK = true;
+                break;
+            default:
+                options.add("--release");
+                options.add(target);
+                expectOK = false;
+                break;
+        }
+
+        if (mods.contains("static") && !"9".equals(target)) {
+            expectOK = false;
+        }
+
+        options.add("-XDrawDiagnostics");
+        jct.options(options);
 
         String log = jct.files(tb.findJavaFiles(src))
             .run(expectOK ? Task.Expect.SUCCESS : Task.Expect.FAIL)
@@ -138,9 +165,9 @@ public class JavaBaseTest {
             boolean foundErrorMessage = false;
             for (String mod : mods) {
                 String key = mod.equals("static")
-                    ? "compiler.err.mod.not.allowed.here"
-                    : "compiler.err.modifier.not.allowed.here";
-                String message = "module-info.java:1:12: " + key + ": " + mod;
+                    ? "compiler.err.mod.not.allowed.here: " + mod
+                    : "compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.java.base.transitive), $(VERSION), 25".replace("$(VERSION)", target);
+                String message = "module-info.java:1:12: " + key;
                 if (log.contains(message)) {
                     foundErrorMessage = true;
                 }
@@ -152,18 +179,53 @@ public class JavaBaseTest {
     }
 
     void testClass(Path base, List<String> mods, String target) throws Exception {
-        createClass(base, mods, target);
+        boolean expectOK = true;
+        List<String> options = new ArrayList<>();
+
+        switch (target) {
+            case "current":
+                options.add("--release");
+                options.add(CURRENT_VERSION);
+                break;
+            case "current-preview":
+                options.add("--enable-preview");
+                options.add("--release");
+                options.add(CURRENT_VERSION);
+                break;
+            case "9":
+                options.add("--release");
+                options.add(target);
+                break;
+            default:
+                options.add("--release");
+                options.add(target);
+                break;
+        }
+
+        if (mods.contains("static") && !"9".equals(target)) {
+            expectOK = false;
+        }
+
+        createClass(base, mods, options);
+
+        List<String> testOptions = new ArrayList<>();
+
+        testOptions.add("-XDrawDiagnostics");
+        testOptions.add("--module-path"); testOptions.add(base.resolve("test-modules").toString());
+
+        if (options.contains("--enable-preview")) {
+            testOptions.add("--enable-preview");
+            testOptions.add("--source"); testOptions.add(CURRENT_VERSION);
+        }
 
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module mx { requires m; }");
         Path modules = Files.createDirectories(base.resolve("modules"));
 
-        boolean expectOK = target.equals("9");
         String log = new JavacTask(tb)
                 .outdir(modules)
-                .options("-XDrawDiagnostics",
-                        "--module-path", base.resolve("test-modules").toString())
+                .options(testOptions)
                 .files(tb.findJavaFiles(src))
                 .run(expectOK ? Task.Expect.SUCCESS : Task.Expect.FAIL)
                 .writeAll()
@@ -188,7 +250,7 @@ public class JavaBaseTest {
         }
     }
 
-    void createClass(Path base, List<String> mods, String target) throws Exception {
+    void createClass(Path base, List<String> mods, List<String> options) throws Exception {
         Path src1 = base.resolve("interim-src");
         tb.writeJavaFiles(src1,
                 "module m { requires java.base; }");
@@ -197,16 +259,14 @@ public class JavaBaseTest {
         JavacTask jct = new JavacTask(tb)
             .outdir(modules1);
 
-        if (!target.equals("current")) {
-            jct.options("--release", target);
-        }
+        jct.options(options);
 
         jct.files(tb.findJavaFiles(src1))
             .run(Task.Expect.SUCCESS);
 
         ClassModel cm1 = ClassFile.of().parse(modules1.resolve("module-info.class"));
 
-        ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.MODULE).orElseThrow();
+        ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.module()).orElseThrow();
         List<ModuleRequireInfo> requires = Arrays.asList(new ModuleRequireInfo[modAttr1.requires().size()]);
         for (int i = 0; i < modAttr1.requires().size(); ++i) {
             ModuleRequireInfo e1 = modAttr1.requires().get(i);
@@ -226,6 +286,8 @@ public class JavaBaseTest {
             requires.set(i, e2);
         }
 
+        boolean preview = options.contains("--enable-preview");
+
         ModuleAttribute modAttr2 = ModuleAttribute.of(
                 modAttr1.moduleName(),
                 modAttr1.moduleFlagsMask(),
@@ -237,8 +299,14 @@ public class JavaBaseTest {
                 modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        byte[] newBytes = ClassFile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
-                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modAttr2))));
+        ClassTransform replace = (builder, element) -> {
+            switch (element) {
+                case ClassFileVersion cfv when preview -> builder.withVersion(cfv.majorVersion(), 0xFFFF);
+                case ModuleAttribute _ -> builder.with(modAttr2);
+                default -> builder.with(element);
+            }
+        };
+        byte[] newBytes = ClassFile.of().transformClass(cm1, replace);
         try (OutputStream out = Files.newOutputStream(modInfo)) {
             out.write(newBytes);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,18 @@ import java.io.ObjectInputStream;
  * Only the null value or the empty string are allowed for the action
  * to allow the policy object to create the permissions specified in
  * the policy file.
- * <p>
- * If a signer, or codesource is granted this permission, then it is
- * considered a trusted source for MBeans. Only MBeans from trusted
- * sources may be registered in the MBeanServer.
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
+ * Consequently this class is deprecated for removal in a future release.
+ *
+ * @deprecated This class was only useful in conjunction with the Security Manager,
+ * which is no longer supported. There is no replacement for this class.
  *
  * @since 1.5
  */
+@Deprecated(since="25", forRemoval=true)
 public class MBeanTrustPermission extends BasicPermission {
 
     private static final long serialVersionUID = -2952178077029018140L;

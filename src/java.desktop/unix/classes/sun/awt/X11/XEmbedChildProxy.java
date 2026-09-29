@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.awt.Toolkit;
 import sun.awt.AWTAccessor;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class XEmbedChildProxy extends Component {
+public final class XEmbedChildProxy extends Component {
     long handle;
     XEmbeddingContainer container;
     public XEmbedChildProxy(XEmbeddingContainer container, long handle) {
@@ -38,6 +38,7 @@ public class XEmbedChildProxy extends Component {
         this.container = container;
     }
 
+    @Override
     public void addNotify() {
         synchronized(getTreeLock()) {
             if (AWTAccessor.getComponentAccessor().getPeer(this) == null) {

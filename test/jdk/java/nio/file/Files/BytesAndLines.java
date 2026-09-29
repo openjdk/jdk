@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,38 +24,47 @@
 /* @test
  * @bug 7006126 8020669 8024788 8019526
  * @build BytesAndLines PassThroughFileSystem
- * @run testng BytesAndLines
+ * @run junit BytesAndLines
  * @summary Unit test for methods for Files readAllBytes, readAllLines and
  *     and write methods.
  * @key randomness
  */
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.OpenOption;
-import static java.nio.file.StandardOpenOption.*;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
-import static java.nio.charset.StandardCharsets.*;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.io.IOException;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.nio.file.StandardOpenOption.*;
 
-@Test(groups = "unit")
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 public class BytesAndLines {
 
     // data for text files
@@ -66,15 +75,15 @@ public class BytesAndLines {
     private static Random RAND = new Random();
 
     // file used by most tests
-    private Path tmpfile;
+    private static Path tmpfile;
 
-    @BeforeClass
-    void setup() throws IOException {
+    @BeforeAll
+    static void setup() throws IOException {
         tmpfile = Files.createTempFile("blah", null);
     }
 
-    @AfterClass
-    void cleanup() throws IOException {
+    @AfterAll
+    static void cleanup() throws IOException {
         Files.deleteIfExists(tmpfile);
     }
 
@@ -90,6 +99,7 @@ public class BytesAndLines {
     /**
      * Exercise NullPointerException
      */
+    @Test
     public void testNulls() {
         Path file = Paths.get("foo");
         byte[] bytes = new byte[100];
@@ -118,18 +128,13 @@ public class BytesAndLines {
     }
 
     private void checkNullPointerException(Callable<?> c) {
-        try {
-            c.call();
-            fail("NullPointerException expected");
-        } catch (NullPointerException ignore) {
-        } catch (Exception e) {
-            fail(e + " not expected");
-        }
+        assertThrows(NullPointerException.class, () -> c.call());
     }
 
     /**
      * Exercise Files.readAllBytes(Path) on varied file sizes
      */
+    @Test
     public void testReadAllBytes() throws IOException {
         int size = 0;
         while (size <= 16*1024) {
@@ -145,7 +150,7 @@ public class BytesAndLines {
 
         // check expected bytes are read
         byte[] read = Files.readAllBytes(tmpfile);
-        assertTrue(Arrays.equals(read, expected), "Bytes read not the same as written");
+        assertArrayEquals(expected, read, "Bytes read not the same as written");
     }
 
     /**
@@ -153,13 +158,14 @@ public class BytesAndLines {
      * special because file sizes are reported as 0 even though the file
      * has content.
      */
+    @Test
+    @EnabledOnOs(OS.LINUX)
     public void testReadAllBytesOnProcFS() throws IOException {
         // read from procfs
-        if (System.getProperty("os.name").equals("Linux")) {
-            Path statFile = Paths.get("/proc/self/stat");
-            byte[] data = Files.readAllBytes(statFile);
-            assertTrue(data.length > 0, "Files.readAllBytes('" + statFile + "') failed to read");
-        }
+        Path statFile = Paths.get("/proc/self/stat");
+        byte[] data = Files.readAllBytes(statFile);
+        assertTrue(data.length > 0,
+                   "Files.readAllBytes('" + statFile + "') failed to read");
     }
 
     /**
@@ -167,6 +173,7 @@ public class BytesAndLines {
      * because readAllBytes was originally implemented to use FileChannel
      * and so may not be supported by custom file system providers.
      */
+    @Test
     public void testReadAllBytesOnCustomFS() throws IOException {
         Path myfile = PassThroughFileSystem.create().getPath("myfile");
         try {
@@ -175,7 +182,7 @@ public class BytesAndLines {
                 byte[] b1 = genBytes(size);
                 Files.write(myfile, b1);
                 byte[] b2 = Files.readAllBytes(myfile);
-                assertTrue(Arrays.equals(b1, b2), "bytes not equal");
+                assertArrayEquals(b1, b2, "bytes not equal");
                 size += 512;
             }
         } finally {
@@ -186,6 +193,7 @@ public class BytesAndLines {
     /**
      * Exercise Files.write(Path, byte[], OpenOption...) on various sizes
      */
+    @Test
     public void testWriteBytes() throws IOException {
         int size = 0;
         while (size < 16*1024) {
@@ -198,10 +206,10 @@ public class BytesAndLines {
     private void testWriteBytes(int size, boolean append) throws IOException {
         byte[] bytes = genBytes(size);
         Path result = Files.write(tmpfile, bytes);
-        assertTrue(result == tmpfile);
+        assertSame(tmpfile, result);
         if (append) {
             Files.write(tmpfile, bytes, APPEND);
-            assertTrue(Files.size(tmpfile) == size*2);
+            assertEquals(size*2, Files.size(tmpfile));
         }
 
         byte[] expected;
@@ -214,12 +222,13 @@ public class BytesAndLines {
         }
 
         byte[] read = Files.readAllBytes(tmpfile);
-        assertTrue(Arrays.equals(read, expected), "Bytes read not the same as written");
+        assertArrayEquals(expected, read, "Bytes read not the same as written");
     }
 
     /**
      * Exercise Files.readAllLines(Path, Charset)
      */
+    @Test
     public void testReadAllLines() throws IOException {
         // zero lines
         Files.write(tmpfile, new byte[0]);
@@ -230,23 +239,22 @@ public class BytesAndLines {
         byte[] hi = { (byte)'h', (byte)'i' };
         Files.write(tmpfile, hi);
         lines = Files.readAllLines(tmpfile, US_ASCII);
-        assertTrue(lines.size() == 1, "One line expected");
-        assertTrue(lines.get(0).equals("hi"), "'Hi' expected");
+        assertEquals(1, lines.size(), "One line expected");
+        assertEquals("hi", lines.get(0), "'Hi' expected");
 
         // two lines using platform's line separator
         List<String> expected = Arrays.asList("hi", "there");
         Files.write(tmpfile, expected, US_ASCII);
         assertTrue(Files.size(tmpfile) > 0, "File is empty");
         lines = Files.readAllLines(tmpfile, US_ASCII);
-        assertTrue(lines.equals(expected), "Unexpected lines");
+        assertLinesMatch(expected, lines, "Unexpected lines");
 
         // MalformedInputException
         byte[] bad = { (byte)0xff, (byte)0xff };
         Files.write(tmpfile, bad);
-        try {
-            Files.readAllLines(tmpfile, US_ASCII);
-            fail("MalformedInputException expected");
-        } catch (MalformedInputException ignore) { }
+        assertThrows(MalformedInputException.class,
+                     () -> Files.readAllLines(tmpfile, US_ASCII),
+                     "MalformedInputException expected");
     }
 
     /**
@@ -254,24 +262,27 @@ public class BytesAndLines {
      * is special because file sizes are reported as 0 even though the file
      * has content.
      */
+    @Test
+    @EnabledOnOs(OS.LINUX)
     public void testReadAllLinesOnProcFS() throws IOException {
-        if (System.getProperty("os.name").equals("Linux")) {
-            Path statFile = Paths.get("/proc/self/stat");
-            List<String> lines = Files.readAllLines(statFile);
-            assertTrue(lines.size() > 0, "Files.readAllLines('" + statFile + "') failed to read");
-        }
+        Path statFile = Paths.get("/proc/self/stat");
+        List<String> lines = Files.readAllLines(statFile);
+        assertTrue(lines.size() > 0,
+                   "Files.readAllLines('" + statFile + "') failed to read");
     }
 
     /**
      * Exercise Files.readAllLines(Path)
      */
+    @Test
     public void testReadAllLinesUTF8() throws IOException {
         Files.write(tmpfile, encodeAsUTF8(EN_STRING + "\n" + JA_STRING));
 
         List<String> lines = Files.readAllLines(tmpfile);
-        assertTrue(lines.size() == 2, "Read " + lines.size() + " lines instead of 2");
-        assertTrue(lines.get(0).equals(EN_STRING));
-        assertTrue(lines.get(1).equals(JA_STRING));
+        assertEquals(2, lines.size(),
+                     "Read " + lines.size() + " lines instead of 2");
+        assertEquals(EN_STRING, lines.get(0));
+        assertEquals(JA_STRING, lines.get(1));
 
         // a sample of malformed sequences
         testReadAllLinesMalformedUTF8((byte)0xFF); // one-byte sequence
@@ -284,57 +295,55 @@ public class BytesAndLines {
         ByteBuffer bb = UTF_8.newEncoder().encode(CharBuffer.wrap(s));
         byte[] result = new byte[bb.limit()];
         bb.get(result);
-        assertTrue(bb.remaining() == 0);
+        assertEquals(0, bb.remaining());
         return result;
     }
 
     private void testReadAllLinesMalformedUTF8(byte... bytes) throws IOException {
         Files.write(tmpfile, bytes);
-        try {
-            Files.readAllLines(tmpfile);
-            fail("MalformedInputException expected");
-        } catch (MalformedInputException ignore) { }
+        assertThrows(MalformedInputException.class,
+                     () -> Files.readAllLines(tmpfile));
     }
 
     /**
      * Exercise Files.write(Path, Iterable<? extends CharSequence>, Charset, OpenOption...)
      */
+    @Test
     public void testWriteLines() throws IOException {
         // zero lines
         Path result = Files.write(tmpfile, Collections.<String>emptyList(), US_ASCII);
-        assert(Files.size(tmpfile) == 0);
-        assert(result == tmpfile);
+        assertEquals(0, Files.size(tmpfile));
+        assertSame(tmpfile, result);
 
         // two lines
         List<String> lines = Arrays.asList("hi", "there");
         Files.write(tmpfile, lines, US_ASCII);
         List<String> actual = Files.readAllLines(tmpfile, US_ASCII);
-        assertTrue(actual.equals(lines), "Unexpected lines");
+        assertLinesMatch(lines, actual, "Unexpected lines");
 
         // append two lines
         Files.write(tmpfile, lines, US_ASCII, APPEND);
         List<String> expected = new ArrayList<>();
         expected.addAll(lines);
         expected.addAll(lines);
-        assertTrue(expected.size() == 4, "List should have 4 elements");
+        assertEquals(4, expected.size());
         actual = Files.readAllLines(tmpfile, US_ASCII);
-        assertTrue(actual.equals(expected), "Unexpected lines");
+        assertLinesMatch(expected, actual, "Unexpected lines");
 
         // UnmappableCharacterException
-        try {
-            String s = "\u00A0\u00A1";
-            Files.write(tmpfile, Arrays.asList(s), US_ASCII);
-            fail("UnmappableCharacterException expected");
-        } catch (UnmappableCharacterException ignore) { }
+        String s = "\u00A0\u00A1";
+        assertThrows(UnmappableCharacterException.class,
+                     () -> Files.write(tmpfile, Arrays.asList(s), US_ASCII));
     }
 
     /**
      * Exercise Files.write(Path, Iterable<? extends CharSequence>, OpenOption...)
      */
+    @Test
     public void testWriteLinesUTF8() throws IOException {
         List<String> lines = Arrays.asList(EN_STRING, JA_STRING);
         Files.write(tmpfile, lines);
         List<String> actual = Files.readAllLines(tmpfile, UTF_8);
-        assertTrue(actual.equals(lines), "Unexpected lines");
+        assertLinesMatch(lines, actual, "Unexpected lines");
     }
 }

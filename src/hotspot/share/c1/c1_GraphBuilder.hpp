@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_C1_C1_GRAPHBUILDER_HPP
 #define SHARE_C1_C1_GRAPHBUILDER_HPP
 
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciMethodData.hpp"
@@ -34,6 +34,24 @@
 #include "compiler/compileLog.hpp"
 
 class MemoryBuffer;
+
+class DelayedFieldAccess : public CompilationResourceObj {
+private:
+  Value            _obj;
+  ciInstanceKlass* _holder;
+  int              _offset;
+  ValueStack*      _state_before;
+
+public:
+  DelayedFieldAccess(Value obj, ciInstanceKlass* holder, int offset, ValueStack* state_before)
+  : _obj(obj), _holder(holder) , _offset(offset), _state_before(state_before) { }
+
+  Value obj() const { return _obj; }
+  ciInstanceKlass* holder() const { return _holder; }
+  int offset() const { return _offset; }
+  void inc_offset(int offset) { _offset += offset; }
+  ValueStack* state_before() const { return _state_before; }
+};
 
 class GraphBuilder {
   friend class JfrResolution;
@@ -192,6 +210,10 @@ class GraphBuilder {
   Instruction*      _last;                       // the last instruction added
   bool              _skip_block;                 // skip processing of the rest of this block
 
+  // support for optimization of accesses to flat fields and flat arrays
+  DelayedFieldAccess* _pending_field_access;
+  DelayedLoadIndexed* _pending_load_indexed;
+
   // accessors
   ScopeData*        scope_data() const           { return _scope_data; }
   Compilation*      compilation() const          { return _compilation; }
@@ -209,6 +231,12 @@ class GraphBuilder {
   Bytecodes::Code   code() const                 { return stream()->cur_bc(); }
   int               bci() const                  { return stream()->cur_bci(); }
   int               next_bci() const             { return stream()->next_bci(); }
+  bool              has_pending_field_access()   { return _pending_field_access != nullptr; }
+  DelayedFieldAccess* pending_field_access()     { return _pending_field_access; }
+  void              set_pending_field_access(DelayedFieldAccess* delayed) { _pending_field_access = delayed; }
+  bool              has_pending_load_indexed()   { return _pending_load_indexed != nullptr; }
+  DelayedLoadIndexed* pending_load_indexed()     { return _pending_load_indexed; }
+  void              set_pending_load_indexed(DelayedLoadIndexed* delayed) { _pending_load_indexed = delayed; }
 
   // unified bailout support
   void bailout(const char* msg) const            { compilation()->bailout(msg); }
@@ -234,6 +262,9 @@ class GraphBuilder {
   void load_local(ValueType* type, int index);
   void store_local(ValueType* type, int index);
   void store_local(ValueStack* state, Value value, int index);
+
+  ValueStack* state_before_for_indexed_access(BasicType type, int array_idx);
+
   void load_indexed (BasicType type);
   void store_indexed(BasicType type);
   void stack_op(Bytecodes::Code code);
@@ -266,7 +297,9 @@ class GraphBuilder {
   void monitorexit(Value x, int bci);
   void new_multi_array(int dimensions);
   void throw_op(int bci);
-  Value round_fp(Value fp_value);
+
+  // value types
+  void copy_value_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before, ciField* enclosing_field = nullptr);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);
@@ -379,6 +412,7 @@ class GraphBuilder {
   void append_unsafe_CAS(ciMethod* callee);
   void append_unsafe_get_and_set(ciMethod* callee, bool is_add);
   void append_char_access(ciMethod* callee, bool is_store);
+  void append_alloc_array_copy(ciMethod* callee);
 
   void print_inlining(ciMethod* callee, const char* msg, bool success = true);
 
@@ -395,6 +429,8 @@ class GraphBuilder {
   bool profile_parameters()    { return _compilation->profile_parameters();    }
   bool profile_arguments()     { return _compilation->profile_arguments();     }
   bool profile_return()        { return _compilation->profile_return();        }
+  bool profile_array_accesses(){ return _compilation->profile_array_accesses();}
+  bool profile_acmp()          { return _compilation->profile_acmp();          }
 
   Values* args_list_for_profiling(ciMethod* target, int& start, bool may_have_receiver);
   Values* collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver);

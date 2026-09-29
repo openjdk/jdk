@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import compiler.lib.ir_framework.CompilePhase;
  * This class represents a single compile phase block of a {@link LoggedMethod}.
  */
 class CompilePhaseBlock {
-    public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
 
     /**
      * Dummy object for a block that we do not need to parse.
@@ -38,11 +37,6 @@ class CompilePhaseBlock {
 
     private final CompilePhase compilePhase;
     private final StringBuilder builder;
-    /**
-     * Stores an incomplete line that was interrupted by a safepoint.
-     * Needs to be merged with the immediately following line.
-     */
-    private String incompleteLine = "";
 
     public CompilePhaseBlock(CompilePhase compilePhase) {
         this.compilePhase = compilePhase;
@@ -92,33 +86,12 @@ class CompilePhaseBlock {
     }
 
     public void addLine(String line) {
-        line = mergeWithIncompleteLine(line);
-        if (line.endsWith(SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            line = removeSafepointMessage(line);
-            incompleteLine = line;
-        } else {
-            appendLine(line);
-        }
-    }
+        builder.append(escapeXML(line)).append(System.lineSeparator());
 
-    private String mergeWithIncompleteLine(String line) {
-        if (!incompleteLine.isEmpty()) {
-            line = incompleteLine + line;
-            incompleteLine = "";
-        }
-        return line;
-    }
-
-    private static String removeSafepointMessage(String line) {
-        return line.substring(0, line.lastIndexOf(SAFEPOINT_WHILE_PRINTING_MESSAGE));
     }
 
     public String content() {
         return builder.toString();
-    }
-
-    private void appendLine(String line) {
-        builder.append(escapeXML(line)).append(System.lineSeparator());
     }
 
     private static String escapeXML(String line) {

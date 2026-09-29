@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
@@ -175,6 +174,9 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
+  case Interpreter::java_lang_math_sinh:
+  case Interpreter::java_lang_math_tanh:
+  case Interpreter::java_lang_math_cbrt:
     // TODO: Implement intrinsic
     break;
   default:
@@ -458,6 +460,10 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
+}
+
 
 // Helpers for commoning out cases in the various type of method entries.
 //
@@ -560,7 +566,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   __ cmp(Rtemp, R0);
 
   __ mov(SP, Rsender_sp, ls);  // restore SP
-  __ b(StubRoutines::throw_StackOverflowError_entry(), ls);
+  __ b(SharedRuntime::throw_StackOverflowError_entry(), ls);
 }
 
 
@@ -574,7 +580,7 @@ void TemplateInterpreterGenerator::lock_method() {
 
   #ifdef ASSERT
     { Label L;
-      __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+      __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
       __ tbnz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
       __ stop("method doesn't need synchronization");
       __ bind(L);
@@ -583,7 +589,7 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // get synchronization object
   { Label done;
-    __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+    __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
     __ tst(Rtemp, JVM_ACC_STATIC);
     __ ldr(R0, Address(Rlocals, Interpreter::local_offset_in_bytes(0)), eq); // get receiver (assume this is frequent case)
     __ b(done, eq);
@@ -790,10 +796,6 @@ address TemplateInterpreterGenerator::generate_currentThread() { return nullptr;
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
@@ -846,7 +848,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+  __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
   {
     Label L;
     __ tbnz(Rtemp, JVM_ACC_NATIVE_BIT, L);
@@ -888,7 +890,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // no synchronization necessary
 #ifdef ASSERT
       { Label L;
-        __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+        __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
         __ tbz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
         __ stop("method needs synchronization");
         __ bind(L);
@@ -970,7 +972,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Pass JNIEnv and mirror for static methods
   {
     Label L;
-    __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+    __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
     __ add(R0, Rthread, in_bytes(JavaThread::jni_environment_offset()));
     __ tbz(Rtemp, JVM_ACC_STATIC_BIT, L);
     __ load_mirror(Rtemp, Rmethod, Rtemp);
@@ -1011,8 +1013,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ restore_default_fp_mode();
   }
 
-  // Do safepoint check
-  __ mov(Rtemp, _thread_in_native_trans);
+  // Perform Native->Java thread transition
+  __ mov(Rtemp, _thread_in_Java);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
@@ -1031,6 +1033,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   saved_result_fp = fnoreg;
 #endif // __ABI_HARD__
 
+  // Do safepoint check
   {
   Label call, skip_call;
   __ safepoint_poll(Rtemp, call);
@@ -1039,17 +1042,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ b(skip_call, eq);
   __ bind(call);
   __ mov(R0, Rthread);
-  __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans), relocInfo::none);
+  __ call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans), relocInfo::none);
   __ bind(skip_call);
 
 #if R9_IS_SCRATCHED
   __ restore_method();
 #endif
   }
-
-  // Perform Native->Java thread transition
-  __ mov(Rtemp, _thread_in_Java);
-  __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // Zero handles and last_java_sp
   __ reset_last_Java_frame(Rtemp);
@@ -1137,7 +1136,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls;
 
@@ -1199,7 +1198,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+  __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
   {
     Label L;
     __ tbz(Rtemp, JVM_ACC_NATIVE_BIT, L);
@@ -1244,12 +1243,18 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     // no synchronization necessary
 #ifdef ASSERT
       { Label L;
-        __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+        __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
         __ tbz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
         __ stop("method needs synchronization");
         __ bind(L);
       }
 #endif
+  }
+
+  // Issue a StoreStore barrier on entry to Object_init if the
+  // class has strict field fields.  Be lazy, always do it.
+  if (object_init) {
+    __ membar(MacroAssembler::StoreStore, R1_tmp);
   }
 
   // start execution
@@ -1467,11 +1472,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(R0_tos);
-  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_offset()));
+  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_oop_offset()));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, Rexception_pc, false, true, false);
   // restore exception
-  __ get_vm_result(Rexception_obj, Rtemp);
+  __ get_vm_result_oop(Rexception_obj, Rtemp);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects

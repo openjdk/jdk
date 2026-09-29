@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
  * @test
  * @bug 8029354
  * @library /test/lib
- * @run main/othervm -Djava.security.manager=allow OpenURL
+ * @run main/othervm OpenURL
  */
 
 import java.net.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import jdk.test.lib.net.URIBuilder;
 import static java.net.Proxy.NO_PROXY;
 
@@ -37,21 +40,61 @@ public class OpenURL {
 
     public static void main (String[] args) throws Exception {
 
-        System.setSecurityManager(new SecurityManager());
+        // minimal HTTP/1.1 reply
+        final String reply = "HTTP/1.1 200 OK\r\n"+
+                "Connection: close\r\n" +
+                "Content-Length: 0\r\n\r\n";
 
-        try {
-            URL url = URIBuilder.newBuilder()
-                .scheme("http")
-                .userInfo("joe")
-                .loopback()
-                .path("/a/b")
-                .toURL();
-            System.out.println("URL: " + url);
-            HttpURLConnection urlc = (HttpURLConnection)url.openConnection(NO_PROXY);
-            InputStream is = urlc.getInputStream();
-            // error will throw exception other than SecurityException
-        } catch (SecurityException e) {
-            System.out.println("OK");
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            final AtomicBoolean done = new AtomicBoolean();
+            final Thread serverThread = new Thread(() -> {
+                while (!done.get()) {
+                    try (Socket ss = serverSocket.accept()) {
+                        ss.getOutputStream().write(reply.getBytes(StandardCharsets.US_ASCII));
+                        ss.getOutputStream().close();
+                        // Give a chance to the peer to close the socket first...
+                        Thread.sleep(100);
+                        // Reads the request headers - avoids Connection reset
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(ss.getInputStream()));
+                        String line;
+                        do {
+                            System.out.println("Server: " + (line = reader.readLine()));
+                        } while (!line.isBlank());
+                    } catch (Exception x) {
+                        if (!done.get()) {
+                            // Something else than the expected client
+                            // might have connected...
+                            x.printStackTrace();
+                        }
+                    }
+                }
+            });
+            serverThread.start();
+            try {
+                URL url = URIBuilder.newBuilder()
+                        .scheme("http")
+                        .userInfo("joe")
+                        .loopback()
+                        .port(serverSocket.getLocalPort())
+                        .path("/a/b")
+                        .toURL();
+                System.out.println("URL: " + url);
+
+                // will throw if not fixed
+                URLPermission perm = new URLPermission(url.toString(), "listen,read,resolve");
+                System.out.println("Permission: " + perm);
+                // may throw if not fixed
+                HttpURLConnection urlc = (HttpURLConnection) url.openConnection(NO_PROXY);
+                InputStream is = urlc.getInputStream();
+            } finally {
+                // make sure the server thread eventually exit
+                done.set(true);
+                serverSocket.close();
+            }
+            serverThread.join();
+            System.out.println("OpenURL: OK");
         }
+
     }
 }

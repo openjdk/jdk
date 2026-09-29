@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A set of {@code Object}s with pairwise orderings between them.
@@ -58,22 +57,21 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
     // p. 315.
 
     // Maps Objects to DigraphNodes that contain them
-    private Map<E, DigraphNode<E>> poNodes = new HashMap<>();
-
-    // The set of Objects
-    private Set<E> nodes = poNodes.keySet();
+    private final Map<E, DigraphNode<E>> poNodes = new HashMap<>();
 
     /**
      * Constructs a {@code PartiallyOrderedSet}.
      */
     public PartiallyOrderedSet() {}
 
+    @Override
     public int size() {
-        return nodes.size();
+        return poNodes.size();
     }
 
+    @Override
     public boolean contains(Object o) {
-        return nodes.contains(o);
+        return poNodes.containsKey(o);
     }
 
     /**
@@ -81,6 +79,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      * collection, with an ordering that respects the orderings set
      * by the {@code setOrdering} method.
      */
+    @Override
     public Iterator<E> iterator() {
         return new PartialOrderIterator<>(poNodes.values().iterator());
     }
@@ -89,8 +88,9 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      * Adds an {@code Object} to this
      * {@code PartiallyOrderedSet}.
      */
+    @Override
     public boolean add(E o) {
-        if (nodes.contains(o)) {
+        if (poNodes.containsKey(o)) {
             return false;
         }
 
@@ -103,6 +103,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      * Removes an {@code Object} from this
      * {@code PartiallyOrderedSet}.
      */
+    @Override
     public boolean remove(Object o) {
         DigraphNode<E> node = poNodes.get(o);
         if (node == null) {
@@ -114,6 +115,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
         return true;
     }
 
+    @Override
     public void clear() {
         poNodes.clear();
     }
@@ -179,10 +181,12 @@ class PartialOrderIterator<E> implements Iterator<E> {
         }
     }
 
+    @Override
     public boolean hasNext() {
         return !zeroList.isEmpty();
     }
 
+    @Override
     public E next() {
         DigraphNode<E> first = zeroList.removeFirst();
 
@@ -202,6 +206,7 @@ class PartialOrderIterator<E> implements Iterator<E> {
         return first.getData();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

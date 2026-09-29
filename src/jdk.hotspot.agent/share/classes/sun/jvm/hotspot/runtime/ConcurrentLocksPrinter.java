@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,14 @@ import sun.jvm.hotspot.oops.*;
 
 public class ConcurrentLocksPrinter {
     private final Map<JavaThread, List<Oop>> locksMap = new HashMap<>();
+    private PrintStream tty;
 
-    public ConcurrentLocksPrinter() {
+    public ConcurrentLocksPrinter(PrintStream tty) {
+        this.tty = tty;
         fillLocks();
     }
 
-    public void print(JavaThread jthread, PrintStream tty) {
+    public void print(JavaThread jthread) {
         List<Oop> locks = locksMap.get(jthread);
         tty.println("Locked ownable synchronizers:");
         if (locks == null || locks.isEmpty()) {
@@ -62,10 +64,11 @@ public class ConcurrentLocksPrinter {
     private void fillLocks() {
         VM vm = VM.getVM();
         SystemDictionary sysDict = vm.getSystemDictionary();
-        Klass absOwnSyncKlass = sysDict.getAbstractOwnableSynchronizerKlass();
+        InstanceKlass absOwnSyncKlass = sysDict.getAbstractOwnableSynchronizerKlass();
         ObjectHeap heap = vm.getObjectHeap();
         // may be not loaded at all
         if (absOwnSyncKlass != null) {
+            tty.println("Finding concurrent locks. This might take a while...");
             heap.iterateObjectsOfKlass(new DefaultHeapVisitor() {
                     public boolean doObj(Oop oop) {
                         JavaThread thread = getOwnerThread(oop);
@@ -77,6 +80,7 @@ public class ConcurrentLocksPrinter {
                     }
 
                 }, absOwnSyncKlass, true);
+            tty.println();
         }
     }
 }

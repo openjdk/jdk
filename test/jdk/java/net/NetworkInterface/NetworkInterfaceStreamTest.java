@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @run testng/othervm -Djava.net.preferIPv4Stack=true NetworkInterfaceStreamTest
  */
 
+import org.testng.SkipException;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -39,12 +40,13 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
 
-import jdk.test.lib.net.IPSupport;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 
 public class NetworkInterfaceStreamTest extends OpTestCase {
 
@@ -52,7 +54,10 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
 
     @BeforeTest
     void setup() {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+        Optional<String> configurationIssue = diagnoseConfigurationIssue();
+        configurationIssue.map(SkipException::new).ifPresent(x -> {
+            throw x;
+        });
     }
 
     @Test

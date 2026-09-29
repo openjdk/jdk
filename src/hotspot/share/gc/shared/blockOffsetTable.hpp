@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,11 @@
 #ifndef SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
 #define SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
 
+#include "gc/shared/cardTable.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class BOTConstants : public AllStatic {
-  static uint _log_card_size;
-  static uint _log_card_size_in_words;
-  static uint _card_size;
-  static uint _card_size_in_words;
-
 public:
   // entries "e" of at least N_words mean "go back by Base^(e-N_words)."
   // All entries are less than "N_words + N_powers".
@@ -41,28 +37,13 @@ public:
   static const uint Base = (1 << LogBase);
   static const uint N_powers = 14;
 
-  // Initialize bot size based on card size
-  static void initialize_bot_size(uint card_shift);
-
   static size_t power_to_cards_back(uint i) {
     return (size_t)1 << (LogBase * i);
   }
 
   static size_t entry_to_cards_back(u_char entry) {
-    assert(entry >= _card_size_in_words, "Precondition");
-    return power_to_cards_back(entry - _card_size_in_words);
-  }
-  static uint log_card_size() {
-    return _log_card_size;
-  }
-  static uint log_card_size_in_words() {
-    return _log_card_size_in_words;
-  }
-  static uint card_size() {
-    return _card_size;
-  }
-  static uint card_size_in_words() {
-    return _card_size_in_words;
+    assert(entry >= CardTable::card_size_in_words(), "Precondition");
+    return power_to_cards_back(entry - CardTable::card_size_in_words());
   }
 };
 

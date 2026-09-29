@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -30,8 +29,8 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
-#include "prims/whitebox.inline.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
+#include "prims/whitebox.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "services/diagnosticArgument.hpp"
@@ -127,6 +126,14 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
      } else {
       parser->add_dcmd_option(argument);
      }
+   } else if (strcmp(type, "FILE") == 0) {
+      DCmdArgument<char*>* argument =
+          new DCmdArgument<char*>(name, desc, "FILE", mandatory);
+      if (isarg) {
+        parser->add_dcmd_argument(argument);
+      } else {
+        parser->add_dcmd_option(argument);
+      }
    }
 }
 
@@ -142,8 +149,8 @@ WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmd
 
   const char* c_cmdline = java_lang_String::as_utf8_string(JNIHandles::resolve(j_cmdline));
   const char c_delim = (char)(j_delim & 0xff);
-  objArrayOop argumentArray = objArrayOop(JNIHandles::resolve_non_null(arguments));
-  objArrayHandle argumentArray_ah(THREAD, argumentArray);
+  refArrayOop argumentArray = refArrayOop(JNIHandles::resolve_non_null(arguments));
+  refArrayHandle argumentArray_ah(THREAD, argumentArray);
 
   int length = argumentArray_ah->length();
 

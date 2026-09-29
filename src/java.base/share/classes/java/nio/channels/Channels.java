@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,6 +505,8 @@ public final class Channels {
      * @param  charset The charset to be used
      *
      * @return  A new reader
+     *
+     * @since 10
      */
     public static Reader newReader(ReadableByteChannel ch, Charset charset) {
         Objects.requireNonNull(charset, "charset");
@@ -613,6 +615,8 @@ public final class Channels {
      *         The charset to be used
      *
      * @return  A new writer
+     *
+     * @since 10
      */
     public static Writer newWriter(WritableByteChannel ch, Charset charset) {
         Objects.requireNonNull(charset, "charset");

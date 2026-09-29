@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
 package com.sun.crypto.provider;
 
 import java.nio.ByteBuffer;
-
-import javax.crypto.MacSpi;
-import javax.crypto.SecretKey;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.MacSpi;
+import javax.crypto.SecretKey;
 
 import static com.sun.crypto.provider.TlsPrfGenerator.genPad;
 
@@ -109,7 +108,7 @@ final class SslMacCore {
      * @param input the input byte to be processed.
      */
     void update(byte input) {
-        if (first == true) {
+        if (first) {
             // compute digest for 1st pass; start with inner pad
             md.update(secret);
             md.update(pad1);
@@ -128,8 +127,8 @@ final class SslMacCore {
      * @param offset the offset in <code>input</code> where the input starts.
      * @param len the number of bytes to process.
      */
-    void update(byte input[], int offset, int len) {
-        if (first == true) {
+    void update(byte[] input, int offset, int len) {
+        if (first) {
             // compute digest for 1st pass; start with inner pad
             md.update(secret);
             md.update(pad1);
@@ -141,7 +140,7 @@ final class SslMacCore {
     }
 
     void update(ByteBuffer input) {
-        if (first == true) {
+        if (first) {
             // compute digest for 1st pass; start with inner pad
             md.update(secret);
             md.update(pad1);
@@ -158,7 +157,7 @@ final class SslMacCore {
      * @return the Mac result.
      */
     byte[] doFinal() {
-        if (first == true) {
+        if (first) {
             // compute digest for 1st pass; start with inner pad
             md.update(secret);
             md.update(pad1);
@@ -189,7 +188,7 @@ final class SslMacCore {
      * Mac was initialized with.
      */
     void reset() {
-        if (first == false) {
+        if (!first) {
             md.reset();
             first = true;
         }
@@ -211,7 +210,7 @@ final class SslMacCore {
         protected void engineUpdate(byte input) {
             core.update(input);
         }
-        protected void engineUpdate(byte input[], int offset, int len) {
+        protected void engineUpdate(byte[] input, int offset, int len) {
             core.update(input, offset, len);
         }
         protected void engineUpdate(ByteBuffer input) {
@@ -244,7 +243,7 @@ final class SslMacCore {
         protected void engineUpdate(byte input) {
             core.update(input);
         }
-        protected void engineUpdate(byte input[], int offset, int len) {
+        protected void engineUpdate(byte[] input, int offset, int len) {
             core.update(input, offset, len);
         }
         protected void engineUpdate(ByteBuffer input) {

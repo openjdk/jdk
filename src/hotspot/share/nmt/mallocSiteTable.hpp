@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
 class MallocSite : public AllocationSite {
   MemoryCounter _c;
  public:
-  MallocSite(const NativeCallStack& stack, MEMFLAGS flags) :
-    AllocationSite(stack, flags) {}
+  MallocSite(const NativeCallStack& stack, MemTag mem_tag) :
+    AllocationSite(stack, mem_tag) {}
 
   void allocate(size_t size)      { _c.allocate(size);   }
   void deallocate(size_t size)    { _c.deallocate(size); }
@@ -57,19 +57,22 @@ class MallocSite : public AllocationSite {
 // Malloc site hashtable entry
 class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  private:
-  MallocSite                         _malloc_site;
-  const unsigned int                 _hash;
-  MallocSiteHashtableEntry* volatile _next;
+  MallocSite                        _malloc_site;
+  const unsigned int                _hash;
+  Atomic<MallocSiteHashtableEntry*> _next;
 
  public:
 
-  MallocSiteHashtableEntry(NativeCallStack stack, MEMFLAGS flags):
-    _malloc_site(stack, flags), _hash(stack.calculate_hash()), _next(nullptr) {
-    assert(flags != mtNone, "Expect a real memory type");
+  MallocSiteHashtableEntry(NativeCallStack stack, MemTag mem_tag):
+    _malloc_site(stack, mem_tag), _hash(stack.calculate_hash()), _next(nullptr) {
+    assert(mem_tag != mtNone, "Expect a real memory tag");
   }
 
   inline const MallocSiteHashtableEntry* next() const {
-    return _next;
+    return _next.load_relaxed();
+  }
+  inline MallocSiteHashtableEntry* next() {
+    return _next.load_relaxed();
   }
 
   // Insert an entry atomically.
@@ -113,7 +116,7 @@ class MallocSiteTable : AllStatic {
   // Each bucket chain cannot be longer than what a 16 bit pos idx can hold (hopefully way shorter)
 #define MAX_BUCKET_LENGTH         (USHRT_MAX - 1)
 
-  STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
+  static_assert(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
   static uint32_t build_marker(unsigned bucket_idx, unsigned pos_idx) {
     assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE && pos_idx < MAX_BUCKET_LENGTH, "overflow");
@@ -131,8 +134,8 @@ class MallocSiteTable : AllStatic {
 
   // Access and copy a call stack from this table. Shared lock should be
   // acquired before access the entry.
-  static inline bool access_stack(NativeCallStack& stack, uint32_t marker) {
-    MallocSite* site = malloc_site(marker);
+  static inline bool access_stack(NativeCallStack& stack, const MallocHeader& header) {
+    MallocSite* site = malloc_site(header.mst_marker());
     if (site != nullptr) {
       stack = *site->call_stack();
       return true;
@@ -147,8 +150,8 @@ class MallocSiteTable : AllStatic {
   //  1. out of memory
   //  2. overflow hash bucket
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
-      uint32_t* marker, MEMFLAGS flags) {
-    MallocSite* site = lookup_or_add(stack, marker, flags);
+      uint32_t* marker, MemTag mem_tag) {
+    MallocSite* site = lookup_or_add(stack, marker, mem_tag);
     if (site != nullptr) site->allocate(size);
     return site != nullptr;
   }
@@ -169,10 +172,14 @@ class MallocSiteTable : AllStatic {
 
   static void print_tuning_statistics(outputStream* st);
 
- private:
-  static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MEMFLAGS flags);
+  static int entry_count() {
+    return _entry_count.load_relaxed();
+  }
 
-  static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags);
+ private:
+  static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MemTag mem_tag);
+
+  static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MemTag mem_tag);
   static MallocSite* malloc_site(uint32_t marker);
   static bool walk(MallocSiteWalker* walker);
 
@@ -193,9 +200,10 @@ class MallocSiteTable : AllStatic {
  private:
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static MallocSiteHashtableEntry**       _table;
-  static const NativeCallStack*           _hash_entry_allocation_stack;
-  static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
+  static Atomic<int>                        _entry_count;
+  static Atomic<MallocSiteHashtableEntry*>* _table;
+  static const NativeCallStack*             _hash_entry_allocation_stack;
+  static const MallocSiteHashtableEntry*    _hash_entry_allocation_site;
 };
 
 #endif // SHARE_NMT_MALLOCSITETABLE_HPP

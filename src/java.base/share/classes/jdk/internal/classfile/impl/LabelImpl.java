@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  * questions.
  */
 package jdk.internal.classfile.impl;
-
-import java.util.Objects;
 
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.LabelTarget;
@@ -51,8 +49,8 @@ public final class LabelImpl
     private final LabelContext labelContext;
     private int bci;
 
-        public LabelImpl(LabelContext labelContext, int bci) {
-        this.labelContext = Objects.requireNonNull(labelContext);
+    public LabelImpl(LabelContext labelContext, int bci) {
+        this.labelContext = labelContext;
         this.bci = bci;
     }
 

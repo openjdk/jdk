@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class EscapeKeyTyped {
             public void keyPressed(KeyEvent e) {
                 printKey(e);
                 int keychar = e.getKeyChar();
-                if (keychar == 27) { // Escape character is 27 or \u0021
+                if (keychar == 27) { // Escape character is 27 or \u001b
                     escapeKeyTypedReceived = true;
                 }
             }

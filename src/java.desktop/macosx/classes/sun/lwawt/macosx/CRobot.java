@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.lwawt.macosx;
 
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.peer.RobotPeer;
@@ -63,7 +65,41 @@ final class CRobot implements RobotPeer {
         mouseLastX = x;
         mouseLastY = y;
 
-        mouseEvent(mouseLastX, mouseLastY, mouseButtonsState, true, true);
+        int leastDiff = Integer.MAX_VALUE;
+        int finX = x;
+        int finY = y;
+
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] gs = ge.getScreenDevices();
+        Rectangle[] allScreenBounds = new Rectangle[gs.length];
+
+        for (int i = 0; i < gs.length; i++) {
+            allScreenBounds[i] = gs[i].getDefaultConfiguration().getBounds();
+        }
+
+        for (Rectangle screenBounds : allScreenBounds) {
+            Point cP = calcClosestPoint(x, y, screenBounds);
+
+            int currXDiff = Math.abs(x - cP.x);
+            int currYDiff = Math.abs(y - cP.y);
+            int currDiff = (int) Math.round(Math.hypot(currXDiff, currYDiff));
+
+            if (currDiff == 0) {
+                mouseEvent(mouseLastX, mouseLastY, mouseButtonsState, true, true);
+                return;
+            } if (currDiff < leastDiff) {
+                finX = cP.x;
+                finY = cP.y;
+                leastDiff = currDiff;
+            }
+        }
+
+        mouseEvent(finX, finY, mouseButtonsState, true, true);
+    }
+
+    private Point calcClosestPoint(int x, int y, Rectangle screenBounds) {
+        return new Point(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width - 1),
+                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height - 1));
     }
 
     /**

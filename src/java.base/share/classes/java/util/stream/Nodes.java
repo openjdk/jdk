@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package java.util.stream;
+
+import jdk.internal.util.ArraysSupport;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -57,7 +59,7 @@ final class Nodes {
     /**
      * The maximum size of an array that can be allocated.
      */
-    static final long MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    static final long MAX_ARRAY_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     // IllegalArgumentException messages
     static final String BAD_SIZE = "Stream size exceeds max array size";
@@ -641,7 +643,6 @@ final class Nodes {
         final T[] array;
         int curSize;
 
-        @SuppressWarnings("unchecked")
         ArrayNode(long size, IntFunction<T[]> generator) {
             if (size >= MAX_ARRAY_SIZE)
                 throw new IllegalArgumentException(BAD_SIZE);
@@ -718,7 +719,6 @@ final class Nodes {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public T[] asArray(IntFunction<T[]> generator) {
             return c.toArray(generator.apply(c.size()));
         }

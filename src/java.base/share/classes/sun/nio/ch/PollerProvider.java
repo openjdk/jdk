@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,38 +30,43 @@ import java.io.IOException;
  * Provider class for Poller implementations.
  */
 abstract class PollerProvider {
-    private static final PollerProvider INSTANCE = new DefaultPollerProvider();
+    private final Poller.Mode mode;
 
-    PollerProvider() { }
+    PollerProvider(Poller.Mode mode) {
+        this.mode = mode;
+    }
 
-    /**
-     * Returns the system-wide PollerProvider.
-     */
-    static PollerProvider provider() {
-        return INSTANCE;
+    final Poller.Mode pollerMode() {
+        return mode;
     }
 
     /**
-     * Returns the default poller mode.
-     * @implSpec The default implementation uses system threads.
+     * Creates a PollerProvider that uses its preferred/default poller mode.
      */
-    Poller.Mode defaultPollerMode() {
-        return Poller.Mode.SYSTEM_THREADS;
+    static PollerProvider createProvider() {
+        return new DefaultPollerProvider();
     }
 
     /**
-     * Default number of read pollers for the given mode. The count must be a power of 2.
+     * Creates a PollerProvider that uses the given poller mode.
+     */
+    static PollerProvider createProvider(Poller.Mode mode) {
+        return new DefaultPollerProvider(mode);
+    }
+
+    /**
+     * Default number of read pollers. The count must be a power of 2.
      * @implSpec The default implementation returns 1.
      */
-    int defaultReadPollers(Poller.Mode mode) {
+    int defaultReadPollers() {
         return 1;
     }
 
     /**
-     * Default number of write pollers for the given mode. The count must be a power of 2.
+     * Default number of write pollers. The count must be a power of 2.
      * @implSpec The default implementation returns 1.
      */
-    int defaultWritePollers(Poller.Mode mode) {
+    int defaultWritePollers() {
         return 1;
     }
 
@@ -74,13 +79,13 @@ abstract class PollerProvider {
     }
 
     /**
-     * Creates a Poller for read ops.
+     * Creates a Poller for POLLIN polling.
      * @param subPoller true to create a sub-poller
      */
     abstract Poller readPoller(boolean subPoller) throws IOException;
 
     /**
-     * Creates a Poller for write ops.
+     * Creates a Poller for POLLOUT polling.
      * @param subPoller true to create a sub-poller
      */
     abstract Poller writePoller(boolean subPoller) throws IOException;

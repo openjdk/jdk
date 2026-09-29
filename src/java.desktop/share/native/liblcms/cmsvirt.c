@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -400,7 +400,7 @@ int InkLimitingSampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUI
     SumCMY   = (cmsFloat64Number) In[0]  + In[1] + In[2];
     SumCMYK  = SumCMY + In[3];
 
-    if (SumCMYK > InkLimit) {
+    if (SumCMYK > InkLimit && SumCMY > 0) {
 
         Ratio = 1 - ((SumCMYK - InkLimit) / SumCMY);
         if (Ratio < 0)
@@ -412,7 +412,7 @@ int InkLimitingSampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUI
     Out[1] = _cmsQuickSaturateWord(In[1] * Ratio);     // M
     Out[2] = _cmsQuickSaturateWord(In[2] * Ratio);     // Y
 
-    Out[3] = In[3];                                 // K (untouched)
+    Out[3] = In[3];                                    // K (untouched)
 
     return TRUE;
 }
@@ -433,12 +433,11 @@ cmsHPROFILE CMSEXPORT cmsCreateInkLimitingDeviceLinkTHR(cmsContext ContextID,
         return NULL;
     }
 
-    if (Limit < 0.0 || Limit > 400) {
+    if (Limit < 1.0 || Limit > 400) {
 
-        cmsSignalError(ContextID, cmsERROR_RANGE, "InkLimiting: Limit should be between 0..400");
-        if (Limit < 0) Limit = 0;
+        cmsSignalError(ContextID, cmsERROR_RANGE, "InkLimiting: Limit should be between 1..400");
+        if (Limit < 1) Limit = 1;
         if (Limit > 400) Limit = 400;
-
     }
 
     hICC = cmsCreateProfilePlaceholder(ContextID);
@@ -514,16 +513,20 @@ cmsHPROFILE CMSEXPORT cmsCreateLab2ProfileTHR(cmsContext ContextID, const cmsCIE
     cmsSetColorSpace(hProfile,  cmsSigLabData);
     cmsSetPCS(hProfile,         cmsSigLabData);
 
-    if (!SetTextTags(hProfile, L"Lab identity built-in")) return NULL;
+    if (!SetTextTags(hProfile, L"Lab identity built-in"))
+        goto Error;
 
     // An identity LUT is all we need
     LUT = cmsPipelineAlloc(ContextID, 3, 3);
-    if (LUT == NULL) goto Error;
+    if (LUT == NULL)
+        goto Error;
 
     if (!cmsPipelineInsertStage(LUT, cmsAT_BEGIN, _cmsStageAllocIdentityCLut(ContextID, 3)))
         goto Error;
 
-    if (!cmsWriteTag(hProfile, cmsSigAToB0Tag, LUT)) goto Error;
+    if (!cmsWriteTag(hProfile, cmsSigAToB0Tag, LUT))
+        goto Error;
+
     cmsPipelineFree(LUT);
 
     return hProfile;
@@ -551,8 +554,14 @@ cmsHPROFILE CMSEXPORT cmsCreateLab4ProfileTHR(cmsContext ContextID, const cmsCIE
 {
     cmsHPROFILE hProfile;
     cmsPipeline* LUT = NULL;
+    cmsCIEXYZ xyz;
 
-    hProfile = cmsCreateRGBProfileTHR(ContextID, WhitePoint == NULL ? cmsD50_xyY() : WhitePoint, NULL, NULL);
+    if (WhitePoint == NULL)
+        xyz = *cmsD50_XYZ();
+    else
+        cmsxyY2XYZ(&xyz, WhitePoint);
+
+    hProfile = cmsCreateRGBProfileTHR(ContextID, NULL, NULL, NULL);
     if (hProfile == NULL) return NULL;
 
     cmsSetProfileVersion(hProfile, 4.4);
@@ -561,6 +570,7 @@ cmsHPROFILE CMSEXPORT cmsCreateLab4ProfileTHR(cmsContext ContextID, const cmsCIE
     cmsSetColorSpace(hProfile,  cmsSigLabData);
     cmsSetPCS(hProfile,         cmsSigLabData);
 
+    if (!cmsWriteTag(hProfile, cmsSigMediaWhitePointTag, &xyz)) goto Error;
     if (!SetTextTags(hProfile, L"Lab identity built-in")) goto Error;
 
     // An empty LUTs is all we need
@@ -701,6 +711,129 @@ cmsHPROFILE CMSEXPORT cmsCreate_sRGBProfile(void)
     return cmsCreate_sRGBProfileTHR(NULL);
 }
 
+/**
+* Oklab colorspace profile (experimental)
+*
+* This virtual profile cannot be saved as an ICC file
+*/
+cmsHPROFILE CMSEXPORT cmsCreate_OkLabProfile(cmsContext ctx)
+{
+    cmsStage* XYZPCS = _cmsStageNormalizeFromXyzFloat(ctx);
+    cmsStage* PCSXYZ = _cmsStageNormalizeToXyzFloat(ctx);
+
+    const double M_D65_D50[] =
+    {
+       1.047886, 0.022919, -0.050216,
+       0.029582, 0.990484, -0.017079,
+      -0.009252, 0.015073,  0.751678
+    };
+
+    const double M_D50_D65[] =
+    {
+         0.955512609517083, -0.023073214184645,  0.063308961782107,
+        -0.028324949364887,  1.009942432477107,  0.021054814890112,
+         0.012328875695483, -0.020535835374141,  1.330713916450354
+    };
+
+    cmsStage* D65toD50 = cmsStageAllocMatrix(ctx, 3, 3, M_D65_D50, NULL);
+    cmsStage* D50toD65 = cmsStageAllocMatrix(ctx, 3, 3, M_D50_D65, NULL);
+
+    const double M_D65_LMS[] =
+    {
+        0.8189330101, 0.3618667424, -0.1288597137,
+        0.0329845436, 0.9293118715,  0.0361456387,
+        0.0482003018, 0.2643662691,  0.6338517070
+    };
+
+    const double M_LMS_D65[] =
+    {
+        1.227013851103521, -0.557799980651822,  0.281256148966468,
+       -0.040580178423281,  1.112256869616830, -0.071676678665601,
+       -0.076381284505707, -0.421481978418013,  1.586163220440795
+    };
+
+    cmsStage* D65toLMS = cmsStageAllocMatrix(ctx, 3, 3, M_D65_LMS, NULL);
+    cmsStage* LMStoD65 = cmsStageAllocMatrix(ctx, 3, 3, M_LMS_D65, NULL);
+
+    cmsToneCurve* CubeRoot = cmsBuildGamma(ctx, 1.0 / 3.0);
+    cmsToneCurve* Cube     = cmsBuildGamma(ctx,  3.0);
+
+    cmsToneCurve* Roots[3] = { CubeRoot, CubeRoot, CubeRoot };
+    cmsToneCurve* Cubes[3] = { Cube, Cube, Cube };
+
+    cmsStage* NonLinearityFw = cmsStageAllocToneCurves(ctx, 3, Roots);
+    cmsStage* NonLinearityRv = cmsStageAllocToneCurves(ctx, 3, Cubes);
+
+    const double M_LMSprime_OkLab[] =
+    {
+        0.2104542553,  0.7936177850, -0.0040720468,
+        1.9779984951, -2.4285922050,  0.4505937099,
+        0.0259040371,  0.7827717662, -0.8086757660
+    };
+
+    const double M_OkLab_LMSprime[] =
+    {
+        0.999999998450520,  0.396337792173768,  0.215803758060759,
+        1.000000008881761, -0.105561342323656, -0.063854174771706,
+        1.000000054672411, -0.089484182094966, -1.291485537864092
+    };
+
+    cmsStage* LMSprime_OkLab = cmsStageAllocMatrix(ctx, 3, 3, M_LMSprime_OkLab, NULL);
+    cmsStage* OkLab_LMSprime = cmsStageAllocMatrix(ctx, 3, 3, M_OkLab_LMSprime, NULL);
+
+    cmsPipeline* AToB = cmsPipelineAlloc(ctx, 3, 3);
+    cmsPipeline* BToA = cmsPipelineAlloc(ctx, 3, 3);
+
+    cmsHPROFILE hProfile = cmsCreateProfilePlaceholder(ctx);
+    if (!hProfile)            // can't allocate
+        goto error;
+
+    cmsSetProfileVersion(hProfile, 4.4);
+
+    cmsSetDeviceClass(hProfile, cmsSigColorSpaceClass);
+    cmsSetColorSpace(hProfile, cmsSig3colorData);
+    cmsSetPCS(hProfile, cmsSigXYZData);
+
+    cmsSetHeaderRenderingIntent(hProfile, INTENT_RELATIVE_COLORIMETRIC);
+
+    /**
+    * Conversion PCS (XYZ/D50) to OkLab
+    */
+    if (!cmsPipelineInsertStage(BToA, cmsAT_END, PCSXYZ)) goto error;
+    if (!cmsPipelineInsertStage(BToA, cmsAT_END, D50toD65)) goto error;
+    if (!cmsPipelineInsertStage(BToA, cmsAT_END, D65toLMS)) goto error;
+    if (!cmsPipelineInsertStage(BToA, cmsAT_END, NonLinearityFw)) goto error;
+    if (!cmsPipelineInsertStage(BToA, cmsAT_END, LMSprime_OkLab)) goto error;
+
+    if (!cmsWriteTag(hProfile, cmsSigBToA0Tag, BToA)) goto error;
+
+    if (!cmsPipelineInsertStage(AToB, cmsAT_END, OkLab_LMSprime)) goto error;
+    if (!cmsPipelineInsertStage(AToB, cmsAT_END, NonLinearityRv)) goto error;
+    if (!cmsPipelineInsertStage(AToB, cmsAT_END, LMStoD65)) goto error;
+    if (!cmsPipelineInsertStage(AToB, cmsAT_END, D65toD50)) goto error;
+    if (!cmsPipelineInsertStage(AToB, cmsAT_END, XYZPCS)) goto error;
+
+    if (!cmsWriteTag(hProfile, cmsSigAToB0Tag, AToB)) goto error;
+
+    cmsPipelineFree(BToA);
+    cmsPipelineFree(AToB);
+
+    cmsFreeToneCurve(CubeRoot);
+    cmsFreeToneCurve(Cube);
+
+    return hProfile;
+
+error:
+    cmsPipelineFree(BToA);
+    cmsPipelineFree(AToB);
+
+    cmsFreeToneCurve(CubeRoot);
+    cmsFreeToneCurve(Cube);
+    cmsCloseProfile(hProfile);
+
+    return NULL;
+
+}
 
 
 typedef struct {
@@ -807,25 +940,24 @@ cmsHPROFILE CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
 
     for (i=0; i < MAX_INPUT_DIMENSIONS; i++) Dimensions[i] = nLUTPoints;
     CLUT = cmsStageAllocCLut16bitGranular(ContextID, Dimensions, 3, 3, NULL);
-    if (CLUT == NULL) goto Error;
-
-
-    if (!cmsStageSampleCLut16bit(CLUT, bchswSampler, (void*) &bchsw, 0)) {
-
-        // Shouldn't reach here
+    if (CLUT == NULL)
         goto Error;
-    }
 
-    if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT)) {
+    if (!cmsStageSampleCLut16bit(CLUT, bchswSampler, (void*) &bchsw, 0))
         goto Error;
-    }
+
+    if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT))
+        goto Error;
 
     // Create tags
-    if (!SetTextTags(hICC, L"BCHS built-in")) return NULL;
+    if (!SetTextTags(hICC, L"BCHS built-in"))
+        goto Error;
 
-    cmsWriteTag(hICC, cmsSigMediaWhitePointTag, (void*) cmsD50_XYZ());
+    if (!cmsWriteTag(hICC, cmsSigMediaWhitePointTag, (void*)cmsD50_XYZ()))
+        goto Error;
 
-    cmsWriteTag(hICC, cmsSigAToB0Tag, (void*) Pipeline);
+    if (!cmsWriteTag(hICC, cmsSigAToB0Tag, (void*)Pipeline))
+        goto Error;
 
     // Pipeline is already on virtual profile
     cmsPipelineFree(Pipeline);
@@ -1060,7 +1192,7 @@ cmsBool CheckOne(const cmsAllowedLUT* Tab, const cmsPipeline* Lut)
 
     for (n=0, mpe = Lut ->Elements; mpe != NULL; mpe = mpe ->Next, n++) {
 
-        if (n > Tab ->nTypes) return FALSE;
+        if (n >= Tab ->nTypes) return FALSE;
         if (cmsStageType(mpe) != Tab ->MpeTypes[n]) return FALSE;
     }
 
@@ -1091,9 +1223,9 @@ const cmsAllowedLUT* FindCombination(const cmsPipeline* Lut, cmsBool IsV4, cmsTa
 cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat64Number Version, cmsUInt32Number dwFlags)
 {
     cmsHPROFILE hProfile = NULL;
-        cmsUInt32Number FrmIn, FrmOut;
-        cmsInt32Number ChansIn, ChansOut;
-        int ColorSpaceBitsIn, ColorSpaceBitsOut;
+    cmsUInt32Number FrmIn, FrmOut;
+    cmsInt32Number ChansIn, ChansOut;
+    int ColorSpaceBitsIn, ColorSpaceBitsOut;
     _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
     cmsPipeline* LUT = NULL;
     cmsStage* mpe;
@@ -1103,6 +1235,9 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat
     cmsProfileClassSignature deviceClass;
 
     _cmsAssert(hTransform != NULL);
+
+    // Check if the pipeline holding is valid
+    if (xform -> Lut == NULL) return NULL;
 
     // Get the first mpe to check for named color
     mpe = cmsPipelineGetPtrToFirstStage(xform ->Lut);
@@ -1213,12 +1348,23 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat
     if (!cmsWriteTag(hProfile, DestinationTag, LUT)) goto Error;
 
 
-    if (xform -> InputColorant != NULL) {
+    // Colorant tables have special rules depening on deviceClass
+    if (xform -> InputColorant != NULL &&
+       (deviceClass == cmsSigLinkClass || deviceClass == cmsSigInputClass)) {
+
            if (!cmsWriteTag(hProfile, cmsSigColorantTableTag, xform->InputColorant)) goto Error;
     }
 
     if (xform -> OutputColorant != NULL) {
-           if (!cmsWriteTag(hProfile, cmsSigColorantTableOutTag, xform->OutputColorant)) goto Error;
+
+        if (deviceClass == cmsSigLinkClass) {
+
+            if (!cmsWriteTag(hProfile, cmsSigColorantTableOutTag, xform->OutputColorant)) goto Error;
+        }
+        else
+        {
+            if (!cmsWriteTag(hProfile, cmsSigColorantTableTag, xform->OutputColorant)) goto Error;
+        }
     }
 
     if ((deviceClass == cmsSigLinkClass) && (xform ->Sequence != NULL)) {

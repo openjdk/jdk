@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,8 @@ public class CompilerThreadPool {
         this.pool = Executors.newFixedThreadPool(POOLSIZE);
     }
 
-    public int dispatchCompilation(String[] args) {
-        Log log = Log.get();
-        try {
-            return pool.submit(() -> Server.runCompiler(log, args)).get();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error during compile", e);
-        }
+    public void execute(Runnable runnable) {
+        this.pool.execute(runnable);
     }
 
     public void shutdown() {
@@ -67,7 +61,7 @@ public class CompilerThreadPool {
         } catch (InterruptedException ie) {
             // (Re-)Cancel if current thread also interrupted
             pool.shutdownNow();
-            // Preserve interrupt status
+            // Preserve interrupted status
             Thread.currentThread().interrupt();
         }
     }

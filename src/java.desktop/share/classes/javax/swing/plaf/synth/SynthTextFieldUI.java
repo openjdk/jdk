@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import java.beans.PropertyChangeEvent;
  * @author  Shannon Hickey
  * @since 1.7
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     private Handler handler = new Handler();
     private SynthStyle style;

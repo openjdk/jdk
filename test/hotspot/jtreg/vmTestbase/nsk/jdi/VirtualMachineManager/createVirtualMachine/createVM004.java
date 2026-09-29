@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,14 @@ public class createVM004 {
     }
 
     private static void logAlways(String message) {
-        logHandler.println(message);
+        logHandler.display(message);
     }
 
     public static void main (String argv[]) {
-        int result = run(argv, System.out);
-        System.exit(result + STATUS_TEMP);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -152,7 +154,7 @@ public class createVM004 {
             logOnVerbose(infoLogPrefixHead + "PROCESS is being created:");
             logOnVerbose(infoLogPrefix + "Command to run: " + commandToRun);
 
-            debugee = binder.startLocalDebugee(commandToRun);
+            debugee = binder.startDebugee(commandToRun);
             debugee.redirectOutput(logHandler);
             processToRun = debugee.getProcess();
 

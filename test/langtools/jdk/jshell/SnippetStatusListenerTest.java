@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Subscribe tests
  * @build KullaTesting TestingInputStream
- * @run testng SnippetStatusListenerTest
+ * @run junit SnippetStatusListenerTest
  */
 
 import java.util.ArrayList;
@@ -37,14 +37,16 @@ import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.JShell.Subscription;
 import jdk.jshell.SnippetEvent;
 import jdk.jshell.TypeDeclSnippet;
-import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.*;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class SnippetStatusListenerTest extends KullaTesting {
 
+    @Test
     public void testTwoSnippetEventListeners() {
         SnippetListener listener1 = new SnippetListener();
         SnippetListener listener2 = new SnippetListener();
@@ -61,45 +63,52 @@ public class SnippetStatusListenerTest extends KullaTesting {
         assertEval("int a = 0;");
 
         List<SnippetEvent> events1 = Collections.unmodifiableList(listener1.getEvents());
-        assertEquals(events1, listener2.getEvents(), "Checking got events");
+        assertEquals(listener2.getEvents(), events1, "Checking got events");
         getState().unsubscribe(subscription1);
 
         assertDrop(f, DiagCheck.DIAG_IGNORE, DiagCheck.DIAG_IGNORE, ste(f, REJECTED, DROPPED, false, null));
         assertEval("void f() { }", added(VALID));
         assertEvalException("throw new RuntimeException();");
-        assertEquals(listener1.getEvents(), events1, "Checking that unsubscribed listener does not get events");
+        assertEquals(events1, listener1.getEvents(), "Checking that unsubscribed listener does not get events");
 
         List<SnippetEvent> events2 = new ArrayList<>(listener2.getEvents());
         events2.removeAll(events1);
 
-        assertEquals(events2.size(), 3, "The second listener got events");
+        assertEquals(3, events2.size(), "The second listener got events");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void testNullCallback() {
-        getState().onSnippetEvent(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            getState().onSnippetEvent(null);
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testSubscriptionAfterClose() {
-        getState().close();
-        getState().onSnippetEvent(e -> {});
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            getState().close();
+            getState().onSnippetEvent(e -> {});
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-          enabled = false) //TODO 8139873
+    @Test //TODO 8139873
+    @Disabled
     public void testSubscriptionAfterShutdown() {
-        assertEval("System.exit(0);");
-        getState().onSnippetEvent(e -> {});
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            assertEval("System.exit(0);");
+            getState().onSnippetEvent(e -> {});
+        });
     }
 
+    @Test
     public void testSubscriptionToAnotherState() {
         SnippetListener listener = new SnippetListener();
         Subscription subscription = getState().onSnippetEvent(listener);
         tearDown();
         setUp();
         assertEval("int x;");
-        assertEquals(Collections.emptyList(), listener.getEvents(), "No events");
+        assertEquals(listener.getEvents(), Collections.emptyList(), "No events");
         getState().unsubscribe(subscription);
     }
 

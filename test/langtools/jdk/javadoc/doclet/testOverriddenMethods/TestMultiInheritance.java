@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,24 +52,24 @@ public class TestMultiInheritance extends JavadocTester {
 
         checkOutput("pkg3/I1.html", true,
                 """
-                    Methods inherited from interface&nbsp;pkg3.<a href="I2.html" title="interface in pkg3">I2</a>""",
+                    Methods inherited from interface&nbsp;<a href="I2.html#method-summary" title="interface in pkg3">I2</a>""",
                 """
-                    Methods inherited from interface&nbsp;pkg3.<a href="I3.html" title="interface in pkg3">I3</a>""");
+                    Methods inherited from interface&nbsp;<a href="I3.html#method-summary" title="interface in pkg3">I3</a>""");
 
         checkOutput("pkg3/I0.html", true,
                 """
-                    Methods inherited from interface&nbsp;pkg3.<a href="I2.html" title="interface in pkg3">I2</a>""",
+                    Methods inherited from interface&nbsp;<a href="I2.html#method-summary" title="interface in pkg3">I2</a>""",
                 """
-                    Methods inherited from interface&nbsp;pkg3.<a href="I3.html" title="interface in pkg3">I3</a>""");
+                    Methods inherited from interface&nbsp;<a href="I3.html#method-summary" title="interface in pkg3">I3</a>""");
 
         // Method foo() is NOT inherited from I4 because it is overridden by I3.
 
         checkOutput("pkg3/I1.html", false,
                 """
-                    Methods inherited from interface&nbsp;pkg3.<a href="I4.html" title="interface in pkg3">I4</a>""");
+                    Methods inherited from interface&nbsp;<a href="I4.html#method-summary" title="interface in pkg3">I4</a>""");
 
         checkOutput("pkg3/I0.html", false,
                 """
-                    Methods inherited from interface&nbsp;pkg3.<a href="I4.html" title="interface in pkg3">I4</a>""");
+                    Methods inherited from interface&nbsp;<a href="I4.html#method-summary" title="interface in pkg3">I4</a>""");
     }
 }

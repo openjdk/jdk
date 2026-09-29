@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,28 +24,79 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 #include <ctype.h>
 
+// The Zalasr (Table A.7 / RCsc) sequences emitted by the JIT for volatile
+// accesses only interoperate with C++ code compiled using the psABI atomics
+// mapping (A6S: seq_cst stores carry a trailing full fence), i.e.
+// gcc >= 13.3 or clang >= 19. libjvm itself and the bundled JDK native
+// libraries are the closest such C++ code, so gate UseZalasr on the
+// toolchain that built this VM. See riscv-elf-psabi-doc,
+// "RISC-V Atomics Mappings" (note 3: do not combine with older mappings).
+static constexpr bool toolchain_uses_psabi_atomics() {
+#if defined(__clang_major__)
+  return __clang_major__ >= 19;
+#elif defined(__GNUC__)
+  return (__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 3);
+#else
+  return false;
+#endif
+}
+
 uint32_t VM_Version::_initial_vector_length = 0;
+bool VM_Version::_use_zalasr_atomics = false;
 
-#define DEF_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)       \
-VM_Version::NAME##RVFeatureValue VM_Version::NAME(PRETTY, BIT, FSTRING);
-RV_FEATURE_FLAGS(DEF_RV_FEATURE)
+#define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
+RV_EXT_FEATURE_FLAGS(DEF_RV_EXT_FEATURE)
+#undef DEF_RV_EXT_FEATURE
 
-#define ADD_RV_FEATURE_IN_LIST(NAME, PRETTY, BIT, FSTRING, FLAGF) \
-    &VM_Version::NAME,
-VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
-RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
+#define DEF_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::PRETTY##RVNonExtFeatureValue VM_Version::PRETTY;
+RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
+#undef DEF_RV_NON_EXT_FEATURE
+
+#define ADD_RV_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::ext_##PRETTY,
+#define ADD_RV_NON_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::PRETTY,
+ VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
+ RV_EXT_FEATURE_FLAGS(ADD_RV_EXT_FEATURE_IN_LIST)
+ RV_NON_EXT_FEATURE_FLAGS(ADD_RV_NON_EXT_FEATURE_IN_LIST)
   nullptr};
+#undef ADD_RV_NON_EXT_FEATURE_IN_LIST
+#undef ADD_RV_EXT_FEATURE_IN_LIST
+
+VM_Version::RVExtFeatures* VM_Version::_rv_ext_features = new VM_Version::RVExtFeatures();
+
+void VM_Version::useRVA20U64Profile() {
+  RV_USE_RVA20U64;
+}
+
+void VM_Version::useRVA22U64Profile() {
+  RV_USE_RVA22U64;
+}
+
+void VM_Version::useRVA23U64Profile() {
+  RV_USE_RVA23U64;
+}
 
 void VM_Version::initialize() {
+  common_initialize();
+#ifdef COMPILER2
+  c2_initialize();
+#endif // COMPILER2
+}
+
+void VM_Version::common_initialize() {
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -61,52 +112,14 @@ void VM_Version::initialize() {
          (int)satp_mode.value()));
   }
 
-  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
   if (UseRVA20U64) {
-    if (FLAG_IS_DEFAULT(UseRVC)) {
-      FLAG_SET_DEFAULT(UseRVC, true);
-    }
+    useRVA20U64Profile();
   }
-  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva22-profiles
   if (UseRVA22U64) {
-    if (FLAG_IS_DEFAULT(UseRVC)) {
-      FLAG_SET_DEFAULT(UseRVC, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZba)) {
-      FLAG_SET_DEFAULT(UseZba, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZbb)) {
-      FLAG_SET_DEFAULT(UseZbb, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZbs)) {
-      FLAG_SET_DEFAULT(UseZbs, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZic64b)) {
-      FLAG_SET_DEFAULT(UseZic64b, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZicbom)) {
-      FLAG_SET_DEFAULT(UseZicbom, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZicbop)) {
-      FLAG_SET_DEFAULT(UseZicbop, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZicboz)) {
-      FLAG_SET_DEFAULT(UseZicboz, true);
-    }
-    if (FLAG_IS_DEFAULT(UseZihintpause)) {
-      FLAG_SET_DEFAULT(UseZihintpause, true);
-    }
+    useRVA22U64Profile();
   }
-
-  // Enable vendor specific features
-
-  if (mvendorid.enabled()) {
-    // Rivos
-    if (mvendorid.value() == RIVOS) {
-      if (FLAG_IS_DEFAULT(UseConservativeFence)) {
-        FLAG_SET_DEFAULT(UseConservativeFence, false);
-      }
-    }
+  if (UseRVA23U64) {
+    useRVA23U64Profile();
   }
 
   if (UseZic64b) {
@@ -130,79 +143,20 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
-  if (UseAES || UseAESIntrinsics) {
-    if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
-      warning("AES instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAES, false);
-    }
-    if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      warning("AES intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-    }
-  }
-
-  if (UseAESCTRIntrinsics) {
-    warning("AES/CTR intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-  }
-
-  if (UseSHA) {
-    warning("SHA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
-  if (UseSHA1Intrinsics) {
-    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
-  }
-
-  if (UseSHA256Intrinsics) {
-    warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
-  }
-
-  if (UseSHA512Intrinsics) {
-    warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  }
-
-  if (UseSHA3Intrinsics) {
-    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
-  }
-
-  if (UseCRC32Intrinsics) {
-    warning("CRC32 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
-  }
-
-  if (UseCRC32CIntrinsics) {
-    warning("CRC32C intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
-  }
-
   if (UseVectorizedMismatchIntrinsic) {
     warning("VectorizedMismatch intrinsic is not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
-  }
-
-  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
-    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
-  }
-
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
-      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+    FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
 
   if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
-      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+    FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
-  if (UseRVC && !ext_C.enabled()) {
+  if (UseRVC && !ext_c.enabled()) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
 
@@ -212,19 +166,38 @@ void VM_Version::initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
-    if (unaligned_access.value() != MISALIGNED_FAST) {
-      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
-    } else {
-      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, false);
+  if (UseZalasr && !toolchain_uses_psabi_atomics()) {
+    // A JVM built by a pre-psABI toolchain contains C++ atomics whose mapping
+    // is incompatible with the Zalasr sequences the JIT would emit; mixing them
+    // can break Java volatile semantics. Only warn when Zalasr was asked for
+    // explicitly: where the extension is detected it is enabled by default, and
+    // a plain start-up should stay quiet.
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr requires a JVM built with a toolchain using the "
+              "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
+              "disabling Zalasr");
     }
+    FLAG_SET_DEFAULT(UseZalasr, false);
+  }
+
+  if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
+      unaligned_scalar.value() != MISALIGNED_SCALAR_FAST);
+  }
+
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+    }
+  } else if (UsePoly1305Intrinsics) {
+    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
   }
 
   // See JDK-8026049
   // This machine has fast unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses,
-      unaligned_access.value() == MISALIGNED_FAST);
+      (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
 #ifdef __riscv_ztso
@@ -235,6 +208,22 @@ void VM_Version::initialize() {
   }
 #endif
 
+  // Zalasr and Ztso are mutually exclusive. Under Ztso the acquire and release fences
+  // are elided anyway, see MacroAssembler::membar(), so all Zalasr would still buy is
+  // eliding the trailing StoreLoad fence of a volatile store, which is a separate
+  // optimization. Ztso takes precedence for now, so Zalasr is turned off.
+  if (UseZtso && UseZalasr) {
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
+    }
+    FLAG_SET_DEFAULT(UseZalasr, false);
+  }
+
+  // Latch the native AtomicAccess dispatch flag only after every UseZalasr
+  // adjustment above has settled. See the comment on _use_zalasr_atomics in
+  // vm_version_riscv.hpp.
+  _use_zalasr_atomics = UseZalasr;
+
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
@@ -243,12 +232,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz) {
+  if (UseZicboz && zicboz_block_size.value() > 0) {
+    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 2 * CacheLineSize);
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
     }
   } else if (UseBlockZeroing) {
     warning("Block zeroing is not available");
@@ -256,63 +246,73 @@ void VM_Version::initialize() {
   }
 
   if (UseRVV) {
-    if (!ext_V.enabled()) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = cpu_vector_length();
+    // read vector length from vector CSR vlenb
+    _initial_vector_length = cpu_vector_length();
+  }
+
+  // Misc Intrinsics that could depend on RVV.
+
+  if (!AvoidUnalignedAccesses && (UseZba || UseRVV)) {
+    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
+    }
+  } else {
+    if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      warning("CRC32 intrinsic is not available on this CPU.");
+    }
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  }
+
+  if (UseZbc) {
+    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+    }
+  } else {
+    if (UseCRC32CIntrinsics) {
+      warning("CRC32C intrinsic is not available on this CPU.");
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
     }
   }
 
-#ifdef COMPILER2
-  c2_initialize();
-#endif // COMPILER2
-
-  // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
-  //       as there are extra checks inside it which could disable UseRVV
-  //       in some situations.
-
-  if (UseRVV) {
-    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
-    }
-  } else if (UseChaCha20Intrinsics) {
-    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-      warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
-    }
-    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+  }
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
 }
 
 #ifdef COMPILER2
 void VM_Version::c2_initialize() {
-  if (UseCMoveUnconditionally) {
-    FLAG_SET_DEFAULT(UseCMoveUnconditionally, false);
-  }
-
-  if (ConditionalMoveLimit > 0) {
-    FLAG_SET_DEFAULT(ConditionalMoveLimit, 0);
-  }
-
   if (!UseRVV) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
-    FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
   } else {
-    if (FLAG_IS_DEFAULT(MaxVectorSize)) {
-      MaxVectorSize = _initial_vector_length;
-    } else if (!is_power_of_2(MaxVectorSize)) {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d, must be a power of 2", (int)MaxVectorSize));
-    } else if (MaxVectorSize > _initial_vector_length) {
-      warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
-              _initial_vector_length, _initial_vector_length);
-      MaxVectorSize = _initial_vector_length;
+    if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
+      warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d",
+               (int)MaxVectorSize, _initial_vector_length);
     }
+    MaxVectorSize = _initial_vector_length;
     if (MaxVectorSize < 16) {
       warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
       UseRVV = false;
       FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector,
+      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
+  }
+
+  // NOTE: Make sure codes dependent on UseRVV are put after MaxVectorSize initialize,
+  //       as there are extra checks inside it which could disable UseRVV
+  //       in some situations.
+
+  // Base64
+  if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+    FLAG_SET_DEFAULT(UseBASE64Intrinsics, true);
   }
 
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
@@ -362,22 +362,178 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMulAddIntrinsic, true);
   }
 
-  if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+      FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
+    }
+  } else if (UseMultiplyToLenIntrinsic) {
+    warning("Intrinsics for BigInteger.multiplyToLen() not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
-    FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, true);
+    }
+  } else if (UseSquareToLenIntrinsic) {
+    warning("Intrinsics for BigInteger.squareToLen() not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
+      FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, true);
+    }
+  } else if (UseMontgomeryMultiplyIntrinsic) {
+    warning("Intrinsics for BigInteger.montgomeryMultiply() not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
+      FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
+    }
+  } else if (UseMontgomerySquareIntrinsic) {
+    warning("Intrinsics for BigInteger.montgomerySquare() not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, false);
+  }
+
+  // Adler32
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
+    }
+  } else if (UseAdler32Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      warning("Adler32 intrinsic requires RVV instructions (not available on this CPU).");
+    }
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+
+  // ChaCha20
+  if (UseRVV && MaxVectorSize >= 32) {
+    // performance tests on hardwares (MaxVectorSize == 16, 32) show that
+    // it brings regression when MaxVectorSize == 16.
+    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
+    }
+  } else if (UseChaCha20Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+      FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+    }
+  } else if (UseMD5Intrinsics) {
+    warning("Intrinsics for MD5 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  }
+
+  // SHA's
+  if (FLAG_IS_DEFAULT(UseSHA)) {
+    FLAG_SET_DEFAULT(UseSHA, true);
+  }
+
+  // SHA-1, no RVV required though.
+  if (UseSHA && !AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
+    }
+  } else if (UseSHA1Intrinsics) {
+    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
+  }
+
+  // SHA-2, depends on Zvkn.
+  if (UseSHA) {
+    if (UseZvkn) {
+      if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+      }
+      if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+      }
+    } else {
+      if (UseSHA256Intrinsics) {
+        warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU, UseZvkn needed.");
+        FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+      }
+      if (UseSHA512Intrinsics) {
+        warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU, UseZvkn needed.");
+        FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+      }
+    }
+  } else {
+    if (UseSHA256Intrinsics) {
+      warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU, as UseSHA disabled.");
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+    }
+    if (UseSHA512Intrinsics) {
+      warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU, as UseSHA disabled.");
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+    }
+  }
+
+  // SHA-3
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
+  // AES
+  if (UseZvkn) {
+    UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
+    UseAESIntrinsics =
+        UseAESIntrinsics || (UseAES && FLAG_IS_DEFAULT(UseAESIntrinsics));
+    if (UseAESIntrinsics && !UseAES) {
+      warning("UseAESIntrinsics enabled, but UseAES not, enabling");
+      UseAES = true;
+    }
+
+    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics) && UseZbb) {
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
+    }
+
+    if (UseAESCTRIntrinsics && !UseZbb) {
+      warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZbb support.");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    }
+  } else {
+    if (UseAES) {
+      warning("AES instructions are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAES, false);
+    }
+    if (UseAESIntrinsics) {
+      warning("AES intrinsics are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    }
+    if (UseAESCTRIntrinsics) {
+      warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZvkn support.");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    }
+  }
+
+  if (UseZvkg) {
+    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics) && UseZvbb) {
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
+    }
+
+    if (UseGHASHIntrinsics && !UseZvbb) {
+      warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvbb support");
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    }
+  } else {
+    if (UseGHASHIntrinsics) {
+      warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvkg support");
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    }
   }
 }
+
 #endif // COMPILER2
 
 void VM_Version::initialize_cpu_information(void) {
@@ -389,7 +545,81 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", features_string());
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
+  os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", cpu_info_string());
   _initialized = true;
+}
+
+bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!supports_float16_float_conversion()) {
+      return false;
+    }
+    break;
+  default:
+    break;
+  }
+  return true;
+}
+
+int VM_Version::cpu_features_size() {
+  return sizeof(RVExtFeatures);
+}
+
+void VM_Version::store_cpu_features(void* buf) {
+  memcpy(buf, RVExtFeatures::current(), sizeof(RVExtFeatures));
+}
+
+bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
+  RVExtFeatures* features_to_test = (RVExtFeatures*)features_buffer;
+  return RVExtFeatures::current()->verify_aot_code_cache_features(features_to_test);
+}
+
+// Print one feature using the same spelling as features_string(): single letter
+// extensions appear as "rvc"/"rvv" and multi-character extensions with a lower
+// case leading character ("Zba" -> "zba"). Must stay in sync with the feature
+// string built in VM_Version::setup_cpu_available_features().
+void VM_Version::print_feature_name(stringStream& ss, RVFeatureValue* feature) {
+  const char* pretty = feature->pretty();
+  if (strlen(pretty) == 1) {
+    ss.print("rv%s", pretty);
+  } else {
+    ss.print("%c%s", (char)tolower(pretty[0]), &pretty[1]);
+  }
+}
+
+void VM_Version::insert_features_names(RVExtFeatures* features, stringStream& ss) {
+  const char* sep = "";
+  int i = 0;
+  while (i < RVExtFeatures::MAX_CPU_FEATURE_INDEX) {
+    if (features->support_feature(i)) {
+      ss.print("%s", sep);
+      print_feature_name(ss, _feature_list[i]);
+      sep = ", ";
+    }
+    i += 1;
+  }
+}
+
+void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  RVExtFeatures* features = (RVExtFeatures*)features_buffer;
+  insert_features_names(features, ss);
+}
+
+void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  RVExtFeatures* rv_ext_features_set1 = (RVExtFeatures*)features_set1;
+  RVExtFeatures* rv_ext_features_set2 = (RVExtFeatures*)features_set2;
+  const char* sep = "";
+  int i = 0;
+  while (i < RVExtFeatures::MAX_CPU_FEATURE_INDEX) {
+    if (rv_ext_features_set1->support_feature(i) && !rv_ext_features_set2->support_feature(i)) {
+      ss.print("%s", sep);
+      print_feature_name(ss, _feature_list[i]);
+      sep = ", ";
+    }
+    i += 1;
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,15 @@ class ValueStack: public CompilationResourceObj {
   ValueStack* _caller_state;
   int      _bci;
   Kind     _kind;
+  bool     _should_reexecute;
 
   Values   _locals;                              // the locals
   Values   _stack;                               // the expression stack
   Values*  _locks;                               // the monitor stack (holding the locked values)
+  bool     _force_reexecute;                     // force the reexecute flag on, used for patching stub
 
   Value check(ValueTag tag, Value t) {
-    assert(tag == t->type()->tag() || tag == objectTag && t->type()->tag() == addressTag, "types must correspond");
+    assert(tag == t->type()->tag() || (tag == objectTag && t->type()->tag() == addressTag), "types must correspond");
     return t;
   }
 
@@ -73,7 +75,7 @@ class ValueStack: public CompilationResourceObj {
   static void apply(const Values& list, ValueVisitor* f);
 
   // for simplified copying
-  ValueStack(ValueStack* copy_from, Kind kind, int bci);
+  ValueStack(ValueStack* copy_from, Kind kind, int bci, bool reexecute);
 
   int locals_size_for_copy(Kind kind) const;
   int stack_size_for_copy(Kind kind) const;
@@ -81,9 +83,9 @@ class ValueStack: public CompilationResourceObj {
   // creation
   ValueStack(IRScope* scope, ValueStack* caller_state);
 
-  ValueStack* copy()                             { return new ValueStack(this, _kind, _bci); }
-  ValueStack* copy(Kind new_kind, int new_bci)   { return new ValueStack(this, new_kind, new_bci); }
-  ValueStack* copy_for_parsing()                 { return new ValueStack(this, Parsing, -99); }
+  ValueStack* copy()                             { return new ValueStack(this, _kind, _bci, _should_reexecute); }
+  ValueStack* copy(Kind new_kind, int new_bci)   { return new ValueStack(this, new_kind, new_bci, _should_reexecute); }
+  ValueStack* copy_for_parsing()                 { return new ValueStack(this, Parsing, -99, false); }
 
   // Used when no exception handler is found
   static Kind empty_exception_kind(bool caller = false) {
@@ -105,6 +107,8 @@ class ValueStack: public CompilationResourceObj {
   ValueStack* caller_state() const               { return _caller_state; }
   int bci() const                                { return _bci; }
   Kind kind() const                              { return _kind; }
+  bool should_reexecute() const                  { return _should_reexecute; }
+  void set_should_reexecute(bool reexec)         { _should_reexecute = reexec; }
 
   int locals_size() const                        { return _locals.length(); }
   int stack_size() const                         { return _stack.length(); }
@@ -224,6 +228,9 @@ class ValueStack: public CompilationResourceObj {
   // SSA form IR support
   void setup_phi_for_stack(BlockBegin* b, int index);
   void setup_phi_for_local(BlockBegin* b, int index);
+
+  bool force_reexecute() const         { return _force_reexecute; }
+  void set_force_reexecute()           { _force_reexecute = true; }
 
   // debugging
   void print()  PRODUCT_RETURN;

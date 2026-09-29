@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8020156 8020009 8022326 8012913 8024405 8024408 8071477
+ * @bug 8020156 8020009 8022326 8012913 8024405 8024408 8071477 8336672
  * @run testng SpliteratorCharacteristics
  */
 
@@ -111,7 +111,7 @@ public class SpliteratorCharacteristics {
     }
 
     public void testSpliteratorFromCollection() {
-        List<Integer> l = Arrays.asList(1, 2, 3, 4);
+        List<String> l = Arrays.asList("A", "B", "C", "D");
 
         {
             Spliterator<?> s = Spliterators.spliterator(l, 0);
@@ -291,7 +291,7 @@ public class SpliteratorCharacteristics {
     }
 
     public void testConcurrentSkipListMapWithComparator() {
-        assertSortedMapCharacteristics(new ConcurrentSkipListMap<>(Comparator.<Integer>reverseOrder()),
+        assertSortedMapCharacteristics(new ConcurrentSkipListMap<>(Comparator.<String>reverseOrder()),
                                        Spliterator.CONCURRENT | Spliterator.NONNULL |
                                        Spliterator.DISTINCT | Spliterator.SORTED |
                                        Spliterator.ORDERED);
@@ -315,11 +315,11 @@ public class SpliteratorCharacteristics {
     //
 
 
-    void assertMapCharacteristics(Map<Integer, String> m, int keyCharacteristics) {
+    void assertMapCharacteristics(Map<String, String> m, int keyCharacteristics) {
         assertMapCharacteristics(m, keyCharacteristics, 0);
     }
 
-    void assertMapCharacteristics(Map<Integer, String> m, int keyCharacteristics, int notValueCharacteristics) {
+    void assertMapCharacteristics(Map<String, String> m, int keyCharacteristics, int notValueCharacteristics) {
         initMap(m);
 
         assertCharacteristics(m.keySet(), keyCharacteristics);
@@ -336,7 +336,7 @@ public class SpliteratorCharacteristics {
         }
     }
 
-    void assertSetCharacteristics(Set<Integer> s, int keyCharacteristics) {
+    void assertSetCharacteristics(Set<String> s, int keyCharacteristics) {
         initSet(s);
 
         assertCharacteristics(s, keyCharacteristics);
@@ -346,10 +346,10 @@ public class SpliteratorCharacteristics {
         }
     }
 
-    void assertSortedMapCharacteristics(SortedMap<Integer, String> m, int keyCharacteristics) {
+    void assertSortedMapCharacteristics(SortedMap<String, String> m, int keyCharacteristics) {
         assertMapCharacteristics(m, keyCharacteristics, Spliterator.SORTED);
 
-        Set<Integer> keys = m.keySet();
+        Set<String> keys = m.keySet();
         if (m.comparator() != null) {
             assertNotNullComparator(keys);
         }
@@ -362,7 +362,7 @@ public class SpliteratorCharacteristics {
         assertNotNullComparator(m.entrySet());
     }
 
-    void assertSortedSetCharacteristics(SortedSet<Integer> s, int keyCharacteristics) {
+    void assertSortedSetCharacteristics(SortedSet<String> s, int keyCharacteristics) {
         assertSetCharacteristics(s, keyCharacteristics);
 
         if (s.comparator() != null) {
@@ -373,15 +373,15 @@ public class SpliteratorCharacteristics {
         }
     }
 
-    void initMap(Map<Integer, String> m) {
-        m.put(1, "4");
-        m.put(2, "3");
-        m.put(3, "2");
-        m.put(4, "1");
+    void initMap(Map<String, String> m) {
+        m.put("A", "4");
+        m.put("B", "3");
+        m.put("C", "2");
+        m.put("D", "1");
     }
 
-    void initSet(Set<Integer> s) {
-        s.addAll(Arrays.asList(1, 2, 3, 4));
+    void initSet(Set<String> s) {
+        s.addAll(Arrays.asList("A", "B", "C", "D"));
     }
 
     void assertCharacteristics(Collection<?> c, int expectedCharacteristics) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package jdk.internal.loader;
 
-import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
@@ -37,15 +35,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.SecureClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -110,16 +101,11 @@ public final class Loader extends SecureClassLoader {
     private final Map<ModuleReference, ModuleReader> moduleToReader
         = new ConcurrentHashMap<>();
 
-    // ACC used when loading classes and resources
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc;
-
     /**
      * A module defined/loaded to a {@code Loader}.
      */
     private static class LoadedModule {
         private final ModuleReference mref;
-        private final URL url;          // may be null
         private final CodeSource cs;
 
         LoadedModule(ModuleReference mref) {
@@ -130,13 +116,11 @@ public final class Loader extends SecureClassLoader {
                 } catch (MalformedURLException | IllegalArgumentException e) { }
             }
             this.mref = mref;
-            this.url = url;
             this.cs = new CodeSource(url, (CodeSigner[]) null);
         }
 
         ModuleReference mref() { return mref; }
         String name() { return mref.descriptor().name(); }
-        URL location() { return url; }
         CodeSource codeSource() { return cs; }
     }
 
@@ -145,7 +129,6 @@ public final class Loader extends SecureClassLoader {
      * Creates a {@code Loader} in a loader pool that loads classes/resources
      * from one module.
      */
-    @SuppressWarnings("removal")
     public Loader(ResolvedModule resolvedModule,
                   LoaderPool pool,
                   ClassLoader parent)
@@ -164,8 +147,6 @@ public final class Loader extends SecureClassLoader {
         LoadedModule lm = new LoadedModule(mref);
         descriptor.packages().forEach(pn -> localPackageToModule.put(pn, lm));
         this.localPackageToModule = localPackageToModule;
-
-        this.acc = AccessController.getContext();
     }
 
     /**
@@ -175,7 +156,6 @@ public final class Loader extends SecureClassLoader {
      * @throws IllegalArgumentException
      *         If two or more modules have the same package
      */
-    @SuppressWarnings("removal")
     public Loader(Collection<ResolvedModule> modules, ClassLoader parent) {
         super(parent);
 
@@ -197,8 +177,6 @@ public final class Loader extends SecureClassLoader {
         }
         this.nameToModule = nameToModule;
         this.localPackageToModule = localPackageToModule;
-
-        this.acc = AccessController.getContext();
     }
 
     /**
@@ -326,7 +304,6 @@ public final class Loader extends SecureClassLoader {
      * Returns a URL to a resource of the given name in a module defined to
      * this class loader.
      */
-    @SuppressWarnings("removal")
     @Override
     protected URL findResource(String mn, String name) throws IOException {
         ModuleReference mref = (mn != null) ? nameToModule.get(mn) : null;
@@ -335,41 +312,12 @@ public final class Loader extends SecureClassLoader {
 
         // locate resource
         URL url = null;
-        try {
-            url = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<URL>() {
-                    @Override
-                    public URL run() throws IOException {
-                        Optional<URI> ouri = moduleReaderFor(mref).find(name);
-                        if (ouri.isPresent()) {
-                            try {
-                                return ouri.get().toURL();
-                            } catch (MalformedURLException |
-                                     IllegalArgumentException e) { }
-                        }
-                        return null;
-                    }
-                });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
-
-        // check access with permissions restricted by ACC
-        if (url != null && System.getSecurityManager() != null) {
+        Optional<URI> ouri = moduleReaderFor(mref).find(name);
+        if (ouri.isPresent()) {
             try {
-                URL urlToCheck = url;
-                url = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<URL>() {
-                        @Override
-                        public URL run() throws IOException {
-                            return URLClassPath.checkURL(urlToCheck);
-                        }
-                    }, acc);
-            } catch (PrivilegedActionException pae) {
-                url = null;
-            }
+                url = ouri.get().toURL();
+            } catch (MalformedURLException | IllegalArgumentException e) { }
         }
-
         return url;
     }
 
@@ -525,15 +473,6 @@ public final class Loader extends SecureClassLoader {
     protected Class<?> loadClass(String cn, boolean resolve)
         throws ClassNotFoundException
     {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            String pn = packageName(cn);
-            if (!pn.isEmpty()) {
-                sm.checkPackageAccess(pn);
-            }
-        }
-
         synchronized (getClassLoadingLock(cn)) {
             // check if already loaded
             Class<?> c = findLoadedClass(cn);
@@ -584,19 +523,7 @@ public final class Loader extends SecureClassLoader {
      *
      * @return the resulting Class or {@code null} if not found
      */
-    @SuppressWarnings("removal")
     private Class<?> findClassInModuleOrNull(LoadedModule loadedModule, String cn) {
-        PrivilegedAction<Class<?>> pa = () -> defineClass(cn, loadedModule);
-        return AccessController.doPrivileged(pa, acc);
-    }
-
-    /**
-     * Defines the given binary class name to the VM, loading the class
-     * bytes from the given module.
-     *
-     * @return the resulting Class or {@code null} if an I/O error occurs
-     */
-    private Class<?> defineClass(String cn, LoadedModule loadedModule) {
         ModuleReader reader = moduleReaderFor(loadedModule.mref());
 
         try {
@@ -619,40 +546,6 @@ public final class Loader extends SecureClassLoader {
             return null;
         }
     }
-
-
-    // -- permissions
-
-    /**
-     * Returns the permissions for the given CodeSource.
-     */
-    @Override
-    protected PermissionCollection getPermissions(CodeSource cs) {
-        PermissionCollection perms = super.getPermissions(cs);
-
-        URL url = cs.getLocation();
-        if (url == null)
-            return perms;
-
-        // add the permission to access the resource
-        try {
-            Permission p = url.openConnection().getPermission();
-            if (p != null) {
-                // for directories then need recursive access
-                if (p instanceof FilePermission) {
-                    String path = p.getName();
-                    if (path.endsWith(File.separator)) {
-                        path += "-";
-                        p = new FilePermission(path, "read");
-                    }
-                }
-                perms.add(p);
-            }
-        } catch (IOException ioe) { }
-
-        return perms;
-    }
-
 
     // -- miscellaneous supporting methods
 

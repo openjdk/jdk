@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 public class MonitorInflationTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("inflate(has_locker):");
+        output.shouldContain("inflate:");
         output.shouldContain("type='MonitorInflationTest$Waiter'");
         output.shouldContain("I've been waiting.");
         output.shouldHaveExitValue(0);

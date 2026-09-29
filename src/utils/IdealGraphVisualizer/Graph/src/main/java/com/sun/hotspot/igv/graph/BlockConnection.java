@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import com.sun.hotspot.igv.layout.Port;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.List;
+import java.util.Objects;
 
 public class BlockConnection implements Connection {
 
@@ -86,11 +87,6 @@ public class BlockConnection implements Connection {
     }
 
     @Override
-    public boolean isVIP() {
-        return true;
-    }
-
-    @Override
     public List<Point> getControlPoints() {
         return controlPoints;
     }
@@ -103,5 +99,20 @@ public class BlockConnection implements Connection {
     @Override
     public boolean hasSlots() {
         return false;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BlockConnection that)) return false;
+        return Objects.equals(this.sourceBlock, that.sourceBlock) &&
+                Objects.equals(this.destinationBlock, that.destinationBlock) &&
+                Objects.equals(this.label, that.label);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sourceBlock, destinationBlock, label);
     }
 }

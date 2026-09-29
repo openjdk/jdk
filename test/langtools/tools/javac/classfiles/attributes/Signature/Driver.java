@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public class Driver extends TestResult {
                     // test class signature
                     testAttribute(
                             className,
-                            () -> classFile.findAttribute(Attributes.SIGNATURE).orElse(null),
+                            () -> classFile.findAttribute(Attributes.signature()).orElse(null),
                             getClassExpectedSignature(className, clazz).get(className));
 
                     testFields(getExpectedFieldSignatures(clazz), classFile);
@@ -173,7 +173,7 @@ public class Driver extends TestResult {
             }
             testAttribute(
                     methodName,
-                    () -> method.findAttribute(Attributes.SIGNATURE).orElse(null),
+                    () -> method.findAttribute(Attributes.signature()).orElse(null),
                     expectedSignatures.get(methodName));
             foundMethods.add(methodName);
         }
@@ -204,7 +204,7 @@ public class Driver extends TestResult {
             printf("Testing field %s\n", fieldName);
             testAttribute(
                     fieldName,
-                    () -> field.findAttribute(Attributes.SIGNATURE).orElse(null),
+                    () -> field.findAttribute(Attributes.signature()).orElse(null),
                     expectedSignatures.get(fieldName));
             foundFields.add(fieldName);
         }
@@ -219,7 +219,7 @@ public class Driver extends TestResult {
 
         SignatureAttribute attribute = sup.get();
         if (expectedSignature != null && checkNotNull(attribute, memberName + " must have attribute")) {
-            checkEquals(attribute.attributeName(),
+            checkEquals(attribute.attributeName().stringValue(),
                     "Signature", "Attribute's name : " + memberName);
             checkEquals(((BoundAttribute<?>)attribute).payloadLen(), 2, "Attribute's length : " + memberName);
             checkEquals(attribute.signature().stringValue(),

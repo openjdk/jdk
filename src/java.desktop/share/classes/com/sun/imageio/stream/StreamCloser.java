@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package com.sun.imageio.stream;
 import sun.awt.util.ThreadGroupUtils;
 
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Set;
 import java.util.WeakHashMap;
 import javax.imageio.stream.ImageInputStream;
@@ -50,7 +48,6 @@ public class StreamCloser {
     private static WeakHashMap<CloseAction, Object> toCloseQueue;
     private static Thread streamCloser;
 
-    @SuppressWarnings("removal")
     public static void addToQueue(CloseAction ca) {
         synchronized (StreamCloser.class) {
             if (toCloseQueue == null) {
@@ -62,6 +59,7 @@ public class StreamCloser {
 
             if (streamCloser == null) {
                 final Runnable streamCloserRunnable = new Runnable() {
+                    @Override
                     public void run() {
                         if (toCloseQueue != null) {
                             synchronized (StreamCloser.class) {
@@ -86,21 +84,18 @@ public class StreamCloser {
                     }
                 };
 
-                AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-                    /* The thread must be a member of a thread group
-                     * which will not get GCed before VM exit.
-                     * Make its parent the top-level thread group.
-                     */
-                    ThreadGroup tg = ThreadGroupUtils.getRootThreadGroup();
-                    streamCloser = new Thread(tg, streamCloserRunnable,
-                                              "StreamCloser", 0, false);
-                    /* Set context class loader to null in order to avoid
-                     * keeping a strong reference to an application classloader.
-                     */
-                    streamCloser.setContextClassLoader(null);
-                    Runtime.getRuntime().addShutdownHook(streamCloser);
-                    return null;
-                });
+                /* The thread must be a member of a thread group
+                 * which will not get GCed before VM exit.
+                 * Make its parent the top-level thread group.
+                 */
+                ThreadGroup tg = ThreadGroupUtils.getRootThreadGroup();
+                streamCloser = new Thread(tg, streamCloserRunnable,
+                                          "StreamCloser", 0, false);
+                /* Set context class loader to null in order to avoid
+                 * keeping a strong reference to an application classloader.
+                 */
+                streamCloser.setContextClassLoader(null);
+                Runtime.getRuntime().addShutdownHook(streamCloser);
             }
         }
     }

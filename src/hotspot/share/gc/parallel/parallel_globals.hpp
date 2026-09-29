@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,34 +29,24 @@
                           develop_pd,                                       \
                           product,                                          \
                           product_pd,                                       \
-                          notproduct,                                       \
                           range,                                            \
                           constraint)                                       \
-  product(uintx, HeapMaximumCompactionInterval, 20,                         \
-          "How often should we maximally compact the heap (not allowing "   \
-          "any dead space)")                                                \
+  product(uintx, NUMAChunkResizeWeight, 20,                                 \
+          "Percentage (0-100) used to weight the current sample when "      \
+          "computing exponentially decaying average for "                   \
+          "AdaptiveNUMAChunkSizing")                                        \
+          range(0, 100)                                                     \
+                                                                            \
+  product(size_t, NUMASpaceResizeRate, 1*G,                                 \
+          "Do not reallocate more than this amount per collection")         \
           range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, HeapFirstMaximumCompactionCount, 3,                        \
-          "The collection count for the first maximum compaction")          \
-          range(0, max_uintx)                                               \
+  product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
+          "Enable adaptive chunk sizing for NUMA")                          \
                                                                             \
   product(bool, UseMaximumCompactionOnSystemGC, true,                       \
           "Use maximum compaction in the Parallel Old garbage collector "   \
-          "for a system GC")                                                \
-                                                                            \
-  product(size_t, ParallelOldDeadWoodLimiterMean, 50,                       \
-          "The mean used by the parallel compact dead wood "                \
-          "limiter (a number between 0-100)")                               \
-          range(0, 100)                                                     \
-                                                                            \
-  product(size_t, ParallelOldDeadWoodLimiterStdDev, 80,                     \
-          "The standard deviation used by the parallel compact dead wood "  \
-          "limiter (a number between 0-100)")                               \
-          range(0, 100)                                                     \
-                                                                            \
-  product(bool, PSChunkLargeArrays, true,                                   \
-          "Process large arrays in chunks")
+          "for a system GC")
 
 // end of GC_PARALLEL_FLAGS
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@ public class FrameToFrontModelessTest {
     private final ExtendedRobot robot;
 
     private boolean isModeless;
+
+    private static final boolean IS_ON_WAYLAND =
+            System.getenv("WAYLAND_DISPLAY") != null;
 
     public FrameToFrontModelessTest(boolean modeless) throws Exception {
         isModeless = modeless;
@@ -76,6 +79,9 @@ public class FrameToFrontModelessTest {
             robot.waitForIdle(delay);
 
             // show the right frame appear on top of the dialog
+            if (IS_ON_WAYLAND) {
+                rightFrame.toFront();
+            }
             rightFrame.clickDummyButton(robot);
             robot.waitForIdle(delay);
 

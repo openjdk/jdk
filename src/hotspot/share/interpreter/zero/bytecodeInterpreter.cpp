@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -30,13 +29,14 @@
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
-#include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/zero/bytecodeInterpreter.inline.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/arrayOop.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -52,15 +52,17 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 /*
@@ -342,11 +344,12 @@ JRT_END
  * On some architectures/platforms it should be possible to do this implicitly
  */
 #undef CHECK_NULL
-#define CHECK_NULL(obj_)                                                                         \
-        if ((obj_) == nullptr) {                                                                    \
-          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), nullptr);                      \
-        }                                                                                        \
+#define CHECK_NULL_MSG(obj_, msg)                                              \
+        if ((obj_) == nullptr) {                                               \
+          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), (msg));   \
+        }                                                                      \
         VERIFY_OOP(obj_)
+#define CHECK_NULL(obj_) CHECK_NULL_MSG(obj_, nullptr)
 
 #define VMdoubleConstZero() 0.0
 #define VMdoubleConstOne() 1.0
@@ -580,18 +583,17 @@ void BytecodeInterpreter::run(interpreterState istate) {
 /* 0xC0 */ &&opc_checkcast,     &&opc_instanceof,       &&opc_monitorenter,   &&opc_monitorexit,
 /* 0xC4 */ &&opc_wide,          &&opc_multianewarray,   &&opc_ifnull,         &&opc_ifnonnull,
 /* 0xC8 */ &&opc_goto_w,        &&opc_jsr_w,            &&opc_breakpoint,     &&opc_fast_agetfield,
-/* 0xCC */ &&opc_fast_bgetfield,&&opc_fast_cgetfield,   &&opc_fast_dgetfield, &&opc_fast_fgetfield,
+/* 0xCC */ &&opc_default,       &&opc_fast_bgetfield,   &&opc_fast_cgetfield, &&opc_fast_dgetfield,
 
-/* 0xD0 */ &&opc_fast_igetfield,&&opc_fast_lgetfield,   &&opc_fast_sgetfield, &&opc_fast_aputfield,
-/* 0xD4 */ &&opc_fast_bputfield,&&opc_fast_zputfield,   &&opc_fast_cputfield, &&opc_fast_dputfield,
-/* 0xD8 */ &&opc_fast_fputfield,&&opc_fast_iputfield,   &&opc_fast_lputfield, &&opc_fast_sputfield,
-/* 0xDC */ &&opc_fast_aload_0,  &&opc_fast_iaccess_0,   &&opc_fast_aaccess_0, &&opc_fast_faccess_0,
+/* 0xD0 */ &&opc_fast_fgetfield, &&opc_fast_igetfield,  &&opc_fast_lgetfield, &&opc_fast_sgetfield,
+/* 0xD4 */ &&opc_fast_aputfield, &&opc_default,         &&opc_fast_bputfield, &&opc_fast_zputfield,
+/* 0xD8 */ &&opc_fast_cputfield, &&opc_fast_dputfield,  &&opc_fast_fputfield, &&opc_fast_iputfield,
+/* 0xDC */ &&opc_fast_lputfield, &&opc_fast_sputfield,  &&opc_fast_aload_0,   &&opc_fast_iaccess_0,
 
-/* 0xE0 */ &&opc_fast_iload,    &&opc_fast_iload2,      &&opc_fast_icaload,   &&opc_fast_invokevfinal,
-/* 0xE4 */ &&opc_default,       &&opc_default,          &&opc_fast_aldc,      &&opc_fast_aldc_w,
-/* 0xE8 */ &&opc_return_register_finalizer,
-                                &&opc_invokehandle,     &&opc_nofast_getfield,&&opc_nofast_putfield,
-/* 0xEC */ &&opc_nofast_aload_0,&&opc_nofast_iload,     &&opc_default,        &&opc_default,
+/* 0xE0 */ &&opc_fast_aaccess_0,  &&opc_fast_faccess_0,    &&opc_fast_iload,                &&opc_fast_iload2,
+/* 0xE4 */ &&opc_fast_icaload,    &&opc_fast_invokevfinal, &&opc_default,                   &&opc_default,
+/* 0xE8 */ &&opc_fast_aldc,       &&opc_fast_aldc_w,       &&opc_return_register_finalizer, &&opc_invokehandle,
+/* 0xEC */ &&opc_nofast_getfield, &&opc_nofast_putfield,   &&opc_nofast_aload_0,            &&opc_nofast_iload,
 
 /* 0xF0 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
 /* 0xF4 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
@@ -623,24 +625,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
         // The initial monitor is ours for the taking.
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
-
-        // Traditional lightweight locking.
-        markWord displaced = rcvr->mark().set_unlocked();
-        mon->lock()->set_displaced_header(displaced);
-        bool call_vm = (LockingMode == LM_MONITOR);
-        bool inc_monitor_count = true;
-        if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
-          // Is it simple recursive case?
-          if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-            mon->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-          } else {
-            inc_monitor_count = false;
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
-          }
-        }
-        if (inc_monitor_count) {
-          THREAD->inc_held_monitor_count();
-        }
+        CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
       }
       THREAD->set_do_not_unlock_if_synchronized(false);
 
@@ -722,24 +707,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
       BasicObjectLock* entry = (BasicObjectLock*) istate->stack_base();
       assert(entry->obj() == nullptr, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
-
-      // traditional lightweight locking
-      markWord displaced = lockee->mark().set_unlocked();
-      entry->lock()->set_displaced_header(displaced);
-      bool call_vm = (LockingMode == LM_MONITOR);
-      bool inc_monitor_count = true;
-      if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-        // Is it simple recursive case?
-        if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-          entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-        } else {
-          inc_monitor_count = false;
-          CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-        }
-      }
-      if (inc_monitor_count) {
-        THREAD->inc_held_monitor_count();
-      }
+      CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
       UPDATE_PC_AND_TOS(1, -1);
       goto run;
     }
@@ -1535,7 +1503,13 @@ run:
           ARRAY_LOADTO32(T_FLOAT, jfloat, "%f",   STACK_FLOAT, 0);
       CASE(_aaload): {
           ARRAY_INTRO(-2);
-          SET_STACK_OBJECT(((objArrayOop) arrObj)->obj_at(index), -2);
+          if (arrObj->is_flatArray()) {
+            CALL_VM(InterpreterRuntime::flat_array_load(THREAD, (objArrayOop) arrObj, index), handle_exception);
+            SET_STACK_OBJECT(THREAD->vm_result_oop(), -2);
+            THREAD->set_vm_result_oop(nullptr);
+          } else {
+            SET_STACK_OBJECT(((refArrayOop) arrObj)->obj_at(index), -2);
+          }
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
       }
       CASE(_baload):
@@ -1599,6 +1573,8 @@ run:
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
               VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "");
             }
+          } else if (arrObj->is_null_free_array()) {
+            VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), "Cannot store null in a null-restricted array");
           }
           ((objArrayOop) arrObj)->obj_at_put(index, rhsObject);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);
@@ -1607,10 +1583,10 @@ run:
           ARRAY_INTRO(-3);
           int item = STACK_INT(-1);
           // if it is a T_BOOLEAN array, mask the stored value to 0/1
-          if (arrObj->klass() == Universe::boolArrayKlassObj()) {
+          if (arrObj->klass() == Universe::boolArrayKlass()) {
             item &= 1;
           } else {
-            assert(arrObj->klass() == Universe::byteArrayKlassObj(),
+            assert(arrObj->klass() == Universe::byteArrayKlass(),
                    "should be byte array otherwise");
           }
           ((typeArrayOop)arrObj)->byte_at_put(index, item);
@@ -1652,24 +1628,7 @@ run:
         }
         if (entry != nullptr) {
           entry->set_obj(lockee);
-
-          // traditional lightweight locking
-          markWord displaced = lockee->mark().set_unlocked();
-          entry->lock()->set_displaced_header(displaced);
-          bool call_vm = (LockingMode == LM_MONITOR);
-          bool inc_monitor_count = true;
-          if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-            // Is it simple recursive case?
-            if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-              entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-            } else {
-              inc_monitor_count = false;
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
-            }
-          }
-          if (inc_monitor_count) {
-            THREAD->inc_held_monitor_count();
-          }
+          CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
         } else {
           istate->set_msg(more_monitors);
@@ -1687,24 +1646,7 @@ run:
         while (most_recent != limit ) {
           if ((most_recent)->obj() == lockee) {
             BasicLock* lock = most_recent->lock();
-            markWord header = lock->displaced_header();
-            most_recent->set_obj(nullptr);
-
-            // If it isn't recursive we either must swap old header or call the runtime
-            bool dec_monitor_count = true;
-            bool call_vm = (LockingMode == LM_MONITOR);
-            if (header.to_pointer() != nullptr || call_vm) {
-              markWord old_header = markWord::encode(lock);
-              if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                most_recent->set_obj(lockee);
-                dec_monitor_count = false;
-                InterpreterRuntime::monitorexit(most_recent);
-              }
-            }
-            if (dec_monitor_count) {
-              THREAD->dec_held_monitor_count();
-            }
+            InterpreterRuntime::monitorexit(most_recent);
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
           }
           most_recent++;
@@ -1797,6 +1739,7 @@ run:
                 MORE_STACK(1);
                 break;
               case atos: {
+                assert(!entry->is_flat(), "Flat volatile field not supported");
                 oop val = obj->obj_field_acquire(field_offset);
                 VERIFY_OOP(val);
                 SET_STACK_OBJECT(val, -1);
@@ -1832,7 +1775,14 @@ run:
                 MORE_STACK(1);
                 break;
               case atos: {
-                oop val = obj->obj_field(field_offset);
+                oop val;
+                if (entry->is_flat()) {
+                  CALL_VM(InterpreterRuntime::read_flat_field(THREAD, obj, entry), handle_exception);
+                  val = THREAD->vm_result_oop();
+                  THREAD->set_vm_result_oop(nullptr);
+                } else {
+                  val = obj->obj_field(field_offset);
+                }
                 VERIFY_OOP(val);
                 SET_STACK_OBJECT(val, -1);
                 break;
@@ -1925,6 +1875,7 @@ run:
                 obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
                 break;
               case atos: {
+                assert(!entry->is_flat(), "Flat volatile field not supported");
                 oop val = STACK_OBJECT(-1);
                 VERIFY_OOP(val);
                 obj->release_obj_field_put(field_offset, val);
@@ -1963,7 +1914,11 @@ run:
               case atos: {
                 oop val = STACK_OBJECT(-1);
                 VERIFY_OOP(val);
-                obj->obj_field_put(field_offset, val);
+                if (entry->is_flat()) {
+                  CALL_VM(InterpreterRuntime::write_flat_field(THREAD, obj, val, entry), handle_exception);
+                } else {
+                  obj->obj_field_put(field_offset, val);
+                }
                 break;
               }
               default:
@@ -1991,20 +1946,23 @@ run:
             size_t obj_size = ik->size_helper();
             HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != nullptr) {
-              // Initialize object field block:
-              //   - if TLAB is pre-zeroed, we can skip this path
-              //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
-              //     this area, and we still need to initialize it
-              if (DEBUG_ONLY(true ||) !ZeroTLAB) {
+              // Initialize object field block.
+              if (!ZeroTLAB) {
+                // The TLAB was not pre-zeroed, we need to clear the memory here.
                 size_t hdr_size = oopDesc::header_size();
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
 
               // Initialize header, mirrors MemAllocator.
-              oopDesc::set_mark(result, markWord::prototype());
-              oopDesc::set_klass_gap(result, 0);
-              oopDesc::release_set_klass(result, ik);
-
+              if (UseCompactObjectHeaders) {
+                oopDesc::release_set_mark(result, ik->prototype_header());
+              } else {
+                oopDesc::set_mark(result, markWord::prototype());
+                if (oopDesc::has_klass_gap()) {
+                  oopDesc::set_klass_gap(result, 0);
+                }
+                oopDesc::release_set_klass(result, ik);
+              }
               oop obj = cast_to_oop(result);
 
               // Must prevent reordering of stores for object initialization
@@ -2021,8 +1979,8 @@ run:
         // Must prevent reordering of stores for object initialization
         // with stores that publish the new object.
         OrderAccess::storestore();
-        SET_STACK_OBJECT(THREAD->vm_result(), 0);
-        THREAD->set_vm_result(nullptr);
+        SET_STACK_OBJECT(THREAD->vm_result_oop(), 0);
+        THREAD->set_vm_result_oop(nullptr);
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
       }
       CASE(_anewarray): {
@@ -2033,8 +1991,8 @@ run:
         // Must prevent reordering of stores for object initialization
         // with stores that publish the new object.
         OrderAccess::storestore();
-        SET_STACK_OBJECT(THREAD->vm_result(), -1);
-        THREAD->set_vm_result(nullptr);
+        SET_STACK_OBJECT(THREAD->vm_result_oop(), -1);
+        THREAD->set_vm_result_oop(nullptr);
         UPDATE_PC_AND_CONTINUE(3);
       }
       CASE(_multianewarray): {
@@ -2050,8 +2008,8 @@ run:
         // Must prevent reordering of stores for object initialization
         // with stores that publish the new object.
         OrderAccess::storestore();
-        SET_STACK_OBJECT(THREAD->vm_result(), -dims);
-        THREAD->set_vm_result(nullptr);
+        SET_STACK_OBJECT(THREAD->vm_result_oop(), -dims);
+        THREAD->set_vm_result_oop(nullptr);
         UPDATE_PC_AND_TOS_AND_CONTINUE(4, -(dims-1));
       }
       CASE(_checkcast):
@@ -2132,8 +2090,8 @@ run:
               oop result = constants->resolved_reference_at(index);
               if (result == nullptr) {
                 CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
-                SET_STACK_OBJECT(THREAD->vm_result(), 0);
-                THREAD->set_vm_result(nullptr);
+                SET_STACK_OBJECT(THREAD->vm_result_oop(), 0);
+                THREAD->set_vm_result_oop(nullptr);
               } else {
                 VERIFY_OOP(result);
                 SET_STACK_OBJECT(result, 0);
@@ -2149,15 +2107,15 @@ run:
           case JVM_CONSTANT_UnresolvedClass:
           case JVM_CONSTANT_UnresolvedClassInError:
             CALL_VM(InterpreterRuntime::ldc(THREAD, wide), handle_exception);
-            SET_STACK_OBJECT(THREAD->vm_result(), 0);
-            THREAD->set_vm_result(nullptr);
+            SET_STACK_OBJECT(THREAD->vm_result_oop(), 0);
+            THREAD->set_vm_result_oop(nullptr);
             break;
 
           case JVM_CONSTANT_Dynamic:
           case JVM_CONSTANT_DynamicInError:
             {
               CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
-              oop result = THREAD->vm_result();
+              oop result = THREAD->vm_result_oop();
               VERIFY_OOP(result);
 
               jvalue value;
@@ -2199,7 +2157,7 @@ run:
           case JVM_CONSTANT_DynamicInError:
             {
               CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
-              oop result = THREAD->vm_result();
+              oop result = THREAD->vm_result_oop();
               VERIFY_OOP(result);
 
               jvalue value;
@@ -2238,7 +2196,7 @@ run:
         if (result == nullptr) {
           CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode),
                   handle_exception);
-          result = THREAD->vm_result();
+          result = THREAD->vm_result_oop();
         }
         if (result == Universe::the_null_sentinel())
           result = nullptr;
@@ -2249,7 +2207,7 @@ run:
       }
 
       CASE(_invokedynamic): {
-        u4 index = cp->constant_pool()->decode_invokedynamic_index(Bytes::get_native_u4(pc+1)); // index is originally negative
+        u4 index = Bytes::get_native_u4(pc+1);
         ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
         if (!indy_info->is_resolved()) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
@@ -2445,7 +2403,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
             if (entry->is_vfinal()) {
               callee = entry->method();
-              if (REWRITE_BYTECODES && !UseSharedSpaces && !CDSConfig::is_dumping_archive()) {
+              if (REWRITE_BYTECODES && !CDSConfig::is_using_archive() && !CDSConfig::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }
@@ -2506,8 +2464,8 @@ run:
         // Must prevent reordering of stores for object initialization
         // with stores that publish the new object.
         OrderAccess::storestore();
-        SET_STACK_OBJECT(THREAD->vm_result(), -1);
-        THREAD->set_vm_result(nullptr);
+        SET_STACK_OBJECT(THREAD->vm_result_oop(), -1);
+        THREAD->set_vm_result_oop(nullptr);
 
         UPDATE_PC_AND_CONTINUE(2);
       }
@@ -2593,8 +2551,17 @@ run:
 
         MAYBE_POST_FIELD_ACCESS(obj);
 
-        VERIFY_OOP(obj->obj_field(field_offset));
-        SET_STACK_OBJECT(obj->obj_field(field_offset), -1);
+        oop val;
+        if (entry->is_flat()) {
+          CALL_VM(InterpreterRuntime::read_flat_field(THREAD, obj, entry), handle_exception);
+          val = THREAD->vm_result_oop();
+          THREAD->set_vm_result_oop(nullptr);
+        } else {
+          val = obj->obj_field(field_offset);
+        }
+
+        VERIFY_OOP(val);
+        SET_STACK_OBJECT(val, -1);
         UPDATE_PC_AND_CONTINUE(3);
       }
 
@@ -2708,7 +2675,17 @@ run:
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
         int field_offset = entry->field_offset();
-        obj->obj_field_put(field_offset, STACK_OBJECT(-1));
+        oop val = STACK_OBJECT(-1);
+
+        if (entry->is_null_free_value_type()) {
+          CHECK_NULL_MSG(val, "Value is null");
+        }
+
+        if (entry->is_flat()) {
+          CALL_VM(InterpreterRuntime::write_flat_field(THREAD, obj, val, entry), handle_exception);
+        } else {
+          obj->obj_field_put(field_offset, val);
+        }
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
       }
@@ -2851,8 +2828,17 @@ run:
 
         MAYBE_POST_FIELD_ACCESS(obj);
 
-        VERIFY_OOP(obj->obj_field(field_offset));
-        SET_STACK_OBJECT(obj->obj_field(field_offset), 0);
+        oop val;
+        if (entry->is_flat()) {
+          CALL_VM(InterpreterRuntime::read_flat_field(THREAD, obj, entry), handle_exception);
+          val = THREAD->vm_result_oop();
+          THREAD->set_vm_result_oop(nullptr);
+        } else {
+          val = obj->obj_field(field_offset);
+        }
+
+        VERIFY_OOP(val);
+        SET_STACK_OBJECT(val, 0);
         UPDATE_PC_AND_TOS_AND_CONTINUE(4, 1);
       }
 
@@ -2947,8 +2933,8 @@ run:
     CALL_VM(continuation_bci = (intptr_t)InterpreterRuntime::exception_handler_for_exception(THREAD, except_oop()),
             handle_exception);
 
-    except_oop = Handle(THREAD, THREAD->vm_result());
-    THREAD->set_vm_result(nullptr);
+    except_oop = Handle(THREAD, THREAD->vm_result_oop());
+    THREAD->set_vm_result_oop(nullptr);
     if (continuation_bci >= 0) {
       // Place exception on top of stack
       SET_STACK_OBJECT(except_oop(), 0);
@@ -3126,24 +3112,7 @@ run:
       while (end < base) {
         oop lockee = end->obj();
         if (lockee != nullptr) {
-          BasicLock* lock = end->lock();
-          markWord header = lock->displaced_header();
-          end->set_obj(nullptr);
-
-          // If it isn't recursive we either must swap old header or call the runtime
-          bool dec_monitor_count = true;
-          if (header.to_pointer() != nullptr) {
-            markWord old_header = markWord::encode(lock);
-            if (lockee->cas_set_mark(header, old_header) != old_header) {
-              // restore object for the slow case
-              end->set_obj(lockee);
-              dec_monitor_count = false;
-              InterpreterRuntime::monitorexit(end);
-            }
-          }
-          if (dec_monitor_count) {
-            THREAD->dec_held_monitor_count();
-          }
+          InterpreterRuntime::monitorexit(end);
 
           // One error is plenty
           if (illegal_state_oop() == nullptr && !suppress_error) {
@@ -3190,34 +3159,11 @@ run:
               illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
-          } else if (LockingMode == LM_MONITOR) {
+          } else {
             InterpreterRuntime::monitorexit(base);
             if (THREAD->has_pending_exception()) {
               if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
-            }
-          } else {
-            BasicLock* lock = base->lock();
-            markWord header = lock->displaced_header();
-            base->set_obj(nullptr);
-
-            // If it isn't recursive we either must swap old header or call the runtime
-            bool dec_monitor_count = true;
-            if (header.to_pointer() != nullptr) {
-              markWord old_header = markWord::encode(lock);
-              if (rcvr->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                base->set_obj(rcvr);
-                dec_monitor_count = false;
-                InterpreterRuntime::monitorexit(base);
-                if (THREAD->has_pending_exception()) {
-                  if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
-                  THREAD->clear_pending_exception();
-                }
-              }
-            }
-            if (dec_monitor_count) {
-              THREAD->dec_held_monitor_count();
             }
           }
         }
@@ -3249,10 +3195,14 @@ run:
     // Whenever JVMTI puts a thread in interp_only_mode, method
     // entry/exit events are sent for that thread to track stack depth.
 
-    if (JVMTI_ENABLED && !suppress_exit_event && THREAD->is_interp_only_mode()) {
-      // Prevent any HandleMarkCleaner from freeing our live handles
-      HandleMark __hm(THREAD);
-      CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
+    if (JVMTI_ENABLED && !suppress_exit_event) {
+      JvmtiThreadState* state = THREAD->jvmti_thread_state();
+      int frame_pop_cnt = state == nullptr ? 0 : state->frame_pop_cnt();
+      if (THREAD->is_interp_only_mode() || frame_pop_cnt) {
+        // Prevent any HandleMarkCleaner from freeing our live handles
+        HandleMark __hm(THREAD);
+        CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
+      }
     }
 
     //

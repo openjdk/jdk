@@ -26,7 +26,6 @@ import java.util.NoSuchElementException;
 /*
  * @test
  * @bug 8319120
- * @enablePreview
  * @run main/othervm -Xmx10m UnboundValueAfterOOME
  */
 public class UnboundValueAfterOOME {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.nio.ch.sctp;
 
 import java.net.InetAddress;
@@ -80,9 +81,9 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private final int fdVal;
 
-    /* IDs of native threads doing send and receives, for signalling */
-    private volatile long receiverThread;
-    private volatile long senderThread;
+    /* Threads doing send and receives, for signalling */
+    private volatile Thread receiverThread;
+    private volatile Thread senderThread;
 
     /* Lock held by current receiving thread */
     private final Object receiveLock = new Object();
@@ -149,10 +150,6 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
 
-                    @SuppressWarnings("removal")
-                    SecurityManager sm = System.getSecurityManager();
-                    if (sm != null)
-                        sm.checkListen(isa.getPort());
                     Net.bind(fd, isa.getAddress(), isa.getPort());
 
                     InetSocketAddress boundIsa = Net.localAddress(fd);
@@ -268,7 +265,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private void receiverCleanup() throws IOException {
         synchronized (stateLock) {
-            receiverThread = 0;
+            receiverThread = null;
             if (state == ChannelState.KILLPENDING)
                 kill();
         }
@@ -276,7 +273,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private void senderCleanup() throws IOException {
         synchronized (stateLock) {
-            senderThread = 0;
+            senderThread = null;
             if (state == ChannelState.KILLPENDING)
                 kill();
         }
@@ -293,10 +290,10 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             if (state != ChannelState.KILLED)
                 SctpNet.preClose(fdVal);
 
-            if (receiverThread != 0)
+            if (receiverThread != null)
                 NativeThread.signal(receiverThread);
 
-            if (senderThread != 0)
+            if (senderThread != null)
                 NativeThread.signal(senderThread);
 
             if (!isRegistered())
@@ -381,7 +378,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             assert !isOpen() && !isRegistered();
 
             /* Postpone the kill if there is a thread sending or receiving. */
-            if (receiverThread == 0 && senderThread == 0) {
+            if (receiverThread == null && senderThread == null) {
                 state = ChannelState.KILLED;
                 SctpNet.close(fdVal);
             } else {
@@ -487,7 +484,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                         synchronized (stateLock) {
                             if(!isOpen())
                                 return null;
-                            receiverThread = NativeThread.current();
+                            receiverThread = NativeThread.threadToSignal();
                         }
 
                         do {
@@ -508,21 +505,6 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                                     resultContainer.getMessageInfo();
                             info.setAssociation(lookupAssociation(info.
                                     associationID()));
-                            @SuppressWarnings("removal")
-                            SecurityManager sm = System.getSecurityManager();
-                            if (sm != null) {
-                                InetSocketAddress isa  = (InetSocketAddress)info.address();
-                                if (!addressMap.containsKey(isa)) {
-                                    /* must be a new association */
-                                    try {
-                                        sm.checkAccept(isa.getAddress().getHostAddress(),
-                                                       isa.getPort());
-                                    } catch (SecurityException se) {
-                                        buffer.clear();
-                                        throw se;
-                                    }
-                                }
-                            }
 
                             assert info.association() != null;
                             return info;
@@ -580,7 +562,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             throws IOException {
         NIO_ACCESS.acquireSession(bb);
         try {
-            int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem);
+            int n = receive0(fd, resultContainer, NIO_ACCESS.getBufferAddress(bb) + pos, rem);
             if (n > 0)
                 bb.position(pos + n);
             return n;
@@ -783,7 +765,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 synchronized (stateLock) {
                     if(!isOpen())
                         return 0;
-                    senderThread = NativeThread.current();
+                    senderThread = NativeThread.threadToSignal();
 
                     /* Determine what address or association to send to */
                     Association assoc = messageInfo.association();
@@ -805,12 +787,6 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                             checkStreamNumber(association, messageInfo.streamNumber());
                             assocId = association.associationID();
 
-                        } else { /* must be new association */
-                            @SuppressWarnings("removal")
-                            SecurityManager sm = System.getSecurityManager();
-                            if (sm != null)
-                                sm.checkConnect(addr.getAddress().getHostAddress(),
-                                                addr.getPort());
                         }
                     } else {
                         throw new AssertionError(
@@ -895,7 +871,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
         NIO_ACCESS.acquireSession(bb);
         try {
-            int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
+            int written = send0(fd, NIO_ACCESS.getBufferAddress(bb) + pos, rem, addr,
                     port, assocId, streamNumber, unordered, ppid);
             if (written > 0)
                 bb.position(pos + written);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -59,7 +58,6 @@
 # include <signal.h>
 # include <errno.h>
 # include <dlfcn.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
@@ -189,7 +187,38 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, fp, epc);
+}
+
+frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  // In compiled code, the stack banging is performed before LR
+  // has been saved in the frame.  LR is live, and SP and FP
+  // belong to the caller.
+  intptr_t* fp = os::Linux::ucontext_get_fp(uc);
+  intptr_t* sp = os::Linux::ucontext_get_sp(uc);
+  address pc = (address)(uc->uc_mcontext.arm_lr
+                         - NativeInstruction::instruction_size);
+  return frame(sp, fp, pc);
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+#if (FP_REG_NUM == 11)
+  assert(Rbcp == R7, "expected FP=R11, Rbcp=R7");
+  return (intptr_t*)uc->uc_mcontext.arm_r7;
+#else
+  assert(Rbcp == R11, "expected FP=R7, Rbcp=R11");
+  return (intptr_t*)uc->uc_mcontext.arm_fp; // r11
+#endif
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -324,20 +353,20 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        if ((nm != nullptr && nm->has_unsafe_access()) || (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc))) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        if ((nm != nullptr && nm->has_unsafe_access()) ||
+            (thread->doing_unsafe_access() &&
+             UnsafeMemoryAccess::contains_pc(pc))) {
           unsafe_access = true;
         }
       } else if (sig == SIGSEGV &&
                  MacroAssembler::uses_implicit_null_check(info->si_addr)) {
-          // Determination of interpreter/vtable stub/compiled code null exception
-          CodeBlob* cb = CodeCache::find_blob(pc);
-          if (cb != nullptr) {
-            stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
-          }
-      } else if (sig == SIGILL && *(int *)pc == NativeInstruction::not_entrant_illegal_instruction) {
-        // Not entrant
-        stub = SharedRuntime::get_handle_wrong_method_stub();
+        // Determination of interpreter/vtable stub/compiled code null exception
+        CodeBlob* cb = CodeCache::find_blob(pc);
+        if (cb != nullptr) {
+          stub = SharedRuntime::continuation_for_implicit_exception(
+              thread, pc, SharedRuntime::IMPLICIT_NULL);
+        }
       }
     } else if ((thread->thread_state() == _thread_in_vm ||
                 thread->thread_state() == _thread_in_native) &&
@@ -347,7 +376,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
     // and the heap gets shrunk before the field access.
-    if (sig == SIGSEGV || sig == SIGBUS) {
+    if (stub == nullptr && ((sig == SIGSEGV) || (sig == SIGBUS))) {
       address addr = JNI_FastGetField::find_slowcase_pc(pc);
       if (addr != (address)-1) {
         stub = addr;
@@ -360,8 +389,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // any other suitable exception reason,
     // so assume it is an unsafe access.
     address next_pc = pc + Assembler::InstructionSize;
-    if (UnsafeCopyMemory::contains_pc(pc)) {
-      next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+    if (UnsafeMemoryAccess::contains_pc(pc)) {
+      next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
     }
 #ifdef __thumb__
     if (uc->uc_mcontext.arm_cpsr & PSR_T_BIT) {
@@ -470,23 +499,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc);
-  st->cr();
-}
-
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   const int register_count = ARM_REGS_IN_CONTEXT;
   int n = continuation;
@@ -533,7 +545,7 @@ int64_t ARMAtomicFuncs::cmpxchg_long_bootstrap(int64_t compare_value, int64_t ex
 
 int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
   // try to use the stub:
-  load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::atomic_load_long_entry());
+  load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::Arm::atomic_load_long_entry());
 
   if (func != nullptr) {
     _load_long_func = func;
@@ -547,7 +559,7 @@ int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
 
 void ARMAtomicFuncs::store_long_bootstrap(int64_t val, volatile int64_t* dest) {
   // try to use the stub:
-  store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::atomic_store_long_entry());
+  store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::Arm::atomic_store_long_entry());
 
   if (func != nullptr) {
     _store_long_func = func;

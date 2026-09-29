@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,14 +158,14 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicChild.html", true,
                 // Field inheritance from non-public superclass.
                 """
-                    Fields inherited from class&nbsp;pkg.<a href="PrivateParent.html" title="class in pkg">PrivateParent</a>""",
+                    Fields inherited from class&nbsp;<a href="PrivateParent.html#field-summary" title="class in pkg">PrivateParent</a>""",
                 """
                     <a href="PrivateParent.html#fieldInheritedFromParent">fieldInheritedFromParent</a>""",
                 // Method inheritance from non-public superclass.
                 """
-                    Methods inherited from class&nbsp;pkg.<a href="PrivateParent.html" title="class in pkg">PrivateParent</a>""",
+                    Methods inherited from class&nbsp;<a href="PrivateParent.html#method-summary" title="class in pkg">PrivateParent</a>""",
                 """
-                    <a href="PrivateParent.html#methodInheritedFromParent(int)">methodInheritedFromParent</a>""",
+                    <a href="PrivateParent.html#methodInheritedFromParent(int)" title="methodInheritedFromParent(int)">methodInheritedFromParent</a>""",
                 // Should document that a method overrides method from private class.
                 """
                     <dt>Overrides:</dt>
@@ -187,8 +187,8 @@ public class TestPrivateClasses extends JavadocTester {
                     <dl class="notes">
                     <dt>All Implemented Interfaces:</dt>
                     <dd><code><a href="PrivateInterface.html" title="interface in pkg">PrivateInterf\
-                    ace</a></code>, <code><a href="PublicInterface.html" title="interface in pkg">Pu\
-                    blicInterface</a></code></dd>
+                    ace</a>, <a href="PublicInterface.html" title="interface in pkg">PublicInterface\
+                    </a></code></dd>
                     </dl>""",
                 """
                     <div class="type-signature"><span class="modifiers">public class </span><span cl\
@@ -197,12 +197,12 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritance from non-public superinterface.
                 """
-                    Fields inherited from interface&nbsp;pkg.<a href="PrivateInterface.html" title="interface in pkg">PrivateInterface</a>""",
+                    Fields inherited from interface&nbsp;<a href="PrivateInterface.html#field-summary" title="interface in pkg">PrivateInterface</a>""",
                 """
                     <a href="PrivateInterface.html#fieldInheritedFromInterface">fieldInheritedFromInterface</a>""",
                 // Method inheritance from non-public superinterface.
                 """
-                    Methods inherited from interface&nbsp;pkg.<a href="PrivateInterface.html" title="interface in pkg">PrivateInterface</a>""",
+                    Methods inherited from interface&nbsp;<a href="PrivateInterface.html#method-summary" title="interface in pkg">PrivateInterface</a>""",
                 // Extend documented private classes or interfaces
                 "extends",
                 "All Superinterfaces",
@@ -210,9 +210,8 @@ public class TestPrivateClasses extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>All Known Implementing Classes:</dt>
-                    <dd><code><a href="PrivateParent.html" title="class in pkg">PrivateParent</a></c\
-                    ode>, <code><a href="PublicChild.html" title="class in pkg">PublicChild</a></cod\
-                    e></dd>
+                    <dd><code><a href="PrivateParent.html" title="class in pkg">PrivateParent</a>, <\
+                    a href="PublicChild.html" title="class in pkg">PublicChild</a></code></dd>
                     </dl>""");
 
         checkOutput("pkg/PrivateInterface.html", true,

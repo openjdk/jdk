@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,17 +50,15 @@ public class TestSharedArchiveWithPreTouch {
         final List<String> BaseOptions = Arrays.asList(new String[] {"-XX:+UseG1GC", "-XX:+AlwaysPreTouch",
             "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + ArchiveFileName });
 
-        ProcessBuilder pb;
-
         List<String> dump_args = new ArrayList<String>(BaseOptions);
 
         if (Platform.is64bit()) {
-          dump_args.addAll(0, Arrays.asList(new String[] { "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops" }));
+          dump_args.addFirst("-XX:+UseCompressedOops" );
         }
         dump_args.addAll(Arrays.asList(new String[] { "-Xshare:dump", "-Xlog:cds" }));
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(dump_args);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(dump_args);
+
         try {
             output.shouldContain("Loading classes to share");
             output.shouldHaveExitValue(0);
@@ -68,12 +66,11 @@ public class TestSharedArchiveWithPreTouch {
             List<String> load_args = new ArrayList<String>(BaseOptions);
 
             if (Platform.is64bit()) {
-                load_args.addAll(0, Arrays.asList(new String[] { "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops" }));
+                load_args.addFirst("-XX:+UseCompressedOops" );
             }
             load_args.addAll(Arrays.asList(new String[] { "-Xshare:on", "-version" }));
 
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder(load_args.toArray(new String[0]));
-            output = new OutputAnalyzer(pb.start());
+            output = ProcessTools.executeLimitedTestJava(load_args.toArray(new String[0]));
             output.shouldContain("sharing");
             output.shouldHaveExitValue(0);
         } catch (RuntimeException e) {

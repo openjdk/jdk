@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 public class BadAgentPath {
 
     public static void main(String[] args) throws Throwable {
-        OutputAnalyzer output = ProcessTools.executeTestJvm("-agentpath:/badAgent/agent", "-version");
+        OutputAnalyzer output = ProcessTools.executeTestJava("-agentpath:/badAgent/agent", "-version");
         output.shouldContain("Could not find agent library /badAgent/agent");
     }
 }

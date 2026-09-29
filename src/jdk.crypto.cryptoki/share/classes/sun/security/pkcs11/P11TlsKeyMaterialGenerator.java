@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,8 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             mechanism = CKM_SSL3_KEY_AND_MAC_DERIVE;
         } else if (tlsVersion == 0x0301 || tlsVersion == 0x0302) {
             mechanism = CKM_TLS_KEY_AND_MAC_DERIVE;
+        } else if (tlsVersion == 0x0303) {
+            mechanism = CKM_TLS12_KEY_AND_MAC_DERIVE;
         }
     }
 

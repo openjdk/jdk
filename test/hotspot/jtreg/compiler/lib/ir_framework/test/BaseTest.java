@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ class BaseTest extends AbstractTest {
     protected final Object invocationTarget;
     private final boolean shouldCompile;
     private final boolean waitForCompilation;
+    private int invocationCounter;
 
     public BaseTest(DeclaredTest test, boolean skip) {
         super(test.getWarmupIterations(), skip);
@@ -47,21 +48,17 @@ class BaseTest extends AbstractTest {
         this.invocationTarget = createInvocationTarget(testMethod);
         this.shouldCompile = shouldCompile(test);
         this.waitForCompilation = isWaitForCompilation(test);
+        this.invocationCounter = 0;
     }
 
     @Override
     public String toString() {
-        return "Base Test: @Test " + testMethod.getName();
+        return "@Test: " + testMethod.getName();
     }
 
     @Override
     public String getName() {
         return testMethod.getName();
-    }
-
-    @Override
-    protected void onStart() {
-        test.printFixedRandomArguments();
     }
 
     @Override
@@ -74,16 +71,18 @@ class BaseTest extends AbstractTest {
         verify(invokeTestMethod());
     }
 
+    /**
+     * Compute arguments (and possibly set fields), and invoke the test method.
+     */
     private Object invokeTestMethod() {
+        Object[] arguments = test.getArguments(invocationTarget, invocationCounter++);
         try {
-            if (test.hasArguments()) {
-                return testMethod.invoke(invocationTarget, test.getArguments());
-            } else {
-                return testMethod.invoke(invocationTarget);
-            }
+            return testMethod.invoke(invocationTarget, arguments);
         } catch (Exception e) {
-            throw new TestRunException("There was an error while invoking @Test method " + testMethod
-                                       + ". Used arguments: " + test.getArgumentsString(), e);
+            throw new TestRunException("There was an error while invoking @Test method " + testMethod +
+                                       ". Target: " + invocationTarget +
+                                       ". Arguments: " + test.formatArguments(arguments),
+                                       e);
         }
     }
 

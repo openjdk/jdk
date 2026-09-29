@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class TestVectorDoubleExpandShrink {
     }
 
     @Test
-    @IR(counts = {REINTERPRET_NODE, "2"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = {REINTERPRET_NODE, "2"})
     public static void testB128toB64(MemorySegment input, MemorySegment output) {
         vectorDoubleExpandShrink(BSPEC128, BSPEC64, input, output);
     }

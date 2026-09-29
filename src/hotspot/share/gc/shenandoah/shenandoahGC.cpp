@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "compiler/oopMap.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -39,11 +38,13 @@ const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
       return "<UNSET>";
     case _degenerated_outside_cycle:
       return "Outside of Cycle";
+    case _degenerated_roots:
+      return "Roots";
     case _degenerated_mark:
       return "Mark";
     case _degenerated_evac:
       return "Evacuation";
-    case _degenerated_updaterefs:
+    case _degenerated_update_refs:
       return "Update References";
     default:
       ShouldNotReachHere();
@@ -66,13 +67,13 @@ public:
     assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
     ShenandoahParallelWorkerSession worker_session(worker_id);
 
-    ShenandoahUpdateRefsClosure cl;
+    ShenandoahNonConcUpdateRefsClosure cl;
     if (_check_alive) {
       ShenandoahForwardedIsAliveClosure is_alive;
-      _root_updater->roots_do<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>(worker_id, &is_alive, &cl);
+      _root_updater->roots_do<ShenandoahForwardedIsAliveClosure, ShenandoahNonConcUpdateRefsClosure>(worker_id, &is_alive, &cl);
     } else {
-      AlwaysTrueClosure always_true;;
-      _root_updater->roots_do<AlwaysTrueClosure, ShenandoahUpdateRefsClosure>(worker_id, &always_true, &cl);
+      AlwaysTrueClosure always_true;
+      _root_updater->roots_do<AlwaysTrueClosure, ShenandoahNonConcUpdateRefsClosure>(worker_id, &always_true, &cl);
     }
   }
 };
@@ -89,9 +90,9 @@ void ShenandoahGC::update_roots(bool full_gc) {
                                     ShenandoahPhaseTimings::degen_gc_update_roots;
 
   ShenandoahGCPhase phase(p);
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   WorkerThreads* workers = heap->workers();
@@ -101,7 +102,7 @@ void ShenandoahGC::update_roots(bool full_gc) {
   ShenandoahUpdateRootsTask update_roots(&root_updater, check_alive);
   workers->run_task(&update_roots);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class T4459541 {
     String javap(File f) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
-        int rc = com.sun.tools.javap.Main.run(new String[] { "-l", f.getPath() }, out);
+        int rc = com.sun.tools.javap.Main.run(new String[] { "-l", "-c", f.getPath() }, out);
         if (rc != 0)
             throw new Error("javap failed. rc=" + rc);
         out.close();

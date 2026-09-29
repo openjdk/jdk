@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,11 @@ import sun.jvm.hotspot.utilities.PlatformInfo;
     RuntimeException if they are called before the debugger is
     configured with the Java primitive type sizes. </P> */
 
+@SuppressWarnings("restricted")
 public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     private boolean useGCC32ABI;
     private boolean attached;
-    private long    p_ps_prochandle; // native debugger handle
+    protected long  p_ps_prochandle; // native debugger handle
     private boolean isCore;
 
     // CDebugger support
@@ -127,6 +128,12 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
       long ptr = findLibPtrByAddress0(pc.asLongValue());
       return (ptr == 0L) ? null
                          : new LinuxAddress(this, ptr);
+    }
+
+    @Override
+    public boolean isSignalTrampoline(Address pc) {
+      var sym = lookup(getAddressValue(pc));
+      return sym == null ? false : SIGTRAMP_NAMES.contains(sym.getName());
     }
 
     // Note on Linux threads are really processes. When target process is
@@ -291,6 +298,10 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         }
     }
 
+    protected void onAttach() {
+       // Do nothing by default: it should be implemented by inherited classes.
+    }
+
     /** From the Debugger interface via JVMDebugger */
     public synchronized void attach(int processID) throws DebuggerException {
         checkAttached();
@@ -315,6 +326,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
               debugger.attached = true;
               debugger.isCore = false;
               findABIVersion();
+
+              onAttach();
            }
         }
 
@@ -332,6 +345,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         attached = true;
         isCore = true;
         findABIVersion();
+
+        onAttach();
     }
 
     /** From the Debugger interface via JVMDebugger */

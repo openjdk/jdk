@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,28 @@ import java.awt.Frame;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /*
  * @test
  * @key headful
  * @bug 8007156 8025126
- * @summary Extended key code is not set for a key event
- * @author Alexandr Scherbatiy
- * @library /lib/client
- * @build ExtendedRobot
+ * @summary Tests that ExtendedKeyCode is set for key events
  * @run main ExtendedKeyCodeTest
  */
 public class ExtendedKeyCodeTest {
 
     private static volatile boolean setExtendedKeyCode = true;
     private static volatile int eventsCount = 0;
+    private static final CountDownLatch frameFocused = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.setAutoDelay(50);
+        robot.setAutoWaitForIdle(true);
 
         Frame frame = new Frame();
         frame.setSize(300, 300);
@@ -64,18 +67,28 @@ public class ExtendedKeyCodeTest {
                         == KeyEvent.getExtendedKeyCodeForChar(e.getKeyChar()));
             }
         });
+        frame.addWindowFocusListener(new WindowAdapter() {
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                frameFocused.countDown();
+            }
+        });
 
         frame.setVisible(true);
-        robot.waitForIdle();
+        if (!frameFocused.await(5, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Frame was not opened");
+        }
 
         robot.keyPress(KeyEvent.VK_D);
         robot.keyRelease(KeyEvent.VK_D);
         robot.waitForIdle();
+        robot.delay(100);
 
         frame.dispose();
 
         if (eventsCount != 2 || !setExtendedKeyCode) {
-            throw new RuntimeException("Wrong extended key code");
+            throw new RuntimeException("Wrong extended key code\n" +
+                    "eventsCount: " + eventsCount);
         }
 
         frame = new Frame();
@@ -89,13 +102,23 @@ public class ExtendedKeyCodeTest {
                 setExtendedKeyCode = e.getExtendedKeyCode() == KeyEvent.VK_LEFT;
             }
         });
+        CountDownLatch secondFrameFocused = new CountDownLatch(1);
+        frame.addWindowFocusListener(new WindowAdapter() {
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                secondFrameFocused.countDown();
+            }
+        });
 
         frame.setVisible(true);
-        robot.waitForIdle();
+        if (!secondFrameFocused.await(5, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Second frame was not opened");
+        }
 
         robot.keyPress(KeyEvent.VK_LEFT);
         robot.keyRelease(KeyEvent.VK_LEFT);
         robot.waitForIdle();
+        robot.delay(100);
         frame.dispose();
 
         if (!setExtendedKeyCode) {

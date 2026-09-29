@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,6 @@ public class ExceptionTest {
         return true;
     }
 
-    // Utility inner class coming from JMX Tonga test suite.
     // Also used by ExceptionFactory.
     static class Utils {
 
@@ -222,9 +221,6 @@ public class ExceptionTest {
         }
 
         /**
-         * Reproduces the original parsing and collection of test parameters
-         * from the DTonga JMX test suite.
-         *
          * Collects passed args and returns them in a map(argname, value) structure,
          * which will be then propagated as necessary to various called methods.
          */

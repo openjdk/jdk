@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,20 @@
  * questions.
  */
 
-import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.AWTEvent;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.event.AWTEventListener;
 import java.awt.event.KeyEvent;
@@ -35,8 +47,9 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
 
 /*
  * @test
@@ -44,7 +57,6 @@ import java.util.Map;
  *          in headless mode
  * @run main/othervm -Djava.awt.headless=true HeadlessToolkit
  */
-
 public class HeadlessToolkit {
 
     class awtEventListener implements AWTEventListener {
@@ -275,13 +287,12 @@ public class HeadlessToolkit {
             im = tk.createImage(image.getAbsolutePath());
             im.flush();
 
+            im = tk.getImage(image.toURI().toURL());
+            im.flush();
+
+            im = tk.createImage(image.toURI().toURL());
+            im.flush();
         }
-
-        im = tk.getImage(new URL("https://openjdk.org/images/openjdk.png"));
-        im.flush();
-
-        im = tk.createImage(new URL("https://openjdk.org/images/openjdk.png"));
-        im.flush();
 
         MemoryImageSource mis;
         int pixels[] = new int[50 * 50];

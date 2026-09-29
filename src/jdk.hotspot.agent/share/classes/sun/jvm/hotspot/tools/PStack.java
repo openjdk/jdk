@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.remote.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
@@ -70,15 +71,21 @@ public class PStack extends Tool {
       if (cdbg != null) {
          ConcurrentLocksPrinter concLocksPrinter = null;
          // compute and cache java Vframes.
-         initJFrameCache();
          if (concurrentLocks) {
-            concLocksPrinter = new ConcurrentLocksPrinter();
+            concLocksPrinter = new ConcurrentLocksPrinter(out);
          }
          // print Java level deadlocks
          try {
             DeadlockDetector.print(out);
          } catch (Exception exp) {
             out.println("can't print deadlock information: " + exp);
+         }
+
+         try {
+             VMLocksPrinter vmLocksPrinter = new VMLocksPrinter(out);
+             vmLocksPrinter.printVMLocks();
+         } catch (Exception e) {
+             out.println("can't print VM locks information: " + e);
          }
 
          List<ThreadProxy> l = cdbg.getThreadList();
@@ -89,6 +96,7 @@ public class PStack extends Tool {
            return;
         }
          final boolean cdbgCanDemangle = cdbg.canDemangle();
+         Map<ThreadProxy, JavaThread> proxyToThread = createProxyToThread();;
          String fillerForAddress = " ".repeat(2 + 2 * (int) VM.getVM().getAddressSize()) + "\t";
          for (Iterator<ThreadProxy> itr = l.iterator() ; itr.hasNext();) {
             ThreadProxy th = itr.next();
@@ -102,6 +110,9 @@ public class PStack extends Tool {
                   jthread.printThreadInfoOn(out);
                }
                while (f != null) {
+                  Address senderSP = null;
+                  Address senderFP = null;
+                  Address senderPC = null;
                   ClosestSymbol sym = f.closestSymbolToPC();
                   Address pc = f.pc();
                   out.print(pc + "\t");
@@ -118,13 +129,13 @@ public class PStack extends Tool {
                      out.println();
                   } else {
                       // look for one or more java frames
-                      String[] names = null;
+                      JavaNameInfo nameInfo = null;
                       // check interpreter frame
                       Interpreter interp = VM.getVM().getInterpreter();
                       if (interp.contains(pc)) {
-                         names = getJavaNames(th, f.localVariableBase());
+                         nameInfo = getJavaNames(jthread, f);
                          // print codelet name if we can't determine method
-                         if (names == null || names.length == 0) {
+                         if (nameInfo == null || nameInfo.names() == null || nameInfo.names().length == 0) {
                             out.print("<interpreter> ");
                             InterpreterCodelet ic = interp.getCodeletContaining(pc);
                             if (ic != null) {
@@ -140,51 +151,55 @@ public class PStack extends Tool {
                             CodeBlob cb = c.findBlobUnsafe(pc);
                             if (cb.isNMethod()) {
                                if (cb.isNativeMethod()) {
-                                  out.print(((CompiledMethod)cb).getMethod().externalNameAndSignature());
+                                  out.print(((NMethod)cb).getMethod().externalNameAndSignature());
                                   long diff = pc.minus(cb.codeBegin());
                                   if (diff != 0L) {
                                     out.print(" + 0x" + Long.toHexString(diff));
                                   }
                                   out.println(" (Native method)");
                                } else {
-                                  names = getJavaNames(th, f.localVariableBase());
+                                  nameInfo = getJavaNames(jthread, f);
                                   // just print compiled code, if can't determine method
-                                  if (names == null || names.length == 0) {
+                                  if (nameInfo == null || nameInfo.names() == null || nameInfo.names().length == 0) {
                                     out.println("<Unknown compiled code>");
                                   }
                                }
-                            } else if (cb.isBufferBlob()) {
-                               out.println("<StubRoutines>");
-                            } else if (cb.isRuntimeStub()) {
-                               out.println("<RuntimeStub>");
-                            } else if (cb.isDeoptimizationStub()) {
-                               out.println("<DeoptimizationStub>");
-                            } else if (cb.isUncommonTrapStub()) {
-                               out.println("<UncommonTrap>");
-                            } else if (cb.isExceptionStub()) {
-                               out.println("<ExceptionStub>");
-                            } else if (cb.isSafepointStub()) {
-                               out.println("<SafepointStub>");
                             } else {
-                               out.println("<Unknown code blob>");
+                               out.println("<" + cb.getName() + ">");
+                               if (cb.getFrameSize() > 0) {
+                                  Frame senderFrame = f.toFrame().sender(jthread.newRegisterMap(true));
+                                  senderSP = senderFrame.getSP();
+                                  senderFP = senderFrame.getFP();
+                                  senderPC = senderFrame.getPC();
+                               }
                             }
                          } else {
                             printUnknown(out);
                          }
                       }
                       // print java frames, if any
-                      if (names != null && names.length != 0) {
-                         // print java frame(s)
-                         for (int i = 0; i < names.length; i++) {
-                             if (i > 0) {
-                                 out.print(fillerForAddress);
+                      if (nameInfo != null) {
+                         if (nameInfo.names() != null && nameInfo.names().length != 0) {
+                             // print java frame(s)
+                             for (int i = 0; i < nameInfo.names().length; i++) {
+                                 if (i > 0) {
+                                     out.print(fillerForAddress);
+                                 }
+                                 out.println(nameInfo.names()[i]);
                              }
-                             out.println(names[i]);
                          }
+                         senderSP = nameInfo.senderSP();
+                         senderFP = nameInfo.senderFP();
+                         senderPC = nameInfo.senderPC();
                       }
                   }
-                  f = f.sender(th);
+                  f = f.sender(th, senderSP, senderFP, senderPC);
                }
+            } catch (DwarfException dex) {
+               // Linux: DwarfException will be thrown if DWARF processing fails.
+               // Stack unwinding should be aborted. However, we can continue for other threads.
+               // See JDK-8392132 and the review thread on GitHub for details.
+               IO.println(dex.toString());
             } catch (Exception exp) {
                exp.printStackTrace();
                // continue, may be we can do a better job for other threads
@@ -192,7 +207,7 @@ public class PStack extends Tool {
             if (concurrentLocks) {
                JavaThread jthread = proxyToThread.get(th);
                if (jthread != null) {
-                   concLocksPrinter.print(jthread, out);
+                   concLocksPrinter.print(jthread);
                }
             }
          } // for threads
@@ -211,82 +226,74 @@ public class PStack extends Tool {
    }
 
    // -- Internals only below this point
-   private Map<ThreadProxy, JavaVFrame[]> jframeCache;
-   private Map<ThreadProxy, JavaThread> proxyToThread;
    private PrintStream out;
    private boolean verbose;
    private boolean concurrentLocks;
 
-   private void initJFrameCache() {
-      // cache frames for subsequent reference
-      jframeCache = new HashMap<>();
-      proxyToThread = new HashMap<>();
+   private Map<ThreadProxy, JavaThread> createProxyToThread() {
+      Map<ThreadProxy, JavaThread> proxyToThread = new HashMap<>();
       Threads threads = VM.getVM().getThreads();
       for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-         JavaThread cur = threads.getJavaThreadAt(i);
-         List<JavaVFrame> tmp = new ArrayList<>(10);
-         try {
-            for (JavaVFrame vf = cur.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
-               tmp.add(vf);
-            }
-         } catch (Exception exp) {
-            // may be we may get frames for other threads, continue
-            // after printing stack trace.
-            exp.printStackTrace();
-         }
-         JavaVFrame[] jvframes = tmp.toArray(new JavaVFrame[0]);
-         jframeCache.put(cur.getThreadProxy(), jvframes);
-         proxyToThread.put(cur.getThreadProxy(), cur);
+         JavaThread jthread = threads.getJavaThreadAt(i);
+         proxyToThread.put(jthread.getThreadProxy(), jthread);
       }
+      return proxyToThread;
    }
 
    private void printUnknown(PrintStream out) {
       out.println("\t????????");
    }
 
-   private String[] getJavaNames(ThreadProxy th, Address fp) {
-      if (fp == null) {
-         return null;
-      }
-      JavaVFrame[] jvframes = jframeCache.get(th);
-      if (jvframes == null) return null; // not a java thread
+   private static record JavaNameInfo(String[] names, Address senderSP, Address senderFP, Address senderPC) {};
+
+   private JavaNameInfo getJavaNames(JavaThread jthread, CFrame f) {
       List<String> names = new ArrayList<>(10);
-      for (int fCount = 0; fCount < jvframes.length; fCount++) {
-         JavaVFrame vf = jvframes[fCount];
-         Frame f = vf.getFrame();
-         if (fp.equals(f.getFP())) {
-            StringBuilder sb = new StringBuilder();
-            Method method = vf.getMethod();
-            // a special char to identify java frames in output
-            sb.append("* ");
-            sb.append(method.externalNameAndSignature());
-            sb.append(" bci:").append(vf.getBCI());
-            int lineNumber = method.getLineNumberFromBCI(vf.getBCI());
-            if (lineNumber != -1) {
-                sb.append(" line:").append(lineNumber);
-            }
-
-            if (verbose) {
-               sb.append(" Method*:").append(method.getAddress());
-            }
-
-            if (vf.isCompiledFrame()) {
-               sb.append(" (Compiled frame");
-               if (vf.isDeoptimized()) {
-                 sb.append(" [deoptimized]");
-               }
-            } else if (vf.isInterpretedFrame()) {
-               sb.append(" (Interpreted frame");
-            }
-            if (vf.mayBeImpreciseDbg()) {
-               sb.append("; information may be imprecise");
-            }
-            sb.append(")");
-            names.add(sb.toString());
+      Address senderSP = null;
+      Address senderFP = null;
+      Address senderPC = null;
+      VFrame vf = VFrame.newVFrame(f.toFrame(), jthread.newRegisterMap(true), jthread, true, true);
+      while (vf != null && vf.isJavaFrame()) {
+         StringBuilder sb = new StringBuilder();
+         Method method = ((JavaVFrame)vf).getMethod();
+         // a special char to identify java frames in output
+         sb.append("* ");
+         sb.append(method.externalNameAndSignature());
+         sb.append(" bci:").append(((JavaVFrame)vf).getBCI());
+         int lineNumber = method.getLineNumberFromBCI(((JavaVFrame)vf).getBCI());
+         if (lineNumber != -1) {
+            sb.append(" line:").append(lineNumber);
          }
+
+         if (verbose) {
+            sb.append(" Method*:").append(method.getAddress());
+         }
+
+         if (vf.isCompiledFrame()) {
+            sb.append(" (Compiled frame");
+            if (vf.isDeoptimized()) {
+               sb.append(" [deoptimized]");
+            }
+         } else if (vf.isInterpretedFrame()) {
+            sb.append(" (Interpreted frame");
+         }
+         if (vf.mayBeImpreciseDbg()) {
+            sb.append("; information may be imprecise");
+         }
+         sb.append(")");
+         names.add(sb.toString());
+
+         // Keep registers in sender Frame
+         Frame senderFrame = vf.getFrame()
+                               .sender((RegisterMap)vf.getRegisterMap().clone());
+         senderSP = senderFrame.getSP();
+         senderFP = senderFrame.getFP();
+         senderPC = senderFrame.getPC();
+
+         // Get sender VFrame for next stack walking
+         vf = vf.sender(true);
       }
-      String[] res = names.toArray(new String[0]);
-      return res;
+
+      return new JavaNameInfo(names.toArray(new String[0]), senderSP, senderFP, senderPC);
    }
 
    public void setVerbose(boolean verbose) {

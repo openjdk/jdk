@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.AccessControlException;
-import java.security.Permission;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.logging.LoggingPermission;
 import resources.ListBundle;
 
 /**
@@ -42,14 +35,11 @@ import resources.ListBundle;
  * @bug 8013839 8189291
  * @summary tests Logger.setResourceBundle;
  * @build TestSetResourceBundle resources.ListBundle resources.ListBundle_fr
- * @run main/othervm TestSetResourceBundle UNSECURE
- * @run main/othervm -Djava.security.manager=allow TestSetResourceBundle PERMISSION
- * @run main/othervm -Djava.security.manager=allow TestSetResourceBundle SECURE
+ * @run main/othervm TestSetResourceBundle
  * @author danielfuchs
  */
 public class TestSetResourceBundle {
 
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     static final String LIST_BUNDLE_NAME = "resources.ListBundle";
     static final String PROPERTY_BUNDLE_NAME = "resources.PropertyBundle";
 
@@ -75,116 +65,26 @@ public class TestSetResourceBundle {
         }
     }
 
-    /**
-     * We will test setResourceBundle() in 3 configurations.
-     * UNSECURE: No security manager.
-     * SECURE: With the security manager present - and the required
-     *         LoggingPermission("control") granted.
-     * PERMISSION: With the security manager present - and the required
-     *         LoggingPermission("control") *not* granted. Here we will
-     *         test that the expected security permission is thrown.
-     */
-    public static enum TestCase {
-        UNSECURE, SECURE, PERMISSION;
-        public void run(String name) throws Exception {
-            System.out.println("Running test case: " + name());
-            switch (this) {
-                case UNSECURE:
-                    testUnsecure(name);
-                    break;
-                case SECURE:
-                    testSecure(name);
-                    break;
-                case PERMISSION:
-                    testPermission(name);
-                    break;
-                default:
-                    throw new Error("Unknown test case: "+this);
-            }
-        }
-        public String loggerName(String name) {
-            return name().toLowerCase(Locale.ROOT) + "." + name;
-        }
-    }
-
     public static void main(String... args) throws Exception {
 
         Locale defaultLocale = Locale.getDefault();
 
-        if (args == null || args.length == 0) {
-            args = new String[] {
-                TestCase.UNSECURE.name(),
-                TestCase.SECURE.name()
-            };
-        }
-
-        for (String testName : args) {
-            TestCase test = TestCase.valueOf(testName);
-            try {
-                test.run(test.loggerName("foo.bar"));
-            } finally {
-                Locale.setDefault(defaultLocale);
-            }
-        }
-    }
-
-    /**
-     * Test without security manager.
-     * @param loggerName The logger to use.
-     * @throws Exception if the test fails.
-     */
-    public static void testUnsecure(String loggerName) throws Exception {
-        if (System.getSecurityManager() != null) {
-            throw new Error("Security manager is set");
-        }
-        test(loggerName);
-    }
-
-    /**
-     * Test with security manager.
-     * @param loggerName The logger to use.
-     * @throws Exception if the test fails.
-     */
-    public static void testSecure(String loggerName) throws Exception {
-        if (System.getSecurityManager() != null) {
-            throw new Error("Security manager is already set");
-        }
-        Policy.setPolicy(new SimplePolicy(TestCase.SECURE));
-        System.setSecurityManager(new SecurityManager());
-        test(loggerName);
-    }
-
-    /**
-     * Test the LoggingPermission("control") is required.
-     * @param loggerName The logger to use.
-     */
-    public static void testPermission(String loggerName) {
-        if (System.getSecurityManager() != null) {
-            throw new Error("Security manager is already set");
-        }
-        Policy.setPolicy(new SimplePolicy(TestCase.PERMISSION));
-        System.setSecurityManager(new SecurityManager());
-        final ResourceBundle bundle = ResourceBundle.getBundle(LIST_BUNDLE_NAME);
-        Logger foobar = Logger.getLogger(loggerName);
         try {
-            foobar.setResourceBundle(bundle);
-            throw new RuntimeException("Permission not checked!");
-        } catch (AccessControlException x) {
-            if (x.getPermission() instanceof LoggingPermission) {
-                if ("control".equals(x.getPermission().getName())) {
-                    System.out.println("Got expected exception: " + x);
-                    return;
-                }
-            }
-            throw new RuntimeException("Unexpected exception: "+x, x);
+            test("foo.bar");
+        } finally {
+            Locale.setDefault(defaultLocale);
         }
-
     }
 
     static String getBaseName(ResourceBundle bundle) {
         return bundle == null ? null : bundle.getBaseBundleName();
     }
 
+    /**
+     * Main test runner.
+     * @param loggerName The logger to use.
+     * @throws Exception if the test fails.
+     */
     public static void test(String loggerName) throws Exception {
 
         System.out.println("Starting test for " + loggerName);
@@ -465,24 +365,4 @@ public class TestSetResourceBundle {
         System.err.println("    expected parent.getResourceBundle() is "
                 + expectedParent.getResourceBundle());
     }
-
-    public static class SimplePolicy extends Policy {
-
-        final Permissions permissions;
-        public SimplePolicy(TestCase test) {
-            permissions = new Permissions();
-            if (test != TestCase.PERMISSION) {
-                permissions.add(new LoggingPermission("control", null));
-            }
-            // required for calling Locale.setDefault in the test.
-            permissions.add(new PropertyPermission("user.language", "write"));
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return permissions.implies(permission) ||
-                   DEFAULT_POLICY.implies(domain, permission);
-        }
-    }
-
 }

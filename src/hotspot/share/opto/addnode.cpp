@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
@@ -32,7 +31,9 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/rangeinference.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -253,6 +254,22 @@ AddNode* AddNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
+bool AddNode::is_not(PhaseGVN* phase, Node* n, BasicType bt) {
+  return n->Opcode() == Op_Xor(bt) && phase->type(n->in(2)) == TypeInteger::minus_1(bt);
+}
+
+AddNode* AddNode::make_not(PhaseGVN* phase, Node* n, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new XorINode(n, phase->intcon(-1));
+    case T_LONG:
+      return new XorLNode(n, phase->longcon(-1L));
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
@@ -379,9 +396,182 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
+  // Collapse addition of the same terms into multiplications.
+  Node* collapsed = Ideal_collapse_variable_times_con(phase, bt);
+  if (collapsed != nullptr) {
+    return collapsed; // Skip AddNode::Ideal() since it may now be a multiplication node.
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 
+// Try to collapse addition of the same terms into a single multiplication. On success, a new MulNode is returned.
+// Examples of this conversion includes:
+//   - a + a + ... + a => CON*a
+//   - (a * CON) + a   => (CON + 1) * a
+//   - a + (a * CON)   => (CON + 1) * a
+//
+// We perform such conversions incrementally during IGVN by transforming left most nodes first and work up to the root
+// of the expression. In other words, we convert, at each iteration:
+//        a + a + a + ... + a
+//     => 2*a + a + ... + a
+//     => 3*a + ... + a
+//     => n*a
+//
+// Due to the iterative nature of IGVN, MulNode transformed from first few AddNode terms may be further transformed into
+// power-of-2 pattern. (e.g., 2 * a => a << 1, 3 * a => (a << 2) + a). We can't guarantee we'll always pick up
+// transformed power-of-2 patterns when term `a` is complex.
+//
+// Note this also converts, for example, original expression `(a*3) + a` into `4*a` and `(a<<2) + a` into `5*a`. A more
+// generalized pattern `(a*b) + (a*c)` into `a*(b + c)` is handled by AddNode::IdealIL().
+Node* AddNode::Ideal_collapse_variable_times_con(PhaseGVN* phase, BasicType bt) {
+  // We need to make sure that the current AddNode is not part of a MulNode that has already been optimized to a
+  // power-of-2 addition (e.g., 3 * a => (a << 2) + a). Without this check, GVN would keep trying to optimize the same
+  // node and can't progress. For example, 3 * a => (a << 2) + a => 3 * a => (a << 2) + a => ...
+  if (Multiplication::find_power_of_two_addition_pattern(this, bt).is_valid()) {
+    return nullptr;
+  }
+
+  Node* lhs = in(1);
+  Node* rhs = in(2);
+
+  Multiplication mul = Multiplication::find_collapsible_addition_patterns(lhs, rhs, bt);
+  if (!mul.is_valid_with(rhs)) {
+    // Swap lhs and rhs then try again
+    mul = Multiplication::find_collapsible_addition_patterns(rhs, lhs, bt);
+    if (!mul.is_valid_with(lhs)) {
+      return nullptr;
+    }
+  }
+
+  Node* con;
+  if (bt == T_INT) {
+    con = phase->intcon(java_add(static_cast<jint>(mul.multiplier()), 1));
+  } else {
+    con = phase->longcon(java_add(mul.multiplier(), CONST64(1)));
+  }
+
+  return MulNode::make(con, mul.variable(), bt);
+}
+
+// Find a pattern of collapsable additions that can be converted to a multiplication.
+// When matching the LHS `a * CON`, we match with best efforts by looking for the following patterns:
+//     - (1) Simple addition:       LHS = a + a
+//     - (2) Simple lshift:         LHS = a << CON
+//     - (3) Simple multiplication: LHS = CON * a
+//     - (4) Power-of-two addition: LHS = (a << CON1) + (a << CON2)
+AddNode::Multiplication AddNode::Multiplication::find_collapsible_addition_patterns(const Node* a, const Node* pattern, BasicType bt) {
+  // (1) Simple addition pattern (e.g., lhs = a + a)
+  Multiplication mul = find_simple_addition_pattern(a, bt);
+  if (mul.is_valid_with(pattern)) {
+    return mul;
+  }
+
+  // (2) Simple lshift pattern (e.g., lhs = a << CON)
+  mul = find_simple_lshift_pattern(a, bt);
+  if (mul.is_valid_with(pattern)) {
+    return mul;
+  }
+
+  // (3) Simple multiplication pattern (e.g., lhs = CON * a)
+  mul = find_simple_multiplication_pattern(a, bt);
+  if (mul.is_valid_with(pattern)) {
+    return mul;
+  }
+
+  // (4) Power-of-two addition pattern (e.g., lhs = (a << CON1) + (a << CON2))
+  // While multiplications can be potentially optimized to power-of-2 subtractions (e.g., a * 7 => (a << 3) - a),
+  // (x - y) + y => x is already handled by the Identity() methods. So, we don't need to check for that pattern here.
+  mul = find_power_of_two_addition_pattern(a, bt);
+  if (mul.is_valid_with(pattern)) {
+    return mul;
+  }
+
+  // We've tried everything.
+  return make_invalid();
+}
+
+// Try to match `n = a + a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = 2`.
+// The method matches `n` for pattern: a + a.
+AddNode::Multiplication AddNode::Multiplication::find_simple_addition_pattern(const Node* n, BasicType bt) {
+  if (n->Opcode() == Op_Add(bt) && n->in(1) == n->in(2)) {
+    return Multiplication(n->in(1), 2);
+  }
+
+  return make_invalid();
+}
+
+// Try to match `n = a << CON`. On success, return a struct with `.valid = true`, `variable = a`, and
+// `multiplier = 1 << CON`.
+// Match `n` for pattern: a << CON.
+// Note that the power-of-2 multiplication optimization could potentially convert a MulNode to this pattern.
+AddNode::Multiplication AddNode::Multiplication::find_simple_lshift_pattern(const Node* n, BasicType bt) {
+  // Note that power-of-2 multiplication optimization could potentially convert a MulNode to this pattern
+  if (n->Opcode() == Op_LShift(bt) && n->in(2)->is_Con()) {
+    Node* con = n->in(2);
+    if (!con->is_top()) {
+      return Multiplication(n->in(1), java_shift_left(1, con->get_int(), bt));
+    }
+  }
+
+  return make_invalid();
+}
+
+// Try to match `n = CON * a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = CON`.
+// Match `n` for patterns: CON * a
+// Note that `CON` will always be the second input node of a Mul node canonicalized by Ideal(). If this is not the case,
+// `n` has not been processed by iGVN. So we skip the optimization for the current add node and wait for to be added to
+// the queue again.
+AddNode::Multiplication AddNode::Multiplication::find_simple_multiplication_pattern(const Node* n, BasicType bt) {
+  if (n->Opcode() == Op_Mul(bt) && n->in(2)->is_Con()) {
+    Node* con = n->in(2);
+    Node* base = n->in(1);
+
+    if (!con->is_top()) {
+      return Multiplication(base, con->get_integer_as_long(bt));
+    }
+  }
+
+  return make_invalid();
+}
+
+// Try to match `n = (a << CON1) + (a << CON2)`. On success, return a struct with `.valid = true`, `variable = a`, and
+// `multiplier = (1 << CON1) + (1 << CON2)`.
+// Match `n` for patterns:
+//     - (1) (a << CON) + (a << CON)
+//     - (2) (a << CON) + a
+//     - (3) a + (a << CON)
+//     - (4) a + a
+// Note that one or both of the term of the addition could simply be `a` (i.e., a << 0) as in pattern (4).
+AddNode::Multiplication AddNode::Multiplication::find_power_of_two_addition_pattern(const Node* n, BasicType bt) {
+  if (n->Opcode() == Op_Add(bt) && n->in(1) != n->in(2)) {
+    const Multiplication lhs = find_simple_lshift_pattern(n->in(1), bt);
+    const Multiplication rhs = find_simple_lshift_pattern(n->in(2), bt);
+
+    // Pattern (1)
+    {
+      const Multiplication res = lhs.add(rhs);
+      if (res.is_valid()) {
+        return res;
+      }
+    }
+
+    // Pattern (2)
+    if (lhs.is_valid_with(n->in(2))) {
+      return Multiplication(lhs.variable(), java_add(lhs.multiplier(), CONST64(1)));
+    }
+
+    // Pattern (3)
+    if (rhs.is_valid_with(n->in(1))) {
+      return Multiplication(rhs.variable(), java_add(rhs.multiplier(), CONST64(1)));
+    }
+
+    // Pattern (4), which is equivalent to a simple addition pattern
+    return find_simple_addition_pattern(n, bt);
+  }
+
+  return make_invalid();
+}
 
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
@@ -434,28 +624,32 @@ Node* AddINode::Identity(PhaseGVN* phase) {
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
 // pre-check.
-const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-  int lo = java_add(r0->_lo, r1->_lo);
-  int hi = java_add(r0->_hi, r1->_hi);
-  if( !(r0->is_con() && r1->is_con()) ) {
-    // Not both constants, compute approximate result
-    if( (r0->_lo & r1->_lo) < 0 && lo >= 0 ) {
-      lo = min_jint; hi = max_jint; // Underflow on the low side
-    }
-    if( (~(r0->_hi | r1->_hi)) < 0 && hi < 0 ) {
-      lo = min_jint; hi = max_jint; // Overflow on the high side
-    }
-    if( lo > hi ) {               // Handle overflow
-      lo = min_jint; hi = max_jint;
-    }
-  } else {
-    // both constants, compute precise result using 'lo' and 'hi'
-    // Semantics define overflow and underflow for integer addition
-    // as expected.  In particular: 0x80000000 + 0x80000000 --> 0x0
+const Type* AddINode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeInt* range0 = t0->is_int();
+  const TypeInt* range1 = t1->is_int();
+
+  jlong lo_sum = (jlong)range0->_lo + (jlong)range1->_lo;
+  jlong hi_sum = (jlong)range0->_hi + (jlong)range1->_hi;
+
+  const jlong jint_wrap_offset = (jlong)max_juint + 1;
+
+  if (hi_sum < min_jint) {
+    // The entire range underflows.
+    lo_sum += jint_wrap_offset;
+    hi_sum += jint_wrap_offset;
+  } else if (lo_sum > max_jint) {
+    // The entire range overflows.
+    lo_sum -= jint_wrap_offset;
+    hi_sum -= jint_wrap_offset;
+  } else if (lo_sum < min_jint || hi_sum > max_jint) {
+    // The range crosses one or both jint boundaries.
+    lo_sum = min_jint;
+    hi_sum = max_jint;
   }
-  return TypeInt::make( lo, hi, MAX2(r0->_widen,r1->_widen) );
+
+  return TypeInt::make(checked_cast<jint>(lo_sum),
+                       checked_cast<jint>(hi_sum),
+                       MAX2(range0->_widen, range1->_widen));
 }
 
 
@@ -508,6 +702,13 @@ const Type *AddLNode::add_ring( const Type *t0, const Type *t1 ) const {
 
 
 //=============================================================================
+//------------------------------Ideal------------------------------------------
+Node* AddFPNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Floating-point addition is commutative but not associative.
+  return commute(phase, this) ? this : nullptr;
+}
+
+//=============================================================================
 //------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
 const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
@@ -534,12 +735,22 @@ const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeF::make( t0->getf() + t1->getf() );
 }
 
-//------------------------------Ideal------------------------------------------
-Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(phase, this) ? this : nullptr;
+//=============================================================================
+//------------------------------add_of_identity--------------------------------
+// Check for addition of the identity
+const Type* AddHFNode::add_of_identity(const Type* t1, const Type* t2) const {
+  return nullptr;
 }
 
+// Supplied function returns the sum of the inputs.
+// This also type-checks the inputs for sanity.  Guaranteed never to
+// be passed a TOP or BOTTOM type, these are filtered out by pre-check.
+const Type* AddHFNode::add_ring(const Type* t0, const Type* t1) const {
+  if (!t0->isa_half_float_constant() || !t1->isa_half_float_constant()) {
+    return bottom_type();
+  }
+  return TypeH::make(t0->getf() + t1->getf());
+}
 
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
@@ -565,12 +776,6 @@ const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
     return bottom_type();
   }
   return TypeD::make( t0->getd() + t1->getd() );
-}
-
-//------------------------------Ideal------------------------------------------
-Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(phase, this) ? this : nullptr;
 }
 
 
@@ -610,7 +815,7 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         offset  = phase->MakeConX(t2->get_con() + t12->get_con());
       } else {
         // Else move the constant to the right.  ((A+con)+B) into ((A+B)+con)
-        address = phase->transform(new AddPNode(in(Base),addp->in(Address),in(Offset)));
+        address = phase->transform(AddPNode::make_with_base(in(Base), addp->in(Address), in(Offset)));
         offset  = addp->in(Offset);
       }
       set_req_X(Address, address, phase);
@@ -632,11 +837,11 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert: (ptr + (offset+con)) into (ptr+offset)+con.
   // The idea is to merge array_base+scaled_index groups together,
   // and only have different constant offsets from the same base.
-  const Node *add = in(Offset);
-  if( add->Opcode() == Op_AddX && add->in(1) != add ) {
-    const Type *t22 = phase->type( add->in(2) );
-    if( t22->singleton() && (t22 != Type::TOP) ) {  // Right input is an add of a constant?
-      set_req(Address, phase->transform(new AddPNode(in(Base),in(Address),add->in(1))));
+  const Node* add = in(Offset);
+  if (add->Opcode() == Op_AddX && add->in(1) != add) {
+    const Type* t22 = phase->type(add->in(2));
+    if (t22->singleton() && (t22 != Type::TOP)) {  // Right input is an add of a constant?
+      set_req(Address, phase->transform(AddPNode::make_with_base(in(Base), in(Address), add->in(1))));
       set_req_X(Offset, add->in(2), phase); // puts add on igvn worklist if needed
       return this;              // Made progress
     }
@@ -651,14 +856,23 @@ const Type *AddPNode::bottom_type() const {
   if (in(Address) == nullptr)  return TypePtr::BOTTOM;
   const TypePtr *tp = in(Address)->bottom_type()->isa_ptr();
   if( !tp ) return Type::TOP;   // TOP input means TOP output
-  assert( in(Offset)->Opcode() != Op_ConP, "" );
-  const Type *t = in(Offset)->bottom_type();
-  if( t == Type::TOP )
-    return tp->add_offset(Type::OffsetTop);
-  const TypeX *tx = t->is_intptr_t();
+
+  assert(in(Offset)->Opcode() != Op_ConP, "");
+  const Type* t = in(Offset)->bottom_type();
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+
+  const TypeX* tx = t->is_intptr_t();
   intptr_t txoffset = Type::OffsetBot;
   if (tx->is_con()) {   // Left input is an add of a constant?
     txoffset = tx->get_con();
+  }
+  if (tp->isa_aryptr()) {
+    // In the case of a flat value type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return tp->is_aryptr()->add_field_offset_and_offset(txoffset);
   }
   return tp->add_offset(txoffset);
 }
@@ -679,6 +893,12 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
   intptr_t p2offset = Type::OffsetBot;
   if (p2->is_con()) {   // Left input is an add of a constant?
     p2offset = p2->get_con();
+  }
+  if (p1->isa_aryptr()) {
+    // In the case of a flat value type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return p1->is_aryptr()->add_field_offset_and_offset(p2offset);
   }
   return p1->add_offset(p2offset);
 }
@@ -708,9 +928,9 @@ Node* AddPNode::Ideal_base_and_offset(Node* ptr, PhaseValues* phase,
 //------------------------------unpack_offsets----------------------------------
 // Collect the AddP offset values into the elements array, giving up
 // if there are more than length.
-int AddPNode::unpack_offsets(Node* elements[], int length) {
+int AddPNode::unpack_offsets(Node* elements[], int length) const {
   int count = 0;
-  Node* addr = this;
+  Node const* addr = this;
   Node* base = addr->in(AddPNode::Base);
   while (addr->is_AddP()) {
     if (addr->in(AddPNode::Base) != base) {
@@ -744,11 +964,22 @@ Node* OrINode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
+  // x | (y | x) => y | x
+  if (in(2)->Opcode() == Op_OrI &&
+      (in(2)->in(1) == in(1) || in(2)->in(2) == in(1))) {
+    return in(2);
+  }
+  // (x | y) | x => x | y
+  if (in(1)->Opcode() == Op_OrI &&
+      (in(1)->in(1) == in(2) || in(1)->in(2) == in(2))) {
+    return in(1);
+  }
+
   return AddNode::Identity(phase);
 }
 
 // Find shift value for Integer or Long OR.
-Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
+static Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
   // val << norm_con_shift | val >> ({32|64} - norm_con_shift) => rotate_left val, norm_con_shift
   const TypeInt* lshift_t = phase->type(lshift)->isa_int();
   const TypeInt* rshift_t = phase->type(rshift)->isa_int();
@@ -790,7 +1021,14 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new RotateRightNode(in(1)->in(1), shift, TypeInt::INT);
     }
   }
-  return nullptr;
+
+  // Convert "~a | ~b" into "~(a & b)"
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
+    Node* and_a_b = new AndINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(and_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
+  }
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -798,29 +1036,8 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 // the logical operations the ring's ADD is really a logical OR function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *OrINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-
-  // If both args are bool, can figure out better types
-  if ( r0 == TypeInt::BOOL ) {
-    if ( r1 == TypeInt::ONE) {
-      return TypeInt::ONE;
-    } else if ( r1 == TypeInt::BOOL ) {
-      return TypeInt::BOOL;
-    }
-  } else if ( r0 == TypeInt::ONE ) {
-    if ( r1 == TypeInt::BOOL ) {
-      return TypeInt::ONE;
-    }
-  }
-
-  // If either input is not a constant, just return all integers.
-  if( !r0->is_con() || !r1->is_con() )
-    return TypeInt::INT;        // Any integer, but still no symbols.
-
-  // Otherwise just OR them bits.
-  return TypeInt::make( r0->get_con() | r1->get_con() );
+const Type* OrINode::add_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_or(t1->is_int(), t2->is_int());
 }
 
 //=============================================================================
@@ -828,6 +1045,17 @@ const Type *OrINode::add_ring( const Type *t0, const Type *t1 ) const {
 Node* OrLNode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
+    return in(1);
+  }
+
+  // x | (y | x) => y | x
+  if (in(2)->Opcode() == Op_OrL &&
+      (in(2)->in(1) == in(1) || in(2)->in(2) == in(1))) {
+    return in(2);
+  }
+  // (x | y) | x => x | y
+  if (in(1)->Opcode() == Op_OrL &&
+      (in(1)->in(1) == in(2) || in(1)->in(2) == in(2))) {
     return in(1);
   }
 
@@ -856,20 +1084,20 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new RotateRightNode(in(1)->in(1), shift, TypeLong::LONG);
     }
   }
-  return nullptr;
+
+  // Convert "~a | ~b" into "~(a & b)"
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node* and_a_b = new AndLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(and_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
+  }
+
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
-const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-
-  // If either input is not a constant, just return all integers.
-  if( !r0->is_con() || !r1->is_con() )
-    return TypeLong::LONG;      // Any integer, but still no symbols.
-
-  // Otherwise just OR them bits.
-  return TypeLong::make( r0->get_con() | r1->get_con() );
+const Type* OrLNode::add_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_or(t1->is_long(), t2->is_long());
 }
 
 //---------------------------Helper -------------------------------------------
@@ -948,56 +1176,22 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  // result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-  const TypeInt* t1i = t1->is_int();
-  const TypeInt* t2i = t2->is_int();
-  if ((t1i->_lo >= 0) &&
-      (t1i->_hi > 0)  &&
-      (t2i->_lo >= 0) &&
-      (t2i->_hi > 0)) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(t1i->_hi) + (round_down_power_of_2(t1i->_hi) - 1), t1i->_widen);
-    const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(t2i->_hi) + (round_down_power_of_2(t2i->_hi) - 1), t2i->_widen);
-    return t1x->meet(t2x);
-  }
   return AddNode::Value(phase);
 }
-
 
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
 // the logical operations the ring's ADD is really a logical OR function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-
-  // Complementing a boolean?
-  if( r0 == TypeInt::BOOL && ( r1 == TypeInt::ONE
-                               || r1 == TypeInt::BOOL))
-    return TypeInt::BOOL;
-
-  if( !r0->is_con() || !r1->is_con() ) // Not constants
-    return TypeInt::INT;        // Any integer, but still no symbols.
-
-  // Otherwise just XOR them bits.
-  return TypeInt::make( r0->get_con() ^ r1->get_con() );
+const Type* XorINode::add_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_xor(t1->is_int(), t2->is_int());
 }
 
 //=============================================================================
 //------------------------------add_ring---------------------------------------
-const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-
-  // If either input is not a constant, just return all integers.
-  if( !r0->is_con() || !r1->is_con() )
-    return TypeLong::LONG;      // Any integer, but still no symbols.
-
-  // Otherwise just OR them bits.
-  return TypeLong::make( r0->get_con() ^ r1->get_con() );
+const Type* XorLNode::add_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_xor(t1->is_long(), t2->is_long());
 }
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1033,23 +1227,11 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  // result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-  const TypeLong* t1l = t1->is_long();
-  const TypeLong* t2l = t2->is_long();
-  if ((t1l->_lo >= 0) &&
-      (t1l->_hi > 0)  &&
-      (t2l->_lo >= 0) &&
-      (t2l->_hi > 0)) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(t1l->_hi) + (round_down_power_of_2(t1l->_hi) - 1), t1l->_widen);
-    const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(t2l->_hi) + (round_down_power_of_2(t2l->_hi) - 1), t2l->_widen);
-    return t1x->meet(t2x);
-  }
+
   return AddNode::Value(phase);
 }
 
-Node* build_min_max_int(Node* a, Node* b, bool is_max) {
+Node* MinMaxNode::build_min_max_int(Node* a, Node* b, bool is_max) {
   if (is_max) {
     return new MaxINode(a, b);
   } else {
@@ -1057,7 +1239,15 @@ Node* build_min_max_int(Node* a, Node* b, bool is_max) {
   }
 }
 
-Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
+Node* MinMaxNode::build_min_max_long(PhaseGVN* phase, Node* a, Node* b, bool is_max) {
+  if (is_max) {
+    return new MaxLNode(phase->C, a, b);
+  } else {
+    return new MinLNode(phase->C, a, b);
+  }
+}
+
+Node* MinMaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
   assert(is_int == (gvn.type(b)->isa_int() != nullptr), "inconsistent inputs");
@@ -1081,7 +1271,7 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
       cmp = gvn.transform(CmpNode::make(b, a, bt, is_unsigned));
     }
     Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-    res = gvn.transform(CMoveNode::make(nullptr, bol, a, b, t));
+    res = gvn.transform(CMoveNode::make(bol, a, b, t));
   }
   if (hook != nullptr) {
     hook->destruct(&gvn);
@@ -1089,7 +1279,7 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
   return res;
 }
 
-Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn) {
+Node* MinMaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
   assert(is_int == (gvn.type(b)->isa_int() != nullptr), "inconsistent inputs");
@@ -1110,7 +1300,7 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   }
   Node* sub = gvn.transform(SubNode::make(a, b, bt));
   Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-  Node* res = gvn.transform(CMoveNode::make(nullptr, bol, sub, zero, t));
+  Node* res = gvn.transform(CMoveNode::make(bol, sub, zero, t));
   if (hook != nullptr) {
     hook->destruct(&gvn);
   }
@@ -1125,10 +1315,18 @@ static bool can_overflow(const TypeInt* t, jint c) {
           (c > 0 && (java_add(t_hi, c) < t_hi)));
 }
 
+// Check if addition of a long with type 't' and a constant 'c' can overflow.
+static bool can_overflow(const TypeLong* t, jlong c) {
+  jlong t_lo = t->_lo;
+  jlong t_hi = t->_hi;
+  return ((c < 0 && (java_add(t_lo, c) > t_lo)) ||
+          (c > 0 && (java_add(t_hi, c) < t_hi)));
+}
+
 // Let <x, x_off> = x_operands and <y, y_off> = y_operands.
 // If x == y and neither add(x, x_off) nor add(y, y_off) overflow, return
 // add(x, op(x_off, y_off)). Otherwise, return nullptr.
-Node* MaxNode::extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands) {
+Node* MinMaxNode::extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands) {
   Node* x = x_operands.first;
   Node* y = y_operands.first;
   int opcode = Opcode();
@@ -1165,7 +1363,11 @@ static ConstAddOperands as_add_with_constant(Node* n) {
   return ConstAddOperands(x, c_type->is_int()->get_con());
 }
 
-Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
+Node* MinMaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
+  Node* n = AddNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
   int opcode = Opcode();
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
   // Try to transform the following pattern, in any of its four possible
@@ -1224,6 +1426,20 @@ Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealI(phase, can_reshape);
 }
 
+Node* MaxINode::Identity(PhaseGVN* phase) {
+  const TypeInt* t1 = phase->type(in(1))->is_int();
+  const TypeInt* t2 = phase->type(in(2))->is_int();
+
+  // Can we determine the maximum statically?
+  if (t1->_lo >= t2->_hi) {
+    return in(1);
+  } else if (t2->_lo >= t1->_hi) {
+    return in(2);
+  }
+
+  return MinMaxNode::Identity(phase);
+}
+
 //=============================================================================
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
@@ -1241,6 +1457,20 @@ const Type *MaxINode::add_ring( const Type *t0, const Type *t1 ) const {
 // "MIN2(x+c0,MIN2(y,x+c1))".  Pick the smaller constant: "MIN2(x+c0,y)"
 Node* MinINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealI(phase, can_reshape);
+}
+
+Node* MinINode::Identity(PhaseGVN* phase) {
+  const TypeInt* t1 = phase->type(in(1))->is_int();
+  const TypeInt* t2 = phase->type(in(2))->is_int();
+
+  // Can we determine the minimum statically?
+  if (t1->_lo >= t2->_hi) {
+    return in(2);
+  } else if (t2->_lo >= t1->_hi) {
+    return in(1);
+  }
+
+  return MinMaxNode::Identity(phase);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -1281,7 +1511,32 @@ const Type *MinINode::add_ring( const Type *t0, const Type *t1 ) const {
 //
 // Note: we assume that SubL was already replaced by an AddL, and that the stride
 // has its sign flipped: SubL(limit, stride) -> AddL(limit, -stride).
-Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
+//
+// Proof MaxL collapsed version equivalent to original (MinL version similar):
+// is_sub_con ensures that con1, con2 ∈ [min_int, 0[
+//
+// Original:
+// - AddL2 underflow => x + con2 ∈ ]max_long - min_int, max_long], ALWAYS BAILOUT as x + con1 + con2 surely fails can_overflow (*)
+// - AddL2 no underflow => x + con2 ∈ [min_long, max_long]
+//   - MaxL2 clamp => min_int
+//     - AddL1 underflow: NOT POSSIBLE: cannot underflow since min_int + con1 ∈ [2 * min_int, min_int] always > min_long
+//     - AddL1 no underflow => min_int + con1 ∈ [2 * min_int, min_int]
+//       - MaxL1 clamp => min_int (RESULT 1)
+//       - MaxL1 no clamp: NOT POSSIBLE: min_int + con1 ∈ [2 * min_int, min_int] always <= min_int, so clamp always taken
+//   - MaxL2 no clamp => x + con2 ∈ [min_int, max_long]
+//     - AddL1 underflow: NOT POSSIBLE: cannot underflow since x + con2 + con1 ∈ [2 * min_int, max_long] always > min_long
+//     - AddL1 no underflow => x + con2 + con1 ∈ [2 * min_int, max_long]
+//       - MaxL1 clamp => min_int (RESULT 2)
+//       - MaxL1 no clamp => x + con2 + con1 ∈ ]min_int, max_long] (RESULT 3)
+//
+// Collapsed:
+// - AddL2 (cannot underflow) => con2 + con1 ∈ [2 * min_int, 0]
+//   - AddL1 underflow: NOT POSSIBLE: would have bailed out at can_overflow (*)
+//   - AddL1 no underflow => x + con2 + con1 ∈ [min_long, max_long]
+//     - MaxL clamp => min_int (RESULT 1 and RESULT 2)
+//     - MaxL no clamp => x + con2 + con1 ∈ ]min_int, max_long] (RESULT 3)
+//
+static Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
   assert(n->Opcode() == Op_MaxL || n->Opcode() == Op_MinL, "sanity");
   // Check that the two clamps have the correct values.
   jlong clamp = (n->Opcode() == Op_MaxL) ? min_jint : max_jint;
@@ -1310,6 +1565,12 @@ Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
         Node* x    = add2->in(1);
         Node* con2 = add2->in(2);
         if (is_sub_con(con2)) {
+          // The graph could be dying (i.e. x is top) in which case type(x) is not a long.
+          const TypeLong* x_long = phase->type(x)->isa_long();
+          // Collapsed graph not equivalent if potential over/underflow -> bailing out (*)
+          if (x_long == nullptr || can_overflow(x_long, con1->get_long() + con2->get_long())) {
+            return nullptr;
+          }
           Node* new_con = phase->transform(new AddLNode(con1, con2));
           Node* new_sub = phase->transform(new AddLNode(x, new_con));
           n->set_req_X(1, new_sub, phase);
@@ -1339,7 +1600,7 @@ Node* MaxLNode::Identity(PhaseGVN* phase) {
     return in(2);
   }
 
-  return MaxNode::Identity(phase);
+  return MinMaxNode::Identity(phase);
 }
 
 Node* MaxLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1357,7 +1618,7 @@ const Type* MinLNode::add_ring(const Type* t0, const Type* t1) const {
   const TypeLong* r0 = t0->is_long();
   const TypeLong* r1 = t1->is_long();
 
-  return TypeLong::make(MIN2(r0->_lo, r1->_lo), MIN2(r0->_hi, r1->_hi), MIN2(r0->_widen, r1->_widen));
+  return TypeLong::make(MIN2(r0->_lo, r1->_lo), MIN2(r0->_hi, r1->_hi), MAX2(r0->_widen, r1->_widen));
 }
 
 Node* MinLNode::Identity(PhaseGVN* phase) {
@@ -1371,7 +1632,7 @@ Node* MinLNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  return MaxNode::Identity(phase);
+  return MinMaxNode::Identity(phase);
 }
 
 Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1383,6 +1644,86 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
   }
   return nullptr;
+}
+
+int MinMaxNode::opposite_opcode() const {
+  if (Opcode() == max_opcode()) {
+    return min_opcode();
+  } else {
+    assert(Opcode() == min_opcode(), "Caller should be either %s or %s, but is %s", NodeClassNames[max_opcode()], NodeClassNames[min_opcode()], NodeClassNames[Opcode()]);
+    return max_opcode();
+  }
+}
+
+// Given a redundant structure such as Max/Min(A, Max/Min(B, C)) where A == B or A == C, return the useful part of the structure.
+// 'operation' is the node expected to be the inner 'Max/Min(B, C)', and 'operand' is the node expected to be the 'A' operand of the outer node.
+Node* MinMaxNode::find_identity_operation(Node* operation, Node* operand) {
+  if (operation->Opcode() == Opcode() || operation->Opcode() == opposite_opcode()) {
+    Node* n1 = operation->in(1);
+    Node* n2 = operation->in(2);
+
+    // Given Op(A, Op(B, C)), see if either A == B or A == C is true.
+    if (n1 == operand || n2 == operand) {
+      // If the operations are the same return the inner operation, as Max(A, Max(A, B)) == Max(A, B).
+      if (operation->Opcode() == Opcode()) {
+        return operation;
+      }
+
+      // If the operations are different return the operand 'A', as Max(A, Min(A, B)) == A if the value isn't floating point.
+      // With floating point values, the identity doesn't hold if B == NaN.
+      const Type* type = bottom_type();
+      if (type->isa_int() || type->isa_long()) {
+        return operand;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+Node* MinMaxNode::Identity(PhaseGVN* phase) {
+  if (in(1) == in(2)) {
+      return in(1);
+  }
+
+  Node* identity_1 = MinMaxNode::find_identity_operation(in(2), in(1));
+  if (identity_1 != nullptr) {
+    return identity_1;
+  }
+
+  Node* identity_2 = MinMaxNode::find_identity_operation(in(1), in(2));
+  if (identity_2 != nullptr) {
+    return identity_2;
+  }
+
+  return AddNode::Identity(phase);
+}
+
+//------------------------------add_ring---------------------------------------
+const Type* MinHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 < f1 ? r0 : r1;
+  }
+
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for min value
+  // detection.
+  return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
 }
 
 //------------------------------add_ring---------------------------------------
@@ -1434,6 +1775,34 @@ const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
   // handle min of 0.0, -0.0 case.
   return (jlong_cast(d0) < jlong_cast(d1)) ? r0 : r1;
 }
+
+//------------------------------add_ring---------------------------------------
+const Type* MaxHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 > f1 ? r0 : r1;
+  }
+
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for max value
+  // detection.
+  return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
+}
+
 
 //------------------------------add_ring---------------------------------------
 const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {

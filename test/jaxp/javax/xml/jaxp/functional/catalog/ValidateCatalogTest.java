@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,27 @@
 
 package catalog;
 
+import org.junit.jupiter.api.Test;
+
+import javax.xml.catalog.CatalogException;
+
 import static catalog.CatalogTestUtils.CATALOG_SYSTEM;
 import static catalog.CatalogTestUtils.CATALOG_URI;
 import static catalog.CatalogTestUtils.catalogResolver;
 import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.ResolutionChecker.checkSysIdResolution;
 import static catalog.ResolutionChecker.checkUriResolution;
-
-import javax.xml.catalog.CatalogException;
-
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.ValidateCatalogTest
- * @run testng/othervm catalog.ValidateCatalogTest
+ * @run junit/othervm catalog.ValidateCatalogTest
  * @summary A legal catalog file must be well-formed XML, the root element
  *          must be catalog, and the naming space of the root element must be
  *          urn:oasis:names:tc:entity:xmlns:xml:catalog.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class ValidateCatalogTest {
 
     private static final String CATALOG_WRONGROOT = "validateCatalog-wrongRoot.xml";
@@ -55,36 +53,36 @@ public class ValidateCatalogTest {
      * EntityResolver tries to load catalog with wrong root,
      * it should throw CatalogException.
      */
-    @Test(expectedExceptions = CatalogException.class)
+    @Test
     public void validateWrongRootCatalogOnEntityResolver() {
-        catalogResolver(CATALOG_WRONGROOT);
+        assertThrows(CatalogException.class, () -> catalogResolver(CATALOG_WRONGROOT));
     }
 
     /*
      * URIResolver tries to load catalog with wrong root,
      * it should throw CatalogException.
      */
-    @Test(expectedExceptions = CatalogException.class)
+    @Test
     public void validateWrongRootCatalogOnUriResolver() {
-        catalogUriResolver(CATALOG_WRONGROOT);
+        assertThrows(CatalogException.class, () -> catalogUriResolver(CATALOG_WRONGROOT));
     }
 
     /*
      * EntityResolver tries to load malformed catalog,
      * it should throw RuntimeException.
      */
-    @Test(expectedExceptions = RuntimeException.class)
+    @Test
     public void validateMalformedCatalogOnEntityResolver() {
-        catalogResolver(CATALOG_MALFORMED);
+        assertThrows(RuntimeException.class, () -> catalogResolver(CATALOG_MALFORMED));
     }
 
     /*
      * UriResolver tries to load malformed catalog,
      * it should throw RuntimeException.
      */
-    @Test(expectedExceptions = RuntimeException.class)
+    @Test
     public void validateMalformedCatalogOnUriResolver() {
-        catalogUriResolver(CATALOG_MALFORMED);
+        assertThrows(RuntimeException.class, () -> catalogUriResolver(CATALOG_MALFORMED));
     }
 
     /*

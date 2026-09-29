@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
  *          /test/lib
  * @build nsk.aod.VirtualMachine.VirtualMachine09.VM09Target
  * @run main/othervm/native
- *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine09.VirtualMachine09
  *      -jdk ${test.jdk}
  *      -javaOpts="-agentlib:VirtualMachine09agent00 -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"

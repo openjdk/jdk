@@ -1,0 +1,183 @@
+
+//
+
+#ifdef ENABLE_ALIAS
+#define DALIAS_d_d(DFUNC, SFUNC) EXPORT CONST double DFUNC(double) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_d2_d(DFUNC, SFUNC) EXPORT CONST Sleef_double2 DFUNC(double) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_i_d(DFUNC, SFUNC) EXPORT CONST int DFUNC(double) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_d_d_d(DFUNC, SFUNC) EXPORT CONST double DFUNC(double, double) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_d_d_d_d(DFUNC, SFUNC) EXPORT CONST double DFUNC(double, double, double) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_d_d_i(DFUNC, SFUNC) EXPORT CONST double DFUNC(double, int) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_f_f(DFUNC, SFUNC) EXPORT CONST float DFUNC(float) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_f2_f(DFUNC, SFUNC) EXPORT CONST Sleef_float2 DFUNC(float) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_i_f(DFUNC, SFUNC) EXPORT CONST int DFUNC(float) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_f_f_f(DFUNC, SFUNC) EXPORT CONST float DFUNC(float, float) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_f_f_f_f(DFUNC, SFUNC) EXPORT CONST float DFUNC(float, float, float) __attribute__((alias( stringify( SFUNC ) )));
+#define DALIAS_f_f_i(DFUNC, SFUNC) EXPORT CONST float DFUNC(float, int) __attribute__((alias( stringify( SFUNC ) )));
+#else
+#define DALIAS_d_d(DFUNC, SFUNC) EXPORT CONST double DFUNC(double d) { return SFUNC (d); }
+#define DALIAS_d2_d(DFUNC, SFUNC) EXPORT CONST Sleef_double2 DFUNC(double d) { return SFUNC (d); }
+#define DALIAS_i_d(DFUNC, SFUNC) EXPORT CONST int DFUNC(double d) { return SFUNC (d); }
+#define DALIAS_d_d_d(DFUNC, SFUNC) EXPORT CONST double DFUNC(double x, double y) { return SFUNC (x, y); }
+#define DALIAS_d_d_d_d(DFUNC, SFUNC) EXPORT CONST double DFUNC(double x, double y, double z) { return SFUNC (x, y, z); }
+#define DALIAS_d_d_i(DFUNC, SFUNC) EXPORT CONST double DFUNC(double x, int i) { return SFUNC (x, i); }
+#define DALIAS_f_f(DFUNC, SFUNC) EXPORT CONST float DFUNC(float d) { return SFUNC (d); }
+#define DALIAS_f2_f(DFUNC, SFUNC) EXPORT CONST Sleef_float2 DFUNC(float d) { return SFUNC (d); }
+#define DALIAS_i_f(DFUNC, SFUNC) EXPORT CONST int DFUNC(float d) { return SFUNC (d); }
+#define DALIAS_f_f_f(DFUNC, SFUNC) EXPORT CONST float DFUNC(float x, float y) { return SFUNC (x, y); }
+#define DALIAS_f_f_f_f(DFUNC, SFUNC) EXPORT CONST float DFUNC(float x, float y, float z) { return SFUNC (x, y, z); }
+#define DALIAS_f_f_i(DFUNC, SFUNC) EXPORT CONST float DFUNC(float x, int i) { return SFUNC (x, i); }
+#endif
+
+DALIAS_d_d(Sleef_sin_u10, Sleef_sind1_u10)
+DALIAS_d_d(Sleef_cos_u10, Sleef_cosd1_u10)
+DALIAS_d_d(Sleef_tan_u10, Sleef_tand1_u10)
+DALIAS_d_d(Sleef_sin_u35, Sleef_sind1_u35)
+DALIAS_d_d(Sleef_cos_u35, Sleef_cosd1_u35)
+DALIAS_d_d(Sleef_tan_u35, Sleef_tand1_u35)
+DALIAS_d_d(Sleef_asin_u10, Sleef_asind1_u10)
+DALIAS_d_d(Sleef_acos_u10, Sleef_acosd1_u10)
+DALIAS_d_d(Sleef_atan_u10, Sleef_atand1_u10)
+DALIAS_d_d(Sleef_asin_u35, Sleef_asind1_u35)
+DALIAS_d_d(Sleef_acos_u35, Sleef_acosd1_u35)
+DALIAS_d_d(Sleef_atan_u35, Sleef_atand1_u35)
+DALIAS_d_d(Sleef_sinh_u10, Sleef_sinhd1_u10)
+DALIAS_d_d(Sleef_cosh_u10, Sleef_coshd1_u10)
+DALIAS_d_d(Sleef_tanh_u10, Sleef_tanhd1_u10)
+DALIAS_d_d(Sleef_sinh_u35, Sleef_sinhd1_u35)
+DALIAS_d_d(Sleef_cosh_u35, Sleef_coshd1_u35)
+DALIAS_d_d(Sleef_tanh_u35, Sleef_tanhd1_u35)
+DALIAS_d_d(Sleef_asinh_u10, Sleef_asinhd1_u10)
+DALIAS_d_d(Sleef_acosh_u10, Sleef_acoshd1_u10)
+DALIAS_d_d(Sleef_atanh_u10, Sleef_atanhd1_u10)
+DALIAS_d_d(Sleef_log_u10, Sleef_logd1_u10)
+DALIAS_d_d(Sleef_log2_u10, Sleef_log2d1_u10)
+DALIAS_d_d(Sleef_log10_u10, Sleef_log10d1_u10)
+DALIAS_d_d(Sleef_log1p_u10, Sleef_log1pd1_u10)
+DALIAS_d_d(Sleef_log_u35, Sleef_logd1_u35)
+DALIAS_d_d(Sleef_log2_u35, Sleef_log2d1_u35)
+DALIAS_d_d(Sleef_exp_u10, Sleef_expd1_u10)
+DALIAS_d_d(Sleef_exp2_u10, Sleef_exp2d1_u10)
+DALIAS_d_d(Sleef_exp10_u10, Sleef_exp10d1_u10)
+DALIAS_d_d(Sleef_expm1_u10, Sleef_expm1d1_u10)
+DALIAS_d_d(Sleef_exp2_u35, Sleef_exp2d1_u35)
+DALIAS_d_d(Sleef_exp10_u35, Sleef_exp10d1_u35)
+DALIAS_d_d(Sleef_sqrt, Sleef_sqrtd1)
+DALIAS_d_d(Sleef_sqrt_u05, Sleef_sqrtd1_u05)
+DALIAS_d_d(Sleef_sqrt_u35, Sleef_sqrtd1_u35)
+DALIAS_d_d(Sleef_cbrt_u10, Sleef_cbrtd1_u10)
+DALIAS_d_d(Sleef_cbrt_u35, Sleef_cbrtd1_u35)
+DALIAS_d_d(Sleef_sinpi_u05, Sleef_sinpid1_u05)
+DALIAS_d_d(Sleef_cospi_u05, Sleef_cospid1_u05)
+DALIAS_d_d(Sleef_fabs, Sleef_fabsd1)
+DALIAS_d_d(Sleef_trunc, Sleef_truncd1)
+DALIAS_d_d(Sleef_floor, Sleef_floord1)
+DALIAS_d_d(Sleef_ceil, Sleef_ceild1)
+DALIAS_d_d(Sleef_round, Sleef_roundd1)
+DALIAS_d_d(Sleef_rint, Sleef_rintd1)
+DALIAS_d_d(Sleef_lgamma_u10, Sleef_lgammad1_u10)
+DALIAS_d_d(Sleef_tgamma_u10, Sleef_tgammad1_u10)
+DALIAS_d_d(Sleef_erf_u10, Sleef_erfd1_u10)
+DALIAS_d_d(Sleef_erfc_u15, Sleef_erfcd1_u15)
+DALIAS_d2_d(Sleef_sincospi_u05, Sleef_sincospid1_u05)
+DALIAS_d2_d(Sleef_sincospi_u35, Sleef_sincospid1_u35)
+DALIAS_d2_d(Sleef_modf, Sleef_modfd1)
+DALIAS_d_d_d(Sleef_copysign, Sleef_copysignd1)
+DALIAS_d_d_d(Sleef_fmax, Sleef_fmaxd1)
+DALIAS_d_d_d(Sleef_fmin, Sleef_fmind1)
+DALIAS_d_d_d(Sleef_fdim, Sleef_fdimd1)
+DALIAS_d_d_d(Sleef_nextafter, Sleef_nextafterd1)
+DALIAS_i_d(Sleef_expfrexp, Sleef_expfrexpd1)
+DALIAS_d_d_d_d(Sleef_fma, Sleef_fmad1)
+DALIAS_d_d_d(Sleef_hypot_u05, Sleef_hypotd1_u05)
+DALIAS_d_d_d(Sleef_hypot_u35, Sleef_hypotd1_u35)
+DALIAS_d_d_d(Sleef_fmod, Sleef_fmodd1)
+DALIAS_d_d_d(Sleef_remainder, Sleef_remainderd1)
+DALIAS_d_d(Sleef_frfrexp, Sleef_frfrexpd1)
+DALIAS_d2_d(Sleef_sincos_u35, Sleef_sincosd1_u35)
+DALIAS_d2_d(Sleef_sincos_u10, Sleef_sincosd1_u10)
+DALIAS_d_d_d(Sleef_atan2_u35, Sleef_atan2d1_u35)
+DALIAS_d_d_d(Sleef_atan2_u10, Sleef_atan2d1_u10)
+DALIAS_d_d_d(Sleef_pow_u10, Sleef_powd1_u10)
+DALIAS_d_d_i(Sleef_ldexp, Sleef_ldexpd1)
+DALIAS_i_d(Sleef_ilogb, Sleef_ilogbd1)
+
+DALIAS_f_f(Sleef_sinf_u35, Sleef_sinf1_u35)
+DALIAS_f_f(Sleef_cosf_u35, Sleef_cosf1_u35)
+DALIAS_f_f(Sleef_tanf_u35, Sleef_tanf1_u35)
+DALIAS_f_f(Sleef_asinf_u35, Sleef_asinf1_u35)
+DALIAS_f_f(Sleef_acosf_u35, Sleef_acosf1_u35)
+DALIAS_f_f(Sleef_atanf_u35, Sleef_atanf1_u35)
+DALIAS_f_f(Sleef_logf_u35, Sleef_logf1_u35)
+DALIAS_f_f(Sleef_cbrtf_u35, Sleef_cbrtf1_u35)
+DALIAS_f_f(Sleef_sinf_u10, Sleef_sinf1_u10)
+DALIAS_f_f(Sleef_cosf_u10, Sleef_cosf1_u10)
+DALIAS_f_f(Sleef_fastsinf_u3500, Sleef_fastsinf1_u3500)
+DALIAS_f_f(Sleef_fastcosf_u3500, Sleef_fastcosf1_u3500)
+DALIAS_f_f(Sleef_tanf_u10, Sleef_tanf1_u10)
+DALIAS_f_f(Sleef_asinf_u10, Sleef_asinf1_u10)
+DALIAS_f_f(Sleef_acosf_u10, Sleef_acosf1_u10)
+DALIAS_f_f(Sleef_atanf_u10, Sleef_atanf1_u10)
+DALIAS_f_f(Sleef_logf_u10, Sleef_logf1_u10)
+DALIAS_f_f(Sleef_cbrtf_u10, Sleef_cbrtf1_u10)
+DALIAS_f_f(Sleef_expf_u10, Sleef_expf1_u10)
+DALIAS_f_f(Sleef_sinhf_u10, Sleef_sinhf1_u10)
+DALIAS_f_f(Sleef_coshf_u10, Sleef_coshf1_u10)
+DALIAS_f_f(Sleef_tanhf_u10, Sleef_tanhf1_u10)
+DALIAS_f_f(Sleef_sinhf_u35, Sleef_sinhf1_u35)
+DALIAS_f_f(Sleef_coshf_u35, Sleef_coshf1_u35)
+DALIAS_f_f(Sleef_tanhf_u35, Sleef_tanhf1_u35)
+DALIAS_f_f(Sleef_asinhf_u10, Sleef_asinhf1_u10)
+DALIAS_f_f(Sleef_acoshf_u10, Sleef_acoshf1_u10)
+DALIAS_f_f(Sleef_atanhf_u10, Sleef_atanhf1_u10)
+DALIAS_f_f(Sleef_exp2f_u10, Sleef_exp2f1_u10)
+DALIAS_f_f(Sleef_exp10f_u10, Sleef_exp10f1_u10)
+DALIAS_f_f(Sleef_exp2f_u35, Sleef_exp2f1_u35)
+DALIAS_f_f(Sleef_exp10f_u35, Sleef_exp10f1_u35)
+DALIAS_f_f(Sleef_expm1f_u10, Sleef_expm1f1_u10)
+DALIAS_f_f(Sleef_log10f_u10, Sleef_log10f1_u10)
+DALIAS_f_f(Sleef_log2f_u10, Sleef_log2f1_u10)
+DALIAS_f_f(Sleef_log2f_u35, Sleef_log2f1_u35)
+DALIAS_f_f(Sleef_log1pf_u10, Sleef_log1pf1_u10)
+DALIAS_f_f(Sleef_sinpif_u05, Sleef_sinpif1_u05)
+DALIAS_f_f(Sleef_cospif_u05, Sleef_cospif1_u05)
+DALIAS_f_f(Sleef_sqrtf_u05, Sleef_sqrtf1_u05)
+DALIAS_f_f(Sleef_sqrtf_u35, Sleef_sqrtf1_u35)
+DALIAS_f_f(Sleef_lgammaf_u10, Sleef_lgammaf1_u10)
+DALIAS_f_f(Sleef_tgammaf_u10, Sleef_tgammaf1_u10)
+DALIAS_f_f(Sleef_erff_u10, Sleef_erff1_u10)
+DALIAS_f_f(Sleef_erfcf_u15, Sleef_erfcf1_u15)
+DALIAS_f_f(Sleef_sqrtf, Sleef_sqrtf1)
+DALIAS_f_f(Sleef_fabsf, Sleef_fabsf1)
+DALIAS_f_f(Sleef_truncf, Sleef_truncf1)
+DALIAS_f_f(Sleef_floorf, Sleef_floorf1)
+DALIAS_f_f(Sleef_ceilf, Sleef_ceilf1)
+DALIAS_f_f(Sleef_roundf, Sleef_roundf1)
+DALIAS_f_f(Sleef_rintf, Sleef_rintf1)
+DALIAS_f_f(Sleef_frfrexpf, Sleef_frfrexpf1)
+DALIAS_f2_f(Sleef_sincospif_u05, Sleef_sincospif1_u05)
+DALIAS_f2_f(Sleef_sincospif_u35, Sleef_sincospif1_u35)
+DALIAS_f2_f(Sleef_sincosf_u35, Sleef_sincosf1_u35)
+DALIAS_f2_f(Sleef_sincosf_u10, Sleef_sincosf1_u10)
+DALIAS_f2_f(Sleef_modff, Sleef_modff1)
+DALIAS_f_f_f(Sleef_hypotf_u05, Sleef_hypotf1_u05)
+DALIAS_f_f_f(Sleef_hypotf_u35, Sleef_hypotf1_u35)
+DALIAS_f_f_f(Sleef_atan2f_u35, Sleef_atan2f1_u35)
+DALIAS_f_f_f(Sleef_atan2f_u10, Sleef_atan2f1_u10)
+DALIAS_f_f_f(Sleef_powf_u10, Sleef_powf1_u10)
+DALIAS_f_f_f(Sleef_fastpowf_u3500, Sleef_fastpowf1_u3500)
+DALIAS_f_f_f_f(Sleef_fmaf, Sleef_fmaf1)
+DALIAS_f_f_f(Sleef_nextafterf, Sleef_nextafterf1)
+DALIAS_f_f_f(Sleef_fmodf, Sleef_fmodf1)
+DALIAS_f_f_f(Sleef_remainderf, Sleef_remainderf1)
+DALIAS_f_f_f(Sleef_copysignf, Sleef_copysignf1)
+DALIAS_f_f_f(Sleef_fmaxf, Sleef_fmaxf1)
+DALIAS_f_f_f(Sleef_fminf, Sleef_fminf1)
+DALIAS_f_f_f(Sleef_fdimf, Sleef_fdimf1)
+
+CONST float Sleef_ldexpf1_purec(float, int);
+EXPORT CONST float Sleef_ldexpf(float f, int i) { return Sleef_ldexpf1_purec(f, i); }
+CONST int Sleef_ilogbf1_purec(float);
+EXPORT CONST int Sleef_ilogbf(float f) { return Sleef_ilogbf1_purec(f); }
+CONST int Sleef_expfrexpf1_purec(float);
+EXPORT CONST int Sleef_expfrexpf(float f) { return Sleef_expfrexpf1_purec(f); }
