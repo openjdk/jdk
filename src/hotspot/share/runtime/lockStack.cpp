@@ -51,10 +51,10 @@ const int LockStack::lock_stack_base_offset = in_bytes(JavaThread::lock_stack_ba
 LockStack::LockStack(JavaThread* jt) :
   _top(lock_stack_base_offset), _base() {
   // Make sure the layout of the object is compatible with the emitted code's assumptions.
-  STATIC_ASSERT(sizeof(_bad_oop_sentinel) == oopSize);
-  STATIC_ASSERT(sizeof(_base[0]) == oopSize);
-  STATIC_ASSERT(std::is_standard_layout<LockStack>::value);
-  STATIC_ASSERT(offsetof(LockStack, _bad_oop_sentinel) == offsetof(LockStack, _base) - oopSize);
+  static_assert(sizeof(_bad_oop_sentinel) == oopSize);
+  static_assert(sizeof(_base[0]) == oopSize);
+  static_assert(std::is_standard_layout<LockStack>::value);
+  static_assert(offsetof(LockStack, _bad_oop_sentinel) == offsetof(LockStack, _base) - oopSize);
 #ifdef ASSERT
   for (int i = 0; i < CAPACITY; i++) {
     _base[i] = nullptr;
@@ -116,5 +116,5 @@ void LockStack::print_on(outputStream* st) {
 }
 
 OMCache::OMCache(JavaThread* jt) {
-  STATIC_ASSERT(std::is_standard_layout<OMCache>::value);
+  static_assert(std::is_standard_layout<OMCache>::value);
 }

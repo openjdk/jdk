@@ -2488,7 +2488,7 @@ const char* Deoptimization::_trap_action_name[] = {
 
 const char* Deoptimization::trap_reason_name(int reason) {
   // Check that every reason has a name
-  STATIC_ASSERT(sizeof(_trap_reason_name)/sizeof(const char*) == Reason_LIMIT);
+  static_assert(sizeof(_trap_reason_name)/sizeof(const char*) == Reason_LIMIT);
 
   if (reason == Reason_many)  return "many";
   if ((uint)reason < Reason_LIMIT)
@@ -2499,7 +2499,7 @@ const char* Deoptimization::trap_reason_name(int reason) {
 }
 const char* Deoptimization::trap_action_name(int action) {
   // Check that every action has a name
-  STATIC_ASSERT(sizeof(_trap_action_name)/sizeof(const char*) == Action_LIMIT);
+  static_assert(sizeof(_trap_action_name)/sizeof(const char*) == Action_LIMIT);
 
   if ((uint)action < Action_LIMIT)
     return _trap_action_name[action];

@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1COLLECTIONSET_HPP
 #define SHARE_GC_G1_G1COLLECTIONSET_HPP
 
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
@@ -219,13 +220,13 @@ class G1CollectionSet {
   // and retained collection set candidates.
   void finalize_old_part(double time_remaining_ms);
 
-  // Iterate the part of the collection set given by the offset and length applying the given
-  // G1HeapRegionClosure. The worker_id will determine where in the part to start the iteration
-  // to allow for more efficient parallel iteration.
+  // Iterate over the collection set range [offset, offset + num_regions) applying the given
+  // G1HeapRegionClosure on each region. The worker_id will determine where in the range to
+  // start the iteration to allow for more efficient parallel iteration.
   void iterate_part_from(G1HeapRegionClosure* cl,
                          G1HeapRegionClaimer* hr_claimer,
                          uint offset,
-                         uint length,
+                         uint num_regions,
                          uint worker_id) const;
 
   // Adds the given group to the optional groups list (_optional_groups)
