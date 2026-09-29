@@ -144,25 +144,29 @@ public class LocaleResources {
         type = ((LocaleProviderAdapter)adapter).getAdapterType();
     }
 
-    private void removeEmptyReferences() {
+    private Object getFromCache(String cacheKey) {
+        // remove empty references
         Object ref;
         while ((ref = referenceQueue.poll()) != null) {
             cache.remove(((ResourceReference)ref).getCacheKey());
         }
+
+        ResourceReference data = cache.get(cacheKey);
+        return data != null ? data.get() : null;
     }
 
     Object getBreakIteratorInfo(String key) {
-        Object biInfo;
         String cacheKey = BREAK_ITERATOR_INFO + key;
+        Object val = getFromCache(cacheKey);
 
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-        if (data == null || ((biInfo = data.get()) == null)) {
-           biInfo = localeData.getBreakIteratorInfo(locale).getObject(key);
-           cache.put(cacheKey, new ResourceReference(cacheKey, biInfo, referenceQueue));
+        if (val != null) {
+            return val;
         }
 
-       return biInfo;
+        val = localeData.getBreakIteratorInfo(locale).getObject(key);
+        cache.put(cacheKey, new ResourceReference(cacheKey, val, referenceQueue));
+
+        return val;
     }
 
     byte[] getBreakIteratorResources(String key) {
@@ -170,13 +174,10 @@ public class LocaleResources {
     }
 
     public String getCalendarData(String key) {
-        String caldata = "";
         String cacheKey = CALENDAR_DATA  + key;
-
-        removeEmptyReferences();
-
-        ResourceReference data = cache.get(cacheKey);
-        if (data == null || ((caldata = (String) data.get()) == null)) {
+        String caldata = (String) getFromCache(cacheKey);
+        if (caldata == null) {
+            caldata = "";
             ResourceBundle rb = localeData.getCalendarData(locale);
             if (rb.containsKey(key)) {
                 caldata = rb.getString(key);
@@ -192,7 +193,6 @@ public class LocaleResources {
     public String getCollationData() {
         String key = "Rule";
         String cacheKey = COLLATION_DATA;
-        String coldata = "";
 
         try {
             var type = locale.getUnicodeLocaleType("co");
@@ -202,9 +202,9 @@ public class LocaleResources {
             }
         } catch (IllegalArgumentException ignore) {}
 
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-        if (data == null || ((coldata = (String) data.get()) == null)) {
+        String coldata = (String) getFromCache(cacheKey);
+        if (coldata == null) {
+            coldata = "";
             ResourceBundle rb = localeData.getCollationData(locale);
             if (rb.containsKey(key)) {
                 coldata = rb.getString(key);
@@ -216,11 +216,8 @@ public class LocaleResources {
     }
 
     public Object[] getDecimalFormatSymbolsData() {
-        Object[] dfsdata;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(DECIMAL_FORMAT_SYMBOLS_DATA_CACHEKEY);
-        if (data == null || ((dfsdata = (Object[]) data.get()) == null)) {
+        Object[] dfsdata = (Object[]) getFromCache(DECIMAL_FORMAT_SYMBOLS_DATA_CACHEKEY);
+        if (dfsdata == null) {
             // Note that only dfsdata[0] is prepared here in this method. Other
             // elements are provided by the caller, yet they are cached here.
             ResourceBundle rb = localeData.getNumberFormatData(locale);
@@ -266,18 +263,10 @@ public class LocaleResources {
     }
 
     public String getCurrencyName(String key) {
-        Object currencyName = null;
         String cacheKey = CURRENCY_NAMES + key;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-
-        if (data != null && ((currencyName = data.get()) != null)) {
-            if (currencyName.equals(NULLOBJECT)) {
-                currencyName = null;
-            }
-
-            return (String) currencyName;
+        Object currencyName = getFromCache(cacheKey);
+        if (currencyName != null) {
+            return currencyName == NULLOBJECT ? null : (String) currencyName;
         }
 
         OpenListResourceBundle olrb = localeData.getCurrencyNames(locale);
@@ -286,24 +275,19 @@ public class LocaleResources {
             currencyName = olrb.getObject(key);
             cache.put(cacheKey,
                       new ResourceReference(cacheKey, currencyName, referenceQueue));
+        } else {
+            cache.put(cacheKey,
+                new ResourceReference(cacheKey, NULLOBJECT, referenceQueue));
         }
 
         return (String) currencyName;
     }
 
     public String getLocaleName(String key) {
-        Object localeName = null;
         String cacheKey = LOCALE_NAMES + key;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-
-        if (data != null && ((localeName = data.get()) != null)) {
-            if (localeName.equals(NULLOBJECT)) {
-                localeName = null;
-            }
-
-            return (String) localeName;
+        Object localeName = getFromCache(cacheKey);
+        if (localeName != null) {
+            return localeName == NULLOBJECT ? null : (String) localeName;
         }
 
         OpenListResourceBundle olrb = localeData.getLocaleNames(locale);
@@ -312,19 +296,18 @@ public class LocaleResources {
             localeName = olrb.getObject(key);
             cache.put(cacheKey,
                       new ResourceReference(cacheKey, localeName, referenceQueue));
+        } else {
+            cache.put(cacheKey,
+                new ResourceReference(cacheKey, NULLOBJECT, referenceQueue));
         }
 
         return (String) localeName;
     }
 
     public Object getTimeZoneNames(String key) {
-        Object val = null;
         String cacheKey = TIME_ZONE_NAMES + key;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-
-        if (Objects.isNull(data) || Objects.isNull(val = data.get())) {
+        Object val = getFromCache(cacheKey);
+        if (val == null) {
             TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
             if (key.startsWith(TZNB_EXCITY_PREFIX) ||
                 key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
@@ -354,7 +337,12 @@ public class LocaleResources {
             if (val != null) {
                 cache.put(cacheKey,
                           new ResourceReference(cacheKey, val, referenceQueue));
+            } else {
+                cache.put(cacheKey,
+                    new ResourceReference(cacheKey, NULLOBJECT, referenceQueue));
             }
+        } else if (val == NULLOBJECT) {
+            return null;
         }
 
         return val;
@@ -362,11 +350,8 @@ public class LocaleResources {
 
     @SuppressWarnings("unchecked")
     Set<String> getZoneIDs() {
-        Set<String> zoneIDs;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(ZONE_IDS_CACHEKEY);
-        if (data == null || ((zoneIDs = (Set<String>) data.get()) == null)) {
+        Set<String> zoneIDs = (Set<String>) getFromCache(ZONE_IDS_CACHEKEY);
+        if (zoneIDs == null) {
             TimeZoneNamesBundle rb = localeData.getTimeZoneNames(locale);
             zoneIDs = rb.keySet();
             cache.put(ZONE_IDS_CACHEKEY,
@@ -418,40 +403,36 @@ public class LocaleResources {
     }
 
     String[] getCalendarNames(String key) {
-        String[] names = null;
         String cacheKey = CALENDAR_NAMES + key;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-
-        if (data == null || ((names = (String[]) data.get()) == null)) {
-            ResourceBundle rb = localeData.getDateFormatData(locale);
-            if (rb.containsKey(key)) {
-                names = rb.getStringArray(key);
-                cache.put(cacheKey,
-                          new ResourceReference(cacheKey, names, referenceQueue));
-            }
+        Object val = getFromCache(cacheKey);
+        if (val != null) {
+            return val == NULLOBJECT ? null : (String[]) val;
         }
 
+        String[] names = null;
+        ResourceBundle rb = localeData.getDateFormatData(locale);
+        if (rb.containsKey(key)) {
+            names = rb.getStringArray(key);
+        }
+        cache.put(cacheKey, new ResourceReference(cacheKey,
+                names != null ? names : NULLOBJECT, referenceQueue));
         return names;
     }
 
     String[] getJavaTimeNames(String key) {
-        String[] names = null;
         String cacheKey = CALENDAR_NAMES + key;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-
-        if (data == null || ((names = (String[]) data.get()) == null)) {
-            ResourceBundle rb = getJavaTimeFormatData();
-            if (rb.containsKey(key)) {
-                names = rb.getStringArray(key);
-                cache.put(cacheKey,
-                          new ResourceReference(cacheKey, names, referenceQueue));
-            }
+        Object val = getFromCache(cacheKey);
+        if (val != null) {
+            return val == NULLOBJECT ? null : (String[]) val;
         }
 
+        String[] names = null;
+        ResourceBundle rb = getJavaTimeFormatData();
+        if (rb.containsKey(key)) {
+            names = rb.getStringArray(key);
+        }
+        cache.put(cacheKey, new ResourceReference(cacheKey,
+                names != null ? names : NULLOBJECT, referenceQueue));
         return names;
     }
 
@@ -531,12 +512,8 @@ public class LocaleResources {
     }
 
     public String[] getNumberPatterns() {
-        String[] numberPatterns;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(NUMBER_PATTERNS_CACHEKEY);
-
-        if (data == null || ((numberPatterns = (String[]) data.get()) == null)) {
+        String[] numberPatterns = (String[]) getFromCache(NUMBER_PATTERNS_CACHEKEY);
+        if (numberPatterns == null) {
             ResourceBundle resource = localeData.getNumberFormatData(locale);
             numberPatterns = getNumberStrings(resource, "NumberPatterns");
             cache.put(NUMBER_PATTERNS_CACHEKEY,
@@ -554,13 +531,10 @@ public class LocaleResources {
     public String[] getCNPatterns(NumberFormat.Style formatStyle) {
 
         Objects.requireNonNull(formatStyle);
-        String[] compactNumberPatterns;
-        removeEmptyReferences();
         String width = (formatStyle == NumberFormat.Style.LONG) ? "long" : "short";
         String cacheKey = width + "." + COMPACT_NUMBER_PATTERNS_CACHEKEY;
-        ResourceReference data = cache.get(cacheKey);
-        if (data == null || ((compactNumberPatterns
-                = (String[]) data.get()) == null)) {
+        String[] compactNumberPatterns = (String[]) getFromCache(cacheKey);
+        if (compactNumberPatterns == null) {
             ResourceBundle resource = localeData.getNumberFormatData(locale);
             compactNumberPatterns = (String[]) resource
                     .getObject(width + ".CompactNumberPatterns");
@@ -589,13 +563,9 @@ public class LocaleResources {
      * @return format pattern string for this locale, null if not found
      */
     public String getLocalizedPattern(String requestedTemplate, String calType) {
-        String pattern;
         String cacheKey = SKELETON_PATTERN + calType + "." + requestedTemplate;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-
-        if (data == null || ((pattern = (String) data.get()) == null)) {
+        String pattern = (String) getFromCache(cacheKey);
+        if (pattern == null) {
             pattern = getLocalizedPatternImpl(requestedTemplate, calType);
             cache.put(cacheKey,
                 new ResourceReference(cacheKey, pattern != null ? pattern : "", referenceQueue));
@@ -796,11 +766,9 @@ public class LocaleResources {
         String resourceKey = sb.toString();
         String cacheKey = sb.insert(0, DATE_TIME_PATTERN).toString();
 
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-        Object value = NULLOBJECT;
-
-        if (data == null || ((value = data.get()) == null)) {
+        Object value = getFromCache(cacheKey);
+        if (value == null) {
+            value = NULLOBJECT;
             ResourceBundle r = (prefix != null) ? getJavaTimeFormatData() : localeData.getDateFormatData(locale);
             if (r.containsKey(resourceKey)) {
                 value = r.getStringArray(resourceKey);
@@ -824,12 +792,8 @@ public class LocaleResources {
     }
 
     public String[] getRules() {
-        String[] rules;
-
-        removeEmptyReferences();
-        ResourceReference data = cache.get(RULES_CACHEKEY);
-
-        if (data == null || ((rules = (String[]) data.get()) == null)) {
+        String[] rules = (String[]) getFromCache(RULES_CACHEKEY);
+        if (rules == null) {
             ResourceBundle rb = localeData.getDateFormatData(locale);
             rules = new String[2];
             rules[0] = rules[1] = "";
@@ -854,13 +818,10 @@ public class LocaleResources {
     public String[] getListPatterns(ListFormat.Type type, ListFormat.Style style) {
         String typeStr = type.toString().toLowerCase(Locale.ROOT);
         String styleStr = style.toString().toLowerCase(Locale.ROOT);
-        String[] lpArray;
         String cacheKey = LIST_PATTERN + typeStr + styleStr;
 
-        removeEmptyReferences();
-        ResourceReference data = cache.get(cacheKey);
-
-        if (data == null || ((lpArray = (String[]) data.get()) == null)) {
+        String[] lpArray = (String[]) getFromCache(cacheKey);
+        if (lpArray == null) {
             var rbKey = "ListPatterns_" + typeStr + (style == ListFormat.Style.FULL ? "" : "-" + styleStr);
             lpArray = localeData.getDateFormatData(locale).getStringArray(rbKey);
 

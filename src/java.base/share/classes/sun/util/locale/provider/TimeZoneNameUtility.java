@@ -62,6 +62,12 @@ public final class TimeZoneNameUtility {
         new ConcurrentHashMap<>();
 
     /**
+     * TZID to explicitDstOffset cache. An empty string value means there is no
+     * explicit DST offset for the TZID.
+     */
+    private static final Map<String, String> cachedExplicitDstOffsets =  new ConcurrentHashMap<>();
+
+    /**
      * get time zone localized strings. Enumerate all keys.
      */
     public static String[][] getZoneStrings(Locale locale) {
@@ -178,11 +184,15 @@ public final class TimeZoneNameUtility {
      * @param tzid the time zone ID
      */
     public static String explicitDstOffset(String tzid) {
-        return (String) (LocaleProviderAdapter.forType(CLDR) instanceof CLDRLocaleProviderAdapter ca ?
-            ca.getLocaleResources(Locale.ROOT)
-                .getTimeZoneNames("metazone.dstoffset." +
-                    ca.canonicalTZID(tzid).orElse(tzid)) :
-            null);
+        var dstOffset = cachedExplicitDstOffsets.computeIfAbsent(tzid, key -> {
+            var val = (String)(LocaleProviderAdapter.forType(CLDR) instanceof CLDRLocaleProviderAdapter ca ?
+                    ca.getLocaleResources(Locale.ROOT)
+                        .getTimeZoneNames("metazone.dstoffset." +
+                            ca.canonicalTZID(key).orElse(key)) :
+                    null);
+            return val == null ? "" : val;
+        });
+        return dstOffset.isEmpty() ? null : dstOffset;
     }
 
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {
