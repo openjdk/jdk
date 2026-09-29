@@ -147,6 +147,7 @@ public class ObjectMethodsTest {
         assertEquals("Empty[]", (String)handle.invokeExact(new Empty()));
     }
 
+    @Test
     public void testRearrangeEquals() {
         class ThrowingList extends ArrayList<Object> {
             public boolean equals(Object o) {
