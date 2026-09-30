@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,8 +163,8 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
   if (to_rem_set->is_tracked()) {
     G1HeapRegion* from = _g1h->heap_region_containing(p);
 
-    if (from->rem_set()->cset_group() != to_rem_set->cset_group()) {
-      to_rem_set->add_reference(p, _worker_id);
+    if (from->rem_set()->card_set_group() != to_rem_set->card_set_group()) {
+      to_rem_set->add_reference(p, _from_card_cache);
       _has_ref_to_old = true;
     }
   }
@@ -290,8 +290,8 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
     if (!to->is_young()) {
       G1HeapRegion* from = _g1h->heap_region_containing(p);
 
-      if (from->rem_set()->cset_group() != rem_set->cset_group()) {
-        rem_set->add_reference(p, _worker_id);
+      if (from->rem_set()->card_set_group() != rem_set->card_set_group()) {
+        rem_set->add_reference(p, _from_card_cache);
       }
     }
   }

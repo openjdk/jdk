@@ -28,16 +28,16 @@ package compiler.lib.ir_framework.driver.network.testvm.java;
  */
 public class JavaMessages {
     private final StdoutMessages stdoutMessages;
-    private final ExecutedTests executedTests;
     private final MethodTimes methodTimes;
+    private final ExecutedTests executedTests;
     private final ApplicableIRRules applicableIrRules;
     private final VMInfo vmInfo;
 
-    JavaMessages(StdoutMessages stdoutMessages, ExecutedTests executedTests, MethodTimes methodTimes,
+    JavaMessages(StdoutMessages stdoutMessages, MethodTimes methodTimes, ExecutedTests executedTests,
                  ApplicableIRRules applicableIrRules, VMInfo vmInfo) {
         this.stdoutMessages = stdoutMessages;
-        this.executedTests = executedTests;
         this.methodTimes = methodTimes;
+        this.executedTests = executedTests;
         this.applicableIrRules = applicableIrRules;
         this.vmInfo = vmInfo;
     }

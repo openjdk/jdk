@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8155026 8178011 8220702 8261625
+ * @bug 8155026 8178011 8220702 8261625 8390284
  * @summary Test automatic modules
  * @library /tools/lib
  * @modules
@@ -34,18 +34,26 @@
  * @run main AutomaticModules
  */
 
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskListener;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.Attributes.Name;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -930,6 +938,217 @@ public class AutomaticModules extends ModuleTestBase {
                 .run(Task.Expect.SUCCESS)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
+    }
+
+    @Test
+    public void testAugmentAutomaticModuleWithPatch(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        Path automaticSrc = base.resolve("automaticSrc");
+        tb.writeJavaFiles(automaticSrc, "package aut1; public class Aut1 { }");
+        Path automaticClasses = base.resolve("automaticClasses");
+        tb.createDirectories(automaticClasses);
+
+        new JavacTask(tb)
+            .outdir(automaticClasses)
+            .files(findJavaFiles(automaticSrc))
+            .run()
+            .writeAll()
+            .getOutput(Task.OutputKind.DIRECT);
+
+        Path automaticJar = modulePath.resolve("automatic-1.0.jar");
+
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(automaticJar))) {
+            out.putNextEntry(new ZipEntry("aut1/Aut1.class"));
+            Files.copy(automaticClasses.resolve("aut1").resolve("Aut1.class"), out);
+        }
+
+        Path extraSrc = base.resolve("extraSrc");
+        tb.writeJavaFiles(extraSrc, "package aut2; public class Aut2 { }");
+        Path extraClasses = base.resolve("extraClasses");
+        tb.createDirectories(extraClasses);
+
+        new JavacTask(tb)
+            .outdir(extraClasses)
+            .files(findJavaFiles(extraSrc))
+            .run()
+            .writeAll()
+            .getOutput(Task.OutputKind.DIRECT);
+
+        Path extraJar = base.resolve("extra.jar");
+
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(extraJar))) {
+            out.putNextEntry(new ZipEntry("aut2/Aut2.class"));
+            Files.copy(extraClasses.resolve("aut2").resolve("Aut2.class"), out);
+        }
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import aut1.Aut1;
+                          import aut2.Aut2;
+                          public class Test {
+                              Aut1 aut1 = new Aut1();
+                              Aut2 aut2 = new Aut2();
+                          }
+                          """);
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        //patch with jar:
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--patch-module", "automatic=" + extraJar.toString(),
+                         "--add-modules", "automatic")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        //patch with class directory:
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--patch-module", "automatic=" + extraClasses.toString(),
+                         "--add-modules", "automatic")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        //patch with source directory:
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--patch-module", "automatic=" + extraSrc.toString(),
+                         "--add-modules", "automatic")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        //with: Automatic-Module-Name:
+        Manifest man = new Manifest();
+
+        man.getMainAttributes().put(Name.MANIFEST_VERSION, "1.0");
+        man.getMainAttributes().putValue("Automatic-Module-Name", "ExplicitAutomatic");
+
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(automaticJar), man)) {
+            out.putNextEntry(new ZipEntry("aut1/Aut1.class"));
+            Files.copy(automaticClasses.resolve("aut1").resolve("Aut1.class"), out);
+        }
+
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--patch-module", "ExplicitAutomatic=" + extraJar.toString(),
+                         "--add-modules", "ExplicitAutomatic")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+    }
+
+    @Test
+    public void testAugmentAutomaticModuleWithPatchNoDuplication(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        Path automaticSrc = base.resolve("automaticSrc");
+        tb.writeJavaFiles(automaticSrc, "package aut; public class Aut1 { }");
+        Path automaticClasses = base.resolve("automaticClasses");
+        tb.createDirectories(automaticClasses);
+
+        new JavacTask(tb)
+            .outdir(automaticClasses)
+            .files(findJavaFiles(automaticSrc))
+            .run()
+            .writeAll()
+            .getOutput(Task.OutputKind.DIRECT);
+
+        Path automaticJar = modulePath.resolve("automatic-1.0.jar");
+
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(automaticJar))) {
+            out.putNextEntry(new ZipEntry("aut/Aut1.class"));
+            Files.copy(automaticClasses.resolve("aut").resolve("Aut1.class"), out);
+        }
+
+        Path extraSrc = base.resolve("extraSrc");
+        tb.writeJavaFiles(extraSrc, "package aut; public class Aut2 { }");
+        Path extraClasses = base.resolve("extraClasses");
+        tb.createDirectories(extraClasses);
+
+        new JavacTask(tb)
+            .outdir(extraClasses)
+            .files(findJavaFiles(extraSrc))
+            .run()
+            .writeAll()
+            .getOutput(Task.OutputKind.DIRECT);
+
+        Path extraJar = base.resolve("extra.jar");
+
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(extraJar))) {
+            out.putNextEntry(new ZipEntry("aut/Aut2.class"));
+            Files.copy(extraClasses.resolve("aut").resolve("Aut2.class"), out);
+        }
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import aut.Aut1;
+                          import aut.Aut2;
+                          public class Test {
+                              Aut1 aut1 = new Aut1();
+                              Aut2 aut2 = new Aut2();
+                          }
+                          """);
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> exportedPackages = new ArrayList<>();
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--patch-module", "automatic=" + extraJar.toString(),
+                         "--add-modules", "automatic")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() != TaskEvent.Kind.ANALYZE) {
+                                return ;
+                            }
+                            ModuleElement automaticModule =
+                                    task.getElements()
+                                        .getModuleElement("automatic");
+                            ElementFilter.exportsIn(automaticModule.getDirectives())
+                                         .forEach(d -> exportedPackages.add(d.getPackage()
+                                                                             .getQualifiedName()
+                                                                             .toString()));
+                        }
+                    });
+                })
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (exportedPackages.size() != 1 ||
+            !exportedPackages.contains("aut")) {
+            throw new AssertionError("Unexpected exportedPackages: " + exportedPackages);
+        }
     }
 
 }

@@ -126,8 +126,8 @@ uint Runtime1::_new_multi_array_slowcase_cnt = 0;
 uint Runtime1::_load_flat_array_slowcase_cnt = 0;
 uint Runtime1::_store_flat_array_slowcase_cnt = 0;
 uint Runtime1::_substitutability_check_slowcase_cnt = 0;
-uint Runtime1::_buffer_inline_args_slowcase_cnt = 0;
-uint Runtime1::_buffer_inline_args_no_receiver_slowcase_cnt = 0;
+uint Runtime1::_buffer_value_args_slowcase_cnt = 0;
+uint Runtime1::_buffer_value_args_no_receiver_slowcase_cnt = 0;
 uint Runtime1::_monitorenter_slowcase_cnt = 0;
 uint Runtime1::_monitorexit_slowcase_cnt = 0;
 uint Runtime1::_patch_code_slowcase_cnt = 0;
@@ -454,7 +454,7 @@ JRT_ENTRY(void, Runtime1::new_null_free_array(JavaThread* current, Klass* array_
   assert(array_klass->is_klass(), "not a class");
   Handle holder(THREAD, array_klass->klass_holder()); // keep the klass alive
   Klass* elem_klass = ObjArrayKlass::cast(array_klass)->element_klass();
-  assert(elem_klass->is_inline_klass(), "must be");
+  assert(elem_klass->is_value_klass(), "must be");
   // Logically creates elements, ensure klass init
   elem_klass->initialize(CHECK);
 
@@ -557,21 +557,21 @@ JRT_ENTRY(int, Runtime1::substitutability_check(JavaThread* current, oopDesc* le
   return result.get_jboolean() ? 1 : 0;
 JRT_END
 
-void Runtime1::buffer_inline_args_impl(JavaThread* current, Method* m, bool allocate_receiver) {
+void Runtime1::buffer_value_args_impl(JavaThread* current, Method* m, bool allocate_receiver) {
   JavaThread* THREAD = current;
-  methodHandle method(current, m); // We are inside the verified_entry or verified_inline_ro_entry of this method.
-  oop obj = SharedRuntime::allocate_inline_types_impl(current, method, allocate_receiver, true, CHECK);
+  methodHandle method(current, m); // We are inside the verified_entry or verified_value_ro_entry of this method.
+  oop obj = SharedRuntime::allocate_value_types_impl(current, method, allocate_receiver, true, CHECK);
   current->set_vm_result_oop(obj);
 }
 
-JRT_ENTRY(void, Runtime1::buffer_inline_args(JavaThread* current, Method* method))
-  NOT_PRODUCT(_buffer_inline_args_slowcase_cnt++;)
-  buffer_inline_args_impl(current, method, true);
+JRT_ENTRY(void, Runtime1::buffer_value_args(JavaThread* current, Method* method))
+  NOT_PRODUCT(_buffer_value_args_slowcase_cnt++;)
+  buffer_value_args_impl(current, method, true);
 JRT_END
 
-JRT_ENTRY(void, Runtime1::buffer_inline_args_no_receiver(JavaThread* current, Method* method))
-  NOT_PRODUCT(_buffer_inline_args_no_receiver_slowcase_cnt++;)
-  buffer_inline_args_impl(current, method, false);
+JRT_ENTRY(void, Runtime1::buffer_value_args_no_receiver(JavaThread* current, Method* method))
+  NOT_PRODUCT(_buffer_value_args_no_receiver_slowcase_cnt++;)
+  buffer_value_args_impl(current, method, false);
 JRT_END
 
 JRT_ENTRY(void, Runtime1::unimplemented_entry(JavaThread* current, StubId id))
@@ -1141,7 +1141,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
     // The field we are patching is null-free. Deoptimize and regenerate
     // the compiled code if we patch a putfield/putstatic because it
     // does not contain the required null check.
-    deoptimize_for_null_free = result.is_null_free_inline_type() && (field_access.is_putfield() || field_access.is_putstatic());
+    deoptimize_for_null_free = result.is_null_free_value_type() && (field_access.is_putfield() || field_access.is_putstatic());
 
     // The field we are patching is flat. Deoptimize and regenerate
     // the compiled code which can't handle the layout of the flat
@@ -1701,8 +1701,8 @@ void Runtime1::print_statistics() {
   tty->print_cr(" _load_flat_array_slowcase_cnt:   %u", _load_flat_array_slowcase_cnt);
   tty->print_cr(" _store_flat_array_slowcase_cnt:  %u", _store_flat_array_slowcase_cnt);
   tty->print_cr(" _substitutability_check_slowcase_cnt: %u", _substitutability_check_slowcase_cnt);
-  tty->print_cr(" _buffer_inline_args_slowcase_cnt:%u", _buffer_inline_args_slowcase_cnt);
-  tty->print_cr(" _buffer_inline_args_no_receiver_slowcase_cnt:%u", _buffer_inline_args_no_receiver_slowcase_cnt);
+  tty->print_cr(" _buffer_value_args_slowcase_cnt:%u", _buffer_value_args_slowcase_cnt);
+  tty->print_cr(" _buffer_value_args_no_receiver_slowcase_cnt:%u", _buffer_value_args_no_receiver_slowcase_cnt);
 
   tty->print_cr(" _monitorenter_slowcase_cnt:      %u", _monitorenter_slowcase_cnt);
   tty->print_cr(" _monitorexit_slowcase_cnt:       %u", _monitorexit_slowcase_cnt);

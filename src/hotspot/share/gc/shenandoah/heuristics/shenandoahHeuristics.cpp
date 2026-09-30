@@ -28,6 +28,7 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -100,12 +101,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t free_regions = 0;
 
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
-
-    if (!_space_info->contains(region)) {
+    if (!_space_info->contains(heap->region_affiliation(i))) {
       continue;
     }
 
+    ShenandoahHeapRegion* region = heap->get_region(i);
     size_t garbage = region->garbage();
     total_garbage += garbage;
 
