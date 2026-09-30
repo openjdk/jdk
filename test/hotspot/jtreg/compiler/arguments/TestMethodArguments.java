@@ -33,7 +33,7 @@
 
 package compiler.arguments;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -106,7 +106,7 @@ public class TestMethodArguments {
     }
 
     public static String generate(CompileFramework comp) {
-        List<Object> tests = new ArrayList<>();
+        List<Object> tests = new LinkedList<>();
         for (int i = MIN; i <= MAX; ++i) {
             tests.add(generateTest(CodeGenerationDataNameType.ints(), i).asToken());
             tests.add(generateTest(CodeGenerationDataNameType.floats(), i).asToken());
