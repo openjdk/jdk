@@ -53,7 +53,7 @@ public class DigestSanityTestBase {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final int MSG_SIZE = 1024;
     private static final int OFFSET = 0;
-    private static final int WARMUP_ITERATIONS = WHITE_BOX.getIntxVMFlag("Tier4InvocationThreshold").intValue() + 50;
+    private static final int WARMUP_ITERATIONS = WHITE_BOX.getIntxVMFlag("Tier4InvocationThreshold").intValue() + 10_000;
     private static final String PROVIDER = "SUN";
 
     private final BooleanSupplier predicate;
