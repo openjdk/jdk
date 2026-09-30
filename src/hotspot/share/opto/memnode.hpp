@@ -185,6 +185,10 @@ public:
 #endif
     return new_node;
   }
+
+  // Support for reinterpret variants used by StoreNode and LoadNode
+  static BasicType get_reinterpret_variant(BasicType bt);
+  bool has_reinterpret_variant(const Type* vt) const;
 };
 
 // Analyze a MemNode to try to prove that it is independent from other memory accesses
@@ -349,7 +353,6 @@ public:
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);
 
-  bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
   ControlDependency control_dependency() const { return _control_dependency; }
@@ -711,7 +714,6 @@ public:
   // have all possible loads of the value stored been optimized away?
   bool value_never_loaded(PhaseValues* phase) const;
 
-  bool  has_reinterpret_variant(const Type* vt);
   Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
 
   MemBarNode* trailing_membar() const;
@@ -1218,7 +1220,7 @@ private:
 //------------------------------MemBar-----------------------------------------
 // There are different flavors of Memory Barriers to match the Java Memory
 // Model.  Monitor-enter and volatile-load act as Acquires: no following ref
-// can be moved to before them.  We insert a MemBar-Acquire after a FastLock or
+// can be moved to before them.  We insert a MemBar-Acquire after a lock or
 // volatile-load.  Monitor-exit and volatile-store act as Release: no
 // preceding ref can be moved to after them.  We insert a MemBar-Release
 // before a FastUnlock or volatile-store.  All volatiles need to be
@@ -1284,6 +1286,10 @@ public:
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);
 
   void remove(PhaseIterGVN *igvn);
+
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 };
 
 // "Acquire" - no following ref can move before (but earlier refs can
@@ -1330,7 +1336,7 @@ public:
 
 // "Acquire" - no following ref can move before (but earlier refs can
 // follow, like an early Load stalled in cache).  Requires multi-cpu
-// visibility.  Inserted after a FastLock.
+// visibility.  Inserted after a Lock.
 class MemBarAcquireLockNode: public MemBarNode {
 public:
   MemBarAcquireLockNode(Compile* C, int alias_idx, Node* precedent)

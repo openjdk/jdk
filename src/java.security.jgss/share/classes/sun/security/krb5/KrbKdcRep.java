@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +89,7 @@ abstract class KrbKdcRep {
         for (int i = 2; i < 6; i++) {
             if (req.reqBody.kdcOptions.get(i) !=
                    rep.encKDCRepPart.flags.get(i)) {
-                if (DEBUG == null) {
+                if (DEBUG != null) {
                     DEBUG.println("> KrbKdcRep.check: at #" + i
                             + ". request for " + req.reqBody.kdcOptions.get(i)
                             + ", received " + rep.encKDCRepPart.flags.get(i));

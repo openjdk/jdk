@@ -45,8 +45,8 @@ public class JavaMessageParser implements TestVmMessageParser<JavaMessages> {
     private static final Pattern TAG_PATTERN = Pattern.compile("^(\\[[^]]+])\\s*(.*)$");
 
     private final List<String> stdoutMessages;
-    private final List<String> executedTests;
     private final Map<String, Long> methodTimes;
+    private final List<String> executedTests;
     private final MultiLineParser<VMInfo> vmInfoParser;
     private final MultiLineParser<ApplicableIRRules> applicableIRRulesParser;
 
@@ -100,11 +100,12 @@ public class JavaMessageParser implements TestVmMessageParser<JavaMessages> {
     }
 
     private void parsePrintTimes(String message) {
-        String[] split = message.split(",");
-        TestFramework.check(split.length == 2, "unexpected format");
-        String methodName = split[0];
+        // When using @Run with multiple tests, we could have several commas in the message
+        int lastCommaIndex = message.lastIndexOf(',');
+        TestFramework.check(lastCommaIndex > 0 && lastCommaIndex < message.length() - 1, "unexpected format");
+        String methodName = message.substring(0, lastCommaIndex);
         try {
-            long duration = Long.parseLong(split[1]);
+            long duration = Long.parseLong(message.substring(lastCommaIndex + 1));
             methodTimes.put(methodName, duration);
         } catch (NumberFormatException e) {
             throw new TestFrameworkException("invalid duration", e);
@@ -123,8 +124,8 @@ public class JavaMessageParser implements TestVmMessageParser<JavaMessages> {
     @Override
     public JavaMessages output() {
         return new JavaMessages(new StdoutMessages(stdoutMessages),
-                                new ExecutedTests(executedTests),
                                 new MethodTimes(methodTimes),
+                                new ExecutedTests(executedTests),
                                 applicableIRRulesParser.output(),
                                 vmInfoParser.output());
     }

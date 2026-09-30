@@ -355,6 +355,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             editor.setMargin(UIManager.getInsets(prefix + ".margin"));
         }
 
+        LookAndFeel.installProperty(editor, "dragEnabled", false);
         updateCursor();
     }
 

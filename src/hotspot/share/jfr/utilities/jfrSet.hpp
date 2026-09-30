@@ -119,6 +119,7 @@ class JfrSetStorage : public AnyObj {
         ::new (&_table[i]) K{};
       }
     }
+    _elements = 0;
   }
 };
 
