@@ -68,7 +68,7 @@ public:
    * the new forwardee that a competing thread installed. If another
    * thread self-forwarded the object, returns the object itself.
    */
-  static inline oop try_update_forwardee(oop obj, oop update);
+  static inline oop try_forward_to(oop obj, oop update);
 
   /* Tries to atomically self-forward obj. Used by the evacuation path
    * when the copy allocation fails: the failing thread installs the
@@ -80,7 +80,9 @@ public:
    * real forwardee pointing at a copy, or obj itself if the winner
    * also self-forwarded).
    */
-  static inline oop try_forward_to_self(oop obj, markWord old_mark);
+  static inline oop try_forward_to_self(oop obj);
+
+  static inline oop try_update_forwardee(oop obj, oop update, bool is_self);
 
   static inline size_t size(oop obj);
   static inline Klass* klass(oop obj);

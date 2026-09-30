@@ -1347,11 +1347,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // the object as "already handled, do not try to evacuate". The CAS
     // may fail if another thread concurrently installed a real forwardee
     // (they succeeded where we failed) or self-forwarded first.
-    markWord old_mark = p->mark();
-    if (old_mark.is_forwarded()) {
-      return ShenandoahForwarding::get_forwardee(p);
-    }
-    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
+    oop winner = ShenandoahForwarding::try_forward_to_self(p);
     if (winner == nullptr) {
       // We own the self-forwarding. Flag the region so the degen/full GC
       // entry drain knows to scan it for self_fwd bits to clear.
@@ -1380,7 +1376,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   // Try to install the new forwarding pointer.
-  oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
+  oop result = ShenandoahForwarding::try_forward_to(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(nullptr, copy_val);

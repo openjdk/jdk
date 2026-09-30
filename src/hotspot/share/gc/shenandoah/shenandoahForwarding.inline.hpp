@@ -66,7 +66,17 @@ inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
   return obj->mark().is_self_forwarded();
 }
 
-inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
+inline oop ShenandoahForwarding::try_forward_to(oop obj, oop update) {
+  return try_update_forwardee(obj, update, false);
+}
+
+inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
+  return try_update_forwardee(obj, nullptr, true);
+}
+
+inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update, bool is_self) {
+  assert(is_self == (update == nullptr), "Pre-condition");
+
   markWord old_mark = obj->mark();
   if (old_mark.is_marked()) {
     return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
@@ -76,10 +86,10 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
     return obj;
   }
 
-  markWord new_mark = markWord::encode_pointer_as_mark(update);
-  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
+  markWord new_mark = is_self ? old_mark.set_self_forwarded() : markWord::encode_pointer_as_mark(update);
+  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark);
   if (prev_mark == old_mark) {
-    return update;
+    return is_self ? nullptr : update;
   }
   // Concurrent writers on a cset object's mark can only be other evacuation
   // threads installing forwarding (real or self). Mutators cannot reach the
@@ -97,25 +107,6 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   return obj;
 }
 
-inline oop ShenandoahForwarding::try_forward_to_self(oop obj, markWord old_mark) {
-  assert(!old_mark.is_forwarded(),
-         "caller must pass a non-forwarded mark: old=" INTPTR_FORMAT, old_mark.value());
-  markWord new_mark = old_mark.set_self_forwarded();
-  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
-  if (prev_mark == old_mark) {
-    // We installed the self-forward.
-    return nullptr;
-  }
-  // Same invariant as in try_update_forwardee: the only races on a
-  // cset object's mark come from other evac threads installing forwarding.
-  if (prev_mark.is_marked()) {
-    return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
-  }
-  assert(prev_mark.is_self_forwarded(),
-         "concurrent writers on cset objects must install forwarding: prev=" INTPTR_FORMAT,
-         prev_mark.value());
-  return obj;
-}
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {
   if (UseCompactObjectHeaders) {
