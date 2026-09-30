@@ -75,6 +75,8 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
     _heap->_gc_state.clear();
     _heap->_gc_state_changed = true;
   }
+
+  assert(_heap->gc_state() == 0, "Should have been cleared");
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
