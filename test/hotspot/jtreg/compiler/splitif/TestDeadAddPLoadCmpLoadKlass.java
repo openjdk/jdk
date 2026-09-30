@@ -58,11 +58,10 @@ public class TestDeadAddPLoadCmpLoadKlass {
         TestDeadAddPLoadCmpLoadKlass value = new TestDeadAddPLoadCmpLoadKlass();
         for (int i = 0; i <= 60; i++) {
             value = new TestDeadAddPLoadCmpLoadKlass();
-            value.test(1);        
+            value.test(1);
         }
         for (int i = 0; i < 1000; i++) {
             value.test(1);
         }
     }
 }
-
