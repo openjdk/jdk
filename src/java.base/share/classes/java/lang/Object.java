@@ -643,8 +643,9 @@ public class Object {
      * ignored.
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          Value objects are never finalized, and it is an error to declare
-     *          a {@code finalize} method in a value class.
+     *          A value class cannot override the {@code finalize} method, and
+     *          the garbage collector never invokes {@code finalize} on a value
+     *          object.
      *      </div>
      * </div>
      *
