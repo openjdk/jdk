@@ -47,7 +47,7 @@ static bool should_initialize_stress_seed(CompilerType comp) {
         StressIncrementalInlining || StressMacroExpansion ||
         StressMacroElimination || StressUnstableIfTraps ||
         StressBailout || StressLoopPeeling || StressCountedLoop ||
-        StressEliminateAllocations;
+        StressEliminateAllocations || StressDuplicateBackedge;
 #endif // COMPILER2
     default:
       assert(comp != compiler_none && comp != compiler_number_of_types, "expected valid compiler");

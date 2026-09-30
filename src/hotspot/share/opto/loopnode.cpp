@@ -3151,7 +3151,7 @@ Node* LoopLimitNode::Identity(PhaseGVN* phase) {
 //
 // Note: in the future, we should fix both the BYTE and the CHAR case,
 //       to allow proper optimization of byte/char cast truncation.
-void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
+void TruncatedIncrement::build(Node* expr) {
   _is_valid = false;
 
   // Quick cutouts:
@@ -3776,8 +3776,9 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
       loop->_body.push(n);
     }
     iloop->set_loop(safepoint, loop);
-    loop->_body.push(safepoint);
+    assert(loop->_body.contains(safepoint), "");
     iloop->set_loop(safepoint->in(0), loop);
+    assert(!loop->_body.contains(safepoint->in(0)), "");
     loop->_body.push(safepoint->in(0));
     outer_loop_ilt->_tail = igvn->C->top();
   }
