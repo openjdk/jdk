@@ -138,7 +138,9 @@ public class TestRemoveStoresAfterPeeling {
     private int testStorePeeling4(A[] array, A a, int v) {
         int sum = 0;
         for (int i = 1; i < 100; i *= 2) {
-            // The store cannot be hoisted because there is a preceding load interfering with it
+            // The store to a.v cannot be directly hoisted because the preceding load array[i].v
+            // may alias it. Peeling preserves the first iteration load-before-store ordering.
+            // Later identical stores are redundant.
             sum += array[i].v;
             a.v = v;
         }
@@ -157,6 +159,27 @@ public class TestRemoveStoresAfterPeeling {
         Asserts.assertEQ(1, testStorePeeling4(array, array[2], 1));
         array[2].v = 0;
         Asserts.assertEQ(0, testStorePeeling4(array, array[1], 1));
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_I, "1"})
+    private void testStorePeeling5(boolean b, A a, int v) {
+        for (int i = 1; i < 100; i *= 2) {
+            // This test triggers peeling without StressLoopPeeling
+            if (b) {
+                break;
+            }
+            a.v = v;
+        }
+    }
+
+    @Run(test = "testStorePeeling5")
+    private void runStorePeeling5() {
+        A a = new A();
+        testStorePeeling5(true, a, 1);
+        Asserts.assertEQ(0, a.v);
+        testStorePeeling5(false, a, 1);
+        Asserts.assertEQ(1, a.v);
     }
 
     @Test
@@ -201,5 +224,26 @@ public class TestRemoveStoresAfterPeeling {
         a1.v = 0;
         testStoreNotPeeled2(a1, a1, 1, 1);
         Asserts.assertEQ(1, a1.v);
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_I, "2"}, phase = CompilePhase.AFTER_PRE_MAIN_POST)
+    private int testPreMainPost(int[] array1, int[] array2, int v) {
+        int sum = 0;
+        for (int i = 0; i < array1.length; i++) {
+            // Iteration split also removes the store from the main-loop, it does not elide the
+            // store in the post-loop, though.
+            sum += array1[i];
+            array2[1] = v;
+        }
+        return sum;
+    }
+
+    @Run(test = "testPreMainPost")
+    public void runPreMainPost() {
+        int[] array1 = new int[100];
+        int[] array2 = new int[100];
+        Asserts.assertEQ(0, testPreMainPost(array1, array2, 1));
+        Asserts.assertEQ(1, testPreMainPost(array1, array1, 1));
     }
 }
