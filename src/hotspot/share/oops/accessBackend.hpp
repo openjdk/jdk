@@ -30,8 +30,8 @@
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/accessDecorators.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/valueKlass.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -1136,9 +1136,9 @@ namespace AccessInternal {
   inline void verify_types(){
     // If this fails to compile, then you have sent in something that is
     // not recognized as a valid primitive type to a primitive Access function.
-    STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
-                   (std::is_pointer<T>::value || std::is_integral<T>::value) ||
-                    std::is_floating_point<T>::value)); // not allowed primitive type
+    static_assert(HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
+                  std::is_pointer<T>::value || std::is_integral<T>::value ||
+                  std::is_floating_point<T>::value); // not allowed primitive type
   }
 
   template <DecoratorSet decorators, typename P, typename T>
@@ -1256,9 +1256,9 @@ namespace AccessInternal {
   inline OopCopyResult arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
                                  arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                  size_t length) {
-    STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
-                   (std::is_same<T, void>::value || std::is_integral<T>::value) ||
-                    std::is_floating_point<T>::value)); // arraycopy allows type erased void elements
+    static_assert(HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
+                  std::is_same<T, void>::value || std::is_integral<T>::value ||
+                  std::is_floating_point<T>::value); // arraycopy allows type erased void elements
     using DecayedT = std::decay_t<T>;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IS_ARRAY | IN_HEAP>::value;
     return arraycopy_reduce_types<expanded_decorators>(src_obj, src_offset_in_bytes, const_cast<DecayedT*>(src_raw),

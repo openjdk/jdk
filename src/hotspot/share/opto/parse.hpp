@@ -501,7 +501,7 @@ class Parse : public GraphKit {
   Node* prepare_array_addressing(BasicType type, int vals, const Type*& elemtype);
   Node* get_ptr_to_array_element(Node* array, Node* idx, BasicType elembt, const TypeInt* sizetype, Node* control);
   bool needs_range_check(const TypeInt* size_type, const Node* index) const;
-  Node* create_speculative_inline_type_array_checks(Node* array, const TypeAryPtr* array_type, const Type*& element_type);
+  Node* create_speculative_value_type_array_checks(Node* array, const TypeAryPtr* array_type, const Type*& element_type);
   Node* cast_to_speculative_array_type(Node* array, const TypeAryPtr*& array_type, const Type*& element_type);
   Node* cast_to_profiled_array_type(Node* const array);
   Node* speculate_non_null_free_array(Node* array, const TypeAryPtr*& array_type);
@@ -556,7 +556,7 @@ class Parse : public GraphKit {
   void do_get_xxx(Node* obj, ciField* field);
   void do_put_xxx(Node* obj, ciField* field, bool is_field);
 
-  ciType* improve_abstract_inline_type_klass(ciType* field_klass);
+  ciType* improve_abstract_value_type_klass(ciType* field_klass);
 
   // implementation of object creation bytecodes
   void do_new();

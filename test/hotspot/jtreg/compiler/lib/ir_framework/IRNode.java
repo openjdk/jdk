@@ -533,6 +533,11 @@ public class IRNode {
         callOfNodes(irNodePlaceholder, "CallLeafNoFP", calleeRegex);
     }
 
+    public static final String VECTORAPI_INSERT_OP = PREFIX + "VECTORAPI_INSERT_OP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTORAPI_INSERT_OP, "CallStaticJava(?=.*VectorSupport::insert instptr:)");
+    }
+
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
     static {
         beforeMatchingNameRegex(CAST_II, "CastII");
@@ -565,13 +570,13 @@ public class IRNode {
 
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*:Constant|.*(?i:mov|mv|or).*aryklassptr:\\[.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*:Constant|.*(?i:mov|mv|or|load).*aryklassptr:\\[.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY, regex);
     }
 
     public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant|.*(?i:mov|mv|or).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant|.*(?i:mov|mv|or|load).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY_OF, regex);
     }
 
@@ -982,9 +987,9 @@ public class IRNode {
         beforeMatchingNameRegex(IF, "If\\b");
     }
 
-    public static final String INLINE_TYPE = PREFIX + "INLINE_TYPE" + POSTFIX;
+    public static final String VALUE_TYPE = PREFIX + "VALUE_TYPE" + POSTFIX;
     static {
-        beforeMatchingNameRegex(INLINE_TYPE, "InlineType");
+        beforeMatchingNameRegex(VALUE_TYPE, "ValueType");
     }
 
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
@@ -2487,6 +2492,36 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
     }
 
+    public static final String VECTOR_SLICE_B = VECTOR_PREFIX + "VECTOR_SLICE_B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_B, "VectorSlice", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_SLICE_S = VECTOR_PREFIX + "VECTOR_SLICE_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_S, "VectorSlice", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_SLICE_I = VECTOR_PREFIX + "VECTOR_SLICE_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_I, "VectorSlice", TYPE_INT);
+    }
+
+    public static final String VECTOR_SLICE_F = VECTOR_PREFIX + "VECTOR_SLICE_F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_F, "VectorSlice", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_SLICE_L = VECTOR_PREFIX + "VECTOR_SLICE_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_L, "VectorSlice", TYPE_LONG);
+    }
+
+    public static final String VECTOR_SLICE_D = VECTOR_PREFIX + "VECTOR_SLICE_D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_D, "VectorSlice", TYPE_DOUBLE);
+    }
+
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
     static {
         vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);
@@ -3223,6 +3258,16 @@ public class IRNode {
         vectorNode(EXPAND_VD, "ExpandV", TYPE_DOUBLE);
     }
 
+    public static final String ADD_I128T = PREFIX + "ADD_I128T" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_I128T, "AddI128T");
+    }
+
+    public static final String SUB_I128T = PREFIX + "SUB_I128T" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SUB_I128T, "SubI128T");
+    }
+
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
     static {
         String regex = START + "zLoadP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
@@ -3332,6 +3377,26 @@ public class IRNode {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_16_16B_AVX, "vector_slice_const_origin_16_16B_reg_avx");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_MULTIPLE4_GT16B_EVEX, "vector_slice_const_origin_multiple4_GT16B_reg_evex");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_GT16_AND_LT48_GT16B_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_GT16_AND_LT48_GT16B_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_GT16_AND_LT48_GT16B_EVEX, "vector_slice_const_origin_GT16_AND_LT48_GT16B_reg_evex");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_LT16_OR_GT48_GT16B_EVEX, "vector_slice_const_origin_LT16_OR_GT48_GT16B_reg_evex");
+    }
+
     public static final String X86_CMOVEL_IMM01UCFE = PREFIX + "X86_CMOVEL_IMM01UCFE" + POSTFIX;
     static {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCFE, "cmovL_imm_01UCFE");
@@ -3411,7 +3476,7 @@ public class IRNode {
     }
 
     /*
-     * Inline type nodes.
+     * Value type nodes.
      */
 
     public static final String CALL_UNSAFE = PREFIX + "CALL_UNSAFE" + POSTFIX;
@@ -3419,19 +3484,19 @@ public class IRNode {
         staticCallOfMethodNodes(CALL_UNSAFE, "# Static  jdk.internal.misc.Unsafe::");
     }
 
-    public static final String STORE_INLINE_FIELDS = PREFIX + "STORE_INLINE_FIELDS" + POSTFIX;
+    public static final String STORE_VALUE_FIELDS = PREFIX + "STORE_VALUE_FIELDS" + POSTFIX;
     static {
-        staticCallOfMethodNodes(STORE_INLINE_FIELDS, "store_inline_type_fields");
+        staticCallOfMethodNodes(STORE_VALUE_FIELDS, "store_value_type_fields");
     }
 
-    public static final String LOAD_UNKNOWN_INLINE = PREFIX + "LOAD_UNKNOWN_INLINE" + POSTFIX;
+    public static final String LOAD_UNKNOWN_VALUE = PREFIX + "LOAD_UNKNOWN_VALUE" + POSTFIX;
     static {
-        staticCallOfMethodNodes(LOAD_UNKNOWN_INLINE, "load_unknown_inline_blob \\(C2 runtime\\)");
+        staticCallOfMethodNodes(LOAD_UNKNOWN_VALUE, "load_unknown_value_blob \\(C2 runtime\\)");
     }
 
-    public static final String STORE_UNKNOWN_INLINE = PREFIX + "STORE_UNKNOWN_INLINE" + POSTFIX;
+    public static final String STORE_UNKNOWN_VALUE = PREFIX + "STORE_UNKNOWN_VALUE" + POSTFIX;
     static {
-        staticCallOfMethodNodes(STORE_UNKNOWN_INLINE, "store_unknown_inline_blob \\(C2 runtime\\)");
+        staticCallOfMethodNodes(STORE_UNKNOWN_VALUE, "store_unknown_value_blob \\(C2 runtime\\)");
     }
 
     public static final String INLINE_ARRAY_NULL_GUARD = PREFIX + "INLINE_ARRAY_NULL_GUARD" + POSTFIX;
@@ -3449,8 +3514,8 @@ public class IRNode {
         callLeafNoFpOfMethodNodes(JLONG_ARRAYCOPY, "jlong_disjoint_arraycopy");
     }
 
-    // The following nodes are specific to tests in in compiler/valhalla/inlinetypes using one of the MyValue classes.
-    private static final String MYVALUE_KLASS = "compiler/valhalla/inlinetypes/.*MyValue\\w*";
+    // The following nodes are specific to tests in in compiler/valhalla/valuetypes using one of the MyValue classes.
+    private static final String MYVALUE_KLASS = "compiler/valhalla/valuetypes/.*MyValue\\w*";
     public static final String ALLOC_OF_MYVALUE_KLASS = PREFIX + "ALLOC_OF_MYVALUE_KLASS" + POSTFIX;
     static {
         allocateOfNodes(ALLOC_OF_MYVALUE_KLASS, MYVALUE_KLASS);
@@ -3461,7 +3526,7 @@ public class IRNode {
         allocateArrayOfNodes(ALLOC_ARRAY_OF_MYVALUE_KLASS, MYVALUE_KLASS);
     }
 
-    private static final String ANY_KLASS = "compiler/valhalla/inlinetypes/[\\w/]*";
+    private static final String ANY_KLASS = "compiler/valhalla/valuetypes/[\\w/]*";
 
     // TODO: Revisit with JDK-8380875
     public static final String LOAD_OF_ANY_KLASS = PREFIX + "LOAD_OF_ANY_KLASS" + POSTFIX;

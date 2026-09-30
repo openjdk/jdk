@@ -65,7 +65,7 @@ void MemTracker::initialize() {
 
   // Memory tag is encoded into tracking header as a byte field,
   // make sure that we don't overflow it.
-  STATIC_ASSERT(mt_number_of_tags <= max_jubyte);
+  static_assert(mt_number_of_tags <= max_jubyte);
 
   if (level > NMT_off) {
     _baseline.initialize();

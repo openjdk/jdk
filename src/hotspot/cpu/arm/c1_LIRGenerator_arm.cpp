@@ -93,7 +93,7 @@ LIR_Opr LIRGenerator::atomicLockOpr() {
   return LIR_OprFact::illegalOpr;
 }
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:     opr = FrameMap::Int_result_opr;    break;
@@ -109,7 +109,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
 }
 
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   return new_register(T_INT);
 }
 
@@ -944,7 +944,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   LIR_Opr tmp2 = new_register(objectType);
   LIR_Opr tmp3 = FrameMap::LR_oop_opr;
 
-  new_instance(reg, x->klass(), x->is_unresolved(), /* allow_inline */ false, tmp1, tmp2, tmp3,
+  new_instance(reg, x->klass(), x->is_unresolved(), /* allow_value */ false, tmp1, tmp2, tmp3,
                LIR_OprFact::illegalOpr, klass_reg, info);
 
   LIR_Opr result = rlock_result(x);

@@ -27,7 +27,6 @@
 runtime/jni/critical/SuspendInCritical.java 8384369 generic-all
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
-serviceability/sa/TestHeapDumpForInvokeDynamic.java 8390689 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
 
 vmTestbase/nsk/jvmti/unit/functions/Dispose/JvmtiTest/TestDescription.java 8387429 generic-all
@@ -85,6 +84,12 @@ vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemor
 # Fails because resume of a virtual thread is not enough to allow the virtual thread
 # to make progress when all other threads are currently suspended.
 vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
+
+####
+## NSK JDWP tests failing with wrapper
+
+# JVMTI bug when popping to a frozen frame
+vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes001/TestDescription.java 8391440 generic-all 
 
 #############################################################################
 

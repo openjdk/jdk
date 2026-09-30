@@ -22,16 +22,15 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
-#define SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
 
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 
 #include "gc/g1/g1CardSet.inline.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1FromCardCache.inline.hpp"
-#include "gc/g1/g1HeapRegion.inline.hpp"
-#include "utilities/bitMap.inline.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "runtime/safepoint.hpp"
 
 void G1HeapRegionRemSet::set_state_untracked() {
   guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),
@@ -122,12 +121,12 @@ uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
 }
 
 void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, G1FromCardCache& from_card_cache) {
-  precond(has_cset_group());
+  precond(has_card_set_group());
   precond(_state != Untracked);
 
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();
 
-  if (from_card_cache.contains_or_add(from_card, cset_group()->group_id())) {
+  if (from_card_cache.contains_or_add(from_card, card_set_group()->group_id())) {
     // We can't check whether the card is in the remembered set - the card container
     // may be coarsened just now.
     return;
@@ -144,4 +143,4 @@ void G1HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
   card_set()->print_info(st, to_card(from));
 }
 
-#endif // SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP

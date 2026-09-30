@@ -5823,7 +5823,7 @@ instruct extractUB_ireg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp) %{
       assert(UseSVE > 0, "must be sve");
       __ sve_tbl($tmp$$FloatRegister, __ B, $src$$FloatRegister, $tmp$$FloatRegister);
     }
-    __ smov($dst$$Register, $tmp$$FloatRegister, __ B, 0);
+    __ umov($dst$$Register, $tmp$$FloatRegister, __ B, 0);
   %}
   ins_pipe(pipe_slow);
 %}

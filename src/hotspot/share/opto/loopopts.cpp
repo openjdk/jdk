@@ -31,7 +31,6 @@
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/divnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
@@ -41,6 +40,7 @@
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
+#include "opto/valuetypenode.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
@@ -64,9 +64,9 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  // Inline types should not be split through Phis because they cannot be merged
+  // Value types should not be split through Phis because they cannot be merged
   // through Phi nodes but each value input needs to be merged individually.
-  if (n->is_InlineType()) {
+  if (n->is_ValueType()) {
     return nullptr;
   }
 
@@ -1124,9 +1124,9 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 }
 
 // We can't use immutable memory for the flat array check because we are loading the mark word which is
-// mutable. Although the bits we are interested in are immutable (we check for markWord::unlocked_value),
-// we need to use raw memory to not break anti dependency analysis. Below code will attempt to still move
-// flat array checks out of loops, mainly to enable loop unswitching.
+// mutable. Although the bits we are interested in are immutable, we need to use raw memory to not break
+// anti dependency analysis. The code below will attempt to still move flat array checks out of loops,
+// mainly to enable loop unswitching.
 void PhaseIdealLoop::move_flat_array_check_out_of_loop(Node* n) {
   // Skip checks for more than one array
   if (n->req() > 3) {
@@ -1731,9 +1731,9 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
   try_move_store_after_loop(n);
 
-  // Remove multiple allocations of the same inline type
-  if (n->is_InlineType()) {
-    n->as_InlineType()->remove_redundant_allocations(this);
+  // Remove multiple allocations of the same value type
+  if (n->is_ValueType()) {
+    n->as_ValueType()->remove_redundant_allocations(this);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,15 +318,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
             ret = getValueInRegistry(hSubKey, STD_NAME, &valueType,
                                      szValue, &size);
             if (ret != ERROR_SUCCESS) {
-                /*
-                 * NT 4.0 SP3 fails here since it doesn't have the "Std"
-                 * entry in the Time Zones registry.
-                 */
                 RegCloseKey(hSubKey);
-                ret = RegOpenKeyExW(hKey, stdNamePtr, 0, KEY_READ, (PHKEY)&hSubKey);
-                if (ret != ERROR_SUCCESS) {
-                    goto err;
-                }
                 break;
             }
 
@@ -363,6 +355,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
                  * found matched record, terminate search
                  */
                 strcpy(winZoneName, subKeyName);
+                RegCloseKey(hSubKey);
                 break;
             }
         out:
