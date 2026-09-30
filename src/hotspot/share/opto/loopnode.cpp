@@ -650,7 +650,6 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* he
     assert(StressDuplicateBackedge, "");
     return nullptr;
   }
-  IfNode* exit_test = back_control->in(0)->as_If();
   SafePointNode* safepoint = nullptr;
   Node* c = back_control;
   while (c != head && c->Opcode() != Op_SafePoint) {
