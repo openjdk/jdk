@@ -51,6 +51,8 @@ nmethod* Candidates::nmethod_from_id(uint64_t nm_id) {
 }
 
 bool ThreadSampler::sample_all_java_threads() {
+  assert(Thread::current()->is_Java_thread(), "ThreadSampler should only be called from a JavaThread");
+
   // Collect samples for each JavaThread
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     if (jt->is_hidden_from_external_view() ||
@@ -82,6 +84,9 @@ bool ThreadSampler::sample_all_java_threads() {
     }
 
     nmethod* nm = cb->as_nmethod();
+
+    // We can dereference the nmethod pointer here because we are sampling from a JavaThread and
+    // the code blob cannot be purged while the thread does not reach a safepoint.
     int compile_id = nm->compile_id();
     CodeBlobType code_blob_type = CodeCache::get_code_blob_type(nm);
 
