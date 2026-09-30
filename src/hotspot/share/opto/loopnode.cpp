@@ -4719,32 +4719,42 @@ void PhaseIdealLoop::eliminate_redundant_iv_check(IdealLoopTree* loop) {
   if (!cl->is_valid_counted_loop(T_INT)) {
     return;
   }
-  Node* phi = cl->phi();
+  Node* iv = cl->phi();
   Node* init = cl->init_trip();
   Node* limit = cl->limit();
-  BoolTest::mask loop_test = cl->stride_con() > 0 ? BoolTest::lt : BoolTest::gt;
+  BoolTest::mask loop_test = cl->loopexit()->test_trip();
 
-  // Only fold when a test above the loop proves the condition for the first iteration
-  bool guarded = false;
-  Node* ctrl = cl->skip_strip_mined()->in(LoopNode::EntryControl);
-  while (!guarded && ctrl != nullptr && (ctrl->is_IfProj() || ctrl->is_If())) {
-    Node* bol = ctrl->is_IfProj() ? ctrl->in(0)->in(1) : nullptr;
-    if (bol != nullptr && bol->is_Bool() && bol->in(1)->Opcode() == Op_CmpI) {
-      Node* cmp = bol->in(1);
-      BoolTest test = ctrl->is_IfFalse() ? BoolTest(bol->as_Bool()->_test.negate()) : bol->as_Bool()->_test;
-      guarded = (cmp->in(1) == init && cmp->in(2) == limit && test._test == loop_test) ||
-                (cmp->in(1) == limit && cmp->in(2) == init && test.commute() == loop_test);
-    }
-    ctrl = idom(ctrl);
+  // Only fold when the zero trip guard proves the condition for the first iteration:
+  //   iv = init;
+  //   if (init < limit) { // zero trip guard installed by C2
+  //       <predicates>
+  //       do {
+  //           if (iv >= limit) trap(); // we are going to fold this check
+  //           iv++;
+  //       } while (iv < limit);
+  //   }
+  Predicates predicates(cl->skip_strip_mined()->in(LoopNode::EntryControl));
+  Node* ctrl = predicates.entry();
+  if (!ctrl->is_IfProj()) {
+    return;
   }
-  if (!guarded) {
+  Node* guard_bol = ctrl->in(0)->in(1);
+  if (!guard_bol->is_Bool() || guard_bol->in(1)->Opcode() != Op_CmpI) {
+    return;
+  }
+  Node* guard_cmp = guard_bol->in(1);
+  BoolTest test = ctrl->is_IfFalse() ? BoolTest(guard_bol->as_Bool()->_test.negate()) : guard_bol->as_Bool()->_test;
+  bool cmp_init_limit = guard_cmp->in(1) == init && guard_cmp->in(2) == limit && test._test == loop_test;
+  bool cmp_limit_init = guard_cmp->in(2) == init && guard_cmp->in(1) == limit && test.commute() == loop_test;
+  if (!cmp_init_limit && !cmp_limit_init) {
     return;
   }
 
+  ResourceMark rm;
   // Collect trivial "iv < limit" and "iv >= limit" checks; rewriting them here would break the walk.
   Node_List redundant;
-  for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
-    Node* cmp = phi->fast_out(i);
+  for (DUIterator_Fast imax, i = iv->fast_outs(imax); i < imax; i++) {
+    Node* cmp = iv->fast_out(i);
     if (cmp->Opcode() != Op_CmpI || cmp->in(2) != limit) {
       continue;
     }
@@ -4771,7 +4781,7 @@ void PhaseIdealLoop::eliminate_redundant_iv_check(IdealLoopTree* loop) {
     }
 #endif
     bool always_taken = iff->in(1)->as_Bool()->_test._test == loop_test;
-    _igvn.replace_input_of(iff, 1, _igvn.intcon(always_taken ? 1 : 0));
+    _igvn.replace_input_of(iff, 1, intcon(always_taken ? 1 : 0));
     C->set_major_progress();
   }
 }
