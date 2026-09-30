@@ -195,7 +195,7 @@ public class TestRemoveStoresAfterPeeling {
     }
 
     @Test
-    private void testStoreNotPeeled1(int limit, A a, int v) {
+    private void testStoreNotElided1(int limit, A a, int v) {
         for (int i = 1; i < 100; i *= 2) {
             // Cannot elide the store after peeling because it does not dominate the back edge
             if (i >= limit) {
@@ -204,21 +204,21 @@ public class TestRemoveStoresAfterPeeling {
         }
     }
 
-    @Run(test = "testStoreNotPeeled1")
-    public void runStoreNotPeeled1() {
+    @Run(test = "testStoreNotElided1")
+    public void runStoreNotElided1() {
         A a = new A();
-        testStoreNotPeeled1(-1, a, 1);
+        testStoreNotElided1(-1, a, 1);
         Asserts.assertEQ(1, a.v);
         a.v = 0;
-        testStoreNotPeeled1(50, a, 1);
+        testStoreNotElided1(50, a, 1);
         Asserts.assertEQ(1, a.v);
         a.v = 0;
-        testStoreNotPeeled1(200, a, 1);
+        testStoreNotElided1(200, a, 1);
         Asserts.assertEQ(0, a.v);
     }
 
     @Test
-    private void testStoreNotPeeled2(A a1, A a2, int v1, int v2) {
+    private void testStoreNotElided2(A a1, A a2, int v1, int v2) {
         for (int i = 1; i < 100; i *= 2) {
             // Cannot elide the store after peeling because there is an interfering store
             a2.v = Float.floatToRawIntBits(i * v2);
@@ -226,15 +226,15 @@ public class TestRemoveStoresAfterPeeling {
         }
     }
 
-    @Run(test = "testStoreNotPeeled2")
-    public void runStoreNotPeel2() {
+    @Run(test = "testStoreNotElided2")
+    public void runStoreNotElided2() {
         A a1 = new A();
         A a2 = new A();
-        testStoreNotPeeled2(a1, a2, 1, 1);
+        testStoreNotElided2(a1, a2, 1, 1);
         Asserts.assertEQ(1, a1.v);
         Asserts.assertEQ(Float.floatToRawIntBits(64), a2.v);
         a1.v = 0;
-        testStoreNotPeeled2(a1, a1, 1, 1);
+        testStoreNotElided2(a1, a1, 1, 1);
         Asserts.assertEQ(1, a1.v);
     }
 
@@ -243,7 +243,7 @@ public class TestRemoveStoresAfterPeeling {
     private int testPreMainPost(int[] array1, int[] array2, int v) {
         int sum = 0;
         for (int i = 0; i < array1.length; i++) {
-            // Iteration split also removes the store from the main-loop, it does not elide the
+            // Iteration split also removes the store from the main-loop. It does not elide the
             // store in the post-loop, though.
             sum += array1[i];
             array2[1] = v;
