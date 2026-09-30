@@ -2788,7 +2788,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
   uintptr_t counter_contents = md_offset_opr->is_constant()
     ? *(uintptr_t*)(md_base_address + md_offset_opr->as_constant_ptr()->as_jint())
-    : 0;
+    : 1;
 
   // Insert a runtime check iff the counter is zero at the time we
   // generate this code.
@@ -2808,10 +2808,10 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     int capture_ratio = do_decimate ? ProfileCaptureRatio : 1;
     assert(md_opr->is_valid(), "must be");
 
-    {
+    if (!do_decimate || md_offset_opr->is_constant()) {
       ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
       counter_address = ce->adjust_mdo_address(md_reg, md_opr, md_offset_opr,
-                                           dest_opr->type());
+                                               dest_opr->type());
       ce->mem2reg(counter_address, dest_opr,
                   dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
     }
@@ -2882,6 +2882,19 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
       __ b(*counter_stub->continuation());
     }
   };
+
+  if (!md_offset_opr->is_constant() && do_decimate) {
+    // Make sure the counter in memory is nonzero
+    const2reg(md_opr, md_reg, lir_patch_none, nullptr);
+    mem2reg(counter_address_opr, dest_opr,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+    Label nope;
+    __ cbnz(dest, nope);
+    __ mov(dest, step->as_constant_ptr()->as_jint_bits());
+    reg2mem(dest_opr, counter_address_opr,
+            dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+    __ bind(nope);
+  }
 
   if (do_decimate) {
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
