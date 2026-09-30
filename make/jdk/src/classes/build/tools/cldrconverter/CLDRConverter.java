@@ -863,8 +863,9 @@ public class CLDRConverter {
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         names.putAll(exCities);
 
-        // Explicit metazone offsets
-        if (id.equals("root")) {
+        // Explicit metazone offsets. For example,
+        // "metazone.dstoffsets" -> "America/Vancouver=-07;Europe/Dublin=+01"
+        if (id.equals("root") && !explicitDstOffsets.isEmpty()) {
             names.put(METAZONE_DSTOFFSETS,
                 explicitDstOffsets.entrySet().stream()
                     .sorted(Map.Entry.comparingByKey())
