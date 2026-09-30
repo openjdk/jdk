@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,23 @@
 
 /*
  * @test NotifBufferSizePropertyNameTest
- * @bug 6174229 8345045
+ * @bug 6174229 8345045 8392788
  * @summary Verify the property name specifying server notification buffer size.
  * @author Shanliang JIANG
  *
  * @run clean NotifBufferSizePropertyNameTest
  * @run build NotifBufferSizePropertyNameTest
  * @run main NotifBufferSizePropertyNameTest
+ */
+
+/*
+ * @test NotifBufferSizePropertyNameTest
+ * @bug 6174229 8345045 8392788
+ * @summary Verify the property name specifying server notification buffer size.
+ *
+ * @run clean NotifBufferSizePropertyNameTest
+ * @run build NotifBufferSizePropertyNameTest
+ * @run main/othervm -Djmx.remote.x.notification.buffer.size=2147483647 NotifBufferSizePropertyNameTest
  */
 
 import java.io.IOException;
@@ -57,6 +67,32 @@ public class NotifBufferSizePropertyNameTest {
         oname = new ObjectName ("Default:name=NotificationEmitter");
         url = new JMXServiceURL("rmi", null, 0);
         Map env = new HashMap(2);
+
+        // Test too-large buffer size with either System Prop or env:
+        boolean seenIAE = false;
+        try {
+            if (System.getProperty("jmx.remote.x.notification.buffer.size") != null) {
+                System.out.println("Test huge buffer size (System Property)");
+                test(null);
+            } else {
+                System.out.println("Test huge buffer size (env)");
+                env.put("jmx.remote.x.notification.buffer.size", String.valueOf(Integer.MAX_VALUE));
+                test(env);
+            }
+        } catch (java.lang.IllegalArgumentException iae) {
+            System.out.println("Expected Exception seen: " + iae);
+            seenIAE = true;
+        }
+
+        // NegativeArraySizeException would have caused test failure if buffer size limit checking is not correct,
+        // but also check we saw the expected Exception:
+        if (!seenIAE) {
+            throw new RuntimeException("No Exception when runnng with huge buffer size: failed.");
+        }
+        // If System Property is set, we are only testing the System Property, so return.
+        if (System.getProperty("jmx.remote.x.notification.buffer.size") != null) {
+            return;
+        }
 
         System.out.println("Test the property name.");
         env.put("jmx.remote.x.notification.buffer.size", String.valueOf(bufferSize));

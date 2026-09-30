@@ -1245,7 +1245,7 @@ inline jlong java_negate(jlong v) { return java_subtract((jlong)0, v); }
 #define JAVA_INTEGER_SHIFT_OP(OP, NAME, TYPE, XTYPE)    \
 inline TYPE NAME (TYPE lhs, jint rhs) {                 \
   const uint rhs_mask = (sizeof(TYPE) * 8) - 1;         \
-  STATIC_ASSERT(rhs_mask == 31 || rhs_mask == 63);      \
+  static_assert(rhs_mask == 31 || rhs_mask == 63);      \
   XTYPE xres = static_cast<XTYPE>(lhs);                 \
   xres OP ## = (rhs & rhs_mask);                        \
   return reinterpret_cast<TYPE&>(xres);                 \
