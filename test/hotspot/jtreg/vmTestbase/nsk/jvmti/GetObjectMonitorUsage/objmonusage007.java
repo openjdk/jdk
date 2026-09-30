@@ -31,7 +31,7 @@
  * DESCRIPTION
  *     The test exercises JVMTI function GetObjectMonitorUsage.
  * COMMENTS
- *     This test checks that GetObjectMonitorUsage works with inline types and always
+ *     This test checks that GetObjectMonitorUsage works with value types and always
  *     returns information consistent with a never locked monitor
  *
  * @enablePreview

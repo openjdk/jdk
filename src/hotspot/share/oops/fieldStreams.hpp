@@ -118,8 +118,8 @@ class FieldStreamBase : public StackObj {
     return field()->offset();
   }
 
-  bool is_null_free_inline_type() {
-    return field()->field_flags().is_null_free_inline_type();
+  bool is_null_free_value_type() {
+    return field()->field_flags().is_null_free_value_type();
   }
 
   bool is_flat() const {
@@ -271,8 +271,8 @@ public:
     return current_stream().is_flat();
   }
 
-  bool is_null_free_inline_type() {
-    return current_stream().is_null_free_inline_type();
+  bool is_null_free_value_type() {
+    return current_stream().is_null_free_value_type();
   }
 
   int null_marker_offset() {

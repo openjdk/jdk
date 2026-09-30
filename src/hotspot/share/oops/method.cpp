@@ -53,7 +53,6 @@
 #include "nmt/memTracker.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/constMethod.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -63,6 +62,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/trainingData.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
@@ -168,20 +168,20 @@ address Method::get_c2i_entry() {
   return adapter()->get_c2i_entry();
 }
 
-address Method::get_c2i_inline_entry() {
+address Method::get_c2i_value_entry() {
   if (is_abstract()) {
     return SharedRuntime::get_handle_wrong_method_abstract_stub();
   }
   assert(adapter() != nullptr, "must have");
-  return adapter()->get_c2i_inline_entry();
+  return adapter()->get_c2i_value_entry();
 }
 
-address Method::get_c2i_inline_ro_entry() {
+address Method::get_c2i_value_ro_entry() {
   if (is_abstract()) {
     return SharedRuntime::get_handle_wrong_method_abstract_stub();
   }
   assert(adapter() != nullptr, "must have");
-  return adapter()->get_c2i_inline_ro_entry();
+  return adapter()->get_c2i_value_ro_entry();
 }
 
 address Method::get_c2i_unverified_entry() {
@@ -192,9 +192,9 @@ address Method::get_c2i_unverified_entry() {
   return adapter()->get_c2i_unverified_entry();
 }
 
-address Method::get_c2i_unverified_inline_entry() {
+address Method::get_c2i_unverified_value_entry() {
   assert(adapter() != nullptr, "must have");
-  return adapter()->get_c2i_unverified_inline_entry();
+  return adapter()->get_c2i_unverified_value_entry();
 }
 
 address Method::get_c2i_no_clinit_check_entry() {
@@ -474,8 +474,8 @@ void Method::restore_unshareable_info(TRAPS) {
   if (_adapter != nullptr) {
     assert(_adapter->is_linked(), "must be");
     _from_compiled_entry = _adapter->get_c2i_entry();
-    _from_compiled_inline_entry = _adapter->get_c2i_inline_entry();
-    _from_compiled_inline_ro_entry = _adapter->get_c2i_inline_ro_entry();
+    _from_compiled_value_entry = _adapter->get_c2i_value_entry();
+    _from_compiled_value_ro_entry = _adapter->get_c2i_value_ro_entry();
   }
   assert(!queued_for_compilation(), "method's queued_for_compilation flag should not be set");
 }
@@ -765,18 +765,18 @@ int Method::extra_stack_words() {
   return extra_stack_entries() * Interpreter::stackElementSize;
 }
 
-// InlineKlass the method is declared to return. This must not
+// ValueKlass the method is declared to return. This must not
 // safepoint as it is called with references live on the stack at
 // locations the GC is unaware of.
-InlineKlass* Method::returns_inline_type() const {
-  assert(InlineTypeReturnedAsFields, "Inline types should never be returned as fields");
+ValueKlass* Method::returns_value_type() const {
+  assert(ValueTypeReturnedAsFields, "Value types should never be returned as fields");
   if (is_native()) {
     return nullptr;
   }
   NoSafepointVerifier nsv;
   SignatureStream ss(signature());
   ss.skip_to_return_type();
-  return ss.as_inline_klass(method_holder());
+  return ss.as_value_klass(method_holder());
 }
 
 bool Method::compute_has_loops_flag() {
@@ -927,9 +927,9 @@ bool Method::is_getter() const {
     default:
       return false;
   }
-  if (InlineTypeReturnedAsFields && returns_inline_type() != nullptr) {
+  if (ValueTypeReturnedAsFields && returns_value_type() != nullptr) {
     // Don't treat this as (trivial) getter method because the
-    // inline type could be returned in a scalarized form.
+    // value type could be returned in a scalarized form.
     return false;
   }
   return true;
@@ -955,7 +955,7 @@ bool Method::is_setter() const {
   if (java_code_at(5) != Bytecodes::_return)   return false;
   if (has_scalarized_args()) {
     // Don't treat this as (trivial) setter method because the
-    // inline type argument should be passed in a scalarized form.
+    // value type argument should be passed in a scalarized form.
     return false;
   }
   return true;
@@ -1232,12 +1232,12 @@ void Method::clear_code() {
   // Only should happen at allocate time.
   if (adapter() == nullptr) {
     _from_compiled_entry    = nullptr;
-    _from_compiled_inline_entry = nullptr;
-    _from_compiled_inline_ro_entry = nullptr;
+    _from_compiled_value_entry = nullptr;
+    _from_compiled_value_ro_entry = nullptr;
   } else {
     _from_compiled_entry    = adapter()->get_c2i_entry();
-    _from_compiled_inline_entry = adapter()->get_c2i_inline_entry();
-    _from_compiled_inline_ro_entry = adapter()->get_c2i_inline_ro_entry();
+    _from_compiled_value_entry = adapter()->get_c2i_value_entry();
+    _from_compiled_value_ro_entry = adapter()->get_c2i_value_ro_entry();
   }
   OrderAccess::storestore();
   _from_interpreted_entry = _i2i_entry;
@@ -1271,8 +1271,8 @@ void Method::unlink_method() {
   }
   _i2i_entry = nullptr;
   _from_compiled_entry = nullptr;
-  _from_compiled_inline_entry = nullptr;
-  _from_compiled_inline_ro_entry = nullptr;
+  _from_compiled_value_entry = nullptr;
+  _from_compiled_value_ro_entry = nullptr;
   _from_interpreted_entry = nullptr;
 
   if (is_native()) {
@@ -1352,12 +1352,12 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // problem we'll make these lazily later.
   // With the scalarized calling convention, create adapters for abstract
   // methods as well because the adapter is used to propagate the signature.
-  if (_adapter == nullptr && (!h_method->is_abstract() || InlineTypePassFieldsAsArgs)) {
+  if (_adapter == nullptr && (!h_method->is_abstract() || ValueTypePassFieldsAsArgs)) {
     make_adapters(h_method, CHECK);
   }
   h_method->_from_compiled_entry = h_method->get_c2i_entry();
-  h_method->_from_compiled_inline_entry = h_method->get_c2i_inline_entry();
-  h_method->_from_compiled_inline_ro_entry = h_method->get_c2i_inline_ro_entry();
+  h_method->_from_compiled_value_entry = h_method->get_c2i_value_entry();
+  h_method->_from_compiled_value_ro_entry = h_method->get_c2i_value_ro_entry();
 
   // ONLY USE the h_method now as make_adapter may have blocked
 
@@ -1377,7 +1377,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 void Method::make_adapters(const methodHandle& mh, TRAPS) {
-  assert(!mh->is_abstract() || InlineTypePassFieldsAsArgs, "abstract methods do not have adapters");
+  assert(!mh->is_abstract() || ValueTypePassFieldsAsArgs, "abstract methods do not have adapters");
   PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
 
   // Adapters for compiled code are made eagerly here.  They are fairly
@@ -1416,16 +1416,16 @@ address Method::verified_code_entry() {
   return _from_compiled_entry;
 }
 
-address Method::verified_inline_code_entry() {
+address Method::verified_value_code_entry() {
   DEBUG_ONLY(NoSafepointVerifier nsv;)
-  assert(_from_compiled_inline_entry != nullptr, "must be set");
-  return _from_compiled_inline_entry;
+  assert(_from_compiled_value_entry != nullptr, "must be set");
+  return _from_compiled_value_entry;
 }
 
-address Method::verified_inline_ro_code_entry() {
+address Method::verified_value_ro_code_entry() {
   DEBUG_ONLY(NoSafepointVerifier nsv;)
-  assert(_from_compiled_inline_ro_entry != nullptr, "must be set");
-  return _from_compiled_inline_ro_entry;
+  assert(_from_compiled_value_ro_entry != nullptr, "must be set");
+  return _from_compiled_value_ro_entry;
 }
 
 // Check that if an nmethod ref exists, it has a backlink to this or no backlink at all
@@ -1459,8 +1459,8 @@ void Method::set_code(const methodHandle& mh, nmethod *code) {
 
   OrderAccess::storestore();
   mh->_from_compiled_entry = code->verified_entry_point();
-  mh->_from_compiled_inline_entry = code->verified_inline_entry_point();
-  mh->_from_compiled_inline_ro_entry = code->verified_inline_ro_entry_point();
+  mh->_from_compiled_value_entry = code->verified_value_entry_point();
+  mh->_from_compiled_value_ro_entry = code->verified_value_ro_entry_point();
   OrderAccess::storestore();
 
   if (mh->is_continuation_native_intrinsic()) {
@@ -1653,8 +1653,8 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 void Method::restore_archived_method_handle_intrinsic(methodHandle m, TRAPS) {
   if (m->adapter() != nullptr) {
     m->set_from_compiled_entry(m->adapter()->get_c2i_entry());
-    m->set_from_compiled_inline_entry(m->adapter()->get_c2i_inline_entry());
-    m->set_from_compiled_inline_ro_entry(m->adapter()->get_c2i_inline_ro_entry());
+    m->set_from_compiled_value_entry(m->adapter()->get_c2i_value_entry());
+    m->set_from_compiled_value_ro_entry(m->adapter()->get_c2i_value_ro_entry());
   }
   m->link_method(m, CHECK);
 
@@ -2362,9 +2362,9 @@ void Method::print_on(outputStream* st) const {
     st->print_cr(PTR_FORMAT, p2i(a));
   else
     a->print_adapter_on(st);
-  st->print_cr(" - compiled entry           " PTR_FORMAT, p2i(from_compiled_entry()));
-  st->print_cr(" - compiled inline entry    " PTR_FORMAT, p2i(from_compiled_inline_entry()));
-  st->print_cr(" - compiled inline ro entry " PTR_FORMAT, p2i(from_compiled_inline_ro_entry()));
+  st->print_cr(" - compiled entry          " PTR_FORMAT, p2i(from_compiled_entry()));
+  st->print_cr(" - compiled value entry    " PTR_FORMAT, p2i(from_compiled_value_entry()));
+  st->print_cr(" - compiled value ro entry " PTR_FORMAT, p2i(from_compiled_value_ro_entry()));
   st->print_cr(" - code size:         %d",   code_size());
   if (code_size() != 0) {
     st->print_cr(" - code start:        " PTR_FORMAT, p2i(code_base()));

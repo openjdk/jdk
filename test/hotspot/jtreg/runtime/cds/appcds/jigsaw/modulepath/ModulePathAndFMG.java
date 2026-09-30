@@ -74,7 +74,7 @@ public class ModulePathAndFMG {
 
     private static String CLASS_FOUND_MESSAGE = "com.foos.Test found";
     private static String CLASS_NOT_FOUND_MESSAGE = "java.lang.ClassNotFoundException: com.foos.Test";
-    private static String FIND_EXCEPTION_MESSAGE = "java.lang.module.FindException: Module com.foos not found, required by com.bars";
+    private static String JMOD_NOT_SUPPORTED = "JMOD format not supported at execution time";
     private static String MODULE_NOT_RECOGNIZED = "Module format not recognized:.*modylibs.*com.bars.JAR";
     private static String FMG_ENABLED = "] full module graph: enabled";
     private static String FMG_DISABLED = "] full module graph: disabled";
@@ -84,6 +84,7 @@ public class ModulePathAndFMG {
     private static String TEST_FROM_JAR = "class,load.*com.foos.Test.*[.]jar";
     private static String TEST_FROM_CDS = "class,load.*com.foos.Test.*shared objects file";
     private static String MAP_FAILED  = "Unable to use shared archive";
+    private static String NON_JAR_FILES = "module path contains sub-directories or non-JAR files";
     private static String PATH_SEPARATOR = File.pathSeparator;
     private static String appClasses[] = {MAIN_CLASS, TEST_CLASS};
     private static String prefix[] = {"-Djava.class.path=", "-Xlog:cds,class+load,class+path=info"};
@@ -116,9 +117,6 @@ public class ModulePathAndFMG {
         dupDir = Files.createTempDirectory(USER_DIR, DUP_LIBS);
         dupJar = dupDir.resolve(DUP_MODULE + ".jar");
         Files.copy(testJar, dupJar, StandardCopyOption.REPLACE_EXISTING);
-
-        badJar = libsDir.resolve(MAIN_MODULE + ".JAR");
-        Files.copy(mainJar, badJar, StandardCopyOption.REPLACE_EXISTING);
     }
 
     public static void buildJmod() throws Exception {
@@ -136,6 +134,9 @@ public class ModulePathAndFMG {
     public static void main(String... args) throws Exception {
         runWithModulePath();
         runWithExplodedModule();
+
+        badJar = libsDir.resolve(MAIN_MODULE + ".JAR");
+        Files.copy(mainJar, badJar, StandardCopyOption.REPLACE_EXISTING);
         runWithJmodAndBadJar();
     }
 
@@ -320,7 +321,7 @@ public class ModulePathAndFMG {
         TestCommon.checkDump(output);
 
         String runModulePath = mainJar.toString() + PATH_SEPARATOR +
-            jmodDir.toString() + TEST_MODULE + ".jmod";
+            jmodDir.toString() + File.separator + TEST_MODULE + ".jmod";
         tty("11. run with CDS on, with module path com.bars.jar:com.foos.jmod");
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
@@ -329,25 +330,12 @@ public class ModulePathAndFMG {
             .assertAbnormalExit(out -> {
                 out.shouldContain(FMG_DISABLED)
                    .shouldNotContain(FMG_ENABLED)
-                   .shouldContain(FIND_EXCEPTION_MESSAGE);
-            });
-
-        runModulePath += PATH_SEPARATOR + testJar.toString();
-        tty("12. run with CDS on, with module path com.bars.jar:com.foos.jmod:com.foos.jar");
-        TestCommon.runWithModules(prefix,
-                                 null,               // --upgrade-module-path
-                                 runModulePath, // --module-path
-                                 MAIN_MODULE)        // -m
-            .assertNormalExit(out -> {
-                out.shouldNotContain(FMG_DISABLED)
-                   .shouldContain(FMG_ENABLED)
-                   .shouldMatch(TEST_FROM_CDS)
-                   .shouldMatch(MAIN_FROM_CDS)
-                   .shouldContain(CLASS_FOUND_MESSAGE);
+                   .shouldContain(NON_JAR_FILES)
+                   .shouldContain(JMOD_NOT_SUPPORTED);
             });
 
         runModulePath = badJar.toString() + PATH_SEPARATOR + testJar.toString();
-        tty("13. run with CDS on, with module path com.bars.JAR:com.foos.jar");
+        tty("12. run with CDS on, with module path com.bars.JAR:com.foos.jar");
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
                                  runModulePath, // --module-path
@@ -355,6 +343,7 @@ public class ModulePathAndFMG {
             .assertAbnormalExit(out -> {
                 out.shouldContain(FMG_DISABLED)
                    .shouldNotContain(FMG_ENABLED)
+                   .shouldContain(NON_JAR_FILES)
                    .shouldMatch(MODULE_NOT_RECOGNIZED);
             });
     }

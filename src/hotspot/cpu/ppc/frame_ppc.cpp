@@ -198,6 +198,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
+  // sender_fp must be within the stack and above (but not equal) to
+  // current frame's fp.
+  address sender_fp = (address)this->link();
+  if (!thread->is_in_stack_range_excl(sender_fp, fp)) {
+    return false;
+  }
+
   if (sender_pc() == nullptr) {
     // Likely the return pc was not yet stored to stack. We rather discard this
     // sample also because we would hit an assertion in frame::setup(). We can
@@ -505,8 +512,8 @@ intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp
 }
 
 bool frame::was_augmented_on_entry(int& real_size) const {
-  assert(is_compiled_frame(), "");
-  if (_cb->as_nmethod_or_null()->needs_stack_repair()) {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  if (_cb->as_nmethod()->needs_stack_repair()) {
     Unimplemented();
   }
   real_size = _cb->frame_size();

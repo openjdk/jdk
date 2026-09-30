@@ -163,6 +163,8 @@ public:
   static void enable_gc() NOT_CDS_JAVA_HEAP_RETURN;
   static void materialize_thread_object() NOT_CDS_JAVA_HEAP_RETURN;
   static void archive_interned_string(oop string);
+  static void update_scratch_mirror_field(oop scratch_m, int field_offset, oop obj);
+  static void archive_updated_mirror_field(oop old_field_obj, oop new_field_obj);
   static void finalize_initialization(FileMapInfo* static_mapinfo) NOT_CDS_JAVA_HEAP_RETURN;
 
 private:
@@ -365,11 +367,14 @@ private:
   };
 
   class OopFieldPusher;
+  class FlatFieldKlassFinder;
   using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
 
   static PendingOop _object_being_archived;
   static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
                               oop orig_obj, oop referrer);
+  static void find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop orig_obj);
+  static void add_flat_field_klass(KlassSubGraphInfo* subgraph_info, ValueKlass* k);
 
   static void reset_archived_object_states(TRAPS);
   static void ensure_determinism(TRAPS);
@@ -442,7 +447,6 @@ private:
   // Run-time only
   static void clear_root(int index);
   static void get_segment_indexes(int index, int& segment_index, int& internal_index);
-  static void setup_test_class(const char* test_class_name) PRODUCT_RETURN;
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
@@ -468,11 +472,7 @@ private:
   static void init_heap_writer() NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
-
-#ifndef PRODUCT
-  static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
-  static void initialize_test_class_from_archive(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-#endif
+  static void load_cached_resolved_methods() NOT_CDS_JAVA_HEAP_RETURN;
 
   static void initialize_java_lang_invoke(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_classes_for_special_subgraph(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;

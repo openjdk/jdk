@@ -73,8 +73,8 @@ define_pd_global(bool, CompactStrings, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
-define_pd_global(bool, InlineTypeReturnedAsFields, false);
+define_pd_global(bool, ValueTypePassFieldsAsArgs, false);
+define_pd_global(bool, ValueTypeReturnedAsFields, false);
 
 #define ARCH_FLAGS(develop,     \
                    product,     \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,7 +377,7 @@ public abstract class TIFFDecompressor {
     /**
      * The width of the source region that will actually be copied
      * into the destination image, taking into account all
-     * susbampling, offsetting, and clipping.
+     * subsampling, offsetting, and clipping.
      *
      * <p> The active source width will always be equal to
      * {@code (dstWidth - 1)*subsampleX + 1}.

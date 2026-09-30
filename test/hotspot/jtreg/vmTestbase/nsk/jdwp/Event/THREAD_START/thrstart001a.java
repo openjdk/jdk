@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package nsk.jdwp.Event.THREAD_START;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdwp.*;
@@ -36,7 +37,7 @@ import java.io.*;
  */
 public class thrstart001a {
 
-    static final int BREAKPOINT_LINE = 93;
+    static final int BREAKPOINT_LINE = 94;
 
     static ArgumentHandler argumentHandler = null;
     static Log log = null;
@@ -53,7 +54,7 @@ public class thrstart001a {
 
         // create tested thread
         log.display("Creating tested thread");
-        TestedClass.thread = new TestedClass(thrstart001.TESTED_THREAD_NAME);
+        TestedClass.thread = new TestedClass(thrstart001.TESTED_THREAD_NAME).getThread();
         log.display("  ... thread created");
 
         // reach breakpoint
@@ -80,8 +81,8 @@ public class thrstart001a {
     }
 
     // tested class
-    public static class TestedClass extends Thread {
-        public static volatile TestedClass thread = null;
+    public static class TestedClass extends ThreadWrapper {
+        public static volatile Thread thread = null;
 
         public TestedClass(String name) {
             super(name);

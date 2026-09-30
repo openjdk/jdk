@@ -252,6 +252,109 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
   fi
 ])
 
+AC_DEFUN([BPERF_SETUP_SCCACHE],
+[
+  # Check if sccache is available
+  SCCACHE_AVAILABLE=true
+
+  UTIL_LOOKUP_TOOLCHAIN_PROGS(SCCACHE, sccache)
+
+  AC_MSG_CHECKING([if sccache is available])
+  if test "x$TOOLCHAIN_TYPE" != "xgcc" && test "x$TOOLCHAIN_TYPE" != "xclang" && \
+      test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
+    AC_MSG_RESULT([no, not supported for toolchain type $TOOLCHAIN_TYPE])
+    SCCACHE_AVAILABLE=false
+  elif test "x$SCCACHE" = "x"; then
+    AC_MSG_RESULT([no, sccache binary missing or not executable])
+    SCCACHE_AVAILABLE=false
+  else
+    AC_MSG_RESULT([yes])
+  fi
+
+  SCCACHE_STATUS=""
+  UTIL_ARG_ENABLE(NAME: sccache, DEFAULT: false, AVAILABLE: $SCCACHE_AVAILABLE,
+      DESC: [enable using sccache to speed up recompilations],
+      CHECKING_MSG: [if sccache is enabled],
+      IF_ENABLED: [
+        if test "x$CCACHE" != x; then
+          AC_MSG_ERROR([Cannot enable both ccache and sccache])
+        fi
+        # Versions of sccache before 0.10.0 can restore stale or incorrect
+        # dependency files for cached C/C++ compilations, breaking our build.
+        SCCACHE_VERSION=[`$SCCACHE --version | head -n1 | $CUT -d " " -f 2 | $TR -d '\r'`]
+        if test "x$SCCACHE_VERSION" = x; then
+          AC_MSG_ERROR([Could not determine sccache version])
+        fi
+        HAS_BAD_SCCACHE=[`$ECHO $SCCACHE_VERSION | \
+            $GREP -e '^0\.[0-9]\.' -e '^0\.[0-9]$'`]
+        if test "x$HAS_BAD_SCCACHE" != "x"; then
+          AC_MSG_ERROR([[sccache 0.10.0 or later is required, found $SCCACHE_VERSION]])
+        fi
+        SCCACHE_STATUS="Active ($SCCACHE_VERSION)"
+      ],
+      IF_DISABLED: [
+        SCCACHE=""
+      ])
+  AC_SUBST(SCCACHE)
+
+  AC_ARG_WITH([sccache-dir],
+      [AS_HELP_STRING([--with-sccache-dir],
+      [where to store sccache files @<:@~/.cache/sccache@:>@])])
+
+  if test "x$with_sccache_dir" != x; then
+    SCCACHE_DIR="$with_sccache_dir"
+    SCCACHE_DIR_FOR_SCCACHE="$SCCACHE_DIR"
+
+    # Ideally, we'd use `UTIL_FIXUP_PATH()`, but it expects the supplied path to
+    # already exist, which might not be true for the sccache directory during
+    # the configure step.  As a workaround, we manually invoke fixpath.sh.
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+      SCCACHE_DIR_FOR_SCCACHE=`$FIXPATH_BASE -m print "$SCCACHE_DIR_FOR_SCCACHE"`
+    fi
+
+    SET_SCCACHE_DIR="SCCACHE_DIR=$SCCACHE_DIR_FOR_SCCACHE"
+    if test "x$SCCACHE" = x; then
+      AC_MSG_WARN([--with-sccache-dir has no meaning when sccache is not enabled])
+    fi
+  fi
+
+  if test "x$SCCACHE" != x; then
+    BPERF_SETUP_SCCACHE_USAGE
+  fi
+])
+
+AC_DEFUN([BPERF_SETUP_SCCACHE_USAGE],
+[
+  if test "x$SCCACHE" != x; then
+    if test "x$USE_PRECOMPILED_HEADER" = "xtrue"; then
+      if test "x$PRECOMPILED_HEADERS_EXPLICITLY_SET" = "xtrue"; then
+        AC_MSG_ERROR([Cannot use sccache with precompiled headers. Use --disable-precompiled-headers.])
+      else
+        AC_MSG_NOTICE([Disabling precompiled headers because sccache is enabled])
+        USE_PRECOMPILED_HEADER=false
+      fi
+    fi
+
+    # On Windows, the sccache binary must be launched through fixpath and the
+    # compiler argument passed to sccache must be the actual compiler
+    # (gcc/clang/cl) and not another fixpath invocation, otherwise sccache will
+    # try to execute fixpath as the compiler.
+    [ if [[ "$OPENJDK_BUILD_OS" = "windows" && "$SCCACHE" =~ ^"$FIXPATH " ]]; then ]
+      [ if [[ "$CC" =~ ^"$FIXPATH " ]]; then ]
+        CC="${CC#"$FIXPATH "}"
+      [ fi ]
+      [ if [[ "$CXX" =~ ^"$FIXPATH " ]]; then ]
+        CXX="${CXX#"$FIXPATH "}"
+      [ fi ]
+    [ fi ]
+
+    if test "x$SET_SCCACHE_DIR" != x; then
+      SCCACHE="$SET_SCCACHE_DIR $SCCACHE"
+      mkdir -p "$SCCACHE_DIR" > /dev/null 2>&1
+    fi
+  fi
+])
+
 ################################################################################
 #
 # Runs icecc-create-env once and prints the error if it fails
@@ -372,7 +475,13 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
 
   UTIL_ARG_ENABLE(NAME: precompiled-headers, DEFAULT: auto,
       RESULT: USE_PRECOMPILED_HEADER, AVAILABLE: $PRECOMPILED_HEADERS_AVAILABLE,
-      DESC: [enable using precompiled headers when compiling C++])
+      DESC: [enable using precompiled headers when compiling C++],
+      IF_GIVEN: [
+        PRECOMPILED_HEADERS_EXPLICITLY_SET=true
+      ],
+      IF_NOT_GIVEN: [
+        PRECOMPILED_HEADERS_EXPLICITLY_SET=false
+      ])
   AC_SUBST(USE_PRECOMPILED_HEADER)
 ])
 

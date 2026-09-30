@@ -127,11 +127,12 @@ final class ValueObjectMethods {
         if (VERBOSE) {
             System.out.println("valueObjectHashCode: obj.getClass:" + obj.getClass().getName());
         }
-        // This method assumes a is not null and is an instance of a value class
+        // This method assumes obj is not null and is an instance of a value class
         Class<?> type = obj.getClass();
         final Unsafe U = UNSAFE;
         int[] map = U.getFieldMap(type);
-        int result = System.identityHashCode(type);
+        int typeHash = System.identityHashCode(type);
+        int result = typeHash;
         int nbNonRef = map[0];
         for (int i = 0; i < nbNonRef; i++) {
             int offset = map[i * 2 + 1];
@@ -169,6 +170,20 @@ final class ValueObjectMethods {
             Object oa = U.getReference(obj, offset);
             result = 31 * result + System.identityHashCode(oa);
         }
-        return result;
+        // To avoid multiple computations, the hash is cached in the mark word,
+        // also for value objects. This field in the mark word contains the
+        // special value Unsafe.hashCodeNoHash() when no value was cached yet.
+        //
+        // To avoid unbounded recomputation of the hash, when the stored value would
+        // be Unsafe.hashCodeNoHash(), we return instead the identity hash of the
+        // value class. That allows to distinguish different value classes and is
+        // easy for the compiler to fetch. Since `type` is an identity object, its
+        // hash is already guaranteed not to be Unsafe.hashCodeNoHash() and to fit
+        // in the mark word cache.
+        //
+        // Note that the computed hash, that would be stored in the mark word, is
+        // not directly `result` but `result` masked to fit in the cache of the
+        // mark word.
+        return (result & U.hashCodeMask()) == U.hashCodeNoHash() ? typeHash : result;
     }
 }

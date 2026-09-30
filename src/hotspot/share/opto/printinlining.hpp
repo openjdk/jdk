@@ -114,6 +114,8 @@ private:
 
   Compile* C;
 
+  uint _suspend_depth;
+
   // In case print inline is disabled, this null stream is returned from ::record()
   nullStream _nullStream;
 
@@ -126,7 +128,7 @@ private:
   IPInlineSite _root{nullptr, 0};
 
 public:
-  InlinePrinter(Compile* compile) : C(compile) {}
+  InlinePrinter(Compile* compile) : C(compile), _suspend_depth(0) {}
 
   // Saves the result of an inline attempt of method at state.
   // An optional string message with more details that is copied to the stream for this attempt. Pointer is not captured.
@@ -136,6 +138,18 @@ public:
 
   // Prints all collected inlining information to the given output stream.
   void print_on(outputStream* tty) const;
+
+  bool is_suspended() const { return _suspend_depth > 0; }
+  void suspend()            { _suspend_depth++; }
+  void resume()             { assert(_suspend_depth > 0, "unbalanced resume"); _suspend_depth--; }
+};
+
+class InlinePrinterSuspendScope : public StackObj {
+ private:
+  InlinePrinter* const _printer;
+ public:
+  InlinePrinterSuspendScope(InlinePrinter* printer) : _printer(printer) { _printer->suspend(); }
+  ~InlinePrinterSuspendScope()                                          { _printer->resume();  }
 };
 
 #endif // PRINTINLINING_HPP

@@ -129,6 +129,14 @@ Options for creating the application image:
   --app-content <additional content>[,<additional content>...]
           A comma separated list of paths to files and/or directories
           to add to the application payload.
+          --app-content is processed after --app-resources, independent
+          of command-line order.
+          This option can be used more than once.
+  --app-resources <additional resources>[:<additional resources>...]
+          A colon-separated list of paths to files and/or directories
+          to add to the application's "lib" directory.
+          If a file from --app-resources conflicts with one from
+          --app-content, the file from --app-content is used.
           This option can be used more than once.
   --input -i <directory path>
           Path of the input directory that contains the files to be packaged

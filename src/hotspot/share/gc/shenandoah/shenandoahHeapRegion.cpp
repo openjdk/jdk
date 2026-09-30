@@ -424,6 +424,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   }
 
   st->print("|%s", shenandoah_affiliation_code(affiliation()));
+  st->print("|A %2d", age());
 
 #define SHR_PTR_FORMAT "%12" PRIxPTR
 

@@ -1045,6 +1045,7 @@ source_hpp %{
   // To keep related declarations/definitions/uses close together,
   // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "oops/compressedKlass.inline.hpp"
 #include "opto/convertnode.hpp"
 
   // Returns true if Node n is followed by a MemBar node that
@@ -1398,7 +1399,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   const bool method_is_frameless      = false /* TODO: PPC port C->is_frameless_method()*/;
 
-  const Register return_pc            = R20; // Must match return_addr() in frame section.
+  const Register return_pc            = R20;
   const Register callers_sp           = R21;
   const Register push_frame_temp      = R22;
   const Register toc_temp             = R23;
@@ -1623,15 +1624,15 @@ static enum RC rc_class(OptoReg::Name reg) {
   if (reg == OptoReg::Bad) return rc_bad;
 
   // We have 64 integer register halves, starting at index 0.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_gpr == (int)MachRegisterNumbers::F0_num);
+  static_assert((int)ConcreteRegisterImpl::max_gpr == (int)MachRegisterNumbers::F0_num);
   if (reg < ConcreteRegisterImpl::max_gpr) return rc_int;
 
   // We have 64 floating-point register halves, starting at index 64.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_fpr == (int)MachRegisterNumbers::VR0_num);
+  static_assert((int)ConcreteRegisterImpl::max_fpr == (int)MachRegisterNumbers::VR0_num);
   if (reg < ConcreteRegisterImpl::max_fpr) return rc_float;
 
   // We have 64 vector-scalar registers, starting at index 128.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_vr == (int)MachRegisterNumbers::CR0_num);
+  static_assert((int)ConcreteRegisterImpl::max_vr == (int)MachRegisterNumbers::CR0_num);
   if (reg < ConcreteRegisterImpl::max_vr) return rc_vec;
 
   // Condition and special purpose registers are not allocated. We only accept stack from here.
@@ -2957,27 +2958,6 @@ encode %{
     assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
   %}
 
-  enc_class postalloc_expand_encode_oop_not_null(iRegNdst dst, iRegPdst src) %{
-
-    encodeP_subNode *n1 = new encodeP_subNode();
-    n1->add_req(n_region, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    encodeP_shiftNode *n2 = new encodeP_shiftNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
-    assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
-  %}
-
   enc_class postalloc_expand_decode_oop(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
     decodeN_shiftNode *n_shift    = new decodeN_shiftNode();
     cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
@@ -3019,29 +2999,6 @@ encode %{
     nodes->push(n_cond_set);
 
   %}
-
-  enc_class postalloc_expand_decode_oop_not_null(iRegPdst dst, iRegNsrc src) %{
-    decodeN_shiftNode *n1 = new decodeN_shiftNode();
-    n1->add_req(n_region, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    decodeN_addNode *n2 = new decodeN_addNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n2, true);
-
-    nodes->push(n1);
-    nodes->push(n2);
-  %}
-
 
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
@@ -3424,6 +3381,60 @@ encode %{
 
 //----------FRAME--------------------------------------------------------------
 // Definition of frame structure and management information.
+//
+//  S T A C K   L A Y O U T    Allocators stack-slot number
+//                             |   (to get allocators register number
+//  G  Owned by    |        |  v    add OptoReg::stack0())
+//  r   CALLER     |        |
+//  o     |        +--------+      pad to even-align allocators stack-slot
+//  w     V        |  pad0  |        numbers; owned by CALLER
+//  t   -----------+--------+----> Matcher::_in_arg_limit, unaligned
+//  h     ^        |   in   |  5
+//        |        |  args  |  4   Holes in incoming args owned by SELF
+//  |     |        |        |  3
+//  |     |        +--------+
+//  V     |        | old out|      Empty on Intel, window on Sparc
+//        |    old |preserve|      Must be even aligned.
+//        |     SP-+--------+----> Matcher::_old_SP, even aligned
+//        |        |   in   |  3   area for Intel ret address
+//     Owned by    |preserve|      Empty on Sparc.
+//       SELF      +--------+
+//        |        |  pad2  |  2   pad to align old SP
+//        |        +--------+  1
+//        |        | locks  |  0
+//        |        +--------+----> OptoReg::stack0(), even aligned
+//        |        |  pad1  | 11   pad to align new SP
+//        |        +--------+
+//        |        |        | 10
+//        |        | spills |  9   spills
+//        V        |        |  8   (pad0 slot for callee)
+//      -----------+--------+----> Matcher::_out_arg_limit, unaligned
+//        ^        |  out   |  7
+//        |        |  args  |  6   Holes in outgoing args owned by CALLEE
+//     Owned by    +--------+
+//      CALLEE     | new out|  6   Empty on Intel, window on Sparc
+//        |    new |preserve|      Must be even-aligned.
+//        |     SP-+--------+----> Matcher::_new_SP, even aligned
+//        |        |        |
+//
+// Note 1: Only region 8-11 is determined by the allocator.  Region 0-5 is
+//         known from SELF's arguments and the Java calling convention.
+//         Region 6-7 is determined per call site.
+// Note 2: If the calling convention leaves holes in the incoming argument
+//         area, those holes are owned by SELF.  Holes in the outgoing area
+//         are owned by the CALLEE.  Holes should not be necessary in the
+//         incoming area, as the Java calling convention is completely under
+//         the control of the AD file.  Doubles can be sorted and packed to
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
+//         varargs C calling conventions.
+// Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
+//         even aligned with pad0 as needed.
+//         Region 6 is even aligned.  Region 6-7 is NOT even aligned;
+//         region 6-11 is even aligned; it may be padded out more so that
+//         the region from SP to FP meets the minimum stack alignment.
+// Note 4: For I2C adapters, the incoming FP may not meet the minimum stack
+//         alignment.  Region 11, pad1, may be dynamically extended so that
+//         SP meets the minimum alignment.
 
 frame %{
   // These two registers define part of the calling convention between
@@ -3454,19 +3465,10 @@ frame %{
   // return address specifies a type (REG or STACK) and a number
   // representing the register number (i.e. - use a register name) or
   // stack slot.
-  //
-  // A: Link register is stored in stack slot ...
-  // M:  ... but it's in the caller's frame according to PPC-64 ABI.
-  // J: Therefore, we make sure that the link register is also in R11_scratch1
-  //    at the end of the prolog.
-  // B: We use R20, now.
-  //return_addr(REG R20);
-
-  // G: After reading the comments made by all the luminaries on their
-  //    failure to tell the compiler where the return address really is,
-  //    I hardly dare to try myself.  However, I'm convinced it's in slot
-  //    4 what apparently works and saves us some spills.
-  return_addr(STACK 4);
+  // Ret Addr is on stack 4 slots (16 bytes) above _old_SP.
+  // That's the after-PROLOG location. Actually it is passed in the LR register and
+  // the prolog saves it in the caller's abi section.
+  return_addr(STACK OptoReg::reg2stack(_old_SP) + 4);
 
   // Location of compiled Java return values.  Same as C
   return_value %{
@@ -3737,6 +3739,15 @@ operand immI_minus1() %{
   interface(CONST_INTER);
 %}
 
+// constant 'int 4'.
+operand immI_4() %{
+  predicate(n->get_int() == 4);
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // int value 16.
 operand immI_16() %{
   predicate(n->get_int() == 16);
@@ -3779,16 +3790,6 @@ operand immN_0() %{
 operand immNKlass() %{
   match(ConNKlass);
 
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// This operand can be used to avoid matching of an instruct
-// with chain rule.
-operand immNKlass_NM() %{
-  match(ConNKlass);
-  predicate(false);
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -4618,7 +4619,9 @@ opclass memoryAlg16(indirect, indOffset16Alg16);
 opclass indirectMemory(indirect, indirectNarrow);
 
 // Special opclass for I and ConvL2I.
-opclass iRegIsrc_iRegL2Isrc(iRegIsrc, iRegL2Isrc);
+// To be preferred over iRegIsrc to elide ConvL2I nodes if present.
+// Causes adlc issues when the operand appears in an effect clause.
+opclass iRegIorL2I(iRegIsrc, iRegL2Isrc);
 
 // Operand classes to match encode and decode. iRegN_P2N is only used
 // for storeN. I have never seen an encode node elsewhere.
@@ -5653,56 +5656,12 @@ instruct loadConN0(iRegNdst dst, immN_0 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Load hi part of compressed oop constant.
-instruct loadConN_hi(iRegNdst dst, immN src) %{
-  effect(DEF dst, USE src);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "LIS     $dst, $src \t// narrow oop hi" %}
-  size(4);
-  ins_encode %{
-    __ lis($dst$$Register, 0); // Will get patched.
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add lo part of compressed oop constant to already loaded hi part.
-instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
-  effect(DEF dst, USE src1, USE src2);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ORI     $dst, $src1, $src2 \t// narrow oop lo" %}
-  size(4);
-  ins_encode %{
-    AddressLiteral addrlit = __ constant_oop_address((jobject)$src2$$constant);
-    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
-    __ ori($dst$$Register, $src1$$Register, 0); // Will get patched.
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct rldicl(iRegLdst dst, iRegLsrc src, immI16 shift, immI16 mask_begin) %{
   effect(DEF dst, USE src, USE shift, USE mask_begin);
 
   size(4);
   ins_encode %{
     __ rldicl($dst$$Register, $src$$Register, $shift$$constant, $mask_begin$$constant);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Needed to postalloc expand loadConN: ConN is loaded as ConI
-// leaving the upper 32 bits with sign-extension bits.
-// This clears these bits: dst = src & 0xFFFFFFFF.
-// TODO: Eventually call this maskN_regN_FFFFFFFF.
-instruct clearMs32b(iRegNdst dst, iRegNsrc src) %{
-  effect(DEF dst, USE src);
-  predicate(false);
-
-  format %{ "MASK    $dst, $src, 0xFFFFFFFF" %} // mask
-  size(4);
-  ins_encode %{
-    __ clrldi($dst$$Register, $src$$Register, 0x20);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -5719,128 +5678,36 @@ instruct loadBase(iRegLdst dst) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Loading ConN must be postalloc expanded so that edges between
-// the nodes are safe. They may not interfere with a safepoint.
-// GL TODO: This needs three instructions: better put this into the constant pool.
-instruct loadConN_Ex(iRegNdst dst, immN src) %{
+instruct loadConN(iRegNdst dst, immN src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST*3);
+
+  format %{ "LIS/ORI/CLRLDI $dst, $src" %}
+  size(12);
+  ins_encode %{
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src$$constant);
+    __ lis($dst$$Register, 0);                              // Will get patched.
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
+    __ ori($dst$$Register, $dst$$Register, 0);              // Will get patched.
+    __ clrldi($dst$$Register, $dst$$Register, 0x20);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct loadConNKlass(iRegNdst dst, immNKlass src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*2);
 
-  format %{ "LoadN   $dst, $src \t// postalloc expanded" %} // mask
-  postalloc_expand %{
-    MachNode *m1 = new loadConN_hiNode();
-    MachNode *m2 = new loadConN_loNode();
-    MachNode *m3 = new clearMs32bNode();
-    m1->_bottom_type = bottom_type();
-    m2->_bottom_type = bottom_type();
-    m3->_bottom_type = bottom_type();
-    m1->add_req(nullptr);
-    m2->add_req(nullptr, m1);
-    m3->add_req(nullptr, m2);
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = op_src;
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_dst;
-    m2->_opnds[2] = op_src;
-    m3->_opnds[0] = op_dst;
-    m3->_opnds[1] = op_dst;
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(m3->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    nodes->push(m1);
-    nodes->push(m2);
-    nodes->push(m3);
-  %}
-%}
-
-// We have seen a safepoint between the hi and lo parts, and this node was handled
-// as an oop. Therefore this needs a match rule so that build_oop_map knows this is
-// not a narrow oop.
-instruct loadConNKlass_hi(iRegNdst dst, immNKlass_NM src) %{
-  match(Set dst src);
-  effect(DEF dst, USE src);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "LIS     $dst, $src \t// narrow klass hi" %}
-  size(4);
+  format %{ "LOAD $dst, $src" %}
   ins_encode %{
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src$$constant);
-    __ lis($dst$$Register, (int)(short)((Csrc >> 16) & 0xffff));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// As loadConNKlass_hi this must be recognized as narrow klass, not oop!
-instruct loadConNKlass_mask(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
-  match(Set dst src1);
-  effect(TEMP src2);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "MASK    $dst, $src2, 0xFFFFFFFF" %} // mask
-  size(4);
-  ins_encode %{
-    __ clrldi($dst$$Register, $src2$$Register, 0x20);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// This needs a match rule so that build_oop_map knows this is
-// not a narrow oop.
-instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
-  match(Set dst src1);
-  effect(TEMP src2);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ORI     $dst, $src1, $src2 \t// narrow klass lo" %}
-  size(4);
-  ins_encode %{
-    // Notify OOP recorder (don't need the relocation)
-    AddressLiteral md = __ constant_metadata_address((Klass*)$src1$$constant);
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
-    __ ori($dst$$Register, $src2$$Register, Csrc & 0xffff);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Loading ConNKlass must be postalloc expanded so that edges between
-// the nodes are safe. They may not interfere with a safepoint.
-instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
-  match(Set dst src);
-  ins_cost(DEFAULT_COST*2);
-
-  format %{ "LoadN   $dst, $src \t// postalloc expanded" %} // mask
-  postalloc_expand %{
-    // Load high bits into register. Sign extended.
-    MachNode *m1 = new loadConNKlass_hiNode();
-    m1->_bottom_type = bottom_type();
-    m1->add_req(nullptr);
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = op_src;
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    nodes->push(m1);
-
-    MachNode *m2 = m1;
-    if (!Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass *)op_src->constant()), 31)) {
-      // Value might be 1-extended. Mask out these bits.
-      m2 = new loadConNKlass_maskNode();
-      m2->_bottom_type = bottom_type();
-      m2->add_req(nullptr, m1);
-      m2->_opnds[0] = op_dst;
-      m2->_opnds[1] = op_src;
-      m2->_opnds[2] = op_dst;
-      ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      nodes->push(m2);
+    if (!ra_->C->output()->in_scratch_emit_size()) {
+      // Notify OOP recorder (don't need the relocation).
+      __ constant_metadata_address((Klass*)$src$$constant);
     }
-
-    MachNode *m3 = new loadConNKlass_loNode();
-    m3->_bottom_type = bottom_type();
-    m3->add_req(nullptr, m2);
-    m3->_opnds[0] = op_dst;
-    m3->_opnds[1] = op_src;
-    m3->_opnds[2] = op_dst;
-    ra_->set_pair(m3->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    nodes->push(m3);
+    narrowKlass Csrc = CompressedKlassPointers::encode((Klass*)$src$$constant);
+    __ load_const_optimized($dst$$Register, Csrc, R0);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // 0x1 is used in object initialization (initial object header).
@@ -6079,7 +5946,7 @@ instruct prefetch_alloc_no_offset(indirectMemory mem) %{
 //----------Store Instructions-------------------------------------------------
 
 // Store Byte
-instruct storeB(memory mem, iRegIsrc src) %{
+instruct storeB(memory mem, iRegIorL2I src) %{
   match(Set mem (StoreB mem src));
   ins_cost(MEMORY_REF_COST);
 
@@ -6093,7 +5960,7 @@ instruct storeB(memory mem, iRegIsrc src) %{
 %}
 
 // Store Char/Short
-instruct storeC(memory mem, iRegIsrc src) %{
+instruct storeC(memory mem, iRegIorL2I src) %{
   match(Set mem (StoreC mem src));
   ins_cost(MEMORY_REF_COST);
 
@@ -6107,22 +5974,11 @@ instruct storeC(memory mem, iRegIsrc src) %{
 %}
 
 // Store Integer
-instruct storeI(memory mem, iRegIsrc src) %{
+instruct storeI(memory mem, iRegIorL2I src) %{
   match(Set mem (StoreI mem src));
   ins_cost(MEMORY_REF_COST);
 
   format %{ "STW     $src, $mem" %}
-  size(4);
-  ins_encode( enc_stw(src, mem) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// ConvL2I + StoreI.
-instruct storeI_convL2I(memory mem, iRegLsrc src) %{
-  match(Set mem (StoreI mem (ConvL2I src)));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STW     l2i($src), $mem" %}
   size(4);
   ins_encode( enc_stw(src, mem) );
   ins_pipe(pipe_class_memory);
@@ -6256,7 +6112,7 @@ instruct encodeP_shift(iRegNdst dst, iRegNsrc src) %{
   format %{ "SRDI    $dst, $src, 3 \t// encode" %}
   size(4);
   ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
+    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6331,14 +6187,18 @@ instruct encodeP_Ex(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
 %}
 
 // shift != 0, base != 0
-instruct encodeP_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
+instruct encodeP_not_null(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base_overlaps());
 
-  format %{ "EncodeP $dst, $src\t// $src != Null, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_encode_oop_not_null(dst, src) );
+  format %{ "EncodeP $dst, $src\t// $src != Null" %}
+  ins_encode %{
+    __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
+    __ srdi($dst$$Register, $dst$$Register, CompressedOops::shift());
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base == 0
@@ -6351,7 +6211,7 @@ instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   format %{ "SRDI    $dst, $src, #3 \t// encodeP, $src != nullptr" %}
   size(4);
   ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
+    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6567,7 +6427,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
 %}
 
 // src != 0, shift != 0, base != 0
-instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
+instruct decodeN_notNull_addBase(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
@@ -6575,8 +6435,12 @@ instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
             CompressedOops::base() != nullptr);
   ins_cost(2 * DEFAULT_COST);
 
-  format %{ "DecodeN $dst, $src \t// $src != nullptr, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_decode_oop_not_null(dst, src));
+  format %{ "DecodeN $dst, $src \t// $src != nullptr" %}
+  ins_encode %{
+    __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
+    __ add_const_optimized($dst$$Register, $dst$$Register, CompressedOops::base(), R0);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Compressed OOPs with narrow_oop_shift == 0.
@@ -6849,7 +6713,7 @@ instruct onspinwait() %{
 //----------Conditional Move---------------------------------------------------
 
 // Cmove using isel.
-instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
+instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST);
 
@@ -7014,7 +6878,7 @@ instruct cmovD_cmpF(cmpOp cop, regF op1, regF op2, regD dst, regD false_result, 
 
 // Strong versions:
 
-instruct compareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapB mem_ptr (Binary src1 src2)));
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
@@ -7032,7 +6896,7 @@ instruct compareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapS mem_ptr (Binary src1 src2)));
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
@@ -7050,7 +6914,7 @@ instruct compareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapI mem_ptr (Binary src1 src2)));
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
@@ -7126,7 +6990,7 @@ instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc
 
 // Weak versions:
 
-instruct weakCompareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct weakCompareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
   predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
@@ -7140,7 +7004,7 @@ instruct weakCompareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
@@ -7154,7 +7018,7 @@ instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   ins_pipe(pipe_class_default);
 %}
 
-instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
   predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
@@ -7168,7 +7032,7 @@ instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
@@ -7182,7 +7046,7 @@ instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   ins_pipe(pipe_class_default);
 %}
 
-instruct weakCompareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct weakCompareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapI mem_ptr (Binary src1 src2)));
   predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
@@ -7196,7 +7060,7 @@ instruct weakCompareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct weakCompareAndSwapI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct weakCompareAndSwapI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapI mem_ptr (Binary src1 src2)));
   predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
@@ -7305,7 +7169,7 @@ instruct weakCompareAndSwapP_acq_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, 
 
 // CompareAndExchange
 
-instruct compareAndExchangeB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndExchangeB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
   predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0);
@@ -7319,7 +7183,7 @@ instruct compareAndExchangeB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
   effect(TEMP_DEF res, TEMP cr0);
@@ -7340,7 +7204,7 @@ instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
 %}
 
 
-instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
   predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0);
@@ -7354,7 +7218,7 @@ instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
   effect(TEMP_DEF res, TEMP cr0);
@@ -7374,7 +7238,7 @@ instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndExchangeI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeI mem_ptr (Binary src1 src2)));
   predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0);
@@ -7388,7 +7252,7 @@ instruct compareAndExchangeI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct compareAndExchangeI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeI mem_ptr (Binary src1 src2)));
   predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0);
@@ -7514,7 +7378,7 @@ instruct compareAndExchangeP_acq_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, 
 
 // Special RMW
 
-instruct getAndAddB(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
+instruct getAndAddB(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddB mem_ptr src));
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndAddB $res, $mem_ptr, $src" %}
@@ -7530,7 +7394,7 @@ instruct getAndAddB(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndAddS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
+instruct getAndAddS(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddS mem_ptr src));
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndAddS $res, $mem_ptr, $src" %}
@@ -7547,7 +7411,7 @@ instruct getAndAddS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr
 %}
 
 
-instruct getAndAddI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
+instruct getAndAddI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddI mem_ptr src));
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndAddI $res, $mem_ptr, $src" %}
@@ -7579,7 +7443,7 @@ instruct getAndAddL(iRegLdst res, iRegPdst mem_ptr, iRegLsrc src, flagsRegCR0 cr
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndSetB(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
+instruct getAndSetB(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetB mem_ptr src));
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndSetB $res, $mem_ptr, $src" %}
@@ -7595,7 +7459,7 @@ instruct getAndSetB(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndSetS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
+instruct getAndSetS(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetS mem_ptr src));
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndSetS $res, $mem_ptr, $src" %}
@@ -7612,7 +7476,7 @@ instruct getAndSetS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr
 %}
 
 
-instruct getAndSetI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
+instruct getAndSetI(iRegIdst res, iRegPdst mem_ptr, iRegIorL2I src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetI mem_ptr src));
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndSetI $res, $mem_ptr, $src" %}
@@ -7682,7 +7546,7 @@ instruct getAndSetN(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src, flagsRegCR0 cr
 // Addition Instructions
 
 // Register Addition
-instruct addI_reg_reg(iRegIdst dst, iRegIsrc_iRegL2Isrc src1, iRegIsrc_iRegL2Isrc src2) %{
+instruct addI_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (AddI src1 src2));
   format %{ "ADD     $dst, $src1, $src2" %}
   size(4);
@@ -7704,7 +7568,7 @@ instruct addI_reg_reg_2(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct tree_addI_addI_addI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, iRegIsrc src3, iRegIsrc src4) %{
+instruct tree_addI_addI_addI_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3, iRegIorL2I src4) %{
   match(Set dst (AddI (AddI (AddI src1 src2) src3) src4));
   ins_cost(DEFAULT_COST*3);
 
@@ -7719,7 +7583,7 @@ instruct tree_addI_addI_addI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc sr
 %}
 
 // Immediate Addition
-instruct addI_reg_imm16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
+instruct addI_reg_imm16(iRegIdst dst, iRegIorL2I src1, immI16 src2) %{
   match(Set dst (AddI src1 src2));
   format %{ "ADDI    $dst, $src1, $src2" %}
   size(4);
@@ -7730,7 +7594,7 @@ instruct addI_reg_imm16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
 %}
 
 // Immediate Addition with 16-bit shifted operand
-instruct addI_reg_immhi16(iRegIdst dst, iRegIsrc src1, immIhi16 src2) %{
+instruct addI_reg_immhi16(iRegIdst dst, iRegIorL2I src1, immIhi16 src2) %{
   match(Set dst (AddI src1 src2));
   format %{ "ADDIS   $dst, $src1, $src2" %}
   size(4);
@@ -7741,7 +7605,7 @@ instruct addI_reg_immhi16(iRegIdst dst, iRegIsrc src1, immIhi16 src2) %{
 %}
 
 // Immediate Addition using prefixed addi
-instruct addI_reg_imm32(iRegIdst dst, iRegIsrc src1, immI32 src2) %{
+instruct addI_reg_imm32(iRegIdst dst, iRegIorL2I src1, immI32 src2) %{
   match(Set dst (AddI src1 src2));
   predicate(PowerArchitecturePPC64 >= 10);
   ins_cost(DEFAULT_COST+1);
@@ -7904,7 +7768,7 @@ instruct addP_reg_imm34(iRegPdst dst, iRegP_N2P src1, immL34 src2) %{
 // Subtraction Instructions
 
 // Register Subtraction
-instruct subI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct subI_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (SubI src1 src2));
   format %{ "SUBF    $dst, $src2, $src1" %}
   size(4);
@@ -7919,7 +7783,7 @@ instruct subI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 // Don't try to use addi with - $src2$$constant since it can overflow when $src2$$constant == minI16.
 
 // SubI from constant (using subfic).
-instruct subI_imm16_reg(iRegIdst dst, immI16 src1, iRegIsrc src2) %{
+instruct subI_imm16_reg(iRegIdst dst, immI16 src1, iRegIorL2I src2) %{
   match(Set dst (SubI src1 src2));
   format %{ "SUBI    $dst, $src1, $src2" %}
 
@@ -7945,7 +7809,7 @@ instruct signmask32I_regI(iRegIdst dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct absI_reg_Ex(iRegIdst dst, iRegIsrc src) %{
+instruct absI_reg_Ex(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (AbsI src));
   ins_cost(DEFAULT_COST*3);
 
@@ -7958,7 +7822,7 @@ instruct absI_reg_Ex(iRegIdst dst, iRegIsrc src) %{
   %}
 %}
 
-instruct negI_regI(iRegIdst dst, immI_0 zero, iRegIsrc src2) %{
+instruct negI_regI(iRegIdst dst, immI_0 zero, iRegIorL2I src2) %{
   match(Set dst (SubI zero src2));
   format %{ "NEG     $dst, $src2" %}
   size(4);
@@ -8061,7 +7925,7 @@ instruct negI_con0_regL(iRegIdst dst, immL_0 zero, iRegLsrc src2) %{
 // Integer Multiplication
 
 // Register Multiplication
-instruct mulI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct mulI_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (MulI src1 src2));
   ins_cost(DEFAULT_COST);
 
@@ -8074,7 +7938,7 @@ instruct mulI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 %}
 
 // Immediate Multiplication
-instruct mulI_reg_imm16(iRegIdst dst, iRegIsrc src1, immI16 src2) %{
+instruct mulI_reg_imm16(iRegIdst dst, iRegIorL2I src1, immI16 src2) %{
   match(Set dst (MulI src1 src2));
   ins_cost(DEFAULT_COST);
 
@@ -8136,23 +8000,10 @@ instruct mulL_reg_imm16(iRegLdst dst, iRegLsrc src1, immL16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Integer Division with Immediate -1: Negate.
-instruct divI_reg_immIvalueMinus1(iRegIdst dst, iRegIsrc src1, immI_minus1 src2) %{
-  match(Set dst (DivI src1 src2));
-  ins_cost(DEFAULT_COST);
-
-  format %{ "NEG     $dst, $src1 \t// /-1" %}
-  size(4);
-  ins_encode %{
-    __ neg($dst$$Register, $src1$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Integer Division with constant, but not -1.
 // We should be able to improve this by checking the type of src2.
 // It might well be that src2 is known to be positive.
-instruct divI_reg_regnotMinus1(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct divI_reg_regnotMinus1(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (DivI src1 src2));
   predicate(n->in(2)->find_int_con(-1) != -1); // src2 is a constant, but not -1
   ins_cost(2*DEFAULT_COST);
@@ -8181,7 +8032,7 @@ instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
 %}
 
 // Integer Division with Registers not containing constants.
-instruct divI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct divI_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (DivI src1 src2));
   ins_cost(10*DEFAULT_COST);
 
@@ -8251,7 +8102,7 @@ instruct divL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 %}
 
 // Integer Remainder with registers.
-instruct modI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct modI_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (ModI src1 src2));
   ins_cost(10*DEFAULT_COST);
 
@@ -8286,7 +8137,7 @@ instruct modL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   %}
 %}
 
-instruct udivI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct udivI_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (UDivI src1 src2));
   format %{ "DIVWU   $dst, $src1, $src2" %}
   size(4);
@@ -8296,7 +8147,7 @@ instruct udivI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct umodI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct umodI_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (UModI src1 src2));
   expand %{
     iRegIdst tmp1;
@@ -8362,7 +8213,7 @@ instruct lShiftI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct lShiftI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct lShiftI_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (LShiftI src1 src2));
   ins_cost(DEFAULT_COST*2);
   expand %{
@@ -8374,7 +8225,7 @@ instruct lShiftI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 %}
 
 // Register Shift Left Immediate
-instruct lShiftI_reg_imm(iRegIdst dst, iRegIsrc src1, immI src2) %{
+instruct lShiftI_reg_imm(iRegIdst dst, iRegIorL2I src1, immI src2) %{
   match(Set dst (LShiftI src1 src2));
 
   format %{ "SLWI    $dst, $src1, ($src2 & 0x1f)" %}
@@ -8386,7 +8237,7 @@ instruct lShiftI_reg_imm(iRegIdst dst, iRegIsrc src1, immI src2) %{
 %}
 
 // AndI with negpow2-constant + LShiftI
-instruct lShiftI_andI_immInegpow2_imm5(iRegIdst dst, iRegIsrc src1, immInegpow2 src2, uimmI5 src3) %{
+instruct lShiftI_andI_immInegpow2_imm5(iRegIdst dst, iRegIorL2I src1, immInegpow2 src2, uimmI5 src3) %{
   match(Set dst (LShiftI (AndI src1 src2) src3));
   predicate(UseRotateAndMaskInstructionsPPC64);
 
@@ -8405,7 +8256,7 @@ instruct lShiftI_andI_immInegpow2_imm5(iRegIdst dst, iRegIsrc src1, immInegpow2 
 %}
 
 // RShiftI + AndI with negpow2-constant + LShiftI
-instruct lShiftI_andI_immInegpow2_rShiftI_imm5(iRegIdst dst, iRegIsrc src1, immInegpow2 src2, uimmI5 src3) %{
+instruct lShiftI_andI_immInegpow2_rShiftI_imm5(iRegIdst dst, iRegIorL2I src1, immInegpow2 src2, uimmI5 src3) %{
   match(Set dst (LShiftI (AndI (RShiftI src1 src3) src2) src3));
   predicate(UseRotateAndMaskInstructionsPPC64);
 
@@ -8437,7 +8288,7 @@ instruct lShiftL_regL_regI(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
 %}
 
 // Register Shift Left
-instruct lShiftL_regL_regI_Ex(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
+instruct lShiftL_regL_regI_Ex(iRegLdst dst, iRegLsrc src1, iRegIorL2I src2) %{
   match(Set dst (LShiftL src1 src2));
   ins_cost(DEFAULT_COST*2);
   expand %{
@@ -8460,7 +8311,7 @@ instruct lshiftL_regL_immI(iRegLdst dst, iRegLsrc src1, immI src2) %{
 %}
 
 // If we shift more than 32 bits, we need not convert I2L.
-instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIsrc src1, uimmI6_ge32 src2) %{
+instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIorL2I src1, uimmI6_ge32 src2) %{
   match(Set dst (LShiftL (ConvI2L src1) src2));
   ins_cost(DEFAULT_COST);
 
@@ -8474,7 +8325,7 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIsrc src1, uimmI6_ge32 src2) %{
 
 // Shift a postivie int to the left.
 // Clrlsldi clears the upper 32 bits and shifts.
-instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIsrc src1, uimmI6 src2) %{
+instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI6 src2) %{
   match(Set dst (LShiftL (ConvI2L src1) src2));
   predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->is_long()->is_positive_int());
 
@@ -8500,7 +8351,7 @@ instruct arShiftI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 %}
 
 // Register Arithmetic Shift Right
-instruct arShiftI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct arShiftI_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (RShiftI src1 src2));
   ins_cost(DEFAULT_COST*2);
   expand %{
@@ -8512,7 +8363,7 @@ instruct arShiftI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 %}
 
 // Register Arithmetic Shift Right Immediate
-instruct arShiftI_reg_imm(iRegIdst dst, iRegIsrc src1, immI src2) %{
+instruct arShiftI_reg_imm(iRegIdst dst, iRegIorL2I src1, immI src2) %{
   match(Set dst (RShiftI src1 src2));
 
   format %{ "SRAWI   $dst, $src1, ($src2 & 0x1f)" %}
@@ -8537,7 +8388,7 @@ instruct arShiftL_regL_regI(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
 %}
 
 // Register Shift Right Arithmetic Long
-instruct arShiftL_regL_regI_Ex(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
+instruct arShiftL_regL_regI_Ex(iRegLdst dst, iRegLsrc src1, iRegIorL2I src2) %{
   match(Set dst (RShiftL src1 src2));
   ins_cost(DEFAULT_COST*2);
 
@@ -8587,7 +8438,7 @@ instruct urShiftI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 %}
 
 // Register Shift Right
-instruct urShiftI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct urShiftI_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (URShiftI src1 src2));
   ins_cost(DEFAULT_COST*2);
 
@@ -8600,7 +8451,7 @@ instruct urShiftI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 %}
 
 // Register Shift Right Immediate
-instruct urShiftI_reg_imm(iRegIdst dst, iRegIsrc src1, immI src2) %{
+instruct urShiftI_reg_imm(iRegIdst dst, iRegIorL2I src1, immI src2) %{
   match(Set dst (URShiftI src1 src2));
 
   format %{ "SRWI    $dst, $src1, ($src2 & 0x1f)" %}
@@ -8625,7 +8476,7 @@ instruct urShiftL_regL_regI(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
 %}
 
 // Register Shift Right
-instruct urShiftL_regL_regI_Ex(iRegLdst dst, iRegLsrc src1, iRegIsrc src2) %{
+instruct urShiftL_regL_regI_Ex(iRegLdst dst, iRegLsrc src1, iRegIorL2I src2) %{
   match(Set dst (URShiftL src1 src2));
   ins_cost(DEFAULT_COST*2);
 
@@ -8674,7 +8525,7 @@ instruct shrP_convP2X_reg_imm6(iRegLdst dst, iRegP_N2P src1, uimmI6 src2) %{
 %}
 
 // Bitfield Extract: URShiftI + AndI
-instruct andI_urShiftI_regI_immI_immIpow2minus1(iRegIdst dst, iRegIsrc src1, immI src2, immIpow2minus1 src3) %{
+instruct andI_urShiftI_regI_immI_immIpow2minus1(iRegIdst dst, iRegIorL2I src1, immI src2, immIpow2minus1 src3) %{
   match(Set dst (AndI (URShiftI src1 src2) src3));
 
   format %{ "EXTRDI  $dst, $src1, shift=$src2, mask=$src3 \t// int bitfield extract" %}
@@ -8709,21 +8560,10 @@ instruct andL_urShiftL_regL_immI_immLpow2minus1(iRegLdst dst, iRegLsrc src1, imm
   ins_pipe(pipe_class_default);
 %}
 
-instruct sxtI_reg(iRegIdst dst, iRegIsrc src) %{
-  match(Set dst (ConvL2I (ConvI2L src)));
-
-  format %{ "EXTSW   $dst, $src \t// int->int" %}
-  size(4);
-  ins_encode %{
-    __ extsw($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 //----------Rotate Instructions------------------------------------------------
 
 // Rotate Left by 8-bit immediate
-instruct rotlI_reg_immi8(iRegIdst dst, iRegIsrc src, immI8 lshift, immI8 rshift) %{
+instruct rotlI_reg_immi8(iRegIdst dst, iRegIorL2I src, immI8 lshift, immI8 rshift) %{
   match(Set dst (OrI (LShiftI src lshift) (URShiftI src rshift)));
   predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x1f));
 
@@ -8736,7 +8576,7 @@ instruct rotlI_reg_immi8(iRegIdst dst, iRegIsrc src, immI8 lshift, immI8 rshift)
 %}
 
 // Rotate Right by 8-bit immediate
-instruct rotrI_reg_immi8(iRegIdst dst, iRegIsrc src, immI8 rshift, immI8 lshift) %{
+instruct rotrI_reg_immi8(iRegIdst dst, iRegIorL2I src, immI8 rshift, immI8 lshift) %{
   match(Set dst (OrI (URShiftI src rshift) (LShiftI src lshift)));
   predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x1f));
 
@@ -9045,7 +8885,7 @@ instruct msubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
 // And Instructions
 
 // Register And
-instruct andI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct andI_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (AndI src1 src2));
   format %{ "AND     $dst, $src1, $src2" %}
   size(4);
@@ -9055,7 +8895,7 @@ instruct andI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct andI_reg_immI(iRegIdst dst, iRegIsrc src1, immI src2, flagsRegCR0 cr0) %{
+instruct andI_reg_immI(iRegIdst dst, iRegIorL2I src1, immI src2, flagsRegCR0 cr0) %{
   match(Set dst (AndI src1 src2));
   predicate(Assembler::andi_supports((juint)(n->in(2)->get_int())));
   effect(KILL cr0);
@@ -9108,7 +8948,7 @@ instruct convL2I_andL_reg_immL(iRegIdst dst, iRegLsrc src1, immL src2, flagsRegC
 // Or Instructions
 
 // Register Or
-instruct orI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct orI_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (OrI src1 src2));
   format %{ "OR      $dst, $src1, $src2" %}
   size(4);
@@ -9130,7 +8970,7 @@ instruct orI_reg_reg_2(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct tree_orI_orI_orI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, iRegIsrc src3, iRegIsrc src4) %{
+instruct tree_orI_orI_orI_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3, iRegIorL2I src4) %{
   match(Set dst (OrI (OrI (OrI src1 src2) src3) src4));
   ins_cost(DEFAULT_COST*3);
 
@@ -9145,7 +8985,7 @@ instruct tree_orI_orI_orI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2,
 %}
 
 // Immediate Or
-instruct orI_reg_uimm16(iRegIdst dst, iRegIsrc src1, uimmI16 src2) %{
+instruct orI_reg_uimm16(iRegIdst dst, iRegIorL2I src1, uimmI16 src2) %{
   match(Set dst (OrI src1 src2));
   format %{ "ORI     $dst, $src1, $src2" %}
   size(4);
@@ -9197,7 +9037,7 @@ instruct orL_reg_uimm16(iRegLdst dst, iRegLsrc src1, uimmL16 con) %{
 // Xor Instructions
 
 // Register Xor
-instruct xorI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct xorI_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (XorI src1 src2));
   format %{ "XOR     $dst, $src1, $src2" %}
   size(4);
@@ -9219,7 +9059,7 @@ instruct xorI_reg_reg_2(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct tree_xorI_xorI_xorI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, iRegIsrc src3, iRegIsrc src4) %{
+instruct tree_xorI_xorI_xorI_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3, iRegIorL2I src4) %{
   match(Set dst (XorI (XorI (XorI src1 src2) src3) src4));
   ins_cost(DEFAULT_COST*3);
 
@@ -9234,7 +9074,7 @@ instruct tree_xorI_xorI_xorI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc sr
 %}
 
 // Immediate Xor
-instruct xorI_reg_uimm16(iRegIdst dst, iRegIsrc src1, uimmI16 src2) %{
+instruct xorI_reg_uimm16(iRegIdst dst, iRegIorL2I src1, uimmI16 src2) %{
   match(Set dst (XorI src1 src2));
   format %{ "XORI    $dst, $src1, $src2" %}
   size(4);
@@ -9283,7 +9123,7 @@ instruct xorL_reg_uimm16(iRegLdst dst, iRegLsrc src1, uimmL16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct notI_reg(iRegIdst dst, iRegIsrc src1, immI_minus1 src2) %{
+instruct notI_reg(iRegIdst dst, iRegIorL2I src1, immI_minus1 src2) %{
   match(Set dst (XorI src1 src2));
   ins_cost(DEFAULT_COST);
 
@@ -9308,7 +9148,7 @@ instruct notL_reg(iRegLdst dst, iRegLsrc src1, immL_minus1 src2) %{
 %}
 
 // And-complement
-instruct andcI_reg_reg(iRegIdst dst, iRegIsrc src1, immI_minus1 src2, iRegIsrc src3) %{
+instruct andcI_reg_reg(iRegIdst dst, iRegIorL2I src1, immI_minus1 src2, iRegIorL2I src3) %{
   match(Set dst (AndI (XorI src1 src2) src3));
   ins_cost(DEFAULT_COST);
 
@@ -9452,7 +9292,7 @@ instruct moveI2F_stack_reg(regF dst, stackSlotI src) %{
 %}
 
 // Move integer value from integer register to float stack-location.
-instruct moveI2F_reg_stack(stackSlotF dst, iRegIsrc src) %{
+instruct moveI2F_reg_stack(stackSlotF dst, iRegIorL2I src) %{
   match(Set dst (MoveI2F src));
   ins_cost(MEMORY_REF_COST);
 
@@ -9526,6 +9366,16 @@ instruct castP2X(iRegLdst dst, iRegP_N2P src) %{
   // variable size, 0 or 4.
   ins_encode %{
     __ mr_if_needed($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct castI2N(iRegNdst dst, iRegIsrc src) %{
+  match(Set dst (CastI2N src));
+  format %{ "CLRLDI  $dst, $src, #32 \t// int->Narrow Ptr" %}
+  size(4);
+  ins_encode %{
+    __ clrldi($dst$$Register, $src$$Register, 32); // zero high word
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9619,7 +9469,7 @@ instruct checkCastPP(iRegPdst dst) %{
 // 3) Xori the result to get 0b1 if src != 0 and 0b0 if src == 0.
 
 // convI2Bool
-instruct convI2Bool_reg__cntlz_Ex(iRegIdst dst, iRegIsrc src) %{
+instruct convI2Bool_reg__cntlz_Ex(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (Conv2B src));
   predicate(UseCountLeadingZerosInstructionsPPC64);
   ins_cost(DEFAULT_COST);
@@ -9635,7 +9485,7 @@ instruct convI2Bool_reg__cntlz_Ex(iRegIdst dst, iRegIsrc src) %{
   %}
 %}
 
-instruct convI2Bool_reg__cmove(iRegIdst dst, iRegIsrc src, flagsReg crx) %{
+instruct convI2Bool_reg__cmove(iRegIdst dst, iRegIorL2I src, flagsReg crx) %{
   match(Set dst (Conv2B src));
   effect(TEMP crx);
   predicate(!UseCountLeadingZerosInstructionsPPC64);
@@ -9652,7 +9502,7 @@ instruct convI2Bool_reg__cmove(iRegIdst dst, iRegIsrc src, flagsReg crx) %{
 %}
 
 // ConvI2B + XorI
-instruct xorI_convI2Bool_reg_immIvalue1__cntlz_Ex(iRegIdst dst, iRegIsrc src, immI_1 mask) %{
+instruct xorI_convI2Bool_reg_immIvalue1__cntlz_Ex(iRegIdst dst, iRegIorL2I src, immI_1 mask) %{
   match(Set dst (XorI (Conv2B src) mask));
   predicate(UseCountLeadingZerosInstructionsPPC64);
   ins_cost(DEFAULT_COST);
@@ -9665,7 +9515,7 @@ instruct xorI_convI2Bool_reg_immIvalue1__cntlz_Ex(iRegIdst dst, iRegIsrc src, im
   %}
 %}
 
-instruct xorI_convI2Bool_reg_immIvalue1__cmove(iRegIdst dst, iRegIsrc src, flagsReg crx, immI_1 mask) %{
+instruct xorI_convI2Bool_reg_immIvalue1__cmove(iRegIdst dst, iRegIorL2I src, flagsReg crx, immI_1 mask) %{
   match(Set dst (XorI (Conv2B src) mask));
   effect(TEMP crx);
   predicate(!UseCountLeadingZerosInstructionsPPC64);
@@ -9682,7 +9532,7 @@ instruct xorI_convI2Bool_reg_immIvalue1__cmove(iRegIdst dst, iRegIsrc src, flags
 %}
 
 // AndI 0b0..010..0 + ConvI2B
-instruct convI2Bool_andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src, immIpowerOf2 mask) %{
+instruct convI2Bool_andI_reg_immIpowerOf2(iRegIdst dst, iRegIorL2I src, immIpowerOf2 mask) %{
   match(Set dst (Conv2B (AndI src mask)));
   predicate(UseRotateAndMaskInstructionsPPC64);
   ins_cost(DEFAULT_COST);
@@ -9770,7 +9620,7 @@ instruct xorI_convP2Bool_reg_immIvalue1__cmove(iRegIdst dst, iRegP_N2P src, flag
 %}
 
 // if src1 < src2, return -1 else return 0
-instruct cmpLTMask_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+instruct cmpLTMask_reg_reg_Ex(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (CmpLTMask src1 src2));
   ins_cost(DEFAULT_COST*4);
 
@@ -9786,7 +9636,7 @@ instruct cmpLTMask_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   %}
 %}
 
-instruct cmpLTMask_reg_immI0(iRegIdst dst, iRegIsrc src1, immI_0 src2) %{
+instruct cmpLTMask_reg_immI0(iRegIdst dst, iRegIorL2I src1, immI_0 src2) %{
   match(Set dst (CmpLTMask src1 src2)); // if src1 < src2, return -1 else return 0
   format %{ "SRAWI   $dst, $src1, $src2 \t// CmpLTMask" %}
   size(4);
@@ -9803,7 +9653,7 @@ instruct cmpLTMask_reg_immI0(iRegIdst dst, iRegIsrc src1, immI_0 src2) %{
 
 // Convert to Int
 
-instruct convB2I_reg(iRegIdst dst, iRegIsrc src, immI_24 amount) %{
+instruct convB2I_reg(iRegIdst dst, iRegIorL2I src, immI_24 amount) %{
   match(Set dst (RShiftI (LShiftI src amount) amount));
   format %{ "EXTSB   $dst, $src \t// byte->int" %}
   size(4);
@@ -9824,24 +9674,12 @@ instruct extsh(iRegIdst dst, iRegIsrc src) %{
 %}
 
 // LShiftI 16 + RShiftI 16 converts short to int.
-instruct convS2I_reg(iRegIdst dst, iRegIsrc src, immI_16 amount) %{
+instruct convS2I_reg(iRegIdst dst, iRegIorL2I src, immI_16 amount) %{
   match(Set dst (RShiftI (LShiftI src amount) amount));
   format %{ "EXTSH   $dst, $src \t// short->int" %}
   size(4);
   ins_encode %{
     __ extsh($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// ConvL2I + ConvI2L: Sign extend int in long register.
-instruct sxtI_L2L_reg(iRegLdst dst, iRegLsrc src) %{
-  match(Set dst (ConvI2L (ConvL2I src)));
-
-  format %{ "EXTSW   $dst, $src \t// long->long" %}
-  size(4);
-  ins_encode %{
-    __ extsw($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9941,7 +9779,7 @@ instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
 
 // Convert to Long
 
-instruct convI2L_reg(iRegLdst dst, iRegIsrc src) %{
+instruct convI2L_reg(iRegLdst dst, iRegIorL2I src) %{
   match(Set dst (ConvI2L src));
   format %{ "EXTSW   $dst, $src \t// int->long" %}
   size(4);
@@ -9952,7 +9790,7 @@ instruct convI2L_reg(iRegLdst dst, iRegIsrc src) %{
 %}
 
 // Zero-extend: convert unsigned int to long (convUI2L).
-instruct zeroExtendL_regI(iRegLdst dst, iRegIsrc src, immL_32bits mask) %{
+instruct zeroExtendL_regI(iRegLdst dst, iRegIorL2I src, immL_32bits mask) %{
   match(Set dst (AndL (ConvI2L src) mask));
   ins_cost(DEFAULT_COST);
 
@@ -10101,7 +9939,7 @@ instruct convL2FRaw_regF(regF dst, regD src) %{
 
 
 // Integer to Float conversion. Special version for Power8.
-instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIsrc src) %{
+instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIorL2I src) %{
   match(Set dst (ConvI2F src));
   ins_cost(DEFAULT_COST);
 
@@ -10132,7 +9970,7 @@ instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
 
 
 // Integer to Double conversion. Special version for Power8.
-instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIsrc src) %{
+instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIorL2I src) %{
   match(Set dst (ConvI2D src));
   ins_cost(DEFAULT_COST);
 
@@ -10181,7 +10019,7 @@ instruct convF2HF_reg_reg(iRegIdst dst, regF src, regF tmp) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct convHF2F_reg_reg(regF dst, iRegIsrc src) %{
+instruct convHF2F_reg_reg(regF dst, iRegIorL2I src) %{
   match(Set dst (ConvHF2F src));
   ins_cost(2 * DEFAULT_COST);
   size(8);
@@ -10198,7 +10036,7 @@ instruct convHF2F_reg_reg(regF dst, iRegIsrc src) %{
 // Compare Instructions
 
 // Compare Integers
-instruct cmpI_reg_reg(flagsReg crx, iRegIsrc src1, iRegIsrc src2) %{
+instruct cmpI_reg_reg(flagsReg crx, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set crx (CmpI src1 src2));
   size(4);
   format %{ "CMPW    $crx, $src1, $src2" %}
@@ -10208,7 +10046,7 @@ instruct cmpI_reg_reg(flagsReg crx, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmpI_reg_imm16(flagsReg crx, iRegIsrc src1, immI16 src2) %{
+instruct cmpI_reg_imm16(flagsReg crx, iRegIorL2I src1, immI16 src2) %{
   match(Set crx (CmpI src1 src2));
   format %{ "CMPWI   $crx, $src1, $src2" %}
   size(4);
@@ -10219,7 +10057,7 @@ instruct cmpI_reg_imm16(flagsReg crx, iRegIsrc src1, immI16 src2) %{
 %}
 
 // (src1 & src2) == 0?
-instruct testI_reg_imm(flagsRegCR0 cr0, iRegIsrc src1, uimmI16 src2, immI_0 zero) %{
+instruct testI_reg_imm(flagsRegCR0 cr0, iRegIorL2I src1, uimmI16 src2, immI_0 zero) %{
   match(Set cr0 (CmpI (AndI src1 src2) zero));
   // r0 is killed
   format %{ "ANDI    R0, $src1, $src2 \t// BTST int" %}
@@ -10309,7 +10147,7 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmpU3_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct cmpU3_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpU3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 5);
@@ -10345,7 +10183,7 @@ instruct cmpUL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 
 //  - (If lt (CmpU index length)), (IfFalse throw exception)
 //
 // Match range check 'If le (CmpU length index)'.
-instruct rangeCheck_iReg_uimm15(cmpOp cmp, iRegIsrc src_length, uimmI15 index, label labl) %{
+instruct rangeCheck_iReg_uimm15(cmpOp cmp, iRegIorL2I src_length, uimmI15 index, label labl) %{
   match(If cmp (CmpU src_length index));
   effect(USE labl);
   predicate(TrapBasedRangeChecks &&
@@ -10371,7 +10209,7 @@ instruct rangeCheck_iReg_uimm15(cmpOp cmp, iRegIsrc src_length, uimmI15 index, l
 %}
 
 // Match range check 'If lt (CmpU index length)'.
-instruct rangeCheck_iReg_iReg(cmpOp cmp, iRegIsrc src_index, iRegIsrc src_length, label labl) %{
+instruct rangeCheck_iReg_iReg(cmpOp cmp, iRegIorL2I src_index, iRegIorL2I src_length, label labl) %{
   match(If cmp (CmpU src_index src_length));
   effect(USE labl);
   predicate(TrapBasedRangeChecks &&
@@ -10397,7 +10235,7 @@ instruct rangeCheck_iReg_iReg(cmpOp cmp, iRegIsrc src_index, iRegIsrc src_length
 %}
 
 // Match range check 'If lt (CmpU index length)'.
-instruct rangeCheck_uimm15_iReg(cmpOp cmp, iRegIsrc src_index, uimmI15 length, label labl) %{
+instruct rangeCheck_uimm15_iReg(cmpOp cmp, iRegIorL2I src_index, uimmI15 length, label labl) %{
   match(If cmp (CmpU src_index length));
   effect(USE labl);
   predicate(TrapBasedRangeChecks &&
@@ -10422,7 +10260,7 @@ instruct rangeCheck_uimm15_iReg(cmpOp cmp, iRegIsrc src_index, uimmI15 length, l
   ins_pipe(pipe_class_trap);
 %}
 
-instruct compU_reg_reg(flagsReg crx, iRegIsrc src1, iRegIsrc src2) %{
+instruct compU_reg_reg(flagsReg crx, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set crx (CmpU src1 src2));
   format %{ "CMPLW   $crx, $src1, $src2 \t// unsigned" %}
   size(4);
@@ -10432,7 +10270,7 @@ instruct compU_reg_reg(flagsReg crx, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_compare);
 %}
 
-instruct compU_reg_uimm16(flagsReg crx, iRegIsrc src1, uimmI16 src2) %{
+instruct compU_reg_uimm16(flagsReg crx, iRegIorL2I src1, uimmI16 src2) %{
   match(Set crx (CmpU src1 src2));
   size(4);
   format %{ "CMPLWI  $crx, $src1, $src2" %}
@@ -10664,7 +10502,7 @@ instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
 %}
 
 // Compare char
-instruct cmprb_Digit_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+instruct cmprb_Digit_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIsrc src2, flagsReg crx) %{
   match(Set dst (Digit src1));
   effect(TEMP src2, TEMP crx);
   ins_cost(3 * DEFAULT_COST);
@@ -10683,7 +10521,7 @@ instruct cmprb_Digit_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRe
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmprb_LowerCase_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+instruct cmprb_LowerCase_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIsrc src2, flagsReg crx) %{
   match(Set dst (LowerCase src1));
   effect(TEMP src2, TEMP crx);
   ins_cost(12 * DEFAULT_COST);
@@ -10733,7 +10571,7 @@ instruct cmprb_LowerCase_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, fla
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmprb_UpperCase_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+instruct cmprb_UpperCase_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIsrc src2, flagsReg crx) %{
   match(Set dst (UpperCase src1));
   effect(TEMP src2, TEMP crx);
   ins_cost(7 * DEFAULT_COST);
@@ -10768,7 +10606,7 @@ instruct cmprb_UpperCase_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, fla
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIorL2I src1, iRegIsrc src2, flagsReg crx) %{
   match(Set dst (Whitespace src1));
   predicate(PowerArchitecturePPC64 <= 9);
   effect(TEMP src2, TEMP crx);
@@ -10791,7 +10629,7 @@ instruct cmprb_Whitespace_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, fl
 %}
 
 // Power 10 version, using prefixed addi to load 32-bit constant
-instruct cmprb_Whitespace_reg_reg_prefixed(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsReg crx) %{
+instruct cmprb_Whitespace_reg_reg_prefixed(iRegIdst dst, iRegIorL2I src1, iRegIsrc src2, flagsReg crx) %{
   match(Set dst (Whitespace src1));
   predicate(PowerArchitecturePPC64 >= 10);
   effect(TEMP src2, TEMP crx);
@@ -10985,24 +10823,7 @@ instruct partialSubtypeCheckConstSuper(rarg3RegP sub, rarg2RegP super_reg, immP 
 
 // inlined locking and unlocking
 
-instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
-  predicate(!UseObjectMonitorTable);
-  match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2);
-
-  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
-  ins_encode %{
-    __ fast_lock($crx$$CondRegister, $oop$$Register, $box$$Register,
-                 $tmp1$$Register, $tmp2$$Register, noreg /*tmp3*/);
-    // If locking was successful, crx should indicate 'EQ'.
-    // The compiler generates a branch to the runtime call to
-    // _complete_monitor_locking_Java for the case where crx is 'NE'.
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmpFastLockMonitorTable(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, flagsRegCR1 cr1) %{
-  predicate(UseObjectMonitorTable);
+instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, flagsRegCR1 cr1) %{
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr1);
 
@@ -11218,7 +11039,7 @@ instruct array_equalsC(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
   ins_pipe(pipe_class_default);
 %}
 
-instruct indexOf_imm1_char_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+instruct indexOf_imm1_char_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
                              immP needleImm, immL offsetImm, immI_1 needlecntImm,
                              iRegIdst tmp1, iRegIdst tmp2,
                              flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
@@ -11251,7 +11072,7 @@ instruct indexOf_imm1_char_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
   ins_pipe(pipe_class_compare);
 %}
 
-instruct indexOf_imm1_char_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+instruct indexOf_imm1_char_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
                              immP needleImm, immL offsetImm, immI_1 needlecntImm,
                              iRegIdst tmp1, iRegIdst tmp2,
                              flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
@@ -11277,7 +11098,7 @@ instruct indexOf_imm1_char_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
   ins_pipe(pipe_class_compare);
 %}
 
-instruct indexOf_imm1_char_UL(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+instruct indexOf_imm1_char_UL(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
                               immP needleImm, immL offsetImm, immI_1 needlecntImm,
                               iRegIdst tmp1, iRegIdst tmp2,
                               flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
@@ -11303,7 +11124,7 @@ instruct indexOf_imm1_char_UL(iRegIdst result, iRegPsrc haystack, iRegIsrc haycn
   ins_pipe(pipe_class_compare);
 %}
 
-instruct indexOf_imm1_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+instruct indexOf_imm1_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
                         rscratch2RegP needle, immI_1 needlecntImm,
                         iRegIdst tmp1, iRegIdst tmp2,
                         flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
@@ -11337,7 +11158,7 @@ instruct indexOf_imm1_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
   ins_pipe(pipe_class_compare);
 %}
 
-instruct indexOf_imm1_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+instruct indexOf_imm1_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
                         rscratch2RegP needle, immI_1 needlecntImm,
                         iRegIdst tmp1, iRegIdst tmp2,
                         flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
@@ -11364,7 +11185,7 @@ instruct indexOf_imm1_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
   ins_pipe(pipe_class_compare);
 %}
 
-instruct indexOf_imm1_UL(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+instruct indexOf_imm1_UL(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
                          rscratch2RegP needle, immI_1 needlecntImm,
                          iRegIdst tmp1, iRegIdst tmp2,
                          flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
@@ -11391,8 +11212,8 @@ instruct indexOf_imm1_UL(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
   ins_pipe(pipe_class_compare);
 %}
 
-instruct indexOfChar_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
-                       iRegIsrc ch, iRegIdst tmp1, iRegIdst tmp2,
+instruct indexOfChar_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
+                       iRegIorL2I ch, iRegIdst tmp1, iRegIdst tmp2,
                        flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
   match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
   effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
@@ -11410,8 +11231,8 @@ instruct indexOfChar_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
   ins_pipe(pipe_class_compare);
 %}
 
-instruct indexOfChar_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
-                       iRegIsrc ch, iRegIdst tmp1, iRegIdst tmp2,
+instruct indexOfChar_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
+                       iRegIorL2I ch, iRegIdst tmp1, iRegIdst tmp2,
                        flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
   match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
   effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
@@ -11574,7 +11395,7 @@ instruct indexOf_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iR
 %}
 
 // char[] to byte[] compression
-instruct string_compress(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst result, iRegLdst tmp1,
+instruct string_compress(rarg1RegP src, rarg2RegP dst, iRegIorL2I len, iRegIdst result, iRegLdst tmp1,
                          iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
   effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
@@ -11589,7 +11410,7 @@ instruct string_compress(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst re
 %}
 
 // byte[] to char[] inflation
-instruct string_inflate(Universe dummy, rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegLdst tmp1,
+instruct string_inflate(Universe dummy, rarg1RegP src, rarg2RegP dst, iRegIorL2I len, iRegLdst tmp1,
                         iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);
@@ -11608,7 +11429,7 @@ instruct string_inflate(Universe dummy, rarg1RegP src, rarg2RegP dst, iRegIsrc l
 %}
 
 // StringCoding.java intrinsics
-instruct count_positives(iRegPsrc ary1, iRegIsrc len, iRegIdst result, iRegLdst tmp1, iRegLdst tmp2,
+instruct count_positives(iRegPsrc ary1, iRegIorL2I len, iRegIdst result, iRegLdst tmp1, iRegLdst tmp2,
                          regCTR ctr, flagsRegCR0 cr0)
 %{
   match(Set result (CountPositives ary1 len));
@@ -11623,7 +11444,7 @@ instruct count_positives(iRegPsrc ary1, iRegIsrc len, iRegIdst result, iRegLdst 
 %}
 
 // encode char[] to byte[] in ISO_8859_1
-instruct encode_iso_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst result, iRegLdst tmp1,
+instruct encode_iso_array(rarg1RegP src, rarg2RegP dst, iRegIorL2I len, iRegIdst result, iRegLdst tmp1,
                           iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
   predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
@@ -11639,7 +11460,7 @@ instruct encode_iso_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst r
 %}
 
 // encode char[] to byte[] in ASCII
-instruct encode_ascii_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst result, iRegLdst tmp1,
+instruct encode_ascii_array(rarg1RegP src, rarg2RegP dst, iRegIorL2I len, iRegIdst result, iRegLdst tmp1,
                           iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
   predicate(((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
@@ -11658,7 +11479,7 @@ instruct encode_ascii_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst
 //---------- Min/Max Instructions ---------------------------------------------
 
 
-instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct minI_reg_reg_isel(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set dst (MinI src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST*2);
@@ -11672,7 +11493,7 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
 %}
 
 
-instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+instruct maxI_reg_reg_isel(iRegIdst dst, iRegIorL2I src1, iRegIorL2I src2, flagsRegCR0 cr0) %{
   match(Set dst (MaxI src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST*2);
@@ -11739,7 +11560,7 @@ instruct maxD(regD dst, regD src1, regD src2) %{
 
 //---------- Population Count Instructions ------------------------------------
 
-instruct popCountI(iRegIdst dst, iRegIsrc src) %{
+instruct popCountI(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (PopCountI src));
   predicate(UsePopCountInstruction);
   ins_cost(DEFAULT_COST);
@@ -11765,7 +11586,7 @@ instruct popCountL(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct countLeadingZerosI(iRegIdst dst, iRegIsrc src) %{
+instruct countLeadingZerosI(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (CountLeadingZerosI src));
   predicate(UseCountLeadingZerosInstructionsPPC64);  // See Matcher::match_rule_supported.
   ins_cost(DEFAULT_COST);
@@ -11804,7 +11625,7 @@ instruct countLeadingZerosP(iRegIdst dst, iRegPsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct countTrailingZerosI_Ex(iRegIdst dst, iRegIsrc src) %{
+instruct countTrailingZerosI_Ex(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (CountTrailingZerosI src));
   predicate(UseCountLeadingZerosInstructionsPPC64 && !UseCountTrailingZerosInstructionsPPC64);
   ins_cost(DEFAULT_COST);
@@ -11823,7 +11644,7 @@ instruct countTrailingZerosI_Ex(iRegIdst dst, iRegIsrc src) %{
   %}
 %}
 
-instruct countTrailingZerosI_cnttzw(iRegIdst dst, iRegIsrc src) %{
+instruct countTrailingZerosI_cnttzw(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (CountTrailingZerosI src));
   predicate(UseCountTrailingZerosInstructionsPPC64);
   ins_cost(DEFAULT_COST);
@@ -11907,7 +11728,7 @@ instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 n, immI16 b) %{
 %}
 
 // Just slightly faster than java implementation.
-instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIsrc src) %{
+instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesI src));
   predicate(!UseByteReverseInstructions);
   ins_cost(7*DEFAULT_COST);
@@ -11932,7 +11753,7 @@ instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIsrc src) %{
   %}
 %}
 
-instruct bytes_reverse_int_vec(iRegIdst dst, iRegIsrc src, vecX tmpV) %{
+instruct bytes_reverse_int_vec(iRegIdst dst, iRegIorL2I src, vecX tmpV) %{
   match(Set dst (ReverseBytesI src));
   predicate(UseVectorByteReverseInstructionsPPC64);
   effect(TEMP tmpV);
@@ -11950,7 +11771,7 @@ instruct bytes_reverse_int_vec(iRegIdst dst, iRegIsrc src, vecX tmpV) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct bytes_reverse_int(iRegIdst dst, iRegIsrc src) %{
+instruct bytes_reverse_int(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesI src));
   predicate(UseByteReverseInstructions);
   ins_cost(DEFAULT_COST);
@@ -12037,7 +11858,7 @@ instruct bytes_reverse_long(iRegLdst dst, iRegLsrc src) %{
 %}
 
 // Need zero extend. Must not use brh only.
-instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIsrc src) %{
+instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesUS src));
   ins_cost(2*DEFAULT_COST);
 
@@ -12052,7 +11873,7 @@ instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIsrc src) %{
   %}
 %}
 
-instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIsrc src) %{
+instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesS src));
   predicate(!UseByteReverseInstructions);
   ins_cost(3*DEFAULT_COST);
@@ -12068,7 +11889,7 @@ instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIsrc src) %{
   %}
 %}
 
-instruct bytes_reverse_short(iRegIdst dst, iRegIsrc src) %{
+instruct bytes_reverse_short(iRegIdst dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesS src));
   predicate(UseByteReverseInstructions);
   ins_cost(DEFAULT_COST);
@@ -12191,7 +12012,7 @@ instruct loadS_reversed_acquire(iRegIdst dst, indirect mem) %{
 %}
 
 // Store Integer reversed byte order
-instruct storeI_reversed(iRegIsrc src, indirect mem) %{
+instruct storeI_reversed(iRegIorL2I src, indirect mem) %{
   match(Set mem (StoreI mem (ReverseBytesI src)));
   ins_cost(MEMORY_REF_COST);
 
@@ -12215,7 +12036,7 @@ instruct storeL_reversed(iRegLsrc src, indirect mem) %{
 %}
 
 // Store unsigned short / char reversed byte order
-instruct storeUS_reversed(iRegIsrc src, indirect mem) %{
+instruct storeUS_reversed(iRegIorL2I src, indirect mem) %{
   match(Set mem (StoreC mem (ReverseBytesUS src)));
   ins_cost(MEMORY_REF_COST);
 
@@ -12227,7 +12048,7 @@ instruct storeUS_reversed(iRegIsrc src, indirect mem) %{
 %}
 
 // Store short reversed byte order
-instruct storeS_reversed(iRegIsrc src, indirect mem) %{
+instruct storeS_reversed(iRegIorL2I src, indirect mem) %{
   match(Set mem (StoreC mem (ReverseBytesS src)));
   ins_cost(MEMORY_REF_COST);
 
@@ -12312,7 +12133,7 @@ instruct repl56(iRegLdst dst) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct repl8B_reg_Ex(iRegLdst dst, iRegIsrc src) %{
+instruct repl8B_reg_Ex(iRegLdst dst, iRegIorL2I src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 8 &&
             Matcher::vector_element_basic_type(n) == T_BYTE);
@@ -12348,7 +12169,7 @@ instruct repl8B_immIminus1(iRegLdst dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct repl16B_reg_Ex(vecX dst, iRegIsrc src) %{
+instruct repl16B_reg_Ex(vecX dst, iRegIorL2I src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 16 &&
             Matcher::vector_element_basic_type(n) == T_BYTE);
@@ -12391,7 +12212,7 @@ instruct repl16B_immIminus1(vecX dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct repl4S_reg_Ex(iRegLdst dst, iRegIsrc src) %{
+instruct repl4S_reg_Ex(iRegLdst dst, iRegIorL2I src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 4 &&
             Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -12426,7 +12247,7 @@ instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct repl8S_reg_Ex(vecX dst, iRegIsrc src) %{
+instruct repl8S_reg_Ex(vecX dst, iRegIorL2I src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 8 &&
             Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -12469,7 +12290,7 @@ instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct repl2I_reg_Ex(iRegLdst dst, iRegIsrc src) %{
+instruct repl2I_reg_Ex(iRegLdst dst, iRegIorL2I src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2 &&
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -12504,7 +12325,7 @@ instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct repl4I_reg_Ex(vecX dst, iRegIsrc src) %{
+instruct repl4I_reg_Ex(vecX dst, iRegIorL2I src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 4 &&
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -12912,7 +12733,7 @@ instruct vxor(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct reductionI_arith_logic(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2) %{
+instruct reductionI_arith_logic(iRegIdst dst, iRegIorL2I srcInt, vecX srcVec, vecX tmp1, vecX tmp2) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (AddReductionVI srcInt srcVec));
   match(Set dst (MulReductionVI srcInt srcVec));
@@ -12931,7 +12752,7 @@ instruct reductionI_arith_logic(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX
   ins_pipe(pipe_class_default);
 %}
 
-instruct reductionI_min_max(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2, flagsRegCR0 cr0) %{
+instruct reductionI_min_max(iRegIdst dst, iRegIorL2I srcInt, vecX srcVec, vecX tmp1, vecX tmp2, flagsRegCR0 cr0) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MinReductionV srcInt srcVec));
   match(Set dst (MaxReductionV srcInt srcVec));
@@ -13910,23 +13731,6 @@ instruct cacheWBPostSync()
 //   match(Set dst (LoadI mem));
 // %}
 //
-peephole %{
-  peepmatch ( loadI storeI );
-  peepconstraint ( 1.src == 0.dst, 1.mem == 0.mem );
-  peepreplace ( storeI( 1.mem 1.mem 1.src ) );
-%}
-
-peephole %{
-  peepmatch ( loadL storeL );
-  peepconstraint ( 1.src == 0.dst, 1.mem == 0.mem );
-  peepreplace ( storeL( 1.mem 1.mem 1.src ) );
-%}
-
-peephole %{
-  peepmatch ( loadP storeP );
-  peepconstraint ( 1.src == 0.dst, 1.dst == 0.mem );
-  peepreplace ( storeP( 1.dst 1.dst 1.src ) );
-%}
 
 //----------SMARTSPILL RULES---------------------------------------------------
 // These must follow all instruction definitions as they use the names

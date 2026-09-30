@@ -147,6 +147,7 @@ compiler.note.preview.plural.additional                 # preview feature suppor
 compiler.warn.declared.using.preview                    # after making sealed classes a final feature there is no other
                                                         # preview feature but we should keep this key for future use just
                                                         # in case
+compiler.misc.illegal.tvar.bound                        # ClassReader
 
 # The following module-related messages will have to stay on the not-yet list for various reasons:
 compiler.warn.locn.unknown.file.on.module.path                # Never issued ATM (short circuited with an if (false))

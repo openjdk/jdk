@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,12 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.AverageTime)
 @Fork(jvmArgs = {"-Xms1024m", "-Xmx1024m", "-Xmn768m", "-XX:+UseParallelGC"}, value = 3)
 public class PKCS12KeyStores {
+    @Param({"false", "true"})
+    private boolean pbmac1;
+
+    private String macAlgorithm(String legacyAlgorithm) {
+        return pbmac1 ? "PBEWithHmacSHA256" : legacyAlgorithm;
+    }
 
     private static final char[] PASS = "changeit".toCharArray();
 
@@ -151,14 +157,14 @@ public class PKCS12KeyStores {
     public byte[] outweak2048() throws Exception {
         return out("PBEWithSHA1AndRC2_40", "2048",
                 "PBEWithSHA1AndDESede", "2048",
-                "HmacPBESHA1", "2048");
+                macAlgorithm("HmacPBESHA1"), "2048");
     }
 
     @Benchmark
     public byte[] outweak50000_Old() throws Exception {
         return out("PBEWithSHA1AndRC2_40", "50000",
                 "PBEWithSHA1AndDESede", "50000",
-                "HmacPBESHA1", "100000");
+                macAlgorithm("HmacPBESHA1"), "100000");
                 // Attention: 100000 is old default Mac ic
     }
 
@@ -166,7 +172,7 @@ public class PKCS12KeyStores {
     public byte[] outstrong50000() throws Exception {
         return out("PBEWithHmacSHA256AndAES_256", "50000",
                 "PBEWithHmacSHA256AndAES_256", "50000",
-                "HmacPBESHA256", "100000");
+                macAlgorithm("HmacPBESHA256"), "100000");
                 // Attention: 100000 is old default Mac ic
     }
 
@@ -174,13 +180,13 @@ public class PKCS12KeyStores {
     public byte[] outstrong10000_New() throws Exception {
         return out("PBEWithHmacSHA256AndAES_256", "10000",
                 "PBEWithHmacSHA256AndAES_256", "10000",
-                "HmacPBESHA256", "10000");
+                macAlgorithm("HmacPBESHA256"), "10000");
     }
 
     @Benchmark
     public byte[] outstrong2048() throws Exception {
         return out("PBEWithHmacSHA256AndAES_256", "2048",
                 "PBEWithHmacSHA256AndAES_256", "2048",
-                "HmacPBESHA256", "2048");
+                macAlgorithm("HmacPBESHA256"), "2048");
     }
 }

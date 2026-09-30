@@ -160,7 +160,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // Just strip it for now.
       sender_pc = pauth_strip_pointer((address) *(sender_sp - 1));
 
-      // Repair the sender sp if this is a method with scalarized inline type args
+      // Repair the sender sp if this is a method with scalarized value type args
       sender_sp = repair_sender_sp(sender_sp, saved_fp_addr);
       sender_unextended_sp = sender_sp;
     }
@@ -266,6 +266,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // linkages it must be safe
 
   if (!fp_safe) {
+    return false;
+  }
+
+  // sender_fp must be within the stack and above (but not equal) to
+  // current frame's fp.
+  address sender_fp = (address)this->link();
+  if (!thread->is_in_stack_range_excl(sender_fp, fp)) {
     return false;
   }
 
@@ -632,7 +639,9 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       ret_pc_loc = (intptr_t*)cfp.sender_pc_addr;
       fp_loc = (intptr_t*)cfp.saved_fp_addr;
     }
-    address ret_pc = *(address*)ret_pc_loc;
+    // Strip without authenticating: describe may see unsigned or broken LRs,
+    // and is_return_barrier_entry() compares against a raw stub address.
+    address ret_pc = pauth_strip_pointer(*(address*)ret_pc_loc);
     values.describe(frame_no, ret_pc_loc,
       Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
     values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
@@ -805,8 +814,8 @@ intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp
 }
 
 bool frame::was_augmented_on_entry(int& real_size) const {
-  assert(is_compiled_frame(), "");
-  if (_cb->as_nmethod_or_null()->needs_stack_repair()) {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  if (_cb->as_nmethod()->needs_stack_repair()) {
     // The stack increment resides just below the saved FP on the stack and
     // records the total frame size excluding the two words for saving FP and LR
     // (see MacroAssembler::remove_frame).
