@@ -52,7 +52,7 @@ public class TestSplitIfSCMemProj {
             throw new RuntimeException(e);
         }
     }
-    
+
     static void test(boolean b) throws Throwable {
         byte[] src = new byte[2];
         byte[] dst = new byte[1];
@@ -71,4 +71,3 @@ public class TestSplitIfSCMemProj {
         }
     }
 }
-
