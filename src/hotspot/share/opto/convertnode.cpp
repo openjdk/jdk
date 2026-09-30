@@ -41,7 +41,9 @@
 //
 // Expressions beyond the limit are not optimized.
 static const int INTEGRAL_FP_DEPTH_LIMIT = 4;
+static_assert(INTEGRAL_FP_DEPTH_LIMIT <= 31, "ConvI2D/ConvI2F leaves (|v| <= 2^31) must stay below 2^(63 - depth)");
 
+// Returns true if n evaluates to an integer v with |v| < 2^(63 - depth), so ConvD2L is exact at depth 0.
 bool is_integral_fp(const PhaseGVN* phase, const Node* n, int depth) {
   if (depth > INTEGRAL_FP_DEPTH_LIMIT) return false;
   switch (n->Opcode()) {
@@ -51,11 +53,13 @@ bool is_integral_fp(const PhaseGVN* phase, const Node* n, int depth) {
   case Op_ConvL2D: {
     // ConvL2D always produces integral values, but longs near max_jlong
     // may round up to 2^63 via ConvL2D, causing ConvD2L to saturate.
-    // Only accept at depth 0 (direct dividend to %) as inside AddD/SubD/NegD,
-    // arithmetic could push the result above 2^63.
     // The ULP of doubles in [2^62, 2^63) is 2^(63 - DBL_MANT_DIG) = 1024.
+    // JLS 5.1.2 and 15.4 require round-to-even for long-to-double conversion.
     // At the midpoint (max_jlong - 511 = 2^63 - 512), round-to-even goes
     // to 2^63 (even mantissa), so the safe bound is max_jlong - 512.
+    //
+    // ConvL2D may yield -2^63, which breaks |v| < 2^63, so only accept it at depth 0
+    // where jlong range is enough.
     if (depth > 0) return false;
     const TypeLong* tl = phase->type(n->in(1))->isa_long();
     return tl != nullptr && tl->_hi <= max_jlong - (1LL << (63 - DBL_MANT_DIG - 1));
@@ -70,6 +74,8 @@ bool is_integral_fp(const PhaseGVN* phase, const Node* n, int depth) {
     return is_integral_fp(phase, n->in(1), depth + 1);
   case Op_AddD: case Op_SubD:
   case Op_AddF: case Op_SubF:
+    // |a|, |b| <= M < 2^(62 - depth), so |a + b| <= 2M < 2^(63 - depth). M is the largest FP value
+    // below 2^(62 - depth) and 2M is representable, so rounding the sum cannot exceed 2M.
     return is_integral_fp(phase, n->in(1), depth + 1) && is_integral_fp(phase, n->in(2), depth + 1);
   default: {
     const TypeD* td = phase->type(n)->isa_double_constant();
@@ -273,9 +279,8 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 Node* ConvD2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // ConvI2D->ConvD2L => ConvI2L
+  // ConvD2L(ConvI2D x) => ConvI2L x, since every int is exactly representable as a double
   if (in(1)->Opcode() == Op_ConvI2D) {
     return phase->transform(new ConvI2LNode(in(1)->in(1)));
   }

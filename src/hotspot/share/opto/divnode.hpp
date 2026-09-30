@@ -207,6 +207,7 @@ private:
   Node* divisor() const override { return in(TypeFunc::Parms + 2); }
   const Type* get_result_if_constant(const Type* dividend, const Type* divisor) const override;
   TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result);
+  Node* convert_to_ModL(PhaseGVN* phase, bool can_reshape);
 
 public:
   ModDNode(Compile* C, Node* a, Node* b);

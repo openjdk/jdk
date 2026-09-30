@@ -87,7 +87,8 @@ TupleNode* ModDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, N
 
 // Optimize drem(x, d) where d is a constant integral double and is_integral_fp(x):
 //   copysign(ConvL2D(ConvD2L(x) % d_as_long), x)
-Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+// Returns nullptr if not applicable.
+Node* ModDNode::convert_to_ModL(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
   }
@@ -101,17 +102,17 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // representable as double, so ConvL2D of the result is exact.
   const TypeD* divisor_type = phase->type(y)->isa_double_constant();
   if (divisor_type == nullptr) {
-    return CallLeafPureNode::Ideal(phase, can_reshape);
+    return nullptr;
   }
 
   double divisor_d = divisor_type->getd();
   if (!g_isfinite(divisor_d) || divisor_d == 0.0 || fabs(divisor_d) >= (1LL << DBL_MANT_DIG)) {
-    return CallLeafPureNode::Ideal(phase, can_reshape);
+    return nullptr;
   }
   jlong divisor_l = (jlong)divisor_d;
   if ((double)divisor_l != divisor_d) {
     // Divisor not integral
-    return CallLeafPureNode::Ideal(phase, can_reshape);
+    return nullptr;
   }
 
   // Dividend is provably integral, no branch needed
@@ -123,6 +124,14 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return make_tuple_of_input_state_and_result(igvn, result);
   }
 
+  return nullptr;
+}
+
+Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* progress = convert_to_ModL(phase, can_reshape);
+  if (progress != nullptr) {
+    return progress;
+  }
   return CallLeafPureNode::Ideal(phase, can_reshape);
 }
 
