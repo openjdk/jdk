@@ -184,19 +184,18 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
-  ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
-  request.generation = _heap->global_generation();
-  global_heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
-  global_heuristics->record_requested_gc();
+  ShenandoahHeuristics* heuristics = request.generation->heuristics();
+  heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
+  heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
     return stw_full;
-  } else {
-    // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
-    // the same `should_unload_classes` call as the regulator's concurrent gc request.
-    _heap->set_unload_classes(global_heuristics->can_unload_classes());
-    return concurrent_normal;
   }
+
+  // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
+  // the same `should_unload_classes` call as the regulator's concurrent gc request.
+  _heap->set_unload_classes(heuristics->can_unload_classes());
+  return concurrent_normal;
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const {
@@ -418,12 +417,18 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
     }
     case ShenandoahOldGeneration::IDLE:
       old_generation->transition_to(ShenandoahOldGeneration::MARKING);
+      set_gc_mode(bootstrapping_old);
+
+      // This is the logical gc id for the old collection. The old cycle itself might be
+      // interrupted many times and each iteration will generate a new gc id, but the one
+      // we record at the start will span all the interruptions.
+      old_generation->record_collection_start(get_gc_id());
+
       // Configure the young generation's concurrent mark to put objects in
       // old regions into the concurrent mark queues associated with the old
       // generation. The young cycle will run as normal except that rather than
       // ignore old references it will mark and enqueue them in the old concurrent
-      // task queues but it will not traverse them.
-      set_gc_mode(bootstrapping_old);
+      // task queues, but it will not traverse them.
       young_generation->set_old_gen_task_queues(old_generation->task_queues());
       service_concurrent_cycle(young_generation, request.cause, true);
       _heap->process_gc_stats();
@@ -567,8 +572,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
       }
     }
   } else {
-    assert(generation->is_global(), "If not young, must be GLOBAL");
-    assert(!do_old_gc_bootstrap, "Do not bootstrap with GLOBAL GC");
+    assert(generation->is_global(), "If not young, must be Global");
+    assert(!do_old_gc_bootstrap, "Do not bootstrap with Global GC");
     if (_heap->cancelled_gc()) {
       msg = "At end of Interrupted Concurrent Global GC";
     } else {
@@ -732,13 +737,10 @@ bool ShenandoahGenerationalControlThread::preempt_old_marking(ShenandoahGenerati
   return generation->is_young() && _allow_old_preemption.try_unset();
 }
 
-void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause) {
-  // For normal requested GCs (System.gc) we want to block the caller. However,
-  // for whitebox requested GC, we want to initiate the GC and return immediately.
-  // The whitebox caller thread will arrange for itself to wait until the GC notifies
-  // it that has reached the requested breakpoint (phase in the GC).
-  if (cause == GCCause::_wb_breakpoint) {
-    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
+void ShenandoahGenerationalControlThread::wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation) {
+
+  if (generation->is_old()) {
+    wait_for_old_gc_cycle(cause, static_cast<ShenandoahOldGeneration*>(generation));
     return;
   }
 
@@ -755,11 +757,39 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   size_t current_gc_id = get_gc_id();
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
-    // Make requests to run a global cycle until at least one is completed
-    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
+    // Make requests to run cycles until at least one is completed
+    notify_control_thread(cause, generation);
     ml.wait();
     current_gc_id = get_gc_id();
   }
+}
+
+
+void ShenandoahGenerationalControlThread::wait_for_old_gc_cycle(GCCause::Cause cause, ShenandoahOldGeneration* generation) {
+  MonitorLocker ml(&_gc_waiters_lock);
+  size_t current_gc_id = generation->started_gc_id();
+  const size_t required_gc_id = current_gc_id + 1;
+  while (current_gc_id < required_gc_id && !should_terminate()) {
+    // Make requests to run cycles until at least one is completed
+    notify_control_thread(cause, generation);
+    ml.wait();
+    current_gc_id = generation->completed_gc_id();
+  }
+}
+
+void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause) {
+  // For normal requested GCs (System.gc) we want to block the caller. However,
+  // for whitebox requested GC, we want to initiate the GC and return immediately.
+  // The whitebox caller thread will arrange for itself to wait until the GC notifies
+  // it that has reached the requested breakpoint (phase in the GC).
+  if (cause == GCCause::_wb_breakpoint) {
+    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
+    return;
+  }
+  ShenandoahGeneration* generation = cause == GCCause::_wb_young_gc
+                                   ? ShenandoahHeap::heap()->young_generation()
+                                   : ShenandoahHeap::heap()->global_generation();
+  wait_for_gc_cycle(cause, generation);
 }
 
 void ShenandoahGenerationalControlThread::notify_gc_waiters() {

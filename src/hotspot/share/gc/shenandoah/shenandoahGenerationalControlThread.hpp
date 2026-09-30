@@ -98,6 +98,9 @@ public:
   // Return true if the request to start a concurrent GC for the given generation succeeded.
   bool request_concurrent_gc(ShenandoahGeneration* generation);
 
+  // Visible for white box API to start an old cycle
+  void wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation);
+
   // Returns the current state of the control thread
   GCMode gc_mode() const {
     return _gc_mode;
@@ -152,6 +155,9 @@ private:
 
   // Print table for young region ages if log is enabled
   void maybe_print_young_region_ages() const;
+
+  // Specialized function that waits for one complete old gc cycle
+  void wait_for_old_gc_cycle(GCCause::Cause cause, ShenandoahOldGeneration* generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

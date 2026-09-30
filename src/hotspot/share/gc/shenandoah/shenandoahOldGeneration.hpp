@@ -356,6 +356,27 @@ public:
   size_t free_unaffiliated_regions() const override;
   size_t get_affiliated_region_count() const override;
   size_t max_capacity() const override;
+
+  virtual void record_collection_start(size_t gc_id) {
+    _started_gc_id.store_relaxed(gc_id);
+  }
+
+private:
+  // Read by mutators, written by control thread
+  Atomic<size_t> _started_gc_id;
+  Atomic<size_t> _completed_gc_id;
+
+protected:
+  void update_completed_gc_id();
+
+public:
+  size_t started_gc_id() const {
+    return _started_gc_id.load_relaxed();
+  }
+
+  size_t completed_gc_id() const {
+    return _completed_gc_id.load_relaxed();
+  }
 };
 
 

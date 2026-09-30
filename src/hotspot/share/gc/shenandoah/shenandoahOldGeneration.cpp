@@ -623,6 +623,7 @@ ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahM
 }
 
 void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated) {
+  update_completed_gc_id();
   heuristics()->record_success_concurrent();
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_old();
 }
@@ -833,4 +834,8 @@ size_t ShenandoahOldGeneration::max_capacity() const {
 
 size_t ShenandoahOldGeneration::free_unaffiliated_regions() const {
   return _free_set->old_unaffiliated_regions();
+}
+
+void ShenandoahOldGeneration::update_completed_gc_id() {
+  _completed_gc_id.store_relaxed(_started_gc_id.load_relaxed());
 }
