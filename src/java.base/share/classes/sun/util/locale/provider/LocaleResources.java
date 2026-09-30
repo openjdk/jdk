@@ -106,8 +106,8 @@ public class LocaleResources {
     // TimeZoneNamesBundle exemplar city prefix
     private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
 
-    // TimeZoneNamesBundle explicit metazone dst offset prefix
-    private static final String TZNB_METAZONE_DSTOFFSET_PREFIX = "metazone.dstoffset.";
+    // TimeZoneNamesBundle explicit metazone dst offsets
+    private static final String TZNB_METAZONE_DSTOFFSETS = "metazone.dstoffsets";
 
     // null singleton cache value
     private static final Object NULLOBJECT = new Object();
@@ -327,7 +327,7 @@ public class LocaleResources {
         if (Objects.isNull(data) || Objects.isNull(val = data.get())) {
             TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
             if (key.startsWith(TZNB_EXCITY_PREFIX) ||
-                key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
+                key.startsWith(TZNB_METAZONE_DSTOFFSETS)) {
                 if (tznb.containsKey(key)) {
                     val = tznb.getString(key);
                     assert val instanceof String;
@@ -360,6 +360,26 @@ public class LocaleResources {
         return val;
     }
 
+    // Returns explict DST offset map solely for TimeZoneNameUtility.
+    // No need to be cached, as it is only invoked once.
+    public Map<String, String> getExplicitDstOffsets() {
+        TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
+        if (tznb.containsKey("metazone.dstoffsets")) {
+            Map<String, String> offsets = HashMap.newHashMap(32);
+            for (String entry : tznb.getString("metazone.dstoffsets").split(";", -1)) {
+                int separator = entry.indexOf('=');
+                if (separator <= 0 || separator == entry.length() - 1) {
+                    throw new InternalError("Invalid metazone.dstoffsets entry: " + entry);
+                }
+                offsets.put(entry.substring(0, separator),
+                    entry.substring(separator + 1));
+            }
+            return offsets;
+        } else {
+            return Map.of();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     Set<String> getZoneIDs() {
         Set<String> zoneIDs;
@@ -385,7 +405,7 @@ public class LocaleResources {
         Set<String> tzIds = new HashSet<>(Arrays.asList(TimeZone.getAvailableIDs()));
         for (String key : keyset) {
             if (!key.startsWith(TZNB_EXCITY_PREFIX) &&
-                !key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
+                !key.startsWith(TZNB_METAZONE_DSTOFFSETS)) {
                 value.add(rb.getStringArray(key));
                 tzIds.remove(key);
             }
@@ -568,7 +588,6 @@ public class LocaleResources {
         }
         return compactNumberPatterns;
     }
-
 
     /**
      * Returns the FormatData resource bundle of this LocaleResources.

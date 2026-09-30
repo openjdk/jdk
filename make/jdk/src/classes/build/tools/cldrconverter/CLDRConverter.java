@@ -87,7 +87,7 @@ public class CLDRConverter {
     static final String EXEMPLAR_CITY_PREFIX = "timezone.excity.";
     static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
-    static final String METAZONE_DSTOFFSET_PREFIX = "metazone.dstoffset.";
+    static final String METAZONE_DSTOFFSETS = "metazone.dstoffsets";
     static final String PARENT_LOCALE_PREFIX = "parentLocale.";
     static final String LIKELY_SCRIPT_PREFIX = "likelyScript.";
     static final String META_EMPTY_ZONE_NAME = "EMPTY_ZONE";
@@ -865,8 +865,11 @@ public class CLDRConverter {
 
         // Explicit metazone offsets
         if (id.equals("root")) {
-            explicitDstOffsets.forEach((k, v) ->
-                names.put(METAZONE_DSTOFFSET_PREFIX + k, v));
+            names.put(METAZONE_DSTOFFSETS,
+                explicitDstOffsets.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(e -> e.getKey() + "=" + e.getValue())
+                    .collect(Collectors.joining(";")));
         }
 
         // If there's no UTC entry at this point, add an empty one
