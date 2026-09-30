@@ -70,6 +70,7 @@ public class TestInstanceKlassSize {
                                                 "java.util.ArrayList",
                                                 "java.lang.String",
                                                 "java.lang.Thread",
+                                                "java.lang.Byte"
                                              };
 
     private static void startMeWithArgs() throws Exception {

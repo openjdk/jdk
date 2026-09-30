@@ -27,8 +27,8 @@
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -976,14 +976,14 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
-    // LIR_OpProfileInlineType:
-    case lir_profile_inline_type: {
-      assert(op->as_OpProfileInlineType() != nullptr, "must be");
-      LIR_OpProfileInlineType* opProfileInlineType = (LIR_OpProfileInlineType*)op;
+    // LIR_OpProfileValueType:
+    case lir_profile_value_type: {
+      assert(op->as_OpProfileValueType() != nullptr, "must be");
+      LIR_OpProfileValueType* opProfileValueType = (LIR_OpProfileValueType*)op;
 
-      do_input(opProfileInlineType->_mdp); do_temp(opProfileInlineType->_mdp);
-      do_input(opProfileInlineType->_obj);
-      do_temp(opProfileInlineType->_tmp);
+      do_input(opProfileValueType->_mdp); do_temp(opProfileValueType->_mdp);
+      do_input(opProfileValueType->_obj);
+      do_temp(opProfileValueType->_tmp);
       break;
     }
 default:
@@ -1059,11 +1059,11 @@ void LIR_OpJavaCall::emit_code(LIR_Assembler* masm) {
   masm->emit_call(this);
 }
 
-bool LIR_OpJavaCall::maybe_return_as_fields(ciInlineKlass** vk_ret) const {
+bool LIR_OpJavaCall::maybe_return_as_fields(ciValueKlass** vk_ret) const {
   ciType* return_type = method()->return_type();
-  if (InlineTypeReturnedAsFields) {
-    if (return_type->is_inlinetype()) {
-      ciInlineKlass* vk = return_type->as_inline_klass();
+  if (ValueTypeReturnedAsFields) {
+    if (return_type->is_value_klass()) {
+      ciValueKlass* vk = return_type->as_value_klass();
       if (vk->can_be_returned_as_fields()) {
         if (vk_ret != nullptr) {
           *vk_ret = vk;
@@ -1073,12 +1073,12 @@ bool LIR_OpJavaCall::maybe_return_as_fields(ciInlineKlass** vk_ret) const {
     } else if (return_type->is_instance_klass() &&
                (method()->is_method_handle_intrinsic() || !return_type->is_loaded() ||
                 StressCallingConvention)) {
-      // An inline type might be returned from the call but we don't know its type.
+      // A value type might be returned from the call but we don't know its type.
       // This can happen with method handle intrinsics or when the return type is
       // not loaded (method holder is not loaded or preload attribute is missing).
-      // If an inline type is returned, we either get an oop to a buffer and nothing
+      // If a value type is returned, we either get an oop to a buffer and nothing
       // needs to be done or one of the values being returned is the klass of the
-      // inline type (RAX on x64, with LSB set to 1) and we need to allocate an inline
+      // value type (RAX on x64, with LSB set to 1) and we need to allocate a value
       // type instance of that type and initialize it with the fields values being
       // returned in other registers.
       return true;
@@ -1205,8 +1205,8 @@ void LIR_OpProfileType::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_type(this);
 }
 
-void LIR_OpProfileInlineType::emit_code(LIR_Assembler* masm) {
-  masm->emit_profile_inline_type(this);
+void LIR_OpProfileValueType::emit_code(LIR_Assembler* masm) {
+  masm->emit_profile_value_type(this);
 }
 
 // LIR_List
@@ -1928,8 +1928,8 @@ const char * LIR_Op::name() const {
      case lir_profile_call:          s = "profile_call";  break;
      // LIR_OpProfileType
      case lir_profile_type:          s = "profile_type";  break;
-     // LIR_OpProfileInlineType
-     case lir_profile_inline_type:   s = "profile_inline_type"; break;
+     // LIR_OpProfileValueType
+     case lir_profile_value_type:    s = "profile_value_type"; break;
      // LIR_OpAssert
 #ifdef ASSERT
      case lir_assert:                s = "assert";        break;
@@ -2260,8 +2260,8 @@ void LIR_OpProfileType::print_instr(outputStream* out) const {
   tmp()->print(out);          out->print(" ");
 }
 
-// LIR_OpProfileInlineType
-void LIR_OpProfileInlineType::print_instr(outputStream* out) const {
+// LIR_OpProfileValueType
+void LIR_OpProfileValueType::print_instr(outputStream* out) const {
   out->print(" flag = %x ", flag());
   mdp()->print(out);          out->print(" ");
   obj()->print(out);          out->print(" ");

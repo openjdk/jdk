@@ -38,9 +38,9 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/continuation.hpp"
@@ -182,8 +182,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // and null it as marker that esp is now tos until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
-  if (state == atos && InlineTypeReturnedAsFields) {
-    __ store_inline_type_fields_to_buf(nullptr);
+  if (state == atos && ValueTypeReturnedAsFields) {
+    __ store_value_type_fields_to_buf(nullptr);
   }
 
   __ restore_bcp();
