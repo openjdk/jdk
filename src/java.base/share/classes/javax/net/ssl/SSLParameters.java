@@ -918,19 +918,32 @@ public class SSLParameters {
      * See {@link #getNamedGroups} for specific details on how the
      * parameters are used in SSL/TLS/DTLS connections.
      * <p>
-     * In TLS 1.3, the ClientHello message can include a list of pre-calculated
-     * key shares. If a group name is prefixed with an asterisk ("*"), a key
-     * share for the named group will be included in the message. If none
-     * of the names have the prefix or these names are not available, the
-     * implementation determines which key shares to include in the message.
-     * The prefix is ignored on the server side.
+     * In TLS 1.3, the ClientHello message can include one or more pre-generated
+     * key shares. A group name prefixed with an asterisk ("*") serves as a hint
+     * to the underlying implementation that a key share for the group should be
+     * included in the message.
+     * <p>
+     * For example, a client may prefer a named group, but it can choose not
+     * to generate and transmit its key share because the server might not
+     * support it. The client can list this group name first without the
+     * prefix, followed by a less-preferred group name with the prefix
+     * for which a key share will be generated. A server that supports the
+     * named group and wishes to respect the preference can request its key
+     * share with a HelloRetryRequest message.
+     * <p>
+     * If no named groups have the prefix or these names are not available,
+     * the implementation determines which key shares to include in the message.
+     * <p>
+     * The prefix is ignored when these parameters are used by a server or with
+     * TLS versions earlier than TLS 1.3.
      *
      * @apiNote
      * Note that a provider may not have been updated to support this method
      * and in that case may ignore the named groups that are set.
      *
      * @implNote
-     * The SunJSSE provider supports this method.
+     * The SunJSSE provider supports this method and uses the asterisk
+     * prefix to determine what key shares to send for TLS 1.3.
      *
      * @param namedGroups an ordered array of key exchange named group names
      *        with the first entry being the most preferred, or {@code null}.
@@ -939,9 +952,11 @@ public class SSLParameters {
      *        SSL/TLS/DTLS connections.
      * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws IllegalArgumentException if any element in the
-     *        {@code namedGroups} array is a duplicate, {@code null},
-     *        {@linkplain String#isBlank() blank}, or starts with two
-     *        asterisks ("**").
+     *        {@code namedGroups} array is {@code null},
+     *        {@linkplain String#isBlank() blank},
+     *        consists only of an asterisk ("*") without a group name,
+     *        starts with two asterisks ("**"), or is a duplicate,
+     *        regardless of the asterisk prefix.
      *
      * @see #getNamedGroups
      *
