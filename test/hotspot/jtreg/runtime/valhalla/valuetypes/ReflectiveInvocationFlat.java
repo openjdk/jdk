@@ -29,6 +29,9 @@ import java.lang.reflect.InvocationTargetException;
 /*
  * @test
  * @summary Reflective invocation with flattened array argument functions when in the interpreter
+ * @bug
+ * @requires vm.flagless
+ * @modules java.base/jdk.internal.value
  * @enablePreview
  * @run main/othervm -Xint -Djdk.reflect.useNativeAccessorOnly=true runtime.valhalla.valuetypes.ReflectiveInvocationFlat
  */
@@ -40,6 +43,9 @@ public class ReflectiveInvocationFlat {
 
     public static void main(String[] args) throws Exception {
         Integer[] array = new Integer[] { 42 };
+        if (!ValueClass.isFlatArray(array)) {
+            throw new AssertionError("Expected a flat reflection argument array");
+        }
         Object res1 = ReflectiveInvocationFlat.class.getDeclaredConstructor(Object.class).newInstance((Object[])array);
         Object res2 = ReflectiveInvocationFlat.class.getDeclaredMethod("test", Object.class).invoke(null, (Object[])array);
 
