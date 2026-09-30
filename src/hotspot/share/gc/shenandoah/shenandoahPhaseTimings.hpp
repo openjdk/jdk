@@ -110,6 +110,8 @@ class outputStream;
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_roots_propagate_gc_state,                  "  Propagate GC State")            \
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_evac,                                       "Concurrent Evacuation",           \
                                                                                   "  CE: ")                          \
+  SHENANDOAH_WORKER_PHASE_DEF(f, conc_self_forward_stranded,                      "Self Forward Stranded Objects",   \
+                                                                                  "  SF: ")                          \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_update_card_table,                          "Concurrent Update Cards")         \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, complete_abbreviated,                            "Complete Abbreviated Cycle")      \
   SHENANDOAH_WORKER_PHASE_DEF(f, complete_abbreviated_promote_in_place,           "  Promote Regions",               \

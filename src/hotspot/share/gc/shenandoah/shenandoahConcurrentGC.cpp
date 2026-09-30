@@ -234,10 +234,17 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       return false;
     }
 
+    // TODO: What we really want to check here is if there are unclaimed regions in the collection
+    // set iterator. If there are unclaimed regions, those are the only ones we need to iterate.
+    if (heap->has_self_forwarded_objects()) {
+      // Self forward objects stranded in the collection set
+      entry_self_forward_stranded_objects();
+    }
+
     // Perform update-refs phase.
     entry_concurrent_update_refs_prepare(heap);
 
-    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    if (heap->mode()->is_generational()) {
       entry_update_card_table();
     }
 
@@ -640,6 +647,22 @@ void ShenandoahConcurrentGC::entry_evacuate() {
   heap->try_inject_alloc_failure();
   heap->try_inject_pin();
   op_evacuate();
+}
+
+void ShenandoahConcurrentGC::entry_self_forward_stranded_objects() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent self forwarding", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_self_forward_stranded);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
+                              "concurrent self forwarding");
+
+  heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
+  op_self_forward_stranded_objects();
 }
 
 void ShenandoahConcurrentGC::entry_update_thread_roots() {
@@ -1164,7 +1187,12 @@ void ShenandoahConcurrentGC::op_cleanup_early() {
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {
-  ShenandoahHeap::heap()->evacuate_collection_set(_generation);
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->evacuate_collection_set(_generation);
+}
+
+void ShenandoahConcurrentGC::op_self_forward_stranded_objects() {
+  ShenandoahHeap::heap()->self_forward_stranded_objects();
 }
 
 void ShenandoahConcurrentGC::op_init_update_refs() {

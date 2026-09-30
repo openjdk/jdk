@@ -193,7 +193,7 @@ public:
 
   ShenandoahHeuristics* heuristics();
 
-// ---------- Initialization, termination, identification, printing routines
+  // ---------- Initialization, termination, identification, printing routines
 //
 public:
   static ShenandoahHeap* heap();
@@ -492,6 +492,10 @@ private:
   // GC support
   // Evacuation
   virtual void evacuate_collection_set(ShenandoahGeneration* generation);
+
+  // Self forwards objects that were never seen by evacuating threads
+  void self_forward_stranded_objects();
+
   // Concurrent root processing
   void prepare_concurrent_roots();
   void finish_concurrent_roots();

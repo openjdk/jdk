@@ -96,6 +96,7 @@ protected:
   void entry_cleanup_early();
   void entry_complete_abbreviated_cycle();
   void entry_evacuate();
+  void entry_self_forward_stranded_objects();
   void entry_update_thread_roots();
   void entry_update_card_table();
   void entry_concurrent_update_refs_prepare(ShenandoahHeap* heap);
@@ -115,6 +116,7 @@ protected:
   void op_strong_roots();
   void op_cleanup_early();
   void op_evacuate();
+  void op_self_forward_stranded_objects();
   void op_init_update_refs();
   void op_update_refs();
   void op_update_thread_roots();
