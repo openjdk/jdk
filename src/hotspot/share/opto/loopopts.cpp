@@ -4654,7 +4654,7 @@ private:
     }
   }
 
-  bool safe_to_perform() const {
+  bool is_safe_to_perform() const {
     Node* region_idom = _phase->idom(_region);
     if (region_idom->is_Catch()) {
       return false;
