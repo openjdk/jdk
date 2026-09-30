@@ -120,7 +120,7 @@ int ph_func(struct dl_phdr_info* info, size_t size, void* data) {
 }
 
 uint64_t end_address_for_sharedobject_live(void* h) {
-    struct link_map *lm = nullptr;
+    struct link_map* lm = nullptr;
     if (dlinfo(h, RTLD_DI_LINKMAP, &lm) != 0 || lm == nullptr) {
        return 0;
     }

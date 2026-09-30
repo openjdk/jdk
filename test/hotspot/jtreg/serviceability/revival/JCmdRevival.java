@@ -365,7 +365,9 @@ public class JCmdRevival {
                     }
                 }
                 case "GC.heap_info": {
-                    out.shouldMatch("total reserved ");
+                    // Output varies with collector.  Avoid testing anything GC-specific.
+                    out.shouldMatch("\\[0x");
+                    out.shouldMatch("00\\)");
                     break;
                 }
                 case "Thread.print": {
@@ -385,7 +387,7 @@ public class JCmdRevival {
                     break;
                 }
                 case "VM.classes": {
-                    out.shouldContain("fully_initialized     WS       java.lang.String");
+                    out.shouldMatch("fully_initialized .* java.lang.String");
                     break;
                 }
                 case "VM.classloader_stats": {

@@ -63,6 +63,7 @@ ifeq ($(call isTargetOs, linux windows), true)
     $(eval $(call SetupJdkLibrary, BUILD_REVIVAL_SUPPORT, \
         NAME := revival_support, \
         OPTIMIZATION := LOW, \
+        CFLAGS := -fstack-protector-all, \
         LIBS_linux:= -ldl,\
         LINK_TYPE := C, \
         OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \

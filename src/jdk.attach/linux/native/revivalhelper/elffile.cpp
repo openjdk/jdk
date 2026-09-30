@@ -348,7 +348,7 @@ uint64_t ELFFile::find_dynamic_value(Elf64_Shdr* s, int tag) {
 void ELFFile::relocate_dyn_array(long displacement, Elf64_Dyn* dyn, int count) {
     logd("relocate_dyn_array: updating %d", count);
     // Get our mmapped address of the array:
-    uint64_t *p = (uint64_t*) ((uint64_t) m + dyn->d_un.d_ptr);
+    uint64_t* p = (uint64_t*) ((uint64_t) m + dyn->d_un.d_ptr);
     // Relocate contents:
     for (int i = 0; i < count; i++) {
         if (*p != 0) {
@@ -538,7 +538,7 @@ void ELFFile::read_file_mappings() {
 
     // Reread that info to build final library list. Use libdirs if set, to rewrite paths.
     // Do not skip duplicate names, as would need to coalesce entries/ranges for same filename.
-    // Lookups will get first match, and want to find base address, so all good.
+    // Lookups will get first match, which is what is needed to find base address.
     for (int i = 0; i < nt_file_count; i++) {
         logd("NT_FILE: 0x%lx - 0x%lx %s", (uint64_t) files[i].vaddr, (uint64_t) files[i].end(), files[i].name);
         Segment lib = files[i];

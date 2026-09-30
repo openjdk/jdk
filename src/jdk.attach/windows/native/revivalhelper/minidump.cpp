@@ -29,15 +29,15 @@
  * Read a MINIDUMP_STRING.
  * Return a malloc'd pointer which the caller should free.
  */
-char *readstring_minidump(int fd) {
+char* readstring_minidump(int fd) {
     // Read ULONG32 Length, WCHAR buffer (UTF16-LE).
     int e = 0;
-    wchar_t *wbuf = (wchar_t *) calloc(BUFLEN, 1);
+    wchar_t* wbuf = (wchar_t*) calloc(BUFLEN, 1);
     if (wbuf == nullptr) {
         warn("readstring_minidump: Failed to allocate wbuf");
         return nullptr;
     }
-    char *mbuf = (char *) calloc(BUFLEN, 1);
+    char* mbuf = (char*) calloc(BUFLEN, 1);
     if (mbuf == nullptr) {
         warn("readstring_minidump: Failed to allocate mbuf");
         goto err;
@@ -78,13 +78,13 @@ err:
  *
  * Return a malloc'd pointer which the caller should free.
  */
-char *string_at_offset_minidump(int fd, ULONG32 offset) {
+char* string_at_offset_minidump(int fd, ULONG32 offset) {
     off_t pos = lseek(fd, 0, SEEK_CUR);
     off_t pos2 = lseek(fd, offset, SEEK_SET);
     if (pos2 != offset) {
         return nullptr;
     }
-    char *s = readstring_minidump(fd);
+    char* s = readstring_minidump(fd);
     lseek(fd, pos, SEEK_SET);
     return s;
 }
@@ -182,7 +182,7 @@ uint64_t MiniDump::get_peb() {
 uint64_t MiniDump::resolve_teb() {
     // Find MiniDump ThreadListStream, read _MINIDUMP_THREAD, read TEB.
     uint64_t _teb = 0;
-    MINIDUMP_DIRECTORY *md = this->find_stream(ThreadListStream);
+    MINIDUMP_DIRECTORY* md = this->find_stream(ThreadListStream);
     if (md == nullptr) {
         warn("resolve_teb: MiniDump ThreadListStream not found\n");
         return 0;
@@ -220,7 +220,7 @@ void MiniDump::read_sharedlibs() {
     if (libs.size() != 0) {
         return;
     }
-    MINIDUMP_DIRECTORY *md = find_stream(ModuleListStream);
+    MINIDUMP_DIRECTORY* md = find_stream(ModuleListStream);
     if (md == nullptr) {
         error("MiniDump::read_sharedlibs: ModuleListStream not found.");
     }
@@ -237,7 +237,7 @@ void MiniDump::read_sharedlibs() {
         if (e != sizeof(module)) {
             error("MiniDump::read_sharedlibs: read MINIDUMP_MODULE expects %d got %d", sizeof(module), e);
         }
-        char *name = string_at_offset_minidump(fd, module.ModuleNameRva);
+        char* name = string_at_offset_minidump(fd, module.ModuleNameRva);
         if (name == nullptr) {
             warn("MiniDump::read_sharedlibs: module %d: base 0x%llx: null string at ModuleNameRva 0x%llx",
                  j, module.BaseOfImage, module.ModuleNameRva);
@@ -246,7 +246,7 @@ void MiniDump::read_sharedlibs() {
         logd("MiniDump::read_shared_libs MODULE 0x%llx: (size 0x%lx) '%s'", module.BaseOfImage, module.SizeOfImage, name);
         // Possibly adjust name using libdirs if set:
         if (libdirs != nullptr) {
-            char *alt_name = find_filename_in_libdirs(libdirs, name);
+            char* alt_name = find_filename_in_libdirs(libdirs, name);
             if (alt_name != nullptr) {
                 logv("Using from libdirs: '%s'", alt_name);
                 name = alt_name;
@@ -254,7 +254,7 @@ void MiniDump::read_sharedlibs() {
         }
         // Populate Segment list of modules/sharedlibs.
         // Extend library size to avoid choosing to map the data immediately after a library.
-        Segment *seg = new Segment(name, (void *) module.BaseOfImage, (size_t) module.SizeOfImage + 0x1000);
+        Segment* seg = new Segment(name, (void*) module.BaseOfImage, (size_t) module.SizeOfImage + 0x1000);
         libs.push_back(seg);
     }
     logd("MiniDump::read_sharedlibs: NumberOfStreams = %d StreamDirectoryRva = %d", hdr.NumberOfStreams, hdr.StreamDirectoryRva);
@@ -299,7 +299,7 @@ void write_mem_mappings(int mappings_fd, const char* exec_name) {
  * by calling readSegment().
  */
 void MiniDump::prepare_memory_ranges() {
-    MINIDUMP_DIRECTORY *md = find_stream(Memory64ListStream);
+    MINIDUMP_DIRECTORY* md = find_stream(Memory64ListStream);
     if (md == nullptr) {
         error("MiniDump Memory64ListStream not found.");
     }
@@ -321,7 +321,7 @@ void MiniDump::prepare_memory_ranges() {
  * Return a Segment* and update the output parameter to be current RVA, the dump file offset of the next segment.
  * Return nullptr when no further memory descriptors are found.
  */
-Segment* MiniDump::readSegment0(MINIDUMP_MEMORY_DESCRIPTOR64 *d, RVA64* currentRVA) {
+Segment* MiniDump::readSegment0(MINIDUMP_MEMORY_DESCRIPTOR64* d, RVA64* currentRVA) {
     if (rangesRead >= NumberOfMemoryRanges) {
         return nullptr;
     }
@@ -340,7 +340,7 @@ Segment* MiniDump::readSegment0(MINIDUMP_MEMORY_DESCRIPTOR64 *d, RVA64* currentR
         return nullptr; // End of user space mappings.
     }
 
-    Segment *seg = new Segment((void *) d->StartOfMemoryRange, (size_t) d->DataSize, (size_t) *currentRVA, (size_t) d->DataSize);
+    Segment* seg = new Segment((void*) d->StartOfMemoryRange, (size_t) d->DataSize, (size_t) *currentRVA, (size_t) d->DataSize);
     *currentRVA += d->DataSize;
     rangesRead++;
     return seg;
@@ -357,8 +357,8 @@ Segment* MiniDump::readSegment0(MINIDUMP_MEMORY_DESCRIPTOR64 *d, RVA64* currentR
  * Returns a Segment* and update the output parameters.  currentRVA will be the dump file offset of the next segment.
  * Returns nullptr when no further memory descriptors are found.
  */
-Segment* MiniDump::readSegment(MINIDUMP_MEMORY_DESCRIPTOR64 *d, RVA64* currentRVA, boolean skipLibraries) {
-    Segment *seg = nullptr;
+Segment* MiniDump::readSegment(MINIDUMP_MEMORY_DESCRIPTOR64* d, RVA64* currentRVA, boolean skipLibraries) {
+    Segment* seg = nullptr;
     bool retry;
     do {
         retry = false;

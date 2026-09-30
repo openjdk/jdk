@@ -162,12 +162,12 @@ class Arguments {
         System.out.println(
 """
   Using a core file (Linux) or MiniDump (Windows) for post-mortem analysis:
-    -c  forces reading a core file, only required in case of a clash with a live process name.
+    -c  forces reading a core file, only required in case of a clash with a live process.
     -L  LIB_PATH must be given if the core file originates from another system, or the
             JDK at the path in the core has changed.
             LIB_PATH must name a directory containing a copy of the same JDK that the corefile originated from.
-            When analyzing a corefile a corefile.revival cache directory is
-            created.  -L is not required once the cache is created.
+            When analyzing a corefile a corefile.revival cache directory is created.
+            -L is not required once the cache is created.
 
     -R  CACHE_PATH should be specified when the core file is in a read-only location, to give a path
             where cache files may be stored.  This must be specified on subsequent invocations.

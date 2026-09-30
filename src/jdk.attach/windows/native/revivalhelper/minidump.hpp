@@ -61,7 +61,7 @@ class MiniDump {
     uint64_t get_peb(); // Process Enviornment Block (from TEB).
 
     MINIDUMP_DIRECTORY* find_stream(int stream);
-    Segment* readSegment(MINIDUMP_MEMORY_DESCRIPTOR64 *d, RVA64* currentRVA, boolean skipLibraries);
+    Segment* readSegment(MINIDUMP_MEMORY_DESCRIPTOR64* d, RVA64* currentRVA, boolean skipLibraries);
 
     std::list<Segment> get_library_mappings();
     Segment* get_library_mapping(const char* filename);
@@ -91,7 +91,7 @@ class MiniDump {
     uint64_t resolve_teb();
     uint64_t teb;
     void read_sharedlibs();
-    Segment* readSegment0(MINIDUMP_MEMORY_DESCRIPTOR64 *d, RVA64* currentRVA);
+    Segment* readSegment0(MINIDUMP_MEMORY_DESCRIPTOR64* d, RVA64* currentRVA);
     ULONG64 NumberOfMemoryRanges;
     RVA64 BaseRVA;
     int rangesRead;
