@@ -24,8 +24,13 @@
 /**
  * @test
  * @bug 8392714
- * @run main/othervm -Xbatch -XX:+StressLoopPeeling -XX:StressSeed=1 -XX:CompileThresholdScaling=0.01 -XX:CompileOnly=${test.main.class}::test ${test.main.class}
- * @run main/othervm -Xbatch -XX:+StressLoopPeeling -XX:CompileThresholdScaling=0.01 -XX:CompileOnly=${test.main.class}::test ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -Xbatch -XX:+StressLoopPeeling -XX:StressSeed=1
+ *                   -XX:CompileThresholdScaling=0.01
+ *                   -XX:CompileOnly=${test.main.class}::test ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:+StressLoopPeeling
+ *                   -XX:CompileThresholdScaling=0.01
+ *                   -XX:CompileOnly=${test.main.class}::test ${test.main.class}
  * @run main ${test.main.class}
  */
 
@@ -50,9 +55,9 @@ public class TestDeadAddPLoadCmpLoadKlass {
     }
 
     public static void main(String[] args) {
-        Test value = new Test();
+        TestDeadAddPLoadCmpLoadKlass value = new TestDeadAddPLoadCmpLoadKlass();
         for (int i = 0; i <= 60; i++) {
-            value = new Test();
+            value = new TestDeadAddPLoadCmpLoadKlass();
             value.test(1);        
         }
         for (int i = 0; i < 1000; i++) {
