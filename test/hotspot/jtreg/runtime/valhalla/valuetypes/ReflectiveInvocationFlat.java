@@ -29,7 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 /*
  * @test
  * @summary Reflective invocation with flattened array argument functions when in the interpreter
- * @bug
+ * @bug 8392757
  * @requires vm.flagless
  * @modules java.base/jdk.internal.value
  * @enablePreview
