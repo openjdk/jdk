@@ -4784,6 +4784,8 @@ private:
         _exit_test->_fcnt = cnt * _f;
         _old_new[_exit_test->_idx]->as_If()->_fcnt = cnt * (1 - _f);
       }
+    } else {
+      assert(StressDuplicateBackedge, "missing exit test in non-stress mode");
     }
   }
 
