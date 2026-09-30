@@ -69,7 +69,7 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   satb_qs.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
 
   if (_active_count.fetch_then_add(1, memory_order_relaxed) == 0) {
-    // Level-0 resetter clears state to deactivate barriers.
+    // First resetter clears state to deactivate barriers.
     // Indicate that state has changed so that verifier threads will use this value,
     // rather than thread local values (which we are _not_ changing here).
     _heap->_gc_state.clear();
