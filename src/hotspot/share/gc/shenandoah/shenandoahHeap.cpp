@@ -1698,6 +1698,12 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
 }
 
 void ShenandoahHeap::print_tracing_info() const {
+  // Do nothing. The control thread prints out GC statistics once it's finished updating them.
+}
+
+void ShenandoahHeap::print_gc_stats_at_exit() const {
+  assert(Thread::current() == control_thread(), "Only the control thread prints these stats");
+  assert(control_thread()->should_terminate(), "Only during shutdown");
   LogTarget(Info, gc, stats) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
