@@ -2482,6 +2482,11 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX, "vand_notL_vx");
     }
 
+    public static final String RISCV_LOAD_N2P_UNSCALED = PREFIX + "RISCV_LOAD_N2P_UNSCALED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_LOAD_N2P_UNSCALED, "loadN2P_unscaled");
+    }
+
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
@@ -3116,6 +3121,11 @@ public class IRNode {
     public static final String X86_VCAST_HF2X = PREFIX + "X86_VCAST_HF2X" + POSTFIX;
     static {
         machOnlyNameRegex(X86_VCAST_HF2X, "castHFtoX_reg_evex");
+    }
+
+    public static final String X86_VCONV_HF2F = PREFIX + "X86_VCONV_HF2F" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCONV_HF2F, "vconvHF2F_reg_(reg|mem)");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
