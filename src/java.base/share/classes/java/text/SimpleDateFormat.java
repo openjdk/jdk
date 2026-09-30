@@ -1312,8 +1312,7 @@ public class SimpleDateFormat extends DateFormat {
                     if (explicitDstOffset != null) {
                         // The time zone ID has an explicit dst offset. Ensure that
                         // our current TimeZone is canonical.
-                        var canonicalZone = ZoneInfo.getTimeZone(tzid);
-                        if (canonicalZone == null || !canonicalZone.equals(zi)) {
+                        if (!ZoneInfo.hasCanonicalRule(zi)) {
                             explicitDstOffset = null;
                         }
                     }

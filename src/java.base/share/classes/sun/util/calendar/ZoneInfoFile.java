@@ -134,7 +134,7 @@ public final class ZoneInfoFile {
         return zi;
     }
 
-    private static ZoneInfo getZoneInfo0(String zoneId) {
+    static ZoneInfo getZoneInfo0(String zoneId) {
         try {
             ZoneInfo zi = zones.get(zoneId);
             if (zi != null) {
