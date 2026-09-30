@@ -128,6 +128,10 @@ class Misaligned {
         // need sufficient capacity for an aligned region starting at position 1
         assertTrue(bb.capacity() >= alignment + 1);
 
+        // another aligned buffer to use for scatter/gather ops
+        ByteBuffer alignedBuffer = ByteBuffer.allocateDirect(2 * alignment - 1)
+                .alignedSlice(alignment);
+
         try (FileChannel fc = FileChannel.open(file, READ, WRITE, DIRECT)) {
             bb.position(1);  // misaligned address
             bb.limit(alignment + 1);
@@ -139,8 +143,12 @@ class Misaligned {
             assertThrows(IOException.class, () -> fc.write(bb));
             assertThrows(IOException.class, () -> fc.read(new ByteBuffer[]{bb}));
             assertThrows(IOException.class, () -> fc.write(new ByteBuffer[]{bb}));
+            assertThrows(IOException.class, () -> fc.read(new ByteBuffer[]{alignedBuffer, bb}));
+            assertThrows(IOException.class, () -> fc.write(new ByteBuffer[]{alignedBuffer, bb}));
             assertThrows(IOException.class, () -> fc.read(bb, 0L));
             assertThrows(IOException.class, () -> fc.write(bb, 0L));
+
+
         }
     }
 
@@ -173,12 +181,18 @@ class Misaligned {
             assertEquals(0, bb.alignmentOffset(0, alignment));
         }
 
+        // another aligned buffer to use for scatter/gather ops
+        ByteBuffer alignedBuffer = ByteBuffer.allocateDirect(2 * alignment - 1)
+                .alignedSlice(alignment);
+
         try (FileChannel fc = FileChannel.open(file, READ, WRITE, DIRECT)) {
             bb.limit(alignment - 1);  // remaining is 1 byte below an alignment
             assertThrows(IOException.class, () -> fc.read(bb));
             assertThrows(IOException.class, () -> fc.write(bb));
             assertThrows(IOException.class, () -> fc.read(new ByteBuffer[]{bb}));
             assertThrows(IOException.class, () -> fc.write(new ByteBuffer[]{bb}));
+            assertThrows(IOException.class, () -> fc.read(new ByteBuffer[]{alignedBuffer, bb}));
+            assertThrows(IOException.class, () -> fc.write(new ByteBuffer[]{alignedBuffer, bb}));
             assertThrows(IOException.class, () -> fc.read(bb, 0L));
             assertThrows(IOException.class, () -> fc.write(bb, 0L));
 
@@ -187,6 +201,8 @@ class Misaligned {
             assertThrows(IOException.class, () -> fc.write(bb));
             assertThrows(IOException.class, () -> fc.read(new ByteBuffer[]{bb}));
             assertThrows(IOException.class, () -> fc.write(new ByteBuffer[]{bb}));
+            assertThrows(IOException.class, () -> fc.read(new ByteBuffer[]{alignedBuffer, bb}));
+            assertThrows(IOException.class, () -> fc.write(new ByteBuffer[]{alignedBuffer, bb}));
             assertThrows(IOException.class, () -> fc.read(bb, 0L));
             assertThrows(IOException.class, () -> fc.write(bb, 0L));
         }
@@ -216,7 +232,7 @@ class Misaligned {
     /**
      * Attempt to close the given Arena.
      */
-    private boolean tryClose(Arena arena) {
+    private static boolean tryClose(Arena arena) {
         try {
             arena.close();
             return true;
