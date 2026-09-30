@@ -7436,12 +7436,12 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
                                          Register result, Register tmp1, Register tmp2,
                                          VectorRegister vreg0, VectorRegister vreg1, VectorRegister vreg2) {
   assert(UseRVV && UseZbb, "RVV and Zbb must be enabled");
-  assert(MaxVectorSize == 16 || MaxVectorSize == 32, "sanity");
 
   Label NOT_EQUAL, ALL_MATCH, DONE;
   Label CONVERT_RESULT;
 
   assert_different_registers(obja, objb, length, log2_array_indxscale, result, tmp1, tmp2);
+  assert_different_registers(vreg0, vreg1, vreg2);
   // Convert element count to byte count
   sll(length, length, log2_array_indxscale);
   mv(result, zr);
@@ -7451,8 +7451,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
   bgeu(length, tmp1, SKIP_SCALAR);
   // Scalar comparison for small arrays
   {
-    Label SCALAR_LOOP, SCALAR_MISMATCH;
-    Label INT_DONE;
+    Label SCALAR_LOOP, WORD_MATCH;
 
     // For 4 <= bytes < 8: compare first 4 bytes as int
     li(tmp2, 4);
@@ -7460,16 +7459,16 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
 
     lw(tmp1, Address(obja, 0));
     lw(tmp2, Address(objb, 0));
-    beq(tmp1, tmp2, INT_DONE);
+    beq(tmp1, tmp2, WORD_MATCH);
 
-    // Words differ: find first differing byte
+    // Word differ: find first differing byte
     xorr(tmp1, tmp1, tmp2);
     ctzw(result, tmp1);
     srai(result, result, 3);
     j(CONVERT_RESULT);
 
-    // Words match, advance by 4
-    bind(INT_DONE);
+    // Word match, advance by 4
+    bind(WORD_MATCH);
     addi(obja, obja, 4);
     addi(objb, objb, 4);
     addi(result, result, 4);
