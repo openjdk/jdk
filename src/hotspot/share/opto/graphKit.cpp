@@ -1974,6 +1974,9 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
   }
 
   ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, false);
+  if (!array_klass->is_loaded()) {
+    return top();
+  }
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
   arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
@@ -1982,6 +1985,9 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
 Node* GraphKit::cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
   assert(is_null_free || is_atomic, "nullable arrays must be atomic");
   ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+  if (!array_klass->is_loaded()) {
+    return top();
+  }
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
   assert(arytype->klass_is_exact(), "inconsistency");
   assert(arytype->is_flat(), "inconsistency");

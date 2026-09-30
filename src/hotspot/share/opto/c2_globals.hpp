@@ -443,9 +443,6 @@
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
                                                                             \
-  product_pd(bool, OptoBundling,                                            \
-          "Generate nops to fill i-cache lines")                            \
-                                                                            \
   product_pd(intx, ConditionalMoveLimit,                                    \
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \

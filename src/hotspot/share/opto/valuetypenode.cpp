@@ -270,6 +270,26 @@ ciField* ValueTypeNode::field(uint index) const {
   return value_klass()->declared_nonstatic_field_at(index);
 }
 
+static uint add_top_to_safepoint(ciValueKlass* vk, SafePointNode* sfpt) {
+  uint cnt = 0;
+  for (int i = 0; i < vk->nof_declared_nonstatic_fields(); ++i) {
+    ciField* field = vk->declared_nonstatic_field_at(i);
+    assert(!field->is_flat() || field->type()->is_value_klass(), "must be a value type");
+    if (field->is_flat()) {
+      cnt += add_top_to_safepoint(field->type()->as_value_klass(), sfpt);
+      if (field->is_null_free()) {
+        continue;
+      }
+      // The null marker of a flat field is added right after we scalarize that field, so the next
+      // add_req either stands for the null marker of `field`, or for the whole `field` itself if
+      // it isn't flat. It's top anyway.
+    }
+    sfpt->add_req(Compile::current()->top());
+    cnt++;
+  }
+  return cnt;
+}
+
 uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePointNode* sfpt) const {
   uint cnt = 0;
   for (uint i = 0; i < field_count(); ++i) {
@@ -277,12 +297,23 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
     ciField* field = this->field(i);
     assert(!field->is_flat() || field->type()->is_value_klass(), "must be a value type");
     if (field->is_flat()) {
-      ValueTypeNode* vt = value->as_ValueType();
-      cnt += vt->add_fields_to_safepoint(worklist, sfpt);
-      if (!field->is_null_free()) {
-        // The null marker of a flat field is added right after we scalarize that field
-        sfpt->add_req(vt->get_null_marker());
-        cnt++;
+      if (value->is_top()) {
+        // An input is top. We act like it was a value type whose fields are all top.
+        Node* top = value;
+        cnt += add_top_to_safepoint(field->type()->as_value_klass(), sfpt);
+        if (!field->is_null_free()) {
+          // The null marker of a flat field is added right after we scalarize that field
+          sfpt->add_req(top);
+          cnt++;
+        }
+      } else {
+        ValueTypeNode* vt = value->as_ValueType();
+        cnt += vt->add_fields_to_safepoint(worklist, sfpt);
+        if (!field->is_null_free()) {
+          // The null marker of a flat field is added right after we scalarize that field
+          sfpt->add_req(vt->get_null_marker());
+          cnt++;
+        }
       }
       continue;
     }
@@ -1088,7 +1119,8 @@ Node* ValueTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t 
   };
 
   Node* const thirty_one = kit->intcon(31);
-  Node* result = kit->intcon(checked_cast<jint>(klass_hash));
+  Node* klass_hash_con = kit->intcon(checked_cast<jint>(klass_hash));
+  Node* result = klass_hash_con;
   for (int i = 0; i < number_of_nonoop_entries; i++) {
     AcmpMapSegment segment = vk->get_nonoop_segment_of_acmp_map(i);
     int offset = segment._offset;
@@ -1121,9 +1153,21 @@ Node* ValueTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t 
       offset++;
     }
   }
-  result = kit->AndI(result, kit->intcon(markWord::hash_mask));
+  Node* hash_mask_con = kit->intcon(markWord::hash_mask);
+  result = kit->AndI(result, hash_mask_con);
 
-  region->add_req(kit->control());
+  // Now, we have computed the hash. But we don't want it to be markWord::no_hash.
+  // If it is, let's just take the hash of the Class, and since this Class is an identity object,
+  // it must be different from markWord::no_hash. Let's do a little diamond since it's easy enough
+  // and cmove experimentally failed to be as efficient.
+  Node* no_hash_con = kit->intcon(checked_cast<int>(markWord::no_hash));
+  Node* bol_hash_would_be_no_hash = kit->BoolCmpI(result, BoolTest::eq, no_hash_con);
+  IfNode* iff_hash_would_be_no_hash = kit->create_and_map_if(kit->control(), bol_hash_would_be_no_hash, PROB_FAIR, COUNT_UNKNOWN);
+
+  region->add_req(kit->IfTrue(iff_hash_would_be_no_hash));
+  phi_result->add_req(klass_hash_con);
+
+  region->add_req(kit->IfFalse(iff_hash_would_be_no_hash));
   phi_result->add_req(result);
 
   kit->set_control(region);

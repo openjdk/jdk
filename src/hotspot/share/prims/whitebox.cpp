@@ -1563,7 +1563,7 @@ CodeHeap* WhiteBox::get_code_heap(CodeBlobType blob_type) {
 
 struct CodeBlobStub {
   CodeBlobStub(const CodeBlob* blob) :
-      name(os::strdup(blob->name())),
+      name(os::strdup(blob->name(), mtInternal)),
       size(blob->size()),
       blob_type(static_cast<jint>(WhiteBox::get_blob_type(blob))),
       address((jlong) blob),
@@ -2672,6 +2672,11 @@ WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
   return os::is_containerized();
 WB_END
 
+// Physical memory of the machine (respecting container limits)
+WB_ENTRY(jlong, WB_PhysicalMemory(JNIEnv* env, jobject o))
+  return static_cast<jlong>(os::physical_memory());
+WB_END
+
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   return static_cast<jlong>(os::Machine::physical_memory());
@@ -3197,6 +3202,7 @@ static JNINativeMethod methods[] = {
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
   {CC"hostAvailableMemory",       CC"()J",            (void*)&WB_HostAvailableMemory },
   {CC"hostCPUs",                  CC"()I",            (void*)&WB_HostCPUs },
+  {CC"physicalMemory",            CC"()J",            (void*)&WB_PhysicalMemory },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },

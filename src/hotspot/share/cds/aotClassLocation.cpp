@@ -661,10 +661,19 @@ void AOTClassLocationConfig::add_class_location(JavaThread* current, GrowableCla
       size_t name_len = strlen(file_start);
       if (name_len > 0) {
         ResourceMark rm(current);
-        size_t libname_len = dir_len + name_len;
-        char* libname = NEW_RESOURCE_ARRAY(char, libname_len + 1);
-        int n = os::snprintf(libname, libname_len + 1, "%.*s%s", dir_len, dir_name, file_start);
-        assert((size_t)n == libname_len, "Unexpected number of characters in string");
+        char* libname;
+
+        if (strncasecmp(file_start, "file:", 5) == 0) {
+          // If the "file:" prefix is present in the attribute, the subsequent
+          // path is absolute. Remove this prefix from the path name and use
+          // the absolute path rather than appending to the parent directory.
+          libname = ClassLoader::uri_to_path(file_start);
+        } else {
+          size_t libname_len = dir_len + name_len;
+          libname = NEW_RESOURCE_ARRAY(char, libname_len + 1);
+          int n = os::snprintf(libname, libname_len + 1, "%.*s%s", dir_len, dir_name, file_start);
+          assert((size_t)n == libname_len, "Unexpected number of characters in string");
+        }
 
         // Avoid infinite recursion when two JAR files refer to each
         // other via cpattr.
