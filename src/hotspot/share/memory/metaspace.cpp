@@ -792,7 +792,8 @@ void Metaspace::global_initialize() {
     if (!rs.is_reserved()) {
       log_info(metaspace)("Reserving compressed class space anywhere");
       // Do not optimize for zero based encoding if Compressed Object Headers are enabled
-      rs = Metaspace::reserve_address_space_for_compressed_classes(size, !UseCompactObjectHeaders);
+      const bool optimize_for_zero_base = !UseCompactObjectHeaders;
+      rs = Metaspace::reserve_address_space_for_compressed_classes(size, optimize_for_zero_base);
     }
 
     // ...failing that, give up.
