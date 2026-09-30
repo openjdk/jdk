@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,12 @@
  *          number of parameters (according to the JVM spec).
  * @library /test/lib /
  * @requires vm.compMode != "Xcomp"
- * @run driver/timeout=1000 compiler.arguments.TestMethodArguments
+ * @run driver/timeout=1000 ${test.main.class}
  */
 
 package compiler.arguments;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -48,6 +48,7 @@ public class TestMethodArguments {
     static final int MIN = 0;
     static final int MAX = 255;
     static final int INPUT_SIZE = 100;
+    static final int WARMUP_ITERATIONS = 100;
 
     public static Template.ZeroArgs generateTest(PrimitiveType type, int numberOfArguments) {
         String arguments = IntStream.range(0, numberOfArguments)
@@ -105,18 +106,21 @@ public class TestMethodArguments {
     }
 
     public static String generate(CompileFramework comp) {
-        List<Object> tests = new LinkedList<>();
+        List<Object> tests = new ArrayList<>();
         for (int i = MIN; i <= MAX; ++i) {
             tests.add(generateTest(CodeGenerationDataNameType.ints(), i).asToken());
             tests.add(generateTest(CodeGenerationDataNameType.floats(), i).asToken());
-            // Longs and doubles take up double as much space in the parameter list as other
-            // primitive types (e.g., int). We therefore have to divide by two to fill up
-            // the same amount of space as for ints and floats.
-            tests.add(generateTest(CodeGenerationDataNameType.longs(), i / 2).asToken());
-            tests.add(generateTest(CodeGenerationDataNameType.doubles(), i / 2).asToken());
+        }
+        // Longs and doubles take up twice as much space in the parameter list as other
+        // primitive types (e.g., int). We therefore have to divide by two to fill up
+        // the same amount of space as for ints and floats.
+        for (int i = MIN; i <= MAX / 2; ++i) {
+            tests.add(generateTest(CodeGenerationDataNameType.longs(), i).asToken());
+            tests.add(generateTest(CodeGenerationDataNameType.doubles(), i).asToken());
         }
         return Template.make(() -> Template.scope(
                 Template.let("classpath", comp.getEscapedClassPathOfCompiledClasses()),
+                Template.let("warmupIterations", WARMUP_ITERATIONS),
                 """
                 import java.util.Arrays;
                 import java.util.stream.*;
@@ -133,6 +137,7 @@ public class TestMethodArguments {
 
                     public static void main() {
                         TestFramework framework = new TestFramework(InnerTest.class);
+                        framework.setDefaultWarmup(#warmupIterations);
                         framework.addFlags("-classpath", "#classpath");
                         framework.start();
                     }
