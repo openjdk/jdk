@@ -209,8 +209,33 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
-    // Check if recursive.
-    bne(tmp3_owner, tid, slow_path);
+    // Normally, a contended monitor enters the runtime slow path here.
+    // If `Zawrs` is enabled, wait briefly for the current owner to release
+    // the monitor and retry the fast-path acquisition once, which can
+    // potentially avoid a runtime call if the owner releases the monitor soon.
+    if (UseZawrs) {
+      Label recursive;
+      beq(tmp3_owner, tid, recursive);
+      // Defer non-thread owner markers to the runtime rather than waiting on them.
+      mv(t0, (uint64_t)ThreadIdentifier::initial());
+      bltu(tmp3_owner, t0, slow_path);
+
+      Label retry;
+      // Reload the owner to establish a reservation, so WRS.STO can
+      // observe an update to it.
+      lr_d(tmp3_owner, tmp2_owner_addr, Assembler::relaxed);
+      beqz(tmp3_owner, retry);
+      bltu(tmp3_owner, t0, slow_path);
+      wrs_sto();
+      bind(retry);
+      cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
+              /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+      beqz(tmp3_owner, monitor_locked);
+      bne(tmp3_owner, tid, slow_path);
+      bind(recursive);
+    } else {
+      bne(tmp3_owner, tid, slow_path);
+    }
 
     // Recursive.
     increment(recursions_address, 1, tmp2, tmp3);

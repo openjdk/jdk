@@ -792,11 +792,8 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
   oop obj = JNIHandles::resolve_non_null(handle);
   if (Arguments::is_valhalla_enabled() && obj->klass()->is_value_klass()) {
     const intptr_t obj_identity_hash = obj->mark().hash();
-    // Check if mark word contains hash code already.
-    // It is possible that the generated identity hash is 0, which is not
-    // distinct from the no_hash value. In such a case, the hash will be
-    // computed and set every time JVM_IHashCode is called. If that happens,
-    // the only consequence is losing out on the optimization.
+    // Check if mark word contains hash code already. The hash code is guaranteed
+    // not to be markWord::no_hash, which is 0.
     if (obj_identity_hash != markWord::no_hash) {
       return checked_cast<jint>(obj_identity_hash);
     }

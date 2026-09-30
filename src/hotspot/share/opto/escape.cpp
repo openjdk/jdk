@@ -2659,7 +2659,17 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
           }
           if (at->isa_oopptr() != nullptr &&
               arg_ptn->escape_state() < PointsToNode::GlobalEscape) {
-            if (!call_analyzer->is_arg_stack(jvms_slot)) {
+            if (scalarized_arg && !call_analyzer->is_arg_local(jvms_slot)) {
+              // If the argument is a field of a scalarized value object, the
+              // bytecode escape analyzer results do not apply (they apply to
+              // the value object itself, not its fields), and we need to
+              // conservatively assume that the field may escape globally. An
+              // exception is if the bytecode escape analyzer determines the
+              // value object argument is local; in that case the callee does
+              // not dereference its fields and hence cannot cause them to
+              // escape globally.
+              set_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
+            } else if (!call_analyzer->is_arg_stack(jvms_slot)) {
               // The argument global escapes
               set_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
             } else {
@@ -5196,8 +5206,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             (use->in(MemNode::Memory) == n)) {
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.push(use);
-        } else if (!(op == Op_CmpP || op == Op_Conv2B ||
-              op == Op_CastP2X || op == Op_FastLock ||
+        } else if (!(op == Op_CmpP || op == Op_Conv2B || op == Op_CastP2X ||
               use->is_memory_access_intrinsic() ||
               op == Op_SubTypeCheck || op == Op_ValueType || op == Op_FlatArrayCheck ||
               op == Op_ReinterpretS2HF ||

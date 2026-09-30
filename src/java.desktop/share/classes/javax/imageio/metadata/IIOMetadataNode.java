@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,12 @@ class IIONamedNodeMap implements NamedNodeMap {
         this.nodes = nodes;
     }
 
+    @Override
     public int getLength() {
         return nodes.size();
     }
 
+    @Override
     public Node getNamedItem(String name) {
         for (Node node : nodes) {
             if (name.equals(node.getNodeName())) {
@@ -78,16 +80,19 @@ class IIONamedNodeMap implements NamedNodeMap {
         return null;
     }
 
+    @Override
     public Node item(int index) {
         Node node = nodes.get(index);
         return node;
     }
 
+    @Override
     public Node removeNamedItem(java.lang.String name) {
         throw new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR,
                                "This NamedNodeMap is read-only!");
     }
 
+    @Override
     public Node setNamedItem(Node arg) {
         throw new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR,
                                "This NamedNodeMap is read-only!");
@@ -96,6 +101,7 @@ class IIONamedNodeMap implements NamedNodeMap {
     /**
      * Equivalent to {@code getNamedItem(localName)}.
      */
+    @Override
     public Node getNamedItemNS(String namespaceURI, String localName) {
         return getNamedItem(localName);
     }
@@ -103,6 +109,7 @@ class IIONamedNodeMap implements NamedNodeMap {
     /**
      * Equivalent to {@code setNamedItem(arg)}.
      */
+    @Override
     public Node setNamedItemNS(Node arg) {
         return setNamedItem(arg);
     }
@@ -110,6 +117,7 @@ class IIONamedNodeMap implements NamedNodeMap {
     /**
      * Equivalent to {@code removeNamedItem(localName)}.
      */
+    @Override
     public Node removeNamedItemNS(String namespaceURI, String localName) {
         return removeNamedItem(localName);
     }
@@ -123,10 +131,12 @@ class IIONodeList implements NodeList {
         this.nodes = nodes;
     }
 
+    @Override
     public int getLength() {
         return nodes.size();
     }
 
+    @Override
     public Node item(int index) {
         if (index < 0 || index >= nodes.size()) {
             return null;
@@ -147,38 +157,47 @@ class IIOAttr extends IIOMetadataNode implements Attr {
         this.value = value;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getNodeName() {
         return name;
     }
 
+    @Override
     public short getNodeType() {
         return ATTRIBUTE_NODE;
     }
 
+    @Override
     public boolean getSpecified() {
         return true;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
 
+    @Override
     public String getNodeValue() {
         return value;
     }
 
+    @Override
     public void setValue(String value) {
         this.value = value;
     }
 
+    @Override
     public void setNodeValue(String value) {
         this.value = value;
     }
 
+    @Override
     public Element getOwnerElement() {
         return owner;
     }
@@ -195,6 +214,7 @@ class IIOAttr extends IIOMetadataNode implements Attr {
      * DOMException are publicly documented as such on IIOMetadataNode.
      * @return false
      */
+    @Override
     public boolean isId() {
         return false;
     }
@@ -330,6 +350,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the node name, as a {@code String}.
      */
+    @Override
     public String getNodeName() {
         return nodeName;
     }
@@ -339,6 +360,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the node value, as a {@code String}.
      */
+    @Override
     public String getNodeValue(){
         return nodeValue;
     }
@@ -346,6 +368,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Sets the {@code String} value associated with this node.
      */
+    @Override
     public void setNodeValue(String nodeValue) {
         this.nodeValue = nodeValue;
     }
@@ -356,6 +379,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the {@code short} value {@code ELEMENT_NODE}.
      */
+    @Override
     public short getNodeType() {
         return ELEMENT_NODE;
     }
@@ -373,6 +397,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @see #replaceChild
      * @see #appendChild
      */
+    @Override
     public Node getParentNode() {
         return parent;
     }
@@ -384,6 +409,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the children as a {@code NodeList}
      */
+    @Override
     public NodeList getChildNodes() {
         return this;
     }
@@ -395,6 +421,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @return the first child, as a {@code Node}, or
      * {@code null}
      */
+    @Override
     public Node getFirstChild() {
         return firstChild;
     }
@@ -406,6 +433,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @return the last child, as a {@code Node}, or
      * {@code null}.
      */
+    @Override
     public Node getLastChild() {
         return lastChild;
     }
@@ -417,6 +445,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @return the previous sibling, as a {@code Node}, or
      * {@code null}.
      */
+    @Override
     public Node getPreviousSibling() {
         return previousSibling;
     }
@@ -428,6 +457,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @return the next sibling, as a {@code Node}, or
      * {@code null}.
      */
+    @Override
     public Node getNextSibling() {
         return nextSibling;
     }
@@ -439,6 +469,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @return a {@code NamedNodeMap} containing the attributes of
      * this node.
      */
+    @Override
     public NamedNodeMap getAttributes() {
         return new IIONamedNodeMap(attributes);
     }
@@ -449,6 +480,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return {@code null}.
      */
+    @Override
     public Document getOwnerDocument() {
         return null;
     }
@@ -467,6 +499,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @throws IllegalArgumentException if {@code newChild} is
      * {@code null}.
      */
+    @Override
     public Node insertBefore(Node newChild,
                              Node refChild) {
         if (newChild == null) {
@@ -525,6 +558,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @throws IllegalArgumentException if {@code newChild} is
      * {@code null}.
      */
+    @Override
     public Node replaceChild(Node newChild,
                              Node oldChild) {
         if (newChild == null) {
@@ -576,6 +610,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @throws IllegalArgumentException if {@code oldChild} is
      * {@code null}.
      */
+    @Override
     public Node removeChild(Node oldChild) {
         if (oldChild == null) {
             throw new IllegalArgumentException("oldChild == null!");
@@ -620,6 +655,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @throws IllegalArgumentException if {@code newChild} is
      * {@code null}.
      */
+    @Override
     public Node appendChild(Node newChild) {
         if (newChild == null) {
             throw new IllegalArgumentException("newChild == null!");
@@ -635,6 +671,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return {@code true} if this node has children.
      */
+    @Override
     public boolean hasChildNodes() {
         return numChildren > 0;
     }
@@ -653,6 +690,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the duplicate node.
      */
+    @Override
     public Node cloneNode(boolean deep) {
         IIOMetadataNode newNode = new IIOMetadataNode(this.nodeName);
         newNode.setUserObject(getUserObject());
@@ -673,6 +711,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * Does nothing, since {@code IIOMetadataNode}s do not
      * contain {@code Text} children.
      */
+    @Override
     public void normalize() {
     }
 
@@ -685,6 +724,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @param feature a {@code String}, which is ignored.
      * @param version a {@code String}, which is ignored.
      */
+    @Override
     public boolean isSupported(String feature, String version) {
         return false;
     }
@@ -692,6 +732,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Returns {@code null}, since namespaces are not supported.
      */
+    @Override
     public String getNamespaceURI() throws DOMException {
         return null;
     }
@@ -703,6 +744,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @see #setPrefix
      */
+    @Override
     public String getPrefix() {
         return null;
     }
@@ -714,6 +756,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @see #getPrefix
      */
+    @Override
     public void setPrefix(String prefix) {
     }
 
@@ -722,6 +765,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the node name, as a {@code String}.
      */
+    @Override
     public String getLocalName() {
         return nodeName;
     }
@@ -734,6 +778,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the node name, as a {@code String}
      */
+    @Override
     public String getTagName() {
         return nodeName;
     }
@@ -744,6 +789,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * @return The {@code Attr} value as a string, or the empty string
      * if that attribute does not have a specified or default value.
      */
+    @Override
     public String getAttribute(String name) {
         Attr attr = getAttributeNode(name);
         if (attr == null) {
@@ -757,10 +803,12 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @see #setAttributeNS
      */
+    @Override
     public String getAttributeNS(String namespaceURI, String localName) {
         return getAttribute(localName);
     }
 
+    @Override
     public void setAttribute(String name, String value) {
         // Name must be valid unicode chars
         boolean valid = true;
@@ -784,11 +832,13 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @see #getAttributeNS
      */
+    @Override
     public void setAttributeNS(String namespaceURI,
                                String qualifiedName, String value) {
         setAttribute(qualifiedName, value);
     }
 
+    @Override
     public void removeAttribute(String name) {
         removeAttribute(name, true);
     }
@@ -814,11 +864,13 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Equivalent to {@code removeAttribute(localName)}.
      */
+    @Override
     public void removeAttributeNS(String namespaceURI,
                                   String localName) {
         removeAttribute(localName);
     }
 
+    @Override
     public Attr getAttributeNode(String name) {
         Node node = getAttributes().getNamedItem(name);
         return (Attr)node;
@@ -829,11 +881,13 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @see #setAttributeNodeNS
      */
+   @Override
    public Attr getAttributeNodeNS(String namespaceURI,
                                    String localName) {
         return getAttributeNode(localName);
     }
 
+    @Override
     public Attr setAttributeNode(Attr newAttr) throws DOMException {
         Element owner = newAttr.getOwnerElement();
         if (owner != null) {
@@ -870,15 +924,18 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @see #getAttributeNodeNS
      */
+    @Override
     public Attr setAttributeNodeNS(Attr newAttr) {
         return setAttributeNode(newAttr);
     }
 
+    @Override
     public Attr removeAttributeNode(Attr oldAttr) {
         removeAttribute(oldAttr.getName());
         return oldAttr;
     }
 
+    @Override
     public NodeList getElementsByTagName(String name) {
         List<Node> l = new ArrayList<>();
         getElementsByTagName(name, l);
@@ -900,15 +957,18 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Equivalent to {@code getElementsByTagName(localName)}.
      */
+    @Override
     public NodeList getElementsByTagNameNS(String namespaceURI,
                                            String localName) {
         return getElementsByTagName(localName);
     }
 
+    @Override
     public boolean hasAttributes() {
         return attributes.size() > 0;
     }
 
+    @Override
     public boolean hasAttribute(String name) {
         return getAttributeNode(name) != null;
     }
@@ -916,6 +976,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Equivalent to {@code hasAttribute(localName)}.
      */
+    @Override
     public boolean hasAttributeNS(String namespaceURI,
                                   String localName) {
         return hasAttribute(localName);
@@ -923,10 +984,12 @@ public class IIOMetadataNode implements Element, NodeList {
 
     // Methods from NodeList
 
+    @Override
     public int getLength() {
         return numChildren;
     }
 
+    @Override
     public Node item(int index) {
         if (index < 0) {
             return null;
@@ -968,6 +1031,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public void setIdAttribute(String name,
                                boolean isId)
                                throws DOMException {
@@ -980,6 +1044,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public void setIdAttributeNS(String namespaceURI,
                                  String localName,
                                  boolean isId)
@@ -993,6 +1058,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public void setIdAttributeNode(Attr idAttr,
                                    boolean isId)
                                    throws DOMException {
@@ -1005,6 +1071,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public TypeInfo getSchemaTypeInfo() throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
@@ -1015,6 +1082,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public Object setUserData(String key,
                               Object data,
                               UserDataHandler handler) throws DOMException {
@@ -1027,6 +1095,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public Object getUserData(String key) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
@@ -1037,6 +1106,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public Object getFeature(String feature, String version)
                               throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1048,6 +1118,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public boolean isSameNode(Node node) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
@@ -1058,6 +1129,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public boolean isEqualNode(Node node) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
@@ -1068,6 +1140,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public String lookupNamespaceURI(String prefix) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
@@ -1078,6 +1151,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public boolean isDefaultNamespace(String namespaceURI)
                                                throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1089,6 +1163,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public String lookupPrefix(String namespaceURI) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
@@ -1099,6 +1174,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public String getTextContent() throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
@@ -1109,6 +1185,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public void setTextContent(String textContent) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
@@ -1119,6 +1196,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public short compareDocumentPosition(Node other)
                                          throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1130,6 +1208,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * and will throw a {@code DOMException}.
      * @throws DOMException always.
      */
+    @Override
     public String getBaseURI() throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
                                "Method not supported");
