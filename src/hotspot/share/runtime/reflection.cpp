@@ -1071,7 +1071,8 @@ static oop invoke(InstanceKlass* klass,
 
   for (int i = 0; i < args_len; i++) {
     oop type_mirror = ptypes->obj_at(i, CHECK_NULL);
-    // obj_at may allocate, wrap type_mirror in a Handle
+    // obj_at of args below may allocate, wrap type_mirror in a Handle so that
+    // it is protected.
     Handle type_mirror_handle(THREAD, type_mirror);
     oop arg = args->obj_at(i, CHECK_NULL);
 
