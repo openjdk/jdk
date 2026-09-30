@@ -163,23 +163,35 @@ public class TestRemoveStoresAfterPeeling {
 
     @Test
     @IR(counts = {IRNode.STORE_I, "1"})
-    private void testStorePeeling5(boolean b, A a, int v) {
+    private int testStorePeeling5(boolean b, A[] array, A a, int v) {
+        int sum = 0;
         for (int i = 1; i < 100; i *= 2) {
-            // This test triggers peeling without StressLoopPeeling
+            // Similar to testStorePeeling4, and this test triggers peeling without
+            // StressLoopPeeling
             if (b) {
                 break;
             }
+
+            sum += array[i].v;
             a.v = v;
         }
+        return sum;
     }
 
     @Run(test = "testStorePeeling5")
     private void runStorePeeling5() {
-        A a = new A();
-        testStorePeeling5(true, a, 1);
-        Asserts.assertEQ(0, a.v);
-        testStorePeeling5(false, a, 1);
-        Asserts.assertEQ(1, a.v);
+        A[] array = new A[100];
+        for (int i = 0; i < 100; i++) {
+            array[i] = new A();
+        }
+        Asserts.assertEQ(0, testStorePeeling5(true, array, array[2], 1));
+
+        A unrelated = new A();
+        Asserts.assertEQ(0, testStorePeeling5(true, array, unrelated, 1));
+        Asserts.assertEQ(0, testStorePeeling5(false, array, unrelated, 1));
+        Asserts.assertEQ(1, testStorePeeling5(false, array, array[2], 1));
+        array[2].v = 0;
+        Asserts.assertEQ(0, testStorePeeling5(false, array, array[1], 1));
     }
 
     @Test
