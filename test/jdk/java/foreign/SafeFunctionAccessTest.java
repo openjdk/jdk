@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test id=specialized
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *  -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *  --enable-native-access=ALL-UNNAMED
  *  SafeFunctionAccessTest
@@ -31,7 +31,7 @@
 
 /*
  * @test id=interpreted
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   --enable-native-access=ALL-UNNAMED
  *   SafeFunctionAccessTest
@@ -49,9 +49,8 @@ import java.lang.invoke.MethodType;
 
 import java.util.stream.Stream;
 
-import org.testng.annotations.*;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class SafeFunctionAccessTest extends NativeTestHelper {
     static {
@@ -62,18 +61,18 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
             C_INT, C_INT
     );
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testClosedStruct() throws Throwable {
         MemorySegment segment;
         try (Arena arena = Arena.ofConfined()) {
             segment = arena.allocate(POINT);
-        }
-        assertFalse(segment.scope().isAlive());
+        }   assertFalse(segment.scope().isAlive());
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("struct_func"),
                 FunctionDescriptor.ofVoid(POINT));
-
-        handle.invokeExact(segment);
+        assertThrows(IllegalStateException.class, () -> {
+            handle.invokeExact(segment);
+        });
     }
 
     @Test
@@ -119,19 +118,19 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testClosedUpcall() throws Throwable {
         MemorySegment upcall;
         try (Arena arena = Arena.ofConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
             upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena);
-        }
-        assertFalse(upcall.scope().isAlive());
+        }   assertFalse(upcall.scope().isAlive());
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func"),
                 FunctionDescriptor.ofVoid(C_POINTER));
-
-        handle.invokeExact(upcall);
+        assertThrows(IllegalStateException.class, () -> {
+            handle.invokeExact(upcall);
+        });
     }
 
     static void dummy() { }

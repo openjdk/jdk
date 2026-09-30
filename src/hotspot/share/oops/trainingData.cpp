@@ -120,7 +120,7 @@ void TrainingData::verify() {
 }
 
 static bool is_excluded(InstanceKlass* k) {
-  if (!k->is_loaded() || k->has_been_redefined()) {
+  if (!k->is_loaded() || (TrainingData::need_data() && k->has_been_redefined())) {
     return true;
   }
   if (CDSConfig::is_at_aot_safepoint()) {

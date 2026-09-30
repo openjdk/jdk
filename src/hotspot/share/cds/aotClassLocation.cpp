@@ -39,8 +39,10 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
@@ -51,6 +53,7 @@
 Array<ClassPathZipEntry*>* AOTClassLocationConfig::_dumptime_jar_files = nullptr;
 AOTClassLocationConfig* AOTClassLocationConfig::_dumptime_instance = nullptr;
 const AOTClassLocationConfig* AOTClassLocationConfig::_runtime_instance = nullptr;
+AOTClassLocationConfig::RuntimePathInfo AOTClassLocationConfig::_runtime_path_info = { false, nullptr, 0 };
 
 // A ClassLocationStream represents a list of code locations, which can be iterated using
 // start() and has_next().
@@ -98,6 +101,7 @@ public:
 
   int current() const { return _current; }
   bool is_empty() const { return _array.length() == 0; }
+  int size() const { return _array.length(); }
 };
 
 class BootCpClassLocationStream : public ClassLocationStream {
@@ -184,9 +188,8 @@ ModulePathClassLocationStream::ModulePathClassLocationStream() : ClassLocationSt
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
     DIR* dirp = os::opendir(path);
-    if (dirp == nullptr && errno == ENOTDIR && has_jar_suffix(path)) {
-      add_one_path(path);
-    } else if (dirp != nullptr) {
+    if (dirp != nullptr) {
+      // Is a directory
       struct dirent* dentry;
       bool found_jar = false;
       while ((dentry = os::readdir(dirp)) != nullptr) {
@@ -201,7 +204,7 @@ ModulePathClassLocationStream::ModulePathClassLocationStream() : ClassLocationSt
         } else if (strcmp(file_name, ".") != 0 && strcmp(file_name, "..") != 0) {
           // Found some non jar entries
           _has_non_jar_modules = true;
-          log_info(class, path)("Found non-jar path: '%s%s%s'", path, os::file_separator(), file_name);
+          log_info(class, path)("Found non-JAR path: '%s%s%s'", path, os::file_separator(), file_name);
         }
       }
       if (!found_jar) {
@@ -210,7 +213,21 @@ ModulePathClassLocationStream::ModulePathClassLocationStream() : ClassLocationSt
       }
       os::closedir(dirp);
     } else {
-      _has_non_jar_modules = true;
+      // Not a directory
+      if (errno == ENOTDIR) {
+        if (has_jar_suffix(path)) {
+          log_info(class, path)("Module path points to a single JAR file: '%s'", path);
+          add_one_path(path);
+        } else {
+          log_info(class, path)("Module path points to a single non-JAR file: '%s'", path);
+          _has_non_jar_modules = true;
+        }
+      } else if (errno == ENOENT) {
+        log_info(class, path)("Found non-existent module path (ignored): '%s'", path);
+      }  else {
+        aot_log_error(aot)("Unable to open file %s.", path);
+        AOTMetaspace::unrecoverable_loading_error();
+      }
     }
   }
 
@@ -278,7 +295,8 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   }
   assert(*(cs->manifest() + cs->manifest_length()) == '\0', "should be nul-terminated");
 
-  if (strstr(cs->manifest(), "Multi-Release: true") != nullptr) {
+  const char* multi_release = cs->get_attr("Multi-Release: ");
+  if (multi_release != nullptr && strcasecmp(multi_release, "true") == 0) {
     cs->_is_multi_release_jar = true;
   }
 
@@ -320,7 +338,7 @@ char* AOTClassLocation::read_manifest(JavaThread* current, const char* path, siz
 }
 
 // The result is resource allocated.
-char* AOTClassLocation::get_cpattr() const {
+char* AOTClassLocation::get_attr(const char* tag) const {
   if (_manifest_length == 0) {
     return nullptr;
   }
@@ -336,7 +354,6 @@ char* AOTClassLocation::get_cpattr() const {
   // Remove all new-line continuation (remove all "\n " substrings)
   StringUtils::replace_no_expand(buf, "\n ", "");
 
-  const char* tag = "Class-Path: ";
   size_t tag_len = strlen(tag);
   char* found = nullptr;
   char* line_start = buf;
@@ -350,7 +367,13 @@ char* AOTClassLocation::get_cpattr() const {
       // JAR spec require the manifest file to be terminated by a new line.
       break;
     }
-    if (strncmp(tag, line_start, tag_len) == 0) {
+
+    if (line_start == line_end) {
+      break;
+    }
+
+    // Attribute names are case insensitive
+    if (strncasecmp(tag, line_start, tag_len) == 0) {
       if (found != nullptr) {
         // Same behavior as jdk/src/share/classes/java/util/jar/Attributes.java
         // If duplicated entries are found, the last one is used.
@@ -367,6 +390,11 @@ char* AOTClassLocation::get_cpattr() const {
   }
 
   return found;
+}
+
+// The result is resource allocated.
+char* AOTClassLocation::get_cpattr() const {
+  return get_attr("Class-Path: ");
 }
 
 AOTClassLocation* AOTClassLocation::write_to_archive() const {
@@ -435,7 +463,7 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
     }
   }
 
-  log_info(class, path)("ok");
+  log_info(class, path)("ok (file size and timestamp have not changed)");
   return true;
 }
 
@@ -504,6 +532,15 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
   _has_platform_classes = false;
   _has_app_classes = false;
   _max_used_index = 0;
+}
+
+const char* AOTClassLocationConfig::get_runtime_path(int shared_path_index, const char* path) const {
+  const char* real_path = path;
+  if (_runtime_path_info.use_lcp_match && _dumptime_lcp_len > 0 && !class_location_at(shared_path_index)->from_module_path()) {
+    // lcp match is not done for module paths
+    real_path = AOTClassLocationConfig::substitute(path, _dumptime_lcp_len, _runtime_path_info.runtime_lcp, _runtime_path_info.runtime_lcp_len);
+  }
+  return real_path;
 }
 
 // Find the longest common prefix of two paths, up to max_lcp_len.
@@ -633,7 +670,7 @@ void AOTClassLocationConfig::add_class_location(JavaThread* current, GrowableCla
         // other via cpattr.
         bool found_duplicate = false;
         for (int i = boot_cp_start_index(); i < tmp_array.length(); i++) {
-          if (strcmp(tmp_array.at(i)->path(), libname) == 0) {
+          if (os::same_files(tmp_array.at(i)->path(), libname)) {
             found_duplicate = true;
             break;
           }
@@ -718,7 +755,9 @@ bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, Insta
       const char* const class_name = ik->name()->as_C_string();
       const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                           ik->name()->utf8_length());
-      if (!zip->has_entry(current, file_name)) {
+      Handle class_loader(current, ik->class_loader());
+      const AOTClassLocation* cl = AOTClassLocationConfig::class_location_at(classpath_index);
+      if (!zip->has_entry(current, file_name, class_loader, cl->is_multi_release_jar())) {
         aot_log_warning(aot)("class %s cannot be archived because it was not defined from %s as claimed",
                          class_name, zip->name());
         return false;
@@ -749,8 +788,7 @@ AOTClassLocationConfig* AOTClassLocationConfig::write_to_archive() const {
 bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_aot_linked_classes,
                                               int index_start, int index_end,
                                               ClassLocationStream& runtime_css,
-                                              bool use_lcp_match, const char* runtime_lcp,
-                                              size_t runtime_lcp_len) const {
+                                              RuntimePathInfo& path_info) const {
   if (index_start >= index_end && runtime_css.is_empty()) { // nothing to check
     return true;
   }
@@ -760,10 +798,11 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
   LogTarget(Info, class, path) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print("Checking %s classpath", which);
-    ls.print_cr("%s", use_lcp_match ? " (with longest common prefix substitution)" : "");
+    ls.print("Checking %s classpath from index [%d]", which, index_start);
+    ls.print_cr("%s", path_info.use_lcp_match ? " (with longest common prefix substitution)" : "");
     ls.print("- expected : '");
-    print_dumptime_classpath(ls, index_start, index_end, use_lcp_match, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
+    print_dumptime_classpath(ls, index_start, index_end, path_info.use_lcp_match, _dumptime_lcp_len,
+                             path_info.runtime_lcp, path_info.runtime_lcp_len);
     ls.print_cr("'");
     ls.print("- actual   : '");
     runtime_css.print(&ls);
@@ -775,8 +814,9 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
     ResourceMark rm;
     const AOTClassLocation* cs = class_location_at(i);
     const char* effective_dumptime_path = cs->path();
-    if (use_lcp_match && _dumptime_lcp_len > 0) {
-      effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
+    if (path_info.use_lcp_match && _dumptime_lcp_len > 0) {
+      effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len,
+                                           path_info.runtime_lcp, path_info.runtime_lcp_len);
     }
 
     log_info(class, path)("Checking [%d] '%s' %s%s", i, effective_dumptime_path, cs->file_type_string(),
@@ -832,68 +872,94 @@ bool AOTClassLocationConfig::check_paths_existence(ClassLocationStream& runtime_
   return exist;
 }
 
-bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int index_start, int index_end,
-                                                ClassLocationStream& runtime_css,
-                                                bool* has_extra_module_paths) const {
-  if (index_start >= index_end && runtime_css.is_empty()) { // nothing to check
-    return true;
-  }
-
+bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, bool has_full_module_graph,
+                                                ModulePathClassLocationStream& runtime_module_css) const {
+  const int index_start = module_path_start_index();
+  const int index_end = module_path_end_index();
   ResourceMark rm;
 
   LogTarget(Info, class, path) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print_cr("Checking module paths");
+    ls.print_cr("Checking module paths from index [%d]", index_start);
     ls.print("- expected : '");
     print_dumptime_classpath(ls, index_start, index_end, false, 0, nullptr, 0);
     ls.print_cr("'");
     ls.print("- actual   : '");
-    runtime_css.print(&ls);
+    runtime_module_css.print(&ls);
     ls.print_cr("'");
   }
 
-  // Make sure all the dumptime module paths exist and are unchanged
+  // All JAR files in the dumptime module paths must exist and must be unchanged,
+  // or else we have a "hard" failure, as we can no longer guarantee that archived
+  // classes from the module paths remain unchanged at runtime.
   for (int i = index_start; i < index_end; i++) {
     const AOTClassLocation* cs = class_location_at(i);
     const char* dumptime_path = cs->path();
 
     assert(!cs->from_cpattr(), "not applicable for module path");
-    log_info(class, path)("Checking '%s' %s", dumptime_path, cs->file_type_string());
+    log_info(class, path)("Checking [%d] '%s' %s", i, dumptime_path, cs->file_type_string());
 
     if (!cs->check(dumptime_path, has_aot_linked_classes)) {
       return false;
     }
   }
 
-  // We allow runtime_css to be a superset of the module paths specified in dumptime. E.g.,
-  // Dumptime:    A:C
-  // Runtime:     A:B:C
-  runtime_css.start();
-  for (int i = index_start; i < index_end; i++) {
-    const AOTClassLocation* cs = class_location_at(i);
-    const char* dumptime_path = cs->path();
-
-    while (true) {
-      if (!runtime_css.has_next()) {
-        aot_log_warning(aot)("module path has fewer elements than expected");
-        *has_extra_module_paths = true;
-        return true;
+  if (!check_module_paths_exact_match(runtime_module_css)) {
+    if (CDSConfig::new_aot_flags_used()) {
+      // New AOT workflow requires an exact match for --module-paths.
+      return false;
+    } else {
+      // For classical CDS, we have a "soft" failure if the runtime module paths are
+      // not an exact match with the dumptime module paths:
+      //   Classes from the module path will not be loaded if they are
+      //   rejected by SystemDictionary::is_shared_class_visible().
+      if (has_full_module_graph) {
+        CDSConfig::disable_full_module_graph();
+        AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
       }
-      // Both this->class_locations() and runtime_css are alphabetically sorted. Skip
-      // items in runtime_css until we see dumptime_path.
-      const char* runtime_path = runtime_css.get_next();
-      if (!os::same_files(dumptime_path, runtime_path)) {
-        *has_extra_module_paths = true;
-        return true;
-      } else {
-        break;
+
+      if (CDSConfig::is_dumping_dynamic_archive() && num_module_paths() > 0) {
+        CDSConfig::disable_dumping_dynamic_archive();
+        aot_log_warning(aot)("Dynamic archiving is disabled because base layer archive has a different module path");
       }
     }
   }
 
-  if (runtime_css.has_next()) {
-    *has_extra_module_paths = true;
+  return true;
+}
+
+bool AOTClassLocationConfig::check_module_paths_exact_match(ModulePathClassLocationStream& runtime_module_css) const {
+  if (runtime_module_css.has_non_jar_modules()) {
+    AOTMetaspace::report_loading_error("module path contains sub-directories or non-JAR files (incompatible with full module graph)");
+    return false;
+  }
+
+  const int index_start = module_path_start_index();
+  const int index_end = module_path_end_index();
+
+  runtime_module_css.start();
+  for (int i = index_start; i < index_end; i++) {
+    const AOTClassLocation* cs = class_location_at(i);
+    const char* dumptime_path = cs->path();
+
+    if (!runtime_module_css.has_next()) {
+      AOTMetaspace::report_loading_error("module path has fewer elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
+      return false;
+    }
+    const char* runtime_path = runtime_module_css.get_next();
+    // Both dumptime and runtime module paths are alphabetically sorted, so we just need to
+    // compare each element at the same position.
+    if (!os::same_files(dumptime_path, runtime_path)) {
+      AOTMetaspace::report_loading_error("module path at [%d] is different: expected %s actual %s",
+                                         i, dumptime_path, runtime_path);
+      return false;
+    }
+  }
+
+  if (runtime_module_css.has_next()) {
+    AOTMetaspace::report_loading_error("module path has more elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
+    return false;
   }
 
   return true;
@@ -967,65 +1033,60 @@ bool AOTClassLocationConfig::need_lcp_match_helper(int start, int end, ClassLoca
   return true;
 }
 
-bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool* has_extra_module_paths) const {
+bool AOTClassLocationConfig::validate_helper(const char* cache_filename, bool has_aot_linked_classes,
+                                             bool has_full_module_graph, RuntimePathInfo& path_info) const {
   ResourceMark rm;
   AllClassLocationStreams all_css;
 
   log_locations(cache_filename, /*is_write=*/false);
 
-  const char* jrt = ClassLoader::get_jrt_entry()->name();
-  log_info(class, path)("Checking [0] (modules image)");
-  bool success = class_location_at(0)->check(jrt, has_aot_linked_classes);
-  log_info(class, path)("Modules image %s validation: %s", jrt, success ? "passed" : "failed");
-  if (!success) {
+  if (!check_jrt(has_aot_linked_classes)) {
     return false;
   }
-  if (class_locations()->length() == 1) {
-    if ((module_path_start_index() >= module_path_end_index()) && Arguments::get_property("jdk.module.path") != nullptr) {
-      *has_extra_module_paths = true;
-    } else {
-      *has_extra_module_paths = false;
-    }
-  } else {
-    bool use_lcp_match = need_lcp_match(all_css);
-    const char* runtime_lcp;
-    size_t runtime_lcp_len;
 
-    log_info(class, path)("Longest common prefix substitution in boot/app classpath matching: %s",
-                          use_lcp_match ? "yes" : "no");
-    if (use_lcp_match) {
-      runtime_lcp = find_lcp(all_css.boot_and_app_cp(), runtime_lcp_len);
-      log_info(class, path)("Longest common prefix: %s (%zu chars)", runtime_lcp, runtime_lcp_len);
-    } else {
-      runtime_lcp = nullptr;
-      runtime_lcp_len = 0;
-    }
-
-    success = check_classpaths(true, has_aot_linked_classes, boot_cp_start_index(), boot_cp_end_index(), all_css.boot_cp(),
-                               use_lcp_match, runtime_lcp, runtime_lcp_len);
-    log_info(class, path)("Archived boot classpath validation: %s", success ? "passed" : "failed");
-
-    if (success && need_to_check_app_classpath()) {
-      success = check_classpaths(false, has_aot_linked_classes, app_cp_start_index(), app_cp_end_index(), all_css.app_cp(),
-                                 use_lcp_match, runtime_lcp, runtime_lcp_len);
-      log_info(class, path)("Archived app classpath validation: %s", success ? "passed" : "failed");
-    }
-
-    if (success) {
-      success = check_module_paths(has_aot_linked_classes, module_path_start_index(), module_path_end_index(),
-                                   all_css.module_path(), has_extra_module_paths);
-      log_info(class, path)("Archived module path validation: %s%s", success ? "passed" : "failed",
-                            (*has_extra_module_paths) ? " (extra module paths found)" : "");
-    }
-
-    if (runtime_lcp_len > 0) {
-      os::free((void*)runtime_lcp);
-    }
+  if (!check_classpaths(has_aot_linked_classes, all_css, path_info)) {
+    return false;
   }
 
-  if (success) {
-    _runtime_instance = this;
-  } else {
+  bool status = check_module_paths(has_aot_linked_classes, has_full_module_graph, all_css.module_path());
+  log_info(class, path)("Archived module path validation: %s", status ? "passed" : "failed");
+  return status;
+}
+
+bool AOTClassLocationConfig::check_jrt(bool has_aot_linked_classes) const {
+  const char* jrt = ClassLoader::get_jrt_entry()->name();
+  log_info(class, path)("Checking [0] (modules image)");
+  bool status = class_location_at(0)->check(jrt, has_aot_linked_classes);
+  log_info(class, path)("Modules image %s validation: %s", jrt, status ? "passed" : "failed");
+  return status;
+}
+
+bool AOTClassLocationConfig::check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css,
+                                              RuntimePathInfo& path_info) const {
+  path_info.use_lcp_match = need_lcp_match(all_css);
+  log_info(class, path)("Longest common prefix substitution in boot/app classpath matching: %s",
+                        path_info.use_lcp_match ? "yes" : "no");
+  if (path_info.use_lcp_match) {
+    path_info.runtime_lcp = find_lcp(all_css.boot_and_app_cp(), path_info.runtime_lcp_len);
+    log_info(class, path)("Longest common prefix: %s (%zu chars)", path_info.runtime_lcp, path_info.runtime_lcp_len);
+  }
+
+  bool status = check_classpaths(true, has_aot_linked_classes, boot_cp_start_index(),
+                                 boot_cp_end_index(), all_css.boot_cp(), path_info);
+  log_info(class, path)("Archived boot classpath validation: %s", status ? "passed" : "failed");
+
+  if (status && need_to_check_app_classpath()) {
+    status = check_classpaths(false, has_aot_linked_classes, app_cp_start_index(),
+                              app_cp_end_index(), all_css.app_cp(), path_info);
+    log_info(class, path)("Archived app classpath validation: %s", status ? "passed" : "failed");
+  }
+
+  return status;
+}
+
+bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const {
+  RuntimePathInfo path_info { false, nullptr, 0 };
+  if (!validate_helper(cache_filename, has_aot_linked_classes, has_full_module_graph, path_info)) {
     const char* mismatch_msg = "shared class paths mismatch";
     const char* hint_msg = log_is_enabled(Info, class, path) ?
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
@@ -1033,7 +1094,7 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
       if (CDSConfig::is_dumping_final_static_archive()) {
         aot_log_error(aot)("class path and/or module path are not compatible with the "
                        "ones specified when the AOTConfiguration file was recorded%s", hint_msg);
-        vm_exit_during_initialization("Unable to use create AOT cache.", nullptr);
+        AOTMetaspace::unrecoverable_writing_error("Unable to use create AOT cache.");
       } else {
         aot_log_error(aot)("%s%s", mismatch_msg, hint_msg);
         AOTMetaspace::unrecoverable_loading_error();
@@ -1041,8 +1102,33 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
     } else {
       AOTMetaspace::report_loading_error("%s%s", mismatch_msg, hint_msg);
     }
+
+    if (path_info.runtime_lcp_len > 0) {
+      os::free((void*)path_info.runtime_lcp);
+    }
+
+    return false;
   }
-  return success;
+
+  if (CDSConfig::is_dumping_dynamic_archive()) {
+    // Only support dynamic dumping with the usage of the default CDS archive
+    // or a simple base archive.
+    // If the base layer archive contains additional path component besides
+    // the runtime image and the -cp, dynamic dumping is disabled.
+    if (num_boot_classpaths() > 0) {
+      CDSConfig::disable_dumping_dynamic_archive();
+      aot_log_warning(aot)(
+        "Dynamic archiving is disabled because base layer archive has appended boot classpath");
+    }
+  }
+
+  if (_runtime_path_info.runtime_lcp_len > 0) {
+    os::free((void*)_runtime_path_info.runtime_lcp);
+  }
+
+  _runtime_path_info = path_info;
+  _runtime_instance = this;
+  return true;
 }
 
 void AOTClassLocationConfig::log_locations(const char* cache_filename, bool is_write) const {

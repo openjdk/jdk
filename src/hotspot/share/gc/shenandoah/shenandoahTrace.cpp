@@ -23,6 +23,7 @@
  */
 
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
+#include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "jfr/jfrEvents.hpp"
 
@@ -43,22 +44,19 @@ void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cse
   }
 }
 
-void ShenandoahTracer::report_promotion_info(const ShenandoahCollectionSet* cset,
-    size_t regions_promoted_humongous, size_t humongous_promoted_garbage, size_t humongous_promoted_free,
-    size_t regions_promoted_regular, size_t regular_promoted_garbage, size_t regular_promoted_free) {
-
+void ShenandoahTracer::report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner& planner) {
   EventShenandoahPromotionInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_collectedOld(cset->get_live_bytes_in_old_regions());
     e.set_collectedPromoted(cset->get_live_bytes_in_tenurable_regions());
     e.set_collectedYoung(cset->get_live_bytes_in_untenurable_regions());
-    e.set_regionsPromotedHumongous(regions_promoted_humongous);
-    e.set_humongousPromotedGarbage(humongous_promoted_garbage);
-    e.set_humongousPromotedFree(humongous_promoted_free);
-    e.set_regionsPromotedRegular(regions_promoted_regular);
-    e.set_regularPromotedGarbage(regular_promoted_garbage);
-    e.set_regularPromotedFree(regular_promoted_free);
+    e.set_regionsPromotedHumongous(planner.humongous_region_stats().count);
+    e.set_humongousPromotedGarbage(planner.humongous_region_stats().garbage);
+    e.set_humongousPromotedFree(planner.humongous_region_stats().free);
+    e.set_regionsPromotedRegular(planner.regular_region_stats().count);
+    e.set_regularPromotedGarbage(planner.regular_region_stats().garbage);
+    e.set_regularPromotedFree(planner.regular_region_stats().free);
 
     e.commit();
   }

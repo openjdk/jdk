@@ -374,7 +374,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * methods that add children to the set.
      * </p>
      * @param targetChild the child to create the Child on behalf of
-     * @param peer        the peer if the tragetChild and the peer are related by an implementation of BeanContextProxy
+     * @param peer        the peer if the targetChild and the peer are related by an implementation of BeanContextProxy
      * @return Subtype-specific subclass of Child without overriding collection methods
      */
 

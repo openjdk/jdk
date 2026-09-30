@@ -86,9 +86,16 @@ public class GenerateJLIClassesPluginTest {
     }
 
     @AfterMethod
-    public static void cleanup(ITestResult result) throws IOException {
+    public static void cleanup(ITestResult result) {
         if (result.isSuccess() && lastImageDir != null && Files.exists(lastImageDir)) {
-            FileUtils.deleteFileTreeWithRetry(lastImageDir);
+            // On Windows, the java.exe process spawned by test methods may
+            // hold open handles to files even after completion.
+            // Use a non-throwing cleanup method but tolerate failures. Just log them.
+            List<IOException> failures = FileUtils.deleteFileTreeUnchecked(lastImageDir);
+            if (!failures.isEmpty()) {
+                System.err.println("WARNING: cleanup of " + lastImageDir + " incomplete:");
+                failures.forEach(e -> System.err.println("  " + e));
+            }
         }
         lastImageDir = null;
     }

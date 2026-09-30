@@ -31,11 +31,13 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.AbstractList;
 import java.util.Collection;
@@ -216,6 +218,15 @@ public final class Util {
         int i = 0;
         for (var entry : list) {
             result[i++] = TemporaryConstantPool.INSTANCE.moduleEntry(entry);
+        }
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
+    }
+
+    public static List<PackageEntry> packageEntryList(List<? extends PackageDesc> list) {
+        var result = new Object[list.size()]; // null check
+        int i = 0;
+        for (var entry : list) {
+            result[i++] = TemporaryConstantPool.INSTANCE.packageEntry(entry);
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }

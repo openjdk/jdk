@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/resourceArea.hpp"
@@ -556,6 +557,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _directive(directive)
 , _env(env)
 , _log(env->log())
+, _stress(_directive, _log, compiler_c1)
 , _method(method)
 , _osr_bci(osr_bci)
 , _hir(nullptr)

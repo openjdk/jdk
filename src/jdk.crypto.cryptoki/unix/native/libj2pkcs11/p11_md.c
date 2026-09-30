@@ -135,6 +135,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
                 rv = C_GetInterfaceList(iList, &ulCount);
                 if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
                     TRACE0("Connect: error polling interface list\n");
+                    free(iList);
                     goto cleanup;
                 }
                 for (int i=0; i < (int)ulCount; i++) {

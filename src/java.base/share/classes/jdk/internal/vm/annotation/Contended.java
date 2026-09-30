@@ -67,6 +67,12 @@ import java.lang.annotation.Target;
  * groups. Contention group tags are not inherited, and the same tag used
  * in a superclass and subclass, represent distinct contention groups.
  *
+ * <div class="preview-block">
+ * <div class="preview-comment">
+ * <p> This annotation has no effect when used on or inside value classes.
+ * </div>
+ * </div>
+ *
  * @since 1.8
  */
 @Retention(RetentionPolicy.RUNTIME)

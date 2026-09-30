@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
 #include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
-#include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
@@ -56,6 +55,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/thread.inline.hpp"
 
 typedef JfrCheckpointManager::BufferPtr BufferPtr;
 typedef JfrCheckpointManager::ConstBufferPtr ConstBufferPtr;
@@ -257,6 +257,7 @@ BufferPtr JfrCheckpointManager::acquire_virtual_thread_local(Thread* thread, siz
 BufferPtr JfrCheckpointManager::renew(ConstBufferPtr old, Thread* thread, size_t size, JfrCheckpointBufferKind kind /* JFR_THREADLOCAL */) {
   assert(old != nullptr, "invariant");
   assert(old->acquired_by_self(), "invariant");
+  assert(!old->retired(), "invariant");
   if (kind == JFR_GLOBAL) {
     return lease_global(thread, instance()._global_mspace->in_previous_epoch_list(old), size);
   }
@@ -493,9 +494,10 @@ class VirtualThreadLocalCheckpointWriteOp {
 };
 
 typedef CheckpointWriteOp<JfrCheckpointManager::Buffer> WriteOperation;
+typedef ExclusiveOp<WriteOperation> ExclusiveWriteOperation;
 typedef MutexedWriteOp<WriteOperation> MutexedWriteOperation;
 typedef ReleaseWithExcisionOp<JfrCheckpointMspace, JfrCheckpointMspace::LiveList> ReleaseOperation;
-typedef CompositeOperation<MutexedWriteOperation, ReleaseOperation> WriteReleaseOperation;
+typedef CompositeOperation<ExclusiveWriteOperation, ReleaseOperation> WriteReleaseOperation;
 typedef VirtualThreadLocalCheckpointWriteOp<JfrCheckpointManager::Buffer> VirtualThreadLocalCheckpointOperation;
 typedef MutexedWriteOp<VirtualThreadLocalCheckpointOperation> VirtualThreadLocalWriteOperation;
 
@@ -504,17 +506,17 @@ void JfrCheckpointManager::shift_epoch() {
   DEBUG_ONLY(const u1 current_epoch = JfrTraceIdEpoch::current();)
   JfrTraceIdEpoch::shift_epoch();
   assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
-  JfrStringPool::on_epoch_shift();
 }
 
 size_t JfrCheckpointManager::write() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   WriteOperation wo(chunkwriter());
-  MutexedWriteOperation mwo(wo);
-  _thread_local_mspace->iterate(mwo, true); // previous epoch list
+  // Must take exclusive ownership before writing, because non-Java threads can still have active usage.
+  ExclusiveWriteOperation ewo(wo);
+  _thread_local_mspace->iterate(ewo, true); // previous epoch list
   assert(_global_mspace->free_list_is_empty(), "invariant");
   ReleaseOperation ro(_global_mspace, _global_mspace->live_list(true)); // previous epoch list
-  WriteReleaseOperation wro(&mwo, &ro);
+  WriteReleaseOperation wro(&ewo, &ro);
   process_live_list(wro, _global_mspace, true); // previous epoch list
   // Do virtual thread local list last. Careful, the vtlco destructor writes to chunk.
   VirtualThreadLocalCheckpointOperation vtlco(chunkwriter());
@@ -524,19 +526,22 @@ size_t JfrCheckpointManager::write() {
 }
 
 typedef DiscardOp<DefaultDiscarder<JfrCheckpointManager::Buffer> > DiscardOperation;
-typedef CompositeOperation<DiscardOperation, ReleaseOperation> DiscardReleaseOperation;
+typedef ExclusiveDiscardOp<DefaultDiscarder<JfrCheckpointManager::Buffer> > ExclusiveDiscardOperation;
+typedef CompositeOperation<ExclusiveDiscardOperation, ReleaseOperation> DiscardReleaseOperation;
 
 size_t JfrCheckpointManager::clear() {
   JfrTraceIdLoadBarrier::clear();
   clear_type_set();
-  DiscardOperation dop(mutexed); // mutexed discard mode
-  _thread_local_mspace->iterate(dop, true); // previous epoch list
+  // Must take exclusive ownership before discarding, because non-Java threads can still have active usage.
+  ExclusiveDiscardOperation edo(mutexed);
+  _thread_local_mspace->iterate(edo, true); // previous epoch list
+  DiscardOperation dop(mutexed); // already has exclusive ownership discard mode
   _virtual_thread_local_mspace->iterate(dop, true); // previous epoch list
   ReleaseOperation ro(_global_mspace, _global_mspace->live_list(true)); // previous epoch list
-  DiscardReleaseOperation dro(&dop, &ro);
+  DiscardReleaseOperation dro(&edo, &ro);
   assert(_global_mspace->free_list_is_empty(), "invariant");
   process_live_list(dro, _global_mspace, true); // previous epoch list
-  return dop.elements();
+  return edo.elements() + dop.elements();
 }
 
 size_t JfrCheckpointManager::write_static_type_set(Thread* thread) {
@@ -623,7 +628,11 @@ void JfrCheckpointManager::write_type_set() {
 
 void JfrCheckpointManager::on_unloading_classes() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  JfrCheckpointWriter writer(Thread::current());
+  Thread* const current = Thread::current();
+  // Take the epoch shift lock to ensure no epoch shift
+  // occurs during artifact serialization (for concurrent GCs).
+  ConditionalMutexLocker lock(current, JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
+  JfrCheckpointWriter writer(current);
   JfrTypeSet::on_unloading_classes(&writer);
   JfrAddRefCountedBlob add_blob(writer, false /* move */, false /* reset */);
 }

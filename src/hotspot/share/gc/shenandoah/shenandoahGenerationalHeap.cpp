@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,8 +161,8 @@ void ShenandoahGenerationalHeap::start_idle_span() {
 }
 
 bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
-  if (is_idle()) {
-    return false;
+  if (ShenandoahHeap::requires_barriers(obj)) {
+    return true;
   }
 
   if (is_concurrent_young_mark_in_progress() && is_in_young(obj) && !marking_context()->allocated_after_mark_start(obj)) {
@@ -172,11 +172,6 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
 
   if (is_in_old(obj)) {
     // Card marking barriers are required for objects in the old generation
-    return true;
-  }
-
-  if (has_forwarded_objects()) {
-    // Object may have pointers that need to be updated
     return true;
   }
 
@@ -211,10 +206,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
       return ShenandoahForwarding::get_forwardee(p);
     }
 
-    if (mark.has_displaced_mark_helper()) {
-      // We don't want to deal with MT here just to ensure we read the right mark word.
-      // Skip the potential promotion attempt for this one.
-    } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+    if (age_census()->is_tenurable(from_region->age() + mark.age())) {
       // If the object is tenurable, try to promote it
       oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 
@@ -1023,7 +1015,7 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
   const char* msg = "Coalescing and filling old regions";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
 
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
   EventMark em("%s", msg);

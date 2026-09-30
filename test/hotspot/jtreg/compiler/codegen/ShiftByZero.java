@@ -26,7 +26,7 @@
  * @bug 8288445 8389892
  * @summary Test shift by 0
  * @run main/othervm -Xbatch -XX:-TieredCompilation ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:VerifyIterativeGVN=100000 ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=100000 ${test.main.class}
  */
 
 package compiler.codegen;

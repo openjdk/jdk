@@ -140,6 +140,7 @@ extern Mutex*   JfrStacktrace_lock;              // used to guard access to the 
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
 extern Mutex*   SuspendedThreadTask_lock;        // used to guard SuspendedThreadTask::run
+extern Mutex*   JfrEpochShift_lock;              // exclude non-java threads from interleaving with the JFR epoch shift
 #endif
 
 extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions

@@ -29,6 +29,7 @@
 #include "ci/ciFlags.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciSymbol.hpp"
+#include "classfile/classFileParser.hpp"
 #include "oops/instanceKlass.hpp"
 
 // ciInstanceKlass
@@ -262,6 +263,10 @@ public:
     return _nonstatic_fields->at(i);
   }
 
+  int number_of_oop_entries_in_acmp_map() const;
+  int number_of_nonoop_entries_in_acmp_map() const;
+  AcmpMapSegment get_nonoop_segment_of_acmp_map(int i) const;
+
   ciInstanceKlass* unique_concrete_subklass();
   bool has_finalizable_subclass();
 
@@ -295,7 +300,7 @@ public:
     return (impl != this ? impl : nullptr);
   }
 
-  virtual bool can_be_inline_klass(bool is_exact = false);
+  virtual bool can_be_value_klass(bool is_exact = false);
 
   // Is the defining class loader of this class the default loader?
   bool uses_default_loader() const;

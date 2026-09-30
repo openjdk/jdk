@@ -43,7 +43,7 @@ static const size_t search_offsets[] =
 static const size_t search_noffsets = ARRAY_SIZE(search_offsets);
 
 static const size_t search_nchunks = BITMAP_SIZE / search_chunk_size;
-STATIC_ASSERT(search_nchunks * search_chunk_size == BITMAP_SIZE);
+static_assert(search_nchunks * search_chunk_size == BITMAP_SIZE);
 
 namespace {
 class TestIteratorFn : public BitMapClosure {

@@ -1913,9 +1913,7 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
       return JVMTI_ERROR_NONE;
     }
     k = java_lang_Class::as_Klass(k_mirror);
-    if (klass == nullptr) {
-      return JVMTI_ERROR_INVALID_CLASS;
-    }
+    assert(k != nullptr, "k_mirror is not null and not primitive, must have a valid klass");
   }
 
   if (initial_object != nullptr) {
@@ -3073,8 +3071,8 @@ JvmtiEnv::GetObjectHashCode(jobject object, jint* hash_code_ptr) {
   NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
   NULL_CHECK(hash_code_ptr, JVMTI_ERROR_NULL_POINTER);
 
-  if (mirror->is_inline_type()) {
-    // For inline types, use the klass as a hash code.
+  if (mirror->is_value_type()) {
+    // For value types, use the klass as a hash code.
     // TBD to improve this (see also JvmtiTagMapKey::get_hash for similar case).
     *hash_code_ptr = (jint)((int64_t)mirror->klass() >> 3);
   } else {
