@@ -1911,39 +1911,46 @@ instruct vlsl_neon(vReg dst, vReg src, vReg shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsl_sve(vReg dst_src, vReg shift) %{
-  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
+dnl
+dnl VSHIFT_SVE($1,   $2,      $3,        $4,   $5           )
+dnl VSHIFT_SVE(type, op_name, predicate, insn, reversed_insn)
+define(`VSHIFT_SVE', `instruct v$1_sve(vReg dst_src, vReg shift) %{
+  predicate($3 &&
             n->in(2)->outcnt() > 1);
-  match(Set dst_src (LShiftVB dst_src shift));
-  match(Set dst_src (LShiftVS dst_src shift));
-  match(Set dst_src (LShiftVI dst_src shift));
-  match(Set dst_src (LShiftVL dst_src shift));
-  format %{ "vlsl_sve $dst_src, $dst_src, $shift" %}
+  match(Set dst_src ($2VB dst_src shift));
+  match(Set dst_src ($2VS dst_src shift));
+  match(Set dst_src ($2VI dst_src shift));
+  match(Set dst_src ($2VL dst_src shift));
+  format %{ "v$1_sve $dst_src, $dst_src, $shift" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_lsl($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
+    __ $4($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
                ptrue, $shift$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslr_sve(vReg dst_shift, vReg src) %{
-  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
+instruct v$1r_sve(vReg dst_shift, vReg src) %{
+  predicate($3 &&
             n->in(2)->outcnt() == 1);
-  match(Set dst_shift (LShiftVB src dst_shift));
-  match(Set dst_shift (LShiftVS src dst_shift));
-  match(Set dst_shift (LShiftVI src dst_shift));
-  match(Set dst_shift (LShiftVL src dst_shift));
-  format %{ "vlslr_sve $dst_shift, $dst_shift, $src" %}
+  match(Set dst_shift ($2VB src dst_shift));
+  match(Set dst_shift ($2VS src dst_shift));
+  match(Set dst_shift ($2VI src dst_shift));
+  match(Set dst_shift ($2VL src dst_shift));
+  format %{ "v$1r_sve $dst_shift, $dst_shift, $src" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_lslr($dst_shift$$FloatRegister, __ elemType_to_regVariant(bt),
+    __ $5($dst_shift$$FloatRegister, __ elemType_to_regVariant(bt),
                 ptrue, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
-%}
+%}')dnl
+dnl
+VSHIFT_SVE(lsl, LShift,
+           !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)),
+           sve_lsl, sve_lslr)
 
 dnl
 dnl VRSHIFT_NEON($1,   $2,      $3  )
@@ -2011,35 +2018,7 @@ VRSHIFT_SVE(asr, RShift, sve_asr)
 VRSHIFT_NEON(lsr, URShift, ushl)
 VRSHIFT_NEON_VAR(lsr, URShift, ushl)
 
-instruct vlsr_sve(vReg dst_src, vReg shift) %{
-  predicate(UseSVE > 0 && n->in(2)->outcnt() > 1);
-  match(Set dst_src (URShiftVB dst_src shift));
-  match(Set dst_src (URShiftVS dst_src shift));
-  match(Set dst_src (URShiftVI dst_src shift));
-  match(Set dst_src (URShiftVL dst_src shift));
-  format %{ "vlsr_sve $dst_src, $dst_src, $shift" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_lsr($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               ptrue, $shift$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vlsrr_sve(vReg dst_shift, vReg src) %{
-  predicate(UseSVE > 0 && n->in(2)->outcnt() == 1);
-  match(Set dst_shift (URShiftVB src dst_shift));
-  match(Set dst_shift (URShiftVS src dst_shift));
-  match(Set dst_shift (URShiftVI src dst_shift));
-  match(Set dst_shift (URShiftVL src dst_shift));
-  format %{ "vlsrr_sve $dst_shift, $dst_shift, $src" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_lsrr($dst_shift$$FloatRegister, __ elemType_to_regVariant(bt),
-                ptrue, $src$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
+VSHIFT_SVE(lsr, URShift, UseSVE > 0, sve_lsr, sve_lsrr)
 
 
 // vector shift with imm
