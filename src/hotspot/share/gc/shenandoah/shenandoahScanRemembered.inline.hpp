@@ -224,9 +224,6 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           if (p < start_addr) {
             assert(obj == cast_to_oop(p), "Inconsistency detected");
             if (use_write_table) {
-              // The head card may have become dirty after the worker responsible for the preceding slice passed it.
-              // Redundant scanning is necessary because we cannot distinguish when the card became dirty compared to
-              // when preceding card was processed.  See https://bugs.openjdk.org/browse/JDK-8389846.
               p += obj->oop_iterate_size(cl);
             } else {
               // The stable read table guarantees that the worker processing
@@ -325,8 +322,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
 template <typename ClosureType>
 inline void
 ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
-                                                     HeapWord *end_of_range, ClosureType *cl, bool use_write_table,
-                                                     ShenandoahHeapRegion*& start_cache) {
+                                                     HeapWord *end_of_range, ClosureType *cl, bool use_write_table) {
   ShenandoahHeapRegion* start_region = r->humongous_start_region();
   HeapWord* p = start_region->bottom();
   oop obj = cast_to_oop(p);
@@ -337,7 +333,7 @@ ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* r, si
   size_t first_card_index = first_cluster * ShenandoahCardCluster::CardsPerCluster;
   HeapWord* first_cluster_addr = _rs->addr_for_card_index(first_card_index);
   size_t spanned_words = count * ShenandoahCardCluster::CardsPerCluster * CardTable::card_size_in_words();
-  start_region->oop_iterate_humongous_slice_dirty(cl, first_cluster_addr, spanned_words, use_write_table, start_cache);
+  start_region->oop_iterate_humongous_slice_dirty(cl, first_cluster_addr, spanned_words, use_write_table);
 }
 
 
@@ -346,7 +342,7 @@ template <typename ClosureType>
 inline void
 ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, size_t start_offset, size_t clusters,
                                                HeapWord *end_of_range, ClosureType *cl, bool use_write_table,
-                                               uint worker_id, ShenandoahHeapRegion*& humongous_start_cache) {
+                                               uint worker_id) {
 
   // This is called only for young gen collection, when we scan old gen regions
   assert(region->is_old(), "Expecting an old region");
@@ -386,8 +382,7 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
   if (start_of_range < end_of_range) {
     if (region->is_humongous()) {
       ShenandoahHeapRegion* start_region = region->humongous_start_region();
-      process_humongous_clusters(start_region, start_cluster_no, clusters, end_of_range, cl, use_write_table,
-                                 humongous_start_cache);
+      process_humongous_clusters(start_region, start_cluster_no, clusters, end_of_range, cl, use_write_table);
     } else {
       process_clusters(start_cluster_no, clusters, end_of_range, cl, use_write_table, worker_id);
     }
@@ -404,14 +399,6 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
     size_t global_offset = cur_index << _chunk_shift;
     size_t region_offset = global_offset & ShenandoahHeapRegion::region_size_words_mask();
     size_t region_index  = global_offset >> ShenandoahHeapRegion::region_size_words_shift();
-
-    // Region affiliations never change during ShenandoahRegionChunkIterator iteration over the remembered set.
-    //
-    // Region affiliations may change to old during evacuation (promote-in-place and allocations for evacuation).
-    // Region affiliations may change from old at end of marking (for immediate garbage) and end of update refs
-    // (recycle collection set). Neither of these transitions can impact ShenandoahRegionChunkIterator activities,
-    // which happen only at the start of marking and at the start of update refs. The iteration over region chunks
-    // always completes before any changes to old region affiliations.
     if (_heap->region_affiliation(region_index) == OLD_GENERATION) {
       // Passable candidate, try to claim it.
       if (_index.compare_set(cur_index, cur_index + 1, memory_order_relaxed)) {
@@ -428,8 +415,7 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
         region_index++;
       }
       size_t skip_index = (region_index << ShenandoahHeapRegion::region_size_words_shift()) >> _chunk_shift;
-      // Multiple worker threads may be running this same loop. If some other thread overwrites _index before I do,
-      // compare_set() will fail, but I don't care as long as the value of _index is updated by someone.
+      // Try to advance cursor to next OLD region.  It is fine to lose the update race, as long as it completes.
       _index.compare_set(cur_index, skip_index, memory_order_relaxed);
 #ifdef ASSERT
       for (size_t i = cur_index; i < skip_index; i++) {

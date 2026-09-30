@@ -646,11 +646,8 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
 
       // Remembered set scanner
       if (region->is_humongous()) {
-        // Invalidate the humongous_start_cache variable on each invocation of process_humongous_clusters() so as to
-        // avoid potential bugs in the caching mechanism.
-        ShenandoahHeapRegion* humongous_start_cache = nullptr;
         process_humongous_clusters(region->humongous_start_region(), start_cluster_no, num_clusters, end_of_range, cl,
-                                   false /* use_write_table */, humongous_start_cache);
+                                   false /* use_write_table */);
       } else {
         process_clusters(start_cluster_no, num_clusters, end_of_range, cl,
                          false /* use_write_table */, 0 /* fake worker id */);
@@ -816,7 +813,6 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
 
   // set up thread local closure for shen ref processor
   _rp->set_mark_closure(worker_id, &cl);
-  ShenandoahHeapRegion* humongous_start_cache = nullptr;
   struct ShenandoahRegionChunk assignment;
   while (_work_list->next(&assignment)) {
     ShenandoahHeapRegion* region = assignment._r;
@@ -834,8 +830,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
       if (end_of_range > region->top()) {
         end_of_range = region->top();
       }
-      scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, worker_id,
-                                    humongous_start_cache);
+      scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, worker_id);
     }
 #ifdef ENABLE_REMEMBERED_SET_CANCELLATION
     // This check is currently disabled to avoid crashes that occur

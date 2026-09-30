@@ -30,7 +30,7 @@
  * @requires vm.flagless
  * @requires os.maxMemory >= 10g
  * @library /test/lib
- * @run driver TestRemSetBalance
+ * @run driver/manual TestRemSetBalance
  */
 
 import java.util.Arrays;
@@ -117,8 +117,9 @@ public class TestRemSetBalance {
   static final Random r = new Random();
   static Object[] retain;
 
-  // Runs the allocation workload if args match the pattern "test <integer> <integer> <integer>" and returns true.
-  // Otherwise, reeturns false.  
+  // Runs the allocation workload if args[0] matches "test", returning true.  args[1], args[2], and args[3] are assumed
+  // to represent integers.
+  // Otherwise, returns false.
   static boolean run_workload(String[] args) throws Exception {
     if (args[0].equals("test")) {
       int total = 1000 * Integer.parseInt(args[1]);
