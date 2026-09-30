@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8392714
+ * @summary AddPNode killed in PhaseIdealLoop::clone_cmp_loadklass_down() not recognized as dead
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -Xbatch -XX:+StressLoopPeeling -XX:StressSeed=1
  *                   -XX:CompileThresholdScaling=0.01

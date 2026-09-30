@@ -2351,20 +2351,18 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
         }
         bool recurse = false;
         // Remove from hash table
-        _table.hash_delete( dead );
+        _table.hash_delete(dead);
         // Smash all inputs to 'dead', isolating him completely
         for (uint i = 0; i < dead->req(); i++) {
           Node *in = dead->in(i);
           if (in == nullptr) {
             continue;
           }
-          if (in == C->top()) {
-            int nrep = dead->replace_edge(in, nullptr, this);  // Kill edges
-            assert((nrep > 0), "sanity");
-            continue;
-          }
           int nrep = dead->replace_edge(in, nullptr, this); // Kill edges
           assert((nrep > 0), "sanity");
+          if (in == C->top()) {
+            continue;
+          }
           if (in->outcnt() == 0) {
             // Made input go dead?
             stack.push(in, PROCESS_INPUTS); // Recursively remove
