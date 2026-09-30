@@ -4939,7 +4939,7 @@ private:
     SafePointNode* safepoint = _phase->find_safepoint(back_control, head, _loop);
     if (safepoint != nullptr) {
       // If we find a suitable safepoint that dominates the backedge, peel one iteration and use it as state for new
-      // parse predicates
+      // Parse Predicates
       assert(!has_store, "no store on the backedge");
       _old_new.clear();
       _phase->do_peeling(_loop, _old_new);
