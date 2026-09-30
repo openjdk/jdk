@@ -3017,6 +3017,7 @@ private:
           _nodes_from_phi.push(buf);
           _subgraph_to_clone.push(n);
         }
+        // We may have a cycle through one the ValueType's field so follow those inputs
         for (uint j = 0; j < value_type->field_count(); ++j) {
           Node* field = value_type->field_value(j);
           const Type* field_type = _phase->type(field);
@@ -3097,6 +3098,7 @@ private:
           _phase->is_IterGVN()->rehash_node_delayed(n);
           value_type->set_oop(*_phase, in_clone);
         }
+        // If the ValueType is reached from one of its field's input, make sure we update that input to not have a cycle
         for (uint j = 0; j < value_type->field_count(); ++j) {
           Node* field = value_type->field_value(j);
           Node* field_clone = get_clone(field);
