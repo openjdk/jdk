@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
  * @test
  * @bug 8248421
  * @summary SystemCLinker should have a way to free memory allocated outside Java
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestFree
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestFree
  */
 
 import java.lang.foreign.MemorySegment;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestFree extends NativeTestHelper {
     public void test() throws Throwable {
@@ -38,7 +38,7 @@ public class TestFree extends NativeTestHelper {
         MemorySegment addr = allocateMemory(str.length() + 1);
         addr.copyFrom(MemorySegment.ofArray(str.getBytes()));
         addr.set(C_CHAR, str.length(), (byte)0);
-        assertEquals(str, addr.getString(0));
+        assertEquals(addr.getString(0), str);
         freeMemory(addr);
     }
 }

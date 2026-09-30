@@ -196,7 +196,7 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 
 template<BitMap::bm_word_t flip, bool aligned_right>
 inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
-  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  static_assert(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(beg, end);
   assert(!aligned_right || is_aligned(end, BitsPerWord), "end not aligned");
 
@@ -240,7 +240,7 @@ inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
 
 template<BitMap::bm_word_t flip, bool aligned_left>
 inline BitMap::idx_t BitMap::find_last_bit_impl(idx_t beg, idx_t end) const {
-  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  static_assert(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(beg, end);
   assert(!aligned_left || is_aligned(beg, BitsPerWord), "beg not aligned");
 

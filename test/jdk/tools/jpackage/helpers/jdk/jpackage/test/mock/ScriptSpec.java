@@ -165,10 +165,6 @@ public record ScriptSpec(List<Item> items, boolean loop) {
             return build(mockSpec).add();
         }
 
-        public Builder addLoop(CommandMockSpec mockSpec) {
-            return build(mockSpec).add();
-        }
-
         public ItemBuilder build(CommandMockSpec mockSpec) {
             return new ItemBuilder(mockSpec);
         }

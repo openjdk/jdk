@@ -31,22 +31,22 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 
-uint G1EvacFailureRegions::num_regions_evac_failed() const {
-  return _num_regions_evac_failed.load_relaxed();
+uint G1EvacFailureRegions::num_evac_failed_regions() const {
+  return _num_evac_failed_regions.load_relaxed();
 }
 
-bool G1EvacFailureRegions::has_regions_evac_failed() const {
-  return num_regions_evac_failed() > 0;
+bool G1EvacFailureRegions::has_evac_failed_regions() const {
+  return num_evac_failed_regions() > 0;
 }
 
-bool G1EvacFailureRegions::has_regions_evac_pinned() const {
+bool G1EvacFailureRegions::has_evac_pinned_regions() const {
   G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
   size_t count = p->sum_thread_work_items(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
                                           G1GCPhaseTimes::RestoreEvacFailureRegionsPinnedNum);
   return count != 0;
 }
 
-bool G1EvacFailureRegions::has_regions_alloc_failed() const {
+bool G1EvacFailureRegions::has_alloc_failed_regions() const {
   G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
   size_t count = p->sum_thread_work_items(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
                                           G1GCPhaseTimes::RestoreEvacFailureRegionsAllocFailedNum);
@@ -54,10 +54,10 @@ bool G1EvacFailureRegions::has_regions_alloc_failed() const {
 }
 
 bool G1EvacFailureRegions::record(uint worker_id, uint region_idx, bool cause_pinned) {
-  bool success = _regions_evac_failed.par_set_bit(region_idx,
+  bool success = _evac_failed_regions_map.par_set_bit(region_idx,
                                                   memory_order_relaxed);
   if (success) {
-    size_t offset = _num_regions_evac_failed.fetch_then_add(1u);
+    size_t offset = _num_evac_failed_regions.fetch_then_add(1u);
     _evac_failed_regions[offset] = region_idx;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();

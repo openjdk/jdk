@@ -580,12 +580,6 @@ class ConstantPool : public Metadata {
     return symbol_at(signature_index);
   }
 
-  // Returns a resolved klass or nullptr if not resolved.  Does not try to resolve the class.
-  Klass* resolved_klass_ref_at(int which, Bytecodes::Code code) {
-    jint ref_index = klass_ref_index_at(which, code);
-    return resolved_klass_at(ref_index);
-  }
-
   u2 klass_ref_index_at(int which, Bytecodes::Code code);
   u2 name_and_type_ref_index_at(int which, Bytecodes::Code code);
 
@@ -614,7 +608,7 @@ class ConstantPool : public Metadata {
   void restore_unshareable_info(TRAPS);
 private:
   void remove_unshareable_entries();
-  void remove_resolved_klass_if_non_deterministic(int cp_index);
+  void remove_resolved_klass_if_non_archivable(int cp_index);
   template <typename Function> void iterate_archivable_resolved_references(Function function);
 #endif
 

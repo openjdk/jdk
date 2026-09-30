@@ -77,11 +77,11 @@ static int* decode_guard_from_instruction(nmethod* nm, address& instruction) {
 //
 // The mapping of C1-compiled methods (scalarization used) looks as follows:
 // * alt1: verified entry point
-// * alt2 (optional): verified inline ro entry point
+// * alt2 (optional): verified value ro entry point
 //
 // The mapping of C2-compiled methods (scalarization used) looks as follows:
-// * alt1: verified inline entry point
-// * alt2 (optional): verified inline ro entry point
+// * alt1: verified value entry point
+// * alt2 (optional): verified value ro entry point
 //
 // In other scenarios, neither alt1 nor alt2 are defined.
 class NativeNMethodBarrier {

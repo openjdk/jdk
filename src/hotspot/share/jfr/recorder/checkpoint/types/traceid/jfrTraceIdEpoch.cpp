@@ -47,6 +47,7 @@ static constexpr const u2 epoch_generation_overflow = excluded_bit;
 
 void JfrTraceIdEpoch::shift_epoch() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  assert(!(UseShenandoahGC || UseZGC) || JfrEpochShift_lock->owned_by_self(), "invariant");
   _epoch_state = !_epoch_state;
   if (++_generation == epoch_generation_overflow) {
     _generation = 1;

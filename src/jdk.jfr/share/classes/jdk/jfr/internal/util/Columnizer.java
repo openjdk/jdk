@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.util.List;
 public final class Columnizer {
     private static final class Column {
         int maxWidth;
+        int height;
         List<String> entries = new ArrayList<>();
         public void add(String text) {
             entries.add(text);
@@ -54,16 +55,17 @@ public final class Columnizer {
     public Columnizer(List<String> texts, int columnCount) {
         List<String> list = new ArrayList<>(texts);
         Collections.sort(list);
-        int columnHeight = (list.size() + columnCount - 1) / columnCount;
+        for (int i = 0; i < columnCount; i++) {
+            columns.add(new Column());
+        }
+        for (int i = 0; i < list.size(); i++) {
+            columns.get(i % columnCount).height++;
+        }
         int index = 0;
-        Column column = null;
-        for (String text : list) {
-            if (index % columnHeight == 0) {
-                column = new Column();
-                columns.add(column);
+        for (Column column : columns) {
+            for (int i = 0; i < column.height; i++) {
+              column.add(list.get(index++));
             }
-            column.add(text);
-            index++;
         }
     }
 

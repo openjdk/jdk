@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @key headful
  * @bug 4832224 6322584 6328478 6328481 6322580 6588884 6587863 8198613
  * @summary Verifies that the pixelization of simple primitives (drawLine,
@@ -33,13 +33,52 @@
  * solid and XOR rendering here, but this testcase is a bit simpler and
  * more appropriate for quick OGL testing.  This test is also useful for
  * comparing quality between our X11/GDI and software pipelines.
- * @run main/othervm SimplePrimQuality
- * @author campbelc
+ *
+ * @run main/othervm -Dsun.java2d.uiScale=1 SimplePrimQuality
+ * @run main/othervm -Dsun.java2d.uiScale=1 SimplePrimQuality -testvi
  */
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
+/*
+ * @test id=opengl
+ * @key headful
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl=True SimplePrimQuality
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl=True SimplePrimQuality -testvi
+ */
+
+/*
+ * @test id=nod3d
+ * @key headful
+ * @requires (os.family == "windows")
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false SimplePrimQuality
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false SimplePrimQuality -testvi
+ */
+
+/*
+ * @test id=noxrender
+ * @key headful
+ * @requires (os.family == "linux")
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.xrender=false SimplePrimQuality
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.xrender=false SimplePrimQuality -testvi
+ */
+
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
@@ -47,21 +86,11 @@ import javax.imageio.ImageIO;
 public class SimplePrimQuality extends Canvas {
 
     private static final int SIZE = 300;
-    private static boolean done;
     private static boolean testVI;
+    private static volatile Frame frame;
+    private static volatile Robot robot;
+    private static volatile SimplePrimQuality test;
     private static volatile BufferedImage capture;
-    private static void doCapture(Component test) {
-        // Grab the screen region
-        try {
-            Robot robot = new Robot();
-            Point pt1 = test.getLocationOnScreen();
-            Rectangle rect =
-                new Rectangle(pt1.x, pt1.y, test.getWidth(), test.getHeight());
-            capture = robot.createScreenCapture(rect);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private static final int[][] rpts = {
         {2, 0, 0, 0},
@@ -125,6 +154,9 @@ public class SimplePrimQuality extends Canvas {
     }
 
     private void renderShapes(Graphics2D g) {
+
+        g.translate(10, 10);
+
         // drawLine tests...
         g.translate(0, 5);
         drawLines(g, 1);
@@ -149,80 +181,72 @@ public class SimplePrimQuality extends Canvas {
     }
 
     private void renderTest(Graphics2D g, int w, int h) {
-        // on the left side, render the shapes in solid mode
         g.setColor(Color.black);
         g.fillRect(0, 0, w, h);
         g.setColor(Color.green);
+
+        AffineTransform saved = g.getTransform();
+        // on the left side, render the shapes in solid mode
         renderShapes(g);
 
         // on the right side, render the shapes in XOR mode
-        g.setTransform(AffineTransform.getTranslateInstance(SIZE/2, 0));
         g.setXORMode(Color.black);
-        renderShapes(g);
-        g.setTransform(AffineTransform.getTranslateInstance(SIZE/2, 0));
-        renderShapes(g);
+        g.setTransform(saved);
+        g.translate(SIZE/2, 0);
+        renderShapes(g); // draw once using XOR
+        g.setTransform(saved);
+        g.translate(SIZE/2, 0);
+        renderShapes(g); // and again to clear
     }
 
     public void paint(Graphics g) {
-
         Graphics2D g2d = (Graphics2D)g;
         renderTest(g2d, SIZE, SIZE);
-
-        Toolkit.getDefaultToolkit().sync();
-
-        synchronized (this) {
-            if (!done) {
-                doCapture(this);
-                done = true;
-            }
-            notifyAll();
-        }
     }
 
     public Dimension getPreferredSize() {
         return new Dimension(SIZE, SIZE);
     }
 
-    public static void main(String[] args) {
-        boolean show = false;
+    private static void createAndShowGUI() {
+        test = new SimplePrimQuality();
+        frame = new Frame("SimplePrimQuality");
+        frame.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(50, 50, 50, 50);
+        c.fill = GridBagConstraints.BOTH;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        frame.add(test, c);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+   }
+
+    public static void main(String[] args) throws Exception {
         for (String arg : args) {
             if (arg.equals("-testvi")) {
                 System.out.println("Testing VolatileImage, not screen");
                 testVI = true;
-            } else if (arg.equals("-show")) {
-                show = true;
             }
         }
 
-        SimplePrimQuality test = new SimplePrimQuality();
-        Frame frame = new Frame();
-        frame.add(test);
-        frame.pack();
-        frame.setVisible(true);
+        EventQueue.invokeAndWait(() -> createAndShowGUI());
 
-        // Wait until the component's been painted
-        synchronized (test) {
-            while (!done) {
-                try {
-                    test.wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Failed: Interrupted");
-                }
-            }
-        }
+        robot = new Robot();
+        robot.waitForIdle();
+        robot.delay(2000);
 
-        // REMIND: We will allow this test to pass silently on Windows
-        // (when OGL is not enabled) until we fix the GDI pipeline so that
-        // its stroked/filled GeneralPaths match our software loops (see
-        // 6322554).  This check should be removed when 6322554 is fixed.
+        boolean expecting_ogl = Boolean.getBoolean("sun.java2d.opengl");
         GraphicsConfiguration gc = frame.getGraphicsConfiguration();
-        if (gc.getClass().getSimpleName().startsWith("Win")) {
-            System.out.println("GDI pipeline detected: " +
+        String sn = gc.getClass().getSimpleName();
+        boolean isOGL = sn.startsWith("CGL") || sn.startsWith("WGL") || sn.startsWith("XGL");
+        if (expecting_ogl && !isOGL) {
+            System.out.println("OpenGL pipeline requested but not available: " +
                                "test considered PASSED");
-            frame.dispose();
+            EventQueue.invokeAndWait(frame::dispose);
             return;
         }
-
 
         if (testVI) {
             // render to a VI instead of the screen
@@ -234,12 +258,14 @@ public class SimplePrimQuality extends Canvas {
                 g1.dispose();
                 capture = vi.getSnapshot();
             } while (vi.contentsLost());
-            frame.dispose();
+        } else {
+            Point pt1 = test.getLocationOnScreen();
+            Rectangle rect =
+                new Rectangle(pt1.x, pt1.y, test.getWidth(), test.getHeight());
+            capture = robot.createScreenCapture(rect);
         }
 
-        if (!show) {
-            frame.dispose();
-        }
+        EventQueue.invokeAndWait(frame::dispose);
         if (capture == null) {
             throw new RuntimeException("Error capturing the rendering");
         }

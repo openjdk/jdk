@@ -22,6 +22,8 @@
  */
 
 
+import static jdk.jpackage.test.JPackageCommand.cannedArgument;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,17 +37,15 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
-import static jdk.jpackage.test.JPackageCommand.cannedArgument;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.TKit;
@@ -146,6 +146,7 @@ public final class MainClassTest {
 
         cmd = JPackageCommand
                 .helloAppImage(script.appDesc)
+                .enableMessageCategories(MessageCategory.ERRORS)
                 .ignoreDefaultRuntime(true);
         if (!script.withJLink) {
             cmd.addArguments("--runtime-image", Path.of(System.getProperty(

@@ -87,6 +87,8 @@ public final class SwingAccessor {
          */
         Object setDropLocation(JTextComponent textComp, TransferHandler.DropLocation location,
                                Object state, boolean forDrop);
+        boolean isDragEnabledSet(JTextComponent textComp);
+        void setDragEnabledUIResource(JTextComponent textComp, boolean value);
     }
 
     /**
