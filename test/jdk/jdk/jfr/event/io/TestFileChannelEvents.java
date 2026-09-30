@@ -142,6 +142,7 @@ public class TestFileChannelEvents {
                 long size = ch.write(buffer, 0);
 
                 recording.stop();
+                assertEquals(size, 10L, "Unexpected size for positional write");
                 IOHelper.verifyEquals(Events.fromRecording(recording),
                         List.of(IOEvent.createFileWriteEvent(size, file)));
             }
@@ -156,6 +157,7 @@ public class TestFileChannelEvents {
                 long size = ch.write(buffer);
 
                 recording.stop();
+                assertEquals(size, 10L, "Unexpected size for current-position write");
                 IOHelper.verifyEquals(Events.fromRecording(recording),
                         List.of(IOEvent.createFileWriteEvent(size, file)));
             }
@@ -174,6 +176,7 @@ public class TestFileChannelEvents {
                 long size = ch.write(new ByteBuffer[] { buffer, other });
 
                 recording.stop();
+                assertEquals(size, 20L, "Unexpected size for gathering write");
                 IOHelper.verifyEquals(Events.fromRecording(recording),
                         List.of(IOEvent.createFileWriteEvent(size, file)));
             }
@@ -189,6 +192,7 @@ public class TestFileChannelEvents {
                 long size = ch.read(buffer, 0);
 
                 recording.stop();
+                assertEquals(size, 10L, "Unexpected size for positional read");
                 IOHelper.verifyEquals(Events.fromRecording(recording),
                         List.of(IOEvent.createFileReadEvent(size, file)));
             }
@@ -204,6 +208,7 @@ public class TestFileChannelEvents {
                 long size = ch.read(buffer);
 
                 recording.stop();
+                assertEquals(size, 10L, "Unexpected size for current-position read");
                 IOHelper.verifyEquals(Events.fromRecording(recording),
                         List.of(IOEvent.createFileReadEvent(size, file)));
             }
@@ -220,6 +225,7 @@ public class TestFileChannelEvents {
                 long size = ch.read(new ByteBuffer[] { buffer, other });
 
                 recording.stop();
+                assertEquals(size, 20L, "Unexpected size for scattering read");
                 IOHelper.verifyEquals(Events.fromRecording(recording),
                         List.of(IOEvent.createFileReadEvent(size, file)));
             }
