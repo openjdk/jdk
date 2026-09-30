@@ -1223,15 +1223,15 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   // Touch the polling page.
   if (need_polling) {
-      Label dummy_label;
-      Label* code_stub = &dummy_label;
-      if (!C->output()->in_scratch_emit_size()) {
-        C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
-        C->output()->add_stub(stub);
-        code_stub = &stub->entry();
-        __ relocate(relocInfo::poll_return_type);
-      }
-      __ safepoint_poll(*code_stub, Z_R0_scratch, true /* at_return */, true /* in_nmethod */);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
+      __ relocate(relocInfo::poll_return_type);
+    }
+    __ safepoint_poll(*code_stub, Z_R0_scratch, true /* at_return */, true /* in_nmethod */);
   }
 }
 
