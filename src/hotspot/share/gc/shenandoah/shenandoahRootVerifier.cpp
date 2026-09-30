@@ -53,23 +53,23 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _saved_gc_state(_heap->gc_state()),
   _saved_gc_state_changed(_heap->_gc_state_changed) {
 
-  // Need to complete GC processing before deactivating the barriers.
-  // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
-  // that would patch barriers or process the oops incorrectly. Verifier code
-  // can enter stack watermark processing as part of regular thread root work.
-  // This pretends Java threads have fixed up all state before we go for verification.
-  // Do this unconditionally in all callers to get to the same consensus point.
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
-    StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
-  }
-
-  // Processing stack frames can also enqueue elements in current thread SATB.
-  // We need to flush it here, to avoid triggering the empty SATB verification code.
-  ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
-  satb_qs.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
-
   if (_active_count.fetch_then_add(1, memory_order_relaxed) == 0) {
-    // First resetter clears state to deactivate barriers.
+    // First resetter deactivates barriers. Nested resetters are no-ops.
+
+    // Need to complete GC processing before deactivating the barriers.
+    // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
+    // that would patch barriers or process the oops incorrectly. Verifier code
+    // can enter stack watermark processing as part of regular thread root work.
+    // This pretends Java threads have fixed up all state before we go for verification.
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
+      StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
+    }
+
+    // Processing stack frames can also enqueue elements in current thread SATB.
+    // We need to flush it here, to avoid triggering the empty SATB verification code.
+    ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
+    satb_qs.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
+
     // Indicate that state has changed so that verifier threads will use this value,
     // rather than thread local values (which we are _not_ changing here).
     _heap->_gc_state.clear();
