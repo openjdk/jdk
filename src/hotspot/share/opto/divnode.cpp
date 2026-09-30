@@ -76,6 +76,7 @@ TupleNode* ModDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, N
   C->remove_macro_node(this);
   return TupleNode::make(
       tf()->range_cc(),
+      nullptr,
       in(TypeFunc::Control),
       in(TypeFunc::I_O),
       in(TypeFunc::Memory),
