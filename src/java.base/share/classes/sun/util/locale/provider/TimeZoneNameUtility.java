@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public final class TimeZoneNameUtility {
     }
 
     /**
-     * {@return the explicit metazone DST offset for the specified time zone ID, if exists}
+     * {@return the explicit metazone DST offset for the specified time zone ID if it exists, or else null}
      * @param tzid the time zone ID
      */
     public static String explicitDstOffset(String tzid) {
