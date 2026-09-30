@@ -234,9 +234,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       return false;
     }
 
-    // TODO: What we really want to check here is if there are unclaimed regions in the collection
-    // set iterator. If there are unclaimed regions, those are the only ones we need to iterate.
-    if (heap->has_self_forwarded_objects()) {
+    if (!heap->collection_set()->all_regions_claimed()) {
       // Self forward objects stranded in the collection set
       entry_self_forward_stranded_objects();
     }

@@ -1248,7 +1248,8 @@ ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, Shena
   WorkerTask("Shenandoah Self-Forward"),
   _heap(heap),
   _cs(cs) {
-  _cs->clear_current_index();
+  // Do not reset claim index, these workers pick up from where the evacuation workers left off
+  assert(!_cs->all_regions_claimed(), "Only here to self forward objects in unclaimed regions");
 }
 
 void ShenandoahSelfForwardTask::work(uint worker_id) {
