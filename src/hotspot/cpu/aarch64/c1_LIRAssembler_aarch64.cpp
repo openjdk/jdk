@@ -2967,7 +2967,7 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   ciMethodData* md = op->md();
 
   Label not_flat, done;
-  __ test_non_flat_array_oop (array, tmp1, not_flat);
+  __ test_non_flat_array_oop(array, tmp1, not_flat);
 
   Register klass = tmp1;
   __ load_klass(klass, array, tmp2);
