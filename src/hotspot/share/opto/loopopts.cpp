@@ -4701,7 +4701,6 @@ private:
     return dd;
   }
 
-
   void create_outer_loop() {
     LoopNode* head = _loop->_head->as_Loop();
     int dd = _phase->dom_depth(head);
