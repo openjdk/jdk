@@ -919,11 +919,6 @@ bool AOTCodeCache::Config::verify() const {
   // Special configs that cannot be checked with macros
 #define COMPRESSED_OOPS_HINT "Consider adding -XX:+AOTCompatibleOopCompression when creating the AOT cache"
 
-  size_t codeCacheSize = pointer_delta(CodeCache::high_bound(), CodeCache::low_bound(), 1);
-  if (codeCacheSize > _codeCacheSize) { // Only allow smaller or equal CodeCache size in production run
-    load_failure_log().print_cr("AOT Code Cache disabled: it was created with smaller CodeCache size = %dKb vs current %dKb", (int)(_codeCacheSize/K), (int)(codeCacheSize/K));
-    return false;
-  }
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
     load_failure_log().print_cr("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
                                 _compressedOopBase, CompressedOops::base());
