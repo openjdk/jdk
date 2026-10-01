@@ -288,6 +288,11 @@
           "Maximum allowed edges in the interference graphs")               \
           range(0, max_juint)                                               \
                                                                             \
+  product(uint, RegSplitLimit, 20*M, DIAGNOSTIC,                            \
+          "Maximum product of spill and CFG block counts during Split "     \
+          "in the Register Allocator")                                      \
+          range(0, max_juint)                                               \
+                                                                            \
   develop(bool, UseUniqueSubclasses, true,                                  \
           "Narrow an abstract reference to the unique concrete subclass")   \
                                                                             \
