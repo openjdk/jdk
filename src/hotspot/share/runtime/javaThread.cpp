@@ -848,7 +848,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   char* thread_name = nullptr;
   if (log_is_enabled(Debug, os, thread, timer)) {
     ResourceMark rm(this);
-    thread_name = os::strdup(name());
+    thread_name = os::strdup(name(), mtInternal);
   }
 
   if (log_is_enabled(Info, os, thread)) {

@@ -93,20 +93,16 @@ int PhaseMacroExpand::replace_input(Node *use, Node *oldref, Node *newref) {
 }
 
 
-Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word) {
-  Node* cmp = word;
+Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, CmpNode* cmp) {
   Node* bol = transform_later(new BoolNode(cmp, BoolTest::ne));
   IfNode* iff = new IfNode( ctrl, bol, PROB_MIN, COUNT_UNKNOWN );
   transform_later(iff);
 
-  // Fast path taken.
-  Node *fast_taken = transform_later(new IfFalseNode(iff));
+  Node* fast_path = transform_later(new IfFalseNode(iff));
+  Node* slow_path = transform_later(new IfTrueNode(iff));
 
-  // Fast path not-taken, i.e. slow path
-  Node *slow_taken = transform_later(new IfTrueNode(iff));
-
-    region->init_req(edge, fast_taken); // Capture fast-control
-    return slow_taken;
+  region->init_req(edge, fast_path); // Capture fast-control
+  return slow_path;
 }
 
 //--------------------copy_predefined_input_for_runtime_call--------------------
@@ -863,7 +859,12 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "Object is passed as argument";)
           can_eliminate = false;
+        } else if (sfpt->is_StoreFlat() && sfpt->as_StoreFlat()->has_non_debug_use(res) && sfpt->as_StoreFlat()->value() != res) {
+          DEBUG_ONLY(disq_node = use;)
+          NOT_PRODUCT(fail_eliminate = "Object is stored with StoreFlat";)
+          can_eliminate = false;
         }
+
         Node* sfptMem = sfpt->memory();
         if (sfptMem == nullptr || sfptMem->is_top()) {
           DEBUG_ONLY(disq_node = use;)
@@ -1416,7 +1417,14 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc, bool value_t
         // Process users
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
           Node* u = use->fast_out(k);
-          if (!u->is_ValueType() && !u->is_StoreFlat()) {
+          // If u is a SafePoint either:
+          // - "use" is a debug info input an is removed by Compile::process_inline_types()
+          // - "use" is the value stored by StoreFlat and is removed when StoreFlat is expanded
+          assert(!u->is_SafePoint() ||
+                 (u->is_Call() && !u->as_Call()->has_non_debug_use(use)) ||
+                 (u->is_LoadFlat() && !u->as_LoadFlat()->has_non_debug_use(use)) ||
+                 (u->is_StoreFlat() && (!u->as_StoreFlat()->has_non_debug_use(use) || u->as_StoreFlat()->value() == use)), "unexpected InlineType use at safepoint");
+          if (!u->is_ValueType() && !u->is_SafePoint()) {
             worklist.push(u);
           }
         }
@@ -2523,13 +2531,6 @@ void PhaseMacroExpand::mark_eliminated_box(Node* box, Node* obj) {
         next_edge = false;
       }
     }
-    if (u->is_FastLock() && u->as_FastLock()->obj_node()->eqv_uncast(obj)) {
-      FastLockNode* flock = u->as_FastLock();
-      assert(flock->box_node() == oldbox, "sanity");
-      _igvn.rehash_node_delayed(flock);
-      flock->set_box_node(newbox);
-      next_edge = false;
-    }
 
     // Replace old box in monitor debug info.
     if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
@@ -2677,14 +2678,6 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     Node* memproj = membar->proj_out(TypeFunc::Memory);
     _igvn.replace_node(ctrlproj, fallthroughproj);
     _igvn.replace_node(memproj, memproj_fallthrough);
-
-    // Delete FastLock node also if this Lock node is unique user
-    // (a loop peeling may clone a Lock node).
-    Node* flock = alock->as_Lock()->fastlock_node();
-    if (flock->outcnt() == 1) {
-      assert(flock->unique_out() == alock, "sanity");
-      _igvn.replace_node(flock, top());
-    }
   }
 
   // Search for MemBarReleaseLock node and delete it also.
@@ -2713,7 +2706,6 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node* mem = lock->in(TypeFunc::Memory);
   Node* obj = lock->obj_node();
   Node* box = lock->box_node();
-  Node* flock = lock->fastlock_node();
 
   assert(!box->as_BoxLock()->is_eliminated(), "sanity");
 
@@ -2724,9 +2716,10 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   region  = new RegionNode(3);
   // create a Phi for the memory state
-  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+  mem_phi = new PhiNode(region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
   // Optimize test; set region slot 2
+  FastLockNode* flock = transform_later(new FastLockNode(ctrl, obj, box))->as_FastLock();
   slow_path = opt_bits_test(ctrl, region, 2, flock);
   mem_phi->init_req(2, mem);
 

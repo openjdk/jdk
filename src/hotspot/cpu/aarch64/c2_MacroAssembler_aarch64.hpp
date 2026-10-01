@@ -80,15 +80,19 @@
   void entry_barrier();
 
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
-  address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
-                          FloatRegister vdata1, FloatRegister vdata2, FloatRegister vdata3,
-                          FloatRegister vmul0, FloatRegister vmul1, FloatRegister vmul2,
-                          FloatRegister vmul3, FloatRegister vpow, FloatRegister vpowm,
+  address arrays_hashcode(Register ary, Register cnt, Register result, Register blocks,
+                          Register tail, Register sum, FloatRegister v_block0, FloatRegister v_block1,
+                          FloatRegister v_block2, FloatRegister v_block3, FloatRegister v_p0, FloatRegister v_p1,
+                          FloatRegister v_p2, FloatRegister v_p3, FloatRegister v_input1, FloatRegister v_input2,
                           BasicType eltype);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box, Register t1, Register t2, Register t3);
   void fast_unlock(Register object, Register box, Register t1, Register t2, Register t3);
+
+  void string_equals_sve(Register a1, Register a2, Register result, Register cnt1,
+                           FloatRegister ztmp1, FloatRegister ztmp2,
+                           PRegister pgtmp, PRegister ptmp);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -144,7 +148,7 @@
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
                    FloatRegister zn, FloatRegister zm, Condition cond);
 
-  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
+  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, FloatRegister vtmp);
 
   // Vector cast
   void neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
