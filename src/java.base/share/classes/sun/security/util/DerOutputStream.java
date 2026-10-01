@@ -494,6 +494,16 @@ public final class DerOutputStream
     private static final Instant utcHigh = Instant.ofEpochSecond(2524607999L);
 
     /**
+     * 1/1/0001 is the lowest date representable by the GeneralizedTime
+     */
+    private static final Instant generalizedLow = Instant.ofEpochSecond(-62135596800L);
+
+    /**
+     * 12/31/9999 is the highest date representable by the GeneralizedTime
+     */
+    private static final Instant generalizedHigh = Instant.ofEpochSecond(253402300799L);
+
+    /**
      * Takes an instant and chooses UTC or GeneralizedTime as per RFC 2630.
      */
     public DerOutputStream putTime(Instant d) {
@@ -556,9 +566,19 @@ public final class DerOutputStream
 
         if (tag == DerValue.tag_UtcTime) {
             pattern = "yyMMddHHmmss'Z'";
+            if (d.isBefore(utcLow)) {
+                d = utcLow;
+            } else if (d.isAfter(utcHigh)) {
+                d = utcHigh;
+            }
         } else {
             tag = DerValue.tag_GeneralizedTime;
             pattern = "yyyyMMddHHmmss'Z'";
+            if (d.isBefore(generalizedLow)) {
+                d = generalizedLow;
+            } else if (d.isAfter(generalizedHigh)) {
+                d = generalizedHigh;
+            }
         }
 
         DateTimeFormatter dateTimeFormatter =
