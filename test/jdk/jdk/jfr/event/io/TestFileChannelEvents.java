@@ -48,12 +48,12 @@ import jdk.test.lib.jfr.Events;
  */
 public class TestFileChannelEvents {
     public static void main(String[] args) throws Throwable {
-        File tmp = Utils.createTempFile("TestFileChannelEvents", ".tmp").toFile();
-        testReadWriteAndForceEvents(tmp);
-        testNoInterference(tmp);
+        testReadWriteAndForceEvents();
+        testNoInterference();
     }
 
-    private static void testReadWriteAndForceEvents(File tmp) throws Throwable {
+    private static void testReadWriteAndForceEvents() throws Throwable {
+        File tmp = Utils.createTempFile("TestFileChannelEvents", ".tmp").toFile();
         try (Recording recording = new Recording()) {
             List<IOEvent> expectedEvents = new ArrayList<>();
             try (RandomAccessFile rf = new RandomAccessFile(tmp, "rw"); FileChannel ch = rf.getChannel();) {
@@ -125,110 +125,76 @@ public class TestFileChannelEvents {
         }
     }
 
-    // Tests that FileRead and FileWrite events are recorded independently when the other event type is disabled.
-    private static void testNoInterference(File file) throws Throwable {
+    // Tests that FileRead and FileWrite events are recorded independently
+    // when the other event type is disabled.
+    private static void testNoInterference() throws Throwable {
+        testNoInterferenceCase("positional write", IOEvent.EVENT_FILE_WRITE, IOEvent.EVENT_FILE_READ,
+                (file, ch, buffer, other) -> {
+                    long size = ch.write(buffer, 0);
+                    assertEquals(size, 10L, "Unexpected size for positional write");
+                    return IOEvent.createFileWriteEvent(size, file);
+                });
+
+        testNoInterferenceCase("current-position write", IOEvent.EVENT_FILE_WRITE, IOEvent.EVENT_FILE_READ,
+                (file, ch, buffer, other) -> {
+                    long size = ch.write(buffer);
+                    assertEquals(size, 10L, "Unexpected size for current-position write");
+                    return IOEvent.createFileWriteEvent(size, file);
+                });
+
+        testNoInterferenceCase("gathering write", IOEvent.EVENT_FILE_WRITE, IOEvent.EVENT_FILE_READ,
+                (file, ch, buffer, other) -> {
+                    long size = ch.write(new ByteBuffer[] { buffer, other });
+                    assertEquals(size, 20L, "Unexpected size for gathering write");
+                    return IOEvent.createFileWriteEvent(size, file);
+                });
+
+        testNoInterferenceCase("positional read", IOEvent.EVENT_FILE_READ, IOEvent.EVENT_FILE_WRITE,
+                (file, ch, buffer, other) -> {
+                    long size = ch.read(buffer, 0);
+                    assertEquals(size, 10L, "Unexpected size for positional read");
+                    return IOEvent.createFileReadEvent(size, file);
+                });
+
+        testNoInterferenceCase("current-position read", IOEvent.EVENT_FILE_READ, IOEvent.EVENT_FILE_WRITE,
+                (file, ch, buffer, other) -> {
+                    long size = ch.read(buffer);
+                    assertEquals(size, 10L, "Unexpected size for current-position read");
+                    return IOEvent.createFileReadEvent(size, file);
+                });
+
+        testNoInterferenceCase("scattering read", IOEvent.EVENT_FILE_READ, IOEvent.EVENT_FILE_WRITE,
+                (file, ch, buffer, other) -> {
+                    long size = ch.read(new ByteBuffer[] { buffer, other });
+                    assertEquals(size, 20L, "Unexpected size for scattering read");
+                    return IOEvent.createFileReadEvent(size, file);
+                });
+    }
+
+    private static void testNoInterferenceCase(String name, String enabledEvent, String disabledEvent,
+                                               FileChannelOperation operation) throws Throwable {
+        System.out.println("Testing " + name + " with " + enabledEvent
+                + " enabled and " + disabledEvent + " disabled");
+        File file = Utils.createTempFile("TestFileChannelEvents", ".tmp").toFile();
         try (RandomAccessFile rf = new RandomAccessFile(file, "rw");
-             FileChannel ch = rf.getChannel()) {
+             FileChannel ch = rf.getChannel();
+             Recording recording = new Recording()) {
+            rf.writeBytes("1234567890abcdefghij");
+            ch.position(0);
             ByteBuffer buffer = ByteBuffer.allocateDirect(10);
-            buffer.put("1234567890".getBytes());
-            buffer.flip();
-
-            // FileWrite should work independently of FileRead.
-            try (Recording recording = new Recording()) {
-                recording.disable(IOEvent.EVENT_FILE_READ);
-                recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
-                recording.start();
-
-                long size = ch.write(buffer, 0);
-
-                recording.stop();
-                assertEquals(size, 10L, "Unexpected size for positional write");
-                IOHelper.verifyEquals(Events.fromRecording(recording),
-                        List.of(IOEvent.createFileWriteEvent(size, file)));
-            }
-
-            buffer.rewind();
-
-            try (Recording recording = new Recording()) {
-                recording.disable(IOEvent.EVENT_FILE_READ);
-                recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
-                recording.start();
-
-                long size = ch.write(buffer);
-
-                recording.stop();
-                assertEquals(size, 10L, "Unexpected size for current-position write");
-                IOHelper.verifyEquals(Events.fromRecording(recording),
-                        List.of(IOEvent.createFileWriteEvent(size, file)));
-            }
-
-            buffer.rewind();
-
             ByteBuffer other = ByteBuffer.allocateDirect(10);
-            other.put("abcdefghij".getBytes());
-            other.flip();
 
-            try (Recording recording = new Recording()) {
-                recording.disable(IOEvent.EVENT_FILE_READ);
-                recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
-                recording.start();
-
-                long size = ch.write(new ByteBuffer[] { buffer, other });
-
-                recording.stop();
-                assertEquals(size, 20L, "Unexpected size for gathering write");
-                IOHelper.verifyEquals(Events.fromRecording(recording),
-                        List.of(IOEvent.createFileWriteEvent(size, file)));
-            }
-
-            buffer.clear();
-
-            // FileRead should work independently of FileWrite.
-            try (Recording recording = new Recording()) {
-                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
-                recording.disable(IOEvent.EVENT_FILE_WRITE);
-                recording.start();
-
-                long size = ch.read(buffer, 0);
-
-                recording.stop();
-                assertEquals(size, 10L, "Unexpected size for positional read");
-                IOHelper.verifyEquals(Events.fromRecording(recording),
-                        List.of(IOEvent.createFileReadEvent(size, file)));
-            }
-
-            buffer.clear();
-            ch.position(0);
-
-            try (Recording recording = new Recording()) {
-                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
-                recording.disable(IOEvent.EVENT_FILE_WRITE);
-                recording.start();
-
-                long size = ch.read(buffer);
-
-                recording.stop();
-                assertEquals(size, 10L, "Unexpected size for current-position read");
-                IOHelper.verifyEquals(Events.fromRecording(recording),
-                        List.of(IOEvent.createFileReadEvent(size, file)));
-            }
-
-            buffer.clear();
-            other.clear();
-            ch.position(0);
-
-            try (Recording recording = new Recording()) {
-                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
-                recording.disable(IOEvent.EVENT_FILE_WRITE);
-                recording.start();
-
-                long size = ch.read(new ByteBuffer[] { buffer, other });
-
-                recording.stop();
-                assertEquals(size, 20L, "Unexpected size for scattering read");
-                IOHelper.verifyEquals(Events.fromRecording(recording),
-                        List.of(IOEvent.createFileReadEvent(size, file)));
-            }
+            recording.disable(disabledEvent);
+            recording.enable(enabledEvent).withThreshold(Duration.ofMillis(0));
+            recording.start();
+            IOEvent expectedEvent = operation.execute(file, ch, buffer, other);
+            recording.stop();
+            IOHelper.verifyEquals(Events.fromRecording(recording), List.of(expectedEvent));
         }
+    }
+
+    @FunctionalInterface
+    private interface FileChannelOperation {
+        IOEvent execute(File file, FileChannel ch, ByteBuffer buffer, ByteBuffer other) throws Exception;
     }
 }
