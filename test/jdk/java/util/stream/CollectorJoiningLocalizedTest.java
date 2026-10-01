@@ -43,7 +43,7 @@ public class CollectorJoiningLocalizedTest {
     @Test
     void joiningConjunctively() {
         assertThrows(NullPointerException.class, () -> Collectors.joiningConjunctively(null));
-        Collector<CharSequence, ?, String> collector = Collectors.joiningConjunctively(Locale.ENGLISH);
+        Collector<CharSequence, ?, String> collector = Collectors.joiningConjunctively(Locale.US);
         assertEquals("", Stream.<CharSequence>empty().collect(collector));
         assertEquals("a",
                 Stream.of("a").collect(collector));
@@ -64,7 +64,7 @@ public class CollectorJoiningLocalizedTest {
     @Test
     void joiningDisjunctively() {
         assertThrows(NullPointerException.class, () -> Collectors.joiningDisjunctively(null));
-        Collector<CharSequence, ?, String> collector = Collectors.joiningDisjunctively(Locale.ENGLISH);
+        Collector<CharSequence, ?, String> collector = Collectors.joiningDisjunctively(Locale.US);
         assertEquals("", Stream.<CharSequence>empty().collect(collector));
         assertEquals("a",
                 Stream.of("a").collect(collector));

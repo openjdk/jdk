@@ -449,7 +449,7 @@ public class TestListFormat {
 
     @Test
     void toCollector() {
-        ListFormat format = ListFormat.getInstance(Locale.ENGLISH, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
+        ListFormat format = ListFormat.getInstance(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
         Collector<CharSequence, ?, String> collector = format.toCollector();
         assertEquals("",
                 Stream.<CharSequence>empty().collect(collector));
