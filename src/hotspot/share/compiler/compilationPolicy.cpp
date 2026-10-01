@@ -184,7 +184,16 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   }
 }
 
+// Exactly once, when each class is initialized, check it for
+// dependent CompileTrainingData blocks, and notify each one that
+// one of its class initialization dependencies has been satisfied.
+// See comments in class CompileTrainingData for details.
 void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current) {
+  // This method must run in a single TrainingReplayThread which
+  // services the training replay queue.  There is no need for atomic
+  // test-and-set of has_init_deps_processed because it is only set
+  // here, after a test.  The single thread cannot race with itself.
+  // FIXME: Add asserts (a) we're in a TRT, and (b) there's just one.
   if (!klass->has_init_deps_processed()) {
     ResourceMark rm;
     log_debug(training)("Replay training: %s", klass->external_name());

@@ -81,8 +81,12 @@ class RelocIterator;
 // State bits are mutated in place (monotonically) to manage the AOT code asset.
 // Main states are stored only, loaded, loaded & not_entrant, loaded & unloaded nmethod.
 //
-// For an nmethod, the id field is a narrow Method pointer, and certain other fields.
-// The nmethod is not directly pointed at from here; we indirect through Method::code.
+// For an nmethod, the id field is a narrow Method pointer.
+// For an adapter or blob, it is an adapter ID or BlobId.
+// Many fields are used only for nmethods; see comments per declaration.
+//
+// The nmethod is not directly pointed at from here; we indirect through Method::code,
+// which adds some uncertainty, since code is subject to concurrent update.
 //
 // Most of the ac region is read-only (never copied on write), but the AOTCodeEntry
 // blocks are modified.  An alternative could be to move all remaining mutable ac data
@@ -102,7 +106,7 @@ public:
 private:
   Kind    _kind;
   // Next field is exposed to external profilers - keep it as boolean.
-  bool    _for_preload;           // Code can be used for preload (before classes initialized)
+  bool    _for_preload;           // "preload" nmethod - runs before classes initialized
   bool    _not_entrant;           // Deoptimized
   bool    _verified;              // VerifyAOTCode
   uint8_t _has_clinit_barriers:1, // Generated code has class init checks (only in for_preload code)
@@ -110,18 +114,21 @@ private:
           _has_vectors:1,         // nmethod uses Vector API
           _loaded:1,              // Code was loaded for use
           _load_fail:1;           // Failed to load due to some klass state
+  // Note: Both _loaded and _load_fail are written only by a compiler thread which owns
+  // this AOTCodeEntry.  The other bitfields are constants (set at AOT dump).  Still,
+  // consider refactoring this loose cluster of booleans.
 
   uint   _id;          // Adapter's id, BlobId for stub or Method's offset in AOTCache for nmethod
   uint   _offset;      // Offset to entry
   uint   _size;        // Entry size
   uint   _name_offset; // Compiled method name, adapter name, StubInfo::name()
   uint   _name_size;
-  uint   _code_offset; // Start of code in cache
+  uint   _code_offset; // Start of code in cache (zero for blobs)
 
-  uint   _comp_level;  // compilation level
-  uint   _comp_id;     // compilation id
-  uint   _num_inlined_bytecodes;
-  uint   _inline_instructions_size; // size from training run
+  uint   _comp_level;  // compilation level, nmethod only
+  uint   _comp_id;     // compilation id, nmethod only
+  uint   _num_inlined_bytecodes;    // nmethod only
+  uint   _inline_instructions_size; // size from training run, nmethod only
 public:
   AOTCodeEntry(Kind kind,         uint id,
                uint offset,       uint size,
@@ -223,15 +230,40 @@ class AOTCodeAddressHashTable : public HashTable<
   mtCode> {};
 
 // Addresses of stubs, blobs and runtime functions called from compiled code.
+// There is a separate naming/indexing scheme for each.
+//
+//  - The extrs are native C addresses used by code (via relocInfo::external_word).
+//    They are keyed by their insertion position, according to the order of calls to
+//    ADD_EXTERNAL_ADDRESS.  The indexes must agree across the processes sharing the
+//    AOT cache.  The JVM currently checks only the lengths, to detect missing or
+//    extra calls to ADD_EXTERNAL_ADDRESS in the APH or PR, perhaps due to flag
+//    mismatches, which should have been caught earlier.  Consider making an enum
+//    for these guys, like the stubs have.
+//
+//  - The stubs are well-known runtime support subroutines used by compiled code.
+//    They are keyed by an enum EntryId, and populated by add_stub_entries.  They are
+//    not C addresses but rather pointers to JVM-assembled code.  Some stubs are
+//    found in the AOT cache, but they are always OK to regenerate.  Some stubs are
+//    optional, in which case their array slots could be empty (null), and then you
+//    get a fatal crash if you try to refer to one.
+//
+//  - C strings are addresses of strings that are used in compiled code.  They are
+//    addressed by content.  That is, if you need a string, spell it out, and either
+//    a pre-existing string of the same spelling will be found for you, or a new
+//    string will be added.  They are sequentially assigned id numbers, one per
+//    unique string, in the order of request.
+//
 class AOTCodeAddressTable : public CHeapObj<mtCode> {
 private:
   AOTCodeAddressHashTable* _hash_table;
 
-  address* _extrs_addr;
-  address* _stubs_addr;
+  address* _extrs_addr;         // array sequenced by dynamic ADD_EXTERNAL_ADDRESS calls
+  address* _stubs_addr;         // array indexed by statically defined enum EntryId
   uint     _extrs_length;
   uint     _extrs2_length;      // recorded in init_extrs2()
   uint     _final_extrs_length; // expected final count
+  //GrowableArray<ccstr> _C_strings; // array searched by content, indexed by int id
+  // _C_strings is a C static pointer, not a field; see init_C_strings_caching.
 
   bool _extrs_complete;
   bool _shared_stubs_complete;
@@ -538,6 +570,81 @@ enum class DataKind: int {
 
 struct AOTCodeEntryStats;
 
+// The AOT code cache lives in two places: First, an AOTCache file that contains code
+// also has a memory-mappable "ac region", which in turn contains mappable C data
+// structures.  Second, a per-process, heap-allocated AOTCodeCache contains all the
+// pointers and metadata required to properly read or write the mapped ac region.
+// The AOTCodeCache object is always only using or dumping the region, never both.
+//
+// The region layout is described in detail below, near the field declarations.
+// Most of the region is used read-only, but AOTCodeEntry state flags are updated.
+// The region has very few relocatable pointers (unlike other AOT cache regions).
+// Barring AOT cache load failure, the whole AOT cache lives forever (in the process).
+// This makes the ac region a good place to keep immutable data that might be needed
+// in the future, such as code, metadata, strings, and tables.
+//
+// Each code asset is described by an AOTCodeEntry block, with an offset to more data.
+// That data is a pre-image of an AOT-compiled nmethod, not directly executable.
+// It can be quickly copied into the JVM code heap and patched to make it executable.
+// Some immutable, position-independent parts of the nmethod are kept in the ac region.
+// These parts do not need to be copied.  They include scopes, dependencies, PC tables.
+//
+// The CDS function FileMapHeader::validate validates the AOTCache as a whole.
+// After the AOTCodeCache is mapped, additional code-specific validation is done:
+//  - the cpu_features array is checked against the JVM's VM_Version
+//  - the Header::config checks code-sensitive flags (AOTCodeCache::Config::verify)
+//  - each entry lookup/load also checks flags (verify_c2_state, is_compilation_valid)
+//
+// Compiled code in the JVM depends on several environmental assumptions.
+//  - clinit (state, order) - this is guarded in code (AP4) or before load (A1/A2/A4)
+//  - constants (stable/final) - the JIT can just read and trust; AOT must always load
+//  - native addresses/data - link via relocInfo; AOT sometimes needs a GOT indirection
+//  - machine features - the JIT can just assume; AOT refuses to load mismatched code
+//
+// AOT and JIT use many of the same relocInfo features.  Some constants have to be
+// AOT-compiled using extra indirection through a GOT-like table (AOTRuntimeConstants).
+// While the JIT often compiles native constants straight into code, the AOT compiler
+// needs to perform link-editing when installing code, for addresses which could not be
+// determined when the AOT cache was dumped.  The AOTCodeAddressTable provides the
+// mappings required when link-editing the installed AOT code.  One subtle disadvantage
+// of AOT is that the size of the JVM code heap, and its placement relative to native C
+// addresses, are hard to predict, so AOT code must prepare its call sites and external
+// data references to handle the longest possible addressing distances.  A JIT can
+// sometimes predict that a short call will be just fine, and avoid the overhead of a
+// long call instruction sequence.
+//
+// In light of how JIT and AOT code work, here is the value of joining them together.
+//
+// Because the JIT always compiles with full knowledge of the present machine, and the
+// most recent application code (classes) and behavior (clinit states, profiles), the
+// JIT can usually produce better, faster code than an AOT compiler that must guess at
+// future conditions on the same machine.  This is why AOT code does not replace JIT
+// code.  Rather it allows the JIT to focus on the most important optimization tasks,
+// while less performance sensitive parts of the application, which used to run in the
+// interpreter or lower tiers, can run faster in high-tier AOT modes (AP4 and A4).
+//
+// Because AP4 executes clinit barriers like the interpreter, it can serve as a faster
+// alternative to the interpreter.  This is why AP4 methods are loaded very eagerly at
+// startup.  (Note that they are in their own array, ready to load ASAP.)  However, as
+// soon as all the clinits required by an A4 method are done, the JVM prefers it to the
+// AP4 method, since performing clinit barriers is expensive, even in optimized code.
+// So the AP4 method is a win, but only until the corresponding A4 method is done
+// waiting for the clinits it depends on.  (See the declaration of CompileTrainingData
+// for a full discussion of how that waiting is managed.)
+//
+// After the A4 method is swapped in, there is still a mild performance penalty due to
+// constants being loaded (instead of folded into other constants, which is normal
+// business for the JIT).  To enable replacement of A4 methods by faster code, each A4
+// method has an invocation counter (like a T2/T3 method).  When that invocation counter
+// reaches a level similar to what was seen in the training run (before the training
+// run JIT compiled a T4 method), the JVM launches a JIT task to recompile the A4
+// method with a fresh T4 method.  When that JIT task is done, calls to the T4 method
+// run at full speed.
+//
+// Because there was less reliance on the interpreter during startup, and because the
+// JIT didn't have to work so hard to speed startup (since AOT code filled the gap),
+// the JIT can get right to work on the methods that need the most attention.
+//
 class AOTCodeCache : public CHeapObj<mtCode> {
   friend class AOTMapLogger;
 
@@ -705,11 +812,56 @@ private:
 
   AOTCodeAddressTable* _table;
 
-  AOTCodeEntry* _load_entries;   // Used when reading cache
-  uint*         _search_entries; // sorted by ID table [id, index]
+  // What's in the AOT cache "ac" region?  (It's what this object indexes.)
+  //
+  // The first read is of a CDS-style size/pointer handle to the ac region.
+  // CachedCodeDirectory { uint ac_size; char* ac_data; }
+  // After this, the @N values are relative to ac_data.
+  // It might be right after the CachedCodeDirectory.  It might be far away.
+  //
+  // @0: Header (all the fixed fields that size and place objects in the ac region.
+  // See AOTCodeCache::Header::verify for a detailed walk through what follows.
+  //
+  // @cpu_features_offset: uchar[cpu_features_size]  same layout as VM_Version
+  //
+  // @preload_entries_offset: AOTCodeEntry[preload_entries_count] "preload" AP4 code
+  // Sorted by compile_id (from the training run).
+  // Queued for load at startup, in that order (see preload_aot_code).
+  // See AOTCodePreload{Start,Stop} if bisection debugging needed.
+  //
+  // @(preload_entries[0]._offset):  nmethod preimage for preload entry #0
+  // @(preload_entries[1]._offset):  nmethod preimage for preload entry #1
+  // ...
+  //
+  // @entries_offset: AOTCodeEntry[entries_count] other code (A1/A2/A4/stub/adapter)
+  // Main (non-preload) code array, presented in dump order (arbitrary).
+  //
+  // @(entries[0]._offset):  preimage for main entry #0 (nmethod, blob, etc.)
+  // @(entries[1]._offset):  preimage for main entry #1
+  // ...
+  //
+  // @search_table_offset: uint[entries_count][2]  id/index pairs, sorted by id
+  // The id matches AOTCodeEntry::_id.  The index point into the entries array.
+  // If several entries for one id, use local linear search.
+  //
+  // @strings_offset: uint[strings_count]  length of each C string, in recording order
+  // @strings_offset+4*strings_count: each string, in recording order
+  // This is not indexed; it is linearly processed at startup into _cached_C_strings.
+  // The AOTCodeAddressTable provides access to them.
+  //
+  // _table: AOTCodeAddressTable (in C heap)
+  // This table contains all the extrs, stubs, C strings, organized in heap arrays.
+  //
+  // compiled code also refers to oops and metadata, not accessed here.
+  // They are stored in other parts of the AOT cache, found via AOTCacheAccess.
+
+  // The following items are used for reading and writing the AOT cache.
+  AOTCodeEntry* _load_entries;   // Used when reading cache @entries_offset
+  uint*         _search_entries; // sorted by ID table [id, index] @search_table_offset
   AOTCodeEntry* _store_entries;  // Used when writing cache
   uint          _store_entries_cnt; // total entries count
 
+  // These guys can stash data to help log messages in the APH.  Move to the writer obj?
   uint _compile_id;
   uint _comp_level;
   uint compile_id() const { return _compile_id; }
@@ -799,10 +951,10 @@ public:
   bool write_klass(Klass* klass);
   bool write_method(Method* method);
 
-  bool write_id_for_relocations(CodeBlob& code_blob, RelocIterator& iter,
-                                bool assert_for_unknown_external_address,
-                                GrowableArray<Handle>* oop_list = nullptr,
-                                GrowableArray<Metadata*>* metadata_list = nullptr);
+  bool write_relocations(CodeBlob& code_blob, RelocIterator& iter,
+                         bool assert_for_unknown_external_address,
+                         GrowableArray<Handle>* oop_list = nullptr,
+                         GrowableArray<Metadata*>* metadata_list = nullptr);
 
   bool write_oop_map_set(CodeBlob& cb);
   bool write_nmethod_reloc_immediates(GrowableArray<Handle>& oop_list, GrowableArray<Metadata*>& metadata_list);
@@ -1017,9 +1169,9 @@ private:
   ImmutableOopMapSet* read_oop_map_set();
   void read_stub_data(CodeBlob* code_blob, AOTStubData *stub_data);
 
-  void restore_relocations(CodeBlob* code_blob, RelocIterator& iter,
-                           GrowableArray<Handle>* oop_list = nullptr,
-                           GrowableArray<Metadata*>* metadata_list = nullptr);
+  void read_relocations(CodeBlob* code_blob, RelocIterator& iter,
+                        GrowableArray<Handle>* oop_list = nullptr,
+                        GrowableArray<Metadata*>* metadata_list = nullptr);
 
 #ifndef PRODUCT
   void restore_asm_remarks(AsmRemarks& asm_remarks);

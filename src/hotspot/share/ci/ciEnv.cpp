@@ -1934,10 +1934,9 @@ bool ciEnv::is_aot_compile() const {
 // classes must be initialized by the time the code gets executed.  First,
 // 1. the top-level method's holder can be assumed initialized, since somebody
 // else already triggered initialization before the method could be called.
-// Also 2. the clinit dependencies listed in the CompileTrainingData are
+// Also 2. the clinit dependencies listed in the CompileTrainingData (CTD) are
 // always checked off before a non-preload nmethod is installed, so all those
-// classes can be assumed initialized.  (And see AOTCodeReader::read_klass for
-// another check.)  Finally 3. certain core JDK classes are always
+// classes can be assumed initialized.  Finally 3. certain core JDK classes are always
 // force-initialized early enough that all compiled code can assume they are
 // initialized.
 //
@@ -1947,6 +1946,27 @@ bool ciEnv::is_aot_compile() const {
 // during AOT cache assembly.  In that case, we return the special sentinel
 // value initialization_error, used here as a sentinel meaning "unknown"; a distinct
 // value (unavailable_aot) is proposed for a later change.
+//
+// One thing this function does NOT do is look at the clinit state of any class.
+// This may be surprising, since a normal JIT compilation task directly queries
+// clinit states, via ciInstanceKlass::compute_init_state.  But for an AOT
+// compilation task, ciIK::compute_init_state calls here, and a future clinit state
+// is predicted, instead of a current state.  The nmethod code cannot be loaded
+// until all such predictions come true.  Eventually, as a future production run
+// initializes classes in some order, a countdown counter on the CTD will tally
+// every clinit event, and eventually reach zero, opening the gate to load the
+// AOT code in the nmethod.
+//
+// These predictions, of which class needs to be initialized for the code to work,
+// have already been made by a previous pass of the compiler, on the same method
+// at the same level, in the earlier training run (TR).  The CTD contains a dep-list
+// of every class which the JIT, running in the TR, observed to be initialized.
+// That dep-list gets passed forward to the AOT compiler, which re-runs a similar
+// compilation, after the TR, in the assembly phase (APH) that creates the AOT cache.
+// Since the APH is a fresh instance of the JVM, there are no interesting clinit
+// states to be observed directly in the InstanceKlass metadata.  (The JVM running
+// the APH does have a few initialized class states, but they are not useful to
+// AOT compilation, so they are deliberately not examined.)
 //
 InstanceKlass::ClassState ciEnv::compute_init_state_for_aot_compile(InstanceKlass* ik) {
   ASSERT_IN_VM;

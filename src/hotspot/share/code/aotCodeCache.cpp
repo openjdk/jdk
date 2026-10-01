@@ -2076,10 +2076,10 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     if (is_multi_stub) {
       CodeSection* cs = code_buffer->code_section(CodeBuffer::SECT_INSTS);
       RelocIterator iter(cs);
-      write_ok = cache->write_id_for_relocations(blob, iter, assert_for_unknown_address);
+      write_ok = cache->write_relocations(blob, iter, assert_for_unknown_address);
     } else {
       RelocIterator iter(&blob);
-      write_ok = cache->write_id_for_relocations(blob, iter, assert_for_unknown_address);
+      write_ok = cache->write_relocations(blob, iter, assert_for_unknown_address);
     }
   }
 
@@ -2417,7 +2417,7 @@ void AOTCodeReader::restore(CodeBlob* code_blob) {
   // multi-stub blob which has no runtime relocations. However, we may
   // still have saved some (re-)load time relocs that were attached to
   // the generator's code buffer. We don't attach them to the blob but
-  // they get processed below by restore_relocations.
+  // they get processed below by read_relocations.
   if (!is_multi_stub) {
     // Allocates space for mutable data and copy relocation data
     code_blob->restore_mutable_data(_reloc_data);
@@ -2439,7 +2439,7 @@ void AOTCodeReader::restore(CodeBlob* code_blob) {
     nm->set_aot_code_entry(_entry);
     nm->set_immutable_data(_immutable_data);
     // Restore metadata and oops sections which are used
-    // by restore_relocations().
+    // by read_relocations().
     nm->copy_values(_oop_list);
     nm->copy_values(_metadata_list);
   }
@@ -2472,12 +2472,12 @@ void AOTCodeReader::restore(CodeBlob* code_blob) {
       code_buffer.insts()->set_locs_end(locs + _reloc_count);
       CodeSection* cs = code_buffer.code_section(CodeBuffer::SECT_INSTS);
       RelocIterator reloc_iter(cs);
-      restore_relocations(code_blob, reloc_iter);
+      read_relocations(code_blob, reloc_iter);
     }
   } else {
     // the AOT-load time relocs will be in the blob's restored relocs
     RelocIterator reloc_iter(code_blob);
-    restore_relocations(code_blob, reloc_iter, _reloc_imm_oop_list, _reloc_imm_metadata_list);
+    read_relocations(code_blob, reloc_iter, _reloc_imm_oop_list, _reloc_imm_metadata_list);
   }
 
 #ifndef PRODUCT
@@ -2794,8 +2794,8 @@ AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
   }
 
   RelocIterator iter(nm);
-  if (!write_id_for_relocations(*nm, iter, AOTAssertOnUnknownExternalAddress,
-                                &oop_list, &metadata_list)) {
+  if (!write_relocations(*nm, iter, AOTAssertOnUnknownExternalAddress,
+                         &oop_list, &metadata_list)) {
     if (!failed()) {
       // Skip this method and reposition file
       set_write_position(entry_position);
@@ -3158,7 +3158,7 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
 
 #define BAD_ADDRESS_ID -2
 
-// The next two functions, write_id_for_relocations and restore_relocations,
+// The next two functions, write_relocations and read_relocations,
 // handle relocation information for AOT code.  The relocations are written
 // by the compiler backend during AOT cache assembly.  Their targeting information
 // gets re-encoded into the AOT cache so that the relocations can be restored later
@@ -3176,10 +3176,13 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
 // relocInfo.cpp.  Perhaps relocInfo.cpp should "know more about" the external
 // address IDs and oop indexes?  Perhaps we want a protocol for relocs
 // named [un]pack_aot_data?
-bool AOTCodeCache::write_id_for_relocations(CodeBlob& code_blob, RelocIterator& iter,
-                                            bool assert_for_unknown_external_address,
-                                            GrowableArray<Handle>* oop_list,
-                                            GrowableArray<Metadata*>* metadata_list) {
+// [[PR 30778 COMMENT: to fit the writer/reader pattern better, here is a proposed
+// rename write_id_for_relocations/restore_relocations -> [write/read]_relocations.
+// It is a pure name change, but we can save for after the PR if desired.]]
+bool AOTCodeCache::write_relocations(CodeBlob& code_blob, RelocIterator& iter,
+                                     bool assert_for_unknown_external_address,
+                                     GrowableArray<Handle>* oop_list,
+                                     GrowableArray<Metadata*>* metadata_list) {
   if (!align_write_int()) {
     return false;
   }
@@ -3345,9 +3348,9 @@ bool AOTCodeCache::write_id_for_relocations(CodeBlob& code_blob, RelocIterator& 
   return true;
 }
 
-void AOTCodeReader::restore_relocations(CodeBlob *code_blob, RelocIterator& iter,
-                                        GrowableArray<Handle>* oop_list,
-                                        GrowableArray<Metadata*>* metadata_list) {
+void AOTCodeReader::read_relocations(CodeBlob *code_blob, RelocIterator& iter,
+                                     GrowableArray<Handle>* oop_list,
+                                     GrowableArray<Metadata*>* metadata_list) {
   uint* reloc_data = _id_for_reloc;
 
   LogStreamHandle(Trace, aot, codecache, reloc) log;
@@ -3408,7 +3411,7 @@ void AOTCodeReader::restore_relocations(CodeBlob *code_blob, RelocIterator& iter
         break;
       }
       case relocInfo::runtime_call_w_cp_type:
-        // this relocation should not be in cache (see write_id_for_relocations)
+        // this relocation should not be in cache (see write_relocations)
         assert(false, "runtime_call_w_cp_type relocation is not implemented");
         break;
       case relocInfo::trampoline_stub_type: {
@@ -3753,10 +3756,20 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
     return nullptr;
   }
   // If the klass was seen to be initialized during AOT cache assembly,
-  // it must also be initialized here, in the production run.
+  // it must also be initialized here, in the production run, when this nmethod loads.
   // Exception:  "preload" code (AP4) can handle uninitialized classes.
-  // There is no exception for A1, A2 code or A4 code. Those are loaded only when
-  // all referenced classes have the same state as during training and AOT compilation.
+  // There is no exception for A1, A2 code or A4 code.
+  //
+  // Note: This init-state check is of minor importance compared to the clinit deps
+  // list/counter on this nmethod's CompileTrainingData, which has already determined
+  // the nmethod's readiness to load.  (For many more details, see comments near
+  // CompileTrainingData::_init_deps_left.)  This check is superficially similar,
+  // but it checks a relatively small number of classes, which may or may not be
+  // necessary to the nmethod's compiled code.  Think of it as an extra sanity check.
+  // But it is an approximate check, and may fail spuriously, discarding good AOT code.
+  // After JDK-8380476 FIXME:  Maybe get rid of this approximate check; replace with
+  // a more accurate and efficient check based on dependencies.hpp (new DepType).
+  // (Also, the metadata for arrays should have its own DataKind::ArrayKlass.)
   if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_initialized() && (init_state == 1) && !_entry->for_preload()) {
     set_lookup_failed("Klass is not initialized");
     log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for klass %s: not initialized",
