@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +33,21 @@
 // It does so by maintaining the double array, where first array defines
 // the magnitude of the value being stored, and the second array maintains
 // the low resolution histogram within that magnitude. For example, storing
-// 4.352819 * 10^3 increments the bucket _hdr[3][435]. This allows for
-// memory efficient storage of huge amount of samples.
+// 0.012 seconds gives 0.768 * 2^-6 and that increments the bucket _hdr[26][34].
+// This allows for memory efficient storage of huge amount of samples.
 //
-// Accepts positive numbers only.
+// Accepts zero and values within the range of [2^-33, 2^23).
 class HdrSeq: public NumberSeq {
 private:
   enum PrivateConstants {
-    ValBuckets = 512,
-    MagBuckets = 24,
-    MagMinimum = -12
+    ValBuckets = 64,
+    // Accounts for the maximum object count we can have from scanning dirty
+    // cards in a chunk and leaves some extra headroom.
+    MagBuckets = 56,
+    MagMinimum = -32
   };
   int** _hdr;
+  double _minimum;
 
 public:
   HdrSeq();
@@ -51,6 +55,7 @@ public:
 
   virtual void add(double val);
   void add(const HdrSeq& other);
+  double minimum() const;
   double percentile(double level) const;
   void clear();
 };

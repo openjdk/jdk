@@ -23,9 +23,10 @@
  */
 
 #include "gc/g1/g1Analytics.hpp"
+#include "gc/g1/g1CardSetGroup.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.inline.hpp"
-#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -170,9 +171,9 @@ void G1CollectionSet::clear() {
 }
 
 void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
-  uint len = _num_regions.load_acquire();
+  uint num_regions = _num_regions.load_acquire();
 
-  for (uint i = 0; i < len; i++) {
+  for (uint i = 0; i < num_regions; i++) {
     G1HeapRegion* r = _g1h->region_at(_regions[i]);
     bool result = cl->do_heap_region(r);
     if (result) {
@@ -205,12 +206,12 @@ void G1CollectionSet::iterate_incremental_part_from(G1HeapRegionClosure* cl,
 void G1CollectionSet::iterate_part_from(G1HeapRegionClosure* cl,
                                         G1HeapRegionClaimer* hr_claimer,
                                         uint offset,
-                                        uint length,
+                                        uint num_regions,
                                         uint worker_id) const {
   _g1h->par_iterate_regions_array(cl,
                                   hr_claimer,
                                   &_regions[offset],
-                                  length,
+                                  num_regions,
                                   worker_id);
 }
 
