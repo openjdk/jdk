@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,9 +493,11 @@ public final class Module implements AnnotatedElement {
             return true;
 
         // check if this module reads other
-        if (other.isNamed()) {
-            Set<Module> reads = this.reads; // volatile read
-            if (reads != null && reads.contains(other))
+        Set<Module> reads = this.reads;
+        if (reads != null) {
+            if (reads.contains(other))
+                return true;
+            if (!other.isNamed() && reads.contains(ALL_UNNAMED_MODULE))
                 return true;
         }
 
@@ -592,8 +594,20 @@ public final class Module implements AnnotatedElement {
                 }
             }
 
-            // add reflective read
-            ReflectionData.reads.putIfAbsent(this, other, Boolean.TRUE);
+            if (VM.isModuleSystemInited()) {
+                // add reflective read
+                ReflectionData.reads.putIfAbsent(this, other, Boolean.TRUE);
+            } else {
+                // --add-reads or a dynamic module created during startup
+                Set<Module> reads = this.reads;
+                if (reads == null) {
+                    this.reads = Set.of(other);
+                } else {
+                    Set<Module> newReads = new HashSet<>(reads);
+                    newReads.add(other);
+                    this.reads = newReads;
+                }
+            }
         }
     }
 
@@ -1025,7 +1039,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote Used by Proxy and other dynamic modules.
      */
     void implAddExports(String pn) {
-        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, false, true, true);
+        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, false,  true);
     }
 
     /**
@@ -1034,7 +1048,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote Used by addExports, Instrumentation::redefineModule, and --add-exports
      */
     void implAddExports(String pn, Module other) {
-        implAddExportsOrOpens(pn, other, false, VM.isBooted(), true);
+        implAddExportsOrOpens(pn, other, false, true);
     }
 
     /**
@@ -1044,7 +1058,7 @@ public final class Module implements AnnotatedElement {
      * an executable JAR file has the "Add-Exports" attribute in its main manifest.
      */
     void implAddExportsToAllUnnamed(String pn) {
-        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, false, false, true);
+        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, false, true);
     }
 
     /**
@@ -1054,7 +1068,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote This method is for VM white-box testing.
      */
     void implAddExportsNoSync(String pn) {
-        implAddExportsOrOpens(pn.replace('/', '.'), Module.EVERYONE_MODULE, false, true, false);
+        implAddExportsOrOpens(pn.replace('/', '.'), Module.EVERYONE_MODULE, false, false);
     }
 
     /**
@@ -1064,7 +1078,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote This method is for VM white-box testing.
      */
     void implAddExportsNoSync(String pn, Module other) {
-        implAddExportsOrOpens(pn.replace('/', '.'), other, false, true, false);
+        implAddExportsOrOpens(pn.replace('/', '.'), other, false,  false);
     }
 
     /**
@@ -1073,7 +1087,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote This method is for JDK tests only.
      */
     void implAddOpens(String pn) {
-        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, true, true, true);
+        implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, true, true);
     }
 
     /**
@@ -1082,7 +1096,7 @@ public final class Module implements AnnotatedElement {
      * @apiNote Used by addOpens, Instrumentation::redefineModule, and --add-opens
      */
     void implAddOpens(String pn, Module other) {
-        implAddExportsOrOpens(pn, other, true, VM.isBooted(), true);
+        implAddExportsOrOpens(pn, other, true, true);
     }
 
     /**
@@ -1092,7 +1106,7 @@ public final class Module implements AnnotatedElement {
      * an executable JAR file has the "Add-Opens" attribute in its main manifest.
      */
     void implAddOpensToAllUnnamed(String pn) {
-        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, true, false, true);
+        implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, true, true);
     }
 
     /**
@@ -1100,13 +1114,11 @@ public final class Module implements AnnotatedElement {
      * @param pn package name
      * @param other the module to export/open the package to
      * @param open true to open, false to export
-     * @param reflectively true if exported/opened reflectively
      * @param syncVM true to update the VM
      */
     private void implAddExportsOrOpens(String pn,
                                        Module other,
                                        boolean open,
-                                       boolean reflectively,
                                        boolean syncVM) {
         Objects.requireNonNull(other);
         Objects.requireNonNull(pn);
@@ -1136,7 +1148,7 @@ public final class Module implements AnnotatedElement {
             }
         }
 
-        if (reflectively) {
+        if (VM.isModuleSystemInited()) {
             // add package name to ReflectionData.exports if absent
             Map<String, Boolean> map = ReflectionData.exports
                 .computeIfAbsent(this, other,
@@ -1393,12 +1405,14 @@ public final class Module implements AnnotatedElement {
                 // update VM view
                 addReads0(m, m2);
             }
-            m.reads = reads;
 
             // automatic modules read all unnamed modules
             if (descriptor.isAutomatic()) {
-                m.implAddReads(ALL_UNNAMED_MODULE, true);
+                addReads0(m, null);
+                reads.add(ALL_UNNAMED_MODULE);
             }
+
+            m.reads = reads;
 
             // exports and opens, skipped for open and automatic
             if (!descriptor.isOpen() && !descriptor.isAutomatic()) {
