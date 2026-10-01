@@ -600,10 +600,11 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute
-            var id = hdr.parentElement.getAttribute("id") || hdr.getAttribute("id")
-                || (hdr.querySelector("a") && hdr.querySelector("a").getAttribute("id"));
+            const id = hdr.id
+                || hdr.querySelector("a")?.id
+                || (hdr.parentElement?.firstElementChild === hdr && hdr.parentElement.id);
             if (id) {
-                var template = document.createElement('template');
+                const template = document.createElement('template');
                 template.innerHTML =" <a href='#" + encodeURI(id) + "' class='anchor-link' aria-label='"
                     + linkToSection + "'><img src='" + pathtoroot + "resource-files/link.svg' alt='"
                     + linkIcon + "' width='16' height='16'></a>";
