@@ -21,38 +21,28 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8389130
- * @summary With Valhalla, frame::sender became a bit too big and is not as spontaneously inlined as before.
- *          This causes some measurable performance regressions in cases where walking the stack is frequent.
- * @requires vm.debug == false
- * @run main/othervm -Xbatch
- *                   -XX:-TieredCompilation
- *                   -XX:CompileCommand=dontinline,${test.main.class}::fillInStackTrace
- *                   ${test.main.class}
+ * @summary Make sure hashCodeMask() returns a value that is a power of two minus 1
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  * @run main ${test.main.class}
  */
 
-package compiler.exceptions;
+import jdk.internal.misc.Unsafe;
 
-public class TestStackWalkPerf extends Throwable {
-    private static final TestStackWalkPerf PROBE = new TestStackWalkPerf();
+public class HashCodeMask {
+    public static void main(String args[]) throws Exception {
+        Unsafe unsafe = Unsafe.getUnsafe();
+        int hashCodeMask = unsafe.hashCodeMask();
+        int n = hashCodeMask;
 
-    private static void fillInStackTrace(int depth, int fills) {
-        if (depth == 0) {
-            for (int i = 0; i < fills; i++) {
-                PROBE.fillInStackTrace();
-            }
+        while ((n & 1) == 1) {
+            n >>>= 1;
+        }
+        if (n == 0 && hashCodeMask > 0) {
             return;
         }
-        fillInStackTrace(depth - 1, fills);
-    }
-
-    public static void main(String[] args) {
-        for (int i = 0; i < 10_000; i++) {
-            fillInStackTrace(512, 1);
-        }
-        fillInStackTrace(512, 1_000_000);
+        throw new RuntimeException("Expected hashCodeMask to be a power of two minus 1, and non-zero, actual hashCodeMask:" + hashCodeMask);
     }
 }
