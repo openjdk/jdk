@@ -2798,7 +2798,6 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     const int add_op = (use_op == Op_MulI) ? Op_AddI : Op_AddL;
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
   }
-<<<<<<< HEAD
 
   // MulNode::Ideal distributes constant multiplication:
   // e.g., (x + c1) * c2 -> x * c1 + (c1 * c2)
