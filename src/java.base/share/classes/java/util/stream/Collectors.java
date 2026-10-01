@@ -348,7 +348,7 @@ public final class Collectors {
      * using the specified {@link Locale}}
      *
      * <p>For example, if the input stream contains three elements {@code "a"}, {@code "b"},
-     * and {@code "c"}, collecting it with {@code joiningConjunctively(Locale.ENGLISH)}
+     * and {@code "c"}, collecting it with {@code joiningConjunctively(Locale.US)}
      * produces the string {@code "a, b, and c"}.
      *
      * <p>The returned {@code Collector} produces an empty string if there are no input elements.
@@ -369,7 +369,7 @@ public final class Collectors {
      * using the specified {@link Locale}}
      *
      * <p>For example, if the input stream contains three elements {@code "a"}, {@code "b"},
-     * and {@code "c"}, collecting it with {@code joiningConjunctively(Locale.ENGLISH)}
+     * and {@code "c"}, collecting it with {@code joiningDisjunctively(Locale.US)}
      * produces the string {@code "a, b, or c"}.
      *
      * <p>The returned {@code Collector} produces an empty string if there are no input elements.
