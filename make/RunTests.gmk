@@ -666,7 +666,7 @@ define SetupRunMicroTestBody
 	        $$($1_MICRO_ITER) $$($1_MICRO_FORK) $$($1_MICRO_TIME) \
 	        $$($1_MICRO_WARMUP_ITER) $$($1_MICRO_WARMUP_TIME) \
 	        $$($1_MICRO_VM_OPTIONS) $$($1_MICRO_BASIC_OPTIONS) $$(MICRO_OPTIONS) \
-	        $$($1_TEST_NAME) \
+	        $$(call ShellQuote,$$($1_TEST_NAME)) \
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/micro.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
@@ -1293,7 +1293,7 @@ UseSpecialTestHandler = \
 
 # Now process each test to run and setup a proper make rule
 $(foreach test, $(TESTS_TO_RUN), \
-  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
+  $(eval TEST_ID := $(shell $(ECHO) $(call ShellQuote,$(strip $(test))) | \
       $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
   $(eval ALL_TEST_IDS += $(TEST_ID)) \
   $(if $(call UseCustomTestHandler, $(test)), \
@@ -1373,10 +1373,10 @@ run-test-report: post-run-test
 	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %5s %2s\n" "  " \
 	    TEST TOTAL PASS FAIL ERROR SKIP " "
 	$(foreach test, $(TESTS_TO_RUN), \
-	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
+	  $(eval TEST_ID := $(shell $(ECHO) $(call ShellQuote,$(strip $(test))) | \
 	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
 	    $(ECHO) >> $(TEST_LAST_IDS) $(TEST_ID) $(NEWLINE) \
-	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c '\n' '_')) \
+	  $(eval NAME_PATTERN := $(shell $(ECHO) $(call ShellQuote,$(test)) | $(TR) -c '\n' '_')) \
 	  $(if $(filter __________________________________________________%, $(NAME_PATTERN)), \
 	    $(eval TEST_NAME := ) \
 	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \

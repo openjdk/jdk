@@ -181,6 +181,19 @@ WB_ENTRY(jlong, WB_GetVMLargePageSize(JNIEnv* env, jobject o))
   return os::large_page_size();
 WB_END
 
+WB_ENTRY(jstring, WB_PrintObject(JNIEnv* env, jobject wb, jobject o))
+  ResourceMark rm(THREAD);
+  stringStream sb;
+  oop obj = JNIHandles::resolve(o);
+  if (obj == nullptr) {
+    sb.print("null");
+  } else {
+    obj->print_on(&sb);
+  }
+  oop result = java_lang_String::create_oop_from_str(sb.as_string(), THREAD);
+  return (jstring) JNIHandles::make_local(THREAD, result);
+WB_END
+
 WB_ENTRY(jstring, WB_PrintString(JNIEnv* env, jobject wb, jstring str, jint max_length))
   ResourceMark rm(THREAD);
   stringStream sb;
@@ -1361,7 +1374,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsLockedVMFlag(JNIEnv* env, jobject o, jstring name))
   const JVMFlag* flag = getVMFlag(thread, env, name);
-  return (flag != nullptr) && !(flag->is_unlocked() || flag->is_unlocker());
+  return (flag != nullptr) && !flag->is_unlocked();
 WB_END
 
 WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
@@ -1550,7 +1563,7 @@ CodeHeap* WhiteBox::get_code_heap(CodeBlobType blob_type) {
 
 struct CodeBlobStub {
   CodeBlobStub(const CodeBlob* blob) :
-      name(os::strdup(blob->name())),
+      name(os::strdup(blob->name(), mtInternal)),
       size(blob->size()),
       blob_type(static_cast<jint>(WhiteBox::get_blob_type(blob))),
       address((jlong) blob),
@@ -1691,7 +1704,8 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   }
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
+    bool handle_alloc_failure = (blob_type != CodeBlobType::MethodHot);
+    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type, handle_alloc_failure);
     if (blob != nullptr) {
       ::new (blob) BufferBlob("WB::DummyBlob", CodeBlobKind::Buffer, full_size);
     }
@@ -2658,6 +2672,11 @@ WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
   return os::is_containerized();
 WB_END
 
+// Physical memory of the machine (respecting container limits)
+WB_ENTRY(jlong, WB_PhysicalMemory(JNIEnv* env, jobject o))
+  return static_cast<jlong>(os::physical_memory());
+WB_END
+
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   return static_cast<jlong>(os::Machine::physical_memory());
@@ -3183,6 +3202,7 @@ static JNINativeMethod methods[] = {
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
   {CC"hostAvailableMemory",       CC"()J",            (void*)&WB_HostAvailableMemory },
   {CC"hostCPUs",                  CC"()I",            (void*)&WB_HostCPUs },
+  {CC"physicalMemory",            CC"()J",            (void*)&WB_PhysicalMemory },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
@@ -3212,6 +3232,7 @@ static JNINativeMethod methods[] = {
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
+  {CC"printObject", CC"(Ljava/lang/Object;)Ljava/lang/String;", (void*)&WB_PrintObject},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
   {CC"lockAndStuckInSafepoint", CC"()V",              (void*)&WB_TakeLockAndHangInSafepoint},
   {CC"getMinimumJavaStackSize", CC"()J",              (void*)&WB_GetMinimumJavaStackSize},
