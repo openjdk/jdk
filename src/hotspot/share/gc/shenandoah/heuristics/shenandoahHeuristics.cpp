@@ -184,6 +184,7 @@ void ShenandoahHeuristics::record_cycle_end() {
   if (!heap->mode()->is_generational()) {
     const size_t available = _space_info->soft_mutator_available();
     heap->alloc_rate().update_minimum_sample_size(available);
+    heap->humongous_alloc_rate().update_minimum_sample_size(available);
   }
 }
 

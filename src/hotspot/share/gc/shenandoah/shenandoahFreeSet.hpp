@@ -652,6 +652,7 @@ public:
   // Public because ShenandoahRegionPartitions assertions require access.
   size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   size_t alloc_capacity(size_t idx) const;
+  size_t calc_max_humongous_allocatable();
 
   // Return bytes used by old
   inline size_t old_used() {

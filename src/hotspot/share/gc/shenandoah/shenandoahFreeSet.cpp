@@ -2795,6 +2795,35 @@ void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition
           );
 }
 
+// TODO: can merge with log status
+size_t ShenandoahFreeSet::calc_max_humongous_allocatable() {
+  ShenandoahHeapLocker locker(_heap->lock());
+
+  idx_t last_idx = 0;
+  size_t max_contig = 0;
+  size_t empty_contig = 0;
+
+  for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
+        idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx++) {
+    if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
+      ShenandoahHeapRegion *r = _heap->get_region(idx);
+      if (r->is_empty_or_trash()) {
+        if (last_idx + 1 == idx) {
+          empty_contig++;
+        } else {
+          empty_contig = 1;
+        }
+      } else {
+        empty_contig = 0;
+      }
+      max_contig = MAX2(max_contig, empty_contig);
+      last_idx = idx;
+    }
+  }
+
+  return max_contig * ShenandoahHeapRegion::region_size_bytes();
+}
+
 void ShenandoahFreeSet::log_status() {
   shenandoah_assert_heaplocked();
 
