@@ -69,6 +69,20 @@ RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   return r;
 }
 
+ProjNode* PhaseIdealLoop::unique_scmem_proj_if_any(Node* n) {
+  ProjNode* proj = nullptr;
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    if (u->Opcode() == Op_SCMemProj) {
+      assert(proj == nullptr, "only one SCMemProj");
+      proj = u->as_Proj();
+    } else {
+      assert(!u->is_Proj(), "we can't split nodes with Proj uses other than SCMemProj");
+    }
+  }
+  return proj;
+}
+
 //------------------------------split_up---------------------------------------
 // Split block-local op up through the phis to empty the current block
 bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
@@ -159,8 +173,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   // Phi doesn't work as split if needs the adr_type of an SCMemProj to create its Phi which Proj::addr_type() gets from
   // its input: that works as long as the input of the SCMemProj is n but not if it's a Phi. Prepare the Phi for the
   // SCMemProj here before n is cloned.
-  assert(!n->has_out_with(Op_Proj), "we can't split nodes with Proj uses other than SCMemProj");
-  Node* mem_proj = n->find_out_with(Op_SCMemProj);
+  ProjNode* mem_proj = unique_scmem_proj_if_any(n);
   Node* phi_mem_proj = nullptr;
   if (mem_proj != nullptr) {
     phi_mem_proj = PhiNode::make_blank(blk1, mem_proj);
