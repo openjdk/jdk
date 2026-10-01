@@ -96,7 +96,10 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   }
 
   // Lost the update race. Pick the forwarding from the existing mark.
-  assert(prev_mark.is_forwarded(), "Must be forwarded");
+  // Barriers guarantee that we can see only forwardings here, either real or self.
+  // Mutators cannot modify mark without executing barriers first and
+  // completing the forwarding install.
+  assert(prev_mark.is_forwarded(), "Must be forwarded: prev=" INTPTR_FORMAT, prev_mark.value());
   return get_forwardee_raw_unchecked(obj, prev_mark);
 }
 
