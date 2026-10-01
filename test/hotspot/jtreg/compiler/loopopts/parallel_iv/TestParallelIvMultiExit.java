@@ -33,7 +33,7 @@ import jdk.test.lib.Asserts;
  *          the loop and where it is not.
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.loopopts.parallel_iv.TestParallelIvMultiExit
+ * @run driver ${test.main.class}
  */
 public class TestParallelIvMultiExit {
 
