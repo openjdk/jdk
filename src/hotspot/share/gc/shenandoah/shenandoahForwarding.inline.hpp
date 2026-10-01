@@ -70,6 +70,7 @@ inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
 }
 
 inline oop ShenandoahForwarding::try_forward_to(oop obj, oop update) {
+  assert(update != nullptr, "Ambiguity");
   return try_update_forwardee(obj, update);
 }
 
@@ -78,7 +79,7 @@ inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
 }
 
 inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
-  bool is_self = (update == nullptr);
+  shenandoah_assert_correct(nullptr, obj);
 
   // Optimistic: check if object is already forwarded.
   markWord old_mark = obj->mark();
@@ -87,6 +88,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   }
 
   // Attempt to install and return on success.
+  const bool is_self = (update == nullptr);
   markWord new_mark = is_self ? old_mark.set_self_forwarded() : markWord::encode_pointer_as_mark(update);
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {

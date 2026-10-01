@@ -47,8 +47,6 @@ public:
    */
   static inline oop get_forwardee_raw_unchecked(oop obj);
 
-  static inline oop get_forwardee_raw_unchecked(oop obj, markWord mark);
-
   /**
    * Returns true if the object is forwarded (including self-forwarded),
    * false otherwise.
@@ -82,6 +80,7 @@ public:
   static inline Klass* klass(oop obj);
 
 private:
+  static inline oop get_forwardee_raw_unchecked(oop obj, markWord mark);
   static inline oop try_update_forwardee(oop obj, oop update);
 };
 
