@@ -31,6 +31,7 @@
  */
 
 import java.io.IOException;
+import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -107,7 +108,7 @@ public class DeleteInterference {
                 }
             }
             Files.delete(file);
-        } catch (IOException ioe) {
+        } catch (IOException | DirectoryIteratorException ioe) {
             // ignore
         }
     }
