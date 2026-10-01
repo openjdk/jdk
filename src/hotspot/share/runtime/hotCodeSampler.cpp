@@ -66,9 +66,6 @@ bool ThreadSampler::sample_all_java_threads() {
       bool created = false;
       int *count = _samples.put_if_absent(cb->as_nmethod(), 0, &created);
       (*count)++;
-      if (created) {
-        _samples.maybe_grow();
-      }
     }
   }
   return true;

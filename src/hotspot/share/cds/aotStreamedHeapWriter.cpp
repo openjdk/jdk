@@ -126,7 +126,6 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
   for (int i = 0; i < _source_objs->length(); ++i) {
     oop obj = _source_objs->at(i);
     _dfs_order_table->put(cast_from_oop<void*>(obj), -1);
-    _dfs_order_table->maybe_grow();
   }
 
   int dfs_order = 0;
@@ -151,7 +150,6 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
         continue;
       }
       _dfs_order_table->put(cast_from_oop<void*>(obj), ++dfs_order);
-      _dfs_order_table->maybe_grow();
 
       FollowOopIterateClosure cl(&dfs_stack, obj, AOTReferenceObjSupport::check_if_ref_obj(obj));
       obj->oop_iterate(&cl);
@@ -261,7 +259,6 @@ void AOTStreamedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, m
 
     OopHandle handle(Universe::vm_global(), src_obj);
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, handle);
-    _buffer_offset_to_source_obj_table->maybe_grow();
 
     int dfs_order = i + 1;
     _dfs_to_archive_object_table[dfs_order] = buffer_offset;

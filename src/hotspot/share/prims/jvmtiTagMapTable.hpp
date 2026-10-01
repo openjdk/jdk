@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,9 @@ typedef
 ResizeableHashTable <JvmtiTagMapKey, jlong,
                               AnyObj::C_HEAP, mtServiceability,
                               JvmtiTagMapKey::get_hash,
-                              JvmtiTagMapKey::equals> ResizableHT;
+                              JvmtiTagMapKey::equals,
+                              5, /*load-factor*/
+                              true /*large table */> ResizableHT;
 
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapKeyClosure {
