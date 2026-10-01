@@ -27,6 +27,7 @@
  * @summary Verify should_clean_previous_versions when run with retransformation and CDS
  * @requires vm.jvmti
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.opt.final.ClassUnloading
  * @requires vm.flagless
  * @library /test/lib

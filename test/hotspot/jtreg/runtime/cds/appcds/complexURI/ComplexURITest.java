@@ -28,6 +28,7 @@
  * @bug 8339460
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
+ * @requires vm.cds.default.archive.available
  * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile mypackage/Main.java mypackage/Another.java

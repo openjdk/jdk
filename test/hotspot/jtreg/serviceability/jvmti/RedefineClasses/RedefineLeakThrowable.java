@@ -50,6 +50,7 @@
  * @requires vm.jvmti
  * @requires vm.flagless
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          java.compiler
