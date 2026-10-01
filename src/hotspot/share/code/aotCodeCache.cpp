@@ -2112,9 +2112,9 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry); // used by arraycopy stubs
   ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_pre_oop_entry); // used by arraycopy stubs
   ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_post_entry); // used by arraycopy stubs
+#endif
   ADD_EXTERNAL_ADDRESS(BarrierSetNMethod::nmethod_stub_entry_barrier); // used by method_entry_barrier
 
-#endif
 #if INCLUDE_SHENANDOAHGC
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre_narrow);
@@ -2337,7 +2337,7 @@ const char* AOTCodeAddressTable::add_C_string(const char* str) {
   // Add one new string.
   // Passed in string can be freed and used space become inaccessible.
   // Duplicate string for future compare.
-  const char* dup = os::strdup(str);
+  const char* dup = os::strdup(str, mtCode);
   _C_strings->at_put_grow(_C_strings_count, dup);
   _C_strings_id->at_put_grow(_C_strings_count, -1);
   log_trace(aot, codecache, stringtable)("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);

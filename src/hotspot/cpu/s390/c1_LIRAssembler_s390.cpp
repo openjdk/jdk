@@ -3172,7 +3172,7 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   move(op->not_equal_result(), op->result_opr());
   __ branch_optimized(Assembler::bcondAlways, L_end);
 
-  // We've returned from the stub. Z_R2 (stub's _scratch_reg) contains 0x0 IFF the two
+  // We've returned from the stub. Z_R2 (stub's _stub_result_reg) contains 0x0 IFF the two
   // operands are not substitutable.
   __ bind(*op->stub()->continuation());
   __ compare64_and_branch(Z_R2, (intptr_t)0, Assembler::bcondEqual, L_oops_not_equal);

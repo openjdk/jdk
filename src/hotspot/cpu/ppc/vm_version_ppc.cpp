@@ -192,7 +192,7 @@ void VM_Version::initialize() {
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
   if (Verbose) {
     print_features();
   }
@@ -249,10 +249,8 @@ void VM_Version::initialize() {
     }
   }
 
-  // TODO: Provide implementation.
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
   }
 
   // The AES intrinsic stubs require AES instruction support.
@@ -350,14 +348,6 @@ void VM_Version::initialize() {
     warning("ValueTypeReturnedAsFields is not supported on this CPU");
     FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
-
-  // TODO: Valhalla optimizations
-  if (FLAG_IS_DEFAULT(UseArrayFlattening                 )) FLAG_SET_DEFAULT(UseArrayFlattening                 , false);
-  if (FLAG_IS_DEFAULT(UseFieldFlattening                 )) FLAG_SET_DEFAULT(UseFieldFlattening                 , false);
-  if (FLAG_IS_DEFAULT(UseNullFreeNonAtomicValueFlattening)) FLAG_SET_DEFAULT(UseNullFreeNonAtomicValueFlattening, false);
-  if (FLAG_IS_DEFAULT(UseNullableAtomicValueFlattening   )) FLAG_SET_DEFAULT(UseNullableAtomicValueFlattening   , false);
-  if (FLAG_IS_DEFAULT(UseNullFreeAtomicValueFlattening   )) FLAG_SET_DEFAULT(UseNullFreeAtomicValueFlattening   , false);
-  if (FLAG_IS_DEFAULT(UseNullableNonAtomicValueFlattening)) FLAG_SET_DEFAULT(UseNullableNonAtomicValueFlattening, false);
 
   check_virtualizations();
 }

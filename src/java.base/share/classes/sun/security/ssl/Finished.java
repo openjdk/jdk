@@ -433,6 +433,7 @@ final class Finished {
                 if (!chc.sslContext.isDTLS()) {
                     chc.conContext.finishHandshake();
                 }
+                recordEvent(chc);
             }
 
             // The handshake message has been delivered.
@@ -499,6 +500,7 @@ final class Finished {
                 if (!shc.sslContext.isDTLS()) {
                     shc.conContext.finishHandshake();
                 }
+                recordEvent(shc);
             }
 
             // The handshake message has been delivered.
@@ -562,12 +564,12 @@ final class Finished {
 
                 // handshake context cleanup.
                 chc.handshakeFinished = true;
-                recordEvent(chc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!chc.sslContext.isDTLS()) {
                     chc.conContext.finishHandshake();
                 }
+                recordEvent(chc);
             } else {
                 chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
@@ -623,12 +625,12 @@ final class Finished {
 
                 // handshake context cleanup.
                 shc.handshakeFinished = true;
-                recordEvent(shc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!shc.sslContext.isDTLS()) {
                     shc.conContext.finishHandshake();
                 }
+                recordEvent(shc);
             } else {
                 shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);

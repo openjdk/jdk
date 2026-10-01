@@ -175,6 +175,9 @@ bool JavaThread::is_vthread_mounted() const {
 }
 
 const ContinuationEntry* JavaThread::vthread_continuation() const {
+  assert(is_handshake_safe_for(Thread::current()) ||
+         SafepointSynchronize::is_at_safepoint()
+         JVMTI_ONLY(|| JavaThread::current()->is_vthread_transition_disabler()), "");
   for (ContinuationEntry* c = last_continuation(); c != nullptr; c = c->parent()) {
     if (c->is_virtual_thread())
       return c;
