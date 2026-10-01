@@ -4726,27 +4726,27 @@ void PhaseIdealLoop::eliminate_redundant_iv_check(IdealLoopTree* loop) {
 
   // Only fold when the zero trip guard proves the condition for the first iteration:
   //   iv = init;
+  //   <predicates>
   //   if (init < limit) { // zero trip guard installed by C2
-  //       <predicates>
   //       do {
   //           if (iv >= limit) trap(); // we are going to fold this check
   //           iv++;
   //       } while (iv < limit);
   //   }
-  Predicates predicates(cl->skip_strip_mined()->in(LoopNode::EntryControl));
-  Node* ctrl = predicates.entry();
-  if (!ctrl->is_IfProj()) {
-    return;
+  // The guard is not always the nearest test above the loop, so walk up the dominators.
+  bool guarded = false;
+  Node* ctrl = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+  while (!guarded && ctrl != nullptr && (ctrl->is_IfProj() || ctrl->is_If())) {
+    Node* guard_bol = ctrl->is_IfProj() ? ctrl->in(0)->in(1) : nullptr;
+    if (guard_bol != nullptr && guard_bol->is_Bool() && guard_bol->in(1)->Opcode() == Op_CmpI) {
+      Node* guard_cmp = guard_bol->in(1);
+      BoolTest test = ctrl->is_IfFalse() ? BoolTest(guard_bol->as_Bool()->_test.negate()) : guard_bol->as_Bool()->_test;
+      guarded = (guard_cmp->in(1) == init && guard_cmp->in(2) == limit && test._test == loop_test) ||
+                (guard_cmp->in(2) == init && guard_cmp->in(1) == limit && test.commute() == loop_test);
+    }
+    ctrl = idom(ctrl);
   }
-  Node* guard_bol = ctrl->in(0)->in(1);
-  if (!guard_bol->is_Bool() || guard_bol->in(1)->Opcode() != Op_CmpI) {
-    return;
-  }
-  Node* guard_cmp = guard_bol->in(1);
-  BoolTest test = ctrl->is_IfFalse() ? BoolTest(guard_bol->as_Bool()->_test.negate()) : guard_bol->as_Bool()->_test;
-  bool cmp_init_limit = guard_cmp->in(1) == init && guard_cmp->in(2) == limit && test._test == loop_test;
-  bool cmp_limit_init = guard_cmp->in(2) == init && guard_cmp->in(1) == limit && test.commute() == loop_test;
-  if (!cmp_init_limit && !cmp_limit_init) {
+  if (!guarded) {
     return;
   }
 
