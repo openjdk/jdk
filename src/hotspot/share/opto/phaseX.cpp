@@ -1204,17 +1204,6 @@ void PhaseIterGVN::optimize(bool deep) {
   // the compilation must never get here failed, with the graph already flushed.
   assert(!C->failing_internal(), "should not run IGVN on a failed compilation");
 
-#ifndef PRODUCT
-  if (StressDeepIGVNRevisit != nullptr) {
-    if (strcmp(StressDeepIGVNRevisit, "all") == 0) {
-      deep = true;
-    }
-    else if (strcmp(StressDeepIGVNRevisit, "random") == 0) {
-      deep = (C->stress().random() % 2) == 0;
-    }
-  }
-#endif
-
   bool deep_revisit_converged = false;
   DEBUG_ONLY(_num_processed = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
@@ -1228,6 +1217,16 @@ void PhaseIterGVN::optimize(bool deep) {
   if (drain_worklist()) {
     return;
   }
+
+#ifndef PRODUCT
+  if (StressDeepIGVNRevisit != nullptr) {
+    if (strcmp(StressDeepIGVNRevisit, "all") == 0) {
+      deep = true;
+    } else if (strcmp(StressDeepIGVNRevisit, "random") == 0) {
+      deep = (C->stress().random() % 2) == 0;
+    }
+  }
+#endif
 
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit_converged = deep_revisit();
