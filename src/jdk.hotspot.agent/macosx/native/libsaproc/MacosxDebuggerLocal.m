@@ -41,9 +41,9 @@
 #import <errno.h>
 #import <sys/types.h>
 #import <sys/ptrace.h>
-#import <sys/signal.h>    // kill, SIGCONT
-#import <sys/proc.h>      // SIDL, SRUN, SSLEEP, SSTOP, SZOMB
-#import <sys/proc_info.h> // proc_bsdinfo, PROC_PIDTBSDINFO
+#import <sys/signal.h>
+#import <sys/proc.h>
+#import <sys/proc_info.h>
 #include "libproc_impl.h"
 
 // The SA libproc.h uses the same _LIBPROC_H_ guard as the macOS SDK's
