@@ -184,11 +184,6 @@ public:
   }
 };
 
-inline void ShenandoahRootProcessor::flush_satb() {
-  ShenandoahSATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
-  satb_mq_set.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
-}
-
 // The rationale for selecting the roots to scan is as follows:
 //   a. With unload_classes = true, we only want to scan the actual strong roots from the
 //      code cache. This will allow us to identify the dead classes, unload them, *and*
@@ -214,9 +209,6 @@ void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
   }
 
   _vm_roots.oops_do<T>(oops, worker_id);
-
-  // Root work might have added new pointers to worker SATB queues. Flush them right away.
-  flush_satb();
 }
 
 template <typename IsAlive, typename KeepAlive>
@@ -232,9 +224,6 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
   // Process heavy-weight/fully parallel roots the last
   _code_roots.nmethods_do(&nmethods_cl, worker_id);
   _thread_roots.oops_do(keep_alive, nullptr, worker_id);
-
-  // Root work might have added new pointers to worker SATB queues. Flush them right away.
-  flush_satb();
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP

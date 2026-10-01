@@ -216,15 +216,13 @@ void ShenandoahConcurrentMark::concurrent_mark() {
       break;
     }
 
-    size_t before = qset.completed_buffers_num();
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_satb_flush, true);
       Handshake::execute(&flush_satb);
     }
-    size_t after = qset.completed_buffers_num();
 
-    if (before == after) {
-      // No more retries needed, break out.
+    if (qset.completed_buffers_num() == 0) {
+      // Nothing new in SATB, break out.
       break;
     }
   }

@@ -144,7 +144,6 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
 
   ShenandoahSATBBufferClosure<GENERATION> drain_satb(q, old_q);
   SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
-  SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(Thread::current());
 
   while (true) {
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
@@ -154,7 +153,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
 
-    size_t work = 0;
+    uint work = 0;
     for (uint i = 0; i < stride; i++) {
       if (q->pop(t) ||
           queues->steal(worker_id, t)) {
@@ -163,12 +162,6 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       } else {
         break;
       }
-    }
-
-    if (work == 0) {
-      // Metadata scan might have added some extra work in worker SATB queues.
-      satb_mq_set.flush_queue(queue);
-      work = satb_mq_set.completed_buffers_num();
     }
 
     if (work == 0) {

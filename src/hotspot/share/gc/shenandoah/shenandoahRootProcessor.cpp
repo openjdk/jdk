@@ -162,9 +162,6 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
   // Process heavy-weight/fully parallel roots the last
   ShenandoahConcurrentMarkThreadClosure thr_cl(oops);
   _java_threads.threads_do(&thr_cl, worker_id);
-
-  // Root work might have added new pointers to worker SATB queues. Flush them right away.
-  flush_satb();
 }
 
 void ShenandoahConcurrentRootScanner::update_tlab_stats() {
@@ -212,9 +209,6 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   // Process heavy-weight/fully parallel roots the last
   _code_roots.nmethods_do(&code_blob_cl, worker_id);
   _thread_roots.oops_do(oops, nullptr, worker_id);
-
-  // Root work might have added new pointers to worker SATB queues. Flush them right away.
-  flush_satb();
 }
 
 ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner(uint n_workers) :
@@ -264,7 +258,4 @@ void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
   // Process heavy-weight/fully parallel roots the last
   _code_roots.nmethods_do(&code, 0);
   _thread_roots.threads_do(&tc_cl, 0);
-
-  // Root work might have added new pointers to worker SATB queues. Flush them right away.
-  flush_satb();
 }

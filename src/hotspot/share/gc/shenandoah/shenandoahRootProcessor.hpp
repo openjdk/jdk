@@ -141,7 +141,6 @@ public:
   ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase);
 
   ShenandoahHeap* heap() const { return _heap; }
-  inline void flush_satb();
 };
 
 // STW root scanner
