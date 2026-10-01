@@ -971,7 +971,7 @@ static integer_t get_task_suspend_count(task_t task) {
     return info.suspend_count;
   } else {
     print_warning("get_task_suspend_count: task_info failed: %s (%d)\n",
-                mach_error_string(kr), kr);
+                  mach_error_string(kr), kr);
     return -1;
   }
 }
@@ -997,11 +997,11 @@ static uint32_t get_process_bsd_status(pid_t pid) {
     return info.pbi_status;
   } else if (size == 0) {
     print_warning("get_process_bsd_status: proc_pidinfo(%d) failed: %s\n",
-                (int)pid, strerror(errno));
+                  (int)pid, strerror(errno));
     return 0;
   } else {
     print_warning("get_process_bsd_status: proc_pidinfo(%d) returned %d, expected %zu\n",
-                (int)pid, size, sizeof(info));
+                  (int)pid, size, sizeof(info));
     return 0;
   }
 }
@@ -1300,12 +1300,12 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
     k_res = task_resume(gTask);
     if (k_res != KERN_SUCCESS) {
       print_warning("detach: task_resume failed: '%s' (%d)\n",
-                  mach_error_string(k_res), k_res);
+                    mach_error_string(k_res), k_res);
     }
     integer_t count2 = get_task_suspend_count(gTask);
     if (count2 > 0) {
       print_warning("detach: task_resume suspend count not 0: old(%d) new(%d)\n",
-                  count, count2);
+                    count, count2);
     }
   }
 
