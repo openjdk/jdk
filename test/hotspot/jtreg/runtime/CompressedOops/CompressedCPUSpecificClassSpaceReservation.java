@@ -53,7 +53,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
     // +SimulateFullAddressSpace (VM won't be able to reserve heap). Therefore we exclude the test for windows
     // for now.
 
-    private static void do_test(boolean CDS) throws IOException {
+    private static void do_test(boolean CDS, boolean COH) throws IOException {
         // We start the VM with -XX:+SimulateFullAdressSpace, which means the JVM will go through all motions
         // of reserving the cds+class space, but never succeed. That means we see every single allocation attempt.
         // We start with -Xlog options enabled. The expected output goes like this:
@@ -62,22 +62,31 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 "-Xshare:" + (CDS ? "on" : "off"),
                 "-Xmx128m",
                 "-XX:CompressedClassSpaceSize=128m",
-                "-XX:-UseCompactObjectHeaders",
+                "-XX:" + (COH ? "+" : "-") +"UseCompactObjectHeaders",
                 "-Xlog:metaspace*", "-Xlog:metaspace+map=trace", "-Xlog:os+map=trace",
                 "-XX:+SimulateFullAddressSpace", // So that no resevation attempt will succeed
                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        final String tryReserveForUnscaled = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
+        final boolean doNotOptimizeForZeroBased = CDS || COH;
         final String tryReserveBelow4G = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
-        final String tryReserveForZeroBased = "reserve_between (range [0x0000000100000000-0x0000000800000000)";
+        // Encoding range for unscaled:
+        // +COH: [0] to [1 << 22]
+        // -COH: [0] to [1 << 32]
+        final String tryReserveForUnscaled = "reserve_between (range [" +
+                (COH ? "0x0000000000000000-0x0000000000400000" : "0x0000000000000000-0x0000000100000000") + ")";
+        // Encoding range for zero based:
+        // +COH: [1 << 22] to [1 << 22 + 10]
+        // -COH: [0] to [1 << 32 + 3]
+        final String tryReserveForZeroBased = "reserve_between (range [" +
+                (COH ? "0x0000000000400000-0x0000000100000000" : "0x0000000100000000-0x0000000800000000") + ")";
         // Failing zero-based allocation, platforms will often attempt allocation suitable for a disjointed move:
         // an insert of the base address bits into the register holding the nK. That requires the base to not
         // intersect with nK bits (for simplicity, we always assume nK range of 32bits).
         // The upper limit of this reservation attempt is platform-dependent, though.
         final String tryReserveFor16bitMoveIntoQ3Regex = "reserve_between.*0x0000000100000000-0x\\d{8}00000000.*alignment 0x100000000";
         if (Platform.isAArch64()) {
-            if (CDS) {
+            if (doNotOptimizeForZeroBased) {
                 output.shouldNotContain(tryReserveForUnscaled);
             } else {
                 output.shouldContain(tryReserveForUnscaled);
@@ -85,7 +94,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldContain("Trying to reserve at an EOR-compatible address");
             output.shouldNotContain(tryReserveForZeroBased);
         } else if (Platform.isPPC()) {
-            if (CDS) {
+            if (doNotOptimizeForZeroBased) {
                 output.shouldNotContain(tryReserveForUnscaled);
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
@@ -101,7 +110,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldContain("reserve_between (range [0x0000100000000000-0xffffffffffffffff)");
         } else if (Platform.isS390x()) {
             output.shouldContain(tryReserveBelow4G); // unconditionally
-            if (CDS) {
+            if (doNotOptimizeForZeroBased) {
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
                 output.shouldContain(tryReserveForZeroBased);
@@ -109,7 +118,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldMatch(tryReserveFor16bitMoveIntoQ3Regex);
         } else if (Platform.isX64()) {
             output.shouldContain(tryReserveBelow4G);
-            if (CDS) {
+            if (doNotOptimizeForZeroBased) {
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
                 output.shouldContain(tryReserveForZeroBased);
@@ -146,9 +155,13 @@ public class CompressedCPUSpecificClassSpaceReservation {
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Test with CDS");
-        do_test(true);
-        System.out.println("Test without CDS");
-        do_test(false);
+        System.out.println("Test with CDS / without COH");
+        do_test(true, false);
+        System.out.println("Test without CDS / without COH");
+        do_test(false, false);
+        System.out.println("Test with CDS / with COH");
+        do_test(true, true);
+        System.out.println("Test without CDS / with COH");
+        do_test(false, true);
     }
 }
