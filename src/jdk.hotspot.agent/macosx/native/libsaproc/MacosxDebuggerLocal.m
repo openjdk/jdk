@@ -39,18 +39,13 @@
 #import <dlfcn.h>
 #import <limits.h>
 #import <errno.h>
+#import <libproc.h>
 #import <sys/types.h>
 #import <sys/ptrace.h>
 #import <sys/signal.h>
 #import <sys/proc.h>
 #import <sys/proc_info.h>
 #include "libproc_impl.h"
-
-// The SA libproc.h uses the same _LIBPROC_H_ guard as the macOS SDK's
-// libproc.h, so we can't include it. We need to declare proc_pidinfo()
-// here instead of picking it up from sys/libproc.h.
-extern int proc_pidinfo(int pid, int flavor, uint64_t arg,
-                        void *buffer, int buffersize);
 
 #if defined(amd64)
 #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
