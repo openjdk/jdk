@@ -146,17 +146,17 @@ public class TestDigest {
         String algorithm2 = System.getProperty("algorithm2", "");
         int msgSize = Integer.getInteger("msgSize", 1024);
         int offset = Integer.getInteger("offset", 0)  % ALIGN;
-        int warmupIters = 20000;
+        int iters = 20000;
 
-        testDigest(provider, algorithm, msgSize, offset, warmupIters);
+        testDigest(provider, algorithm, msgSize, offset, iters);
 
         if (algorithm2.equals("") == false) {
-            testDigest(provider, algorithm2, msgSize, offset, warmupIters);
+            testDigest(provider, algorithm2, msgSize, offset, iters);
         }
     }
 
     public static void testDigest(String provider, String algorithm, int msgSize,
-                        int offset, int warmupIters) throws Exception {
+                        int offset, int iters) throws Exception {
         System.out.println("provider = " + provider);
         System.out.println("algorithm = " + algorithm);
         System.out.println("msgSize = " + msgSize + " bytes");
@@ -177,8 +177,8 @@ public class TestDigest {
             digest.update(data, offset, msgSize);
             expectedHash = digest.digest();
 
-            /* warm up */
-            for (int i = 0; i < warmupIters; i++) {
+            /* trigger compilation to use intrinsics */
+            for (int i = 0; i < iters; i++) {
                 digest.reset();
                 digest.update(data, offset, msgSize);
                 hash = digest.digest();
