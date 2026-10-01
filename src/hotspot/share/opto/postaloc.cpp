@@ -704,6 +704,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
             OptoReg::Name inreg = lrgs(lidx).reg();
             uint in_ideal_reg = in->ideal_reg();
             int in_regs = RegMask::num_registers(in_ideal_reg, lrgs(lidx));
+            // This node kills in_regs. Make sure its current value is not reused.
             assert(in_regs == 1 || RegMask::is_vector(in_ideal_reg) || lrgs(lidx).mask().member(OptoReg::add(inreg,-1)), "");
             for (int l = 0; l < in_regs; l++) {
               regnd.map(OptoReg::add(inreg,-l), nullptr);

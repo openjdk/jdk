@@ -122,15 +122,14 @@ bool InstructForm::sets_result() const {
 bool InstructForm::needs_projections(ArchDesc& AD) {
   _components.reset();
   for( Component *comp; (comp = _components.iter()) != nullptr; ) {
-    if (comp->isa(Component::KILL) && !comp->isa(Component::USE)) {
+    if (comp->isa(Component::KILL)) {
       Form *form = (Form*)AD.globalNames()[comp->_type];
       assert(form, "component type must be a defined form");
       OperandForm *op = form->is_operand();
       assert(op, "Support additional KILLS for base operands");
-      assert(op->is_bound_register(), "");
-      // if (is_noninput_operand(_components.operand_position(comp->_name))) {
-      return true;
-        // }
+      if (op->is_bound_register()) {
+        return true;
+      }
     }
   }
   return false;
@@ -140,13 +139,13 @@ bool InstructForm::kills_some_inputs(ArchDesc& AD) {
   _components.reset();
   for( Component *comp; (comp = _components.iter()) != nullptr; ) {
     if (comp->isa(Component::KILL) && comp->isa(Component::USE)) {
-      // Form *form = (Form*)AD.globalNames()[comp->_type];
-      // assert(form, "component type must be a defined form");
-      // OperandForm *op = form->is_operand();
-      // assert(op, "Support additional KILLS for base operands");
-      // if (!is_noninput_operand(_components.operand_position(comp->_name))) {
-      return true;
-        // }
+      Form *form = (Form*)AD.globalNames()[comp->_type];
+      assert(form, "component type must be a defined form");
+      OperandForm *op = form->is_operand();
+      assert(op, "Support additional KILLS for base operands");
+      if (!op->is_bound_register()) {
+        return true;
+      }
     }
   }
   return false;

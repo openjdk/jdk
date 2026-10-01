@@ -283,7 +283,9 @@ public:
   // output have choices - but they must use the same choice.
   virtual uint two_adr( ) const { return 0; }
 
+  // Does this node's implementation cause some of its inputs to be killed?
   virtual bool has_killed_inputs() const { return false; }
+  // If that's the case, is input i killed?
   virtual bool is_killed_input(uint i) const {
     ShouldNotReachHere();
     return false;

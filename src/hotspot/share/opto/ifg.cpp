@@ -28,9 +28,12 @@
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
 #include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
+#include "opto/coalesce.hpp"
 #include "opto/indexSet.hpp"
 #include "opto/machnode.hpp"
+#include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
 
 #include <fenv.h>
@@ -889,6 +892,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
       Node* n = block->get_node(location);
       uint lid = _lrg_map.live_range_id(n);
 
+      // A killed input that's live after the node that kills it must be spilled
       if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
         const MachNode* mach = n->as_Mach();
         for (uint i = 1; i < n->req(); i++) {
@@ -954,6 +958,9 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           return 0;
         }
       }
+      // A killed input could be a MachSpillCopy that was inserted because the input was live after the current node.
+      // A MachSpillCopy doesn't interfere with its input in general but for killed inputs we must make sure it does
+      // otherwise the MachSpillCopy and its input could coalesce.
       if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
         const MachNode* mach = n->as_Mach();
         for (uint i = 1; i < n->req(); i++) {

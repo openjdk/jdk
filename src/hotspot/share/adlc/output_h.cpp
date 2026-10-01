@@ -1697,10 +1697,10 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Starting point for inputs matcher wants.
     // Use MachNode::oper_input_base() for nodes based on MachNode class
     // if the base == 1.
-    if ( instr->oper_input_base(_globalNames) != 1 ||
-         strcmp("MachNode", instr->mach_base_class(_globalNames)) != 0 ) {
+    if (instr->oper_input_base(_globalNames) != 1 ||
+         strcmp("MachNode", instr->mach_base_class(_globalNames)) != 0) {
       fprintf(fp,"  virtual uint           oper_input_base() const { return %d; }\n",
-             instr->oper_input_base(_globalNames));
+              instr->oper_input_base(_globalNames));
     }
 
     // Make the constructor and following methods 'public:'
@@ -1803,12 +1803,12 @@ void ArchDesc::declareClasses(FILE *fp) {
     fprintf(fp, " }\n");
 
     // Virtual methods which are only generated to override base class
-    if( instr->expands() || instr->needs_projections(*this) ||
+    if (instr->expands() || instr->needs_projections(*this) ||
         instr->has_temps() ||
         instr->is_mach_constant() ||
         instr->needs_constant_base() ||
         (instr->_matrule != nullptr &&
-         instr->num_opnds() != instr->num_unique_opnds()) ) {
+         instr->num_opnds() != instr->num_unique_opnds())) {
       fprintf(fp,"  virtual MachNode      *Expand(State *state, Node_List &proj_list, Node* mem);\n");
     }
 
