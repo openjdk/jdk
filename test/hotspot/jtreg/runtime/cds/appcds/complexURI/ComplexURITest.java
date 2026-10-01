@@ -1,4 +1,4 @@
-/* Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024 JetBrains s.r.o.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
