@@ -389,7 +389,7 @@ public class TestPrintContextual {
             rs.enable("Trace").withoutStackTrace();
             rs.enable("jdk.ExecutionSample").withoutStackTrace().withPeriod(java.time.Duration.ofMillis(1));
             rs.onEvent("jdk.ExecutionSample", event -> {
-                if (event.getThread("sampledThread").getJavaThreadId() == target.threadId()) {
+                if (event.getThread().getJavaThreadId() == target.threadId()) {
                     sampleReceived.countDown();
                 }
             });
