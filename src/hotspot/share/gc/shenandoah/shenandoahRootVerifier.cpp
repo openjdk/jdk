@@ -45,16 +45,18 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
+#include "utilities/spinYield.hpp"
 
-Atomic<int> ShenandoahGCStateResetter::_active_count;
+Atomic<int> ShenandoahGCStateResetter::_arrived_count;
+Atomic<bool> ShenandoahGCStateResetter::_active;
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
   _saved_gc_state(_heap->gc_state()),
   _saved_gc_state_changed(_heap->_gc_state_changed) {
 
-  if (_active_count.fetch_then_add(1, memory_order_relaxed) == 0) {
-    // First resetter deactivates barriers. Nested resetters are no-ops.
+  if (_arrived_count.fetch_then_add(1, memory_order_relaxed) == 0) {
+    // First resetter deactivates barriers. Nested/concurrent resetters are no-ops.
 
     // Need to complete GC processing before deactivating the barriers.
     // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
@@ -74,17 +76,27 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
     // rather than thread local values (which we are _not_ changing here).
     _heap->_gc_state.clear();
     _heap->_gc_state_changed = true;
+
+    // Resetter is now active.
+    _active.store_relaxed(true);
+  } else {
+    // Lost the race, wait until winning thread completes the activation.
+    SpinYield sp;
+    while (!_active.load_relaxed()) {
+      sp.wait();
+    }
   }
 
   assert(_heap->gc_state() == 0, "Should have been cleared");
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
-  if (_active_count.add_then_fetch(-1, memory_order_relaxed) > 0) {
+  if (_arrived_count.add_then_fetch(-1, memory_order_relaxed) > 0) {
     // Nested, nothing to do.
     return;
   }
 
+  _active.store_relaxed(false);
   _heap->_gc_state.set(_saved_gc_state);
   _heap->_gc_state_changed = _saved_gc_state_changed;
   assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
