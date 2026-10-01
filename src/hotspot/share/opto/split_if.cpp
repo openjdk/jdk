@@ -159,6 +159,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   // Phi doesn't work as split if needs the adr_type of an SCMemProj to create its Phi which Proj::addr_type() gets from
   // its input: that works as long as the input of the SCMemProj is n but not if it's a Phi. Prepare the Phi for the
   // SCMemProj here before n is cloned.
+  assert(!n->has_out_with(Op_Proj), "we can't split nodes with Proj uses other than SCMemProj");
   Node* mem_proj = n->find_out_with(Op_SCMemProj);
   Node* phi_mem_proj = nullptr;
   if (mem_proj != nullptr) {
