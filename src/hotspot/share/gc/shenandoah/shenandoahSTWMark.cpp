@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
-#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"

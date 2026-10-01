@@ -31,6 +31,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/markBitMap.hpp"
+#include "gc/shared/verifyOption.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
@@ -90,7 +91,6 @@ class ShenandoahWorkerThreads;
 class ShenandoahYoungGeneration;
 class Thread;
 class ThreadClosure;
-enum class VerifyOption : uint;
 class VMStructs;
 class WorkerThreads;
 

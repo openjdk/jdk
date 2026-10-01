@@ -28,8 +28,10 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "unittest.hpp"
+#include "utilities/ostream.hpp"
 
 #include <cstdarg>
+#include <iostream>
 
 // These tests will all be skipped (unless Shenandoah becomes the default
 // collector). To execute these tests, you must enable Shenandoah, which

@@ -46,4 +46,4 @@ public:
   static void report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner& planner);
 };
 
-#endif
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHTRACE_HPP

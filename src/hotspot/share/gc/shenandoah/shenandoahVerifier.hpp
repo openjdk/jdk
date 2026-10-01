@@ -26,6 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 
+#include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -37,7 +38,6 @@ class MarkBitMap;
 class ShenandoahGeneration;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
-enum class VerifyOption : uint;
 
 #ifdef _WINDOWS
 #pragma warning( disable : 4522 )

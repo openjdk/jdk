@@ -24,7 +24,6 @@
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
-#include "gc/shared/taskqueue.inline.hpp" // do not reorder
 #include "memory/padded.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/debug.hpp"
