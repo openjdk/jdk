@@ -29,7 +29,7 @@ import java.lang.invoke.VarHandle;
 
 /*
  * @test VarHandleCAEOfEmptyClass
- * @summary VarHandle compareAndSet can handle empty value classes
+ * @summary VarHandle compareAndExchange can handle empty value classes
  * @bug 8391651
  * @enablePreview
  * @compile VarHandleCAEOfEmptyClass.java
@@ -46,7 +46,7 @@ public class VarHandleCAEOfEmptyClass {
     public static void main(String[] args) throws ReflectiveOperationException {
         VarHandle handle = MethodHandles.lookup().findVarHandle(Holder.class, "value", Empty.class);
         if (handle.compareAndExchange(new Holder(), null, new Empty()) != null) {
-            throw new RuntimeException("compareAndSet failed");
+            throw new RuntimeException("compareAndExchange failed");
         }
     }
 }
