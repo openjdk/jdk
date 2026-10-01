@@ -26,6 +26,7 @@ package jdk.tools.jlink.internal;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ModuleLink;
+import jdk.internal.module.Checks;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -206,7 +207,7 @@ public final class ImageResourcesTree {
             // We've collected information for all "packages", including the root
             // (empty) package and anything under "META-INF". However, these should
             // not have entries in the "/packages" directory.
-            packageToModules.keySet().removeIf(p -> p.isEmpty() || p.equals("META-INF") || p.startsWith("META-INF."));
+            packageToModules.keySet().removeIf(p -> !Checks.isPackageName(p));
             packageToModules.forEach((pkgName, modLinks) -> {
                 // Merge multiple links for the same module.
                 List<ModuleLink> pkgModules = modLinks.stream()
