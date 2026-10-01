@@ -49,11 +49,11 @@
 
 Atomic<int> ShenandoahGCStateResetter::_arrived_count;
 Atomic<bool> ShenandoahGCStateResetter::_active;
+char ShenandoahGCStateResetter::_saved_gc_state;
+bool ShenandoahGCStateResetter::_saved_gc_state_changed;
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
-  _heap(ShenandoahHeap::heap()),
-  _saved_gc_state(_heap->gc_state()),
-  _saved_gc_state_changed(_heap->_gc_state_changed) {
+  _heap(ShenandoahHeap::heap()) {
 
   if (_arrived_count.fetch_then_add(1, memory_order_relaxed) == 0) {
     // First resetter deactivates barriers. Nested/concurrent resetters are no-ops.
@@ -72,17 +72,19 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
     ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
     satb_qs.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
 
-    // Indicate that state has changed so that verifier threads will use this value,
-    // rather than thread local values (which we are _not_ changing here).
+    // Flip the state to zero. Indicate that state has changed so that verifier threads
+    // will use this value, rather than thread local values (which we are _not_ changing here).
+    _saved_gc_state = _heap->gc_state();
+    _saved_gc_state_changed = _heap->_gc_state_changed;
     _heap->_gc_state.clear();
     _heap->_gc_state_changed = true;
 
     // Resetter is now active.
-    _active.store_relaxed(true);
+    _active.release_store_fence(true);
   } else {
     // Lost the race, wait until winning thread completes the activation.
     SpinYield sp;
-    while (!_active.load_relaxed()) {
+    while (!_active.load_acquire()) {
       sp.wait();
     }
   }
@@ -96,10 +98,10 @@ ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
     return;
   }
 
-  _active.store_relaxed(false);
   _heap->_gc_state.set(_saved_gc_state);
   _heap->_gc_state_changed = _saved_gc_state_changed;
-  assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
+
+  _active.release_store_fence(false);
 }
 
 void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {

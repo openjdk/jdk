@@ -34,10 +34,10 @@ class ShenandoahGCStateResetter : public StackObj {
 private:
   static Atomic<int> _arrived_count;
   static Atomic<bool> _active;
+  static char _saved_gc_state;
+  static bool _saved_gc_state_changed;
 
   ShenandoahHeap* const _heap;
-  const char _saved_gc_state;
-  const bool _saved_gc_state_changed;
 
 public:
   ShenandoahGCStateResetter();
