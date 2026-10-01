@@ -44,7 +44,14 @@ class VM_Version : public Abstract_VM_Version {
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
   enum VendorId {
-    RIVOS = 0x6cf, // JEDEC: 0x4f, Bank: 14
+    RIVOS   = 0x6cf, // JEDEC: 0x4f, Bank: 14
+    XUANTIE = 0x5b7, // JEDEC: 0x37, Bank: 12
+  };
+
+  enum XuantieArchitectureId : uint64_t {
+    C925_MARCHID = 0x80000000091c1600ULL,
+    C930_MARCHID = 0x8000000009201600ULL,
+    C950_MARCHID = 0x8000000009241600ULL,
   };
 
   class RVExtFeatures;
@@ -244,12 +251,14 @@ class VM_Version : public Abstract_VM_Version {
                                                                                                           \
   /* Atomic compare-and-swap (CAS) instructions */                                                        \
   decl(Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                                  \
+  /* Byte and Halfword Atomic Memory instructions */                                                      \
+  decl(Zabha       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZabha))                                  \
   /* Zba Address generation instructions */                                                               \
   decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
   /* Zbb Basic bit-manipulation */                                                                        \
   decl(Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                    \
   /* Zbc Carry-less multiplication */                                                                     \
-  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbc))                                    \
   /* Bitmanip instructions for Cryptography */                                                            \
   decl(Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                   \
   /* Zbs Single-bit instructions */                                                                       \
@@ -347,7 +356,7 @@ private:
     };
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
-    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
 
     // Number of 8-byte elements in _features_bitmap.
     constexpr static int element_count() {
@@ -499,6 +508,7 @@ private:
   static void vendor_features();
   // Vendors specific features
   static void rivos_features();
+  static void xuantie_features();
 
   // Determine vector length iff ext_V/UseRVV
   static uint32_t cpu_vector_length();

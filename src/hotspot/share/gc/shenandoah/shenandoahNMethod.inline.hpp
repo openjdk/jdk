@@ -47,7 +47,9 @@ bool ShenandoahNMethod::is_unregistered() const {
   return _unregistered;
 }
 
-void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
+void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations, ICacheInvalidationContext* icic) {
+  assert(!fix_relocations || icic != nullptr, "Need ICIC if fixing relocations");
+
   for (int c = 0; c < _oops_count; c ++) {
     oops->do_oop(_oops[c]);
   }
@@ -60,14 +62,21 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
     }
   }
 
-  if (fix_relocations && _has_non_immed_oops) {
-    _nm->fix_oop_relocations();
+  if (fix_relocations) {
+    // If we have immediate oops, tracked by us, it is likely we have modified them.
+    // Declare this fact to ICIC.
+    if (_oops_count > 0) {
+      icic->set_has_modified_code();
+    }
+    if (_has_non_immed_oops) {
+      _nm->fix_oop_relocations(icic);
+    }
   }
 }
 
-void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
+void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data, ICacheInvalidationContext* icic) {
   ShenandoahEvacuateUpdateMetadataClosure cl;
-  nmethod_data->oops_do(&cl, true /*fix relocation*/);
+  nmethod_data->oops_do(&cl, /* fix_relocations = */ true, icic);
 }
 
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {

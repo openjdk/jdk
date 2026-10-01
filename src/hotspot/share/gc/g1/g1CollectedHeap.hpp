@@ -1037,8 +1037,8 @@ public:
 
   bool last_gc_was_periodic() { return _gc_lastcause == GCCause::_g1_periodic_collection; }
 
-  void remove_from_old_gen_sets(const uint old_regions_removed,
-                                const uint humongous_regions_removed);
+  void remove_from_old_gen_sets(const uint num_old_regions_removed,
+                                const uint num_humongous_regions_removed);
   void prepend_to_freelist(G1FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
 
@@ -1234,9 +1234,9 @@ public:
 
   inline uint target_num_eden_regions() const;
   uint num_eden_regions() const { return _eden.num_regions(); }
-  uint num_eden_regions(uint node_index) const { return _eden.regions_on_node(node_index); }
+  uint num_eden_regions(uint node_index) const { return _eden.num_regions_on_node(node_index); }
   uint num_survivor_regions() const { return _survivor.num_regions(); }
-  uint num_survivor_regions(uint node_index) const { return _survivor.regions_on_node(node_index); }
+  uint num_survivor_regions(uint node_index) const { return _survivor.num_regions_on_node(node_index); }
   size_t eden_regions_used_bytes() const { return _eden.used_bytes(); }
   size_t survivor_regions_used_bytes() const { return _survivor.used_bytes(); }
   uint num_young_regions() const { return _eden.num_regions() + _survivor.num_regions(); }

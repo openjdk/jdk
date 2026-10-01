@@ -152,6 +152,10 @@ abstract public class CDSAppTester {
         }
     }
 
+    public class TerminateWorkflowException extends RuntimeException {
+        private static final long serialVersionUID = 1L; // Value is not important.
+    }
+
     public boolean isDumping(RunMode runMode) {
         if (isStaticWorkflow()) {
             return runMode == RunMode.DUMP_STATIC;
@@ -188,7 +192,9 @@ abstract public class CDSAppTester {
     abstract public String[] appCommandLine(RunMode runMode);
 
     // optional
-    public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {}
+    // @throws TerminateWorkflowException if the AOT workflow should be terminated (any remaining AOT
+    // steps in the AOT workflow will be skipped).
+    public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception, TerminateWorkflowException {}
 
     private Workflow workflow;
     private boolean checkExitValue = true;
@@ -240,9 +246,6 @@ abstract public class CDSAppTester {
         for (String logFile : logFiles) {
             listOutputFile(logFile);
         }
-        if (checkExitValue) {
-            output.shouldHaveExitValue(0);
-        }
         output.shouldNotContain(CDSTestUtils.MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
         CDSTestUtils.checkCommonExecExceptions(output);
         return output;
@@ -251,6 +254,9 @@ abstract public class CDSAppTester {
     private OutputAnalyzer executeAndCheck(String[] cmdLine, RunMode runMode, String... logFiles) throws Exception {
         OutputAnalyzer output = execute(cmdLine, runMode, logFiles);
         checkExecution(output, runMode);
+        if (checkExitValue) {
+            output.shouldHaveExitValue(0);
+        }
         return output;
     }
 
@@ -649,13 +655,18 @@ abstract public class CDSAppTester {
     public void runAOTWorkflow(String... args) throws Exception {
         this.workflow = Workflow.AOT;
 
-        if (isOneStepTraining(args)) {
-            createAOTCacheOneStep();
-        } else {
-            recordAOTConfiguration();
-            createAOTCache();
+        try {
+            if (isOneStepTraining(args)) {
+                createAOTCacheOneStep();
+            } else {
+                recordAOTConfiguration();
+                createAOTCache();
+            }
+            productionRun();
+        } catch (TerminateWorkflowException e) {
+            System.out.println("AOT workflow is terminated by tester's checkExecution() method");
+            e.printStackTrace(System.out);
         }
-        productionRun();
     }
 
     public void runAOTRetrainWorkflow(boolean runAppInBaseCache, String... args) throws Exception {

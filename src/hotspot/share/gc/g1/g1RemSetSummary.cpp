@@ -251,7 +251,7 @@ public:
 
     // Accumulate card set details for regions that are assigned to single-region
     // card set groups. G1HeapRegionRemSet::mem_size() includes the size of the code roots
-    if (hrrs->has_card_set_group() && hrrs->card_set_group()->length() == 1) {
+    if (hrrs->has_card_set_group() && hrrs->card_set_group()->num_regions() == 1) {
       G1CardSet* card_set = hrrs->card_set_group()->card_set();
 
       rs_mem_sz = hrrs->mem_size() + card_set->mem_size();
@@ -294,7 +294,7 @@ public:
   void accumulate_stats_for_group(G1CardSetGroup* group, G1PerRegionTypeRemSetCounters* gen_counter) {
     // If the group has only a single region, then stats were accumulated
     // during region iteration. Skip these.
-    if (group->length() > 1) {
+    if (group->num_regions() > 1) {
       G1CardSet* card_set = group->card_set();
 
       size_t rs_mem_sz = card_set->mem_size();
@@ -321,9 +321,9 @@ public:
       accumulate_stats_for_group(group, &_old);
     }
     // Skip gathering statistics for retained regions. Just verify that they have
-    // the expected amount of regions.
+    // the expected number of regions.
     for (G1CardSetGroup* group : candidates->retained_groups()) {
-      assert(group->length() == 1, "must be");
+      assert(group->num_regions() == 1, "must be");
     }
   }
 
@@ -360,7 +360,7 @@ public:
       G1CardSetGroup* card_set_group = max_card_set_mem_sz_group();
       out->print_cr("    Card Set Group with largest card set = %u:(%u regions), "
                     "size = %zu occupied = %zu",
-                    card_set_group->group_id(), card_set_group->length(),
+                    card_set_group->group_id(), card_set_group->num_regions(),
                     card_set_group->card_set()->mem_size(),
                     card_set_group->card_set()->occupied());
     }

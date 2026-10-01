@@ -60,8 +60,8 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                            T exchange_value,
                                                            atomic_memory_order order) const {
-  STATIC_ASSERT(byte_size == sizeof(T));
-  STATIC_ASSERT(byte_size == 4 || byte_size == 8);
+  static_assert(byte_size == sizeof(T));
+  static_assert(byte_size == 4 || byte_size == 8);
   T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELEASE);
   FULL_MEM_BARRIER;
   return res;
@@ -73,7 +73,7 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
                                                               T compare_value,
                                                               T exchange_value,
                                                               atomic_memory_order order) const {
-  STATIC_ASSERT(byte_size == sizeof(T));
+  static_assert(byte_size == sizeof(T));
   if (order == memory_order_conservative) {
     T value = compare_value;
     FULL_MEM_BARRIER;
@@ -82,7 +82,7 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
     FULL_MEM_BARRIER;
     return value;
   } else {
-    STATIC_ASSERT (
+    static_assert(
        // The modes that align with C++11 are intended to
        // follow the same semantics.
        memory_order_relaxed == __ATOMIC_RELAXED &&

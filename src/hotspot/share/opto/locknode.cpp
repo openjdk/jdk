@@ -223,7 +223,7 @@ void Parse::do_monitor_enter() {
 
   {
     // Synchronizing on a value type is not allowed
-    BuildCutout unless(this, value_type_test(obj, /* is_inline = */ false), PROB_MAX);
+    BuildCutout unless(this, value_type_test(obj, /* is_value = */ false), PROB_MAX);
     uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_none);
   }
 
