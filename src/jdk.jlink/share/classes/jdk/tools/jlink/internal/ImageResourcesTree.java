@@ -205,8 +205,9 @@ public final class ImageResourcesTree {
             }
 
             // We've collected information for all "packages", including the root
-            // (empty) package and anything under "META-INF". However, these should
-            // not have entries in the "/packages" directory.
+            // (empty) package and anything under non-package resource directories
+            // (e.g. "META-INF"). However, these should not have entries in the
+            // "/packages" directory.
             packageToModules.keySet().removeIf(p -> !Checks.isPackageName(p));
             packageToModules.forEach((pkgName, modLinks) -> {
                 // Merge multiple links for the same module.
