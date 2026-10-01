@@ -48,15 +48,18 @@
 #include "utilities/spinYield.hpp"
 
 Atomic<int> ShenandoahGCStateResetter::_arrived_count;
-Atomic<bool> ShenandoahGCStateResetter::_active;
+Atomic<bool> ShenandoahGCStateResetter::_is_gc_state_reset;
 char ShenandoahGCStateResetter::_saved_gc_state;
 bool ShenandoahGCStateResetter::_saved_gc_state_changed;
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()) {
 
-  if (_arrived_count.fetch_then_add(1, memory_order_relaxed) == 0) {
+  if (_arrived_count.fetch_then_add(1) == 0) {
     // First resetter deactivates barriers. Nested/concurrent resetters are no-ops.
+    // Capture the GC state right away.
+    _saved_gc_state = _heap->gc_state();
+    _saved_gc_state_changed = _heap->_gc_state_changed;
 
     // Need to complete GC processing before deactivating the barriers.
     // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
@@ -74,17 +77,15 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
 
     // Flip the state to zero. Indicate that state has changed so that verifier threads
     // will use this value, rather than thread local values (which we are _not_ changing here).
-    _saved_gc_state = _heap->gc_state();
-    _saved_gc_state_changed = _heap->_gc_state_changed;
     _heap->_gc_state.clear();
     _heap->_gc_state_changed = true;
 
-    // Resetter is now active.
-    _active.release_store_fence(true);
+    // GC state is now reset.
+    _is_gc_state_reset.release_store_fence(true);
   } else {
-    // Lost the race, wait until winning thread completes the activation.
+    // Lost the race, wait until winning thread completes the reset.
     SpinYield sp;
-    while (!_active.load_acquire()) {
+    while (!_is_gc_state_reset.load_acquire()) {
       sp.wait();
     }
   }
@@ -93,15 +94,16 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
-  if (_arrived_count.add_then_fetch(-1, memory_order_relaxed) > 0) {
+  if (_arrived_count.add_then_fetch(-1) > 0) {
     // Nested, nothing to do.
     return;
   }
 
   _heap->_gc_state.set(_saved_gc_state);
   _heap->_gc_state_changed = _saved_gc_state_changed;
+  assert(_heap->gc_state() == _saved_gc_state, "Should have been restored");
 
-  _active.release_store_fence(false);
+  _is_gc_state_reset.release_store_fence(false);
 }
 
 void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {
