@@ -53,6 +53,7 @@
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
 #include "memory/universe.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -3654,17 +3655,27 @@ Method* AOTCodeReader::read_method() {
 
 bool AOTCodeCache::write_klass(Klass* klass) {
   uint array_dim = 0;
-  uint array_flags = ArrayProperties::Invalid().value();
+  uint array_desc = ArrayProperties::Invalid().value();
   bool can_write = true;
   if (klass->is_objArray_klass()) {
     // We must check klass and its bottom_klass.
     can_write = AOTCacheAccess::can_generate_aot_code(klass);
-    array_dim = ObjArrayKlass::cast(klass)->dimension();
+    ObjArrayKlass* oak = ObjArrayKlass::cast(klass);
+    array_dim = oak->dimension();
     if (klass->is_refined_objArray_klass()) {
       // Preserve property of object array
-      array_flags = ObjArrayKlass::cast(klass)->properties().value();
+      Klass::KlassKind kind;
+      LayoutKind layout;
+      if (klass->is_flatArray_klass()) {
+        kind = Klass::FlatArrayKlassKind;
+        layout = FlatArrayKlass::cast(klass)->layout_kind();
+      } else {
+        kind = Klass::RefArrayKlassKind;
+        layout = LayoutKind::REFERENCE;
+      }
+      array_desc = ArrayDescription(kind, oak->properties(), layout).value();
     }
-    klass = ObjArrayKlass::cast(klass)->bottom_klass(); // overwrites klass
+    klass = oak->bottom_klass(); // overwrites klass
   }
   uint init_state = 0;
   if (klass->is_instance_klass()) {
@@ -3689,7 +3700,7 @@ bool AOTCodeCache::write_klass(Klass* klass) {
       return false;
     }
     // Record array's properties
-    if (!write_int(array_flags)) {
+    if (!write_int(array_desc)) {
       return false;
     }
     narrowPtr klass_narrow_ptr = AOTCacheAccess::to_narrow_ptr(klass);
@@ -3715,8 +3726,8 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
   if (!read_int((int*)&state)) {
     return nullptr;
   }
-  uint array_flags;
-  if (!read_int((int*)&array_flags)) {
+  uint array_desc;
+  if (!read_int((int*)&array_desc)) {
     return nullptr;
   }
   narrowPtr klass_narrow_ptr;
@@ -3755,9 +3766,9 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
   if (array_dim > 0) {
     assert(k->is_instance_klass() || k->is_typeArray_klass(), "sanity check");
     Klass* ak = k->array_klass_or_null(array_dim);
-    ArrayProperties props(array_flags);
-    if (ak != nullptr && props.is_valid()) {
-      ak = ObjArrayKlass::cast(ak)->klass_with_properties(ArrayProperties(array_flags), thread);
+    if (ak != nullptr && array_desc != ArrayProperties::Invalid().value()) {
+      ArrayDescription adesc = ArrayDescription::from_value(array_desc);
+      ak = ObjArrayKlass::cast(ak)->klass_from_description(adesc, thread);
     }
     if (ak == nullptr) {
       set_lookup_failed("Lookup failed for array klass");

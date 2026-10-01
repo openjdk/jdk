@@ -2074,13 +2074,13 @@ void nmethod::create_reloc_immediates_list(JavaThread* thread, GrowableArray<Han
       if (reloc->oop_is_immediate()) {
         oop dest = reloc->oop_value();
         Handle h(thread, dest);
-        oop_list.append(h);
+        oop_list.append_if_missing(h);
       }
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
       if (reloc->metadata_is_immediate()) {
         Metadata* m = reloc->metadata_value();
-        metadata_list.append(m);
+        metadata_list.append_if_missing(m);
       }
     }
   }
