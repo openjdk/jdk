@@ -65,7 +65,7 @@ public final class TimeZoneNameUtility {
      * Explicit DST offset map
      */
     private static final LazyConstant<Map<String, String>> explicitDstOffsets =
-        LazyConstant.of(TimeZoneNameUtility::initExplictDstOffsets);
+        LazyConstant.of(TimeZoneNameUtility::initExplicitDstOffsets);
 
     /**
      * get time zone localized strings. Enumerate all keys.
@@ -186,7 +186,8 @@ public final class TimeZoneNameUtility {
     public static String explicitDstOffset(String tzid) {
         return explicitDstOffsets.get().get(canonicalTZID(tzid).orElse(tzid));
     }
-    private static Map<String, String> initExplictDstOffsets() {
+
+    private static Map<String, String> initExplicitDstOffsets() {
         return LocaleProviderAdapter.forType(CLDR) instanceof CLDRLocaleProviderAdapter ca ?
             ca.getLocaleResources(Locale.ROOT).getExplicitDstOffsets() :
             Map.of();
