@@ -44,6 +44,13 @@ java/lang/invoke/DumpMethodHandleInternals.java                 0000000 generic-
 # this message will not be printed in the production run.
 java/util/Locale/UseOldISOCodesTest.java                       0000000 generic-all
 
+# These vector tests hit MemLimit during C2 compilation on Aarch64
+jdk/incubator/vector/Vector128ConversionTests.java     8337281 linux-aarch64,macosx-aarch64
+jdk/incubator/vector/Vector256ConversionTests.java     8337281 linux-aarch64,macosx-aarch64
+jdk/incubator/vector/Vector512ConversionTests.java     8337281 linux-aarch64,macosx-aarch64
+jdk/incubator/vector/Vector64ConversionTests.java#id0  8337281 linux-aarch64,macosx-aarch64
+jdk/incubator/vector/VectorMaxConversionTests.java#id0 8337281 linux-aarch64,macosx-aarch64
+
 #############################################################################
 
 # Preview project specific failures go here at the end of the file.
