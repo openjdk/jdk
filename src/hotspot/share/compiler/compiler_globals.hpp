@@ -395,6 +395,11 @@
           "Must be a power of 2.")                                          \
           constraint(ProfileCaptureRatioConstraintFunc, AtParse)            \
           range(1, 65536)                                                   \
+                                                                            \
+  product(bool, AggressiveProfileReduction, false, EXPERIMENTAL,            \
+          "Reduce profile memory traffic to a mimimum. Comes at some cost " \
+          "to throughput in uncontended cases.")                            \
+                                                                            \
 
 // end of COMPILER_FLAGS
 

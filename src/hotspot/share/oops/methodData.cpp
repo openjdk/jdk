@@ -1556,7 +1556,8 @@ void MethodData::print_data_on(outputStream* st) const {
     parameters_type_data()->print_data_on(st);
   }
   for ( ; is_valid(data); data = next_data(data)) {
-    st->print("%d", dp_to_di(data->dp()));
+    address x = (address)data->dp();
+    st->print("[0x%016lx] %d ", (uintptr_t)x, dp_to_di(data->dp()));
     st->fill_to(6);
     data->print_data_on(st, this);
   }
@@ -1584,7 +1585,8 @@ void MethodData::print_data_on(outputStream* st) const {
     default:
       fatal("unexpected tag %d", dp->tag());
     }
-    st->print("%d", dp_to_di(data->dp()));
+    address x = (address)data->dp();
+    st->print("[0x%016lx] %d ", (uintptr_t)x, dp_to_di(data->dp()));
     st->fill_to(6);
     data->print_data_on(st);
     if (dp >= end) return;

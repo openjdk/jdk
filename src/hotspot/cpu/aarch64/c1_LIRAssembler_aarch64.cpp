@@ -1328,18 +1328,42 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
+static jlong get_counter(address md_base_address, int offset, BasicType type) {
+  address counter_addr = md_base_address + offset;
+  switch (type) {
+    case T_INT:
+      return *(jint*)counter_addr; break;
+    case T_LONG:
+      return *(jlong*)counter_addr; break;
+    default:
+      ShouldNotReachHere();
+      return 0; // unreachable
+  }
+}
+
 static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src,
                           address md_base_address) {
   intptr_t counter_contents = (ProfileCaptureRatio > 1
-                                && md_base_address != nullptr
-                                && dst.getMode() == Address::base_plus_offset)
-    ? *(intptr_t*)(md_base_address + dst.offset())
-    : 0;
+                               && md_base_address != nullptr
+                               && dst.getMode() == Address::base_plus_offset)
+    ? get_counter(md_base_address, dst.offset(), T_LONG) : 0;
 
   auto as_C1_masm = C1_masm->as_C1_MacroAssembler();
   auto masm = [=]() { return as_C1_masm; };
   __ block_comment("increment_mdo {");
-  if (counter_contents != 0) {
+  if (ProfileCaptureRatio == 1) {
+    __ increment(dst, src);
+  } else if (counter_contents != 0 || AggressiveProfileReduction) {
+    if (AggressiveProfileReduction) {
+      // Make sure the counter in memory is nonzero
+      Label nonzero;
+      __ block_comment("AggressiveProfileReduction");
+      __ ldr(rscratch1, dst);
+      __ cbz(rscratch1, nonzero);
+      __ mov(rscratch1, 1);
+      __ str(rscratch1, dst);
+      __ bind(nonzero);
+    }
     Label nope;
     int ratio_shift = exact_log2(ProfileCaptureRatio);
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
@@ -2786,14 +2810,28 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
       ? new LIR_Address(md_reg, md_offset_opr->as_constant_ptr()->as_jint(), dest_opr->type())
       : new LIR_Address(md_reg, md_offset_opr, dest_opr->type());
 
-  uintptr_t counter_contents = md_offset_opr->is_constant()
-    ? *(uintptr_t*)(md_base_address + md_offset_opr->as_constant_ptr()->as_jint())
-    : 1;
+  constexpr jlong UNKNOWN = min_jlong;
+  jlong counter_contents = UNKNOWN;
+  if (md_offset_opr->is_constant()) {
+    counter_contents
+      = get_counter(md_base_address, md_offset_opr->as_constant_ptr()->as_jint(),
+                    dest_opr->type());
+  }
 
-  // Insert a runtime check iff the counter is zero at the time we
-  // generate this code.
-  const bool do_decimate = counter_contents != 0 && ProfileCaptureRatio > 1;
+  switch (counter_contents) {
+    case 0:
+      __ block_comment("counter is zero");  break;
+    case UNKNOWN:
+      __ block_comment("counter is unknown");  break;
+    default:
+      __ block_comment("counter is set");  break;
+  }
 
+  // AggressiveProfileReduction controls what we do when a profile
+  // counter's value is unknown at code generation time. With
+  // AggressiveProfileReduction true we insert a runtime check 
+  const bool do_decimate = ProfileCaptureRatio > 1
+    && (AggressiveProfileReduction || counter_contents > 0);
   ProfileStub *counter_stub = do_decimate ? new ProfileStub() : nullptr;
 
   auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
@@ -2883,20 +2921,20 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     }
   };
 
-  if (!md_offset_opr->is_constant() && do_decimate) {
-    // Make sure the counter in memory is nonzero
-    const2reg(md_opr, md_reg, lir_patch_none, nullptr);
-    mem2reg(counter_address_opr, dest_opr,
-                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
-    Label nope;
-    __ cbnz(dest, nope);
-    __ mov(dest, step->as_constant_ptr()->as_jint_bits());
-    reg2mem(dest_opr, counter_address_opr,
-            dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
-    __ bind(nope);
-  }
-
   if (do_decimate) {
+    if (counter_contents == UNKNOWN) {
+      // Make sure the counter in memory is nonzero
+      const2reg(md_opr, md_reg, lir_patch_none, nullptr);
+      mem2reg(counter_address_opr, dest_opr,
+              dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+      Label nope;
+      __ cbnz(dest, nope);
+      __ mov(dest, step->as_constant_ptr()->as_jint_bits());
+      reg2mem(dest_opr, counter_address_opr,
+              dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+      __ bind(nope);
+    }
+
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
     __ cbz(rscratch1, *counter_stub->entry());
     __ bind(*counter_stub->continuation());
