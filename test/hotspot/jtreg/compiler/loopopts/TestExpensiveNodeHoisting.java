@@ -40,6 +40,11 @@
  * above the loop, one that cannot move at all, and two identical ones that are
  * commoned by process_expensive_nodes(). A wrong placement either fails loop
  * verification on a debug VM or changes the result.
+ *
+ * Compile::cleanup_expensive_nodes() clears the control input of a Sqrt that
+ * is the only one in its compilation, which leaves nothing to hoist. The
+ * methods with two Sqrts on different inputs keep their control inputs, so
+ * they go through hoist_expensive_node().
  */
 
 package compiler.loopopts;
@@ -85,6 +90,46 @@ public class TestExpensiveNodeHoisting {
         return sum;
     }
 
+    // Two loop invariant Sqrts, both hoisted above the loop.
+    static double invariantTwo(double x, double y) {
+        double sum = 0;
+        for (int i = 0; i < 100; i++) {
+            sum += Math.sqrt(x) + Math.sqrt(y);
+        }
+        return sum;
+    }
+
+    // Two Sqrts depending on the loop body, both stay where they are.
+    static double variantTwo(double[] a, double y) {
+        double sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            sum += Math.sqrt(a[i]) + Math.sqrt(a[i] + y);
+        }
+        return sum;
+    }
+
+    // One Sqrt is hoisted above the loop, the other one stays.
+    static double mixed(double[] a, double x) {
+        double sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            sum += Math.sqrt(x) + Math.sqrt(a[i]);
+        }
+        return sum;
+    }
+
+    // A different Sqrt in each branch, neither can move above the If.
+    static double bothBranchesTwo(double x, double y) {
+        double sum = 0;
+        for (int i = 0; i < 100; i++) {
+            if ((i & 1) == 0) {
+                sum += Math.sqrt(x);
+            } else {
+                sum -= Math.sqrt(y);
+            }
+        }
+        return sum;
+    }
+
     static void check(double result, double expected) {
         if (result != expected) {
             throw new RuntimeException("expected " + expected + " but got " + result);
@@ -95,11 +140,19 @@ public class TestExpensiveNodeHoisting {
         double invariantResult = invariant(2.0);
         double variantResult = variant(VALUES);
         double bothBranchesResult = bothBranches(2.0);
+        double invariantTwoResult = invariantTwo(2.0, 3.0);
+        double variantTwoResult = variantTwo(VALUES, 3.0);
+        double mixedResult = mixed(VALUES, 2.0);
+        double bothBranchesTwoResult = bothBranchesTwo(2.0, 3.0);
 
         for (int i = 0; i < 20_000; i++) {
             check(invariant(2.0), invariantResult);
             check(variant(VALUES), variantResult);
             check(bothBranches(2.0), bothBranchesResult);
+            check(invariantTwo(2.0, 3.0), invariantTwoResult);
+            check(variantTwo(VALUES, 3.0), variantTwoResult);
+            check(mixed(VALUES, 2.0), mixedResult);
+            check(bothBranchesTwo(2.0, 3.0), bothBranchesTwoResult);
         }
     }
 }

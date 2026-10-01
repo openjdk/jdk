@@ -93,34 +93,35 @@ bool LoopNode::is_valid_counted_loop(BasicType bt) const {
   return false;
 }
 
-// Keep the deepest of 'early' and the controls of n's inputs, starting at input 'start'.
-Node *PhaseIdealLoop::deepest_ctrl_of_inputs(Node *n, Node *early, uint start) {
+// Return the deepest control in the dominator tree considering 'early' and controls of n's inputs starting
+// at index 'start'. This is n's earliest legal control.
+Node* PhaseIdealLoop::deepest_ctrl_of_inputs(Node* n, Node* early, uint start) {
   assert(early != nullptr, "no starting control");
-  uint e_d = dom_depth(early);
+  uint early_depth = dom_depth(early);
   for (uint i = start; i < n->req(); i++) {
-    Node *cin = get_ctrl(n->in(i));
-    assert(cin != nullptr, "");
-    uint c_d = dom_depth(cin);
-    if (c_d > e_d) {
+    Node* input_ctrl = get_ctrl(n->in(i));
+    assert(input_ctrl != nullptr, "");
+    uint input_ctrl_depth = dom_depth(input_ctrl);
+    if (input_ctrl_depth > early_depth) {
       // Keep deepest found
-      early = cin;
-      e_d = c_d;
-    } else if (c_d == e_d && early != cin) {
+      early = input_ctrl;
+      early_depth = input_ctrl_depth;
+    } else if (input_ctrl_depth == early_depth && early != input_ctrl) {
       // Same depth but not equal, we want the deeper one.
-      Node *n1 = early;
-      Node *n2 = cin;
-      while (1) {
+      Node* n1 = early;
+      Node* n2 = input_ctrl;
+      while (true) {
         n1 = idom(n1);
         n2 = idom(n2);
-        if (n1 == cin || dom_depth(n2) < c_d) {
+        if (n1 == input_ctrl || dom_depth(n2) < input_ctrl_depth) {
           break; // we keep early
         }
-        if (n2 == early || dom_depth(n1) < c_d) {
-          early = cin; // cin is deeper
+        if (n2 == early || dom_depth(n1) < input_ctrl_depth) {
+          early = input_ctrl; // input_ctrl is deeper
           break;
         }
       }
-      e_d = dom_depth(early); // reset depth register cache
+      early_depth = dom_depth(early); // reset depth register cache
     }
   }
 
@@ -128,12 +129,11 @@ Node *PhaseIdealLoop::deepest_ctrl_of_inputs(Node *n, Node *early, uint start) {
   return early;
 }
 
-//------------------------------get_early_ctrl---------------------------------
 // Compute earliest legal control
-Node *PhaseIdealLoop::get_early_ctrl(Node *n) {
+Node* PhaseIdealLoop::get_early_ctrl(Node* n) {
   assert(!n->is_Phi() && !n->is_CFG(), "this code only handles data nodes");
   uint i;
-  Node *early;
+  Node* early;
   if (n->in(0) != nullptr) {
     early = n->in(0);
     if (!early->is_CFG()) { // Might be a non-CFG multi-def
@@ -149,15 +149,14 @@ Node *PhaseIdealLoop::get_early_ctrl(Node *n) {
 }
 
 // Earliest control ignoring the control input of n: the highest an expensive node may go.
-Node *PhaseIdealLoop::get_early_ctrl_of_data_inputs(Node *n) {
+Node* PhaseIdealLoop::get_early_ctrl_of_data_inputs(Node* n) {
   assert(!n->is_Phi() && !n->is_CFG(), "only handles data nodes");
   assert(n->in(0) != nullptr, "only for nodes with a control input");
   return deepest_ctrl_of_inputs(n, get_ctrl(n->in(1)), 2);
 }
 
-//------------------------------get_early_ctrl_for_expensive---------------------------------
 // How far up the dominator tree an expensive node may move.
-Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
+Node* PhaseIdealLoop::get_early_ctrl_for_expensive(Node* n, Node* earliest) {
   assert(n->in(0) && n->is_expensive(), "expensive node with control input here");
   assert(OptimizeExpensiveOps, "optimization off?");
 
@@ -215,7 +214,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
         // parent control.
         int nb_ctl_proj = 0;
         for (DUIterator_Fast imax, i = parent_ctl->fast_outs(imax); i < imax; i++) {
-          Node *p = parent_ctl->fast_out(i);
+          Node* p = parent_ctl->fast_out(i);
           if (p->is_Proj() && p->is_CFG()) {
             nb_ctl_proj++;
             if (nb_ctl_proj > 1) {
@@ -245,30 +244,33 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
 
 // Move an expensive node up the dominator tree as high as legal while still beneficial.
 // Modifies the graph, so it must run before the early control of n is computed.
-void PhaseIdealLoop::hoist_expensive_node(Node *n) {
+void PhaseIdealLoop::hoist_expensive_node(Node* n) {
   assert(n->is_expensive(), "only for expensive nodes");
   assert(!_verify_only && _verify_me == nullptr, "must not modify the graph when verifying");
-  Node *ctl = get_early_ctrl_for_expensive(n, get_early_ctrl_of_data_inputs(n));
+  Node* ctl = get_early_ctrl_for_expensive(n, get_early_ctrl_of_data_inputs(n));
   if (ctl != n->in(0)) {
     _igvn.replace_input_of(n, 0, ctl);
     _igvn.hash_insert(n);
   }
 }
 
-
-//------------------------------set_early_ctrl---------------------------------
 // Set earliest legal control
 void PhaseIdealLoop::set_early_ctrl(Node* n, bool update_body) {
   if (n->is_expensive() && !_verify_only && _verify_me == nullptr) {
-    // Changes in(0), so it has to run before get_early_ctrl().
+    // The early control of an expensive node is bounded by its control input, so it is hoisted
+    // here, right before that early control is computed and recorded. Hoisting later, for
+    // instance in a separate pass after build_loop_early(), would leave n and the nodes that
+    // depend on it with an outdated early control that would have to be recomputed. Hoisting
+    // is skipped when verifying, which must not modify the graph and sees the control inputs
+    // that the hoisting already set.
     hoist_expensive_node(n);
   }
 
-  Node *early = get_early_ctrl(n);
+  Node* early = get_early_ctrl(n);
 
   // Record earliest legal location
   set_ctrl(n, early);
-  IdealLoopTree *loop = get_loop(early);
+  IdealLoopTree* loop = get_loop(early);
   if (update_body && loop->_child == nullptr) {
     loop->_body.push(n);
   }
@@ -5197,7 +5199,7 @@ bool PhaseIdealLoop::process_expensive_nodes() {
         Node* parent_c1 = c1;
         Node* parent_c2 = c2;
 
-        // The call to get_early_ctrl_for_expensive() moves the
+        // The call to hoist_expensive_node() moves the
         // expensive nodes up but stops at loops that are in a if
         // branch. See whether we can exit the loop and move above the
         // If.
