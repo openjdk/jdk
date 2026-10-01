@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "runtime/icache.hpp"
@@ -40,6 +41,8 @@
 #include "utilities/macros.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
+  assert(!ShenandoahGCStateResetter::is_active(), "Resetter must not be active");
+
   if (!is_armed(nm)) {
     // Some other thread got here first and healed the oops.
     // No need to continue. We only need to sync up the changes done by others.
