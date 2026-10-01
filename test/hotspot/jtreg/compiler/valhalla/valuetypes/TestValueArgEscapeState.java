@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /**
  * @test
- * @bug 8392283
+ * @bug 8392283 8392949
  * @summary Test that C2 and bytecode escape analysis (BCEA) together compute
  *          the correct escape state for fields of value objects when these are
  *          passed as scalar arguments.
@@ -54,14 +54,21 @@ class TestValueArgEscapeState {
         int val;
     }
 
+    @ForceCompileClassInitializer
     static value class ValueHolder {
+        // Just to force initialization before the tests are compiled.
+        static final ValueHolder DEFAULT = new ValueHolder(null);
         IdentityObject obj;
         ValueHolder(IdentityObject obj) {
             this.obj = obj;
         }
     }
 
+    @ForceCompileClassInitializer
     static value class ValueHolderHolder {
+        // Just to force initialization before the tests are compiled.
+        static final ValueHolderHolder DEFAULT =
+            new ValueHolderHolder(ValueHolder.DEFAULT);
         ValueHolder holder;
         ValueHolderHolder(ValueHolder holder) {
             this.holder = holder;
