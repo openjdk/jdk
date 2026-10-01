@@ -415,9 +415,16 @@ public final class ListFormat extends Format {
      * @since 28
      */
     public Collector<CharSequence, ?, String> toCollector() {
-        return Collectors.collectingAndThen(
-                Collectors.mapping(String::valueOf, Collectors.toList()),
-                input -> input.isEmpty() ? "" : format(input));
+        return Collectors.collectingAndThen(Collectors.toList(),
+                input -> {
+                    if (input.isEmpty()) {
+                        return "";
+                    }
+                    Object[] array = input.toArray();
+                    StringBuf result = generateMessageFormat(array).format(
+                            array, StringBufFactory.of(), DontCareFieldPosition.INSTANCE);
+                    return result.toString();
+                });
     }
 
     @Override
