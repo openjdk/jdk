@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 
-#include "oops/markWord.hpp"
 #include "oops/oop.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -59,10 +58,7 @@ public:
    */
   static inline bool is_self_forwarded(oop obj);
 
-  /* Tries to atomically update forwardee in $holder object to $update.
-   * Assumes $holder points at itself.
-   * Asserts $holder is in from-space.
-   * Asserts $update is in to-space.
+  /* Tries to atomically update forwardee in $obj object to $update.
    *
    * Returns the new object 'update' upon success, or
    * the new forwardee that a competing thread installed. If another
@@ -70,10 +66,7 @@ public:
    */
   static inline oop try_forward_to(oop obj, oop update);
 
-  /* Tries to atomically self-forward obj. Used by the evacuation path
-   * when the copy allocation fails: the failing thread installs the
-   * self-forwarded bit so other threads see the object as "already
-   * handled" and return it unchanged.
+  /* Tries to atomically update forwardee in $obj object to self-forward.
    *
    * Returns nullptr on success (we installed the self-forward), or
    * the winning forwardee when another thread raced ahead (either a
@@ -82,10 +75,11 @@ public:
    */
   static inline oop try_forward_to_self(oop obj);
 
-  static inline oop try_update_forwardee(oop obj, oop update, bool is_self);
-
   static inline size_t size(oop obj);
   static inline Klass* klass(oop obj);
+
+private:
+  static inline oop try_update_forwardee(oop obj, oop update, bool is_self);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

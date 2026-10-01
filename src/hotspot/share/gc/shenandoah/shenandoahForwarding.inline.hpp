@@ -77,36 +77,36 @@ inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
 inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update, bool is_self) {
   assert(is_self == (update == nullptr), "Pre-condition");
 
+  // Optimistic: do the single check if object is already forwarded, then figure out
+  // what kind of forwarding that is.
   markWord old_mark = obj->mark();
-  if (old_mark.is_marked()) {
-    return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
-  }
-  if (old_mark.is_self_forwarded()) {
-    // Another thread lost the evacuation race; the object stays put.
+  if (old_mark.is_forwarded()) {
+    if (old_mark.is_marked()) {
+      return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
+    }
+    assert(old_mark.is_self_forwarded(),
+           "Self-forwarding is the only remaining case: old=" INTPTR_FORMAT,
+           old_mark.value());
     return obj;
   }
 
+  // Attempt to install and return on success.
   markWord new_mark = is_self ? old_mark.set_self_forwarded() : markWord::encode_pointer_as_mark(update);
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {
     return is_self ? nullptr : update;
   }
-  // Concurrent writers on a cset object's mark can only be other evacuation
-  // threads installing forwarding (real or self). Mutators cannot reach the
-  // mark of a not-yet-forwarded cset object: LRB + stack watermark barriers
-  // redirect all reference uses before a Java-level operation can touch it.
-  // So the only possible failure modes are a regular forwardee (marked) or
-  // a self-forward (possibly with mutator lock/hash mods layered on top
-  // after the self-forward became visible).
+
+  // Lost the update race. What is currently in mark word must be either the real
+  // forwarding or a self-forward, nothing else.
   if (prev_mark.is_marked()) {
     return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
   }
   assert(prev_mark.is_self_forwarded(),
-         "concurrent writers on cset objects must install forwarding: prev=" INTPTR_FORMAT,
+         "Self-forwarding is the only remaining case: prev=" INTPTR_FORMAT,
          prev_mark.value());
   return obj;
 }
-
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {
   if (UseCompactObjectHeaders) {
