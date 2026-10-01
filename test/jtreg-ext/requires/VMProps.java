@@ -409,7 +409,8 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS default archive classes.jsa exists in the JDK to be tested.
      */
     protected String vmCDSDefaultArchiveAvailable() {
-        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes.jsa");
+        String subdir = Platform.isWindows() ? "bin" : "lib";
+        Path archive = Paths.get(System.getProperty("java.home"), subdir, "server", "classes.jsa");
         return "" + ("true".equals(vmCDS()) && Files.exists(archive));
     }
 
@@ -419,7 +420,8 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS archive classes_nocoops.jsa exists in the JDK to be tested.
      */
     protected String vmCDSNocoopsArchiveAvailable() {
-        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes_nocoops.jsa");
+        String subdir = Platform.isWindows() ? "bin" : "lib";
+        Path archive = Paths.get(System.getProperty("java.home"), subdir, "server", "classes_nocoops.jsa");
         return "" + ("true".equals(vmCDS()) && Files.exists(archive));
     }
 
@@ -429,7 +431,8 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS archive classes_nocoh.jsa exists in the JDK to be tested.
      */
     protected String vmCDSNocohArchiveAvailable() {
-        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes_nocoh.jsa");
+        String subdir = Platform.isWindows() ? "bin" : "lib";
+        Path archive = Paths.get(System.getProperty("java.home"), subdir, "server", "classes_nocoh.jsa");
         return "" + ("true".equals(vmCDS()) && Files.exists(archive));
     }
 
