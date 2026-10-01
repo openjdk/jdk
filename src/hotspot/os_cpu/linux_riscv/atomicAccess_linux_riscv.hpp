@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,8 +30,11 @@
 
 // Implementation of class AtomicAccess
 
-// Note that memory_order_conservative requires a full barrier after atomic stores.
-// See https://patchwork.kernel.org/patch/3575821/
+// Note that memory_order_conservative requires a strong two-way barrier.
+// For add and xchg that barrier is provided by the RMW itself: the compiler
+// emits non-relaxed ops as seq_cst RMWs, i.e. an AMO with .aqrl (or an
+// ordered LR/SC loop for sub-word operands), so no explicit fences are
+// needed. cmpxchg still uses explicit full barriers.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
