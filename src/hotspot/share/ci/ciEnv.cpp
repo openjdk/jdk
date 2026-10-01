@@ -1174,7 +1174,8 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
         log.print_cr("%s", ss.freeze());
       }
 #endif
-      aot_code_entry->set_loaded();
+      assert(nm->aot_code_entry() == aot_code_entry, "mismatched entry");
+      assert(aot_code_entry->is_loaded(), "AOT entry should be marked as loaded already");
       assert(nm->has_clinit_barriers() == aot_code_entry->has_clinit_barriers(), "should match");
       make_code_usable(thread, target, aot_preload, InvocationEntryBci, aot_code_entry, nm);
     }

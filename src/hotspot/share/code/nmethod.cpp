@@ -1212,6 +1212,13 @@ nmethod* nmethod::new_nmethod(nmethod* archived_nm,
     address code_cache_buffer = (address)CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
     if (code_cache_buffer != nullptr) {
       nm = archived_nm->restore(code_cache_buffer, method, aot_code_reader);
+      AOTCodeEntry* entry = nm->aot_code_entry();
+      assert(entry != nullptr, "AOTCodeReader::restore() should set it");
+      // Mark the AOT code entry as loaded before releasing CodeCache_lock.
+      // This guarantees that CodeCache iterators can not observe the restored
+      // AOT nmethod before its AOT entry is loaded, preserving the normal
+      // installation vs deoptimization protocol.
+      entry->set_loaded();
       nm->record_nmethod_dependency();
       NOT_PRODUCT(note_java_nmethod(nm));
     }
