@@ -42,6 +42,9 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
    // Value of the CIE return-address register, when it can be recovered.
    private final Address ra;
 
+   // Value of x1 for a frame created from registers.
+   private final Address lr;
+
    private static LinuxRISCV64CFrame getFrameFromReg(LinuxDebugger dbg,
                                                     Function<Integer, Address> getreg) {
       Address pc = getreg.apply(RISCV64ThreadContext.PC);
@@ -84,7 +87,8 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
         }
         cfa = base.addOffsetTo(dwarf.getCFAOffset());
       }
-      return new LinuxRISCV64CFrame(dbg, sp, fp, cfa, pc, ra, dwarf, false);
+      return new LinuxRISCV64CFrame(dbg, sp, fp, cfa, pc, ra,
+                                   getreg.apply(RISCV64ThreadContext.LR), dwarf, false);
    }
 
    public static LinuxRISCV64CFrame getTopFrame(LinuxDebugger dbg, ThreadContext context) {
@@ -94,8 +98,15 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
    private LinuxRISCV64CFrame(LinuxDebugger dbg, Address sp, Address fp, Address cfa,
                              Address pc, Address ra, DwarfParser dwarf,
                              boolean use1ByteBeforeToLookup) {
+      this(dbg, sp, fp, cfa, pc, ra, null, dwarf, use1ByteBeforeToLookup);
+   }
+
+   private LinuxRISCV64CFrame(LinuxDebugger dbg, Address sp, Address fp, Address cfa,
+                             Address pc, Address ra, Address lr, DwarfParser dwarf,
+                             boolean use1ByteBeforeToLookup) {
       super(dbg, sp, fp, cfa, pc, dwarf, use1ByteBeforeToLookup);
       this.ra = ra;
+      this.lr = lr;
    }
 
    @Override
@@ -234,13 +245,16 @@ public final class LinuxRISCV64CFrame extends DwarfCFrame {
       if (dwarf() != null && senderDwarf != null &&
           senderDwarf.getReturnAddressOffsetFromCFA() == Integer.MAX_VALUE &&
           dwarf().getRARegister() != senderDwarf.getRARegister()) {
-        // A save helper returning through x5 may have saved the caller's x1.
-        // Keep that value for a caller whose CFI still describes a register-held
-        // return address. With the same return column, the saved value is just
-        // senderPC and must not be reused as the caller's own return address.
+        // A save helper returning through x5 keeps the caller's x1 in place until
+        // it saves x1 on the stack. Keep that value for a caller whose CFI still
+        // describes a register-held return address. With the same return column,
+        // the saved value is just senderPC and must not be reused as the caller's
+        // own return address.
         int offset = dwarf().getOffsetFromCFA(senderDwarf.getRARegister());
         if (offset != Integer.MAX_VALUE) {
           senderRA = getSenderSP(null).getAddressAt(offset);
+        } else if (senderDwarf.getRARegister() == RISCV64ThreadContext.LR) {
+          senderRA = lr;
         }
       }
       return new LinuxRISCV64CFrame(linuxDbg(), senderSP, senderFP, senderCFA,
