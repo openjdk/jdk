@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 
+#include "oops/markWord.hpp"
 #include "oops/oop.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -46,6 +47,8 @@ public:
    */
   static inline oop get_forwardee_raw_unchecked(oop obj);
 
+  static inline oop get_forwardee_raw_unchecked(oop obj, markWord mark);
+
   /**
    * Returns true if the object is forwarded (including self-forwarded),
    * false otherwise.
@@ -58,7 +61,7 @@ public:
    */
   static inline bool is_self_forwarded(oop obj);
 
-  /* Tries to atomically update forwardee in $obj object to $update.
+  /* Tries to atomically update forwardee in $obj to $update.
    *
    * Returns the new object 'update' upon success, or
    * the new forwardee that a competing thread installed. If another
@@ -66,7 +69,7 @@ public:
    */
   static inline oop try_forward_to(oop obj, oop update);
 
-  /* Tries to atomically update forwardee in $obj object to self-forward.
+  /* Tries to atomically update forwardee in $obj to self-forward.
    *
    * Returns nullptr on success (we installed the self-forward), or
    * the winning forwardee when another thread raced ahead (either a
@@ -79,7 +82,7 @@ public:
   static inline Klass* klass(oop obj);
 
 private:
-  static inline oop try_update_forwardee(oop obj, oop update, bool is_self);
+  static inline oop try_update_forwardee(oop obj, oop update);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

@@ -37,11 +37,14 @@ inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
 }
 
 inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
+  return get_forwardee_raw_unchecked(obj, obj->mark());
+}
+
+inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj, markWord mark) {
   // JVMTI and JFR code use mark words for marking objects for their needs.
   // On this path, we can encounter the "marked" object, but with null
   // fwdptr. That object is still not forwarded, and we need to return
   // the object itself.
-  markWord mark = obj->mark();
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
     if (fwdptr != nullptr) {
@@ -67,27 +70,20 @@ inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
 }
 
 inline oop ShenandoahForwarding::try_forward_to(oop obj, oop update) {
-  return try_update_forwardee(obj, update, false);
+  return try_update_forwardee(obj, update);
 }
 
 inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
-  return try_update_forwardee(obj, nullptr, true);
+  return try_update_forwardee(obj, nullptr);
 }
 
-inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update, bool is_self) {
-  assert(is_self == (update == nullptr), "Pre-condition");
+inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
+  bool is_self = (update == nullptr);
 
-  // Optimistic: do the single check if object is already forwarded, then figure out
-  // what kind of forwarding that is.
+  // Optimistic: check if object is already forwarded.
   markWord old_mark = obj->mark();
   if (old_mark.is_forwarded()) {
-    if (old_mark.is_marked()) {
-      return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
-    }
-    assert(old_mark.is_self_forwarded(),
-           "Self-forwarding is the only remaining case: old=" INTPTR_FORMAT,
-           old_mark.value());
-    return obj;
+    return get_forwardee_raw_unchecked(obj, old_mark);
   }
 
   // Attempt to install and return on success.
@@ -97,15 +93,9 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update, bool 
     return is_self ? nullptr : update;
   }
 
-  // Lost the update race. What is currently in mark word must be either the real
-  // forwarding or a self-forward, nothing else.
-  if (prev_mark.is_marked()) {
-    return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
-  }
-  assert(prev_mark.is_self_forwarded(),
-         "Self-forwarding is the only remaining case: prev=" INTPTR_FORMAT,
-         prev_mark.value());
-  return obj;
+  // Lost the update race. Pick the forwarding from the existing mark.
+  assert(prev_mark.is_forwarded(), "Must be forwarded");
+  return get_forwardee_raw_unchecked(obj, prev_mark);
 }
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {
