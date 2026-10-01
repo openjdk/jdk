@@ -1614,6 +1614,23 @@ bool IfNode::is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const {
   return false;
 }
 
+// Returns true if this IfNode belongs to a flat array check
+// and returns the corresponding array in the 'array' parameter.
+bool IfNode::is_flat_array_check(PhaseTransform* phase, Node** array) {
+  Node* bol = in(1);
+  if (!bol->is_Bool()) {
+    return false;
+  }
+  Node* cmp = bol->in(1);
+  if (cmp->isa_FlatArrayCheck()) {
+    if (array != nullptr) {
+      *array = cmp->in(FlatArrayCheckNode::ArrayOrKlass);
+    }
+    return true;
+  }
+  return false;
+}
+
 // Check that the If that is in between the 2 integer comparisons has
 // no side effect
 bool IfNode::is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) const {
@@ -1863,6 +1880,19 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
+    Node* true_proj = this->true_proj();
+    Node* false_proj = this->false_proj();
+
+    Node* head = true_proj->find_out_with(Op_Loop);
+    if (head == nullptr) {
+      head = false_proj->find_out_with(Op_Loop);
+    }
+    if (head != nullptr && head->as_Loop()->is_loop_nest_inner_loop()) {
+      // Exit test for a loop that's in the process of being transformed into a counted loop: do not remove that exit
+      // test so the counted loop transformation happens.
+      return nullptr;
+    }
+
     // Dominating CountedLoopEnd (left over from some now dead loop) will become the new loop exit. Outer strip mined
     // loop will go away. Mark this loop as no longer strip mined.
     if (is_CountedLoopEnd()) {

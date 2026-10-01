@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -620,6 +620,11 @@ class InvokerBytecodeGenerator {
                                     onStack = emitTableSwitch(cob, i, numCases);
                                     i += 2; // jump to the end of the TS idiom
                                     continue;
+                                case SYNCHRONIZE:
+                                    assert lambdaForm.isSynchronize(i);
+                                    onStack = emitSynchronize(cob, i);
+                                    i += 2;
+                                    continue;
                                 case LOOP:
                                     assert lambdaForm.isLoop(i);
                                     onStack = emitLoop(cob, i);
@@ -1169,6 +1174,48 @@ class InvokerBytecodeGenerator {
         }
 
         cob.labelBinding(endLabel);
+
+        return result;
+    }
+
+    private Name emitSynchronize(CodeBuilder cob, int pos) {
+        Name args    = lambdaForm.names[pos];
+        Name invoker = lambdaForm.names[pos + 1];
+        Name result  = lambdaForm.names[pos + 2];
+
+        Class<?> returnType = result.function.resolvedHandle().type().returnType();
+        MethodType bodyType = args.function.resolvedHandle().type()
+                .dropParameterTypes(0, 1) // drop lock
+                .changeReturnType(returnType);
+        MethodTypeDesc bodyDesc = methodDesc(bodyType.basicType());
+
+        // synchronized (lock) {
+        //     return body.invokeBasic(args...);
+        // }
+        Label tryStart = cob.newLabel();
+        Label tryEnd = cob.newLabel();
+        Label catchStart = cob.newLabel();
+        Label end = cob.newLabel();
+
+        emitPushArgument(cob, invoker, 0); // push lock
+        cob.monitorenter();
+        emitPushArgument(cob, invoker, 1); // push body handle
+        emitPushArguments(cob, args, 1); // push args, skip lock
+        cob.labelBinding(tryStart);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", bodyDesc); // return on the stack (if any)
+        cob.labelBinding(tryEnd);
+        emitPushArgument(cob, invoker, 0); // push lock
+        cob.monitorexit();
+        cob.goto_(end);
+
+        cob.labelBinding(catchStart); // exception on top
+        emitPushArgument(cob, invoker, 0); // push lock
+        cob.monitorexit(); // exit
+        cob.athrow(); // throw
+
+        cob.labelBinding(end);
+
+        cob.exceptionCatchAll(tryStart, tryEnd, catchStart);
 
         return result;
     }

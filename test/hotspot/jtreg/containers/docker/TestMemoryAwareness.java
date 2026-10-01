@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,9 @@ public class TestMemoryAwareness {
         System.out.println("sizeToAllocInMb is:" + sizeToAllocInMb + " sizeToAllocInMb/2 is:" + sizeToAllocInMb/2);
         String javaHeapSize = sizeToAllocInMb/2 + "m";
         opts.addJavaOptsAppended("-Xmx" + javaHeapSize);
+        // reduce the number of CPUs to 2, so that the number of GC threads is not too
+        // high for the small memory limit (each thread reserves 2MB stacksize).
+        opts.addJavaOptsAppended("-XX:ActiveProcessorCount=2");
 
         OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
 

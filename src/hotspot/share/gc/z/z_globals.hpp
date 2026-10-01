@@ -36,6 +36,7 @@
                                                                             \
   product(double, ZAllocationSpikeTolerance, 2.0,                           \
           "Allocation spike tolerance factor")                              \
+          range(0, INT_MAX)                                                 \
                                                                             \
   product(double, ZFragmentationLimit, 5.0,                                 \
           "Maximum allowed heap fragmentation")                             \

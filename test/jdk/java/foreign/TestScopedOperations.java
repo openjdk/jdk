@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestScopedOperations
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestScopedOperations
  */
 
 import java.lang.foreign.Arena;
@@ -31,8 +31,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,11 +44,16 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestScopedOperations {
 
     static Path tempPath;
@@ -65,7 +68,8 @@ public class TestScopedOperations {
         }
     }
 
-    @Test(dataProvider = "scopedOperations")
+    @ParameterizedTest
+    @MethodSource("scopedOperations")
     public <Z> void testOpAfterClose(String name, ScopedOperation<Z> scopedOperation) {
         Arena arena = Arena.ofConfined();
         Z obj = scopedOperation.apply(arena);
@@ -78,7 +82,8 @@ public class TestScopedOperations {
         }
     }
 
-    @Test(dataProvider = "scopedOperations")
+    @ParameterizedTest
+    @MethodSource("scopedOperations")
     public <Z> void testOpOutsideConfinement(String name, ScopedOperation<Z> scopedOperation) {
         try (Arena arena = Arena.ofConfined()) {
             Z obj = scopedOperation.apply(arena);
@@ -93,7 +98,7 @@ public class TestScopedOperations {
             t.start();
             t.join();
             assertNotNull(failed.get());
-            assertEquals(failed.get().getClass(), WrongThreadException.class);
+            assertEquals(WrongThreadException.class, failed.get().getClass());
             assertTrue(failed.get().getMessage().contains("outside"));
         } catch (InterruptedException ex) {
             throw new AssertionError(ex);
@@ -140,7 +145,6 @@ public class TestScopedOperations {
         ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_INT, source, JAVA_BYTE, 0, 1), "Arena::allocateFrom/5arg");
     };
 
-    @DataProvider(name = "scopedOperations")
     static Object[][] scopedOperations() {
         return scopedOperations.stream().map(op -> new Object[] { op.name, op }).toArray(Object[][]::new);
     }

@@ -442,12 +442,13 @@ static bool is_file_secure(int fd, const char *filename) {
 }
 
 
-// return the user name for the given user id
+// return the user name for the given user id. If the UID cannot be resolved
+// to a passwd entry, return a stable UID-based synthetic name.
 //
 // the caller is expected to free the allocated memory.
 //
-static char* get_user_name(uid_t uid) {
-
+[[nodiscard]] static char* get_user_name(uid_t uid) {
+  char* user_name = nullptr;
   struct passwd pwent;
 
   // Determine the max pwbuf size from sysconf, and hardcode
@@ -461,7 +462,14 @@ static char* get_user_name(uid_t uid) {
   struct passwd* p = nullptr;
   int result = getpwuid_r(uid, &pwent, pwbuf, (size_t)bufsize, &p);
 
-  if (result != 0 || p == nullptr || p->pw_name == nullptr || *(p->pw_name) == '\0') {
+  if (result == 0
+      && p != nullptr
+      && p->pw_name != nullptr
+      && *(p->pw_name) != '\0') {
+    user_name = NEW_C_HEAP_ARRAY(char, strlen(p->pw_name) + 1, mtInternal);
+    strcpy(user_name, p->pw_name);
+  }
+  else {
     if (log_is_enabled(Debug, perf)) {
       LogStreamHandle(Debug, perf) log;
       if (result != 0) {
@@ -485,12 +493,19 @@ static char* get_user_name(uid_t uid) {
                      p->pw_name == nullptr ? "pw_name = null" : "pw_name zero length");
       }
     }
-    FREE_C_HEAP_ARRAY(pwbuf);
-    return nullptr;
-  }
 
-  char* user_name = NEW_C_HEAP_ARRAY(char, strlen(p->pw_name) + 1, mtInternal);
-  strcpy(user_name, p->pw_name);
+    // A process can run with a numeric uid that has no passwd entry, for
+    // example in a Docker container started with --user=<uid>:<gid>. Use a
+    // synthetic name so the JVM can still publish hsperfdata.
+    char uid_name[32];
+    jio_snprintf(uid_name, sizeof(uid_name), "uid" UINT64_FORMAT, static_cast<uint64_t>(uid));
+
+    log_info(perf)("Using synthetic user name %s for unresolved uid " UINT64_FORMAT,
+                   uid_name, static_cast<uint64_t>(uid));
+
+    user_name = NEW_C_HEAP_ARRAY(char, strlen(uid_name) + 1, mtInternal);
+    strcpy(user_name, uid_name);
+  }
 
   FREE_C_HEAP_ARRAY(pwbuf);
   return user_name;
@@ -505,8 +520,7 @@ static char* get_user_name(uid_t uid) {
 //
 // the caller is expected to free the allocated memory.
 //
-//
-static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
+[[nodiscard]] static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
   // short circuit the directory search if the process doesn't even exist.
   if (kill(vmid, 0) == OS_ERR) {
@@ -645,7 +659,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
 // return the name of the user that owns the JVM indicated by the given vmid.
 //
-static char* get_user_name(int vmid, int *nspid, TRAPS) {
+[[nodiscard]] static char* get_user_name(int vmid, int *nspid, TRAPS) {
   char *result = get_user_name_slow(vmid, *nspid, CHECK_NULL);
 
 #if defined(LINUX)
@@ -1082,10 +1096,8 @@ static char* mmap_create_shared(size_t size) {
   int vmid = os::current_process_id();
 
   char* user_name = get_user_name(geteuid());
-
-  if (user_name == nullptr)
-    return nullptr;
-
+  assert(user_name != nullptr,
+         "get_user_name() must resolve or synthesize a user name");
   char* dirname = get_user_tmp_dir(user_name, vmid, -1);
   char* filename = get_sharedmem_filename(dirname, vmid, -1);
 

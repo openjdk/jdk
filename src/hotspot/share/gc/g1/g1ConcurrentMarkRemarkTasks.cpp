@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -147,7 +148,7 @@ G1UpdateRegionLivenessAndSelectForRebuildTask::G1UpdateRegionLivenessAndSelectFo
 
 G1UpdateRegionLivenessAndSelectForRebuildTask::~G1UpdateRegionLivenessAndSelectForRebuildTask() {
   if (!_cleanup_list.is_empty()) {
-    log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.length());
+    log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.num_regions());
     // And actually make them available.
     _g1h->prepend_to_freelist(&_cleanup_list);
   }
@@ -189,17 +190,17 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::prune(GrowableArrayCHeap<G1H
 
   uint num_candidates = (uint)old_regions->length();
 
-  uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
+  uint min_num_old_cset_regions = p->calc_min_num_old_cset_regions(num_candidates);
   uint num_pruned = 0;
   size_t wasted_bytes = 0;
 
-  if (min_old_cset_length >= num_candidates) {
+  if (min_num_old_cset_regions >= num_candidates) {
     // We take all of the candidate regions to provide some forward progress.
     return;
   }
 
   size_t allowed_waste = p->allowed_waste_in_collection_set();
-  uint max_to_prune = num_candidates - min_old_cset_length;
+  uint max_to_prune = num_candidates - min_num_old_cset_regions;
 
   while (true) {
     G1HeapRegion* r = old_regions->at(num_candidates - num_pruned - 1);
@@ -208,7 +209,8 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::prune(GrowableArrayCHeap<G1H
       wasted_bytes + reclaimable > allowed_waste) {
       break;
     }
-    r->rem_set()->clear(true /* cardset_only */);
+    assert(!r->rem_set()->has_card_set_group(), "must not have a card set group");
+    r->rem_set()->set_state_untracked();
 
     wasted_bytes += reclaimable;
     num_pruned++;

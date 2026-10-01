@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,16 @@
 
 /*
  * @test
- * @bug 8362394
+ * @bug 8328078 8362394
  * @summary Test that repeated stacked string concatenations do not
  *          consume too many compilation resources.
  * @requires vm.compiler2.enabled
  * @library /test/lib /
- * @run main/othervm -XX:-OptoScheduling compiler.stringopts.TestStackedConcatsMany
- * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:-OptoScheduling
- *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsMany::f
- *                   compiler.stringopts.TestStackedConcatsMany
+ * @run main ${test.main.class}
+ * @run main/othervm -XX:-TieredCompilation -Xcomp
+ *                   -XX:CompileOnly=${test.main.class}::f
+ *                   ${test.main.class}
  */
-
-// The test uses -XX:-OptoScheduling to avoid the assert "too many D-U pinch points" on aarch64 (JDK-8328078).
 
 package compiler.stringopts;
 

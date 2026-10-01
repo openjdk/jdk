@@ -951,8 +951,7 @@ public:
   u4 max_frames() const { return _max_frames; }
 
   void report_frame(const Method* method, int bci, u1 type) const {
-    int line_no = method->line_number_from_bci(bci);
-    _stack_trace.record_frame(method, bci, line_no, type);
+    _stack_trace.record_frame(method, bci, type);
   }
 };
 

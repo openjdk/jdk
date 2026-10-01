@@ -37,6 +37,7 @@ include gensrc/GensrcMisc.gmk
 include gensrc/GensrcModuleLoaderMap.gmk
 include gensrc/GensrcRegex.gmk
 include gensrc/GensrcScopedMemoryAccess.gmk
+include gensrc/GensrcValueClasses.gmk
 include gensrc/GensrcVarHandles.gmk
 
 ################################################################################

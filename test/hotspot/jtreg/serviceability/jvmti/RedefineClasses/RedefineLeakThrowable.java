@@ -21,13 +21,20 @@
  * questions.
  */
 
+// This test has two variants with different MaxMetaspaceSize values depending on CDS availability.
+// With CDS enabled: 17m is sufficient because core JDK classes are mapped from CDS shared
+// archive into separate shared class space and do not count against MaxMetaspaceSize.
+// Without CDS (e.g. AIX): all classes are allocated in classic metaspace, requiring a
+// larger MaxMetaspaceSize of 25m.
+
 /*
- * @test
+ * @test id=nocds
  * @bug 8308762
  * @library /test/lib
  * @summary Test that redefinition of class containing Throwable refs does not leak constant pool
  * @requires vm.jvmti
  * @requires vm.flagless
+ * @requires !vm.cds
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          java.compiler
@@ -35,7 +42,21 @@
  * @run main/othervm/timeout=6000 -javaagent:redefineagent.jar -XX:MetaspaceSize=25m -XX:MaxMetaspaceSize=25m RedefineLeakThrowable
  */
 
-// MaxMetaspaceSize=25m allows InMemoryJavaCompiler to load even if CDS is off.
+/*
+ * @test id=cds
+ * @bug 8308762
+ * @library /test/lib
+ * @summary Test that redefinition of class containing Throwable refs does not leak constant pool
+ * @requires vm.jvmti
+ * @requires vm.flagless
+ * @requires vm.cds
+ * @modules java.base/jdk.internal.misc
+ * @modules java.instrument
+ *          java.compiler
+ * @run main RedefineClassHelper
+ * @run main/othervm/timeout=6000 -javaagent:redefineagent.jar -XX:MetaspaceSize=17m -XX:MaxMetaspaceSize=17m RedefineLeakThrowable
+ */
+
 class Tester {
     void test() {
         try {

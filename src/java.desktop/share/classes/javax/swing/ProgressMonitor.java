@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,7 +534,7 @@ public class ProgressMonitor implements Accessible
          *       AccessibleJLabel
          *       AccessibleJProgressBar
          *
-         * The abstraction presented to assitive technologies by
+         * The abstraction presented to assistive technologies by
          * the AccessibleProgressMonitor is that a dialog contains a
          * progress monitor with three children: a message, a note
          * label and a progress bar.

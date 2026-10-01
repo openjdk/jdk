@@ -33,6 +33,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -380,7 +381,11 @@ oop MemAllocator::finish(HeapWord* mem) const {
   if (UseCompactObjectHeaders) {
     oopDesc::release_set_mark(mem, _klass->prototype_header());
   } else {
-    oopDesc::set_mark(mem, markWord::prototype());
+    if (Arguments::is_valhalla_enabled()) {
+      oopDesc::set_mark(mem, _klass->prototype_header());
+    } else {
+      oopDesc::set_mark(mem, markWord::prototype());
+    }
     oopDesc::release_set_klass(mem, _klass);
   }
   return cast_to_oop(mem);

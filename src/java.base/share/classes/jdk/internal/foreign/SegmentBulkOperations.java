@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,10 @@ public final class SegmentBulkOperations {
         src.checkAccess(srcOffset, size, true);
         dst.checkAccess(dstOffset, size, false);
 
-        if (size <= 0) {
-            // Do nothing
+        if (size == 0) {
+            // No memory access occurs below, so the segments' states must be checked explicitly.
+            src.sessionImpl().checkValidState();
+            dst.sessionImpl().checkValidState();
         } else if (size < NATIVE_THRESHOLD_COPY && !src.overlaps(dst)) {
             // 0 < size < FILL_NATIVE_LIMIT : 0...0X...XXXX
             //
@@ -257,6 +259,9 @@ public final class SegmentBulkOperations {
         final boolean srcAndDstBytesDiffer = srcBytes != dstBytes;
 
         if (length == 0) {
+            // No memory access occurs below, so the segments' states must be checked explicitly.
+            src.sessionImpl().checkValidState();
+            dst.sessionImpl().checkValidState();
             return srcAndDstBytesDiffer ? 0 : -1;
         } else if (length < NATIVE_THRESHOLD_MISMATCH) {
             return mismatch(src, srcFromOffset, dst, dstFromOffset, 0, (int) length, srcAndDstBytesDiffer);
@@ -273,10 +278,7 @@ public final class SegmentBulkOperations {
             if (i >= 0) {
                 return i;
             }
-            final long remaining = ~i;
-            assert remaining < 8 : "remaining greater than 7: " + remaining;
-            i = length - remaining;
-            return mismatch(src, srcFromOffset + i, dst, dstFromOffset + i, i, (int) remaining, srcAndDstBytesDiffer);
+            return srcAndDstBytesDiffer ? length : -1L;
         }
     }
 
@@ -356,7 +358,7 @@ public final class SegmentBulkOperations {
         long remaining = length;
         int i, size;
         boolean lastSubRange = false;
-        while (remaining > 7 && !lastSubRange) {
+        while (!lastSubRange) {
             if (remaining > Integer.MAX_VALUE) {
                 size = Integer.MAX_VALUE;
             } else {
@@ -370,11 +372,10 @@ public final class SegmentBulkOperations {
             if (i >= 0)
                 return off + i;
 
-            i = size - ~i;
-            off += i;
-            remaining -= i;
+            off += size;
+            remaining -= size;
         }
-        return ~remaining;
+        return -1L;
     }
 
     static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";

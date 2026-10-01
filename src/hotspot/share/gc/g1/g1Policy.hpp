@@ -95,7 +95,7 @@ class G1Policy: public CHeapObj<mtGC> {
   // G1 allocation of new regions for eden is restrained when allocating into that reserve.
   // This intentionally slows down the allocation when the heap is close to full to allow
   // concurrent marking to finish and hopefully avoid a Full GC.
-  Atomic<uint> _reserve_regions;
+  Atomic<uint> _num_reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
 
@@ -151,12 +151,12 @@ public:
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   double predict_merge_scan_time(size_t card_rs_length) const;
-  // Predict other time for count young regions.
-  double predict_young_region_other_time_ms(uint count) const;
-  double predict_non_young_other_time_ms(uint count) const;
-  // Predict copying live data time for count eden regions. Return the predict bytes if
+  // Predict other time for young regions.
+  double predict_young_region_other_time_ms(uint num_regions) const;
+  double predict_non_young_other_time_ms(uint num_regions) const;
+  // Predict copying live data time for eden regions. Return the predict bytes if
   // bytes_to_copy is non-null.
-  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
+  double predict_eden_copy_time_ms(uint num_eden_regions, size_t* bytes_to_copy = nullptr) const;
 
   void cset_regions_freed();
 
@@ -251,15 +251,15 @@ public:
   double predict_gc_efficiency(G1HeapRegion* hr);
 
   // The minimum number of retained regions we will add to the CSet during a young GC.
-  uint min_retained_old_cset_length() const;
+  uint min_num_retained_old_cset_regions() const;
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a single mixed GC given the initial number of regions selected during
   // marking.
-  uint calc_min_old_cset_length(uint num_candidate_regions) const;
+  uint calc_min_num_old_cset_regions(uint num_candidate_regions) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
-  uint calc_max_old_cset_length() const;
+  uint calc_max_num_old_cset_regions() const;
 
 private:
   void abandon_collection_set_candidates();
@@ -290,7 +290,7 @@ public:
   void revise_target_num_young_regions(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
 
   // This should be called after the heap is resized.
-  void record_new_heap_size(uint new_number_of_regions);
+  void record_new_heap_size(uint new_num_regions);
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
@@ -401,11 +401,11 @@ private:
   uint _tenuring_threshold;
 
   // The limit on the number of regions allocated for survivors.
-  uint _max_survivor_regions;
+  uint _max_num_survivor_regions;
 
   AgeTable _survivors_age_table;
 
-  size_t desired_survivor_size(uint max_regions) const;
+  size_t desired_survivor_size(uint max_num_regions) const;
 
 public:
   // Fraction used when predicting how many optional regions to include in
@@ -422,8 +422,8 @@ public:
 
   uint tenuring_threshold() const { return _tenuring_threshold; }
 
-  uint max_survivor_regions() {
-    return _max_survivor_regions;
+  uint max_num_survivor_regions() {
+    return _max_num_survivor_regions;
   }
 
   void start_adding_survivor_regions() {

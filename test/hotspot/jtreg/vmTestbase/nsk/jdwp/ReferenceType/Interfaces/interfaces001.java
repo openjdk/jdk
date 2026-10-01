@@ -142,7 +142,7 @@ public class interfaces001 {
 
                         if (interfaceID != interfaceIDs[i]) {
                             log.complain("Unexpected interface ID for interface #" + i + " in the reply packet: " + interfaceID
-                                        + " (expected: " + interfaceIDs[i] + ")");
+                                         + " (expected: " + interfaceIDs[i] + ")");
                             success = false;
                         }
 

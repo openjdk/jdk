@@ -33,7 +33,10 @@
 
 extern "C" {
 
-typedef jvmtiError (JNICALL *RequestJFRStackTraceFn)(jvmtiEnv*, jthread, void*, jlong);
+// JVMTI extension functions are variadic (jvmtiExtensionFunction); calling them
+// through a non-variadic prototype breaks on ABIs that pass varargs differently
+// from named arguments (e.g. macOS/aarch64).
+typedef jvmtiError (JNICALL *RequestJFRStackTraceFn)(jvmtiEnv*, ...);
 
 static jvmtiEnv*              g_jvmti              = nullptr;
 static RequestJFRStackTraceFn g_request_stacktrace = nullptr;

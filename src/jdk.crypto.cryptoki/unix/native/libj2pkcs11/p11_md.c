@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -79,10 +79,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     jstring jGetFunctionList) {
 
     void *hModule;
-    int i;
-    CK_ULONG ulCount = 0;
-    CK_C_GetInterfaceList C_GetInterfaceList = NULL;
-    CK_INTERFACE_PTR iList = NULL;
     CK_C_GetInterface C_GetInterface = NULL;
     CK_INTERFACE_PTR interface = NULL;
     CK_C_GetFunctionList C_GetFunctionList = NULL;
@@ -124,27 +120,32 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     }
 
 #ifdef DEBUG
-    C_GetInterfaceList = (CK_C_GetInterfaceList) dlsym(hModule,
-            "C_GetInterfaceList");
+    CK_C_GetInterfaceList C_GetInterfaceList = (CK_C_GetInterfaceList) dlsym(hModule, "C_GetInterfaceList");
     if (C_GetInterfaceList != NULL) {
+        CK_ULONG ulCount = 0;
         TRACE0("Connect: Found C_GetInterfaceList func\n");
         rv = (C_GetInterfaceList)(NULL, &ulCount);
         if (rv == CKR_OK) {
             TRACE1("Connect: interface list size %ld \n", ulCount);
             // retrieve available interfaces and report their info
-            iList = (CK_INTERFACE_PTR)
-                malloc(ulCount*sizeof(CK_INTERFACE));
-            rv = C_GetInterfaceList(iList, &ulCount);
-            if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
-                TRACE0("Connect: error polling interface list\n");
-                goto cleanup;
-            }
-            for (i=0; i < (int)ulCount; i++) {
-                TRACE4("Connect: name %s, version %d.%d, flags 0x%lX\n",
-                        iList[i].pInterfaceName,
-                        ((CK_VERSION *)iList[i].pFunctionList)->major,
-                        ((CK_VERSION *)iList[i].pFunctionList)->minor,
-                        iList[i].flags);
+            CK_INTERFACE_PTR iList = (CK_INTERFACE_PTR) malloc(ulCount*sizeof(CK_INTERFACE));
+            if (iList == NULL) {
+                TRACE0("Connect: error allocating interface list\n");
+            } else {
+                rv = C_GetInterfaceList(iList, &ulCount);
+                if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+                    TRACE0("Connect: error polling interface list\n");
+                    free(iList);
+                    goto cleanup;
+                }
+                for (int i=0; i < (int)ulCount; i++) {
+                    TRACE4("Connect: name %s, version %d.%d, flags 0x%lX\n",
+                            iList[i].pInterfaceName,
+                            ((CK_VERSION *)iList[i].pFunctionList)->major,
+                            ((CK_VERSION *)iList[i].pFunctionList)->minor,
+                            iList[i].flags);
+                }
+                free(iList);
             }
         } else {
             TRACE0("Connect: error polling interface list size\n");

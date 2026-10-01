@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfrfiles/jfrEventIds.hpp"
 #include "logging/log.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/spinCriticalSection.hpp"
@@ -46,7 +47,7 @@ constexpr static int num_throttled_events = sizeof(throttleble_events) / sizeof(
 // Throttler-by-ID lookup table
 class ThrottlerLookupTable {
   static constexpr int max = (int)LAST_EVENT_ID;
-  STATIC_ASSERT(max < 1000); // should this ever get unreasonably large, we rethink this table.
+  static_assert(max < 1000); // should this ever get unreasonably large, we rethink this table.
   JfrEventThrottler* _table[max];
 public:
   ThrottlerLookupTable() { memset(_table, 0, sizeof(_table)); }
@@ -90,7 +91,7 @@ JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
 bool JfrEventThrottler::create() {
   bool rc = _throttler_table.initialize();
   if (rc) {
-    _throttler_table.at(JfrCPUTimeSampleEvent)->_disabled = true; // CPU time sampler disabled
+    AtomicAccess::store(&_throttler_table.at(JfrCPUTimeSampleEvent)->_disabled, true); // CPU time sampler disabled
   }
   return rc;
 }
@@ -140,7 +141,7 @@ void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
 bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp /* 0 */) {
   JfrEventThrottler* const throttler = for_event(event_id);
   assert(throttler != nullptr, "invariant");
-  return throttler->_disabled ? true : throttler->sample(timestamp);
+  return AtomicAccess::load(&throttler->_disabled) ? true : throttler->sample(timestamp);
 }
 
 /*
@@ -244,8 +245,9 @@ inline bool is_disabled(int64_t event_sample_size) {
 }
 
 const JfrSamplerParams& JfrEventThrottler::update_params(const JfrSamplerWindow* expired) {
-  _disabled = is_disabled(_sample_size);
-  if (_disabled) {
+  const bool disabled = is_disabled(_sample_size);
+  AtomicAccess::store(&_disabled, disabled);
+  if (disabled) {
     return _disabled_params;
   }
   normalize(&_sample_size, &_period_ms);
@@ -318,5 +320,5 @@ const JfrSamplerParams& JfrEventThrottler::next_window_params(const JfrSamplerWi
   if (_update) {
     return update_params(expired); // Updates _last_params in-place.
   }
-  return _disabled ? _disabled_params : _last_params;
+  return AtomicAccess::load(&_disabled) ? _disabled_params : _last_params;
 }

@@ -240,6 +240,18 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
   }
 }
 
+void LIR_Assembler::arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check) {
+  if (null_check) {
+    __ beqz(obj, *slow_path->entry(), /* is_far */ true);
+  }
+  if (is_dest) {
+    __ test_null_free_array_oop(obj, tmp, *slow_path->entry());
+    __ test_flat_array_oop(obj, tmp, *slow_path->entry());
+  } else {
+    __ test_flat_array_oop(obj, tmp, *slow_path->entry());
+  }
+}
+
 void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   ciArrayKlass *default_type = op->expected_type();
   Register src = op->src()->as_register();
@@ -254,10 +266,23 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   BasicType basic_type = default_type != nullptr ? default_type->element_type()->basic_type() : T_ILLEGAL;
   if (is_reference_type(basic_type)) { basic_type = T_OBJECT; }
 
+  if (flags & LIR_OpArrayCopy::always_slow_path) {
+    __ j(*stub->entry());
+    __ bind(*stub->continuation());
+    return;
+  }
+
   // if we don't know anything, just go through the generic arraycopy
   if (default_type == nullptr) {
     generic_arraycopy(src, src_pos, length, dst, dst_pos, stub);
     return;
+  }
+
+  if (flags & LIR_OpArrayCopy::src_valuetype_check) {
+    arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
+  }
+  if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
+    arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
   }
 
   assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(),
@@ -322,11 +347,11 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 void LIR_Assembler::arraycopy_prepare_params(Register src, Register src_pos, Register length,
                                              Register dst, Register dst_pos, BasicType basic_type) {
   int scale = array_element_size(basic_type);
-  __ shadd(c_rarg0, src_pos, src, t0, scale);
-  __ addi(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(basic_type));
+  __ shift_left_add(t0, src_pos, src, scale);
+  __ addi(c_rarg0, t0, arrayOopDesc::base_offset_in_bytes(basic_type));
   assert_different_registers(c_rarg0, dst, dst_pos, length);
-  __ shadd(c_rarg1, dst_pos, dst, t0, scale);
-  __ addi(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(basic_type));
+  __ shift_left_add(t0, dst_pos, dst, scale);
+  __ addi(c_rarg1, t0, arrayOopDesc::base_offset_in_bytes(basic_type));
   assert_different_registers(c_rarg1, dst, length);
   __ mv(c_rarg2, length);
   assert_different_registers(c_rarg2, dst);

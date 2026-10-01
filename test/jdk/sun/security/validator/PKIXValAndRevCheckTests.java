@@ -27,7 +27,6 @@
  * @summary Stapled OCSPResponses should be added to PKIXRevocationChecker
  *          irrespective of revocationEnabled flag
  * @library /test/lib
- * @enablePreview
  * @modules java.base/sun.security.validator
  * @build jdk.test.lib.Convert
  * @run main PKIXValAndRevCheckTests

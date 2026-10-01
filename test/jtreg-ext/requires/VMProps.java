@@ -328,6 +328,8 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
         vmOptFinalFlag(map, "CriticalJNINatives");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "StressIncrementalInlining");
+        vmOptFinalFlag(map, "TieredCompilation");
         vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseAdaptiveSizePolicy");
         vmOptFinalFlag(map, "UseCompressedOops");
@@ -354,6 +356,8 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected void vmOptFinalIntxFlags(SafeMap map) {
         vmOptFinalIntxFlag(map, "MaxVectorSize");
+        vmOptFinalIntxFlag(map, "PerMethodSpecTrapLimit");
+        vmOptFinalIntxFlag(map, "PerMethodTrapLimit");
     }
 
     /**
@@ -476,7 +480,7 @@ public class VMProps implements Callable<Map<String, String>> {
     protected String vmCDSSupportsAOTCodeCaching() {
       if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
           !"zero".equals(vmFlavor()) &&
-          (Platform.isX64() || Platform.isAArch64())) {
+          (Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64())) {
         return "true";
       } else {
         return "false";

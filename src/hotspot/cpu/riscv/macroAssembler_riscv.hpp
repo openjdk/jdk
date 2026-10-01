@@ -28,10 +28,14 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "runtime/signature.hpp"
+
+class ciValueKlass;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -138,6 +142,7 @@ class MacroAssembler: public Assembler {
 
   // These always tightly bind to MacroAssembler::call_VM_base
   // bypassing the virtual implementation
+  void super_call_VM_leaf(address entry_point);
   void super_call_VM_leaf(address entry_point, Register arg_0);
   void super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1);
   void super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2);
@@ -184,8 +189,8 @@ class MacroAssembler: public Assembler {
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
-  void movoop(Register dst, jobject obj);
-  void mov_metadata(Register dst, Metadata* obj);
+  void movoop(Register dst, jobject obj, Register tmp = noreg);
+  void mov_metadata(Register dst, Metadata* obj, Register tmp = noreg);
   void bang_stack_size(Register size, Register tmp);
   void set_narrow_oop(Register dst, jobject obj);
   void set_narrow_klass(Register dst, Klass* k);
@@ -249,6 +254,29 @@ class MacroAssembler: public Assembler {
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
+  void test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type);
+  void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
+
+  void test_markword_is_value_type(Register markword, Label& is_value_type);
+  void test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null = true);
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register klass, Register temp_reg, Label& is_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+
+  void value_field_layout_info(Register holder_klass, Register index, Register layout_info);
+
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
+
+  // value type data payload offsets...
+  void payload_offset(Register value_klass, Register offset);
+  void payload_address(Register oop, Register data, Register value_klass);
+
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
@@ -291,6 +319,7 @@ class MacroAssembler: public Assembler {
   }
 
   // allocation
+
   void tlab_allocate(
     Register obj,                   // result: pointer to object after successful allocation
     Register var_size_in_bytes,     // object size in bytes if unknown at compile time; invalid otherwise
@@ -655,6 +684,9 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
+  void cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp = t0);
+  void cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp = t0);
+
   void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
@@ -741,7 +773,7 @@ class MacroAssembler: public Assembler {
   // is used to keep the entry address for jalr/movptr.
   // Uses call() for intra code cache, else movptr + jalr.
   // Clobebrs t1
-  void rt_call(address dest, Register tmp = t1);
+  void rt_call(address dest, Register tmp1 = t1, Register tmp2 = noreg);
 
   // ret: jalr x0, 0(x1)
   inline void ret() {
@@ -1160,6 +1192,49 @@ public:
 
 #undef INSN
 
+#define INSN(NAME, LOAD_INSN, ZALASR_INSN, BITS)                               \
+  void NAME(Register Rd, Register Rs1) {                                       \
+    if (UseZalasr) {                                                           \
+      Assembler::ZALASR_INSN(Rd, Rs1);                                         \
+      zext(Rd, Rd, BITS);                                                      \
+    } else {                                                                   \
+      Assembler::LOAD_INSN(Rd, Rs1, 0);                                        \
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);            \
+    }                                                                          \
+  }
+
+INSN(lbu_acquire, lbu, lb_aq,  8);
+INSN(lhu_acquire, lhu, lh_aq, 16);
+INSN(lwu_acquire, lwu, lw_aq, 32);
+
+#undef INSN
+
+  void ld_acquire(Register Rd, Register Rs1) {
+    if (UseZalasr) {
+      Assembler::ld_aq(Rd, Rs1);
+    } else {
+      Assembler::ld(Rd, Rs1, 0);
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    }
+  }
+
+#define INSN(NAME, STORE_INSN, ZALASR_INSN)                                    \
+  void NAME(Register Rs2, Register Rs1) {                                      \
+    if (UseZalasr) {                                                           \
+      Assembler::ZALASR_INSN(Rs2, Rs1);                                        \
+    } else {                                                                   \
+      membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);          \
+      Assembler::STORE_INSN(Rs2, Rs1, 0);                                      \
+    }                                                                          \
+  }
+
+INSN(sb_release, sb, sb_rl);
+INSN(sh_release, sh, sh_rl);
+INSN(sw_release, sw, sw_rl);
+INSN(sd_release, sd, sd_rl);
+
+#undef INSN
+
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
@@ -1262,6 +1337,9 @@ public:
 
   void load_byte_map_base(Register reg);
 
+  // Load a constant address in the AOT Runtime Constants area
+  void load_aotrc_address(Register reg, address a);
+
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
     assert(offset > 0, "must bang with negative offset");
@@ -1278,6 +1356,8 @@ public:
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
   void remove_frame(int framesize);
+
+  void verified_entry(Compile* C, int sp_inc);
 
   void reserved_stack_check();
 
@@ -1351,6 +1431,7 @@ public:
 
   void load_method_holder_cld(Register result, Register method);
   void load_method_holder(Register holder, Register method);
+  void load_metadata(Register dst, Register src);
 
   void compute_index(Register str1, Register trailing_zeros, Register match_mask,
                      Register result, Register char_tmp, Register tmp,
@@ -1366,6 +1447,23 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper);
   void update_byte_crc32(Register crc, Register val, Register table);
+
+  // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic,
+  // accelerated with Zbc carry-less multiplication (clmul/clmulh).
+  void kernel_crc32c(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void kernel_crc32c_clmul_fold(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void kernel_crc32c_clmul_align(Register crc, Register buf, Register len,
+        Register table, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_fold_128(Register accum_lo, Register accum_hi,
+        Register k1, Register k2, Register buf, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_reduce_128_to_64(Register accum_lo, Register accum_hi,
+        Register clmul_table, Register k, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_barrett_64_to_32(Register accum_lo, Register clmul_table,
+        Register k, Register tmp);
 
 #ifdef COMPILER2
   void vector_update_crc32(Register crc, Register buf, Register len,
@@ -1429,8 +1527,10 @@ public:
   void zero_memory(Register addr, Register len, Register tmp);
   void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
 
-  // shift left by shamt and add
-  void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
+  void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt);
+  void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
+
+  void shadd(Register Rd, Register Rs1, Register Rs2, int shamt);
 
   // test single bit in Rs, result is set to Rd
   void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
@@ -1690,7 +1790,7 @@ public:
     assert_cond(instr != nullptr);
     return extract_opcode(instr) == 0b0010011 &&
            extract_funct3(instr) == 0b101 &&
-           Assembler::extract(((unsigned*)instr)[0], 31, 26) == 0b000000;
+           Assembler::extract(Assembler::ld_instr(instr), 31, 26) == 0b000000;
   }
 
   static bool is_slli_shift_at(address instr, uint32_t shift) {
@@ -1803,10 +1903,14 @@ public:
   static bool is_pc_relative_at(address branch);
 
   static bool is_membar(address addr) {
-    return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
+    return (Assembler::ld_instr(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
   }
   static uint32_t get_membar_kind(address addr);
   static void set_membar_kind(address addr, uint32_t order_kind);
+
+ public:
+  // Value type specific methods
+  #include "asm/macroAssembler_common.hpp"
 };
 
 #ifdef ASSERT

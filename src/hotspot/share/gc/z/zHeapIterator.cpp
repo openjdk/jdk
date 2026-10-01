@@ -462,7 +462,7 @@ void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, cons
 template <bool VisitWeaks>
 void ZHeapIterator::follow(const ZHeapIteratorContext& context, oop obj) {
   // Follow
-  if (obj->is_objArray()) {
+  if (obj->is_refArray()) {
     follow_array(context, obj);
   } else {
     follow_object<VisitWeaks>(context, obj);

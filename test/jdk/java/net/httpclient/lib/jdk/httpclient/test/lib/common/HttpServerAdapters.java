@@ -319,6 +319,7 @@ public interface HttpServerAdapters {
         public abstract InetSocketAddress getLocalAddress();
         public abstract String getConnectionKey();
         public abstract SSLSession getSSLSession();
+        public abstract <T> T getUnderlyingExchange(Class<T> exchgType);
         public CompletableFuture<Long> sendPing() {
             throw new UnsupportedOperationException("sendPing not supported on "
                     + getExchangeVersion());
@@ -555,6 +556,16 @@ public interface HttpServerAdapters {
             }
 
             @Override
+            public <T> T getUnderlyingExchange(final Class<T> exchgType) {
+                if (exchgType.isInstance(this.exchange)) {
+                    return exchgType.cast(this.exchange);
+                }
+                throw new IllegalArgumentException("underlying exchange "
+                        + this.exchange.getClass().getName() + " is not of type: "
+                        + exchgType);
+            }
+
+            @Override
             public String toString() {
                 return this.getClass().getSimpleName() + ": " + exchange.toString();
             }
@@ -675,6 +686,17 @@ public interface HttpServerAdapters {
             public URI getRequestURI() { return exchange.getRequestURI(); }
             @Override
             public String getRequestMethod() { return exchange.getRequestMethod(); }
+
+            @Override
+            public <T> T getUnderlyingExchange(final Class<T> exchgType) {
+                if (exchgType.isInstance(this.exchange)) {
+                    return exchgType.cast(this.exchange);
+                }
+                throw new IllegalArgumentException("underlying exchange "
+                        + this.exchange.getClass().getName() + " is not of type: "
+                        + exchgType);
+            }
+
             @Override
             public String toString() {
                 return this.getClass().getSimpleName() + ": " + exchange.toString();

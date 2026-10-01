@@ -218,8 +218,9 @@ public class AccessZeroNKlassHitsProtectionZone {
             case runwb -> WhiteBox.getWhiteBox().decodeNKlassAndAccessKlass(0);
             case no_coh_no_cds -> run_test(false, false);
             case no_coh_cds -> run_test(false, true);
-            case coh_no_cds -> run_test(true, false);
-            case coh_cds -> run_test(true, true);
+            // TODO 8348568 Re-enable
+            // case coh_no_cds -> run_test(true, false);
+            // case coh_cds -> run_test(true, true);
         }
     }
 }

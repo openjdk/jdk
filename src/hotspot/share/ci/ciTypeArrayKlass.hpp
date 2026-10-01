@@ -61,6 +61,10 @@ public:
   virtual ciKlass* exact_klass() {
     return this;
   }
+
+  virtual bool can_be_value_array_klass() {
+    return false;
+  }
 };
 
 #endif // SHARE_CI_CITYPEARRAYKLASS_HPP
