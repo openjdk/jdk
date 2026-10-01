@@ -57,7 +57,6 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.PrinterName;
-import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DialogTypeSelection;
