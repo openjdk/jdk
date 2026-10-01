@@ -27,6 +27,7 @@
 
 /* Light theme and global variables */
 :root {
+    color-scheme: light;
     --body-font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Luxi Sans', Verdana, Arial, Helvetica;
     --code-font-family: 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Luxi Mono', 'Courier New';
     --body-font-size: 10pt;
@@ -41,13 +42,12 @@
     --link-color: #437291;
     --link-color-active: #bb7a2a;
     --link-color-visited: #77629E;
-    --prefs-background-color: #f8f8f8;
-    --button-hover-color: #e9ecf0;
-    --button-border-color: #b0b8c8;
-    --border-color: #e6e6e6;
-    --example-background-color: #E6E6FABB;
     --table-border-color: #000000;
     --table-header-background-color: #DDF;
+    --button-border-color: #b0b8c8;
+    --button-hover-color: #e9ecf0;
+    --settings-background-color: #f8f8f8;
+    --settings-border-color: #e6e6e6;
     --underline-thickness: 0.08em;
     --icon-filter: none;
     --current-theme-svg: url('data:image/svg+xml; utf8, \
@@ -67,6 +67,7 @@
 }
 /* Dark theme variables */
 :root[data-theme="theme-dark"] {
+    color-scheme: dark;
     --body-text-color: #e8e8e8;
     --body-background-color: #1f2124;
     --navbar-background-color: #395A6F;
@@ -76,13 +77,12 @@
     --link-color: #94badb;
     --link-color-active: #e8a351;
     --link-color-visited: #A5A3C5;
-    --prefs-background-color: #2f3439;
-    --button-hover-color: #3f4146;
-    --border-color: #595959;
-    --example-background-color: #4B4B6399;
     --table-border-color: #919191;
     --table-header-background-color: #4D4D6C;
     --button-border-color: #909090;
+    --button-hover-color: #3f4146;
+    --settings-background-color: #2f3439;
+    --settings-border-color: #595959;
     --icon-filter: invert(91%) brightness(160%);
     --underline-thickness: 0.05em;
     /* Inline SVG icons for dark theme */
@@ -212,15 +212,6 @@ a img {
 img {
   filter: var(--icon-filter);
 }
-
-div.example {
-    background-color: var(--example-background-color);
-    margin: 10px 36px;
-    padding-left: 10px;
-    padding-right: 10px;
-    border: 1px solid var(--border-color);
-}
-
 
 table {
   border-collapse: collapse;
@@ -398,12 +389,12 @@ div#theme-panel {
     display: none;
     position: fixed;
     z-index: 8;
-    background-color: var(--prefs-background-color);
+    background-color: var(--settings-background-color);
     color: var(--body-text-color);
     font-size: var(--nav-font-size);
     padding: 4px;
     white-space: nowrap;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--settings-border-color);
     border-radius: 4px;
     box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
 }
