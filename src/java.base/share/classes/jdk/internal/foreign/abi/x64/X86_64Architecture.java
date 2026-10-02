@@ -93,7 +93,7 @@ public final class X86_64Architecture implements Architecture {
         public static final VMStorage r13 = integerRegister(13, "r13");
         public static final VMStorage r14 = integerRegister(14, "r14");
         public static final VMStorage r15 = integerRegister(15, "r15");
-        // APX enxtended GPRs (EGPRs)
+        // APX extended GPRs (EGPRs)
         public static final VMStorage r16 = integerRegister(16, "r16");
         public static final VMStorage r17 = integerRegister(17, "r17");
         public static final VMStorage r18 = integerRegister(18, "r18");
