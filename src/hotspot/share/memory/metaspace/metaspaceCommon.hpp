@@ -53,7 +53,7 @@ static const size_t AllocationAlignmentWordSize = AllocationAlignmentByteSize / 
 // Returns the raw word size allocated for a given net allocation. This only matters on 32-bit, where
 // allocations have to be 64-bit aligned too and therefore must be 2-word-aligned.
 inline size_t get_raw_word_size_for_requested_word_size(size_t word_size) {
-  LP64_ONLY(STATIC_ASSERT(AllocationAlignmentWordSize == 1)); // rewrite if this does not hold true anymore
+  LP64_ONLY(static_assert(AllocationAlignmentWordSize == 1)); // rewrite if this does not hold true anymore
   return LP64_ONLY(word_size) // no-op on 64-bit
          NOT_LP64(align_up(word_size, AllocationAlignmentWordSize));
 }

@@ -50,7 +50,6 @@
  *        nsk.jdi.Accessible.modifiers.modifiers001a
  * @run driver
  *      nsk.jdi.Accessible.modifiers.modifiers001
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

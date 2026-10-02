@@ -169,7 +169,7 @@ const char* CDSConfig::default_archive_path() {
       tmp.print_raw("_preview");
     }
     tmp.print_raw(".jsa");
-    _default_archive_path = os::strdup(tmp.base());
+    _default_archive_path = os::strdup(tmp.base(), mtInternal);
   }
   return _default_archive_path;
 }
@@ -345,6 +345,12 @@ void CDSConfig::check_incompatible_property(const char* key, const char* value) 
     }
   }
 
+  if (strcmp(key, "jdk.internal.lambda.disableEagerInitialization") == 0 &&
+      strcasecmp(value, "true") == 0) { // Same as Boolean.getBoolean()
+    log_warning(aot)("Disabled AOTInvokeDynamicLinking because "
+                     "jdk.internal.lambda.disableEagerInitialization is set to true");
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+  }
 }
 
 // Returns any JVM command-line option, such as "--patch-module", that's not supported by CDS.

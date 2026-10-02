@@ -36,25 +36,35 @@ uint StrIntrinsicNode::match_edge(uint idx) const {
   return idx == 2 || idx == 3;
 }
 
+static Node* ideal_mem_intrinsic_node(PhaseGVN* phase, bool can_reshape, Node* n) {
+  if (n->remove_dead_region(phase, can_reshape)) {
+    return n;
+  }
+
+  // Don't bother trying to transform a dead node
+  if (n->in(0) && n->in(0)->is_top()) {
+    return nullptr;
+  }
+
+  // If mem input is a MergeMem, get the desired slice
+  if (const TypePtr* adr_type = n->adr_type(); can_reshape && adr_type != TypePtr::BOTTOM) {
+    Node* mem = n->in(MemNode::Memory);
+    uint alias_idx = phase->C->get_alias_index(adr_type);
+    Node* new_mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
+    if (new_mem != mem) {
+      n->set_req_X(MemNode::Memory, new_mem, phase);
+      return n;
+    }
+  }
+
+  return nullptr;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape)) return this;
-  // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return nullptr;
-
-  if (can_reshape) {
-    Node* mem = in(MemNode::Memory);
-    // If mem input is a MergeMem, get the desired slice
-    uint alias_idx = phase->C->get_alias_index(adr_type());
-    mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
-    if (mem != in(MemNode::Memory)) {
-      set_req_X(MemNode::Memory, mem, phase);
-      return this;
-    }
-  }
-  return nullptr;
+  return ideal_mem_intrinsic_node(phase, can_reshape, this);
 }
 
 //------------------------------Value------------------------------------------
@@ -63,29 +73,13 @@ const Type* StrIntrinsicNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
-// Return a node which is more "ideal" than the current node.  Strip out
-// control copies
-Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : nullptr;
-}
-
-//=============================================================================
-//------------------------------Ideal------------------------------------------
-// Return a node which is more "ideal" than the current node.  Strip out
-// control copies
-Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : nullptr;
-}
-
 uint VectorizedHashCodeNode::match_edge(uint idx) const {
   // Do not match memory edge.
   return idx >= 2 && idx <=  5; // VectorizedHashCodeNode (Binary ary1 cnt1) (Binary result bt)
 }
 
 Node* VectorizedHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : nullptr;
+  return ideal_mem_intrinsic_node(phase, can_reshape, this);
 }
 
 const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
@@ -105,7 +99,7 @@ uint EncodeISOArrayNode::match_edge(uint idx) const {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : nullptr;
+  return ideal_mem_intrinsic_node(phase, can_reshape, this);
 }
 
 //------------------------------Value------------------------------------------

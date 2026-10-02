@@ -146,6 +146,11 @@
 #define DEFLATED    8
 
 /*
+ * Index representing end of hash chain
+ */
+#define ZIP_ENDCHAIN ((jint) -1)
+
+/*
  * Support for reading ZIP/JAR files. Some things worth noting:
  *
  * - Zip file entries larger than 2**32 bytes are not supported.
@@ -237,11 +242,6 @@ typedef struct jzfile {   /* Zip file */
 } jzfile;
 
 /*
- * Index representing end of hash chain
- */
-#define ZIP_ENDCHAIN ((jint)-1)
-
-/*
  * Returns the ZIP entry corresponding to the given (NULL terminated)
  * entry name. Returns NULL if no entry is found by that name.
  * If the entry is found, then the value of the given sizeP will be
@@ -260,18 +260,6 @@ ZIP_GetNextEntry(jzfile *zip, jint n);
 JNIEXPORT jzfile *
 ZIP_Open(const char *name, char **pmsg);
 
-jzfile *
-ZIP_Open_Generic(const char *name, char **pmsg, int mode, jlong lastModified);
-
-jzfile *
-ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified);
-
-jzfile *
-ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified);
-
-jzfile *
-ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified, jboolean usemmap);
-
 JNIEXPORT void
 ZIP_Close(jzfile *zip);
 
@@ -281,15 +269,8 @@ ZIP_Close(jzfile *zip);
  */
 jzentry *
 ZIP_GetEntry(jzfile *zip, const char *name);
-void
-ZIP_Lock(jzfile *zip);
-void
-ZIP_Unlock(jzfile *zip);
-jint
-ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len);
 JNIEXPORT void
 ZIP_FreeEntry(jzfile *zip, jzentry *ze);
-jlong ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry);
 
 JNIEXPORT jboolean
 ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg);

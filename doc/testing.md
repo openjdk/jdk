@@ -353,11 +353,33 @@ For more fine-grained control, you can pass arbitrary filters to JCov using
 `--with-jcov-filters`, and you can specify a specific JDK to instrument
 using `--with-jcov-input-jdk`.
 
+The resulting coverage is written into
+`build/$BUILD/test-results/jcov-output/result.xml`.
+
 The JCov report is stored in `build/$BUILD/test-results/jcov-output/report`.
 
 Please note that running with JCov reporting can be very memory intensive.
 
-#### JCOV_DIFF_CHANGESET
+##### JCov scales
+
+JCov scales make it possible to record which tests cover each part of the
+instrumented code. To collect coverage with scales, set `JCOV_SCALES=true`,
+for example:
+
+    $ make jcov-test TEST=jdk_lang TEST_OPTS="JCOV_SCALES=true"
+
+The resulting coverage data contains the association between covered code and
+the tests that covered it. A corresponding `testlist.txt` file, which contains
+the test names, is generated in the same directory.
+
+The JCov report displays the names of the tests that cover each class.
+
+Collecting coverage scales forces jtreg tests to be run in `othervm` mode,
+which takes longer than ordinary JCov collection. The coverage data is also
+larger because it includes scale information, and the generated report is
+larger because it includes test names.
+
+##### JCOV_DIFF_CHANGESET
 
 While collecting code coverage with JCov, it is also possible to find coverage
 for only recently changed code. JCOV_DIFF_CHANGESET specifies a source

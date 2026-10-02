@@ -31,8 +31,8 @@ public:
   static const uint TestRegions = 512;
 
   void verify_counts() {
-    verify_active_count(0, TestRegions, num_active());
-    verify_inactive_count(0, TestRegions, num_inactive());
+    verify_num_active_regions(0, TestRegions, num_active_regions());
+    verify_num_inactive_regions(0, TestRegions, num_inactive_regions());
   }
 
 protected:
@@ -51,7 +51,7 @@ static void generate_random_map(G1CommittedRegionMap* map) {
     }
   }
 
-  if (map->num_active() == 0) {
+  if (map->num_active_regions() == 0) {
     // If we randomly activated 0 regions, activate the first half
     // to have some regions to test.
     map->activate(0, G1CommittedRegionMapSerial::TestRegions / 2);
@@ -63,12 +63,12 @@ static void random_deactivate(G1CommittedRegionMap* map) {
   do {
     G1HeapRegionRange current = map->next_active_range(current_offset);
     if (mutate()) {
-      if (current.length() < 5) {
+      if (current.num_regions() < 5) {
         // For short ranges, deactivate whole.
         map->deactivate(current.start(), current.end());
       } else {
         // For larger ranges, deactivate half.
-        map->deactivate(current.start(), current.end() - (current.length() / 2));
+        map->deactivate(current.start(), current.end() - (current.num_regions() / 2));
       }
     }
     current_offset = current.end();
@@ -94,14 +94,14 @@ static void random_activate_free(G1CommittedRegionMap* map) {
   uint current_offset = 0;
   do {
     G1HeapRegionRange current = map->next_committable_range(current_offset);
-    // Randomly either reactivate or uncommit
+    // Randomly activate parts of the committed map.
     if (mutate()) {
-      if (current.length() < 5) {
+      if (current.num_regions() < 5) {
         // For short ranges, deactivate whole.
         map->activate(current.start(), current.end());
       } else {
         // For larger ranges, deactivate half.
-        map->activate(current.start(), current.end() - (current.length() / 2));
+        map->activate(current.start(), current.end() - (current.num_regions() / 2));
       }
     }
 
@@ -124,6 +124,6 @@ TEST(G1CommittedRegionMapTest, serial) {
     serial_map.verify_counts();
     random_activate_free(&serial_map);
     serial_map.verify_counts();
-    ASSERT_EQ(serial_map.num_inactive(), 0u);
+    ASSERT_EQ(serial_map.num_inactive_regions(), 0u);
   }
 }

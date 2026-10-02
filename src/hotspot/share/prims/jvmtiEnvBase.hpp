@@ -54,7 +54,7 @@ class JvmtiTagMap;
 // done via JNI GetEnv() call. Multiple attachments are
 // allowed in jvmti.
 
-class JvmtiEnvBase : public CHeapObj<mtInternal> {
+class JvmtiEnvBase : public CHeapObj<mtServiceability> {
 
  private:
 
@@ -266,7 +266,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
     if (size == 0) {
       *mem_ptr = nullptr;
     } else {
-      *mem_ptr = (unsigned char *)os::malloc((size_t)size, mtInternal);
+      *mem_ptr = (unsigned char *)os::malloc((size_t)size, mtServiceability);
       if (*mem_ptr == nullptr) {
         return JVMTI_ERROR_OUT_OF_MEMORY;
       }

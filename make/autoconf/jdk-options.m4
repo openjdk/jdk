@@ -829,9 +829,18 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_NOCOOPS],
 
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_PREVIEW],
 [
-  UTIL_ARG_ENABLE(NAME: cds-archive-preview, DEFAULT: true, RESULT: BUILD_CDS_ARCHIVE_PREVIEW,
+  UTIL_ARG_ENABLE(NAME: cds-archive-preview, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_PREVIEW,
       DESC: [enable generation of preview CDS archives (requires --enable-cds-archive)],
-      CHECKING_MSG: [if default CDS archives for preview should be generated])
+      CHECKING_MSG: [if default CDS archives for preview should be generated],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if value objects are supported])
+        if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no (64-bit only)])
+          AVAILABLE=false
+        fi
+      ])
   AC_SUBST(BUILD_CDS_ARCHIVE_PREVIEW)
 ])
 

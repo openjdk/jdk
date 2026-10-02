@@ -122,8 +122,7 @@ public class ValueTearingTest {
       static final int BATCH_SIZE = 10_000;
 
       static int incrementIndex(int idx, int n) {
-          idx += INCREMENTS[n];
-          if (idx >= N_PRECOMPUTED) idx -= N_PRECOMPUTED;
+          idx = (idx + INCREMENTS[n]) % N_PRECOMPUTED;
           return idx;
       }
 

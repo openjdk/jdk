@@ -64,6 +64,7 @@
 
   void string_indexof_char_short(Register str1, Register cnt1,
                                  Register ch, Register result,
+                                 Register start_index,
                                  bool isL);
 
   void string_indexof_char(Register str1, Register cnt1,

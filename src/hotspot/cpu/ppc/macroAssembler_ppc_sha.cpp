@@ -613,7 +613,6 @@ void MacroAssembler::sha512_update_sha_state(const Register state,
   VectorRegister ini_e = VR14;
   VectorRegister ini_g = VR16;
   static const VectorRegister inis[] = {ini_a, ini_c, ini_e, ini_g};
-  static const int total_inis = sizeof(inis)/sizeof(VectorRegister);
 
   Label state_save_aligned, after_state_save_aligned;
 

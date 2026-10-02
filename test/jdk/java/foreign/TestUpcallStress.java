@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  * @bug 8337753
  *
- * @run testng/native/othervm
+ * @run junit/native/othervm
  *   -Xcheck:jni
  *   -XX:+IgnoreUnrecognizedVMOptions
  *   -XX:-VerifyDependencies
@@ -43,9 +43,6 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import jdk.test.lib.Utils;
 
 import java.lang.invoke.MethodHandle;
@@ -55,6 +52,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUpcallStress extends TestUpcallBase {
 
     static {
@@ -65,12 +69,12 @@ public class TestUpcallStress extends TestUpcallBase {
 
     ExecutorService executor;
 
-    @BeforeClass
+    @BeforeAll
     public void setup() {
         executor = Executors.newFixedThreadPool(THREAD_COUNT);
     }
 
-    @AfterClass
+    @AfterAll
     public void tearDown() throws InterruptedException {
         executor.shutdown();
         // Let it run for a while, and then just terminate
@@ -78,7 +82,8 @@ public class TestUpcallStress extends TestUpcallBase {
     }
 
 
-    @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
+    @ParameterizedTest
+    @MethodSource("functions")
     public void testUpcallsStress(int count, String fName, Ret ret, List<ParamType> paramTypes,
                                   List<StructFieldType> fields) {
         for (int threadIdx = 0; threadIdx < THREAD_COUNT; threadIdx++) {
