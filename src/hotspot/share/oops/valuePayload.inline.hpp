@@ -187,27 +187,7 @@ inline void ValuePayload::copy(const ValuePayload& src,
                                LayoutKind copy_layout_kind) {
   assert_pre_copy_invariants(src, dst, copy_layout_kind);
 
-  ValueKlass* const klass = src.klass();
-
-  switch (copy_layout_kind) {
-  case LayoutKind::NULLABLE_ATOMIC_FLAT:
-  case LayoutKind::NULLABLE_NON_ATOMIC_FLAT: {
-    if (src.is_payload_null()) {
-      HeapAccess<>::value_store_null(dst);
-    } else {
-      HeapAccess<>::value_copy(src, dst);
-    }
-  } break;
-  case LayoutKind::BUFFERED:
-  case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-  case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
-    if (!klass->is_empty_value_type()) {
-      HeapAccess<>::value_copy(src, dst);
-    }
-  } break;
-  default:
-    ShouldNotReachHere();
-  }
+  HeapAccess<>::value_copy(src, dst);
 }
 
 inline void ValuePayload::mark_as_non_null() {
@@ -218,6 +198,14 @@ inline void ValuePayload::mark_as_non_null() {
 inline void ValuePayload::mark_as_null() {
   precond(has_null_marker());
   klass()->mark_payload_as_null(addr());
+}
+
+inline bool ValuePayload::has_null_marker() const {
+  return klass()->layout_has_null_marker(layout_kind());
+}
+
+inline bool ValuePayload::is_payload_null() const {
+  return has_null_marker() && klass()->is_payload_marked_as_null(addr());
 }
 
 inline bool ValuePayload::uses_absolute_addr() const {
@@ -441,14 +429,6 @@ inline address ValuePayload::addr() const {
       : (cast_from_oop<address>(container()) + offset());
 }
 
-inline bool ValuePayload::has_null_marker() const {
-  return klass()->layout_has_null_marker(layout_kind());
-}
-
-inline bool ValuePayload::is_payload_null() const {
-  return has_null_marker() && klass()->is_payload_marked_as_null(addr());
-}
-
 inline ValuePayload ValuePayload::construct_from_parts(address absolute_addr,
                                                        ValueKlass* klass,
                                                        LayoutKind layout_kind) {
@@ -576,6 +556,14 @@ inline void FlatValuePayload::write(valueOop obj, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Value is null");
   }
   write_without_nullability_check(obj);
+}
+
+inline bool FlatValuePayload::has_null_marker() const {
+  return ValuePayload::has_null_marker();
+}
+
+inline bool FlatValuePayload::is_payload_null() const {
+  return ValuePayload::is_payload_null();
 }
 
 inline FlatValuePayload FlatValuePayload::construct_from_parts(oop container,

@@ -116,6 +116,9 @@ protected:
   inline void mark_as_non_null();
   inline void mark_as_null();
 
+  inline bool has_null_marker() const;
+  inline bool is_payload_null() const;
+
   inline bool uses_absolute_addr() const;
 
   inline oop& container();
@@ -136,9 +139,6 @@ public:
   inline LayoutKind layout_kind() const;
 
   inline address addr() const;
-
-  inline bool has_null_marker() const;
-  inline bool is_payload_null() const;
 
   class Handle;
   class OopHandle;
@@ -199,6 +199,9 @@ public:
   [[nodiscard]] inline valueOop read(TRAPS);
   inline void write_without_nullability_check(valueOop obj);
   inline void write(valueOop obj, TRAPS);
+
+  inline bool has_null_marker() const;
+  inline bool is_payload_null() const;
 
   [[nodiscard]] static inline FlatValuePayload construct_from_parts(oop container,
                                                                     ptrdiff_t offset,
