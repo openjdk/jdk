@@ -21,38 +21,22 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8389130
- * @summary With Valhalla, frame::sender became a bit too big and is not as spontaneously inlined as before.
- *          This causes some measurable performance regressions in cases where walking the stack is frequent.
- * @requires vm.debug == false
- * @run main/othervm -Xbatch
- *                   -XX:-TieredCompilation
- *                   -XX:CompileCommand=dontinline,${test.main.class}::fillInStackTrace
- *                   ${test.main.class}
- * @run main ${test.main.class}
+ * @bug 8392782
+ * @summary Integer overflow in constructor causes NegativeArraySizeException
+ * @library /test/lib
+ * @modules java.base/sun.security.util
+ * @run main/othervm -Xmx64m BitArrayIntegerOverflow
  */
 
-package compiler.exceptions;
+import static jdk.test.lib.Asserts.assertThrows;
 
-public class TestStackWalkPerf extends Throwable {
-    private static final TestStackWalkPerf PROBE = new TestStackWalkPerf();
+import sun.security.util.BitArray;
 
-    private static void fillInStackTrace(int depth, int fills) {
-        if (depth == 0) {
-            for (int i = 0; i < fills; i++) {
-                PROBE.fillInStackTrace();
-            }
-            return;
-        }
-        fillInStackTrace(depth - 1, fills);
-    }
-
+public class BitArrayIntegerOverflow {
     public static void main(String[] args) {
-        for (int i = 0; i < 10_000; i++) {
-            fillInStackTrace(512, 1);
-        }
-        fillInStackTrace(512, 1_000_000);
+        assertThrows(OutOfMemoryError.class,
+                () -> new BitArray(Integer.MAX_VALUE - 6));
     }
 }

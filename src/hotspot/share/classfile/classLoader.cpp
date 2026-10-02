@@ -1247,7 +1247,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
 
 #if INCLUDE_CDS
 static const char* skip_uri_protocol(const char* source) {
-  if (strncmp(source, "file:", 5) == 0) {
+  if (strncasecmp(source, "file:", 5) == 0) {
     // file: protocol path could start with file:/ or file:///
     // locate the char after all the forward slashes
     int offset = 5;
