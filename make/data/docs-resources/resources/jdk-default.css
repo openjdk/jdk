@@ -118,8 +118,12 @@
     }
 }
 
-html {
-  scroll-padding-top: 0.95em;
+[id] {
+  scroll-margin-top: 0.9em;
+}
+
+code[id], span[id] {
+    scroll-margin-top: 0.3em;
 }
 
 body {
