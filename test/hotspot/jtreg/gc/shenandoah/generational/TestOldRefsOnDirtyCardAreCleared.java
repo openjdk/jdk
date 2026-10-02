@@ -40,6 +40,7 @@ import jdk.test.whitebox.WhiteBox;
  *      -Xms512m -Xmx512m
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:-DisableExplicitGC -XX:+ExplicitGCInvokesConcurrent
  *      gc.shenandoah.generational.TestOldRefsOnDirtyCardAreCleared
  */
 public class TestOldRefsOnDirtyCardAreCleared {
@@ -66,12 +67,12 @@ public class TestOldRefsOnDirtyCardAreCleared {
     }
 
     public static void main(String[] args) throws Exception {
-        int iterations = args.length > 0 ? Integer.parseInt(args[0]) : 8;
+        final int REF_COUNT = 8;
 
         // Step 1. Make references with strongly reachable referents. Making multiples here
         // helps the test avoid the false positive scenario where the `youngPointer` ends up
         // on a different card.
-        for (int iteration = 0; iteration < iterations; iteration++) {
+        for (int i = 0; i < REF_COUNT; ++i) {
             Object obj = new Object();
             WeakReferenceWithYoungPointer wr = new WeakReferenceWithYoungPointer(obj);
             WEAK_REFS.add(wr);
@@ -79,8 +80,14 @@ public class TestOldRefsOnDirtyCardAreCleared {
         }
 
         // Step 2. Run full GCs until all the references and their referents are promoted
+        final int MAX_FULL_GCS = 5;
+        int tries = 0;
         while (!allAreInOld(WEAK_REFS) || !allAreInOld(STRONG)) {
+            if (tries >= MAX_FULL_GCS) {
+                throw new RuntimeException("Test condition unmet: weak refs and referents not promoted");
+            }
             WB.fullGC();
+            ++tries;
         }
 
         // Step 3. Drop the strong references to the referents
