@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8392714
+ * @bug 8391971
  * @modules java.base/java.lang:+open
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
  * @run main ${test.main.class}
