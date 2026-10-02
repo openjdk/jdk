@@ -1479,15 +1479,10 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
 
 #ifdef ASSERT
 void ShenandoahHeap::assert_no_self_forwards() const {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
-  ShenandoahCollectionSet* cs = collection_set();
-  if (cs == nullptr) return;
-  cs->clear_current_index();
-  ShenandoahHeapRegion* r;
-  while ((r = cs->next()) != nullptr) {
-    assert(!r->has_self_forwards(), "region still flagged after drain");
+  for (size_t i = 0, n = num_regions(); i < n; ++i) {
+    const ShenandoahHeapRegion* region = get_region(i);
+    assert(!region->has_self_forwards(), "Region %zu should not have self forwarded objects here.", i);
   }
-  cs->clear_current_index();
 }
 #endif
 
