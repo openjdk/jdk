@@ -35,22 +35,19 @@ public:
    */
   static inline oop get_forwardee(oop obj);
 
-  /* Returns the raw value from forwardee slot without any checks.
-   * Used for quick verification. For a self-forwarded object,
-   * returns the object itself.
+  /* Returns the raw forwardee without extra checks.
    */
   static inline oop get_forwardee_raw(oop obj);
 
-  /* Returns true if the object is forwarded, false otherwise.
+  /* Returns true iff the object is forwarded.
    */
   static inline bool is_forwarded(oop obj);
 
-  /* Returns true iff the object has been self-forwarded.
+  /* Returns true iff the object is self-forwarded.
    */
   static inline bool is_self_forwarded(oop obj);
 
-  /* Returns true if the object is allowed to be forwarded,
-   * false otherwise.
+  /* Returns true iff the object is allowed to be forwarded.
    */
   static inline bool is_forwardable(oop obj);
 
