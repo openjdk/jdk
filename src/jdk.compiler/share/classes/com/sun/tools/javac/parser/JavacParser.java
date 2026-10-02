@@ -983,8 +983,7 @@ public class JavacParser implements Parser {
         JCExpression e;
         if (token.kind == UNDERSCORE && parsedType == null) {
             if (!allowVar && Feature.UNNAMED_VARIABLES.allowedInSource(source)){
-                log.error(DiagnosticFlag.SYNTAX, token.pos,
-                        Errors.UseOfUnderscoreNotAllowedNonVariable);
+                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowedNonVariable);
             }
             nextToken();
             checkSourceLevel(Feature.UNNAMED_VARIABLES);
