@@ -559,6 +559,34 @@
  * wisekeyglobalrootgcca CRL
  */
 
+/*
+ * @test id=certumtrustedrootca
+ * @bug 8392771
+ * @summary Interoperability tests with Certum Trusted Root CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * certumtrustedrootca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop certumtrustedrootca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * certumtrustedrootca CRL
+ */
+
+/*
+ * @test id=certumec384ca
+ * @bug 8392771
+ * @summary Interoperability tests with Certum EC-384 CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * certumec384ca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop certumec384ca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * certumec384ca CRL
+ */
+
 /**
  * Collection of certificate validation tests for interoperability with external CAs.
  * These tests are marked as manual as they depend on external infrastructure and may fail
@@ -740,6 +768,13 @@ public class CAInterop {
             case "wisekeyglobalrootgcca" ->
                     new CATestURLs("https://gcvalidssl.hightrusted.com",
                             "https://gcrevokedssl.hightrusted.com");
+
+            case "certumtrustedrootca" ->
+                    new CATestURLs("https://valid-ctrca.certificates.certum.pl",
+                            "https://revoked-ctrca.certificates.certum.pl");
+            case "certumec384ca" ->
+                    new CATestURLs("https://valid-cec384ca.certificates.certum.pl",
+                            "https://revoked-cec384ca.certificates.certum.pl");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };
