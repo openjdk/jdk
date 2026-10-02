@@ -1245,6 +1245,7 @@ ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, Shena
   _cs(cs) {
   // Do not reset claim index, these workers pick up from where the evacuation workers left off
   assert(!_cs->all_regions_claimed(), "Only here to self forward objects in unclaimed regions");
+  assert(_heap->has_self_forwarded_objects(), "Workers that did not evacuate a region must set this flag");
 }
 
 void ShenandoahSelfForwardTask::work(uint worker_id) {
