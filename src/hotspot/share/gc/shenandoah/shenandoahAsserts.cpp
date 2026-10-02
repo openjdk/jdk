@@ -80,7 +80,7 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
     ss.print_cr("%3s marked strong",              ctx->is_marked_strong(obj) ? "" : "not");
     ss.print_cr("%3s marked weak",                ctx->is_marked_weak(obj) ? "" : "not");
     ss.print_cr("%3s in collection set",          heap->in_collection_set(obj) ? "" : "not");
-    if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+    if (heap->mode()->is_generational() && !ShenandoahForwarding::is_forwarded(obj)) {
       ss.print_cr("age: %d", obj->age());
     }
     ss.print_raw("mark: ");
