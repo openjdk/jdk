@@ -954,6 +954,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
       if (ShenandoahForwarding::is_forwardable(obj)) {
         resolved = _heap->evacuate_object(obj, _thread);
       } else {
+        shenandoah_assert_forwarded(p, obj);
         resolved = ShenandoahForwarding::get_forwardee(obj);
       }
       if (resolved != obj) {

@@ -118,7 +118,7 @@ private:
       verify_oop_at_basic(p, obj);
 
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj)) && ShenandoahForwarding::is_forwarded(obj)) {
-        obj = ShenandoahForwarding::get_forwardee(obj);
+        obj = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       }
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);

@@ -158,6 +158,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
         assert(thr == Thread::current(), "Wrong thread");
         resolved = _heap->evacuate_object(obj, thr);
       } else {
+        shenandoah_assert_forwarded(p, obj);
         resolved = ShenandoahForwarding::get_forwardee(obj);
       }
       if (resolved != obj) {
