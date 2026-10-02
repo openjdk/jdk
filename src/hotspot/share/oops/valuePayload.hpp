@@ -110,8 +110,7 @@ protected:
   inline void set_offset(ptrdiff_t offset);
 
   static inline void copy(const ValuePayload& src,
-                          const ValuePayload& dst,
-                          LayoutKind copy_layout_kind);
+                          const ValuePayload& dst);
 
   inline void mark_as_non_null();
   inline void mark_as_null();
@@ -130,8 +129,7 @@ private:
   inline void assert_is_flat_field(const InstanceKlass* klass, int offset) const NOT_DEBUG_RETURN;
   inline void assert_post_construction_invariants() const NOT_DEBUG_RETURN;
   static inline void assert_pre_copy_invariants(const ValuePayload& src,
-                                                const ValuePayload& dst,
-                                                LayoutKind copy_layout_kind) NOT_DEBUG_RETURN;
+                                                const ValuePayload& dst) NOT_DEBUG_RETURN;
 
 public:
   inline ValueKlass* klass() const;

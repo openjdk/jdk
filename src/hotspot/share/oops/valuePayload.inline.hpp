@@ -183,10 +183,8 @@ inline void ValuePayload::set_offset(ptrdiff_t offset) {
 }
 
 inline void ValuePayload::copy(const ValuePayload& src,
-                               const ValuePayload& dst,
-                               LayoutKind copy_layout_kind) {
-  assert_pre_copy_invariants(src, dst, copy_layout_kind);
-
+                               const ValuePayload& dst) {
+  assert_pre_copy_invariants(src, dst);
   HeapAccess<>::value_copy(src, dst);
 }
 
@@ -348,8 +346,7 @@ inline void ValuePayload::assert_post_construction_invariants() const {
 }
 
 inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
-                                                     const ValuePayload& dst,
-                                                     LayoutKind copy_layout_kind) {
+                                                     const ValuePayload& dst) {
   OnVMError on_assertion_failuire([&](outputStream* st) {
     st->print_cr("=== assert_post_construction_invariants failure ===");
     StreamIndentor si(st);
@@ -365,18 +362,14 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
       dst.print_on(st);
       st->cr();
     }
-    {
-      st->print_cr("--- copy layout kind ---");
-      StreamIndentor si(st);
-      LayoutKindHelper::print_on(copy_layout_kind, st);
-      st->cr();
-    }
   });
 
   const ValueKlass* const src_klass = src.klass();
   const ValueKlass* const dst_klass = dst.klass();
 
   precond(src_klass == dst_klass);
+
+  const LayoutKind copy_layout_kind = LayoutKindHelper::get_copy_layout(src.layout_kind(), dst.layout_kind());
 
   const bool src_is_buffered = src.layout_kind() == LayoutKind::BUFFERED;
   const bool dst_is_buffered = dst.layout_kind() == LayoutKind::BUFFERED;
@@ -404,8 +397,6 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
 
   precond(copy_layout_size_in_bytes <= src_layout_size_in_bytes);
   precond(copy_layout_size_in_bytes <= dst_layout_size_in_bytes);
-  precond(LayoutKindHelper::get_copy_layout(src.layout_kind(),
-                                            dst.layout_kind()) == copy_layout_kind);
 }
 
 #endif // ASSERT
@@ -453,7 +444,7 @@ inline valueOop BufferedValuePayload::container() const {
 }
 
 inline void BufferedValuePayload::copy_to(const BufferedValuePayload& dst) {
-  copy(*this, dst, LayoutKind::BUFFERED);
+  copy(*this, dst);
 }
 
 inline FlatValuePayload::FlatValuePayload(oop container,
@@ -477,7 +468,7 @@ inline bool FlatValuePayload::copy_to(BufferedValuePayload& dst) {
   // Copy from FLAT to BUFFERED, null marker fix may be required.
 
   // Copy the payload to the buffered object.
-  copy(*this, dst, layout_kind());
+  copy(*this, dst);
 
   if (!has_null_marker() && dst.has_null_marker()) {
     // We must fix the null marker if the src does not have a null marker but
@@ -505,11 +496,11 @@ inline void FlatValuePayload::copy_from(BufferedValuePayload& src) {
     // valid non null value.
     src.mark_as_non_null();
   }
-  copy(src, *this, layout_kind());
+  copy(src, *this);
 }
 
 inline void FlatValuePayload::copy_to(const FlatValuePayload& dst) {
-  copy(*this, dst, layout_kind());
+  copy(*this, dst);
 }
 
 inline valueOop FlatValuePayload::read(TRAPS) {
