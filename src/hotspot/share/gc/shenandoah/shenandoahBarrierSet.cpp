@@ -411,12 +411,10 @@ void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (cset->is_in(obj)) {
-        oop fwd = obj;
-        if (ShenandoahForwarding::is_forwarded(obj)) {
-          fwd = ShenandoahForwarding::get_forwardee(obj);
-        }
-        if (fwd != obj) {
-          ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
+        shenandoah_assert_forwarded(elem_ptr, obj);
+        oop resolved = ShenandoahForwarding::get_forwardee(obj);
+        if (resolved != obj) {
+          ShenandoahHeap::atomic_update_oop(resolved, elem_ptr, o);
         }
       }
     }
