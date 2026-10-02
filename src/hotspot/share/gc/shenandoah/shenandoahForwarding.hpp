@@ -68,8 +68,13 @@ public:
    */
   static inline oop try_forward_to_self(oop obj);
 
+  static inline void unset_self_forwarded(oop obj);
+
   static inline size_t size(oop obj);
   static inline Klass* klass(oop obj);
+
+  static inline int age(oop obj);
+  static inline void increase_age(oop obj, uint add);
 
 private:
   static inline oop get_forwardee_raw(oop obj, markWord mark);

@@ -299,27 +299,6 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
   return allocate_from_gclab_slow(thread, size);
 }
 
-void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
-  // This operates on new copy of an object. This means that the object's mark-word
-  // is thread-local and therefore safe to access.
-  markWord w = obj->mark();
-  // It is possible that we have copied the object after another thread has
-  // already successfully completed evacuation. While harmless (we would never
-  // publish our copy), don't even attempt to modify the age when that
-  // happens.
-  if (!w.is_marked()) {
-    w = w.set_age(MIN2(markWord::max_age, w.age() + additional_age));
-    obj->set_mark(w);
-  }
-}
-
-uint ShenandoahHeap::get_object_age(oop obj) {
-  markWord w = obj->mark();
-  assert(!w.is_marked(), "must not be forwarded");
-  assert(w.age() <= markWord::max_age, "Impossible!");
-  return w.age();
-}
-
 inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
   if (!mode()->is_generational()) {
     // everything is the same single generation

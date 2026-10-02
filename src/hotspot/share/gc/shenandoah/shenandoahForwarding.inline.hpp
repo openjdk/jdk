@@ -103,6 +103,13 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   return get_forwardee_raw(obj, prev_mark);
 }
 
+inline void ShenandoahForwarding::unset_self_forwarded(oop obj) {
+  markWord m = obj->mark();
+  if (m.is_self_forwarded()) {
+    obj->set_mark(m.unset_self_forwarded());
+  }
+}
+
 inline Klass* ShenandoahForwarding::klass(oop obj) {
   if (UseCompactObjectHeaders) {
     markWord mark = obj->mark();
@@ -118,6 +125,23 @@ inline Klass* ShenandoahForwarding::klass(oop obj) {
 
 inline size_t ShenandoahForwarding::size(oop obj) {
   return obj->size_given_klass(klass(obj));
+}
+
+inline int ShenandoahForwarding::age(oop obj) {
+  markWord w = obj->mark();
+  assert(!w.is_marked(), "Must not be forwarded");
+  assert(w.age() <= markWord::max_age, "Age is in bounds");
+  return w.age();
+}
+
+inline void ShenandoahForwarding::increase_age(oop obj, uint add) {
+  // This method is expected to be called on new copy before it is exposed.
+  // This means that mark word is safe to modify.
+  markWord w = obj->mark();
+  if (!w.is_marked()) {
+    w = w.set_age(MIN2(markWord::max_age, w.age() + add));
+    obj->set_mark(w);
+  }
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP

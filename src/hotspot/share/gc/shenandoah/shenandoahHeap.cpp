@@ -1413,10 +1413,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
 class ShenandoahUnSelfForwardObjectClosure : public ObjectClosure {
 public:
   void do_object(oop obj) override {
-    markWord m = obj->mark();
-    if (m.is_self_forwarded()) {
-      obj->set_mark(m.unset_self_forwarded());
-    }
+    ShenandoahForwarding::unset_self_forwarded(obj);
   }
 };
 

@@ -203,7 +203,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (ShenandoahForwarding::is_forwarded(p)) {
       return ShenandoahForwarding::get_forwardee(p);
     }
-    if (age_census()->is_tenurable(from_region->age() + p->mark().age())) {
+    if (age_census()->is_tenurable(from_region->age() + ShenandoahForwarding::age(p))) {
       // If the object is tenurable, try to promote it
       oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 
@@ -331,7 +331,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
 
   // Update the age of the evacuated object
   if (TO_GENERATION == YOUNG_GENERATION) {
-    increase_object_age(copy_val, from_region_age + 1);
+    ShenandoahForwarding::increase_age(copy_val, from_region_age + 1);
   }
 
   // Relativize stack chunks before publishing the copy. After the forwarding CAS,
