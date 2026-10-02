@@ -1221,6 +1221,8 @@ void PhaseIterGVN::optimize(bool deep) {
       deep = true;
     } else if (strcmp(StressDeepIGVNRevisit, "random") == 0) {
       deep = (C->stress().random() % 2) == 0;
+    } else {
+      ShouldNotReachHere();
     }
   }
 #endif
