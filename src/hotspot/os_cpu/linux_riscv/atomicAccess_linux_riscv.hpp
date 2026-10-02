@@ -43,24 +43,25 @@
 template<size_t byte_size>
 struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
-  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_then_fetch(dest, add_value, order) - add_value;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+    D value = fetch_then_add(dest, add_value, order) + add_value;
+    return value;
   }
 };
 
 template<size_t byte_size>
 template<typename D, typename I>
-inline D AtomicAccess::PlatformAdd<byte_size>::add_then_fetch(D volatile* dest, I add_value,
+inline D AtomicAccess::PlatformAdd<byte_size>::fetch_then_add(D volatile* dest, I add_value,
                                                               atomic_memory_order order) const {
   static_assert(byte_size == sizeof(D));
   static_assert(byte_size == sizeof(I));
   static_assert(byte_size == 4 || byte_size == 8);
 
   if (order == memory_order_relaxed) {
-    return __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+    return __atomic_fetch_add(dest, add_value, __ATOMIC_RELAXED);
   }
 
   D old_value;
@@ -75,7 +76,7 @@ inline D AtomicAccess::PlatformAdd<byte_size>::add_then_fetch(D volatile* dest, 
                           : "r" (add_value)
                           : "memory");
   }
-  return old_value + add_value;
+  return old_value;
 }
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
