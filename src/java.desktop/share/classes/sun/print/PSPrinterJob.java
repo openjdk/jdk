@@ -700,7 +700,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                 String fileName = spoolFile.getAbsolutePath();
                 String[] execCmd = printExecCmd(mDestination, mOptions,
                                mNoJobSheet, getJobNameInt(),
-                                                1, fileName);
+                                                getCopiesInt(), fileName);
 
                 Process process = Runtime.getRuntime().exec(execCmd);
                 process.waitFor();
