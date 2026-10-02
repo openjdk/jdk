@@ -209,6 +209,10 @@ public:
   // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
   void process_gc_stats() const;
 
+  // Prints GC statistics for the entire GC run. Called by the control thread once it has
+  // finished updating them.
+  void print_gc_stats_at_exit() const;
+
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
 

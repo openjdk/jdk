@@ -28,6 +28,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -1147,13 +1148,13 @@ public:
     collection_set_iterate_increment_from(blk, nullptr, worker_id);
   }
   void collection_set_iterate_increment_from(G1HeapRegionClosure *blk, G1HeapRegionClaimer* hr_claimer, uint worker_id);
-  // Iterate over the array of region indexes, uint regions[length], applying
-  // the given G1HeapRegionClosure on each region. The worker_id will determine where
-  // to start the iteration to allow for more efficient parallel iteration.
+  // Iterate over the array of region indices applying the given G1HeapRegionClosure
+  // on each region. The worker_id will determine where to start the iteration to
+  // allow for more efficient parallel iteration.
   void par_iterate_regions_array(G1HeapRegionClosure* cl,
                                  G1HeapRegionClaimer* hr_claimer,
                                  const uint regions[],
-                                 size_t length,
+                                 size_t num_regions,
                                  uint worker_id) const;
 
   // Returns the G1HeapRegion that contains addr. addr must not be null.

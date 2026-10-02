@@ -570,13 +570,13 @@ public class IRNode {
 
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*:Constant|.*(?i:mov|mv|or).*aryklassptr:\\[.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*:Constant|.*(?i:mov|mv|or|load).*aryklassptr:\\[.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY, regex);
     }
 
     public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant|.*(?i:mov|mv|or).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant|.*(?i:mov|mv|or|load).*aryklassptr:\\[.*" + IS_REPLACED + ":.*:Constant.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY_OF, regex);
     }
 
@@ -2482,6 +2482,11 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX, "vand_notL_vx");
     }
 
+    public static final String RISCV_LOAD_N2P_UNSCALED = PREFIX + "RISCV_LOAD_N2P_UNSCALED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_LOAD_N2P_UNSCALED, "loadN2P_unscaled");
+    }
+
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
@@ -3116,6 +3121,11 @@ public class IRNode {
     public static final String X86_VCAST_HF2X = PREFIX + "X86_VCAST_HF2X" + POSTFIX;
     static {
         machOnlyNameRegex(X86_VCAST_HF2X, "castHFtoX_reg_evex");
+    }
+
+    public static final String X86_VCONV_HF2F = PREFIX + "X86_VCONV_HF2F" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCONV_HF2F, "vconvHF2F_reg_(reg|mem)");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
