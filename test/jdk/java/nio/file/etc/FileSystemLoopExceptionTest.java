@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 JetBrains s.r.o.
+ * Copyright (c) 2026, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,81 +22,56 @@
  */
 
 /* @test
- * @summary Check file system loop exception structure
  * @bug 8393106
- * @requires os.family != "windows"
- * @run main/othervm
- *      FileSystemLoopExceptionTest
+ * @summary Check file system loop exception structure
+ * @library ..
+ * @run junit ${test.main.class}
  */
+
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.channels.FileChannel;
 import java.nio.file.FileSystemLoopException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardOpenOption.READ;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class FileSystemLoopExceptionTest {
 
-    public static void main(String[] args) throws Exception {
+    @ParameterizedTest
+    @MethodSource
+    public void symlinkLoop(Function<Path, Executable> executableProvider) throws Exception {
         Path link = Files.createTempDirectory("loop_test").resolve("link");
+        assumeTrue(TestUtil.supportsSymbolicLinks(link.getParent()), "Test requires symbolic links support");
         Files.createSymbolicLink(link, link);
 
         try {
-            test(
-                    new FileSystemLoopException(link.toString()),
-                    () -> Files.newInputStream(link).close()
-            );
+            FileSystemLoopException expectedException = new FileSystemLoopException(link.toString());
+            FileSystemLoopException actualException = assertThrowsExactly(FileSystemLoopException.class, executableProvider.apply(link));
 
-            test(
-                    new FileSystemLoopException(link.toString()),
-                    () -> Files.newOutputStream(link).close()
-            );
-
-            test(
-                    new FileSystemLoopException(link.toString()),
-                    () -> FileChannel.open(link, READ).close()
-            );
+            assertEquals(actualException.getFile(), expectedException.getFile());
+            assertEquals(actualException.getOtherFile(), expectedException.getOtherFile());
+            assertEquals(actualException.getReason(), expectedException.getReason());
         } finally {
             Files.delete(link);
             Files.delete(link.getParent());
         }
     }
 
-    private static void test(FileSystemLoopException expectedException, TestRunnable fn) {
-        test(expectedException, () -> {
-            fn.run();
-            return Void.TYPE;
-        });
-    }
-
-    private static <T> void test(FileSystemLoopException expectedException, TestComputable<T> fn) {
-        final T result;
-        try {
-            result = fn.run();
-        } catch (Exception err) {
-            if (err instanceof FileSystemLoopException loopException
-                    && Objects.equals(loopException.getFile(), expectedException.getFile())
-                    && Objects.equals(loopException.getOtherFile(), expectedException.getOtherFile())
-                    && Objects.equals(loopException.getReason(), expectedException.getReason())
-            ) {
-                return;
-            }
-            AssertionError assertionError = new AssertionError("Another exception was expected", err);
-            assertionError.addSuppressed(expectedException);
-            throw assertionError;
-        }
-        throw new AssertionError("Expected an exception but got a result: " + result);
-    }
-
-    @FunctionalInterface
-    private interface TestRunnable {
-        void run() throws Exception;
-    }
-
-    @FunctionalInterface
-    private interface TestComputable<T> {
-        T run() throws Exception;
+    static private Stream<Arguments> symlinkLoop() {
+        return Stream.of(
+                Arguments.of((Function<Path, Executable>) link -> () -> Files.newInputStream(link).close()),
+                Arguments.of((Function<Path, Executable>) link -> () -> Files.newOutputStream(link).close()),
+                Arguments.of((Function<Path, Executable>) link -> () -> FileChannel.open(link, READ).close())
+        );
     }
 }
