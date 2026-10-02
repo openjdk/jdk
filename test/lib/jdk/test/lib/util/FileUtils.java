@@ -263,7 +263,7 @@ public final class FileUtils {
      * File systems are considered to be accessible if this process completes
      * successfully before a given fixed duration has elapsed.
      *
-     * @implNote On Unix this executes the {@code df} command in a separate
+     * @implNote On Unix this executes the {@code df -a} command in a separate
      * process and on Windows always returns {@code true}.
      *
      * @return whether file systems appear to be accessible and duplicate-free
@@ -274,7 +274,7 @@ public final class FileUtils {
         final AtomicBoolean areMountPointsOK = new AtomicBoolean(true);
         Thread thr = new Thread(() -> {
             try {
-                Process proc = new ProcessBuilder("df").start();
+                Process proc = new ProcessBuilder("df", "-a").start();
                 BufferedReader reader = new BufferedReader
                     (new InputStreamReader(proc.getInputStream()));
                 // Skip the first line as it is the "df" output header.

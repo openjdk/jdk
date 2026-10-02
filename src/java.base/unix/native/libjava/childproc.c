@@ -369,10 +369,11 @@ JDK_execvpe(int mode, const char *file,
 }
 
 /**
- * Child process after a successful fork().
- * This function must not return, and must be prepared for either all
- * of its address space to be shared with its parent, or to be a copy.
- * It must not modify global variables such as "environ".
+ * Child process after a successful fork() or after posix_spawn() inside
+ * jspawnhelper.
+ * This function must not return. It will prepare the exec of the target
+ * binary, then exec the target binary. If an error occurs, it ends the
+ * process with _exit().
  */
 int
 childProcess(void *arg)

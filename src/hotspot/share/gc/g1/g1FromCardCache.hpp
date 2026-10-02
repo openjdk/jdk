@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,76 +25,44 @@
 #ifndef SHARE_GC_G1_G1FROMCARDCACHE_HPP
 #define SHARE_GC_G1_G1FROMCARDCACHE_HPP
 
-#include "memory/allStatic.hpp"
-#include "utilities/ostream.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-// G1FromCardCache remembers the most recently processed card on the heap on
-// a per-region and per-thread basis.
-class G1FromCardCache : public AllStatic {
-private:
-  // Array of card indices. Indexed by heap region (rows) and thread (columns) to minimize
-  // thread contention.
-  // This order minimizes the time to clear all entries for a given region during region
-  // freeing. I.e. a single clear of a single memory area instead of multiple separate
-  // accesses with a large stride per region.
-  static uintptr_t** _cache;
-  static uint _max_reserved_regions;
-  static size_t _static_mem_size;
-#ifdef ASSERT
-  static uint _max_workers;
+// G1FromCardCache remembers which destination card set groups have been
+// encountered while a worker scans the current from_card.
+//
+// Refinement and remembered set rebuild scan the heap linearly, visiting
+// references from a card consecutively. Therefore, the cache only tracks
+// the destination card set groups found while scanning the current card. The
+// cache state is discarded when advancing to the next card.
+//
+// A scan can be suspended at a yield point. A GC may run while it is
+// suspended and change the card set group assignments. Therefore, the cache
+// must be reset before the scan resumes after every yield.
+class G1FromCardCache {
+  // Worst case: each reference in a card targets a different card set group.
+  static constexpr uint MaxGroupsPerCard = MaxGCCardSizeInBytes / sizeof(narrowOop);
 
-  static void check_bounds(uint worker_id, uint region_idx) {
-    assert(worker_id < _max_workers, "Worker_id %u is larger than maximum %u", worker_id, _max_workers);
-    assert(region_idx < _max_reserved_regions, "Region_idx %u is larger than maximum %u", region_idx, _max_reserved_regions);
-  }
-#endif
+  uintptr_t _from_card;
+  uint _num_card_set_groups;
+  uint _card_set_group_ids[MaxGroupsPerCard];
 
-  // This card index indicates "no card for that entry" yet. This allows us to use the OS
-  // lazy backing of memory with zero-filled pages to avoid initial actual memory use.
-  // This means that the heap must not contain card zero.
-  static const uintptr_t InvalidCard = 0;
-
-  // Gives an approximation on how many threads can be expected to add records to
-  // a remembered set in parallel. This is used for sizing the G1FromCardCache to
-  // decrease performance losses due to data structure sharing.
-  // Examples for quantities that influence this value are the maximum number of
-  // mutator threads, maximum number of concurrent refinement or GC threads.
-  static uint num_par_rem_sets();
+  NONCOPYABLE(G1FromCardCache);
 
 public:
-  static void clear(uint region_idx);
+  G1FromCardCache()
+    : _from_card(0),
+      _num_card_set_groups(0) {}
 
-  // Returns true if the given card is in the cache at the given location, or
-  // replaces the card at that location and returns false.
-  static bool contains_or_replace(uint worker_id, uint region_idx, uintptr_t card) {
-    uintptr_t card_in_cache = at(worker_id, region_idx);
-    if (card_in_cache == card) {
-      return true;
-    } else {
-      set(worker_id, region_idx, card);
-      return false;
-    }
+  // Discard the state associated with the _from_card.
+  void reset() {
+    _num_card_set_groups = 0;
   }
 
-  static uintptr_t at(uint worker_id, uint region_idx) {
-    DEBUG_ONLY(check_bounds(worker_id, region_idx);)
-    return _cache[region_idx][worker_id];
-  }
-
-  static void set(uint worker_id, uint region_idx, uintptr_t val) {
-    DEBUG_ONLY(check_bounds(worker_id, region_idx);)
-    _cache[region_idx][worker_id] = val;
-  }
-
-  static void initialize(uint max_reserved_regions);
-
-  static void invalidate(uint start_idx, size_t num_regions);
-
-  static void print(outputStream* out = tty) PRODUCT_RETURN;
-
-  static size_t static_mem_size() {
-    return _static_mem_size;
-  }
+  // Returns true if card_set_group_id has already been encountered while
+  // scanning from_card. Otherwise, records the id and returns false.
+  inline bool contains_or_add(uintptr_t from_card, uint card_set_group_id);
 };
 
 #endif // SHARE_GC_G1_G1FROMCARDCACHE_HPP

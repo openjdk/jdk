@@ -46,6 +46,19 @@ class G1CardSetTest : public ::testing::Test {
     }
   };
 
+  // Verify Full card containers contents (and amount). Assumes that cards returned are in ascending order.
+  class G1VerifyFullCardContainerClosure : public G1CardSet::CardClosure {
+  public:
+    size_t _cur_card;
+
+    G1VerifyFullCardContainerClosure() : _cur_card(0) { }
+
+    void do_card(uint region_idx, uint card_idx) override {
+      ASSERT_TRUE(card_idx == _cur_card);
+      _cur_card++;
+    }
+  };
+
   static WorkerThreads* _workers;
   static uint _max_workers;
 
@@ -76,8 +89,8 @@ public:
     return (seed % i);
   }
 
-  static void cardset_basic_test();
-  static void cardset_mt_test();
+  static void card_set_basic_test();
+  static void card_set_mt_test();
 
   static void add_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards, G1AddCardResult* results);
   static void contains_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards);
@@ -202,7 +215,7 @@ void G1CardSetTest::check_iteration(G1CardSet* card_set, const size_t expected, 
   }
 }
 
-void G1CardSetTest::cardset_basic_test() {
+void G1CardSetTest::card_set_basic_test() {
 
   const uint CardsPerRegion = 2048;
   const double FullCardSetThreshold = 0.8;
@@ -374,9 +387,9 @@ void G1CardSetTest::cardset_basic_test() {
     res = card_set.add_card(99, CardsPerRegion - 2);
     ASSERT_TRUE(res == Found);
 
-    G1CountCardsClosure count_cards;
+    G1VerifyFullCardContainerClosure count_cards;
     card_set.iterate_cards(count_cards);
-    ASSERT_TRUE(count_cards._num_cards == config.max_cards_in_region());
+    ASSERT_TRUE(count_cards._cur_card == config.max_cards_in_region());
 
     card_set.clear();
     ASSERT_TRUE(card_set.occupied() == 0);
@@ -422,7 +435,7 @@ public:
   size_t found() const { return _found.load_relaxed(); }
 };
 
-void G1CardSetTest::cardset_mt_test() {
+void G1CardSetTest::card_set_mt_test() {
   const uint CardsPerRegion = 16384;
   const double FullCardSetThreshold = 1.0;
   const uint BitmapCoarsenThreshold = 1.0;
@@ -443,7 +456,7 @@ void G1CardSetTest::cardset_mt_test() {
   G1CardSetMtTestTask cl(&card_set);
 
   {
-    GCTraceTime(Error, gc) x("Cardset test");
+    GCTraceTime(Error, gc) x("G1CardSet test");
     _workers->run_task(&cl, num_workers);
   }
 
@@ -479,10 +492,10 @@ void G1CardSetTest::cardset_mt_test() {
   ASSERT_TRUE(count_cards._num_cards <= cl.added());
 }
 
-TEST_VM(G1CardSetTest, basic_cardset_test) {
-  G1CardSetTest::cardset_basic_test();
+TEST_VM(G1CardSetTest, basic_card_set_test) {
+  G1CardSetTest::card_set_basic_test();
 }
 
-TEST_VM(G1CardSetTest, mt_cardset_test) {
-  G1CardSetTest::cardset_mt_test();
+TEST_VM(G1CardSetTest, mt_card_set_test) {
+  G1CardSetTest::card_set_mt_test();
 }

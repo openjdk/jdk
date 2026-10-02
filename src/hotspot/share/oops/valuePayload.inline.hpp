@@ -30,11 +30,11 @@
 #include "cppstdlib/type_traits.hpp"
 #include "oops/flatArrayKlass.inline.hpp"
 #include "oops/flatArrayOop.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/layoutKind.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/resolvedFieldEntry.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -53,7 +53,7 @@ inline ValuePayload::StorageImpl<OopOrHandle>::StorageImpl()
 template <typename OopOrHandle>
 inline ValuePayload::StorageImpl<OopOrHandle>::StorageImpl(OopOrHandle container,
                                                            ptrdiff_t offset,
-                                                           InlineKlass* klass,
+                                                           ValueKlass* klass,
                                                            LayoutKind layout_kind)
     : _container(container),
       _offset(offset),
@@ -63,7 +63,7 @@ inline ValuePayload::StorageImpl<OopOrHandle>::StorageImpl(OopOrHandle container
 
 template <typename OopOrHandle>
 inline ValuePayload::StorageImpl<OopOrHandle>::StorageImpl(address absolute_addr,
-                                                           InlineKlass* klass,
+                                                           ValueKlass* klass,
                                                            LayoutKind layout_kind)
     : _absolute_addr(absolute_addr),
       _klass(klass),
@@ -149,7 +149,7 @@ inline address ValuePayload::StorageImpl<OopOrHandle>::absolute_addr() const {
 }
 
 template <typename OopOrHandle>
-inline InlineKlass* ValuePayload::StorageImpl<OopOrHandle>::klass() const {
+inline ValueKlass* ValuePayload::StorageImpl<OopOrHandle>::klass() const {
   return _klass;
 }
 
@@ -165,14 +165,14 @@ inline bool ValuePayload::StorageImpl<OopOrHandle>::uses_absolute_addr() const {
 
 inline ValuePayload::ValuePayload(oop container,
                                   ptrdiff_t offset,
-                                  InlineKlass* klass,
+                                  ValueKlass* klass,
                                   LayoutKind layout_kind)
     : _storage{container, offset, klass, layout_kind} {
   assert_post_construction_invariants();
 }
 
 inline ValuePayload::ValuePayload(address absolute_addr,
-                                  InlineKlass* klass,
+                                  ValueKlass* klass,
                                   LayoutKind layout_kind)
     : _storage{absolute_addr, klass, layout_kind} {
   assert_post_construction_invariants();
@@ -187,7 +187,7 @@ inline void ValuePayload::copy(const ValuePayload& src,
                                LayoutKind copy_layout_kind) {
   assert_pre_copy_invariants(src, dst, copy_layout_kind);
 
-  InlineKlass* const klass = src.klass();
+  ValueKlass* const klass = src.klass();
 
   switch (copy_layout_kind) {
   case LayoutKind::NULLABLE_ATOMIC_FLAT:
@@ -201,7 +201,7 @@ inline void ValuePayload::copy(const ValuePayload& src,
   case LayoutKind::BUFFERED:
   case LayoutKind::NULL_FREE_ATOMIC_FLAT:
   case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
-    if (!klass->is_empty_inline_type()) {
+    if (!klass->is_empty_value_type()) {
       HeapAccess<>::value_copy(src, dst);
     }
   } break;
@@ -257,7 +257,7 @@ inline void ValuePayload::print_on(outputStream* st) const {
     }
   }
   {
-    InlineKlass* const klass = _storage.klass();
+    ValueKlass* const klass = _storage.klass();
     st->print_cr("--- klass ---");
     StreamIndentor si(st);
     st->print_cr("_klass: " PTR_FORMAT, p2i(klass));
@@ -289,29 +289,29 @@ inline void ValuePayload::assert_is_flat_field(const InstanceKlass* klass, int o
   fieldDescriptor field_descriptor;
   postcond(klass->find_flat_field_containing_offset(offset, &field_descriptor));
 
-  const InlineLayoutInfo inline_layout_info = field_descriptor.field_holder()->inline_layout_info(field_descriptor.index());
+  const ValueFieldLayoutInfo value_field_layout_info = field_descriptor.field_holder()->value_field_layout_info(field_descriptor.index());
 
-  OnVMError on_assertion_failure_inline_layout_info([&](outputStream* st) {
+  OnVMError on_assertion_failure_value_field_layout_info([&](outputStream* st) {
     st->print_cr("=== assert_is_flat_field(" PTR_FORMAT ", %d) failure ===", p2i(klass), offset);
       StreamIndentor si(st);
       st->print("field_descriptor: ");
       field_descriptor.print_on(st);
       st->cr();
-      st->print("inline_layout_info: ");
-      inline_layout_info.print_on(st);
+      st->print("value_field_layout_info: ");
+      value_field_layout_info.print_on(st);
       st->cr();
   });
 
-  if (inline_layout_info.klass() == this->klass()) {
+  if (value_field_layout_info.klass() == this->klass()) {
     // Found the field in klass
     postcond(offset == field_descriptor.offset());
-    postcond(inline_layout_info.kind() == layout_kind());
+    postcond(value_field_layout_info.kind() == layout_kind());
     postcond(field_descriptor.layout_kind() == layout_kind());
     postcond(field_descriptor.is_flat());
   } else {
     // Nested flat field
     postcond(offset >= field_descriptor.offset());
-    const InlineKlass* const field_klass = inline_layout_info.klass();
+    const ValueKlass* const field_klass = value_field_layout_info.klass();
     const int payload_offset = field_klass->payload_offset();
     assert_is_flat_field(field_klass, offset - field_descriptor.offset() + payload_offset);
   }
@@ -346,7 +346,7 @@ inline void ValuePayload::assert_post_construction_invariants() const {
           postcond(container_flat_array_klass->layout_kind() == layout_kind());
         } else {
           // Accessing nested flat field
-          const InlineKlass* const element_klass = container_flat_array_klass->element_klass();
+          const ValueKlass* const element_klass = container_flat_array_klass->element_klass();
           const int element_offset =
               (checked_cast<int>(this->offset()) -
                checked_cast<int>(flatArrayOopDesc::base_offset_in_bytes())) %
@@ -385,8 +385,8 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
     }
   });
 
-  const InlineKlass* const src_klass = src.klass();
-  const InlineKlass* const dst_klass = dst.klass();
+  const ValueKlass* const src_klass = src.klass();
+  const ValueKlass* const dst_klass = dst.klass();
 
   precond(src_klass == dst_klass);
 
@@ -422,7 +422,7 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
 
 #endif // ASSERT
 
-inline InlineKlass* ValuePayload::klass() const {
+inline ValueKlass* ValuePayload::klass() const {
   return _storage.klass();
 }
 
@@ -450,26 +450,26 @@ inline bool ValuePayload::is_payload_null() const {
 }
 
 inline ValuePayload ValuePayload::construct_from_parts(address absolute_addr,
-                                                       InlineKlass* klass,
+                                                       ValueKlass* klass,
                                                        LayoutKind layout_kind) {
   return ValuePayload(absolute_addr, klass, layout_kind);
 }
 
-inline BufferedValuePayload::BufferedValuePayload(inlineOop container,
+inline BufferedValuePayload::BufferedValuePayload(valueOop container,
                                                   ptrdiff_t offset,
-                                                  InlineKlass* klass,
+                                                  ValueKlass* klass,
                                                   LayoutKind layout_kind)
     : ValuePayload(container, offset, klass, layout_kind) {}
 
-inline BufferedValuePayload::BufferedValuePayload(inlineOop buffer)
-    : BufferedValuePayload(buffer, InlineKlass::cast(buffer->klass())) {}
+inline BufferedValuePayload::BufferedValuePayload(valueOop buffer)
+    : BufferedValuePayload(buffer, ValueKlass::cast(buffer->klass())) {}
 
-inline BufferedValuePayload::BufferedValuePayload(inlineOop buffer,
-                                                  InlineKlass* klass)
+inline BufferedValuePayload::BufferedValuePayload(valueOop buffer,
+                                                  ValueKlass* klass)
     : ValuePayload(buffer, klass->payload_offset(), klass, LayoutKind::BUFFERED) {}
 
-inline inlineOop BufferedValuePayload::container() const {
-  return inlineOop(ValuePayload::container());
+inline valueOop BufferedValuePayload::container() const {
+  return valueOop(ValuePayload::container());
 }
 
 inline void BufferedValuePayload::copy_to(const BufferedValuePayload& dst) {
@@ -478,15 +478,15 @@ inline void BufferedValuePayload::copy_to(const BufferedValuePayload& dst) {
 
 inline FlatValuePayload::FlatValuePayload(oop container,
                                           ptrdiff_t offset,
-                                          InlineKlass* klass,
+                                          ValueKlass* klass,
                                           LayoutKind layout_kind)
     : ValuePayload(container, offset, klass, layout_kind) {}
 
-inline inlineOop FlatValuePayload::allocate_instance(TRAPS) {
+inline valueOop FlatValuePayload::allocate_instance(TRAPS) {
   // Preserve the container oop across the instance allocation.
   oop& container = this->container();
   ::Handle container_handle(THREAD, container);
-  inlineOop res = klass()->allocate_instance(THREAD);
+  valueOop res = klass()->allocate_instance(THREAD);
   container = container_handle();
   return res;
 }
@@ -530,7 +530,7 @@ inline void FlatValuePayload::copy_to(const FlatValuePayload& dst) {
   copy(*this, dst, layout_kind());
 }
 
-inline inlineOop FlatValuePayload::read(TRAPS) {
+inline valueOop FlatValuePayload::read(TRAPS) {
   switch (layout_kind()) {
   case LayoutKind::NULLABLE_ATOMIC_FLAT:
   case LayoutKind::NULLABLE_NON_ATOMIC_FLAT: {
@@ -540,7 +540,7 @@ inline inlineOop FlatValuePayload::read(TRAPS) {
   } // Fallthrough
   case LayoutKind::NULL_FREE_ATOMIC_FLAT:
   case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
-    inlineOop res = allocate_instance(CHECK_NULL);
+    valueOop res = allocate_instance(CHECK_NULL);
     BufferedValuePayload dst(res, klass());
     if (!copy_to(dst)) {
       // copy_to may fail if the payload has been updated with a null value
@@ -558,7 +558,7 @@ inline inlineOop FlatValuePayload::read(TRAPS) {
   }
 }
 
-inline void FlatValuePayload::write_without_nullability_check(inlineOop obj) {
+inline void FlatValuePayload::write_without_nullability_check(valueOop obj) {
   if (obj == nullptr) {
     assert(has_null_marker(), "Payload must support null values");
     HeapAccess<>::value_store_null(*this);
@@ -569,7 +569,7 @@ inline void FlatValuePayload::write_without_nullability_check(inlineOop obj) {
   }
 }
 
-inline void FlatValuePayload::write(inlineOop obj, TRAPS) {
+inline void FlatValuePayload::write(valueOop obj, TRAPS) {
   if (obj == nullptr && !has_null_marker()) {
     // This payload does not have a null marker and cannot represent a null
     // value.
@@ -580,21 +580,21 @@ inline void FlatValuePayload::write(inlineOop obj, TRAPS) {
 
 inline FlatValuePayload FlatValuePayload::construct_from_parts(oop container,
                                                                ptrdiff_t offset,
-                                                               InlineKlass* klass,
+                                                               ValueKlass* klass,
                                                                LayoutKind layout_kind) {
   return FlatValuePayload(container, offset, klass, layout_kind);
 }
 
 inline FlatFieldPayload::FlatFieldPayload(instanceOop container,
                                           ptrdiff_t offset,
-                                          InlineKlass* klass,
+                                          ValueKlass* klass,
                                           LayoutKind layout_kind)
     : FlatValuePayload(container, offset, klass, layout_kind) {}
 
 inline FlatFieldPayload::FlatFieldPayload(instanceOop container,
                                           ptrdiff_t offset,
-                                          InlineLayoutInfo* inline_layout_info)
-    : FlatValuePayload(container, offset, inline_layout_info->klass(), inline_layout_info->kind()) {}
+                                          ValueFieldLayoutInfo* layout_info)
+    : FlatValuePayload(container, offset, layout_info->klass(), layout_info->kind()) {}
 
 #ifdef ASSERT
 
@@ -630,7 +630,7 @@ inline FlatFieldPayload::FlatFieldPayload(instanceOop container,
                                           fieldDescriptor* field_descriptor)
     : FlatFieldPayload(container,
                        field_descriptor->offset(),
-                       field_descriptor->field_holder()->inline_layout_info_adr(field_descriptor->index())) {
+                       field_descriptor->field_holder()->value_field_layout_info_adr(field_descriptor->index())) {
   assert_post_construction_invariants(container, field_descriptor);
 }
 
@@ -638,7 +638,7 @@ inline FlatFieldPayload::FlatFieldPayload(instanceOop container,
                                           ResolvedFieldEntry* resolved_field_entry)
     : FlatFieldPayload(container,
                        resolved_field_entry->field_offset(),
-                       resolved_field_entry->field_holder()->inline_layout_info_adr(resolved_field_entry->field_index())) {
+                       resolved_field_entry->field_holder()->value_field_layout_info_adr(resolved_field_entry->field_index())) {
   assert_post_construction_invariants(container, resolved_field_entry);
 }
 
@@ -648,7 +648,7 @@ inline instanceOop FlatFieldPayload::container() const {
 
 inline FlatArrayPayload::FlatArrayPayload(flatArrayOop container,
                                           ptrdiff_t offset,
-                                          InlineKlass* klass,
+                                          ValueKlass* klass,
                                           LayoutKind layout_kind,
                                           jint layout_helper,
                                           int element_size)
@@ -740,7 +740,7 @@ inline oop ValuePayload::Handle::container() const {
   return _storage.container()();
 }
 
-inline InlineKlass* ValuePayload::Handle::klass() const {
+inline ValueKlass* ValuePayload::Handle::klass() const {
   return _storage.klass();
 }
 
@@ -766,7 +766,7 @@ inline void ValuePayload::OopHandle::release(OopStorage* storage) {
   return _storage.container().release(storage);
 }
 
-inline InlineKlass* ValuePayload::OopHandle::klass() const {
+inline ValueKlass* ValuePayload::OopHandle::klass() const {
   return _storage.klass();
 }
 
@@ -785,8 +785,8 @@ inline BufferedValuePayload BufferedValuePayload::Handle::operator()() const {
   return BufferedValuePayload(container(), offset(), klass(), layout_kind());
 }
 
-inline inlineOop BufferedValuePayload::Handle::container() const {
-  return inlineOop(ValuePayload::Handle::container());
+inline valueOop BufferedValuePayload::Handle::container() const {
+  return valueOop(ValuePayload::Handle::container());
 }
 
 inline BufferedValuePayload::Handle BufferedValuePayload::make_handle(JavaThread* thread) const {
@@ -801,8 +801,8 @@ inline BufferedValuePayload BufferedValuePayload::OopHandle::operator()() const 
   return BufferedValuePayload(container(), offset(), klass(), layout_kind());
 }
 
-inline inlineOop BufferedValuePayload::OopHandle::container() const {
-  return inlineOop(ValuePayload::OopHandle::container());
+inline valueOop BufferedValuePayload::OopHandle::container() const {
+  return valueOop(ValuePayload::OopHandle::container());
 }
 
 inline BufferedValuePayload::OopHandle BufferedValuePayload::make_oop_handle(OopStorage* storage) const {

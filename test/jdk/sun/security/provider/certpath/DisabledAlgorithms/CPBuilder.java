@@ -29,7 +29,6 @@
  *
  * @bug 6861062
  * @summary Disable MD2 support
- * @enablePreview
  *
  * @run main/othervm CPBuilder trustAnchor_SHA1withRSA_1024 0 true
  * @run main/othervm CPBuilder trustAnchor_SHA1withRSA_512  0 true
