@@ -79,6 +79,7 @@ void ShenandoahGenerationalControlThread::run_service() {
     // if there was no other cycle requested, cleanup and wait for the next request.
     MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
     if (_requested_gc_cause == GCCause::_no_gc) {
+      _heap->clear_cancelled_gc();
       set_gc_mode(ml, none);
       ml.wait();
     }
