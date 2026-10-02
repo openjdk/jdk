@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_ARM_VMSTORAGE_ARM_INLINE_HPP
-#define CPU_ARM_VMSTORAGE_ARM_INLINE_HPP
+#ifndef CPU_ARM_VMSTORAGE_ARM_HPP
+#define CPU_ARM_VMSTORAGE_ARM_HPP
 
 #include <cstdint>
 
@@ -49,4 +49,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   return VMStorage::invalid();
 }
 
-#endif // CPU_ARM_VMSTORAGE_ARM_INLINE_HPP
+#endif // CPU_ARM_VMSTORAGE_ARM_HPP

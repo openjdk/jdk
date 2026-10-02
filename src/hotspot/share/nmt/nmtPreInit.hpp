@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_NMT_NMT_PREINIT_HPP
-#define SHARE_NMT_NMT_PREINIT_HPP
+#ifndef SHARE_NMT_NMTPREINIT_HPP
+#define SHARE_NMT_NMTPREINIT_HPP
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTracker.hpp"
@@ -377,5 +377,4 @@ public:
   DEBUG_ONLY(static void verify();)
 };
 
-#endif // SHARE_NMT_NMT_PREINIT_HPP
-
+#endif // SHARE_NMT_NMTPREINIT_HPP

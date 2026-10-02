@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_VM_PRIMS_UPCALLLINKER_HPP
-#define SHARE_VM_PRIMS_UPCALLLINKER_HPP
+#ifndef SHARE_PRIMS_UPCALLLINKER_HPP
+#define SHARE_PRIMS_UPCALLLINKER_HPP
 
 #include "asm/codeBuffer.hpp"
 #include "code/codeBlob.hpp"
@@ -47,4 +47,4 @@ public:
   static void handle_uncaught_exception(oopDesc* exception);
 };
 
-#endif // SHARE_VM_PRIMS_UPCALLLINKER_HPP
+#endif // SHARE_PRIMS_UPCALLLINKER_HPP

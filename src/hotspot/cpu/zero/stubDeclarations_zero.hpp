@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_STUBDECLARATIONS_HPP
-#define CPU_ZERO_STUBDECLARATIONS_HPP
+#ifndef CPU_ZERO_STUBDECLARATIONS_ZERO_HPP
+#define CPU_ZERO_STUBDECLARATIONS_ZERO_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -66,4 +66,4 @@
   do_arch_blob(final, 0)                                                \
 
 
-#endif // CPU_ZERO_STUBDECLARATIONS_HPP
+#endif // CPU_ZERO_STUBDECLARATIONS_ZERO_HPP

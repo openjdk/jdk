@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_SCAVENGABLENMETHODDATAS_HPP
-#define SHARE_GC_SHARED_SCAVENGABLENMETHODDATAS_HPP
+#ifndef SHARE_GC_SHARED_SCAVENGABLENMETHODSDATA_HPP
+#define SHARE_GC_SHARED_SCAVENGABLENMETHODSDATA_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -71,4 +71,4 @@ public:
   void set_next(nmethod *n) { set_data(from_nmethod(n) | state()); }
 };
 
-#endif // SHARE_GC_SHARED_SCAVENGABLENMETHODDATAS_HPP
+#endif // SHARE_GC_SHARED_SCAVENGABLENMETHODSDATA_HPP

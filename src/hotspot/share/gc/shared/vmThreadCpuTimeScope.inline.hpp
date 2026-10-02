@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_INLINE_HPP
+#define SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_INLINE_HPP
+
 #include "gc/shared/vmThreadCpuTimeScope.hpp"
 
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -56,3 +59,5 @@ inline VMThreadCPUTimeScope::~VMThreadCPUTimeScope() {
     CPUTimeCounters::update_counter(CPUTimeGroups::CPUTimeType::vm, end);
   }
 }
+
+#endif // SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_INLINE_HPP

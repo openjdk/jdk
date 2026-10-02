@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_RISCV_VM_GLOBALS_LINUX_RISCV_HPP
-#define OS_CPU_LINUX_RISCV_VM_GLOBALS_LINUX_RISCV_HPP
+#ifndef OS_CPU_LINUX_RISCV_GLOBALS_LINUX_RISCV_HPP
+#define OS_CPU_LINUX_RISCV_GLOBALS_LINUX_RISCV_HPP
 
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
@@ -39,4 +39,4 @@ define_pd_global(uintx, JVMInvokeMethodSlack,     8192);
 // Used on 64 bit platforms for UseCompressedOops base address
 define_pd_global(uintx, HeapBaseMinAddress,       2 * G);
 
-#endif // OS_CPU_LINUX_RISCV_VM_GLOBALS_LINUX_RISCV_HPP
+#endif // OS_CPU_LINUX_RISCV_GLOBALS_LINUX_RISCV_HPP

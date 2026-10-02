@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_INTELJCCERRATUM_X86_HPP
-#define CPU_X86_INTELJCCERRATUM_X86_HPP
+#ifndef CPU_X86_C2_INTELJCCERRATUM_X86_HPP
+#define CPU_X86_C2_INTELJCCERRATUM_X86_HPP
 
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -64,5 +64,4 @@ public:
   ~IntelJccErratumAlignment();
 };
 
-#endif // CPU_X86_INTELJCCERRATUM_X86_HPP
-
+#endif // CPU_X86_C2_INTELJCCERRATUM_X86_HPP

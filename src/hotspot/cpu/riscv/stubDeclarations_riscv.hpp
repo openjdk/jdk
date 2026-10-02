@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_RISCV_STUBDECLARATIONS_HPP
-#define CPU_RISCV_STUBDECLARATIONS_HPP
+#ifndef CPU_RISCV_STUBDECLARATIONS_RISCV_HPP
+#define CPU_RISCV_STUBDECLARATIONS_RISCV_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -99,4 +99,4 @@
                 zero_blocks)                                            \
 
 
-#endif // CPU_RISCV_STUBDECLARATIONS_HPP
+#endif // CPU_RISCV_STUBDECLARATIONS_RISCV_HPP

@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_SERIAL_STRINGDEDUP_HPP
-#define SHARE_GC_SERIAL_STRINGDEDUP_HPP
+#ifndef SHARE_GC_SERIAL_SERIALSTRINGDEDUP_HPP
+#define SHARE_GC_SERIAL_SERIALSTRINGDEDUP_HPP
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -43,4 +43,4 @@ public:
 
 };
 
-#endif // SHARE_GC_SERIAL_STRINGDEDUP_HPP
+#endif // SHARE_GC_SERIAL_SERIALSTRINGDEDUP_HPP

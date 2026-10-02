@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP
-#define CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP
+#ifndef CPU_S390_FOREIGNGLOBALS_S390_HPP
+#define CPU_S390_FOREIGNGLOBALS_S390_HPP
 
 struct ABIDescriptor {
   GrowableArray<Register> _integer_argument_registers;
@@ -43,4 +43,4 @@ struct ABIDescriptor {
   bool is_volatile_reg(FloatRegister reg) const;
 };
 
-#endif // CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP
+#endif // CPU_S390_FOREIGNGLOBALS_S390_HPP

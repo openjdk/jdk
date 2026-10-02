@@ -43,4 +43,3 @@ constexpr T2 checked_cast(T1 thing) {
 }
 
 #endif // SHARE_UTILITIES_CHECKEDCAST_HPP
-

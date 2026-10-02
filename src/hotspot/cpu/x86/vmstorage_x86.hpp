@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_X86_VMSTORAGE_X86_INLINE_HPP
-#define CPU_X86_VMSTORAGE_X86_INLINE_HPP
+#ifndef CPU_X86_VMSTORAGE_X86_HPP
+#define CPU_X86_VMSTORAGE_X86_HPP
 
 #include <cstdint>
 
@@ -97,4 +97,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   return VMStorage::invalid();
 }
 
-#endif // CPU_X86_VMSTORAGE_X86_INLINE_HPP
+#endif // CPU_X86_VMSTORAGE_X86_HPP

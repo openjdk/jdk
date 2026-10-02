@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_NUMA_HPP
-#define SHARE_VM_GC_G1_NUMA_HPP
+#ifndef SHARE_GC_G1_G1NUMA_HPP
+#define SHARE_GC_G1_G1NUMA_HPP
 
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1NUMAStats.hpp"
@@ -146,4 +146,4 @@ public:
   bool do_heap_region(G1HeapRegion* hr);
 };
 
-#endif // SHARE_VM_GC_G1_NUMA_HPP
+#endif // SHARE_GC_G1_G1NUMA_HPP

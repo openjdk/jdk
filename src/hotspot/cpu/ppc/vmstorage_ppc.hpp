@@ -22,8 +22,8 @@
  * questions.
  */
 
-#ifndef CPU_PPC_VMSTORAGE_PPC_INLINE_HPP
-#define CPU_PPC_VMSTORAGE_PPC_INLINE_HPP
+#ifndef CPU_PPC_VMSTORAGE_PPC_HPP
+#define CPU_PPC_VMSTORAGE_PPC_HPP
 
 #include <cstdint>
 
@@ -107,4 +107,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   return VMStorage::invalid();
 }
 
-#endif // CPU_PPC_VMSTORAGE_PPC_INLINE_HPP
+#endif // CPU_PPC_VMSTORAGE_PPC_HPP

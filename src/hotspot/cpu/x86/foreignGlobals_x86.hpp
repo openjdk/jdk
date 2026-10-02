@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_X86_VM_FOREIGN_GLOBALS_X86_HPP
-#define CPU_X86_VM_FOREIGN_GLOBALS_X86_HPP
+#ifndef CPU_X86_FOREIGNGLOBALS_X86_HPP
+#define CPU_X86_FOREIGNGLOBALS_X86_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "utilities/growableArray.hpp"
@@ -47,4 +47,4 @@ struct ABIDescriptor {
   bool is_volatile_reg(XMMRegister reg) const;
 };
 
-#endif // CPU_X86_VM_FOREIGN_GLOBALS_X86_HPP
+#endif // CPU_X86_FOREIGNGLOBALS_X86_HPP

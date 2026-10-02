@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_LINUX_RISCV_FLUSH_ICACHE_LINUX_HPP
-#define OS_LINUX_RISCV_FLUSH_ICACHE_LINUX_HPP
+#ifndef OS_CPU_LINUX_RISCV_RISCV_FLUSH_ICACHE_HPP
+#define OS_CPU_LINUX_RISCV_RISCV_FLUSH_ICACHE_HPP
 
 #include "memory/allStatic.hpp"
 #include "runtime/vm_version.hpp"
@@ -36,4 +36,4 @@ class RiscvFlushIcache: public AllStatic {
   static void flush(uintptr_t start, uintptr_t end);
 };
 
-#endif // OS_LINUX_RISCV_FLUSH_ICACHE_LINUX_HPP
+#endif // OS_CPU_LINUX_RISCV_RISCV_FLUSH_ICACHE_HPP

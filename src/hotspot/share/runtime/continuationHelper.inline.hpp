@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_CONTINUATIONHELPER_INLINE_HPP
-#define SHARE_VM_RUNTIME_CONTINUATIONHELPER_INLINE_HPP
+#ifndef SHARE_RUNTIME_CONTINUATIONHELPER_INLINE_HPP
+#define SHARE_RUNTIME_CONTINUATIONHELPER_INLINE_HPP
 
 #include "runtime/continuationHelper.hpp"
 
@@ -220,4 +220,4 @@ inline bool ContinuationHelper::StubFrame::is_instance(const frame& f) {
   return !f.is_interpreted_frame() && is_stub(f.cb());
 }
 
-#endif // SHARE_VM_RUNTIME_CONTINUATIONHELPER_INLINE_HPP
+#endif // SHARE_RUNTIME_CONTINUATIONHELPER_INLINE_HPP

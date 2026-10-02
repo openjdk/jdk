@@ -161,4 +161,4 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f
   return f.fp();
 }
 
-#endif // CPU_RISCV_CONTINUATIONFRAMEHELPERS_RISCV_INLINE_HPP
+#endif // CPU_RISCV_CONTINUATIONHELPER_RISCV_INLINE_HPP

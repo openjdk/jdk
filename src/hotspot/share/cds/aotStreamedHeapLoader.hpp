@@ -241,5 +241,6 @@ public:
   static AOTMapLogger::OopDataIterator* oop_iterator(FileMapInfo* info, address buffer_start, address buffer_end);
 };
 
-#endif // SHARE_CDS_AOTSTREAMEDHEAPLOADER_HPP
 #endif // INCLUDE_CDS_JAVA_HEAP
+
+#endif // SHARE_CDS_AOTSTREAMEDHEAPLOADER_HPP

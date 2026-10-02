@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_PPC_STUBDECLARATIONS_HPP
-#define CPU_PPC_STUBDECLARATIONS_HPP
+#ifndef CPU_PPC_STUBDECLARATIONS_PPC_HPP
+#define CPU_PPC_STUBDECLARATIONS_PPC_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -66,4 +66,4 @@
   do_arch_blob(final, 24000)                                            \
 
 
-#endif // CPU_PPC_STUBDECLARATIONS_HPP
+#endif // CPU_PPC_STUBDECLARATIONS_PPC_HPP

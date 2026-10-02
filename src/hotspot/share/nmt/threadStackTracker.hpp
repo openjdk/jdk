@@ -40,4 +40,3 @@ public:
 };
 
 #endif // SHARE_NMT_THREADSTACKTRACKER_HPP
-

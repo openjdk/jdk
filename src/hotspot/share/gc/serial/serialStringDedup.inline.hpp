@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
-#define SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
+#ifndef SHARE_GC_SERIAL_SERIALSTRINGDEDUP_INLINE_HPP
+#define SHARE_GC_SERIAL_SERIALSTRINGDEDUP_INLINE_HPP
 
 #include "gc/serial/serialStringDedup.hpp"
 
@@ -38,4 +38,4 @@ bool SerialStringDedup::is_candidate_from_evacuation(oop obj,
           StringDedup::is_threshold_age(obj->age()));
 }
 
-#endif // SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
+#endif // SHARE_GC_SERIAL_SERIALSTRINGDEDUP_INLINE_HPP

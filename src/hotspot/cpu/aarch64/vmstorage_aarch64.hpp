@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_VMSTORAGE_AARCH64_INLINE_HPP
-#define CPU_AARCH64_VMSTORAGE_AARCH64_INLINE_HPP
+#ifndef CPU_AARCH64_VMSTORAGE_AARCH64_HPP
+#define CPU_AARCH64_VMSTORAGE_AARCH64_HPP
 
 #include <cstdint>
 
@@ -83,4 +83,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   return VMStorage::invalid();
 }
 
-#endif // CPU_AARCH64_VMSTORAGE_AARCH64_INLINE_HPP
+#endif // CPU_AARCH64_VMSTORAGE_AARCH64_HPP

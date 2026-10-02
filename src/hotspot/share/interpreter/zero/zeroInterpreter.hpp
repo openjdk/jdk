@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_INTERPRETER_ZEROINTERPRETER_HPP
-#define SHARE_INTERPRETER_ZEROINTERPRETER_HPP
+#ifndef SHARE_INTERPRETER_ZERO_ZEROINTERPRETER_HPP
+#define SHARE_INTERPRETER_ZERO_ZEROINTERPRETER_HPP
 
 #include "interpreter/abstractInterpreter.hpp"
 #include "utilities/macros.hpp"
@@ -77,4 +77,4 @@ class ZeroInterpreter: public AbstractInterpreter {
 
 #endif // ZERO
 
-#endif // SHARE_INTERPRETER_ZEROINTERPRETER_HPP
+#endif // SHARE_INTERPRETER_ZERO_ZEROINTERPRETER_HPP

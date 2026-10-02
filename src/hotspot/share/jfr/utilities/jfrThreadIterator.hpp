@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_UTILITIES_JFRTHREADITERATOR_HPP
-#define SHARE_VM_JFR_UTILITIES_JFRTHREADITERATOR_HPP
+#ifndef SHARE_JFR_UTILITIES_JFRTHREADITERATOR_HPP
+#define SHARE_JFR_UTILITIES_JFRTHREADITERATOR_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/javaThread.hpp"
@@ -75,4 +75,4 @@ class JfrNonJavaThreadIteratorAdapter {
 typedef JfrThreadIterator<JfrJavaThreadIteratorAdapter, StackObj> JfrJavaThreadIterator;
 typedef JfrThreadIterator<JfrNonJavaThreadIteratorAdapter, StackObj> JfrNonJavaThreadIterator;
 
-#endif // SHARE_VM_JFR_UTILITIES_JFRTHREADITERATOR_HPP
+#endif // SHARE_JFR_UTILITIES_JFRTHREADITERATOR_HPP

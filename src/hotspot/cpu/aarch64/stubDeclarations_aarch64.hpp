@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_STUBDECLARATIONS_HPP
-#define CPU_AARCH64_STUBDECLARATIONS_HPP
+#ifndef CPU_AARCH64_STUBDECLARATIONS_AARCH64_HPP
+#define CPU_AARCH64_STUBDECLARATIONS_AARCH64_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -192,4 +192,4 @@
                 atomic_cmpxchg_8_seq_cst_impl)                          \
 
 
-#endif // CPU_AARCH64_STUBDECLARATIONS_HPP
+#endif // CPU_AARCH64_STUBDECLARATIONS_AARCH64_HPP

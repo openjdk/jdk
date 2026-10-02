@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_CONTINUATION_HPP
-#define SHARE_VM_RUNTIME_CONTINUATION_HPP
+#ifndef SHARE_RUNTIME_CONTINUATION_HPP
+#define SHARE_RUNTIME_CONTINUATION_HPP
 
 #include "jni.h"
 #include "memory/allStatic.hpp"
@@ -145,4 +145,4 @@ public:
 
 void CONT_RegisterNativeMethods(JNIEnv *env, jclass cls);
 
-#endif // SHARE_VM_RUNTIME_CONTINUATION_HPP
+#endif // SHARE_RUNTIME_CONTINUATION_HPP

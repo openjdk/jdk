@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_FLATARRAYKLASS_HPP
-#define SHARE_VM_OOPS_FLATARRAYKLASS_HPP
+#ifndef SHARE_OOPS_FLATARRAYKLASS_HPP
+#define SHARE_OOPS_FLATARRAYKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
@@ -153,4 +153,4 @@ private:
   void oop_verify_on(oop obj, outputStream* st) override;
 };
 
-#endif
+#endif // SHARE_OOPS_FLATARRAYKLASS_HPP

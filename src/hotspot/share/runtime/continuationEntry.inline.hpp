@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP
-#define SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP
+#ifndef SHARE_RUNTIME_CONTINUATIONENTRY_INLINE_HPP
+#define SHARE_RUNTIME_CONTINUATIONENTRY_INLINE_HPP
 
 #include "runtime/continuationEntry.hpp"
 
@@ -70,4 +70,4 @@ inline oop ContinuationEntry::scope(const JavaThread* thread) const {
   return Continuation::continuation_scope(cont_oop(thread));
 }
 
-#endif // SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP
+#endif // SHARE_RUNTIME_CONTINUATIONENTRY_INLINE_HPP

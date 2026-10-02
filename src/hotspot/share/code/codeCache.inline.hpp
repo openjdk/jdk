@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_COMPILER_CODECACHE_INLINE_HPP
-#define SHARE_VM_COMPILER_CODECACHE_INLINE_HPP
+#ifndef SHARE_CODE_CODECACHE_INLINE_HPP
+#define SHARE_CODE_CODECACHE_INLINE_HPP
 
 #include "code/codeCache.hpp"
 
@@ -59,4 +59,4 @@ inline int CodeCache::find_oopmap_slot_fast(void* pc) {
   return -1;
 }
 
-#endif // SHARE_VM_COMPILER_CODECACHE_INLINE_HPP
+#endif // SHARE_CODE_CODECACHE_INLINE_HPP

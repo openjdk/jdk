@@ -23,8 +23,8 @@
  */
 
 
-#ifndef SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
-#define SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
+#ifndef SHARE_PRIMS_SCOPEDMEMORYACCESS_HPP
+#define SHARE_PRIMS_SCOPEDMEMORYACCESS_HPP
 
 #include "jni.h"
 
@@ -32,4 +32,4 @@ extern "C" {
   void JNICALL JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jclass scopedMemoryAccessClass);
 }
 
-#endif // SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
+#endif // SHARE_PRIMS_SCOPEDMEMORYACCESS_HPP

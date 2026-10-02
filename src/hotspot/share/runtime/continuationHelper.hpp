@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_CONTINUATIONHELPER_HPP
-#define SHARE_VM_RUNTIME_CONTINUATIONHELPER_HPP
+#ifndef SHARE_RUNTIME_CONTINUATIONHELPER_HPP
+#define SHARE_RUNTIME_CONTINUATIONHELPER_HPP
 
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
@@ -159,4 +159,4 @@ public:
   static int stack_argsize(const frame& f) { return 0; }
 };
 
-#endif // SHARE_VM_RUNTIME_CONTINUATIONHELPER_HPP
+#endif // SHARE_RUNTIME_CONTINUATIONHELPER_HPP

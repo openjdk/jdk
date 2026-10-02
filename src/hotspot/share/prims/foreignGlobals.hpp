@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_PRIMS_FOREIGN_GLOBALS
-#define SHARE_PRIMS_FOREIGN_GLOBALS
+#ifndef SHARE_PRIMS_FOREIGNGLOBALS_HPP
+#define SHARE_PRIMS_FOREIGNGLOBALS_HPP
 
 #include "code/vmreg.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -150,4 +150,4 @@ private:
   void pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const;
 };
 
-#endif // SHARE_PRIMS_FOREIGN_GLOBALS
+#endif // SHARE_PRIMS_FOREIGNGLOBALS_HPP

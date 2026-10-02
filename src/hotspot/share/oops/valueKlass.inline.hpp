@@ -21,8 +21,9 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
-#define SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
+
+#ifndef SHARE_OOPS_VALUEKLASS_INLINE_HPP
+#define SHARE_OOPS_VALUEKLASS_INLINE_HPP
 
 #include "oops/valueKlass.hpp"
 
@@ -169,4 +170,4 @@ inline void ValueKlass::oop_iterate_value_payload_bounded(address payload, OopCl
   }
 }
 
-#endif // SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
+#endif // SHARE_OOPS_VALUEKLASS_INLINE_HPP

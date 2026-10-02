@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_NODE_TIMES_HPP
-#define SHARE_VM_GC_G1_NODE_TIMES_HPP
+#ifndef SHARE_GC_G1_G1NUMASTATS_HPP
+#define SHARE_GC_G1_G1NUMASTATS_HPP
 
 #include "memory/allocation.hpp"
 
@@ -116,4 +116,4 @@ public:
   void print_statistics();
 };
 
-#endif // SHARE_VM_GC_G1_NODE_TIMES_HPP
+#endif // SHARE_GC_G1_G1NUMASTATS_HPP

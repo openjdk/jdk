@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_ZERO_VMSTORAGE_ZERO_INLINE_HPP
-#define CPU_ZERO_VMSTORAGE_ZERO_INLINE_HPP
+#ifndef CPU_ZERO_VMSTORAGE_ZERO_HPP
+#define CPU_ZERO_VMSTORAGE_ZERO_HPP
 
 #include <cstdint>
 
@@ -50,4 +50,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
 }
 
 
-#endif // CPU_ZERO_VMSTORAGE_ZERO_INLINE_HPP
+#endif // CPU_ZERO_VMSTORAGE_ZERO_HPP

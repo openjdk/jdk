@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
-#define LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
+#ifndef OS_LINUX_COMPILERTHREADTIMEOUT_LINUX_HPP
+#define OS_LINUX_COMPILERTHREADTIMEOUT_LINUX_HPP
 
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
@@ -52,4 +52,4 @@ class CompilerThreadTimeoutLinux : public CHeapObj<mtCompiler> {
   };
 };
 
-#endif //LINUX_COMPILER_THREAD_TIMEOUT_LINUX_HPP
+#endif // OS_LINUX_COMPILERTHREADTIMEOUT_LINUX_HPP

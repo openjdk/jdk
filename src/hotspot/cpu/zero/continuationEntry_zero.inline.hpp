@@ -44,4 +44,3 @@ inline void ContinuationEntry::update_register_map(RegisterMap* map) const {
 }
 
 #endif // CPU_ZERO_CONTINUATIONENTRY_ZERO_INLINE_HPP
-

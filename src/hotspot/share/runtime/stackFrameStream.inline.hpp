@@ -34,5 +34,3 @@ inline bool StackFrameStream::is_done() {
 }
 
 #endif // SHARE_RUNTIME_STACKFRAMESTREAM_INLINE_HPP
-
-

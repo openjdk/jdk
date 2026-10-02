@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_ICACHE_AARCH64_HPP
-#define OS_CPU_WINDOWS_AARCH64_ICACHE_AARCH64_HPP
+#ifndef OS_CPU_WINDOWS_AARCH64_ICACHE_WINDOWS_AARCH64_HPP
+#define OS_CPU_WINDOWS_AARCH64_ICACHE_WINDOWS_AARCH64_HPP
 
 // Interface for updating the instruction cache.  Whenever the VM
 // modifies code, part of the processor instruction cache potentially
@@ -41,4 +41,4 @@ class ICache : public AbstractICache {
   }
 };
 
-#endif // OS_CPU_WINDOWS_AARCH64_ICACHE_AARCH64_HPP
+#endif // OS_CPU_WINDOWS_AARCH64_ICACHE_WINDOWS_AARCH64_HPP

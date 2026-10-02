@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
+#ifndef OS_CPU_LINUX_AARCH64_ICACHE_LINUX_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_ICACHE_LINUX_AARCH64_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/vm_version.hpp"
@@ -143,4 +143,4 @@ class AArch64ICacheInvalidationContext : StackObj {
 
 #define PD_ICACHE_INVALIDATION_CONTEXT AArch64ICacheInvalidationContext
 
-#endif // OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
+#endif // OS_CPU_LINUX_AARCH64_ICACHE_LINUX_AARCH64_HPP

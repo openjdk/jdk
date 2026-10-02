@@ -59,4 +59,4 @@ inline void ZMarkContext::set_nstripes(size_t nstripes) {
   _nstripes = nstripes;
 }
 
-#endif // SHARE_GC_Z_ZMARKCACHE_INLINE_HPP
+#endif // SHARE_GC_Z_ZMARKCONTEXT_INLINE_HPP

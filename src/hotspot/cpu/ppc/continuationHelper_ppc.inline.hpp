@@ -195,4 +195,4 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f
   return f.fp();
 }
 
-#endif // CPU_PPC_CONTINUATIONFRAMEHELPERS_PPC_INLINE_HPP
+#endif // CPU_PPC_CONTINUATIONHELPER_PPC_INLINE_HPP

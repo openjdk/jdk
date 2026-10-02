@@ -22,8 +22,8 @@
  * questions.
  */
 
-#ifndef CPU_PPC_VM_FOREIGN_GLOBALS_PPC_HPP
-#define CPU_PPC_VM_FOREIGN_GLOBALS_PPC_HPP
+#ifndef CPU_PPC_FOREIGNGLOBALS_PPC_HPP
+#define CPU_PPC_FOREIGNGLOBALS_PPC_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "utilities/growableArray.hpp"
@@ -44,4 +44,4 @@ struct ABIDescriptor {
   bool is_volatile_reg(FloatRegister reg) const;
 };
 
-#endif // CPU_PPC_VM_FOREIGN_GLOBALS_PPC_HPP
+#endif // CPU_PPC_FOREIGNGLOBALS_PPC_HPP

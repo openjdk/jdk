@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIFLATARRAYKLASS_HPP
-#define SHARE_VM_CI_CIFLATARRAYKLASS_HPP
+#ifndef SHARE_CI_CIFLATARRAYKLASS_HPP
+#define SHARE_CI_CIFLATARRAYKLASS_HPP
 
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciValueKlass.hpp"
@@ -70,4 +70,4 @@ public:
   }
 };
 
-#endif // SHARE_VM_CI_CIFLATARRAYKLASS_HPP
+#endif // SHARE_CI_CIFLATARRAYKLASS_HPP

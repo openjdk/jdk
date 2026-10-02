@@ -114,4 +114,3 @@ public:
 } // end namespace
 
 #endif // SHARE_MEMORY_METASPACE_METASPACECONTEXT_HPP
-

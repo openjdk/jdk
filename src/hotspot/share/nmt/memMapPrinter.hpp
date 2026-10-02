@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMMAPPRINTER_HPP
-#define SHARE_SERVICES_MEMMAPPRINTER_HPP
+#ifndef SHARE_NMT_MEMMAPPRINTER_HPP
+#define SHARE_NMT_MEMMAPPRINTER_HPP
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
@@ -53,4 +53,4 @@ public:
 
 #endif // LINUX
 
-#endif // SHARE_SERVICES_MEMMAPPRINTER_HPP
+#endif // SHARE_NMT_MEMMAPPRINTER_HPP

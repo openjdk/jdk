@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef PRINTINLINING_HPP
-#define PRINTINLINING_HPP
+#ifndef SHARE_OPTO_PRINTINLINING_HPP
+#define SHARE_OPTO_PRINTINLINING_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
@@ -152,4 +152,4 @@ class InlinePrinterSuspendScope : public StackObj {
   ~InlinePrinterSuspendScope()                                          { _printer->resume();  }
 };
 
-#endif // PRINTINLINING_HPP
+#endif // SHARE_OPTO_PRINTINLINING_HPP

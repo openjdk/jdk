@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_CPPINTERPRETER_ZERO_HPP
-#define CPU_ZERO_CPPINTERPRETER_ZERO_HPP
+#ifndef CPU_ZERO_ZEROINTERPRETER_ZERO_HPP
+#define CPU_ZERO_ZEROINTERPRETER_ZERO_HPP
 
  protected:
   // Size of interpreter code
@@ -46,4 +46,4 @@
   // Main loop of normal_entry
   static void main_loop(int recurse, TRAPS);
 
-#endif // CPU_ZERO_CPPINTERPRETER_ZERO_HPP
+#endif // CPU_ZERO_ZEROINTERPRETER_ZERO_HPP

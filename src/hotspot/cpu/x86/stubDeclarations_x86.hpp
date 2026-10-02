@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_X86_STUBDECLARATIONS_HPP
-#define CPU_X86_STUBDECLARATIONS_HPP
+#ifndef CPU_X86_STUBDECLARATIONS_X86_HPP
+#define CPU_X86_STUBDECLARATIONS_X86_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -275,4 +275,4 @@
   do_arch_blob(final, 33000                                             \
                WINDOWS_ONLY(+22000) ZGC_ONLY(+20000))                   \
 
-#endif // CPU_X86_STUBDECLARATIONS_HPP
+#endif // CPU_X86_STUBDECLARATIONS_X86_HPP

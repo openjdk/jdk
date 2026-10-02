@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_S390_VMSTORAGE_S390_INLINE_HPP
-#define CPU_S390_VMSTORAGE_S390_INLINE_HPP
+#ifndef CPU_S390_VMSTORAGE_S390_HPP
+#define CPU_S390_VMSTORAGE_S390_HPP
 
 #include <cstdint>
 
@@ -105,4 +105,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   return VMStorage::invalid();
 }
 
-#endif // CPU_S390_VMSTORAGE_S390_INLINE_HPP
+#endif // CPU_S390_VMSTORAGE_S390_HPP

@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_RISCV_VMSTORAGE_RISCV_INLINE_HPP
-#define CPU_RISCV_VMSTORAGE_RISCV_INLINE_HPP
+#ifndef CPU_RISCV_VMSTORAGE_RISCV_HPP
+#define CPU_RISCV_VMSTORAGE_RISCV_HPP
 
 #include <cstdint>
 
@@ -83,4 +83,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   return VMStorage::invalid();
 }
 
-#endif // CPU_RISCV_VMSTORAGE_RISCV_INLINE_HPP
+#endif // CPU_RISCV_VMSTORAGE_RISCV_HPP
