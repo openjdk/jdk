@@ -859,7 +859,7 @@ private:
       oop obj = cast_to_oop(p);
       objs.do_object(obj);
       HeapWord* prev_p = p;
-      p += obj->size();
+      p += ShenandoahForwarding::size(obj);
       if (p < tams) {
         p = ctx->get_next_marked_addr(p, tams);
         // If there are no more marked objects before tams, this returns tams.  Note that tams is

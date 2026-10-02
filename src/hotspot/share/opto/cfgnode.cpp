@@ -30,6 +30,7 @@
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
@@ -1094,9 +1095,15 @@ uint PhiNode::hash() const {
   const Type* at = _adr_type;
   return TypeNode::hash() + (at ? at->hash() : 0);
 }
-bool PhiNode::cmp( const Node &n ) const {
-  return TypeNode::cmp(n) && _adr_type == ((PhiNode&)n)._adr_type;
+
+bool PhiNode::cmp(const Node& n) const {
+  const PhiNode& other = static_cast<const PhiNode&>(n);
+  if (!TypeNode::cmp(other) || _adr_type != other._adr_type) {
+    return false;
+  }
+  return _adr_type != TypePtr::BOTTOM || _excluded_idx == other._excluded_idx;
 }
+
 static inline
 const TypePtr* flatten_phi_adr_type(const TypePtr* at) {
   if (at == nullptr || at == TypePtr::BOTTOM)  return at;
@@ -3478,6 +3485,22 @@ void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
   if (is_tripcount(T_INT) || is_tripcount(T_LONG)) {
     st->print(" #tripcount");
+  }
+  if (type() == Type::MEMORY && adr_type() == TypePtr::BOTTOM && _excluded_idx != nullptr) {
+    st->print(" #excluded_alias_idx:{");
+    bool first = true;
+    for (int alias_idx = Compile::AliasIdxRaw; alias_idx < Compile::current()->num_alias_types(); alias_idx++) {
+      if (_excluded_idx->contains(alias_idx)) {
+        if (first) {
+          first = false;
+        } else {
+          st->print(",");
+        }
+
+        st->print("%d", alias_idx);
+      }
+    }
+    st->print("}");
   }
 }
 #endif
