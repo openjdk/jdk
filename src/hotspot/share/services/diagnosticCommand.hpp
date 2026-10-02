@@ -880,7 +880,7 @@ public:
   ShowSettingsDCmd(outputStream* output, bool heap) :
       DCmdWithParser(output, heap),
       _section("section",
-               "Optional -XshowSettings section. Settings are queried when "
+               "Optional -XshowSettings section. Current settings are printed when "
                "the command runs; see 'java -X' for supported "
                "-XshowSettings sections.",
                "STRING", false, "all") {
@@ -890,7 +890,7 @@ public:
   static int num_arguments() { return 1; }
   static const char* name() { return "VM.show_settings"; }
   static const char* description() {
-    return "Print effective VM configuration and settings queried at command "
+    return "Print current VM configuration and settings at command "
            "execution, e.g. 'VM.show_settings all'. See "
            "'java -X' for supported -XshowSettings sections.";
   }

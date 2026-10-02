@@ -162,7 +162,7 @@ public final class SecuritySettings {
     }
 
     private static void printSecurityProviderConfig(boolean verbose) {
-        ostream.println(INDENT + "Security provider static configuration: (in order of preference)");
+        ostream.println(INDENT + "Currently registered security providers (in order of preference):");
         for (Provider p : Security.getProviders()) {
             if (verbose) {
                 // separate the views out

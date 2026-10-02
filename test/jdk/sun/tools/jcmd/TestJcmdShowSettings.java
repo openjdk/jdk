@@ -111,7 +111,7 @@ public class TestJcmdShowSettings {
         output.shouldHaveExitValue(0);
         output.shouldContain("Security settings:");
         output.shouldContain("Security properties:");
-        output.shouldContain("Security provider static configuration:");
+        output.shouldContain("Currently registered security providers (in order of preference):");
         output.shouldContain("Security TLS configuration");
     }
 
@@ -121,7 +121,7 @@ public class TestJcmdShowSettings {
         output.shouldHaveExitValue(0);
         output.shouldContain("Security settings:");
         output.shouldContain("Security properties:");
-        output.shouldContain("Security provider static configuration:");
+        output.shouldContain("Currently registered security providers (in order of preference):");
         output.shouldContain("Security TLS configuration");
     }
 
@@ -138,7 +138,7 @@ public class TestJcmdShowSettings {
         OutputAnalyzer output = JcmdBase.jcmd("VM.show_settings", "security:providers");
 
         output.shouldHaveExitValue(0);
-        output.shouldContain("Security provider static configuration:");
+        output.shouldContain("Currently registered security providers (in order of preference):");
         output.shouldContain("Provider name:");
     }
 
