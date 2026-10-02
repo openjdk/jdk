@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 4533872 4915683 4922962 4985217 5017280 6242664 6588260
+ * @bug 4533872 4915683 4922962 4985217 5017280 6242664 6588260 8364007
  * @summary Unit tests for supplementary character support (JSR-204)
  */
 
@@ -386,7 +386,8 @@ public class Supplementary {
     }
 
     /**
-     * Test codePointCount(int, int)
+     * Test codePointCount(int, int) &
+     *      codePointCount()
      *
      * This test case assumes that
      * Character.codePointCount(CharSequence, int, int) works
@@ -396,16 +397,22 @@ public class Supplementary {
         for (int i = 0; i < input.length; i++) {
             String str = input[i];
             int length = str.length();
+            {
+                int result = str.codePointCount();
+                int expected = Character.codePointCount(str, 0, str.length());
+                check(result != expected, "String::codePointCount()", result, expected);
+            }
             for (int j = 0; j <= length; j++) {
                 int result = str.codePointCount(j, length);
                 int expected = Character.codePointCount(str, j, length);
                 check(result != expected, "codePointCount(input["+i+"], "+j+", "+length+")",
                       result, expected);
-                // Create a substring of the text range. It shares the
-                // underlying char[] of the String str.
                 String substr = str.substring(j, length);
                 result = substr.codePointCount(0, substr.length());
-                check(result != expected, "substring:codePointCount(input["+i+"], "+j+", "+length+")",
+                check(result != expected, "String::codePointCount(input["+i+"], "+j+", "+length+")",
+                      result, expected);
+                result = substr.codePointCount();
+                check(result != expected, "String::codePointCount()",
                       result, expected);
             }
             for (int j = length; j >= 0; j--) {
@@ -415,7 +422,10 @@ public class Supplementary {
                       result, expected);
                 String substr = str.substring(0, j);
                 result = substr.codePointCount(0, substr.length());
-                check(result != expected, "substring:codePointCount(input["+i+"], 0, "+j+")",
+                check(result != expected, "String::codePointCount(input["+i+"], 0, "+j+")",
+                      result, expected);
+                result = substr.codePointCount();
+                check(result != expected, "String::codePointCount()",
                       result, expected);
             }
 

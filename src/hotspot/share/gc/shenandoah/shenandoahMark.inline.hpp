@@ -73,9 +73,9 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
         InstanceKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
         break;
       }
-      case Klass::InlineKlassKind: {
-        // Inline instance.
-        InlineKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
+      case Klass::ValueKlassKind: {
+        // Value instance.
+        ValueKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
         break;
       }
       case Klass::InstanceRefKlassKind: {

@@ -2141,9 +2141,12 @@ JDWP "Java(tm) Debug Wire Protocol"
         "language method. Forcing return on a thread with only one "
         "frame on the stack causes the thread to exit when resumed. "
         "<p>"
-        "When preview features are enabled in the target VM, "
-        "the method can not be the constructor of a "
-        "<a href=../../api/java.base/java/lang/Class.html#isValue()>value class<sup>PREVIEW</sup></a>."
+        "When preview features are enabled in the target VM, the specified "
+        "thread's current frame can not be a constructor of a class with "
+        "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
+        "strictly-initialized<sup>PREVIEW</sup></a> instance fields in the class "
+        "or any of its superclasses, or the class initializer of a class with "
+        "strictly-initialized static fields."
         "<p>"
         "For void methods, the value must be a void value. "
         "For methods that return primitive values, the value's type must "
@@ -2165,8 +2168,12 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_OBJECT    "Thread or value is not a known ID.")
             (Error THREAD_NOT_SUSPENDED)
             (Error OPAQUE_FRAME      "Unable to force the current frame to return "
-                                     "(e.g. the current frame is executing a native method or "
-                                     "the current frame is the constructor for a value class).")
+                                     "(e.g. the current frame is executing a native method or, "
+                                     "if preview features are enabled in the target VM, "
+                                     "either the current frame is a constructor of a class "
+                                     "with strictly-initialized instance fields in its class "
+                                     "hierarchy or the current frame is the class initializer "
+                                     "of a class with strictly-initialized static fields).")
             (Error NO_MORE_FRAMES)
             (Error NOT_IMPLEMENTED)
             (Error TYPE_MISMATCH   "Value is not an appropriate type for the "

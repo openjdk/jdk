@@ -24,7 +24,6 @@
 
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/multnode.hpp"
@@ -32,6 +31,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/vmError.hpp"
 
 //=============================================================================
@@ -134,7 +134,7 @@ const Type* ProjNode::proj_type(const Type* t) const {
   CallStaticJavaNode* call = in(0)->isa_CallStaticJava();
   if (call != nullptr && call->is_boxing_method()) {
     // The result of autoboxing is always non-null on normal path.
-    if (call->tf()->returns_inline_type_as_fields()) {
+    if (call->tf()->returns_value_type_as_fields()) {
       // Last returned value is the null marker
       if (_con == call->tf()->range_cc()->cnt() - 1) {
         t = TypeInt::ONE;
@@ -151,27 +151,25 @@ const Type *ProjNode::bottom_type() const {
   return proj_type(in(0)->bottom_type());
 }
 
-const TypePtr *ProjNode::adr_type() const {
-  if (bottom_type() == Type::MEMORY) {
-    // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
-    Node* ctrl = in(0);
-    if (ctrl->Opcode() == Op_Tuple) {
-      // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
-      ctrl = ctrl->in(_con);
-    }
-    // node is dead or we are in the process of removing a dead subgraph
-    if (ctrl == nullptr || ctrl->is_top()) {
-      return nullptr;
-    }
-    const TypePtr* adr_type = ctrl->adr_type();
-    #ifdef ASSERT
-    if (!VMError::is_error_reported() && !Node::in_dump())
-      assert(adr_type != nullptr, "source must have adr_type");
-    #endif
-    return adr_type;
+const TypePtr* ProjNode::adr_type() const {
+  if (bottom_type() != Type::MEMORY) {
+    assert(bottom_type()->base() != Type::Memory, "no other memories?");
+    return nullptr;
   }
-  assert(bottom_type()->base() != Type::Memory, "no other memories?");
-  return nullptr;
+
+  Node* ctrl = in(0);
+  // node is dead or we are in the process of removing a dead subgraph
+  if (ctrl == nullptr || ctrl->is_top()) {
+    return nullptr;
+  }
+
+  const TypePtr* adr_type = ctrl->adr_type();
+#ifdef ASSERT
+  if (!VMError::is_error_reported() && !Node::in_dump()) {
+    assert(adr_type != nullptr, "source must have adr_type");
+  }
+#endif // ASSERT
+  return adr_type;
 }
 
 bool ProjNode::pinned() const { return in(0)->pinned(); }
@@ -214,9 +212,9 @@ Node* ProjNode::Identity(PhaseGVN* phase) {
 
   CallStaticJavaNode* call = in(0)->isa_CallStaticJava();
   if (call != nullptr) {
-    if (call->is_boxing_method() && call->method()->return_type()->is_inlinetype()) {
+    if (call->is_boxing_method() && call->method()->return_type()->is_value_klass()) {
       // Boxing (for example, via Integer.valueOf(int))
-      if (call->tf()->returns_inline_type_as_fields()) {
+      if (call->tf()->returns_value_type_as_fields()) {
         if (_con == TypeFunc::Parms) {
           // Oop projection: Keep it to avoid re-buffering. If unused,
           // it will go away and enable removal of the boxing call.
@@ -234,9 +232,9 @@ Node* ProjNode::Identity(PhaseGVN* phase) {
         return call->in(TypeFunc::Parms + 1);
       } else {
         Node* arg = call->in(TypeFunc::Parms);
-        if (arg->is_InlineType()) {
+        if (arg->is_ValueType()) {
           assert(!phase->type(arg)->maybe_null(), "missing receiver null check?");
-          return arg->as_InlineType()->field_value(0);
+          return arg->as_ValueType()->field_value(0);
         }
       }
     }

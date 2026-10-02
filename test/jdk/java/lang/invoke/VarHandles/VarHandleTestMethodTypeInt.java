@@ -477,7 +477,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // actual reference class
             int x = (int) vh.compareAndExchange(recv, 0x01234567, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.compareAndExchange(0, 0x01234567, 0x01234567);
         });
         // Incorrect return type
@@ -510,7 +510,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // actual reference class
             int x = (int) vh.compareAndExchangeAcquire(recv, 0x01234567, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.compareAndExchangeAcquire(0, 0x01234567, 0x01234567);
         });
         // Incorrect return type
@@ -543,7 +543,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // actual reference class
             int x = (int) vh.compareAndExchangeRelease(recv, 0x01234567, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.compareAndExchangeRelease(0, 0x01234567, 0x01234567);
         });
         // Incorrect return type
@@ -573,7 +573,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndSet(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndSet(0, 0x01234567);
         });
         // Incorrect return type
@@ -602,7 +602,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndSetAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndSetAcquire(0, 0x01234567);
         });
         // Incorrect return type
@@ -631,7 +631,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndSetRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndSetRelease(0, 0x01234567);
         });
         // Incorrect return type
@@ -660,7 +660,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndAdd(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndAdd(0, 0x01234567);
         });
         // Incorrect return type
@@ -689,7 +689,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndAddAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndAddAcquire(0, 0x01234567);
         });
         // Incorrect return type
@@ -718,7 +718,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndAddRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndAddRelease(0, 0x01234567);
         });
         // Incorrect return type
@@ -747,7 +747,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseOr(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndBitwiseOr(0, 0x01234567);
         });
         // Incorrect return type
@@ -777,7 +777,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseOrAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndBitwiseOrAcquire(0, 0x01234567);
         });
         // Incorrect return type
@@ -802,27 +802,27 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             int x = (int) vh.getAndBitwiseOrRelease(null, 0x01234567);
         });
         checkCCE(() -> { // receiver reference class
-            int x = (int) vh.getAndBitwiseOr(Void.class, 0x01234567);
+            int x = (int) vh.getAndBitwiseOrRelease(Void.class, 0x01234567);
         });
         checkWMTE(() -> { // value reference class
-            int x = (int) vh.getAndBitwiseOr(recv, Void.class);
+            int x = (int) vh.getAndBitwiseOrRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
-            int x = (int) vh.getAndBitwiseOr(0, 0x01234567);
+        checkWMTE(() -> { // receiver primitive class
+            int x = (int) vh.getAndBitwiseOrRelease(0, 0x01234567);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.getAndBitwiseOr(recv, 0x01234567);
+            Void r = (Void) vh.getAndBitwiseOrRelease(recv, 0x01234567);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.getAndBitwiseOr(recv, 0x01234567);
+            boolean x = (boolean) vh.getAndBitwiseOrRelease(recv, 0x01234567);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            int x = (int) vh.getAndBitwiseOr();
+            int x = (int) vh.getAndBitwiseOrRelease();
         });
         checkWMTE(() -> { // >
-            int x = (int) vh.getAndBitwiseOr(recv, 0x01234567, Void.class);
+            int x = (int) vh.getAndBitwiseOrRelease(recv, 0x01234567, Void.class);
         });
 
 
@@ -837,7 +837,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseAnd(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndBitwiseAnd(0, 0x01234567);
         });
         // Incorrect return type
@@ -867,7 +867,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseAndAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndBitwiseAndAcquire(0, 0x01234567);
         });
         // Incorrect return type
@@ -892,27 +892,27 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             int x = (int) vh.getAndBitwiseAndRelease(null, 0x01234567);
         });
         checkCCE(() -> { // receiver reference class
-            int x = (int) vh.getAndBitwiseAnd(Void.class, 0x01234567);
+            int x = (int) vh.getAndBitwiseAndRelease(Void.class, 0x01234567);
         });
         checkWMTE(() -> { // value reference class
-            int x = (int) vh.getAndBitwiseAnd(recv, Void.class);
+            int x = (int) vh.getAndBitwiseAndRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
-            int x = (int) vh.getAndBitwiseAnd(0, 0x01234567);
+        checkWMTE(() -> { // receiver primitive class
+            int x = (int) vh.getAndBitwiseAndRelease(0, 0x01234567);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.getAndBitwiseAnd(recv, 0x01234567);
+            Void r = (Void) vh.getAndBitwiseAndRelease(recv, 0x01234567);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.getAndBitwiseAnd(recv, 0x01234567);
+            boolean x = (boolean) vh.getAndBitwiseAndRelease(recv, 0x01234567);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            int x = (int) vh.getAndBitwiseAnd();
+            int x = (int) vh.getAndBitwiseAndRelease();
         });
         checkWMTE(() -> { // >
-            int x = (int) vh.getAndBitwiseAnd(recv, 0x01234567, Void.class);
+            int x = (int) vh.getAndBitwiseAndRelease(recv, 0x01234567, Void.class);
         });
 
 
@@ -927,7 +927,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseXor(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndBitwiseXor(0, 0x01234567);
         });
         // Incorrect return type
@@ -957,7 +957,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseXorAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             int x = (int) vh.getAndBitwiseXorAcquire(0, 0x01234567);
         });
         // Incorrect return type
@@ -982,27 +982,27 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
             int x = (int) vh.getAndBitwiseXorRelease(null, 0x01234567);
         });
         checkCCE(() -> { // receiver reference class
-            int x = (int) vh.getAndBitwiseXor(Void.class, 0x01234567);
+            int x = (int) vh.getAndBitwiseXorRelease(Void.class, 0x01234567);
         });
         checkWMTE(() -> { // value reference class
-            int x = (int) vh.getAndBitwiseXor(recv, Void.class);
+            int x = (int) vh.getAndBitwiseXorRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
-            int x = (int) vh.getAndBitwiseXor(0, 0x01234567);
+        checkWMTE(() -> { // receiver primitive class
+            int x = (int) vh.getAndBitwiseXorRelease(0, 0x01234567);
         });
         // Incorrect return type
         checkWMTE(() -> { // reference class
-            Void r = (Void) vh.getAndBitwiseXor(recv, 0x01234567);
+            Void r = (Void) vh.getAndBitwiseXorRelease(recv, 0x01234567);
         });
         checkWMTE(() -> { // primitive class
-            boolean x = (boolean) vh.getAndBitwiseXor(recv, 0x01234567);
+            boolean x = (boolean) vh.getAndBitwiseXorRelease(recv, 0x01234567);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            int x = (int) vh.getAndBitwiseXor();
+            int x = (int) vh.getAndBitwiseXorRelease();
         });
         checkWMTE(() -> { // >
-            int x = (int) vh.getAndBitwiseXor(recv, 0x01234567, Void.class);
+            int x = (int) vh.getAndBitwiseXorRelease(recv, 0x01234567, Void.class);
         });
     }
 
@@ -1120,7 +1120,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
                 int x = (int) hs.get(am, methodType(int.class, VarHandleTestMethodTypeInt.class, int.class, Class.class)).
                     invokeExact(recv, 0x01234567, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 int x = (int) hs.get(am, methodType(int.class, int.class , int.class, int.class)).
                     invokeExact(0, 0x01234567, 0x01234567);
             });
@@ -1157,7 +1157,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
                 int x = (int) hs.get(am, methodType(int.class, VarHandleTestMethodTypeInt.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 int x = (int) hs.get(am, methodType(int.class, int.class, int.class)).
                     invokeExact(0, 0x01234567);
             });
@@ -1194,7 +1194,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
                 int x = (int) hs.get(am, methodType(int.class, VarHandleTestMethodTypeInt.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 int x = (int) hs.get(am, methodType(int.class, int.class, int.class)).
                     invokeExact(0, 0x01234567);
             });
@@ -1231,7 +1231,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
                 int x = (int) hs.get(am, methodType(int.class, VarHandleTestMethodTypeInt.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 int x = (int) hs.get(am, methodType(int.class, int.class, int.class)).
                     invokeExact(0, 0x01234567);
             });
@@ -1690,7 +1690,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         });
 
 
-        // GetAndBitwiseOrReleaseRelease
+        // GetAndBitwiseOrRelease
         // Incorrect argument types
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseOrRelease(Void.class);
@@ -1753,7 +1753,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         });
 
 
-        // GetAndBitwiseAndReleaseRelease
+        // GetAndBitwiseAndRelease
         // Incorrect argument types
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseAndRelease(Void.class);
@@ -1816,7 +1816,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         });
 
 
-        // GetAndBitwiseXorReleaseRelease
+        // GetAndBitwiseXorRelease
         // Incorrect argument types
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndBitwiseXorRelease(Void.class);
@@ -2495,7 +2495,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndSet(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             int x = (int) vh.getAndSet(0, 0, 0x01234567);
         });
         checkWMTE(() -> { // index reference class
@@ -2528,7 +2528,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndSetAcquire(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             int x = (int) vh.getAndSetAcquire(0, 0, 0x01234567);
         });
         checkWMTE(() -> { // index reference class
@@ -2561,7 +2561,7 @@ public class VarHandleTestMethodTypeInt extends VarHandleBaseTest {
         checkWMTE(() -> { // value reference class
             int x = (int) vh.getAndSetRelease(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             int x = (int) vh.getAndSetRelease(0, 0, 0x01234567);
         });
         checkWMTE(() -> { // index reference class

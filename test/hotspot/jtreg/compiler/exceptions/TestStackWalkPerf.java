@@ -26,6 +26,7 @@
  * @bug 8389130
  * @summary With Valhalla, frame::sender became a bit too big and is not as spontaneously inlined as before.
  *          This causes some measurable performance regressions in cases where walking the stack is frequent.
+ * @requires vm.debug == false
  * @run main/othervm -Xbatch
  *                   -XX:-TieredCompilation
  *                   -XX:CompileCommand=dontinline,${test.main.class}::fillInStackTrace

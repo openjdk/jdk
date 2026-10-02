@@ -99,7 +99,9 @@ Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   assert( !n->is_Phi() && !n->is_CFG(), "this code only handles data nodes" );
   uint i;
   Node *early;
-  if (n->in(0) && !n->is_expensive()) {
+  // During verification we also get early control for expensive nodes here,
+  // as get_early_ctrl_for_expensive is skipped because it modifies the graph.
+  if (n->in(0) != nullptr && (!n->is_expensive() || _verify_me != nullptr || _verify_only)) {
     early = n->in(0);
     if (!early->is_CFG()) // Might be a non-CFG multi-def
       early = get_ctrl(early);        // So treat input as a straight data input
@@ -222,8 +224,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
         if (nb_ctl_proj > 1) {
           break;
         }
-        assert(parent_ctl->is_Start() || parent_ctl->is_MemBar() || parent_ctl->is_Call() ||
-               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(parent_ctl), "unexpected node");
+        assert(parent_ctl->is_Start() || parent_ctl->is_MemBar() || parent_ctl->is_SafePoint(), "unexpected node");
         assert(idom(ctl) == parent_ctl, "strange");
         next = idom(parent_ctl);
       }
@@ -1288,9 +1289,17 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     register_new_node(new_limit, predicates.entry());
   } else {
     assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");
+    // If an OpaqueLoopInitNode is shared by several template assertion predicates, the code that updates them (below)
+    // will encounter it several times. Updating it more than once introduces a dead loop:
+    // 1- current OpaqueLoopInitNode is replaced by (AddI (OpaqueLoopInitNode ..)) with a new OpaqueLoopInitNode
+    // 2- The new OpaqueLoopInitNode in (AddI (OpaqueLoopInitNode ..)) is encountered again and replaced by the same
+    //    (AddI (OpaqueLoopInitNode ..)) resulting in a dead loop
+    // new_nodes is set so the new OpaqueLoopInitNode is ignored by UpdateInitForTemplateAssertionPredicates so step 2
+    // doesn't happen
+    uint last_node_index = C->unique();
     PredicateIterator predicate_iterator(entry_control);
     Node* new_init = new_assertion_predicate_opaque_init(entry_control, init, int_zero);
-    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this);
+    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this, last_node_index);
     predicate_iterator.for_each(update_init_for_template_assertion_predicates);
   }
   IfNode* exit_test = head->loopexit();
@@ -3922,7 +3931,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
               // We may have encountered multiple if conditions, that have no
               // overlap, and produce an empty/top type. Returning nullptr
               // is conservative, it means we do not constrain the type, which
-              // will just prevent further optimiziations.
+              // will just prevent further optimizations.
               assert(join_t->empty(), "top");
               return nullptr;
             }
@@ -3931,7 +3940,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
         }
       }
       pred = _phase->idom(pred);
-      if (pred == nullptr || pred == _phase->C->top()) {
+      if (pred == nullptr || pred == _phase->C->top() || pred == _phase->C->start()) {
         break;
       }
       // Stop if going beyond definition block of val
@@ -4154,7 +4163,7 @@ static float estimate_path_freq( Node *n ) {
         n = n->in(0);
         continue;
       }
-      return data->as_CounterData()->count()/FreqCountInvocations;
+      return data->as_CounterData()->count();
     }
     // See if there's a gating IF test
     Node *n_c = n->in(0);
@@ -4381,10 +4390,9 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
   visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
-    if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
-        && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+    if (n->is_Call() && n->as_Call()->guaranteed_safepoint() && !n->is_boxing_or_unboxing_call()) {
       // Terminate this path: guaranteed safepoint found.
-      // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+      // Boxing and unboxing calls are excluded as they may lack a safepoint on the fast path. This is
       // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
       // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
       // to avoid this additional check.
@@ -4485,12 +4493,11 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     if (!_irreducible) {
       // Scan the dom-path nodes from tail to head
       for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-        // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+        // Boxing and unboxing calls are excluded as they may lack a safepoint on the fast path. This is
         // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
         // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
         // to avoid this additional check.
-        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
-            && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint() && !n->is_boxing_or_unboxing_call()) {
           has_call = true;
           _has_sfpt = 1;          // Then no need for a safept!
           break;
@@ -5302,14 +5309,11 @@ void PhaseIdealLoop::build_and_optimize() {
     return;
   }
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
   bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll &&
-                    !do_expand_reachability_fences && !_verify_me && !_verify_only &&
-                    !bs->is_gc_specific_loop_opts_pass(_mode) ;
+                    !do_expand_reachability_fences && !_verify_me && !_verify_only;
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
   bool do_optimize_reachability_fences = OptimizeReachabilityFences && (C->reachability_fences_count() > 0);
-  bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
   if (stop_early && !do_expensive_nodes && !do_optimize_reachability_fences) {
     return;
   }
@@ -5386,7 +5390,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Given early legal placement, try finding counted loops.  This placement
   // is good enough to discover most loop invariants.
-  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded && !do_expand_reachability_fences) {
+  if (!_verify_me && !_verify_only && !do_expand_reachability_fences) {
     _ltree_root->counted_loop( this );
   }
 
@@ -5490,10 +5494,6 @@ void PhaseIdealLoop::build_and_optimize() {
     }
 
     C->restore_major_progress(old_progress);
-    return;
-  }
-
-  if (bs->optimize_loops(this, _mode, visited, nstack, worklist)) {
     return;
   }
 
@@ -7191,7 +7191,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.
-  if (least != early && !BarrierSet::barrier_set()->barrier_set_c2()->is_gc_specific_loop_opts_pass(_mode)) {
+  if (least != early) {
     Node* ctrl_out = least->unique_ctrl_out_or_null();
     if (ctrl_out != nullptr && ctrl_out->is_Loop() &&
         least == ctrl_out->in(LoopNode::EntryControl) &&

@@ -30,7 +30,7 @@
 
 
 // Interface for a compression  implementation.
-class AbstractCompressor : public CHeapObj<mtInternal> {
+class AbstractCompressor : public CHeapObj<mtServiceability> {
 public:
   virtual ~AbstractCompressor() { }
 
@@ -46,7 +46,7 @@ public:
 };
 
 // Interface for a writer implementation.
-class AbstractWriter : public CHeapObj<mtInternal> {
+class AbstractWriter : public CHeapObj<mtServiceability> {
 public:
   virtual ~AbstractWriter() { }
 
