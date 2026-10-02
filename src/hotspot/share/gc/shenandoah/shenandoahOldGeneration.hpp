@@ -357,7 +357,7 @@ public:
   size_t get_affiliated_region_count() const override;
   size_t max_capacity() const override;
 
-  virtual void record_collection_start(size_t gc_id) {
+  void record_collection_start(size_t gc_id) {
     _started_gc_id.store_relaxed(gc_id);
   }
 
