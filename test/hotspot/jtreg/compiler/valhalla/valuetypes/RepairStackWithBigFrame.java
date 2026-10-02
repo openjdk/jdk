@@ -33,7 +33,6 @@ import static compiler.valhalla.valuetypes.ValueTypes.*;
  *          increment and rfp at the same time, since it only has a 7 bit offset.
  *          We use two ldr with 9-bit offsets instead.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/othervm

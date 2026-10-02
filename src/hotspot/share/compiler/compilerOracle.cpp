@@ -255,7 +255,7 @@ template<> void TypedMethodOptionMatcher::set_value(bool value) {
 }
 
 template<> void TypedMethodOptionMatcher::set_value(ccstr value) {
-  _u.ccstr_value = (ccstr)os::strdup_check_oom(value);
+  _u.ccstr_value = (ccstr)os::strdup_check_oom(value, mtCompiler);
 }
 
 void TypedMethodOptionMatcher::print() {
@@ -1043,7 +1043,7 @@ class LineCopy : StackObj {
   const char* _copy;
 public:
     LineCopy(char* line) {
-      _copy = os::strdup(line, mtInternal);
+      _copy = os::strdup(line, mtCompiler);
     }
     ~LineCopy() {
       os::free((void*)_copy);
@@ -1255,7 +1255,7 @@ bool compilerOracle_init() {
   // Register default compile commands first - any commands specified via CompileCommand will
   // supersede these default commands.
   for (int i = 0; default_compile_commands[i] != nullptr; i ++) {
-    char* s = os::strdup(default_compile_commands[i]);
+    char* s = os::strdup(default_compile_commands[i], mtCompiler);
     success = CompilerOracle::parse_from_line_quietly(s);
     os::free(s);
     assert(success, "default compile command \"%s\" failed to parse", default_compile_commands[i]);

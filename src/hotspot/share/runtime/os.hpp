@@ -299,7 +299,7 @@ class os: AllStatic {
   static jlong elapsed_counter();
   static jlong elapsed_frequency();
 
-  static double elapsed_process_cpu_time();
+  [[nodiscard]] static bool elapsed_process_cpu_time(double& value);
 
   static jlong initial_time_count();
   static uint64_t initial_time_date();
@@ -1004,9 +1004,9 @@ class os: AllStatic {
 
   // handles null pointers
   static void  free    (void *memblock);
-  static char* strdup(const char *, MemTag mem_tag = mtInternal);  // Like strdup
+  static char* strdup(const char *, MemTag mem_tag);  // Like strdup
   // Like strdup, but exit VM when strdup() returns null
-  static char* strdup_check_oom(const char*, MemTag mem_tag = mtInternal);
+  static char* strdup_check_oom(const char*, MemTag mem_tag);
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);

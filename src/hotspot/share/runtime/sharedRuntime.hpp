@@ -1010,6 +1010,8 @@ public:
   CompiledEntrySignature(Method* method = nullptr);
   void compute_calling_conventions(bool link_time = true);
   void initialize_from_fingerprint(AdapterFingerPrint* fingerprint);
+
+  static int max_stack_slots_cc();
 };
 
 #endif // SHARE_RUNTIME_SHAREDRUNTIME_HPP
