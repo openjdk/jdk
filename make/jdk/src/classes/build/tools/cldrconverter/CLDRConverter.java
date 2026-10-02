@@ -869,7 +869,14 @@ public class CLDRConverter {
             names.put(METAZONE_DSTOFFSETS,
                 explicitDstOffsets.entrySet().stream()
                     .sorted(Map.Entry.comparingByKey())
-                    .map(e -> e.getKey() + "=" + e.getValue())
+                    .map(e -> {
+                        String tzid = e.getKey();
+                        if (tzid.isEmpty() || tzid.indexOf('=') >= 0 || tzid.indexOf(';') >= 0) {
+                            throw new IllegalArgumentException("Invalid timezone ID: " + tzid);
+                        }
+                        ZoneOffset.of(e.getValue()); // checks if the offset is valid
+                        return tzid + "=" + e.getValue();
+                    })
                     .collect(Collectors.joining(";")));
         }
 

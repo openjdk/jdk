@@ -45,6 +45,7 @@ import java.lang.ref.SoftReference;
 import java.text.ListFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.time.ZoneOffset;
 import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -360,19 +361,15 @@ public class LocaleResources {
         return val;
     }
 
-    // Returns explict DST offset map solely for TimeZoneNameUtility.
+    // Returns explicit DST offset map solely for TimeZoneNameUtility.
     // No need to be cached, as it is only invoked once.
-    public Map<String, String> getExplicitDstOffsets() {
+    public Map<String, ZoneOffset> getExplicitDstOffsets() {
         TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
         if (tznb.containsKey("metazone.dstoffsets")) {
-            Map<String, String> offsets = HashMap.newHashMap(32);
+            Map<String, ZoneOffset> offsets = HashMap.newHashMap(32);
             for (String entry : tznb.getString("metazone.dstoffsets").split(";", -1)) {
                 int separator = entry.indexOf('=');
-                if (separator <= 0 || separator == entry.length() - 1) {
-                    throw new InternalError("Invalid metazone.dstoffsets entry: " + entry);
-                }
-                offsets.put(entry.substring(0, separator),
-                    entry.substring(separator + 1));
+                offsets.put(entry.substring(0, separator), ZoneOffset.of(entry.substring(separator + 1)));
             }
             return offsets;
         } else {

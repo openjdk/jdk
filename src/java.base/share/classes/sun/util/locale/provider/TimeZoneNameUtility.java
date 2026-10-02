@@ -26,6 +26,7 @@
 package sun.util.locale.provider;
 
 import java.lang.ref.SoftReference;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -64,7 +65,7 @@ public final class TimeZoneNameUtility {
     /**
      * Explicit DST offset map
      */
-    private static final LazyConstant<Map<String, String>> explicitDstOffsets =
+    private static final LazyConstant<Map<String, ZoneOffset>> explicitDstOffsets =
         LazyConstant.of(TimeZoneNameUtility::initExplicitDstOffsets);
 
     /**
@@ -183,14 +184,14 @@ public final class TimeZoneNameUtility {
      * {@return the explicit metazone DST offset for the specified time zone ID if it exists, or else null}
      * @param tzid the time zone ID
      */
-    public static String explicitDstOffset(String tzid) {
+    public static ZoneOffset explicitDstOffset(String tzid) {
         return explicitDstOffsets.get().get(canonicalTZID(tzid).orElse(tzid));
     }
 
-    private static Map<String, String> initExplicitDstOffsets() {
-        return LocaleProviderAdapter.forType(CLDR) instanceof CLDRLocaleProviderAdapter ca ?
-            ca.getLocaleResources(Locale.ROOT).getExplicitDstOffsets() :
-            Map.of();
+    private static Map<String, ZoneOffset> initExplicitDstOffsets() {
+        return LocaleProviderAdapter.forType(CLDR)
+            .getLocaleResources(Locale.ROOT)
+            .getExplicitDstOffsets();
     }
 
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {
