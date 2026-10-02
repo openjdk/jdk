@@ -28,7 +28,6 @@
 
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
-#include "memory/iterator.hpp"
 #include "runtime/atomic.hpp"
 
 class OopIterateClosure;
