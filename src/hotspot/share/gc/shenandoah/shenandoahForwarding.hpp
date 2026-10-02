@@ -47,10 +47,6 @@ public:
    */
   static inline bool is_self_forwarded(oop obj);
 
-  /* Returns true iff the object is allowed to be forwarded.
-   */
-  static inline bool is_forwardable(oop obj);
-
   /* Tries to atomically update forwardee in $obj to $update.
    *
    * Returns the actual forwardee, whether installed by this call

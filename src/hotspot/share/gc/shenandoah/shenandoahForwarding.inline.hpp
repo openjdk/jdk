@@ -55,10 +55,6 @@ inline oop ShenandoahForwarding::get_forwardee(oop obj) {
   return get_forwardee_raw(obj);
 }
 
-inline bool ShenandoahForwarding::is_forwardable(oop obj) {
-  return !obj->mark().is_forwarded();
-}
-
 inline bool ShenandoahForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
 }

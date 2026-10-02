@@ -1115,7 +1115,7 @@ public:
 
   void do_object(oop p) {
     shenandoah_assert_marked(nullptr, p);
-    if (ShenandoahForwarding::is_forwardable(p)) {
+    if (!ShenandoahForwarding::is_forwarded(p)) {
       _heap->evacuate_object(p, _thread);
     }
   }

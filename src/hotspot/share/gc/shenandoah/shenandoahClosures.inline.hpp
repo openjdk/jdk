@@ -152,14 +152,13 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
 
-      oop resolved = obj;
-      if (ShenandoahForwarding::is_forwardable(obj)) {
+      oop resolved;
+      if (ShenandoahForwarding::is_forwarded(obj)) {
+        resolved = ShenandoahForwarding::get_forwardee(obj);
+      } else {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
         resolved = _heap->evacuate_object(obj, thr);
-      } else {
-        shenandoah_assert_forwarded(p, obj);
-        resolved = ShenandoahForwarding::get_forwardee(obj);
       }
       if (resolved != obj) {
         if (CONCURRENT) {
