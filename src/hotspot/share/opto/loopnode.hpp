@@ -1792,6 +1792,9 @@ public:
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
+
+  static ProjNode* unique_scmem_proj_if_any(Node* n);
+
   // Split Node 'n' through merge point if there is enough win.
   Node *split_thru_phi( Node *n, Node *region, int policy );
   // Found an If getting its condition-code input from a Phi in the
