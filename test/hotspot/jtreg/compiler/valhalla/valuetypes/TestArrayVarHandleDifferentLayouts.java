@@ -34,6 +34,7 @@ import jdk.test.lib.Asserts;
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
+ * @run main ${test.main.class}
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1
  *                   -XX:CompileOnly=${test.main.class}::* ${test.main.class}
  */
