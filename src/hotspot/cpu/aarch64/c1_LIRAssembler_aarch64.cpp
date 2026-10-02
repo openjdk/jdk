@@ -2829,7 +2829,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
   // AggressiveProfileReduction controls what we do when a profile
   // counter's value is unknown at code generation time. With
-  // AggressiveProfileReduction true we insert a runtime check 
+  // AggressiveProfileReduction true we insert a runtime check
   const bool do_decimate = ProfileCaptureRatio > 1
     && (AggressiveProfileReduction || counter_contents > 0);
   ProfileStub *counter_stub = do_decimate ? new ProfileStub() : nullptr;
