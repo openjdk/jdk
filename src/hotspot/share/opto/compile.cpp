@@ -3286,6 +3286,9 @@ void Compile::Optimize() {
   // Conditional Constant Propagation;
   print_method(PHASE_BEFORE_CCP1, 2);
   PhaseCCP ccp( &igvn );
+  if (failing()) {
+    return;
+  }
   assert( true, "Break here to ccp.dump_nodes_and_types(_root,999,1)");
   {
     TracePhase tp(_t_ccp);
