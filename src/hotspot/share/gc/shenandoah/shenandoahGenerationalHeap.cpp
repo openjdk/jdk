@@ -311,17 +311,14 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     control_thread()->handle_alloc_failure_evac(size);
 
     // Install the self-forwarded bit so other evacuators/LRBs see the
-    // object as "already handled, do not try to evacuate". The CAS may
-    // fail if another thread concurrently installed a real forwardee or
-    // self-forwarded first.
-    oop winner = ShenandoahForwarding::try_forward_to_self(p);
-    if (winner == nullptr) {
-      // We own the self-forwarding. Flag the from-region so the degen/full
+    // object as "already handled, do not try to evacuate".
+    oop fwd = ShenandoahForwarding::try_forward_to_self(p);
+    if (fwd == p) {
+      // Now self-forwarded. Flag the from-region so the degen/full
       // GC entry drain knows to scan it for self_fwd bits to clear.
       heap_region_containing(p)->set_has_self_forwards();
-      return p;
     }
-    return winner;
+    return fwd;
   }
 
   if (ShenandoahEvacTracking) {

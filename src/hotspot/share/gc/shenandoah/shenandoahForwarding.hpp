@@ -73,18 +73,15 @@ public:
 
   /* Tries to atomically update forwardee in $obj to $update.
    *
-   * Returns the new object 'update' upon success, or
-   * the new forwardee that a competing thread installed. If another
-   * thread self-forwarded the object, returns the object itself.
+   * Returns the actual forwardee, whether installed by this call
+   * or discovered during the conflict.
    */
   static inline oop try_forward_to(oop obj, oop update);
 
   /* Tries to atomically update forwardee in $obj to self-forward.
    *
-   * Returns nullptr on success (we installed the self-forward), or
-   * the winning forwardee when another thread raced ahead (either a
-   * real forwardee pointing at a copy, or obj itself if the winner
-   * also self-forwarded).
+   * Returns the actual forwardee, whether installed by this call
+   * or discovered during the conflict.
    */
   static inline oop try_forward_to_self(oop obj);
 

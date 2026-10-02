@@ -77,12 +77,12 @@ inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
 }
 
 inline oop ShenandoahForwarding::try_forward_to(oop obj, oop update) {
-  assert(update != nullptr, "Ambiguity");
+  assert(update != obj, "Use try_forward_to_self");
   return try_update_forwardee(obj, update);
 }
 
 inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
-  return try_update_forwardee(obj, nullptr);
+  return try_update_forwardee(obj, obj);
 }
 
 inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
@@ -95,7 +95,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   }
 
   // Attempt to install and return on success.
-  markWord new_mark = (update != nullptr) ?
+  markWord new_mark = (update != obj) ?
     markWord::encode_pointer_as_mark(update) :
     old_mark.set_self_forwarded();
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
