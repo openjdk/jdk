@@ -1273,7 +1273,7 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
         }
       }
     }
-    return true; // All recorded constraints added successfully.
+    return true; // Recorded constraints, if any, have all been added successfully.
   }
   if (log.is_enabled()) {
     ResourceMark rm(current);
