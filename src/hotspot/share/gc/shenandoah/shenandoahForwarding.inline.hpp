@@ -64,15 +64,6 @@ inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
 }
 
 inline oop ShenandoahForwarding::try_forward_to(oop obj, oop update) {
-  assert(update != obj, "Use try_forward_to_self");
-  return try_update_forwardee(obj, update);
-}
-
-inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
-  return try_update_forwardee(obj, obj);
-}
-
-inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   shenandoah_assert_correct(nullptr, obj);
 
   // Optimistic: check if object is already forwarded.

@@ -1347,7 +1347,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // the object as "already handled, do not try to evacuate". The CAS
     // may fail if another thread concurrently installed a real forwardee
     // (they succeeded where we failed) or self-forwarded first.
-    oop fwd = ShenandoahForwarding::try_forward_to_self(p);
+    oop fwd = ShenandoahForwarding::try_forward_to(p, p);
     if (fwd == p) {
       // Now self-forwarded. Flag the region so the degen/full GC
       // entry drain knows to scan it for self_fwd bits to clear.

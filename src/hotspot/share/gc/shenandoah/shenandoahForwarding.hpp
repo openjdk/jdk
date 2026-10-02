@@ -54,13 +54,6 @@ public:
    */
   static inline oop try_forward_to(oop obj, oop update);
 
-  /* Tries to atomically update forwardee in $obj to self-forward.
-   *
-   * Returns the actual forwardee, whether installed by this call
-   * or discovered during the conflict.
-   */
-  static inline oop try_forward_to_self(oop obj);
-
   /* Unsets self-forwarding bit on the object.
    * WARNING: This is only safe to do when no evacuations happen.
    */
@@ -86,7 +79,6 @@ public:
 
 private:
   static inline oop get_forwardee_raw(oop obj, markWord mark);
-  static inline oop try_update_forwardee(oop obj, oop update);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
