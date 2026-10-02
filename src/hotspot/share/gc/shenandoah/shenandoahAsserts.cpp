@@ -172,7 +172,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
       msg.append("  (not forwarded)");
     } else if (ShenandoahForwarding::is_self_forwarded(obj)) {
       msg.append("  (self forwarded)");
-    } else if (!ShenandoahForwarding::is_forwarded(obj)) {
+    } else {
       oop fwd = ShenandoahForwarding::get_forwardee_raw(obj);
       if (level >= _safe_oop_fwd && os::is_readable_pointer(fwd)) {
         print_obj(msg, fwd);
