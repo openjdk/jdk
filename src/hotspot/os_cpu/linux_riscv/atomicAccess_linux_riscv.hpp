@@ -32,6 +32,12 @@
 
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
+//
+// Under Ztso, loads and stores have acquire-RCpc and release-RCpc semantics,
+// respectively, while AMOs have acquire-RCsc and release-RCsc semantics.  The
+// latter makes the hardware fences around AMO-based atomic operations
+// redundant, but compiler barriers are still needed.  LR/SC-based operations
+// do not have the same ordering guarantees and still require the full fences.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
@@ -51,13 +57,21 @@ struct AtomicAccess::PlatformAdd {
 #endif
 
     if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
+      if (UseZtso && (byte_size == 4 || byte_size == 8)) {
+        compiler_barrier();
+      } else {
+        FULL_MEM_BARRIER;
+      }
     }
 
     D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
 
     if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
+      if (UseZtso && (byte_size == 4 || byte_size == 8)) {
+        compiler_barrier();
+      } else {
+        FULL_MEM_BARRIER;
+      }
     }
     return res;
   }
@@ -160,23 +174,25 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                            T exchange_value,
                                                            atomic_memory_order order) const {
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-  // If we add xchg for sub word and are using older compiler
-  // it must be added here due to not using lib atomic.
-  static_assert(byte_size >= 4);
-#endif
-
   static_assert(byte_size == sizeof(T));
   static_assert(byte_size == 4 || byte_size == 8);
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
 
   T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
   return res;
 }
@@ -290,7 +306,8 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
       return (T)zalasr_load_acquire<byte_size>((const void*)p);
     } else {
       T data;
-      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE);
+      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_RELAXED);
+      OrderAccess::acquire();
       return data;
     }
   }
@@ -308,7 +325,8 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
       // widening v here is value-preserving for both signed and unsigned T.
       zalasr_store_release<byte_size>((void*)p, (uint64_t)v);
     } else {
-      __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE);
+      OrderAccess::release();
+      __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELAXED);
     }
   }
 };
