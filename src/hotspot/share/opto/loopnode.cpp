@@ -254,8 +254,8 @@ void PhaseIdealLoop::hoist_expensive_node(Node* n) {
   }
 }
 
-// Set earliest legal control
-void PhaseIdealLoop::set_early_ctrl(Node* n, bool update_body) {
+// Optimize n, which may modify the graph, then set its earliest legal control
+void PhaseIdealLoop::optimize_and_set_early_ctrl(Node* n, bool update_body) {
   if (n->is_expensive() && !_verify_only && _verify_me == nullptr) {
     // The early control of an expensive node is bounded by its control input, so it is hoisted
     // here, right before that early control is computed and recorded. Hoisting later, for
@@ -291,7 +291,7 @@ void PhaseIdealLoop::set_subtree_ctrl(Node* n, bool update_body) {
   }
 
   // Fixup self
-  set_early_ctrl(n, update_body);
+  optimize_and_set_early_ctrl(n, update_body);
 }
 
 IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift) {
@@ -2642,7 +2642,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
   incr->set_req(1, _structure.phi());
   incr->set_req(2, _structure.stride().stride_node());
   incr = igvn->register_new_node_with_optimizer(incr);
-  _phase->set_early_ctrl(incr, false);
+  _phase->optimize_and_set_early_ctrl(incr, false);
   igvn->rehash_node_delayed(_structure.phi());
   _structure.phi()->set_req_X(LoopNode::LoopBackControl, incr, igvn);
 
@@ -4713,11 +4713,11 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
     _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
-    set_early_ctrl(ratio_init, false);
+    optimize_and_set_early_ctrl(ratio_init, false);
 
     Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
     _igvn.register_new_node_with_optimizer(diff, init2);
-    set_early_ctrl(diff, false);
+    optimize_and_set_early_ctrl(diff, false);
 
     Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
     _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
@@ -4744,7 +4744,7 @@ Node* PhaseIdealLoop::insert_convert_node_if_needed(BasicType target, Node* inpu
 
   Node* converted = ConvertNode::create_convert(source, target, input);
   _igvn.register_new_node_with_optimizer(converted, input);
-  set_early_ctrl(converted, false);
+  optimize_and_set_early_ctrl(converted, false);
 
   return converted;
 }
@@ -6504,7 +6504,7 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
             }
             // Get next node from nstack:
             // - skip n's inputs processing by setting i > cnt;
-            // - we also will not call set_early_ctrl(n) since
+            // - we also will not call optimize_and_set_early_ctrl(n) since
             //   has_node(n) == true (see the condition above).
             i = cnt + 1;
           }
@@ -6544,7 +6544,7 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
         // CFG, Phi, pinned nodes already know their controlling input.
         if (!has_node(n)) {
           // Record earliest legal location
-          set_early_ctrl(n, false);
+          optimize_and_set_early_ctrl(n, false);
         }
         if (nstack.is_empty()) {
           // Finished all nodes on stack.

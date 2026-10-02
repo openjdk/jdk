@@ -1054,7 +1054,7 @@ public:
   Node* get_early_ctrl(Node* n);
   Node* get_early_ctrl_for_expensive(Node* n, Node* earliest);
   void hoist_expensive_node(Node* n);
-  void set_early_ctrl(Node* n, bool update_body);
+  void optimize_and_set_early_ctrl(Node* n, bool update_body);
   void set_subtree_ctrl(Node* n, bool update_body);
   void set_ctrl( Node *n, Node *ctrl ) {
     assert( !has_node(n) || has_ctrl(n), "" );
