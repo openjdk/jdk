@@ -366,8 +366,12 @@ public class JCmdRevival {
                 }
                 case "GC.heap_info": {
                     // Output varies with collector.  Avoid testing anything GC-specific.
-                    out.shouldMatch("\\[0x");
-                    out.shouldMatch("00\\)");
+                    if (out.contains("ZHeap")) {
+                        out.shouldContain("size classes");
+                    } else {
+                        out.shouldMatch("\\[0x");
+                        out.shouldMatch("00\\)");
+                    }
                     break;
                 }
                 case "Thread.print": {
