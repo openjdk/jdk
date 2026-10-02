@@ -114,7 +114,7 @@ public class TestFileChannelEvents {
                 ch.position(ch.size());
                 bufA.clear();
                 size = ch.read(bufA);
-                assertEquals(size, -1L, "Expected size -1 when read at EOF");
+                assertEquals(-1L, size, "Expected size -1 when read at EOF");
                 expectedEvents.add(IOEvent.createFileReadEvent(size, tmp));
 
                 ch.close();
@@ -131,42 +131,42 @@ public class TestFileChannelEvents {
         testNoInterferenceCase("positional write", IOEvent.EVENT_FILE_WRITE, IOEvent.EVENT_FILE_READ,
                 (file, ch, buffer, other) -> {
                     long size = ch.write(buffer, 0);
-                    assertEquals(size, 10L, "Unexpected size for positional write");
+                    assertEquals(10L, size, "Unexpected size for positional write");
                     return IOEvent.createFileWriteEvent(size, file);
                 });
 
         testNoInterferenceCase("current-position write", IOEvent.EVENT_FILE_WRITE, IOEvent.EVENT_FILE_READ,
                 (file, ch, buffer, other) -> {
                     long size = ch.write(buffer);
-                    assertEquals(size, 10L, "Unexpected size for current-position write");
+                    assertEquals(10L, size, "Unexpected size for current-position write");
                     return IOEvent.createFileWriteEvent(size, file);
                 });
 
         testNoInterferenceCase("gathering write", IOEvent.EVENT_FILE_WRITE, IOEvent.EVENT_FILE_READ,
                 (file, ch, buffer, other) -> {
                     long size = ch.write(new ByteBuffer[] { buffer, other });
-                    assertEquals(size, 20L, "Unexpected size for gathering write");
+                    assertEquals(20L, size, "Unexpected size for gathering write");
                     return IOEvent.createFileWriteEvent(size, file);
                 });
 
         testNoInterferenceCase("positional read", IOEvent.EVENT_FILE_READ, IOEvent.EVENT_FILE_WRITE,
                 (file, ch, buffer, other) -> {
                     long size = ch.read(buffer, 0);
-                    assertEquals(size, 10L, "Unexpected size for positional read");
+                    assertEquals(10L, size, "Unexpected size for positional read");
                     return IOEvent.createFileReadEvent(size, file);
                 });
 
         testNoInterferenceCase("current-position read", IOEvent.EVENT_FILE_READ, IOEvent.EVENT_FILE_WRITE,
                 (file, ch, buffer, other) -> {
                     long size = ch.read(buffer);
-                    assertEquals(size, 10L, "Unexpected size for current-position read");
+                    assertEquals(10L, size, "Unexpected size for current-position read");
                     return IOEvent.createFileReadEvent(size, file);
                 });
 
         testNoInterferenceCase("scattering read", IOEvent.EVENT_FILE_READ, IOEvent.EVENT_FILE_WRITE,
                 (file, ch, buffer, other) -> {
                     long size = ch.read(new ByteBuffer[] { buffer, other });
-                    assertEquals(size, 20L, "Unexpected size for scattering read");
+                    assertEquals(20L, size, "Unexpected size for scattering read");
                     return IOEvent.createFileReadEvent(size, file);
                 });
     }
