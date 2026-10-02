@@ -2380,8 +2380,11 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
   // construct a NaN in 32 bits from the NaN in 16 bits,
   // we need the payloads of non-canonical NaNs to be preserved.
   __ mv(tmp, 0x7f800000);
-  // sign-bit was already set via sign-extension if necessary.
-  __ slli(t0, src, 13);
+  // The upper 16 bits of a short argument are unspecified. Sign-extend the
+  // low 16 bits before shifting so that the float sign bit comes from the
+  // float16 sign bit.
+  __ sext(t0, src, 16);
+  __ slli(t0, t0, 13);
   __ orr(tmp, t0, tmp);
   __ fmv_w_x(dst, tmp);
 
