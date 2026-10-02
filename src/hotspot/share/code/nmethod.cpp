@@ -129,6 +129,7 @@
 struct java_nmethod_stats_struct {
   uint nmethod_count;
   uint total_nm_size;
+  uint total_hdr_size;
   uint total_immut_size;
   uint total_mut_size;
   uint relocation_size;
@@ -146,6 +147,7 @@ struct java_nmethod_stats_struct {
   void note_nmethod(nmethod* nm) {
     nmethod_count += 1;
     total_nm_size       += nm->size();
+    total_hdr_size      += nm->hdr_size();
     total_immut_size    += nm->immutable_data_size();
     total_mut_size      += nm->mutable_data_size();
     relocation_size     += nm->relocation_size();
@@ -163,7 +165,7 @@ struct java_nmethod_stats_struct {
   void print_nmethod_stats(const char* name) {
     if (nmethod_count == 0)  return;
     tty->print_cr("Statistics for %u bytecoded nmethods for %s:", nmethod_count, name);
-    uint total_size = total_nm_size + total_immut_size + total_mut_size;
+    uint total_size = total_nm_size + total_hdr_size + total_immut_size + total_mut_size;
     if (total_nm_size != 0) {
       tty->print_cr(" total size      = %u (100%%)", total_size);
       tty->print_cr(" in CodeCache    = %u (%f%%)", total_nm_size, (total_nm_size * 100.0f)/total_size);
@@ -183,6 +185,9 @@ struct java_nmethod_stats_struct {
     }
     if (oops_size != 0) {
       tty->print_cr("   oops          = %u (%f%%)", oops_size, (oops_size * 100.0f)/total_nm_size);
+    }
+    if (total_hdr_size != 0) {
+      tty->print_cr(" external header = %u (%f%%)", total_hdr_size, (total_hdr_size * 100.0f)/total_size);
     }
     if (total_mut_size != 0) {
       tty->print_cr(" mutable data    = %u (%f%%)", total_mut_size, (total_mut_size * 100.0f)/total_size);
@@ -460,13 +465,13 @@ const char* nmethod::state() const {
 
 void nmethod::set_deoptimized_done() {
   ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
-  if (_deoptimization_status != deoptimize_done) { // can't go backwards
-    AtomicAccess::store(&_deoptimization_status, deoptimize_done);
+  if (deoptimization_status() != deoptimize_done) { // can't go backwards
+    set_deoptimization_status(deoptimize_done);
   }
 }
 
 ExceptionCache* nmethod::exception_cache_acquire() const {
-  return AtomicAccess::load_acquire(&_exception_cache);
+  return AtomicAccess::load_acquire(&_hdr->_exception_cache);
 }
 
 void nmethod::add_exception_cache_entry(ExceptionCache* new_entry) {
@@ -486,7 +491,7 @@ void nmethod::add_exception_cache_entry(ExceptionCache* new_entry) {
         // next pointers always point at live ExceptionCaches, that are not removed due
         // to concurrent ExceptionCache cleanup.
         ExceptionCache* next = ec->next();
-        if (AtomicAccess::cmpxchg(&_exception_cache, ec, next) == ec) {
+        if (AtomicAccess::cmpxchg(&_hdr->_exception_cache, ec, next) == ec) {
           CodeCache::release_exception_cache(ec);
         }
         continue;
@@ -496,7 +501,7 @@ void nmethod::add_exception_cache_entry(ExceptionCache* new_entry) {
         new_entry->set_next(ec);
       }
     }
-    if (AtomicAccess::cmpxchg(&_exception_cache, ec, new_entry) == ec) {
+    if (AtomicAccess::cmpxchg(&_hdr->_exception_cache, ec, new_entry) == ec) {
       return;
     }
   }
@@ -529,7 +534,7 @@ void nmethod::clean_exception_cache() {
         // Try to clean head; this is contended by concurrent inserts, that
         // both lazily clean the head, and insert entries at the head. If
         // the CAS fails, the operation is restarted.
-        if (AtomicAccess::cmpxchg(&_exception_cache, curr, next) != curr) {
+        if (AtomicAccess::cmpxchg(&_hdr->_exception_cache, curr, next) != curr) {
           prev = nullptr;
           curr = exception_cache_acquire();
           continue;
@@ -964,9 +969,9 @@ bool nmethod::has_evol_metadata() {
     ResourceMark rm;
     log_debug(redefine, class, nmethod)
             ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on in nmethod metadata",
-             _method->method_holder()->external_name(),
-             _method->name()->as_C_string(),
-             _method->signature()->as_C_string(),
+             _hdr->_method->method_holder()->external_name(),
+             _hdr->_method->name()->as_C_string(),
+             _hdr->_method->signature()->as_C_string(),
              compile_id());
   }
   return check_evol.has_evol_dependency();
@@ -995,7 +1000,7 @@ const char* nmethod::compile_kind() const {
 }
 
 const char* nmethod::compiler_name() const {
-  return compilertype2name(_compiler_type);
+  return compilertype2name(_hdr->_compiler_type);
 }
 
 #ifdef ASSERT
@@ -1173,11 +1178,27 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   return nm;
 }
 
-// Fill in default values for various fields
-void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
-  assert(frame_complete_offset() == offsets->value(CodeOffsets::Frame_Complete), "offset truncated?");
+nmethod::header::header(bool is_native,
+                        CodeBlob* cb,
+                        CodeBuffer *code_buffer,
+                        CodeOffsets* offsets,
+                        Method* method,
+                        Flags flags)
+  : _flags(flags) {
+  assert(cb->frame_complete_offset() == offsets->value(CodeOffsets::Frame_Complete), "offset truncated?");
+
+  _deoptimization_generation = 0;
+  _gc_epoch = CodeCache::gc_epoch();
+  _method = method;
 
   // avoid uninitialized fields, even for short time periods
+  if (is_native) {
+    _native_receiver_sp_offset   = in_ByteSize(0);
+    _native_basic_lock_sp_offset = in_ByteSize(0);
+  } else {
+    _osr_link = nullptr;
+  }
+
   _exception_cache            = nullptr;
   _gc_data                    = nullptr;
   _oops_do_mark_link          = nullptr;
@@ -1186,9 +1207,9 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _is_unloading_state         = 0;
   _state                      = not_installed;
 
-  _has_flushed_dependencies   = false;
-  _is_unlinked                = false;
-  _load_reported              = false; // jvmti state
+  _has_flushed_dependencies   = 0;
+  _is_unlinked                = 0;
+  _load_reported              = 0; // jvmti state
 
   _deoptimization_status      = not_marked;
 
@@ -1196,7 +1217,7 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
   assert(consts_offset == 0, "const_offset: %d", consts_offset);
 
-  _stub_offset = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
+  _stub_offset = cb->content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
 
   CHECKED_CAST(_entry_offset,              uint16_t, (offsets->value(CodeOffsets::Entry)));
   CHECKED_CAST(_verified_entry_offset,     uint16_t, (offsets->value(CodeOffsets::Verified_Entry)));
@@ -1206,6 +1227,80 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _verified_value_ro_entry_offset = _verified_entry_offset;
 
   _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
+}
+
+nmethod::header::header(bool is_native,
+                        CodeBlob* new_cb,
+                        const header& hdr,
+                        ptrdiff_t nm_addr_diff)
+  : _flags(hdr._flags) {
+  _deoptimization_generation    = 0;
+  _gc_epoch                     = CodeCache::gc_epoch();
+  _method                       = hdr._method;
+
+  assert(!is_native, "native nmethods are not expected to be relocatable");
+  _osr_link                     = nullptr;
+
+  _exception_cache              = nullptr;
+  _gc_data                      = nullptr;
+  _oops_do_mark_link            = nullptr;
+  _compiled_ic_data             = nullptr;
+
+  // Relocate the OSR entry point from nm to the new nmethod.
+  if (hdr._osr_entry_point == nullptr) {
+    _osr_entry_point            = nullptr;
+  } else {
+    address new_addr = hdr._osr_entry_point + nm_addr_diff;
+    assert(new_addr >= new_cb->code_begin() && new_addr < new_cb->code_end(),
+           "relocated address must be within code bounds");
+    _osr_entry_point = new_addr;
+  }
+
+  _entry_offset                    = hdr._entry_offset;
+  _verified_entry_offset           = hdr._verified_entry_offset;
+  _value_entry_offset              = hdr._value_entry_offset;
+  _verified_value_entry_offset     = hdr._verified_value_entry_offset;
+  _verified_value_ro_entry_offset  = hdr._verified_value_ro_entry_offset;
+  _entry_bci                       = hdr._entry_bci;
+  _immutable_data_size             = hdr._immutable_data_size;
+
+  _skipped_instructions_size       = hdr._skipped_instructions_size;
+  _stub_offset                     = hdr._stub_offset;
+  _exception_offset                = hdr._exception_offset;
+  _deopt_handler_entry_offset      = hdr._deopt_handler_entry_offset;
+  _unwind_handler_offset           = hdr._unwind_handler_offset;
+  _num_stack_arg_slots             = hdr._num_stack_arg_slots;
+  _nul_chk_table_offset            = hdr._nul_chk_table_offset;
+  _handler_table_offset            = hdr._handler_table_offset;
+  _scopes_pcs_offset               = hdr._scopes_pcs_offset;
+  _scopes_data_offset              = hdr._scopes_data_offset;
+  _immutable_data_ref_count_offset = hdr._immutable_data_ref_count_offset;
+
+  // Increment number of references to immutable data to share it between nmethods
+  if (_immutable_data_size > 0) {
+    _immutable_data                = hdr._immutable_data;
+  } else {
+    _immutable_data                = new_cb->blob_end();
+  }
+
+  _orig_pc_offset                  = hdr._orig_pc_offset;
+  _compile_id                      = hdr._compile_id;
+  _comp_level                      = hdr._comp_level;
+  _compiler_type                   = hdr._compiler_type;
+  _is_unloading_state              = hdr._is_unloading_state;
+  _state                           = not_installed;
+
+  _has_flushed_dependencies        = hdr._has_flushed_dependencies;
+  _is_unlinked                     = hdr._is_unlinked;
+  _load_reported                   = hdr._load_reported;
+
+  _deoptimization_status           = hdr._deoptimization_status;
+
+  if (hdr._pc_desc_container != nullptr) {
+    _pc_desc_container             = new PcDescContainer(scopes_pcs_begin());
+  } else {
+    _pc_desc_container             = nullptr;
+  }
 }
 
 // Post initialization
@@ -1242,38 +1337,40 @@ nmethod::nmethod(
   OopMapSet* oop_maps,
   int mutable_data_size)
   : CodeBlob("native nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
-             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, mutable_data_size),
-  _deoptimization_generation(0),
-  _gc_epoch(CodeCache::gc_epoch()),
-  _method(method),
-  _native_receiver_sp_offset(basic_lock_owner_sp_offset),
-  _native_basic_lock_sp_offset(basic_lock_sp_offset)
+             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, mutable_data_size)
 {
   {
     DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
     assert(!method->has_scalarized_args(), "scalarized native wrappers not supported yet");
-    init_defaults(code_buffer, offsets);
 
-    _osr_entry_point         = nullptr;
-    _pc_desc_container       = nullptr;
-    _entry_bci               = InvocationEntryBci;
-    _compile_id              = compile_id;
-    _comp_level              = CompLevel_none;
-    _compiler_type           = type;
-    _orig_pc_offset          = 0;
-    _num_stack_arg_slots     = 0;
+    // Allocate space for header in C Heap
+    _hdr = new header(/*is_native=*/ true, this, code_buffer, offsets, method);
+    if (_hdr == nullptr) {
+      vm_exit_out_of_memory(sizeof(header), OOM_MALLOC_ERROR, "no space for header");
+    }
+
+    _hdr->_native_receiver_sp_offset = basic_lock_owner_sp_offset;
+    _hdr->_native_basic_lock_sp_offset = basic_lock_sp_offset;
+    _hdr->_osr_entry_point         = nullptr;
+    _hdr->_pc_desc_container       = nullptr;
+    _hdr->_entry_bci               = InvocationEntryBci;
+    _hdr->_compile_id              = compile_id;
+    _hdr->_comp_level              = CompLevel_none;
+    _hdr->_compiler_type           = type;
+    _hdr->_orig_pc_offset          = 0;
+    _hdr->_num_stack_arg_slots     = 0;
 
     if (offsets->value(CodeOffsets::Exceptions) != -1) {
       // Continuation enter intrinsic
-      _exception_offset      = code_offset() + offsets->value(CodeOffsets::Exceptions);
+      _hdr->_exception_offset      = code_offset() + offsets->value(CodeOffsets::Exceptions);
     } else {
-      _exception_offset      = 0;
+      _hdr->_exception_offset      = 0;
     }
     // Native wrappers do not have deopt handlers. Make the values
     // something that will never match a pc like the nmethod vtable entry
-    _deopt_handler_entry_offset    = 0;
-    _unwind_handler_offset   = 0;
+    _hdr->_deopt_handler_entry_offset   = 0;
+    _hdr->_unwind_handler_offset   = 0;
 
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     assert(_mutable_data_size == _relocation_size + metadata_size,
@@ -1281,13 +1378,13 @@ nmethod::nmethod(
            _mutable_data_size, _relocation_size, metadata_size);
 
     // native wrapper does not have read-only data but we need unique not null address
-    _immutable_data          = blob_end();
-    _immutable_data_size     = 0;
-    _nul_chk_table_offset    = 0;
-    _handler_table_offset    = 0;
-    _scopes_pcs_offset       = 0;
-    _scopes_data_offset      = 0;
-    _immutable_data_ref_count_offset = 0;
+    _hdr->_immutable_data          = blob_end();
+    _hdr->_immutable_data_size     = 0;
+    _hdr->_nul_chk_table_offset    = 0;
+    _hdr->_handler_table_offset    = 0;
+    _hdr->_scopes_pcs_offset       = 0;
+    _hdr->_scopes_data_offset      = 0;
+    _hdr->_immutable_data_ref_count_offset = 0;
 
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
@@ -1302,7 +1399,7 @@ nmethod::nmethod(
     // be sure to tag this tty output with the compile ID.
     if (xtty != nullptr) {
       xtty->begin_head("print_native_nmethod");
-      xtty->method(_method);
+      xtty->method(_hdr->_method);
       xtty->stamp();
       xtty->end_head(" address='" INTPTR_FORMAT "'", (intptr_t) this);
     }
@@ -1339,8 +1436,7 @@ nmethod::nmethod(
 }
 
 
-nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm._header_size),
-  _flags(nm._flags)
+nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm._header_size)
 {
 
   if (nm._oop_maps != nullptr) {
@@ -1382,71 +1478,16 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
     _mutable_data               = nullptr;
   }
 
-  _deoptimization_generation    = 0;
-  _gc_epoch                     = CodeCache::gc_epoch();
-  _method                       = nm._method;
-  _osr_link                     = nullptr;
-
-  _exception_cache              = nullptr;
-  _gc_data                      = nullptr;
-  _oops_do_mark_link            = nullptr;
-  _compiled_ic_data             = nullptr;
-
-  // Relocate the OSR entry point from nm to the new nmethod.
-  if (nm._osr_entry_point == nullptr) {
-    _osr_entry_point = nullptr;
-  } else {
-    address new_addr = nm._osr_entry_point - (address) &nm + (address) this;
-    assert(new_addr >= code_begin() && new_addr < code_end(),
-           "relocated address must be within code bounds");
-    _osr_entry_point = new_addr;
+   // Allocate space for header in C Heap
+  _hdr = new header(/*is_native=*/ false, this, *nm._hdr, (address) this - (address) &nm);
+  if (_hdr == nullptr) {
+    vm_exit_out_of_memory(sizeof(header), OOM_MALLOC_ERROR, "no space for header");
   }
-  _entry_offset                 = nm._entry_offset;
-  _verified_entry_offset        = nm._verified_entry_offset;
-  _value_entry_offset             = nm._value_entry_offset;
-  _verified_value_entry_offset    = nm._verified_value_entry_offset;
-  _verified_value_ro_entry_offset = nm._verified_value_ro_entry_offset;
-
-  _entry_bci                    = nm._entry_bci;
-  _immutable_data_size          = nm._immutable_data_size;
-
-  _skipped_instructions_size    = nm._skipped_instructions_size;
-  _stub_offset                  = nm._stub_offset;
-  _exception_offset             = nm._exception_offset;
-  _deopt_handler_entry_offset   = nm._deopt_handler_entry_offset;
-  _unwind_handler_offset        = nm._unwind_handler_offset;
-  _num_stack_arg_slots          = nm._num_stack_arg_slots;
-  _nul_chk_table_offset         = nm._nul_chk_table_offset;
-  _handler_table_offset         = nm._handler_table_offset;
-  _scopes_pcs_offset            = nm._scopes_pcs_offset;
-  _scopes_data_offset           = nm._scopes_data_offset;
-  _immutable_data_ref_count_offset = nm._immutable_data_ref_count_offset;
 
   // Increment number of references to immutable data to share it between nmethods
-  if (_immutable_data_size > 0) {
-    _immutable_data             = nm._immutable_data;
+  if (_hdr->_immutable_data_size > 0) {
+    assert(_hdr->_immutable_data == nm._hdr->_immutable_data, "wrong immutable_data link");
     inc_immutable_data_ref_count();
-  } else {
-    _immutable_data             = blob_end();
-  }
-
-  _orig_pc_offset               = nm._orig_pc_offset;
-  _compile_id                   = nm._compile_id;
-  _comp_level                   = nm._comp_level;
-  _compiler_type                = nm._compiler_type;
-  _is_unloading_state           = nm._is_unloading_state;
-  _state                        = not_installed;
-
-  _has_flushed_dependencies     = nm._has_flushed_dependencies;
-  _is_unlinked                  = nm._is_unlinked;
-  _load_reported                = nm._load_reported;
-
-  _deoptimization_status        = nm._deoptimization_status;
-
-  if (nm._pc_desc_container != nullptr) {
-    _pc_desc_container          = new PcDescContainer(scopes_pcs_begin());
-  } else {
-    _pc_desc_container          = nullptr;
   }
 
   // Copy nmethod contents excluding header
@@ -1640,28 +1681,27 @@ nmethod::nmethod(
   CompLevel comp_level,
   Flags flags)
   : CodeBlob("nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
-             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, mutable_data_size),
-  _deoptimization_generation(0),
-  _gc_epoch(CodeCache::gc_epoch()),
-  _method(method),
-  _osr_link(nullptr),
-  _flags(flags)
+             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, mutable_data_size)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
     DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
-    init_defaults(code_buffer, offsets);
+    // Allocate space for header in C Heap
+    _hdr = new header(/*is_native=*/ false, this, code_buffer, offsets, method, flags);
+    if (_hdr == nullptr) {
+      vm_exit_out_of_memory(sizeof(header), OOM_MALLOC_ERROR, "no space for header");
+    }
 
-    _osr_entry_point = code_begin() + offsets->value(CodeOffsets::OSR_Entry);
-    _entry_bci       = entry_bci;
-    _compile_id      = compile_id;
-    _comp_level      = comp_level;
-    _compiler_type   = type;
-    _orig_pc_offset  = orig_pc_offset;
+    _hdr->_osr_entry_point = code_begin() + offsets->value(CodeOffsets::OSR_Entry);
+    _hdr->_entry_bci       = entry_bci;
+    _hdr->_compile_id      = compile_id;
+    _hdr->_comp_level      = comp_level;
+    _hdr->_compiler_type   = type;
+    _hdr->_orig_pc_offset  = orig_pc_offset;
 
-    _num_stack_arg_slots = entry_bci != InvocationEntryBci ? 0 : _method->constMethod()->num_stack_arg_slots();
+    _hdr->_num_stack_arg_slots = entry_bci != InvocationEntryBci ? 0 : _hdr->_method->constMethod()->num_stack_arg_slots();
 
     set_ctable_begin(header_begin() + content_offset());
 
@@ -1672,32 +1712,32 @@ nmethod::nmethod(
     assert(has_exception_handler == (compiler->type() != compiler_c2),
            "C2 compiler doesn't provide exception handler stub code.");
     if (has_exception_handler) {
-      _exception_offset = _stub_offset + offsets->value(CodeOffsets::Exceptions);
+      _hdr->_exception_offset = _hdr->_stub_offset + offsets->value(CodeOffsets::Exceptions);
     } else {
-      _exception_offset = -1;
+      _hdr->_exception_offset = -1;
     }
 
-    _deopt_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::Deopt);
+    _hdr->_deopt_handler_entry_offset = _hdr->_stub_offset + offsets->value(CodeOffsets::Deopt);
 
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       // C1 generates UnwindHandler at the end of instructions section.
       // Calculate positive offset as distance between the start of stubs section
       // (which is also the end of instructions section) and the start of the handler.
       int unwind_handler_offset = code_offset() + offsets->value(CodeOffsets::UnwindHandler);
-      CHECKED_CAST(_unwind_handler_offset, int16_t, (_stub_offset - unwind_handler_offset));
+      CHECKED_CAST(_hdr->_unwind_handler_offset, int16_t, (_hdr->_stub_offset - unwind_handler_offset));
     } else {
-      _unwind_handler_offset = -1;
+      _hdr->_unwind_handler_offset = -1;
     }
 
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     if (offsets->value(CodeOffsets::Value_Entry) != CodeOffsets::no_such_entry_point) {
-      CHECKED_CAST(_value_entry_offset            , uint16_t, offsets->value(CodeOffsets::Value_Entry));
+      CHECKED_CAST(_hdr->_value_entry_offset            , uint16_t, offsets->value(CodeOffsets::Value_Entry));
     }
     if (offsets->value(CodeOffsets::Verified_Value_Entry) != CodeOffsets::no_such_entry_point) {
-      CHECKED_CAST(_verified_value_entry_offset   , uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry));
+      CHECKED_CAST(_hdr->_verified_value_entry_offset   , uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry));
     }
     if (offsets->value(CodeOffsets::Verified_Value_Entry_RO) != CodeOffsets::no_such_entry_point) {
-      CHECKED_CAST(_verified_value_ro_entry_offset, uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry_RO));
+      CHECKED_CAST(_hdr->_verified_value_ro_entry_offset, uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry_RO));
     }
 
     assert(_mutable_data_size == _relocation_size + metadata_size,
@@ -1706,21 +1746,21 @@ nmethod::nmethod(
     assert(nmethod_size == data_end() - header_begin(), "wrong nmethod size: %d != %d",
            nmethod_size, (int)(code_end() - header_begin()));
 
-    _immutable_data_size  = immutable_data_size;
+    _hdr->_immutable_data_size  = immutable_data_size;
     if (immutable_data_size > 0) {
       assert(immutable_data != nullptr, "required");
-      _immutable_data     = immutable_data;
+      _hdr->_immutable_data     = immutable_data;
     } else {
       // We need unique not null address
-      _immutable_data     = blob_end();
+      _hdr->_immutable_data     = blob_end();
     }
-    CHECKED_CAST(_nul_chk_table_offset, uint16_t, (align_up((int)dependencies->size_in_bytes(), oopSize)));
-    CHECKED_CAST(_handler_table_offset, uint16_t, (_nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize)));
-    _scopes_pcs_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
-    _scopes_data_offset   = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
+    CHECKED_CAST(_hdr->_nul_chk_table_offset, uint16_t, (align_up((int)dependencies->size_in_bytes(), oopSize)));
+    CHECKED_CAST(_hdr->_handler_table_offset, uint16_t, (_hdr->_nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize)));
+    _hdr->_scopes_pcs_offset    = _hdr->_handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
+    _hdr->_scopes_data_offset   = _hdr->_scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
 
-    _immutable_data_ref_count_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_ref_count_offset + ImmutableDataRefCountSize; )
+    _hdr->_immutable_data_ref_count_offset = _hdr->_scopes_data_offset + align_up(debug_info->data_size(), oopSize);
+    DEBUG_ONLY( int immutable_data_end_offset = _hdr->_immutable_data_ref_count_offset + ImmutableDataRefCountSize; )
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
 
@@ -1733,7 +1773,7 @@ nmethod::nmethod(
     debug_info->copy_to(this);
 
     // Create cache after PcDesc data is copied - it will be used to initialize cache
-    _pc_desc_container = new PcDescContainer(scopes_pcs_begin());
+    _hdr->_pc_desc_container = new PcDescContainer(scopes_pcs_begin());
 
     // Copy contents of ExceptionHandlerTable to nmethod
     handler_table->copy_to(this);
@@ -1746,7 +1786,7 @@ nmethod::nmethod(
     // we use the information of entry points to find out if a method is
     // static or non static
     assert(compiler->is_c2() ||
-           _method->is_static() == (entry_point() == verified_entry_point()),
+           _hdr->_method->is_static() == (entry_point() == verified_entry_point()),
            " entry points must be same for static methods and vice versa");
   }
 }
@@ -1894,7 +1934,7 @@ void nmethod::print_nmethod(bool printmethod) {
 
 #if defined(SUPPORT_DATA_STRUCTS)
   if (AbstractDisassembler::show_structs()) {
-    methodHandle mh(Thread::current(), _method);
+    methodHandle mh(Thread::current(), _hdr->_method);
     if (printmethod || PrintDebugInfo || CompilerOracle::has_option(mh, CompileCommandEnum::PrintDebugInfo)) {
       print_scopes();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
@@ -2040,8 +2080,8 @@ void nmethod::finalize_relocations() {
 
   if (virtual_call_data.length() > 0) {
     // We allocate a block of CompiledICData per nmethod so the GC can purge this faster.
-    _compiled_ic_data = new CompiledICData[virtual_call_data.length()];
-    CompiledICData* next_data = _compiled_ic_data;
+    _hdr->_compiled_ic_data = new CompiledICData[virtual_call_data.length()];
+    CompiledICData* next_data = _hdr->_compiled_ic_data;
 
     for (NativeMovConstReg* value : virtual_call_data) {
       value->set_data((intptr_t)next_data);
@@ -2153,13 +2193,13 @@ void nmethod::verify_clean_inline_caches() {
 
 void nmethod::mark_as_maybe_on_stack() {
   MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
-  AtomicAccess::store(&_gc_epoch, CodeCache::gc_epoch());
+  AtomicAccess::store(&_hdr->_gc_epoch, CodeCache::gc_epoch());
 }
 
 bool nmethod::is_maybe_on_stack() {
   // If the condition below is true, it means that the nmethod was found to
   // be alive the previous completed marking cycle.
-  return AtomicAccess::load(&_gc_epoch) >= CodeCache::previous_completed_gc_marking_cycle();
+  return AtomicAccess::load(&_hdr->_gc_epoch) >= CodeCache::previous_completed_gc_marking_cycle();
 }
 
 void nmethod::inc_decompile_count() {
@@ -2178,17 +2218,17 @@ void nmethod::inc_decompile_count() {
 bool nmethod::try_transition(signed char new_state_int) {
   signed char new_state = new_state_int;
   assert_lock_strong(NMethodState_lock);
-  signed char old_state = _state;
+  signed char old_state = _hdr->_state;
   if (old_state >= new_state) {
     // Ensure monotonicity of transitions.
     return false;
   }
-  AtomicAccess::store(&_state, new_state);
+  AtomicAccess::store(&_hdr->_state, new_state);
   return true;
 }
 
 void nmethod::invalidate_osr_method() {
-  assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
+  assert(_hdr->_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
   // Remove from list of active nmethods
   if (method() != nullptr) {
     method()->method_holder()->remove_osr_nmethod(this);
@@ -2234,7 +2274,7 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
     return false;
   }
 
-  if (AtomicAccess::load(&_state) == not_entrant) {
+  if (AtomicAccess::load(&_hdr->_state) == not_entrant) {
     // Avoid taking the lock if already in required state.
     // This is safe from races because the state is an end-state,
     // which the nmethod cannot back out of once entered.
@@ -2248,7 +2288,7 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
     // Enter critical section.  Does not block for safepoint.
     ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
-    if (AtomicAccess::load(&_state) == not_entrant) {
+    if (AtomicAccess::load(&_hdr->_state) == not_entrant) {
       // another thread already performed this transition so nothing
       // to do, but return false to indicate this.
       return false;
@@ -2345,7 +2385,7 @@ void nmethod::purge(bool unregister_nmethod) {
     const size_t codecache_free_space = CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024;
     ls.print("Flushing nmethod %6d/" INTPTR_FORMAT ", level=%d, osr=%d, cold=%d, epoch=" UINT64_FORMAT ", cold_count=" UINT64_FORMAT ". "
               "Cache capacity: %zuKb, free space: %zuKb. method %s (%s)",
-              _compile_id, p2i(this), _comp_level, is_osr_method(), is_cold(), _gc_epoch, CodeCache::cold_gc_count(),
+              _hdr->_compile_id, p2i(this), _hdr->_comp_level, is_osr_method(), is_cold(), _hdr->_gc_epoch, CodeCache::cold_gc_count(),
               codecache_capacity, codecache_free_space, method_name, compiler_name());
   }
 
@@ -2358,18 +2398,18 @@ void nmethod::purge(bool unregister_nmethod) {
     delete ec;
     ec = next;
   }
-  if (_pc_desc_container != nullptr) {
-    delete _pc_desc_container;
+  if (_hdr->_pc_desc_container != nullptr) {
+    delete _hdr->_pc_desc_container;
   }
-  delete[] _compiled_ic_data;
+  delete[] _hdr->_compiled_ic_data;
 
-  if (_immutable_data != blob_end()) {
+  if (_hdr->_immutable_data != blob_end()) {
     // Free memory if this was the last nmethod referencing immutable data
     if (dec_immutable_data_ref_count() == 0) {
-      os::free(_immutable_data);
+      os::free(_hdr->_immutable_data);
     }
 
-    _immutable_data = blob_end(); // Valid not null address
+    _hdr->_immutable_data = blob_end(); // Valid not null address
   }
 
   if (unregister_nmethod) {
@@ -2521,7 +2561,7 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
 }
 
 void nmethod::post_compiled_method_unload() {
-  assert(_method != nullptr, "just checking");
+  assert(_hdr->_method != nullptr, "just checking");
   DTRACE_METHOD_UNLOAD_PROBE(method());
 
   // If a JVMTI agent has enabled the CompiledMethodUnload event then
@@ -2552,7 +2592,7 @@ void nmethod::metadata_do(MetadataClosure* f) {
                "metadata must be found in exactly one place");
         if (r->metadata_is_immediate() && r->metadata_value() != nullptr) {
           Metadata* md = r->metadata_value();
-          if (md != _method) f->do_metadata(md);
+          if (md != _hdr->_method) f->do_metadata(md);
         }
       } else if (iter.type() == relocInfo::virtual_call_type) {
         // Check compiledIC holders associated with this nmethod
@@ -2571,7 +2611,7 @@ void nmethod::metadata_do(MetadataClosure* f) {
   }
 
   // Visit metadata not embedded in the other places.
-  if (_method != nullptr) f->do_metadata(_method);
+  if (_hdr->_method != nullptr) f->do_metadata(_hdr->_method);
 }
 
 // Heuristic for nuking nmethods even though their oops are live.
@@ -2603,7 +2643,7 @@ bool nmethod::is_cold() {
   }
 
   // Other code can be phased out more gradually after N GCs
-  return CodeCache::previous_completed_gc_marking_cycle() > _gc_epoch + 2 * CodeCache::cold_gc_count();
+  return CodeCache::previous_completed_gc_marking_cycle() > _hdr->_gc_epoch + 2 * CodeCache::cold_gc_count();
 }
 
 // The _is_unloading_state encodes a tuple comprising the unloading cycle
@@ -2647,7 +2687,7 @@ public:
 };
 
 bool nmethod::is_unloading() {
-  uint8_t state = AtomicAccess::load(&_is_unloading_state);
+  uint8_t state = AtomicAccess::load(&_hdr->_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
   if (state_is_unloading) {
     return true;
@@ -2672,7 +2712,7 @@ bool nmethod::is_unloading() {
   // different outcomes, so we guard the computed result with a CAS
   // to ensure all threads have a shared view of whether an nmethod
   // is_unloading or not.
-  uint8_t found_state = AtomicAccess::cmpxchg(&_is_unloading_state, state, new_state, memory_order_relaxed);
+  uint8_t found_state = AtomicAccess::cmpxchg(&_hdr->_is_unloading_state, state, new_state, memory_order_relaxed);
 
   if (found_state == state) {
     // First to change state, we win
@@ -2685,7 +2725,7 @@ bool nmethod::is_unloading() {
 
 void nmethod::clear_unloading_state() {
   uint8_t state = IsUnloadingState::create(false, CodeCache::unloading_cycle());
-  AtomicAccess::store(&_is_unloading_state, state);
+  AtomicAccess::store(&_hdr->_is_unloading_state, state);
 }
 
 
@@ -2769,8 +2809,8 @@ bool nmethod::oops_do_try_claim() {
 bool nmethod::oops_do_try_claim_weak_request() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
 
-  if ((_oops_do_mark_link == nullptr) &&
-      (AtomicAccess::replace_if_null(&_oops_do_mark_link, mark_link(this, claim_weak_request_tag)))) {
+  if ((_hdr->_oops_do_mark_link == nullptr) &&
+      (AtomicAccess::replace_if_null(&_hdr->_oops_do_mark_link, mark_link(this, claim_weak_request_tag)))) {
     oops_do_log_change("oops_do, mark weak request");
     return true;
   }
@@ -2778,35 +2818,35 @@ bool nmethod::oops_do_try_claim_weak_request() {
 }
 
 void nmethod::oops_do_set_strong_done(nmethod* old_head) {
-  _oops_do_mark_link = mark_link(old_head, claim_strong_done_tag);
+  _hdr->_oops_do_mark_link = mark_link(old_head, claim_strong_done_tag);
 }
 
-nmethod::oops_do_mark_link* nmethod::oops_do_try_claim_strong_done() {
+nmethod::header::oops_do_mark_link* nmethod::oops_do_try_claim_strong_done() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
 
-  oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_oops_do_mark_link, mark_link(nullptr, claim_weak_request_tag), mark_link(this, claim_strong_done_tag));
+  nmethod::header::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, mark_link(nullptr, claim_weak_request_tag), mark_link(this, claim_strong_done_tag));
   if (old_next == nullptr) {
     oops_do_log_change("oops_do, mark strong done");
   }
   return old_next;
 }
 
-nmethod::oops_do_mark_link* nmethod::oops_do_try_add_strong_request(nmethod::oops_do_mark_link* next) {
+nmethod::header::oops_do_mark_link* nmethod::oops_do_try_add_strong_request(header::oops_do_mark_link* next) {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
   assert(next == mark_link(this, claim_weak_request_tag), "Should be claimed as weak");
 
-  oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_oops_do_mark_link, next, mark_link(this, claim_strong_request_tag));
+  nmethod::header::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, next, mark_link(this, claim_strong_request_tag));
   if (old_next == next) {
     oops_do_log_change("oops_do, mark strong request");
   }
   return old_next;
 }
 
-bool nmethod::oops_do_try_claim_weak_done_as_strong_done(nmethod::oops_do_mark_link* next) {
+bool nmethod::oops_do_try_claim_weak_done_as_strong_done(header::oops_do_mark_link* next) {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
   assert(extract_state(next) == claim_weak_done_tag, "Should be claimed as weak done");
 
-  oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_oops_do_mark_link, next, mark_link(extract_nmethod(next), claim_strong_done_tag));
+  nmethod::header::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, next, mark_link(extract_nmethod(next), claim_strong_done_tag));
   if (old_next == next) {
     oops_do_log_change("oops_do, mark weak done -> mark strong done");
     return true;
@@ -2817,9 +2857,9 @@ bool nmethod::oops_do_try_claim_weak_done_as_strong_done(nmethod::oops_do_mark_l
 nmethod* nmethod::oops_do_try_add_to_list_as_weak_done() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
 
-  assert(extract_state(_oops_do_mark_link) == claim_weak_request_tag ||
-         extract_state(_oops_do_mark_link) == claim_strong_request_tag,
-         "must be but is nmethod " PTR_FORMAT " %u", p2i(extract_nmethod(_oops_do_mark_link)), extract_state(_oops_do_mark_link));
+  assert(extract_state(_hdr->_oops_do_mark_link) == claim_weak_request_tag ||
+         extract_state(_hdr->_oops_do_mark_link) == claim_strong_request_tag,
+         "must be but is nmethod " PTR_FORMAT " %u", p2i(extract_nmethod(_hdr->_oops_do_mark_link)), extract_state(_hdr->_oops_do_mark_link));
 
   nmethod* old_head = AtomicAccess::xchg(&_oops_do_mark_nmethods, this);
   // Self-loop if needed.
@@ -2827,7 +2867,7 @@ nmethod* nmethod::oops_do_try_add_to_list_as_weak_done() {
     old_head = this;
   }
   // Try to install end of list and weak done tag.
-  if (AtomicAccess::cmpxchg(&_oops_do_mark_link, mark_link(this, claim_weak_request_tag), mark_link(old_head, claim_weak_done_tag)) == mark_link(this, claim_weak_request_tag)) {
+  if (AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, mark_link(this, claim_weak_request_tag), mark_link(old_head, claim_weak_done_tag)) == mark_link(this, claim_weak_request_tag)) {
     oops_do_log_change("oops_do, mark weak done");
     return nullptr;
   } else {
@@ -2843,8 +2883,8 @@ void nmethod::oops_do_add_to_list_as_strong_done() {
   if (old_head == nullptr) {
     old_head = this;
   }
-  assert(_oops_do_mark_link == mark_link(this, claim_strong_done_tag), "must be but is nmethod " PTR_FORMAT " state %u",
-         p2i(extract_nmethod(_oops_do_mark_link)), extract_state(_oops_do_mark_link));
+  assert(_hdr->_oops_do_mark_link == mark_link(this, claim_strong_done_tag), "must be but is nmethod " PTR_FORMAT " state %u",
+         p2i(extract_nmethod(_hdr->_oops_do_mark_link)), extract_state(_hdr->_oops_do_mark_link));
 
   oops_do_set_strong_done(old_head);
 }
@@ -2864,8 +2904,8 @@ void nmethod::oops_do_process_weak(OopsDoProcessor* p) {
   }
   oops_do_log_change("oops_do, mark weak done fail");
   // Adding to global list failed, another thread added a strong request.
-  assert(extract_state(_oops_do_mark_link) == claim_strong_request_tag,
-         "must be but is %u", extract_state(_oops_do_mark_link));
+  assert(extract_state(_hdr->_oops_do_mark_link) == claim_strong_request_tag,
+         "must be but is %u", extract_state(_hdr->_oops_do_mark_link));
 
   oops_do_log_change("oops_do, mark weak request -> mark strong done");
 
@@ -2875,7 +2915,7 @@ void nmethod::oops_do_process_weak(OopsDoProcessor* p) {
 }
 
 void nmethod::oops_do_process_strong(OopsDoProcessor* p) {
-  oops_do_mark_link* next_raw = oops_do_try_claim_strong_done();
+  header::oops_do_mark_link* next_raw = oops_do_try_claim_strong_done();
   if (next_raw == nullptr) {
     p->do_regular_processing(this);
     oops_do_add_to_list_as_strong_done();
@@ -2883,7 +2923,7 @@ void nmethod::oops_do_process_strong(OopsDoProcessor* p) {
   }
   // Claim failed. Figure out why and handle it.
   if (oops_do_has_weak_request(next_raw)) {
-    oops_do_mark_link* old = next_raw;
+    header::oops_do_mark_link* old = next_raw;
     // Claim failed because being weak processed (state == "weak request").
     // Try to request deferred strong processing.
     next_raw = oops_do_try_add_strong_request(old);
@@ -2921,8 +2961,8 @@ void nmethod::oops_do_marking_epilogue() {
     nmethod* cur;
     do {
       cur = next;
-      next = extract_nmethod(cur->_oops_do_mark_link);
-      cur->_oops_do_mark_link = nullptr;
+      next = extract_nmethod(cur->_hdr->_oops_do_mark_link);
+      cur->_hdr->_oops_do_mark_link = nullptr;
       DEBUG_ONLY(cur->verify_oop_relocations());
 
       LogTarget(Trace, gc, nmethod) lt;
@@ -3203,8 +3243,8 @@ void nmethod::verify() {
   assert(voc.ok(), "embedded oops must be OK");
   Universe::heap()->verify_nmethod(this);
 
-  assert(_oops_do_mark_link == nullptr, "_oops_do_mark_link for %s should be nullptr but is " PTR_FORMAT,
-         nm->method()->external_name(), p2i(_oops_do_mark_link));
+  assert(_hdr->_oops_do_mark_link == nullptr, "_oops_do_mark_link for %s should be nullptr but is " PTR_FORMAT,
+         nm->method()->external_name(), p2i(_hdr->_oops_do_mark_link));
   verify_scopes();
 
   CompiledICLocker nm_verify(this);

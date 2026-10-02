@@ -1931,7 +1931,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     // r2: scratch
     __ cbz(r0, dispatch);     // test result -- no osr if null
     // nmethod may have been invalidated (VM may block upon call_VM return)
-    __ ldrb(r2, Address(r0, nmethod::state_offset()));
+    __ ldr(r2, Address(r0, nmethod::hdr_offset()));
+    __ ldrb(r2, Address(r2, nmethod::state_offset()));
     if (nmethod::in_use != 0)
       __ sub(r2, r2, nmethod::in_use);
     __ cbnz(r2, dispatch);
@@ -1962,7 +1963,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     __ andr(sp, esp, -16);
 
     // and begin the OSR nmethod
-    __ ldr(rscratch1, Address(r19, nmethod::osr_entry_point_offset()));
+    __ ldr(rscratch1, Address(r19, nmethod::hdr_offset()));
+    __ ldr(rscratch1, Address(rscratch1, nmethod::osr_entry_point_offset()));
     __ br(rscratch1);
   }
 }
