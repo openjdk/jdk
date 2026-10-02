@@ -54,26 +54,24 @@ class TestValueArgEscapeState {
         int val;
     }
 
-    @ForceCompileClassInitializer
     static value class ValueHolder {
-        // Just to force initialization before the tests are compiled.
-        static final ValueHolder DEFAULT = new ValueHolder(null);
         IdentityObject obj;
         ValueHolder(IdentityObject obj) {
             this.obj = obj;
         }
     }
 
-    @ForceCompileClassInitializer
     static value class ValueHolderHolder {
-        // Just to force initialization before the tests are compiled.
-        static final ValueHolderHolder DEFAULT =
-            new ValueHolderHolder(ValueHolder.DEFAULT);
         ValueHolder holder;
         ValueHolderHolder(ValueHolder holder) {
             this.holder = holder;
         }
     }
+
+    // Just to force initialization of ValueHolder and ValueHolderHolder before
+    // the tests are compiled, in case they are run with warm-up disabled.
+    static final ValueHolderHolder LOAD_VALUE_HOLDERS =
+        new ValueHolderHolder(new ValueHolder(null));
 
     static IdentityObject globalObj = null;
     static ValueHolder globalHolder = null;
