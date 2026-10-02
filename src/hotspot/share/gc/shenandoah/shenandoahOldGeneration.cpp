@@ -109,7 +109,6 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
     _promoted_reserve(0),
     _promoted_expended(0),
     _promotion_potential(0),
-    _pad_for_promote_in_place(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
     _is_parsable(true),
@@ -453,7 +452,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahGCPhase phase(concurrent ?
         ShenandoahPhaseTimings::final_update_region_states :
         ShenandoahPhaseTimings::degen_gc_final_update_region_states);
-    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
+    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context(), this);
 
     parallel_heap_region_iterate(&cl);
     heap->assert_pinned_region_status(this);
@@ -514,8 +513,9 @@ const char* ShenandoahOldGeneration::state_name(State state) {
 
 void ShenandoahOldGeneration::transition_to(State new_state) {
   if (_state != new_state) {
-    log_debug(gc, thread)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
-    EventMark event("Old was %s, now is %s", state_name(_state), state_name(new_state));
+    FormatBuffer<> msg("Old was %s, now is %s", state_name(_state), state_name(new_state));
+    log_debug(gc, thread)("%s", msg.buffer());
+    Events::log(Thread::current(), "%s", msg.buffer());
     validate_transition(new_state);
     _state = new_state;
   }
@@ -801,7 +801,7 @@ void ShenandoahOldGeneration::clear_cards_for(ShenandoahHeapRegion* region) {
   _card_scan->mark_range_as_empty(region->bottom(), pointer_delta(region->end(), region->bottom()));
 }
 
-void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
+void ShenandoahOldGeneration::mark_card_as_dirty(void* location) const {
   _card_scan->mark_card_as_dirty((HeapWord*)location);
 }
 

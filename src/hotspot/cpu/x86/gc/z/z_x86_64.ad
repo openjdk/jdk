@@ -34,14 +34,14 @@ source %{
 #include "c2_intelJccErratum_x86.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 
-static void z_color(MacroAssembler* masm, const MachNode* node, Register ref) {
+static void z_color(MacroAssembler* masm, Register ref) {
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
   __ shlq(ref, barrier_Relocation::unpatched);
   __ orq_imm32(ref, barrier_Relocation::unpatched);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
 }
 
-static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
+static void z_uncolor(MacroAssembler* masm, Register ref) {
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
   __ shrq(ref, barrier_Relocation::unpatched);
 }
@@ -53,7 +53,7 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
   __ jcc(Assembler::notEqual, *stub->entry());
 
-  z_uncolor(masm, node, ref);
+  z_uncolor(masm, ref);
 
   __ bind(*stub->continuation());
 }
@@ -69,7 +69,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
     return;
   }
 
-  z_uncolor(masm, node, ref);
+  z_uncolor(masm, ref);
   if (node->barrier_data() == ZBarrierElided) {
     return;
   }
@@ -87,7 +87,7 @@ static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address 
     if (rnew_zaddress != noreg) {
       // noreg means null; no need to color
       __ movptr(rnew_zpointer, rnew_zaddress);
-      z_color(masm, node, rnew_zpointer);
+      z_color(masm, rnew_zpointer);
     }
   } else {
     bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
@@ -200,10 +200,10 @@ instruct zCompareAndExchangeP(indirect mem, no_rax_RegP newval, rRegP tmp, rax_R
     assert_different_registers($oldval$$Register, $newval$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $tmp$$Register, true /* is_atomic */);
-    z_color(masm, this, $oldval$$Register);
+    z_color(masm, $oldval$$Register);
     __ lock();
     __ cmpxchgptr($tmp$$Register, mem_addr);
-    z_uncolor(masm, this, $oldval$$Register);
+    z_uncolor(masm, $oldval$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);
@@ -223,7 +223,7 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_
     assert_different_registers($oldval$$Register, $mem$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $tmp$$Register, true /* is_atomic */);
-    z_color(masm, this, $oldval$$Register);
+    z_color(masm, $oldval$$Register);
     __ lock();
     __ cmpxchgptr($tmp$$Register, mem_addr);
     __ setcc(Assembler::equal, $res$$Register);
@@ -245,7 +245,7 @@ instruct zXChgP(indirect mem, rRegP newval, rRegP tmp, rFlagsReg cr) %{
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $tmp$$Register, true /* is_atomic */);
     __ movptr($newval$$Register, $tmp$$Register);
     __ xchgptr($newval$$Register, mem_addr);
-    z_uncolor(masm, this, $newval$$Register);
+    z_uncolor(masm, $newval$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);

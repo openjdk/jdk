@@ -44,7 +44,7 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
       if (MacroAssembler::is_load_pc_relative_at(addr())) {
         address constptr = (address)code()->oop_addr_at(reloc->oop_index());
         bytes = MacroAssembler::pd_patch_instruction_size(addr(), constptr);
-        assert((address)Bytes::get_native_u8(constptr) == x, "error in oop relocation");
+        assert((address)MacroAssembler::get_native_u8(constptr) == x, "error in oop relocation");
       } else {
         bytes = MacroAssembler::patch_oop(addr(), x);
       }
@@ -74,7 +74,12 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
 address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_at(addr())) {
-    return nativeCall_at(addr())->reloc_destination();
+    // A reloc call keeps its destination in its address stub, so the
+    // instruction sequence at orig_addr must not be decoded here: the
+    // auipc + ld pair points to itself until the call is linked to the
+    // stub in pd_set_call_destination.
+    NativeCall* call = nativeCall_at(addr());
+    return call->destination();
   }
 
   if (orig_addr != nullptr) {
@@ -93,12 +98,16 @@ address Relocation::pd_call_destination(address orig_addr) {
 void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_at(addr())) {
-    NativeCall* call = nativeCall_at(addr());
-    call->reloc_set_destination(x);
+    // Nothing to do while code is still living in a CodeBuffer, where the call
+    // does not have an address stub yet. See NativeCall::stub_address().
+    if (x != nullptr) {
+      NativeCall* call = nativeCall_at(addr());
+      call->set_destination(x);
+    }
   } else {
     MacroAssembler::pd_patch_instruction_size(addr(), x);
-    assert(pd_call_destination(addr()) == x, "fail in reloc");
   }
+  guarantee(pd_call_destination(addr()) == x, "fail in reloc");
 }
 
 address* Relocation::pd_address_in_code() {

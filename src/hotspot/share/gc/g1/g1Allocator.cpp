@@ -68,8 +68,7 @@ G1Allocator::~G1Allocator() {
 }
 
 #ifdef ASSERT
-bool G1Allocator::has_mutator_alloc_region() {
-  uint node_index = current_node_index();
+bool G1Allocator::has_mutator_alloc_region(uint node_index) {
   return mutator_alloc_region(node_index)->get() != nullptr;
 }
 #endif
@@ -153,7 +152,7 @@ void G1Allocator::release_gc_alloc_regions(G1EvacInfo* evacuation_info) {
     num_survivor_regions += survivor_gc_alloc_region(node_index)->num_regions_used();
     survivor_gc_alloc_region(node_index)->release();
   }
-  evacuation_info->set_allocation_regions(num_survivor_regions +
+  evacuation_info->set_num_allocation_regions(num_survivor_regions +
                                           old_gc_alloc_region()->num_regions_used());
 
   // If we have an old GC alloc region to release, we'll save it in

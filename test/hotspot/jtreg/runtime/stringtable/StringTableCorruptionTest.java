@@ -34,11 +34,16 @@
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class StringTableCorruptionTest {
+    // Retain all Strings to make sure StringTable grows and keeps our corrupted String alive
+    static final List<String> RETAIN = new ArrayList<>();
+
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("--add-opens", "java.base/java.lang=ALL-UNNAMED",
@@ -51,9 +56,20 @@ public class StringTableCorruptionTest {
 
         Field f = String.class.getDeclaredField("value");
         f.setAccessible(true);
-        f.set("s1".intern(), f.get("s2"));
+
+        // Put a String into StringTable and corrupt it.
+        String s1 = "s1".intern();
+        f.set(s1, f.get("s2"));
+        RETAIN.add(s1);
+
+        // Fill in StringTable to trigger growth.
+        // Also do a few intentional GCs to make sure test behavior does not depend on accidental GCs.
         for (int i = 0; i < 4_000_000; i++) {
-            ("s_" + i).intern();
+            String s = ("s_" + i).intern();
+            RETAIN.add(s);
+            if (i % 100_000 == 0) {
+                System.gc();
+            }
         }
     }
 }

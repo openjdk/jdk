@@ -766,10 +766,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     final
     Float16Vector lanewiseTemplate(VectorOperators.Unary op) {
         if (opKind(op, VO_SPECIAL)) {
-            if (op == ZOMO) {
-                return blend(broadcast(-1), compare(NE, 0));
-            }
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return unaryMathOp(op);
             }
         }
@@ -794,10 +791,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                                           VectorMask<Float16> m) {
         m.check(maskClass, this);
         if (opKind(op, VO_SPECIAL)) {
-            if (op == ZOMO) {
-                return blend(broadcast(-1), compare(NE, 0, m));
-            }
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return blend(unaryMathOp(op), m);
             }
         }
@@ -1945,6 +1939,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                 }
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -1993,6 +1988,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                 }
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -2250,15 +2246,21 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     /*package-private*/
     final
     @ForceInline
-    Float16Vector sliceTemplate(int origin, Vector<Float16> v1) {
+    <V extends Vector<Float16>>
+    Float16Vector sliceTemplate(int origin, V v1) {
         Float16Vector that = (Float16Vector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
-        ShortVector filter = ShortVector.broadcast((ShortVector.ShortSpecies) vspecies().asIntegral(), (short)(length() - origin));
-        VectorMask<Float16> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
-        AbstractShuffle<Float16> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        return (Float16Vector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                ShortVector iotaVector = (ShortVector) vec1.iotaShuffle().toBitsVector();
+                ShortVector filter = ShortVector.broadcast((ShortVector.ShortSpecies) vec1.vspecies().asIntegral(),
+                                                                     (short)(vec1.length() - index));
+                VectorMask<Float16> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
+                AbstractShuffle<Float16> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2285,11 +2287,17 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     @ForceInline
     Float16Vector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
-        ShortVector filter = ShortVector.broadcast((ShortVector.ShortSpecies) vspecies().asIntegral(), (short)(length() - origin));
-        VectorMask<Float16> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
-        AbstractShuffle<Float16> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+        Float16Vector that = (Float16Vector) vspecies().zero();
+        return (Float16Vector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                ShortVector iotaVector = (ShortVector) vec1.iotaShuffle().toBitsVector();
+                ShortVector filter = ShortVector.broadcast((ShortVector.ShortSpecies) vec1.vspecies().asIntegral(),
+                                                                     (short)(vec1.length() - index));
+                VectorMask<Float16> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
+                AbstractShuffle<Float16> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -3621,18 +3629,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                 .reinterpretAsFloat16s();
         }
         return this;
-    }
-
-    @Override
-    @ForceInline
-    final
-    Float16Vector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        int subLanesPerSrc = subLanesToSwap(srcSpecies);
-        if (subLanesPerSrc < 0) {
-            return this;
-        }
-        VectorShuffle<Float16> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-        return (Float16Vector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =

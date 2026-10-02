@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,7 +60,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
- * @LastModified: July 2023
+ * @LastModified: July 2026
  */
 public class Parser implements Constants, ContentHandler {
 
@@ -540,23 +540,20 @@ public class Parser implements Constants, ContentHandler {
             return(element);
         }
         else {
-            try {
-                String path = _target;
-                if (path.indexOf(":")==-1) {
-                    path = "file:" + path;
-                }
-                path = SystemIDResolver.getAbsoluteURI(path);
-                String accessError = SecuritySupport.checkAccess(path,
-                        (String)_xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
-                        JdkConstants.ACCESS_EXTERNAL_ALL);
-                if (accessError != null) {
-                    ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-                            SecuritySupport.sanitizePath(_target), accessError,
-                            root);
-                    throw new CompilerException(msg.toString());
-                }
-            } catch (IOException ex) {
-                throw new CompilerException(ex);
+            String path = _target;
+            if (path.indexOf(":")==-1) {
+                path = "file:" + path;
+            }
+            path = SystemIDResolver.getAbsoluteURI(path);
+            String accessError = SecuritySupport.checkAccess(path,
+                (XMLSecurityManager)_xsltc.getProperty(JdkConstants.SECURITY_MANAGER),
+                XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
+                (String)_xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET));
+            if (accessError != null) {
+                ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+                        SecuritySupport.sanitizePath(_target), accessError,
+                        root);
+                throw new CompilerException(msg.toString());
             }
 
             return(loadExternalStylesheet(_target));

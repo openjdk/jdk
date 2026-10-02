@@ -66,11 +66,11 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -81,6 +81,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = nullptr;
 
@@ -429,11 +432,11 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   }
 }
 
-void ClassLoaderData::inline_classes_do(void f(InlineKlass*)) {
+void ClassLoaderData::value_classes_do(void f(ValueKlass*)) {
   // Lock-free access requires load_acquire
   for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
-    if (k->is_inline_klass()) {
-      f(InlineKlass::cast(k));
+    if (k->is_value_klass()) {
+      f(ValueKlass::cast(k));
     }
     assert(k != k->next_link(), "no loops!");
   }
@@ -617,7 +620,7 @@ void ClassLoaderData::unload() {
   // if they are not already on the _klasses list.
   free_deallocate_list_C_heap_structures();
 
-  inline_classes_do(InlineKlass::cleanup);
+  value_classes_do(ValueKlass::cleanup);
 
   // Clean up class dependencies and tell serviceability tools
   // these classes are unloading.  This must be called
@@ -899,10 +902,11 @@ void ClassLoaderData::free_deallocate_list() {
         HeapShared::remove_scratch_resolved_references((ConstantPool*)m);
         MetadataFactory::free_metadata(this, (ConstantPool*)m);
       } else if (m->is_klass()) {
-        if (!((Klass*)m)->is_inline_klass()) {
+        JFR_ONLY(Jfr::on_deallocation(static_cast<Klass*>(m));)
+        if (!((Klass*)m)->is_value_klass()) {
           MetadataFactory::free_metadata(this, (InstanceKlass*)m);
         } else {
-          MetadataFactory::free_metadata(this, (InlineKlass*)m);
+          MetadataFactory::free_metadata(this, (ValueKlass*)m);
         }
       } else {
         ShouldNotReachHere();
