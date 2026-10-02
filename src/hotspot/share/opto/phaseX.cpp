@@ -2577,7 +2577,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       use_op == Op_ConvL2F ||
       use_op == Op_ConvF2I ||
       use_op == Op_ConvL2I) {
-    add_users_to_worklist_if(worklist, use, [=](Node* u) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
       return (use_op == Op_ConvL2D && u->Opcode() == Op_ConvD2L) ||
              (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
              (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
@@ -2601,7 +2601,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   //   address expression flattening.
   if (use_op == Op_AddP) {
     bool offset_changed = n == use->in(AddPNode::Offset);
-    add_users_to_worklist_if(worklist, use, [=](Node* u) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
       return u->is_Mem() ||
              (offset_changed && u->is_AddP() && u->in(AddPNode::Offset)->is_Con());
     });
@@ -2789,7 +2789,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // (x - y) - x -> -y
   if (use_op == Op_SubI || use_op == Op_SubL) {
     const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
-    add_users_to_worklist_if(worklist, use, [=](Node* u) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
       return u->Opcode() == add_op || u->Opcode() == use_op;
     });
   }
@@ -2798,14 +2798,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // e.g., (a * b) + (a * c) -> a * (b + c).
   if (use_op == Op_MulI || use_op == Op_MulL) {
     const int add_op = (use_op == Op_MulI) ? Op_AddI : Op_AddL;
-    add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
+    add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == add_op; });
   }
 
   // MulNode::Ideal distributes constant multiplication:
   // e.g., (x + c1) * c2 -> x * c2 + (c1 * c2)
   if (use_op == Op_AddI || use_op == Op_AddL) {
     const int mul_op = (use_op == Op_AddI) ? Op_MulI : Op_MulL;
-    add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == mul_op; });
+    add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == mul_op; });
   }
 
   // We may have a loop-phi that is about to close the AddI recurrence,
