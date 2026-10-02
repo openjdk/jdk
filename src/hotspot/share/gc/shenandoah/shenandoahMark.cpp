@@ -48,18 +48,18 @@ void ShenandoahMark::end_mark() {
   }
 }
 
-ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation) :
+ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapping) :
   _generation(generation),
   _task_queues(generation->task_queues()),
   _old_gen_task_queues(generation->old_gen_task_queues()),
-  _string_dedup(StringDedup::is_enabled()) {
+  _string_dedup(StringDedup::is_enabled()),
+  _bootstrapping(bootstrapping) {
 }
 
 template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::Requests* const req, bool update_refs) {
-  ShenandoahObjToScanQueueSet* queues = task_queues();
   ShenandoahObjToScanQueue* q = get_queue(w);
-  ShenandoahObjToScanQueue* old_q = get_old_queue(w);
+  ShenandoahObjToScanQueue* old_q = _bootstrapping ? get_old_queue(w) : nullptr;
   ShenandoahReferenceProcessor *rp = _generation->ref_processor();
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahLiveData* ld = heap->get_liveness_cache(w);

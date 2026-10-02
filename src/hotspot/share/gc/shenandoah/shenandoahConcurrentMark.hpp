@@ -39,7 +39,7 @@ class ShenandoahConcurrentMark: public ShenandoahMark {
   template <ShenandoahGenerationType GENERATION> friend class ShenandoahFinalMarkingTask;
 
 public:
-  ShenandoahConcurrentMark(ShenandoahGeneration* generation);
+  ShenandoahConcurrentMark(ShenandoahGeneration* generation, bool bootstrapping);
 
   // Concurrent mark roots
   void mark_concurrent_roots();

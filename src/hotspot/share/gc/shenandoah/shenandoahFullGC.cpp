@@ -312,7 +312,7 @@ void ShenandoahFullGC::phase1_mark_heap() {
   // enable ("weak") refs discovery
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
-  ShenandoahSTWMark mark(_generation, true /*full_gc*/);
+  ShenandoahSTWMark mark(_generation, true /*full_gc*/, false /*bootstrapping*/);
   mark.mark();
   heap->parallel_cleaning(_generation, true /* full_gc */);
 

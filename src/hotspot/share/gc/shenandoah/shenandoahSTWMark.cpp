@@ -62,8 +62,8 @@ void ShenandoahSTWMarkTask::work(uint worker_id) {
   _mark->finish_mark(worker_id);
 }
 
-ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc) :
-  ShenandoahMark(generation),
+ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc, bool bootstrapping) :
+  ShenandoahMark(generation, bootstrapping),
   _root_scanner(full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_mark),
   _terminator(ShenandoahHeap::heap()->workers()->active_workers(), task_queues()),
   _full_gc(full_gc) {
