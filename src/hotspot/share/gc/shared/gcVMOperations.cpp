@@ -289,9 +289,9 @@ void VM_CollectForMetadataAllocation::doit() {
 }
 
 VM_CollectForAllocation::VM_CollectForAllocation(AllocationRequest request, uint gc_count_before, GCCause::Cause cause)
-    : VM_GC_Collect_Operation(gc_count_before, cause), _request(request), _result(nullptr) {
+    : VM_GC_Collect_Operation(gc_count_before, cause), _alloc_request(request), _result(nullptr) {
   // Only report if operation was really caused by an allocation.
-  if (!_request.is_empty()) {
-    AllocTracer::send_allocation_requiring_gc_event(_request.word_size() * HeapWordSize, GCId::peek());
+  if (!_alloc_request.is_zero()) {
+    AllocTracer::send_allocation_requiring_gc_event(_alloc_request.word_size() * HeapWordSize, GCId::peek());
   }
 }

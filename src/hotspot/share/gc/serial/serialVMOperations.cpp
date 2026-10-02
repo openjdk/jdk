@@ -28,7 +28,7 @@
 void VM_SerialCollectForAllocation::doit() {
   SerialHeap* gch = SerialHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
-  _result = gch->satisfy_failed_allocation(_request.word_size(), _tlab);
+  _result = gch->satisfy_failed_allocation(_alloc_request.word_size(), _tlab);
   assert(_result == nullptr || gch->is_in_reserved(_result), "result not in heap");
 }
 

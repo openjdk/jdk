@@ -123,12 +123,12 @@ void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  g1h->do_collection_pause_at_safepoint(_request.word_size());
+  g1h->do_collection_pause_at_safepoint(_alloc_request.word_size());
 
-  if (!_request.is_empty()) {
+  if (!_alloc_request.is_zero()) {
     // An allocation had been requested. Do it, eventually trying a stronger
     // kind of GC.
-    _result = g1h->satisfy_failed_allocation(_request);
+    _result = g1h->satisfy_failed_allocation(_alloc_request);
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no
     // information on how much memory has been asked for. In case there are

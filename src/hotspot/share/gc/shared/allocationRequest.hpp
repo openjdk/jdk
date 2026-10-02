@@ -34,7 +34,8 @@ class AllocationRequest {
   const int _numa_id;
 
   AllocationRequest(size_t word_size, int numa_id)
-  :_word_size(word_size), _numa_id(numa_id) {}
+    : _word_size(word_size),
+      _numa_id(numa_id) {}
 
 public:
   static constexpr int InvalidNumaId = -1;
@@ -43,21 +44,21 @@ public:
     return AllocationRequest(0, InvalidNumaId);
   }
 
-  static AllocationRequest for_allocation(size_t word_size) {
+  static AllocationRequest from_allocation(size_t word_size) {
     assert(word_size != 0, "An allocation should always be requested with this operation.");
     return AllocationRequest(word_size, InvalidNumaId);
   }
 
-  static AllocationRequest for_numa_allocation(size_t word_size, int numa_id) {
+  static AllocationRequest from_allocation(size_t word_size, int numa_id) {
     assert(word_size != 0, "An allocation should always be requested with this operation.");
     assert(numa_id >= 0, "invalid node id %d", numa_id);
     return AllocationRequest(word_size, numa_id);
   }
 
- size_t word_size() const { return _word_size; }
- int numa_id() const { return _numa_id; }
- bool is_empty() const { return _word_size == 0; }
- bool has_numa_id() const { return _numa_id != InvalidNumaId; }
+  size_t word_size() const { return _word_size; }
+  int numa_id() const { return _numa_id; }
+  bool is_zero() const { return _word_size == 0; }
+  bool has_numa_id() const { return _numa_id != InvalidNumaId; }
 };
 
 #endif //SHARE_GC_SHARED_ALLOCATIONREQUEST_HPP

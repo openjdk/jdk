@@ -424,8 +424,8 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
   assert(!is_humongous(requested_size), "we do not allow humongous TLABs");
 
   const G1AllocationRequest request(min_size, _numa->is_enabled()
-    ? AllocationRequest::for_numa_allocation(requested_size, os::numa_get_group_id())
-    : AllocationRequest::for_allocation(requested_size));
+    ? AllocationRequest::from_allocation(requested_size, os::numa_get_group_id())
+    : AllocationRequest::from_allocation(requested_size));
 
   // Do not allow a GC because we are allocating a new TLAB to avoid an issue
   // with UseGCOverheadLimit: although this GC would return null if the overhead
@@ -443,8 +443,8 @@ HeapWord* G1CollectedHeap::mem_allocate(size_t word_size) {
   }
   size_t dummy = 0;
   const G1AllocationRequest request(_numa->is_enabled()
-    ? AllocationRequest::for_numa_allocation(word_size, os::numa_get_group_id())
-    : AllocationRequest::for_allocation(word_size));
+    ? AllocationRequest::from_allocation(word_size, os::numa_get_group_id())
+    : AllocationRequest::from_allocation(word_size));
   return attempt_allocation(request, &dummy, true /* allow_gc */);
 }
 
@@ -698,7 +698,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
          "should only be called for humongous allocations");
 
   // Humongous allocations do not have a preferred NUMA node.
-  const AllocationRequest request = AllocationRequest::for_allocation(word_size);
+  const AllocationRequest request = AllocationRequest::from_allocation(word_size);
 
   // Humongous objects can exhaust the heap quickly, so we should check if we
   // need to start a marking cycle at each humongous object allocation. We do

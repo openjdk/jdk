@@ -35,7 +35,7 @@ class VM_SerialCollectForAllocation : public VM_CollectForAllocation {
   VM_SerialCollectForAllocation(size_t word_size,
                                 bool tlab,
                                 uint gc_count_before)
-    : VM_CollectForAllocation(AllocationRequest::for_allocation(word_size), gc_count_before, GCCause::_allocation_failure),
+    : VM_CollectForAllocation(AllocationRequest::from_allocation(word_size), gc_count_before, GCCause::_allocation_failure),
       _tlab(tlab) {}
   virtual VMOp_Type type() const { return VMOp_SerialCollectForAllocation; }
   virtual void doit();

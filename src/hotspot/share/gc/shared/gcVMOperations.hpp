@@ -201,7 +201,7 @@ class VM_GC_HeapInspection : public VM_GC_Service_Operation {
 
 class VM_CollectForAllocation : public VM_GC_Collect_Operation {
  protected:
-  const AllocationRequest _request;
+  const AllocationRequest _alloc_request;
   HeapWord* _result;    // Allocation result (null if allocation failed)
 
  public:
