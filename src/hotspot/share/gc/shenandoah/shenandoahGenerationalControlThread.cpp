@@ -145,6 +145,13 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   }
 
   assert(request.generation != nullptr, "request.generation cannot be null, cause is: %s", GCCause::to_string(request.cause));
+
+  if (request.generation->is_old() && _heap->old_generation()->is_doing_mixed_evacuations()) {
+    request.cause = GCCause::_no_gc;
+    log_debug(gc, thread)("Dropping request to run old cycle because old is: %s", _heap->old_generation()->state_name());
+    return;
+  }
+
   GCMode mode;
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
     mode = prepare_for_allocation_failure_gc(request);
@@ -738,7 +745,6 @@ bool ShenandoahGenerationalControlThread::preempt_old_marking(ShenandoahGenerati
 }
 
 void ShenandoahGenerationalControlThread::wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation) {
-
   if (generation->is_old()) {
     wait_for_old_gc_cycle(cause, static_cast<ShenandoahOldGeneration*>(generation));
     return;
@@ -770,9 +776,19 @@ void ShenandoahGenerationalControlThread::wait_for_old_gc_cycle(GCCause::Cause c
   size_t current_gc_id = generation->started_gc_id();
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
-    // Make requests to run cycles until at least one is completed
-    notify_control_thread(cause, generation);
-    ml.wait();
+    {
+      // Take control lock for gc mode. Old gc state is changed outside of a lock, but the control
+      // thread is the only thread that does it. When we see that gc_mode is none under the lock,
+      // the control thread cannot be changing the old gen state.
+      MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
+      if (gc_mode() == none && generation->is_idle()) {
+        // Make requests to run cycles until at least one is completed. Note: we must only submit
+        // a request if the old generation is idle, otherwise we violate the invariant that an old
+        // cycle cannot run on top of another.
+        notify_control_thread(controller, cause, generation);
+      }
+    }
+    ml.wait(100);
     current_gc_id = generation->completed_gc_id();
   }
 }
@@ -786,9 +802,7 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
     notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
     return;
   }
-  ShenandoahGeneration* generation = cause == GCCause::_wb_young_gc
-                                   ? ShenandoahHeap::heap()->young_generation()
-                                   : ShenandoahHeap::heap()->global_generation();
+  ShenandoahGeneration* generation = ShenandoahHeap::heap()->global_generation();
   wait_for_gc_cycle(cause, generation);
 }
 
