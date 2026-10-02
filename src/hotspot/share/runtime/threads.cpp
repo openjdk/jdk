@@ -378,7 +378,9 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   jdk_internal_misc_UnsafeConstants::set_unsafe_constants();
 
   // Initialize Value type support - this also initializes Unsafe.
-  initialize_class(vmSymbols::java_lang_runtime_ValueObjectMethods(), CHECK);
+  if (Arguments::is_valhalla_enabled()) {
+    initialize_class(vmSymbols::java_lang_runtime_ValueObjectMethods(), CHECK);
+  }
 
   // The VM preresolves methods to these classes. Make sure that they get initialized
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
