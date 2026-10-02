@@ -2493,7 +2493,9 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
   // LShiftNode::IdealIL:
   // (x + c1) << c2  ->  (x << c2) + c3
-  if (use_op == Op_AddI || use_op == Op_AddL) {
+  // (c1 - x) << c2  ->  c3 - (x << c2)
+  if (use_op == Op_AddI || use_op == Op_AddL ||
+      use_op == Op_SubI || use_op == Op_SubL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL;
     });
@@ -2800,7 +2802,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   // MulNode::Ideal distributes constant multiplication:
-  // e.g., (x + c1) * c2 -> x * c1 + (c1 * c2)
+  // e.g., (x + c1) * c2 -> x * c2 + (c1 * c2)
   if (use_op == Op_AddI || use_op == Op_AddL) {
     const int mul_op = (use_op == Op_AddI) ? Op_MulI : Op_MulL;
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == mul_op; });
