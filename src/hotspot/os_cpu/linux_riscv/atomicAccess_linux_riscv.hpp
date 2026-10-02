@@ -32,7 +32,7 @@
 
 // Note that memory_order_conservative requires a strong two-way barrier.
 // For 32- and 64-bit add and xchg that barrier is provided by an explicit
-// AMO with .aqrl. Sub-word cmpxchg still uses explicit full barriers.
+// AMO with .aqrl. Cmpxchg still uses explicit full barriers.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
