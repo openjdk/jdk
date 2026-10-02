@@ -51,6 +51,7 @@ Atomic<bool> ShenandoahGCStateResetter::_is_active;
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()) {
 
+  shenandoah_assert_safepoint();
   assert(!_is_active.load_relaxed(), "No nested resets");
 
   // Capture the GC state right away.
