@@ -44,6 +44,7 @@ import jdk.test.lib.process.ProcessTools;
  * @requires vm.hasSA
  * @requires vm.continuations
  * @requires vm.gc != "Z"
+ * @requires vm.gc != "Shenandoah"
  * @library /test/lib
  * @run driver TestHeapDumpForUnmountedVirtualThread
  */

@@ -22,14 +22,25 @@
  */
 
 /**
- * @test
+ * @test id=serial
  * @bug 8261848
  * @summary Test that clhsdb 'revptrs' finds references from a virtual thread's stack chunk
  * @requires vm.hasSA
  * @requires vm.gc.Serial
  * @requires vm.continuations
  * @library /test/lib
- * @run main/othervm/timeout=1200 ClhsdbRevPtrsForVirtualThread
+ * @run main/othervm/timeout=1200 ClhsdbRevPtrsForVirtualThread UseSerialGC
+ */
+
+/**
+ * @test id=parallel
+ * @bug 8261848
+ * @summary Test that clhsdb 'revptrs' finds references from a virtual thread's stack chunk
+ * @requires vm.hasSA
+ * @requires vm.gc.Parallel
+ * @requires vm.continuations
+ * @library /test/lib
+ * @run main/othervm/timeout=1200 ClhsdbRevPtrsForVirtualThread UseParallelGC
  */
 
 import java.util.List;
@@ -42,22 +53,32 @@ public class ClhsdbRevPtrsForVirtualThread {
     private static final String TARGET_TYPE =
         "LingeredAppWithUnmountedVirtualThread$ChunkReferenced";
 
-    public static void main(String[] args) throws Exception {
+    private static void testWithGcType(String gc) throws Exception {
         LingeredApp theApp = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
 
             theApp = new LingeredAppWithUnmountedVirtualThread();
-            LingeredApp.startApp(theApp, "-XX:+UseSerialGC", "-XX:InitialHeapSize=100M");
+            LingeredApp.startApp(theApp, gc, "-XX:InitialHeapSize=100M");
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             String universeOutput = test.run(theApp.getPid(), List.of("universe"), null, null);
 
+            String oldGenMarker;
+            String edenMarker;
+            if (gc.contains("UseParallelGC")) {
+                oldGenMarker = "PSOldGen \\[  ";
+                edenMarker = "eden =  ";
+            } else {
+                oldGenMarker = "old  \\[";
+                edenMarker = "eden \\[";
+            }
+
             // The instance was created before the System.gc() in the app, so
             // look for it in the old gen first and fall back to eden.
-            String addr = scan(test, theApp, universeOutput, "old  \\[");
+            String addr = scan(test, theApp, universeOutput, oldGenMarker);
             if (addr == null) {
-                addr = scan(test, theApp, universeOutput, "eden \\[");
+                addr = scan(test, theApp, universeOutput, edenMarker);
             }
             if (addr == null) {
                 throw new RuntimeException("No " + TARGET_TYPE + " instance found in the heap");
@@ -89,5 +110,10 @@ public class ClhsdbRevPtrsForVirtualThread {
             }
         }
         return null;
+    }
+
+    public static void main(String[] args) throws Exception {
+        String gc = args[0];
+        testWithGcType("-XX:+" + gc);
     }
 }
