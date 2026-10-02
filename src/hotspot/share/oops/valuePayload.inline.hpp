@@ -460,7 +460,9 @@ inline FlatValuePayload::FlatValuePayload(oop container,
                                           ptrdiff_t offset,
                                           ValueKlass* klass,
                                           LayoutKind layout_kind)
-    : ValuePayload(container, offset, klass, layout_kind) {}
+    : ValuePayload(container, offset, klass, layout_kind) {
+  postcond(LayoutKindHelper::is_flat(layout_kind));
+}
 
 inline valueOop FlatValuePayload::allocate_instance(TRAPS) {
   // Preserve the container oop across the instance allocation.
@@ -511,31 +513,22 @@ inline void FlatValuePayload::copy_to(const FlatValuePayload& dst) {
 }
 
 inline valueOop FlatValuePayload::read(TRAPS) {
-  switch (layout_kind()) {
-  case LayoutKind::NULLABLE_ATOMIC_FLAT:
-  case LayoutKind::NULLABLE_NON_ATOMIC_FLAT: {
-    if (is_payload_null()) {
-      return nullptr;
-    }
-  } // Fallthrough
-  case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-  case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
-    valueOop res = allocate_instance(CHECK_NULL);
-    BufferedValuePayload dst(res, klass());
-    if (!copy_to(dst)) {
-      // copy_to may fail if the payload has been updated with a null value
-      // between our is_payload_null() check above and the copy.
-      // In this case we have copied a null value into the buffer the payload.
-      return nullptr;
-    }
-    // Must ensure the content of the buffered value is visible
-    // before publishing the buffered value oop
-    OrderAccess::storestore();
-    return res;
-  } break;
-  default:
-    ShouldNotReachHere();
+  if (is_payload_null()) {
+    return nullptr;
   }
+
+  valueOop res = allocate_instance(CHECK_NULL);
+  BufferedValuePayload dst(res, klass());
+  if (!copy_to(dst)) {
+    // copy_to may fail if the payload has been updated with a null value
+    // between our is_payload_null() check above and the copy.
+    // In this case we have copied a null value into the buffer the payload.
+    return nullptr;
+  }
+  // Must ensure the content of the buffered value is visible
+  // before publishing the buffered value oop
+  OrderAccess::storestore();
+  return res;
 }
 
 inline void FlatValuePayload::write_without_nullability_check(valueOop obj) {
