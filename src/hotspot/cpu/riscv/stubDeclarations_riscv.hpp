@@ -97,6 +97,35 @@
   do_stub(final, zero_blocks)                                           \
   do_arch_entry(riscv, final, zero_blocks, zero_blocks,                 \
                 zero_blocks)                                            \
+  /* n.b. these are not the same as the generic atomic stubs */         \
+  do_stub(final, atomic_entry_points)                                   \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_1_impl, atomic_cmpxchg_1_impl)           \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_4_impl, atomic_cmpxchg_4_impl)           \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_8_impl, atomic_cmpxchg_8_impl)           \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_1_relaxed_impl,                          \
+                atomic_cmpxchg_1_relaxed_impl)                          \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_4_relaxed_impl,                          \
+                atomic_cmpxchg_4_relaxed_impl)                          \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_8_relaxed_impl,                          \
+                atomic_cmpxchg_8_relaxed_impl)                          \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_4_release_impl,                          \
+                atomic_cmpxchg_4_release_impl)                          \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_8_release_impl,                          \
+                atomic_cmpxchg_8_release_impl)                          \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_4_seq_cst_impl,                          \
+                atomic_cmpxchg_4_seq_cst_impl)                          \
+  do_arch_entry(riscv, final, atomic_entry_points,                      \
+                atomic_cmpxchg_8_seq_cst_impl,                          \
+                atomic_cmpxchg_8_seq_cst_impl)                          \
 
 
 #endif // CPU_RISCV_STUBDECLARATIONS_HPP
