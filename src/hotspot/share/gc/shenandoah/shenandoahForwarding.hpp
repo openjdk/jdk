@@ -68,12 +68,26 @@ public:
    */
   static inline oop try_forward_to_self(oop obj);
 
+  /* Unsets self-forwarding bit on the object.
+   * WARNING: This is only safe to do when no evacuations happen.
+   */
   static inline void unset_self_forwarded(oop obj);
 
+  /* Gets the size of the object, taking care of any forwardings.
+   */
   static inline size_t size(oop obj);
+
+  /* Gets the klass of the object, taking care of any forwardings.
+   */
   static inline Klass* klass(oop obj);
 
+  /* Gets the age of the object, taking care of any forwardings.
+   */
   static inline int age(oop obj);
+
+  /* Bumps the age the object.
+   * WARNING: This method is expected to operate on unexposed copy.
+   */
   static inline void increase_age(oop obj, uint add);
 
 private:
