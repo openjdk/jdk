@@ -138,8 +138,12 @@ public:
 
   inline address addr() const;
 
+  inline size_t size_in_bytes() const;
+
   class Handle;
   class OopHandle;
+
+  static inline size_t copy_size_in_bytes(const ValuePayload& src, const ValuePayload& dst);
 
   [[nodiscard]] static inline ValuePayload construct_from_parts(address absolute_addr,
                                                                 ValueKlass* klass,

@@ -39,6 +39,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
@@ -388,12 +389,9 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
     precond(!src_klass->supports_nullable_layouts() || container != src_klass->null_reset_value());
   }
 
-  const int src_layout_size_in_bytes = src_klass->layout_size_in_bytes(src.layout_kind());
-  const int dst_layout_size_in_bytes = dst_klass->layout_size_in_bytes(dst.layout_kind());
-  const int copy_layout_size_in_bytes =
-      src_has_copy_layout
-          ? src_layout_size_in_bytes
-          : dst_layout_size_in_bytes;
+  const size_t src_layout_size_in_bytes = src.size_in_bytes();
+  const size_t dst_layout_size_in_bytes = dst.size_in_bytes();
+  const size_t copy_layout_size_in_bytes = copy_size_in_bytes(src, dst);
 
   precond(copy_layout_size_in_bytes <= src_layout_size_in_bytes);
   precond(copy_layout_size_in_bytes <= dst_layout_size_in_bytes);
@@ -418,6 +416,17 @@ inline address ValuePayload::addr() const {
   return uses_absolute_addr()
       ? _storage.absolute_addr()
       : (cast_from_oop<address>(container()) + offset());
+}
+
+inline size_t ValuePayload::size_in_bytes() const {
+  return integer_cast<size_t>(klass()->layout_size_in_bytes(layout_kind()));
+}
+
+inline size_t ValuePayload::copy_size_in_bytes(const ValuePayload& src, const ValuePayload& dst) {
+  precond(src.klass() == dst.klass());
+
+  const LayoutKind copy_layout_kind = LayoutKindHelper::get_copy_layout(src.layout_kind(), dst.layout_kind());
+  return integer_cast<size_t>(src.klass()->layout_size_in_bytes(copy_layout_kind));
 }
 
 inline ValuePayload ValuePayload::construct_from_parts(address absolute_addr,
