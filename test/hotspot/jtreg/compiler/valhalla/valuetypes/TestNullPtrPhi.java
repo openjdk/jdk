@@ -55,7 +55,7 @@ public class TestNullPtrPhi {
             return new Val();
         }
     }
-    
+
     public static void main(String[] args) {
         SomeObject notVal     = new NotValue();
         SomeObject notNullVal = new NotNullValue();
