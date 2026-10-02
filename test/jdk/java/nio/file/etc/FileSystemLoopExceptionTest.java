@@ -58,9 +58,9 @@ public class FileSystemLoopExceptionTest {
             FileSystemLoopException expectedException = new FileSystemLoopException(link.toString());
             FileSystemLoopException actualException = assertThrowsExactly(FileSystemLoopException.class, executableProvider.apply(link));
 
-            assertEquals(actualException.getFile(), expectedException.getFile());
-            assertEquals(actualException.getOtherFile(), expectedException.getOtherFile());
-            assertEquals(actualException.getReason(), expectedException.getReason());
+            assertEquals(expectedException.getFile(), actualException.getFile());
+            assertEquals(expectedException.getOtherFile(), actualException.getOtherFile());
+            assertEquals(expectedException.getReason(), actualException.getReason());
         } finally {
             Files.delete(link);
             Files.delete(link.getParent());
