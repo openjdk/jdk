@@ -25,6 +25,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
+#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -204,13 +205,13 @@ void VM_GC_HeapInspection::doit() {
     }
   }
   HeapInspection inspect;
-  WorkerThreads* workers = Universe::heap()->safepoint_workers();
-  if (workers != nullptr) {
+  if (Universe::heap()->supports_parallel_heap_iteration() && _parallel_thread_num > 1) {
     // The GC provided a WorkerThreads to be used during a safepoint.
     // Can't run with more threads than provided by the WorkerThreads.
+    WorkerThreads* workers = DiagnosticWorkers::workers();
     const uint capped_parallel_thread_num = MIN2(_parallel_thread_num, workers->max_workers());
-    WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
-    inspect.heap_inspection(_out, workers);
+    uint active_workers = workers->set_active_workers(capped_parallel_thread_num);
+    inspect.heap_inspection(_out, active_workers > 1 ? workers : nullptr);
   } else {
     inspect.heap_inspection(_out, nullptr);
   }

@@ -307,8 +307,8 @@ void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }
 
-WorkerThreads* ZCollectedHeap::safepoint_workers() {
-  return _runtime_workers.workers();
+bool ZCollectedHeap::supports_parallel_heap_iteration() const {
+  return true;
 }
 
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {

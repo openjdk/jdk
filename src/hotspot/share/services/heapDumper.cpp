@@ -30,6 +30,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -2657,7 +2658,12 @@ void VM_HeapDumper::doit() {
     }
   }
 
-  WorkerThreads* workers = ch->safepoint_workers();
+  WorkerThreads* workers = nullptr;
+  if (ch->supports_parallel_heap_iteration() && _num_dumper_threads > 1) {
+    workers = DiagnosticWorkers::workers();
+    workers->set_active_workers(MIN2(_num_dumper_threads, workers->max_workers()));
+  }
+
   prepare_parallel_dump(workers);
 
   if (!is_parallel_dump()) {

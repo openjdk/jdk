@@ -72,10 +72,6 @@ inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
 }
 
-inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
-  return _safepoint_workers;
-}
-
 inline void ShenandoahHeap::notify_gc_progress() {
   _gc_no_progress_count.store_relaxed((size_t) 0);
 

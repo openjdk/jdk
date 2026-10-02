@@ -1309,7 +1309,7 @@ public:
   // WhiteBox testing support.
   bool supports_concurrent_gc_breakpoints() const override;
 
-  WorkerThreads* safepoint_workers() override { return _workers; }
+  bool supports_parallel_heap_iteration() const override { return true; }
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption
