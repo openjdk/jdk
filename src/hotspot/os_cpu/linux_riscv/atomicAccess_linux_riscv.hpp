@@ -31,10 +31,8 @@
 // Implementation of class AtomicAccess
 
 // Note that memory_order_conservative requires a strong two-way barrier.
-// For add and xchg that barrier is provided by the RMW itself: the compiler
-// emits non-relaxed ops as seq_cst RMWs, i.e. an AMO with .aqrl (or an
-// ordered LR/SC loop for sub-word operands), so no explicit fences are
-// needed. cmpxchg still uses explicit full barriers.
+// For 32- and 64-bit add and xchg that barrier is provided by an explicit
+// AMO with .aqrl. Sub-word add and cmpxchg still use explicit full barriers.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
@@ -53,12 +51,16 @@ struct AtomicAccess::PlatformAdd {
     static_assert(byte_size >= 4);
 #endif
 
-    switch (order) {
-      case memory_order_relaxed:
-        return __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
-      default:
-        return __atomic_add_fetch(dest, add_value, __ATOMIC_SEQ_CST);
+    if (order != memory_order_relaxed) {
+      FULL_MEM_BARRIER;
     }
+
+    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+
+    if (order != memory_order_relaxed) {
+      FULL_MEM_BARRIER;
+    }
+    return res;
   }
 
   template<typename D, typename I>
@@ -66,6 +68,44 @@ struct AtomicAccess::PlatformAdd {
     return add_then_fetch(dest, add_value, order) - add_value;
   }
 };
+
+template<>
+template<typename D, typename I>
+inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
+                                                      atomic_memory_order order) const {
+  static_assert(4 == sizeof(D));
+  static_assert(4 == sizeof(I));
+
+  if (order == memory_order_relaxed) {
+    return __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+  }
+
+  D old_value;
+  __asm__ __volatile__ ("amoadd.w.aqrl %0, %2, %1"
+                        : "=r" (old_value), "+A" (*dest)
+                        : "r" (add_value)
+                        : "memory");
+  return old_value + add_value;
+}
+
+template<>
+template<typename D, typename I>
+inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
+                                                      atomic_memory_order order) const {
+  static_assert(8 == sizeof(D));
+  static_assert(8 == sizeof(I));
+
+  if (order == memory_order_relaxed) {
+    return __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+  }
+
+  D old_value;
+  __asm__ __volatile__ ("amoadd.d.aqrl %0, %2, %1"
+                        : "=r" (old_value), "+A" (*dest)
+                        : "r" (add_value)
+                        : "memory");
+  return old_value + add_value;
+}
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
 template<>
@@ -168,12 +208,23 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
   static_assert(byte_size == sizeof(T));
   static_assert(byte_size == 4 || byte_size == 8);
 
-  switch (order) {
-    case memory_order_relaxed:
-      return __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
-    default:
-      return __atomic_exchange_n(dest, exchange_value, __ATOMIC_SEQ_CST);
+  if (order == memory_order_relaxed) {
+    return __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
   }
+
+  T old_value;
+  if constexpr (byte_size == 4) {
+    __asm__ __volatile__ ("amoswap.w.aqrl %0, %2, %1"
+                          : "=r" (old_value), "+A" (*dest)
+                          : "r" (exchange_value)
+                          : "memory");
+  } else {
+    __asm__ __volatile__ ("amoswap.d.aqrl %0, %2, %1"
+                          : "=r" (old_value), "+A" (*dest)
+                          : "r" (exchange_value)
+                          : "memory");
+  }
+  return old_value;
 }
 
 // __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
