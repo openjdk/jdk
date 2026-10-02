@@ -131,9 +131,14 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
     if (in_collection_set(obj)) {
+      // For concurrent update-refs, we cannot reach the state
+      // with non-forwarded objects in cset.
       shenandoah_assert_forwarded(p, obj);
       oop resolved = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset(p, resolved);
+
+      // We should not be updating the cset regions themselves.
+      shenandoah_assert_not_in_cset_loc_except(p, !is_in(p));
 
       if (resolved != obj) {
         // Either we succeed in updating the reference, or something else gets in our way.
