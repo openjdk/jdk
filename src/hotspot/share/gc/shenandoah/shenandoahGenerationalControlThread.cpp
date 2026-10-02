@@ -494,7 +494,10 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   _heap->increment_total_collections(false);
   if (gc.collect(cause)) {
     // Cycle is complete
-    _heap->notify_gc_progress();
+    if (alloc_stall_count() == 0) {
+      _heap->notify_gc_progress();
+    }
+
     // In the generational mode, we don't use global heuristics to trigger global cycles, so
     // direct heuristic signals to the young heuristics
     _heap->young_generation()->heuristics()->record_concurrent_completion();
