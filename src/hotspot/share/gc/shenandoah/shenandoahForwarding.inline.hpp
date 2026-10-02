@@ -128,7 +128,7 @@ inline size_t ShenandoahForwarding::size(oop obj) {
   return obj->size_given_klass(klass(obj));
 }
 
-inline int ShenandoahForwarding::age(oop obj) {
+inline uint ShenandoahForwarding::age(oop obj) {
   markWord mark = obj->mark();
   if (!mark.is_marked()) {
     // Object has trustworthy mark.

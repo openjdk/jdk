@@ -83,7 +83,7 @@ public:
 
   /* Gets the age of the object, taking care of any forwardings.
    */
-  static inline int age(oop obj);
+  static inline uint age(oop obj);
 
   /* Bumps the age the object.
    * WARNING: This method is expected to operate on a copy that is
