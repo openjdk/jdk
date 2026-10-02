@@ -32,10 +32,9 @@
 
 class ShenandoahGCStateResetter : public StackObj {
 private:
-  static Atomic<int> _arrived_count;
-  static Atomic<bool> _is_gc_state_reset;
-  static char _saved_gc_state;
-  static bool _saved_gc_state_changed;
+  static Atomic<bool> _is_active;
+  char _saved_gc_state;
+  bool _saved_gc_state_changed;
 
   ShenandoahHeap* const _heap;
 
@@ -43,7 +42,7 @@ public:
   ShenandoahGCStateResetter();
   ~ShenandoahGCStateResetter();
 
-  static bool is_reset() { return _is_gc_state_reset.load_relaxed(); }
+  static bool is_active() { return _is_active.load_relaxed(); }
 };
 
 class ShenandoahRootVerifier : public AllStatic {

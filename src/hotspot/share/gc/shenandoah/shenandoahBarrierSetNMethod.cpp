@@ -42,7 +42,7 @@
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
-  assert(!ShenandoahGCStateResetter::is_reset(), "GC state must not be reset");
+  assert(!ShenandoahGCStateResetter::is_active(), "Resetter must not be active");
 
   if (!is_armed(nm)) {
     // Some other thread got here first and healed the oops.
