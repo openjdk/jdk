@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8267265
+ * @bug 8267265 8392563
  * @summary Test that Ideal transformations of SubINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.SubINodeIdealizationTests
@@ -43,7 +43,8 @@ public class SubINodeIdealizationTests {
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
                  "test16", "test17", "test18",
-                 "test19", "test20", "test21"})
+                 "test19", "test20", "test21",
+                 "test22","test23"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -81,6 +82,8 @@ public class SubINodeIdealizationTests {
         Asserts.assertEQ(a*b - b*c        , test19(a, b, c));
         Asserts.assertEQ(a*c - b*c        , test20(a, b, c));
         Asserts.assertEQ(a*b - c*a        , test21(a, b, c));
+        Asserts.assertEQ(Math.max(Integer.MIN_VALUE - ((a & 1) | 2), 0), test22(a));
+        Asserts.assertEQ(Math.min(Integer.MAX_VALUE - (a | -2), 0), test23(a));
     }
 
     @Test
@@ -248,5 +251,23 @@ public class SubINodeIdealizationTests {
     // Checks a*b-c*a => a*(b-c)
     public int test21(int a, int b, int c) {
         return a*b - c*a;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MAX})
+    // Checks that SubI keeps a precise range when the entire sub
+    // range underflows.
+    public int test22(int x) {
+        int value = Integer.MIN_VALUE - ((x & 1) | 2);
+        return Math.max(value, 0);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MIN})
+    // Checks that SubI keeps a precise range when the entire sub
+    // range overflows.
+    public int test23(int x) {
+        int value = Integer.MAX_VALUE - (x | -2);
+        return Math.min(value, 0);
     }
 }

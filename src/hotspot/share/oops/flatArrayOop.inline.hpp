@@ -30,8 +30,8 @@
 #include "classfile/vmSymbols.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.inline.hpp"
 #include "runtime/globals.hpp"
 
@@ -90,7 +90,7 @@ inline jboolean flatArrayOopDesc::null_marker_of_obj_at(int index) const {
 inline jboolean flatArrayOopDesc::null_marker_of_obj_at(int index, TRAPS) const {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
   FlatArrayKlass* fak = klass();
-  InlineKlass* vk = fak->element_klass();
+  ValueKlass* vk = fak->element_klass();
   char* this_oop = (char*) (oopDesc*) this;
   char* val = (char*) value_at_addr(index, fak->layout_helper());
   ptrdiff_t offset = val - this_oop + (ptrdiff_t)vk->null_marker_offset_in_payload();
@@ -105,7 +105,7 @@ inline void flatArrayOopDesc::obj_at_put(int index, oop value) {
 inline void flatArrayOopDesc::obj_at_put(int index, oop value, TRAPS) {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
   FlatArrayKlass* fak = klass();
-  InlineKlass* vk = fak->element_klass();
+  ValueKlass* vk = fak->element_klass();
   if (value != nullptr) {
     if (value->klass() != vk) {
       THROW(vmSymbols::java_lang_ArrayStoreException());
@@ -116,7 +116,7 @@ inline void flatArrayOopDesc::obj_at_put(int index, oop value, TRAPS) {
 
   FlatArrayPayload payload(flatArrayOop(this), index, fak);
   // The value and klass has already been checked for null compatibility.
-  payload.write_without_nullability_check(inlineOop(value));
+  payload.write_without_nullability_check(valueOop(value));
 }
 
 template <typename OopClosureType>

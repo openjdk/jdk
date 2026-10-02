@@ -2100,9 +2100,9 @@ bool VMError::check_timeout() {
     // exceptions to this (printing a callstack from debug information located on a slow file system, or
     // printing a memory map of an extremely fragmented process). To give those rare slow steps enough
     // breathing space while still allowing us to skip any hanging steps, we use a per-step timeout of
-    // <total timeout>/4, or 5 seconds, whichever is smaller.
+    // <total timeout>/4, or 15 seconds, whichever is smaller.
     const jlong step_timeout_nanos = ((jlong)ErrorLogTimeout * SECONDS_TO_NANOS_FACTOR) / 4;
-    const jlong max_step_timeout_nanos = 5LL * SECONDS_TO_NANOS_FACTOR;
+    const jlong max_step_timeout_nanos = 15LL * SECONDS_TO_NANOS_FACTOR;
     const jlong timeout_duration = MIN2(max_step_timeout_nanos, step_timeout_nanos);
     const jlong end = step_start_time + timeout_duration;
     if (end <= now && !_step_did_timeout.load_relaxed()) {

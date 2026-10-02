@@ -17,9 +17,11 @@ const sortAsc = "sort-asc";
 const sortDesc = "sort-desc";
 const tableTab = "table-tab";
 const activeTableTab = "active-table-tab";
+const THEME = "theme";
 const THEME_LIGHT = "theme-light";
 const THEME_DARK = "theme-dark";
 const THEME_OS = "theme-os";
+const UNDERLINE_LINKS = "underline-links";
 
 const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
@@ -323,17 +325,22 @@ function makeFilterWidget(sidebar, updateToc) {
 }
 
 const osDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
-osDarkTheme.addEventListener("change", e => {
-    if (getTheme() === THEME_OS) {
-        setTheme(THEME_OS);
-    }
-});
 function getTheme() {
-    return localStorage.getItem("theme") || THEME_LIGHT;
+    return [
+        localStorage.getItem(THEME) ?? THEME_LIGHT,
+        localStorage.getItem(UNDERLINE_LINKS)
+    ];
 }
-function setTheme(theme) {
-    var value = theme !== THEME_OS ? theme : osDarkTheme.matches ? THEME_DARK : THEME_LIGHT;
-    document.documentElement.setAttribute("data-theme", value);
+function setTheme([theme, underlineLinks]) {
+    if (theme === THEME_OS) {
+        theme = osDarkTheme.matches ? THEME_DARK : THEME_LIGHT;
+    }
+    document.documentElement.setAttribute("data-theme", theme);
+    if (underlineLinks) {
+        document.documentElement.setAttribute("data-underline-links", underlineLinks);
+    } else {
+        document.getElementById(UNDERLINE_LINKS).checked = (theme === THEME_DARK);
+    }
 }
 function initTheme() {
     setTheme(getTheme());
@@ -382,7 +389,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         if (!themePanelVisible) {
             let {x, y} = themeButton.getBoundingClientRect();
             themePanel.style.display = "block";
-            if (window.innerHeight - 85 < y) {
+            if (window.innerHeight - themePanel.offsetHeight < y) {
                 themePanel.style.top = "";
                 themePanel.style.bottom = "4px";
             } else {
@@ -402,16 +409,35 @@ document.addEventListener("DOMContentLoaded", function(e) {
             themePanelVisible = false;
         }
     }
-    var currentTheme = getTheme();
+    document.getElementById("theme-panel-close-button").addEventListener("click", e => {
+        closeThemePanel();
+    });
+    var [currentTheme, underlineLinks] = getTheme();
+    osDarkTheme.addEventListener("change", e => {
+        if (currentTheme === THEME_OS) {
+            setTheme([currentTheme, underlineLinks]);
+        }
+    });
     themePanel.querySelectorAll("input").forEach(input => {
         input.removeAttribute("disabled");
         if (input.id === currentTheme) {
             input.checked = true;
+        } else if (input.id === UNDERLINE_LINKS) {
+            input.checked = (underlineLinks === "on" ||
+                (!underlineLinks && document.documentElement.getAttribute("data-theme") === THEME_DARK));
+            input.addEventListener("change", e => {
+                underlineLinks = e.target.checked ? "on" : "off";
+                localStorage.setItem(UNDERLINE_LINKS, underlineLinks);
+                setTheme([currentTheme, underlineLinks]);
+            });
         }
-        input.addEventListener("change", e => {
-            setTheme(e.target.value);
-            localStorage.setItem("theme", e.target.value);
-        })
+        if (input.name === "theme") {
+            input.addEventListener("change", e => {
+                currentTheme = e.target.value;
+                localStorage.setItem(THEME, e.target.value);
+                setTheme([currentTheme, underlineLinks]);
+            });
+        }
     });
     themePanel.addEventListener("focusout", e => {
         if (e.relatedTarget && !themePanel.contains(e.relatedTarget) && !themeButton.contains(e.relatedTarget)) {
@@ -475,7 +501,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
     }
     function expand() {
-        closeThemePanel();
         expanded = true;
         mainnav.style.display = "block";
         mainnav.style.removeProperty("height");
@@ -821,12 +846,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
 
     // Resize handler
     new ResizeObserver((entries) => {
-        if (expanded) {
-            if (windowWidth !== window.innerWidth) {
-                collapse();
-            } else {
-                expand();
-            }
+        if (expanded && windowWidth !== window.innerWidth) {
+            collapse();
         }
         if (sections && document.body.offsetHeight !== bodyHeight) {
             initSectionData();

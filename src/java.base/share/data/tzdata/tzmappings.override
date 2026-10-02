@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,15 @@
 # Extra definitions for Windows /lib/tzmappings file. These entries
 # replace the existing (Windows Zone Name):(REGION) entries, or are added
 # as new entries
-
+#
 # Example entries
 # Foo Standard Time:US:America/Los_Angeles:
 # Bar Standard Time:001:Asia/Tokyo:
+
+# tz2026b: British Columbia
+# https://techcommunity.microsoft.com/blog/dstblog/interim-guidance-for-british-columbia-time-zone-changes-2026/4544988
+British Columbia Standard Time:001:America/Vancouver:
+
+# tz2026c: Alberta
+# https://techcommunity.microsoft.com/blog/dstblog/interim-guidance-for-alberta-time-zone-changes-2026/4545015
+Alberta Standard Time:001:America/Edmonton:

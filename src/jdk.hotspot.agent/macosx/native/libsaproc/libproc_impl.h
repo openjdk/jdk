@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -218,6 +218,7 @@ struct ps_prochandle {
 
 int pathmap_open(const char* name);
 void print_debug(const char* format,...);
+void print_warning(const char* format,...);
 void print_error(const char* format,...);
 bool is_debug();
 

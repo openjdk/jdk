@@ -240,7 +240,7 @@ bool ciMethodData::load_data() {
 #ifndef ZERO
   // Some Zero platforms do not have expected alignment, and do not use
   // this code. static_assert would still fire and fail for them.
-  static_assert(sizeof(_orig) % HeapWordSize == 0, "align");
+  static_assert(sizeof(_orig) % HeapWordSize == 0);
 #endif
   Copy::disjoint_words_atomic((HeapWord*) &mdo->_compiler_counters,
                               (HeapWord*) &_orig,

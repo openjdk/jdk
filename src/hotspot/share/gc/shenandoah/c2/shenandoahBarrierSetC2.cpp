@@ -460,13 +460,19 @@ void ShenandoahBarrierSetC2::elide_dominated_barrier(MachNode* node, MachNode* d
   }
 
   if (orig_bd != bd) {
-    // We are already in final output.
-    // Strip the extra barrier data if no real bits are left.
-    if ((bd & ShenandoahBitsReal) != 0) {
-      node->set_barrier_data(bd);
-    } else {
-      node->set_barrier_data(0);
-    }
+#ifdef ASSERT
+    PhaseRegAlloc* ra = Compile::current()->regalloc();
+    uint old_size = node->size(ra);
+#endif
+    // We are already in final output. This means all nodes have already matched,
+    // and we are about to use Shenandoah match rules with stripped-down barriers.
+    // In this case, we must *not* strip non-real bits, because it would shift the
+    // encoding.
+    node->set_barrier_data(bd);
+#ifdef ASSERT
+    uint new_size = node->size(ra);
+    assert(new_size <= old_size, "Node must not grow: %u -> %u", old_size, new_size);
+#endif
   }
 }
 
@@ -906,7 +912,7 @@ void ShenandoahBarrierStubC2::load_post(MacroAssembler* masm, const MachNode* no
     check |= needs_keep_alive_barrier(node)    ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)      ? ShenandoahHeap::HAS_FORWARDED : 0;
     check |= needs_load_ref_barrier_weak(node) ? ShenandoahHeap::WEAK_ROOTS : 0;
-    stub->enter_if_gc_state(*masm, check, tmp1);
+    stub->enter_if_gc_state(*masm, check, tmp1, tmp2);
   }
 }
 
@@ -915,7 +921,7 @@ void ShenandoahBarrierStubC2::store_pre(MacroAssembler* masm, const MachNode* no
   if (needs_slow_barrier(node)) {
     assert(!needs_load_ref_barrier(node), "Should not be required for stores");
     ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true);
-    stub->enter_if_gc_state(*masm, ShenandoahHeap::MARKING, tmp1);
+    stub->enter_if_gc_state(*masm, ShenandoahHeap::MARKING, tmp1, tmp2);
   }
 }
 
@@ -933,7 +939,7 @@ void ShenandoahBarrierStubC2::load_store_pre(MacroAssembler* masm, const MachNod
     check |= needs_keep_alive_barrier(node) ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)   ? ShenandoahHeap::HAS_FORWARDED : 0;
     assert(!needs_load_ref_barrier_weak(node), "Not supported for Load/Stores");
-    stub->enter_if_gc_state(*masm, check, tmp1);
+    stub->enter_if_gc_state(*masm, check, tmp1, tmp2);
   }
 }
 

@@ -209,6 +209,10 @@ public:
   // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
   void process_gc_stats() const;
 
+  // Prints GC statistics for the entire GC run. Called by the control thread once it has
+  // finished updating them.
+  void print_gc_stats_at_exit() const;
+
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
 
@@ -495,7 +499,7 @@ private:
   void concurrent_prepare_for_update_refs();
 
   // Turn off weak roots flag
-  void concurrent_final_roots();
+  void op_final_roots();
 
   virtual void update_heap_references(ShenandoahGeneration* generation, bool concurrent);
   // Final update region states
