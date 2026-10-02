@@ -958,12 +958,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // Shenandoah will grind along for quite a while allocating one
     // object at a time using shared (non-tlab) allocations. This check
     // is testing that the GC overhead limit has not been exceeded.
-    // This will notify the collector to start a cycle, but will raise
-    // an OOME to the mutator if the last Full GCs have not made progress.
-    // gc_no_progress_count is incremented following each full GC that
-    // fails to achieve is_good_progress().
     if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
-      control_thread()->handle_alloc_failure(req);
       req.set_actual_size(0);
       return nullptr;
     }
