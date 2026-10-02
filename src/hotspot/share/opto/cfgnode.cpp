@@ -2912,7 +2912,8 @@ private:
     for (int i = _nodes_from_phi.size() - 1; i >= 0; i--) {
       Node* n = _nodes_from_phi.at(i);
       if (!n->is_ValueType()) {
-        assert(!n->is_Phi() || n->bottom_type()->make_oopptr() != nullptr, "broken graph");
+        assert(!n->is_Phi() || _phase->type(n)->is_zero_type() ||
+               n->bottom_type()->make_oopptr() != nullptr, "broken graph");
         _nodes_from_phi.remove(i);
       }
     }
