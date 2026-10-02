@@ -4599,10 +4599,15 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
   jlong stride_con = cl->stride_con();
+  assert(stride_con != min_jint, "excluded by counted loop construction, -stride_con must fit in int");
 
-  // Visit all children, looking for Phis
-  for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
-    Node *out = cl->out(i);
+  // Take a snapshot as replacing a parallel IV can remove more than one output of the loop head
+  Node_List outs;
+  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
+    outs.push(cl->fast_out(i));
+  }
+  for (uint i = 0; i < outs.size(); i++) {
+    Node* out = outs.at(i);
     // Look for other phis (secondary IVs). Skip dead ones
     if (!out->is_Phi() || out == phi || !has_node(out)) {
       continue;
@@ -4629,12 +4634,6 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     } else if (is_add && incr2->in(2)->uncast() == phi2) {
       phi_idx = 2; inc_idx = 1;
     } else {
-      continue;
-    }
-
-    if (incr2->in(phi_idx)->is_ConstraintCast() &&
-        !(incr2->in(phi_idx)->in(0)->is_IfProj() && incr2->in(phi_idx)->in(0)->in(0)->is_RangeCheck())) {
-      // Skip AddI/SubI->CastII->Phi case if CastII is not controlled by local RangeCheck
       continue;
     }
 
@@ -4706,8 +4705,9 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
         _igvn.register_new_node_with_optimizer(result, phi2);
         set_ctrl(result, cl);
         _igvn.replace_node(phi2, result);
-        if (result->outcnt() == 0) { _igvn.remove_dead_node(result, PhaseIterGVN::NodeOrigin::Graph); }
-        --i;
+        if (result->outcnt() == 0) {
+           _igvn.remove_dead_node(result, PhaseIterGVN::NodeOrigin::Graph);
+        }
         continue;
       }
       NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> sinkable: %d", phi2->_idx);)
@@ -4793,7 +4793,6 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     if (result->outcnt() == 0) {
       _igvn.remove_dead_node(result, PhaseIterGVN::NodeOrigin::Graph);
     }
-    --i;
   }
 }
 

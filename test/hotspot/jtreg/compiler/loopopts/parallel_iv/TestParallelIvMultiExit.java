@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2026, Kerem Kat. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import jdk.test.lib.Asserts;
  * @summary Test parallel IV replacement in multi-exit loops, both where the result is sinkable out of
  *          the loop and where it is not.
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver ${test.main.class}
  */
 public class TestParallelIvMultiExit {

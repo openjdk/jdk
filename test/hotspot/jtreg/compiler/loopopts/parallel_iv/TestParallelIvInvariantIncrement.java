@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2026, Kerem Kat. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import static compiler.lib.generators.Generators.G;
  * @key randomness
  * @summary test parallel IV replacement with loop-invariant increments
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver ${test.main.class}
  *
  * Test loops run at most ~20000 iterations, except the two tests whose trip
