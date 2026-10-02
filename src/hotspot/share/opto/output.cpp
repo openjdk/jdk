@@ -533,8 +533,13 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           // nop to disambiguate the two safepoints.
           // ScheduleAndBundle() can rearrange nodes in a block,
           // check for all offsets inside this block.
-          if (last_call_adr >= blk_starts[i]) {
-            blk_size += nop_size;
+          if (!mach->is_MachUncommonTrap()) {
+            if (last_call_adr >= blk_starts[i]) {
+              blk_size += nop_size;
+            }
+          } else {
+            assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0,
+                   "Safepoint address should be offset from the first instruction");
           }
         }
         if (mach->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
