@@ -39,12 +39,8 @@
 #import <dlfcn.h>
 #import <limits.h>
 #import <errno.h>
-#import <libproc.h>
 #import <sys/types.h>
 #import <sys/ptrace.h>
-#import <sys/signal.h>
-#import <sys/proc.h>
-#import <sys/proc_info.h>
 #include "libproc_impl.h"
 
 #if defined(amd64)
@@ -957,56 +953,6 @@ static int wait_for_exception() {
   return WAIT_SUCCESS;
 }
 
-static integer_t get_task_suspend_count(task_t task) {
-  struct task_basic_info info;
-  mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
-  kern_return_t kr = task_info(task, TASK_BASIC_INFO,
-                               (task_info_t)&info, &count);
-  if (kr == KERN_SUCCESS) {
-    return info.suspend_count;
-  } else {
-    print_warning("get_task_suspend_count: task_info failed: %s (%d)\n",
-                  mach_error_string(kr), kr);
-    return -1;
-  }
-}
-
-static const char* bsd_status_name(uint32_t status) {
-  // proc_bsdinfo::pbi_status values
-  switch (status) {
-    case SIDL:    return "SIDL";
-    case SRUN:    return "SRUN";
-    case SSLEEP:  return "SSLEEP";
-    case SSTOP:   return "SSTOP";
-    case SZOMB:   return "SZOMB";
-    default: return "unknown";
-  }
-}
-
-// Returns the process's bsd status, such as SRUN or SSTOP.
-static uint32_t get_process_bsd_status(pid_t pid) {
-  struct proc_bsdinfo info;
-  int size = proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, sizeof(info));
-
-  if (size == (int)sizeof(info)) {
-    return info.pbi_status;
-  } else if (size == 0) {
-    print_warning("get_process_bsd_status: proc_pidinfo(%d) failed: %s\n",
-                  (int)pid, strerror(errno));
-    return 0;
-  } else {
-    print_warning("get_process_bsd_status: proc_pidinfo(%d) returned %d, expected %zu\n",
-                  (int)pid, size, sizeof(info));
-    return 0;
-  }
-}
-
-static void log_process_bsd_status(pid_t pid, const char* where) {
-  uint32_t status = get_process_bsd_status(pid);
-  print_debug("%s: process pid %d BSD status=%s (%u)\n",
-              where, (int)pid, bsd_status_name(status), status);
-}
-
 /*
  * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
  * Method:    attach0
@@ -1271,59 +1217,25 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
   }
 
   // detach from the ptraced process causing it to resume execution
-  int pid = -1;
+  int pid;
   k_res = pid_for_task(gTask, &pid);
   if (k_res != KERN_SUCCESS) {
     print_error("detach: pid_for_task(%d) failed (%d)\n", pid, k_res);
     detach_cleanup(gTask, env, this_obj, true);
   }
-
-  if (pid > 0) {
+  else {
+    // Sleep 10ms before doing the PT_DETACH. This is necessary to give the Mach
+    // state of the task (process) time to settle after having done the Mach
+    // exception reply and restoring the Mach exception ports. If this delay
+    // is not done, sometimes the SIGSTOP generated during the attach ends
+    // up triggering again, changing the bsd process status of the process
+    // to SSTOP, resulting in it remaining suspended after the detach.
+    usleep(10000);
     errno = 0;
     ptrace(PT_DETACH, pid, (caddr_t)1, 0);
     if (errno != 0) {
       print_error("detach: ptrace(PT_DETACH,...) failed: %s", strerror(errno));
       detach_cleanup(gTask, env, this_obj, true);
-    }
-  }
-
-  // Don't throw an exception for failures after this point.
-
-  // Resume the task to undo the suspend we did earlier if DETACH did not already do so.
-  integer_t count = get_task_suspend_count(gTask);
-  if (count > 0) {
-    k_res = task_resume(gTask);
-    if (k_res != KERN_SUCCESS) {
-      print_warning("detach: task_resume failed: '%s' (%d)\n",
-                    mach_error_string(k_res), k_res);
-    }
-    integer_t count2 = get_task_suspend_count(gTask);
-    if (count2 > 0) {
-      print_warning("detach: task_resume suspend count not 0: old(%d) new(%d)\n",
-                    count, count2);
-    }
-  }
-
-  if (pid > 0) {
-    // Work around a macOS timing issue that can result in the SIGSTOP
-    // generated during the attach ending up being applied after the DETACH
-    // and task_resume(). This leaves the process with the SSTOP. We need
-    // to continue the process when this happens.
-    //
-    // First we need to give the SIGSTOP a chance to be issued, so we wait 10ms
-    // before checking the process status.
-    log_process_bsd_status(pid, "detach: before 10ms sleep");
-    usleep(10000);
-    log_process_bsd_status(pid, "detach: after 10ms sleep");
-    if (get_process_bsd_status(pid) == SSTOP) {
-      if (kill(pid, SIGCONT) != 0) {
-        print_warning("detach: kill(SIGCONT) failed: %s\n", strerror(errno));
-      } else {
-        log_process_bsd_status(pid, "detach: after kill(SIGCONT)");
-        if (get_process_bsd_status(pid) == SSTOP) {
-          print_warning("detach: status is still SSTOP after kill(SIGCONT)\n");
-        }
-      }
     }
   }
 
