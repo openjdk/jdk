@@ -219,7 +219,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_slow(oop obj, T* load_addr) {
   assert(_heap->has_forwarded_objects(), "Filtered by caller");
   assert(_heap->in_collection_set(obj), "Filtered by caller");
 
-  oop resolved;
+  oop resolved = obj;
   if (ShenandoahForwarding::is_forwarded(obj)) {
     resolved = ShenandoahForwarding::get_forwardee(obj);
   } else if (_heap->is_evacuation_in_progress()) {
