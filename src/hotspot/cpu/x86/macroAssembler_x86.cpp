@@ -10347,41 +10347,53 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
 
 void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {
-  Label done;
-  cvttss2sil(dst, src);
-  // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
-  cmpl(dst, 0x80000000); // float_sign_flip
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movflt(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttss2sisl(dst, src);
+  } else {
+    Label done;
+    cvttss2sil(dst, src);
+    // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
+    cmpl(dst, 0x80000000); // float_sign_flip
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movflt(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::convert_d2i(Register dst, XMMRegister src) {
-  Label done;
-  cvttsd2sil(dst, src);
-  // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
-  cmpl(dst, 0x80000000); // float_sign_flip
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movdbl(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttsd2sisl(dst, src);
+  } else {
+    Label done;
+    cvttsd2sil(dst, src);
+    // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
+    cmpl(dst, 0x80000000); // float_sign_flip
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movdbl(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
-  Label done;
-  cvttss2siq(dst, src);
-  cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movflt(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttss2sisq(dst, src);
+  } else {
+    Label done;
+    cvttss2siq(dst, src);
+    cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movflt(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, Register rcx) {
@@ -10459,15 +10471,19 @@ void MacroAssembler::round_double(Register dst, XMMRegister src, Register rtmp, 
 }
 
 void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
-  Label done;
-  cvttsd2siq(dst, src);
-  cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movdbl(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttsd2sisq(dst, src);
+  } else {
+    Label done;
+    cvttsd2siq(dst, src);
+    cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movdbl(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::cache_wb(Address line)

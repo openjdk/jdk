@@ -256,8 +256,7 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
 
         if (fsk->layout_kind() == fdk->layout_kind()) {
           // Because source and destination have the same layout, we do not have
-          // to worry about null checks and atomicity problems and can call the
-          // Access API directly.
+          // to worry about null checks and atomicity problems.
           int index_delta;
           if (needs_backwards_copy(sa, src_pos, da, dst_pos, length)) {
             index_delta = -1;
@@ -268,7 +267,7 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
           }
 
           for (int i = 0; i < length; i++) {
-            HeapAccess<>::value_copy(src_payload, dst_payload);
+            src_payload.copy_to(dst_payload);
             src_payload.advance_index(index_delta);
             dst_payload.advance_index(index_delta);
           }

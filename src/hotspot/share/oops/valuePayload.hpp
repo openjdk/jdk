@@ -110,11 +110,13 @@ protected:
   inline void set_offset(ptrdiff_t offset);
 
   static inline void copy(const ValuePayload& src,
-                          const ValuePayload& dst,
-                          LayoutKind copy_layout_kind);
+                          const ValuePayload& dst);
 
   inline void mark_as_non_null();
   inline void mark_as_null();
+
+  inline bool has_null_marker() const;
+  inline bool is_payload_null() const;
 
   inline bool uses_absolute_addr() const;
 
@@ -127,8 +129,7 @@ private:
   inline void assert_is_flat_field(const InstanceKlass* klass, int offset) const NOT_DEBUG_RETURN;
   inline void assert_post_construction_invariants() const NOT_DEBUG_RETURN;
   static inline void assert_pre_copy_invariants(const ValuePayload& src,
-                                                const ValuePayload& dst,
-                                                LayoutKind copy_layout_kind) NOT_DEBUG_RETURN;
+                                                const ValuePayload& dst) NOT_DEBUG_RETURN;
 
 public:
   inline ValueKlass* klass() const;
@@ -137,11 +138,12 @@ public:
 
   inline address addr() const;
 
-  inline bool has_null_marker() const;
-  inline bool is_payload_null() const;
+  inline size_t size_in_bytes() const;
 
   class Handle;
   class OopHandle;
+
+  static inline size_t copy_size_in_bytes(const ValuePayload& src, const ValuePayload& dst);
 
   [[nodiscard]] static inline ValuePayload construct_from_parts(address absolute_addr,
                                                                 ValueKlass* klass,
@@ -199,6 +201,9 @@ public:
   [[nodiscard]] inline valueOop read(TRAPS);
   inline void write_without_nullability_check(valueOop obj);
   inline void write(valueOop obj, TRAPS);
+
+  inline bool has_null_marker() const;
+  inline bool is_payload_null() const;
 
   [[nodiscard]] static inline FlatValuePayload construct_from_parts(oop container,
                                                                     ptrdiff_t offset,

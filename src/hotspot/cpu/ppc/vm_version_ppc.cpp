@@ -192,7 +192,7 @@ void VM_Version::initialize() {
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
   if (Verbose) {
     print_features();
   }
