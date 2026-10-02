@@ -38,12 +38,12 @@ inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj, markWord mark) {
   assert(mark.is_forwarded(), "Must only be here for forwarded objects");
   if (mark.is_marked()) {
-    // JVMTI and JFR code use mark words for marking objects for their needs.
-    // On this path, we can encounter the "marked" object, but with null
-    // fwdptr. That object is still not forwarded, and we need to return
-    // the object itself.
-    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
-    return (fwdptr != nullptr) ? cast_to_oop(fwdptr) : obj;
+    // Historically, JVMTI and JFR used mark words for marking objects
+    // for their needs, without regard for GC. This path is now unreachable:
+    // incompatible JFR code is disabled with Shenandoah. Assert paranoidly.
+    HeapWord* fwd = (HeapWord*) mark.clear_lock_bits().to_pointer();
+    assert(fwd != nullptr, "Sanity: forwardee must be set");
+    return cast_to_oop(fwd);
   }
   // Self-forwarded. Report itself.
   assert(mark.is_self_forwarded(), "The only remaining case");
@@ -115,6 +115,7 @@ inline Klass* ShenandoahForwarding::klass(oop obj) {
     markWord mark = obj->mark();
     if (mark.is_marked()) {
       oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+      assert(fwd != nullptr, "Sanity: forwarding pointer must be set");
       mark = fwd->mark();
     }
     return mark.klass();
