@@ -71,6 +71,13 @@ public class TestRequestStackTraceForeignThread {
                         workerThread, USER_DATA);
                 Asserts.assertEquals(RequestStackTraceHelper.JVMTI_ERROR_NONE, rc,
                         "unexpected JVMTI error: " + rc);
+                // Requests for a foreign thread are queued (initial capacity
+                // 20) until the worker reaches a safepoint poll; excess
+                // requests are dropped. Pace the calls so the worker gets a
+                // chance to drain the queue, even on a loaded machine.
+                if (i % 10 == 9) {
+                    Thread.sleep(1);
+                }
             }
 
             stop.set(true);
