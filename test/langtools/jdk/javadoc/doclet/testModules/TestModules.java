@@ -523,7 +523,7 @@ public class TestModules extends JavadocTester {
                     </nav>
                     </header>
                     <div class="main-grid">
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="block">The overview summary page header.</div>
                     <div id="all-modules-table">
                     <div class="caption"><span>Modules</span></div>
@@ -532,7 +532,7 @@ public class TestModules extends JavadocTester {
                 """
                     </div>
                     </main>
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="block">The overview summary page header.</div>
                     </div>
                     <div id="all-modules-table">
@@ -693,7 +693,7 @@ public class TestModules extends JavadocTester {
                     </table>
                     </div>
                     </main>
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="block">The overview summary page header.</div>
                     </div>
                     <a id="Packages">
@@ -713,7 +713,7 @@ public class TestModules extends JavadocTester {
                     </nav>
                     </header>
                     <div class="main-grid">
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="block">The overview summary page header.</div>
                     <div id="all-packages-table">
                     <div class="caption"><span>Packages</span></div>
