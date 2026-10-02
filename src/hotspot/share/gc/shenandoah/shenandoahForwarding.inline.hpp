@@ -32,15 +32,10 @@
 #include "runtime/javaThread.hpp"
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
-  shenandoah_assert_in_heap_bounds(nullptr, obj);
-  return get_forwardee_raw_unchecked(obj);
+  return get_forwardee_raw(obj, obj->mark());
 }
 
-inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
-  return get_forwardee_raw_unchecked(obj, obj->mark());
-}
-
-inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj, markWord mark) {
+inline oop ShenandoahForwarding::get_forwardee_raw(oop obj, markWord mark) {
   assert(mark.is_forwarded(), "Must only be here for forwarded objects");
   if (mark.is_marked()) {
     // JVMTI and JFR code use mark words for marking objects for their needs.
@@ -57,7 +52,7 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj, markWord m
 
 inline oop ShenandoahForwarding::get_forwardee(oop obj) {
   shenandoah_assert_correct(nullptr, obj);
-  return get_forwardee_raw_unchecked(obj);
+  return get_forwardee_raw(obj);
 }
 
 inline bool ShenandoahForwarding::is_forwardable(oop obj) {
@@ -66,10 +61,6 @@ inline bool ShenandoahForwarding::is_forwardable(oop obj) {
 
 inline bool ShenandoahForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
-}
-
-inline bool ShenandoahForwarding::is_real_forwarded(oop obj) {
-  return obj->mark().is_marked();
 }
 
 inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
@@ -91,7 +82,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   // Optimistic: check if object is already forwarded.
   markWord old_mark = obj->mark();
   if (old_mark.is_forwarded()) {
-    return get_forwardee_raw_unchecked(obj, old_mark);
+    return get_forwardee_raw(obj, old_mark);
   }
 
   // Attempt to install and return on success.
@@ -109,7 +100,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   // completing the forwarding install. Self-forwarded objects can have
   // more data layered on top of mark word, this code handles it too.
   assert(prev_mark.is_forwarded(), "Must be forwarded: prev=" INTPTR_FORMAT, prev_mark.value());
-  return get_forwardee_raw_unchecked(obj, prev_mark);
+  return get_forwardee_raw(obj, prev_mark);
 }
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {

@@ -31,45 +31,28 @@
 
 class ShenandoahForwarding {
 public:
-  /* Gets forwardee from the given object. For a self-forwarded object
-   * (evacuation failure), returns the object itself.
+  /* Returns the forwardee.
    */
   static inline oop get_forwardee(oop obj);
-
-  /* Returns the raw value from forwardee slot. For a self-forwarded
-   * object, returns the object itself.
-   */
-  static inline oop get_forwardee_raw(oop obj);
 
   /* Returns the raw value from forwardee slot without any checks.
    * Used for quick verification. For a self-forwarded object,
    * returns the object itself.
    */
-  static inline oop get_forwardee_raw_unchecked(oop obj);
+  static inline oop get_forwardee_raw(oop obj);
 
-  /**
-   * Returns true if the object is forwarded (including self-forwarded),
-   * false otherwise.
-   */
-  static inline bool is_real_forwarded(oop obj);
-
-  /**
-   * Returns true if the object is forwarded (including self-forwarded),
-   * false otherwise.
+  /* Returns true if the object is forwarded, false otherwise.
    */
   static inline bool is_forwarded(oop obj);
 
-  /**
-   * Returns true if the object is forwarded (including self-forwarded),
+  /* Returns true iff the object has been self-forwarded.
+   */
+  static inline bool is_self_forwarded(oop obj);
+
+  /* Returns true if the object is allowed to be forwarded,
    * false otherwise.
    */
   static inline bool is_forwardable(oop obj);
-
-  /**
-   * Returns true iff obj has been self-forwarded (i.e. evacuation has
-   * failed for this object in the current cycle).
-   */
-  static inline bool is_self_forwarded(oop obj);
 
   /* Tries to atomically update forwardee in $obj to $update.
    *
@@ -89,7 +72,7 @@ public:
   static inline Klass* klass(oop obj);
 
 private:
-  static inline oop get_forwardee_raw_unchecked(oop obj, markWord mark);
+  static inline oop get_forwardee_raw(oop obj, markWord mark);
   static inline oop try_update_forwardee(oop obj, oop update);
 };
 

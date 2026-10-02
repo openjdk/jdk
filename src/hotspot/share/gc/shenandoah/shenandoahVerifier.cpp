@@ -118,7 +118,7 @@ private:
       verify_oop_at_basic(p, obj);
 
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj)) && ShenandoahForwarding::is_forwarded(obj)) {
-        obj = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+        obj = ShenandoahForwarding::get_forwardee_raw(obj);
       }
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
@@ -202,8 +202,8 @@ private:
     }
 
     oop fwd = obj;
-    if (ShenandoahForwarding::is_real_forwarded(fwd)) {
-      fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+    if (ShenandoahForwarding::is_forwarded(fwd)) {
+      fwd = ShenandoahForwarding::get_forwardee_raw(obj);
     }
 
     ShenandoahHeapRegion* fwd_reg = nullptr;
@@ -295,7 +295,7 @@ private:
         break;
       }
       case ShenandoahVerifier::_verify_forwarded_allow: {
-        if (ShenandoahForwarding::is_real_forwarded(obj)) {
+        if (ShenandoahForwarding::is_forwarded(obj) && !ShenandoahForwarding::is_self_forwarded(obj)) {
           check(ShenandoahAsserts::_safe_all, obj, obj_reg != fwd_reg,
                  "Forwardee should be in another region");
         }

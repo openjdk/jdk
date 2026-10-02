@@ -222,8 +222,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_slow(oop obj, T* load_addr) {
   oop resolved = obj;
   if (ShenandoahForwarding::is_forwardable(obj) && _heap->is_evacuation_in_progress()) {
     resolved = _heap->evacuate_object(obj, Thread::current());
-  } else {
-    shenandoah_assert_forwarded(load_addr, obj);
+  } else if (ShenandoahForwarding::is_forwarded(obj)) {
     resolved = ShenandoahForwarding::get_forwardee(obj);
   }
   if (load_addr != nullptr && resolved != obj) {
