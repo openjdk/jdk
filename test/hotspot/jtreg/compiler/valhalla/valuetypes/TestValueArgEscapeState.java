@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /**
  * @test
- * @bug 8392283 8392949
+ * @bug 8392283
  * @summary Test that C2 and bytecode escape analysis (BCEA) together compute
  *          the correct escape state for fields of value objects when these are
  *          passed as scalar arguments.
