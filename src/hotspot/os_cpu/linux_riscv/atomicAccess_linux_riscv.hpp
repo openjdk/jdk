@@ -32,7 +32,7 @@
 
 // Note that memory_order_conservative requires a strong two-way barrier.
 // For 32- and 64-bit add and xchg that barrier is provided by an explicit
-// AMO with .aqrl. Sub-word add and cmpxchg still use explicit full barriers.
+// AMO with .aqrl. Sub-word cmpxchg still uses explicit full barriers.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
@@ -43,25 +43,7 @@
 template<size_t byte_size>
 struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
-  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-    // If we add add and fetch for sub word and are using older compiler
-    // it must be added here due to not using lib atomic.
-    static_assert(byte_size >= 4);
-#endif
-
-    if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
-    }
-
-    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
-
-    if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
-    }
-    return res;
-  }
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
   D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
@@ -69,41 +51,30 @@ struct AtomicAccess::PlatformAdd {
   }
 };
 
-template<>
+template<size_t byte_size>
 template<typename D, typename I>
-inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
-                                                      atomic_memory_order order) const {
-  static_assert(4 == sizeof(D));
-  static_assert(4 == sizeof(I));
+inline D AtomicAccess::PlatformAdd<byte_size>::add_then_fetch(D volatile* dest, I add_value,
+                                                              atomic_memory_order order) const {
+  static_assert(byte_size == sizeof(D));
+  static_assert(byte_size == sizeof(I));
+  static_assert(byte_size == 4 || byte_size == 8);
 
   if (order == memory_order_relaxed) {
     return __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
   }
 
   D old_value;
-  __asm__ __volatile__ ("amoadd.w.aqrl %0, %2, %1"
-                        : "=r" (old_value), "+A" (*dest)
-                        : "r" (add_value)
-                        : "memory");
-  return old_value + add_value;
-}
-
-template<>
-template<typename D, typename I>
-inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
-                                                      atomic_memory_order order) const {
-  static_assert(8 == sizeof(D));
-  static_assert(8 == sizeof(I));
-
-  if (order == memory_order_relaxed) {
-    return __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+  if constexpr (byte_size == 4) {
+    __asm__ __volatile__ ("amoadd.w.aqrl %0, %2, %1"
+                          : "=r" (old_value), "+A" (*dest)
+                          : "r" (add_value)
+                          : "memory");
+  } else {
+    __asm__ __volatile__ ("amoadd.d.aqrl %0, %2, %1"
+                          : "=r" (old_value), "+A" (*dest)
+                          : "r" (add_value)
+                          : "memory");
   }
-
-  D old_value;
-  __asm__ __volatile__ ("amoadd.d.aqrl %0, %2, %1"
-                        : "=r" (old_value), "+A" (*dest)
-                        : "r" (add_value)
-                        : "memory");
   return old_value + add_value;
 }
 
