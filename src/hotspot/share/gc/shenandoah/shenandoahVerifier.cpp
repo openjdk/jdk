@@ -288,7 +288,8 @@ private:
         // skip
         break;
       case ShenandoahVerifier::_verify_forwarded_none: {
-        check(ShenandoahAsserts::_safe_all, obj, (obj == fwd),
+        // Objects must not be self-forwarded here either
+        check(ShenandoahAsserts::_safe_all, obj, obj == fwd && !obj->is_self_forwarded(),
                "Should not be forwarded");
         break;
       }
