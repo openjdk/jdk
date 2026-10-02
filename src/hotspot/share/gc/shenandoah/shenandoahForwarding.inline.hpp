@@ -41,18 +41,17 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
 }
 
 inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj, markWord mark) {
-  // JVMTI and JFR code use mark words for marking objects for their needs.
-  // On this path, we can encounter the "marked" object, but with null
-  // fwdptr. That object is still not forwarded, and we need to return
-  // the object itself.
+  assert(mark.is_forwarded(), "Must only be here for forwarded objects");
   if (mark.is_marked()) {
+    // JVMTI and JFR code use mark words for marking objects for their needs.
+    // On this path, we can encounter the "marked" object, but with null
+    // fwdptr. That object is still not forwarded, and we need to return
+    // the object itself.
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
-    if (fwdptr != nullptr) {
-      return cast_to_oop(fwdptr);
-    }
+    return (fwdptr != nullptr) ? cast_to_oop(fwdptr) : obj;
   }
-  // Self-forwarded (evacuation failure): the object stays put; the
-  // self-fwd bit is set alongside normal lock bits.
+  // Self-forwarded. Report itself.
+  assert(mark.is_self_forwarded(), "The only remaining case");
   return obj;
 }
 
@@ -61,8 +60,16 @@ inline oop ShenandoahForwarding::get_forwardee(oop obj) {
   return get_forwardee_raw_unchecked(obj);
 }
 
+inline bool ShenandoahForwarding::is_forwardable(oop obj) {
+  return !obj->mark().is_forwarded();
+}
+
 inline bool ShenandoahForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
+}
+
+inline bool ShenandoahForwarding::is_real_forwarded(oop obj) {
+  return obj->mark().is_marked();
 }
 
 inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {

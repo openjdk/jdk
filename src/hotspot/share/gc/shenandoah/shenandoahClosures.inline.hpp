@@ -89,7 +89,9 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  obj = ShenandoahForwarding::get_forwardee(obj);
+  if (ShenandoahForwarding::is_forwarded(obj)) {
+    obj = ShenandoahForwarding::get_forwardee(obj);
+  }
   shenandoah_assert_not_forwarded_if(nullptr, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
   return _mark_context->is_marked_or_old(obj);
 }
@@ -149,17 +151,21 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
     if (_heap->in_collection_set(obj)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop resolved = ShenandoahForwarding::get_forwardee(obj);
-      if (resolved == obj) {
+
+      oop resolved = obj;
+      if (ShenandoahForwarding::is_forwardable(obj)) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
-
         resolved = _heap->evacuate_object(obj, thr);
-      }
-      if (CONCURRENT) {
-        ShenandoahHeap::atomic_update_oop(resolved, p, o);
       } else {
-        RawAccess<IS_NOT_NULL | MO_UNORDERED>::oop_store(p, resolved);
+        resolved = ShenandoahForwarding::get_forwardee(obj);
+      }
+      if (resolved != obj) {
+        if (CONCURRENT) {
+          ShenandoahHeap::atomic_update_oop(resolved, p, o);
+        } else {
+          RawAccess<IS_NOT_NULL | MO_UNORDERED>::oop_store(p, resolved);
+        }
       }
     }
   }

@@ -200,13 +200,10 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   const ShenandoahAffiliation target_gen = from_region->affiliation();
 
   if (target_gen == YOUNG_GENERATION) {
-    markWord mark = p->mark();
-    if (mark.is_marked()) {
-      // Already forwarded.
+    if (ShenandoahForwarding::is_forwarded(p)) {
       return ShenandoahForwarding::get_forwardee(p);
     }
-
-    if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+    if (age_census()->is_tenurable(from_region->age() + p->mark().age())) {
       // If the object is tenurable, try to promote it
       oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 

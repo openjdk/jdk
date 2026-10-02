@@ -51,7 +51,19 @@ public:
    * Returns true if the object is forwarded (including self-forwarded),
    * false otherwise.
    */
+  static inline bool is_real_forwarded(oop obj);
+
+  /**
+   * Returns true if the object is forwarded (including self-forwarded),
+   * false otherwise.
+   */
   static inline bool is_forwarded(oop obj);
+
+  /**
+   * Returns true if the object is forwarded (including self-forwarded),
+   * false otherwise.
+   */
+  static inline bool is_forwardable(oop obj);
 
   /**
    * Returns true iff obj has been self-forwarded (i.e. evacuation has
