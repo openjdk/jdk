@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,7 @@ public final class Utilities {
     }
 
     static String parseTimespan(String s) {
+        s = s.strip();
         StringBuilder sb = new StringBuilder();
         try {
             for (TimespanUnit timespan : TimespanUnit.values()) {
@@ -118,7 +119,7 @@ public final class Utilities {
     }
 
     private static String parseForUnit(String s, String unit) {
-        String number = s.trim().substring(0, s.length() - unit.length());
-        return Long.parseLong(number.trim()) + " " + unit;
+        String number = s.substring(0, s.length() - unit.length());
+        return Long.parseLong(number.strip()) + " " + unit;
     }
 }
