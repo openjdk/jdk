@@ -86,7 +86,8 @@ public:
   static inline int age(oop obj);
 
   /* Bumps the age the object.
-   * WARNING: This method is expected to operate on unexposed copy.
+   * WARNING: This method is expected to operate on a copy that is
+   * not accessible to normal use.
    */
   static inline void increase_age(oop obj, uint add);
 
