@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.StringJoiner;
 
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedMethod;
+import jdk.jfr.consumer.RecordedObject;
 
 public final class ValueFormatter {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -282,6 +283,32 @@ public final class ValueFormatter {
         }
         sb.append(")");
 
+        return sb.toString();
+    }
+
+    // Formats a native function, e.g. "libzstd.so!ZSTD_compressBlock"
+    // or "libzstd.so!0x12345", if the native symbol is not resolved.
+    public static String formatNativeFunction(RecordedObject function) {
+        if (function == null) {
+            return "<unknown>";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        RecordedObject library = function.getValue("library");
+        if (library != null) {
+            String libName = library.getString("name");
+            if (libName != null) {
+                sb.append(libName.substring(libName.lastIndexOf('/') + 1));
+                sb.append('!');
+            }
+        }
+        String name = function.getString("name");
+        if (name != null && !name.isEmpty()) {
+            sb.append(name);
+        } else {
+            long offset = function.getLong("offset");
+            sb.append("0x").append(Long.toHexString(offset));
+        }
         return sb.toString();
     }
 

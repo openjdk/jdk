@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,29 +38,38 @@ class JavaThread;
 struct JfrCPUTimeSampleRequest {
   JfrSampleRequest _request;
   Tickspan _cpu_time_period;
+  u4 _native_pc_count;
+  // unused array elements are not stored in JfrCPUTimeTraceQueue
+  address _native_pcs[MAX_NATIVE_STACK_DEPTH];
 
-  JfrCPUTimeSampleRequest() {}
+  JfrCPUTimeSampleRequest() : _native_pc_count(0) {}
+
+  // minimum size of the request, excluding native PCs
+  static constexpr u4 fixed_size() {
+    return offsetof(JfrCPUTimeSampleRequest, _native_pcs);
+  }
+
+  // total size in bytes, including variable part of _native_pcs array
+  u4 size() const {
+    return fixed_size() + _native_pc_count * sizeof(_native_pcs[0]);
+  }
 };
 
-// Fixed size async-signal-safe SPSC linear queue backed by an array.
+// Async-signal-safe SPSC queue backed by a byte buffer holding variable-size requests.
 // Designed to be only used under lock and read linearly
 class JfrCPUTimeTraceQueue {
-
-  // the default queue capacity, scaled if the sampling period is smaller than 10ms
-  // when the thread is started
-  static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
-
-  JfrCPUTimeSampleRequest* _data;
-  volatile u4 _capacity;
-  // next unfilled index
-  volatile u4 _head;
+ private:
+  u1* _data;
+  u4 _capacity;
+  u4 _offset;   // byte offset of the next empty slot
 
   volatile u4 _lost_samples;
   volatile u4 _lost_samples_due_to_queue_full;
 
-  static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
-  static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
-public:
+  static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 1 * K;
+  static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 256 * K;
+
+ public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
   ~JfrCPUTimeTraceQueue();
@@ -67,18 +77,17 @@ public:
   // signal safe, but can't be interleaved with dequeue
   bool enqueue(JfrCPUTimeSampleRequest& trace);
 
-  JfrCPUTimeSampleRequest& at(u4 index);
+  // request at the given byte offset
+  JfrCPUTimeSampleRequest& at(u4 offset) const;
 
-  u4 size() const;
+  u4 size() const { return _offset; }
 
-  void set_size(u4 size);
-
-  u4 capacity() const;
+  u4 capacity() const { return _capacity; }
 
   // deletes all samples in the queue
   void set_capacity(u4 capacity);
 
-  bool is_empty() const;
+  bool is_empty() const { return _offset == 0; }
 
   u4 lost_samples() const;
 
@@ -122,8 +131,6 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void destroy();
 
   void update_run_state(JfrCPUSamplerThrottle& throttle);
-
-  static void set_rate(JfrCPUSamplerThrottle& throttle);
 
  public:
   static void set_rate(double rate);

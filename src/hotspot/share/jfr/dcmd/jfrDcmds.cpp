@@ -383,6 +383,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _repository_path("repositorypath", "Path to repository,.e.g \\\"My Repository\\\"", "STRING", false, nullptr),
   _dump_path("dumppath", "Path to dump, e.g. \\\"My Dump path\\\"", "STRING", false, nullptr),
   _stack_depth("stackdepth", "Stack depth", "JULONG", false, "64"),
+  _native_stack_depth("nativestackdepth", "Native stack depth", "JULONG", false, "0"),
   _global_buffer_count("globalbuffercount", "Number of global buffers,", "JULONG", false, "20"),
   _global_buffer_size("globalbuffersize", "Size of a global buffers,", "MEMORY SIZE", false, "512k"),
   _thread_buffer_size("thread_buffer_size", "Size of a thread buffer", "MEMORY SIZE", false, "8k"),
@@ -394,6 +395,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _dcmdparser.add_dcmd_option(&_repository_path);
   _dcmdparser.add_dcmd_option(&_dump_path);
   _dcmdparser.add_dcmd_option(&_stack_depth);
+  _dcmdparser.add_dcmd_option(&_native_stack_depth);
   _dcmdparser.add_dcmd_option(&_global_buffer_count);
   _dcmdparser.add_dcmd_option(&_global_buffer_size);
   _dcmdparser.add_dcmd_option(&_thread_buffer_size);
@@ -460,6 +462,10 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
   out->print_cr("                      greater than the default of 64 may cause a performance");
   out->print_cr("                      degradation. This value cannot be changed once JFR has been");
   out->print_cr("                      initialized. (LONG, 64)");
+  out->print_cr("");
+  out->print_cr("  nativestackdepth    (Optional) Maximum number of native (non-Java) frames recorded");
+  out->print_cr("                      in stack traces of jdk.CPUTimeSample events. The default of 0");
+  out->print_cr("                      disables native frames. (LONG, 0)");
   out->print_cr("");
   out->print_cr(              "  %-19s (Optional) Local buffer size for each thread in bytes if one of",
                                        startup ? "threadbuffersize" : "thread_buffer_size");
@@ -574,6 +580,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   jobject stack_depth = nullptr;
+  jobject native_stack_depth = nullptr;
   jobject global_buffer_count = nullptr;
   jobject global_buffer_size = nullptr;
   jobject thread_buffer_size = nullptr;
@@ -584,6 +591,9 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   if (!JfrRecorder::is_created()) {
     if (_stack_depth.is_set()) {
       stack_depth = JfrJavaSupport::new_java_lang_Integer((jint)_stack_depth.value(), CHECK);
+    }
+    if (_native_stack_depth.is_set()) {
+      native_stack_depth = JfrJavaSupport::new_java_lang_Integer((jint)_native_stack_depth.value(), CHECK);
     }
     if (_global_buffer_count.is_set()) {
       global_buffer_count = JfrJavaSupport::new_java_lang_Long(_global_buffer_count.value(), CHECK);
@@ -617,7 +627,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdConfigure";
   static const char method[] = "execute";
   static const char signature[] = "(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;"
-    "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;"
+    "Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;"
     "Ljava/lang/Long;Ljava/lang/Boolean;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
@@ -628,6 +638,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(repository_path);
   execute_args.push_jobject(dump_path);
   execute_args.push_jobject(stack_depth);
+  execute_args.push_jobject(native_stack_depth);
   execute_args.push_jobject(global_buffer_count);
   execute_args.push_jobject(global_buffer_size);
   execute_args.push_jobject(thread_buffer_size);
