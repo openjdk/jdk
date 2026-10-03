@@ -28,27 +28,27 @@
  * @run junit ${test.main.class}
  */
 
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.SeekableByteChannel;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import static org.junit.jupiter.api.Assertions.*;
 
 class Available {
 
@@ -77,7 +77,19 @@ class Available {
         };
         for (long pos : positions) {
             if (pos >= 0) {
-                ch.position(pos);
+                try {
+                    ch.position(pos);
+                } catch (IOException ioe) {
+                    // The position may not be supported by the file system, for
+                    // example ext4 does not allow positions beyond the maximum
+                    // file size and so the lseek fails with EINVAL ("Invalid
+                    // argument"). Skip the position, but only if the seek
+                    // failed with EINVAL.
+                    if (!"Invalid argument".equals(ioe.getMessage()))
+                        throw ioe;
+                    System.err.format("  position = %d, not supported, test skipped%n", pos);
+                    continue;
+                }
                 int expectedAvailable = Math.clamp(size - pos, 0, Integer.MAX_VALUE);
                 int available = in.available();
                 System.err.format("  position = %d, available = %d%n", pos, available);
