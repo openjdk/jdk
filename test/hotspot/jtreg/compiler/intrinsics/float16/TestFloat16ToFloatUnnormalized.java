@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8392738
+ * @bug 8393488
  * @summary Verify float16ToFloat ignores bits above the low 16 bits of its argument
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @run main/othervm -Xverify:all -Xint -XX:+UnlockDiagnosticVMOptions
