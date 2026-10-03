@@ -87,7 +87,7 @@ class NameSet {
         if (w <= 0) {
             // Negative weight should never happen, as all names have positive weight.
             if (w < 0) {
-                throw new RuntimeException("Negative weight not allowed: " + w);
+                throw new TemplateFrameworkException("Negative weight not allowed: " + w);
             }
             // If the weight is zero, there is no matching Name available.
             // Return null, and let the caller handle the situation, e.g.
