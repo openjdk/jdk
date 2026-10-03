@@ -80,4 +80,61 @@ public class InstanceStackChunkKlass extends InstanceKlass {
     long sizeInBits = stackSizeInWords * (vm.getBytesPerWord() / vm.getHeapOopSize());
     return vm.alignUp(sizeInBits, bitsPerWord);
   }
+
+  @Override
+  public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
+    super.iterateNonStaticFields(visitor, obj);
+    iterateStackOops(visitor, obj);
+  }
+
+  // findField only sees the Java fields, this covers the ones injected by the VM.
+  private Field findInjectedField(String name, String sig) {
+    for (int i = getJavaFieldsCount(); i < getAllFieldsCount(); i++) {
+      if (getFieldName(i).equals(name) && getFieldSignature(i).equals(sig)) {
+        return getFieldByIndex(i);
+      }
+    }
+    return null;
+  }
+
+  // Visits the oops in the copied stack, mirroring the bitmap path of
+  // oop_oop_iterate_stack in the VM.
+  public void iterateStackOops(OopVisitor visitor, Oop obj) {
+    byte flags = ((ByteField) findInjectedField("flags", "B")).getValue(obj);
+    if ((flags & 0x10) == 0) {   // FLAG_HAS_BITMAP, only set once the GC transforms the chunk
+      return;
+    }
+    VM vm = VM.getVM();
+    long wordSize = vm.getAddressSize();
+    long oopSize = vm.getHeapOopSize();
+    long stackSizeInWords = ((IntField) findField("size", "I")).getValue(obj);
+    long headerBytes = getSizeHelper() * wordSize;
+    long bitmapBytes = headerBytes + stackSizeInWords * wordSize;
+    long bitsPerWord = wordSize * 8L;
+    long slotCount = stackSizeInWords * (wordSize / oopSize);
+    Address base = obj.getHandle();
+    for (long w = 0; w * bitsPerWord < slotCount; w++) {
+      long word = base.getCIntegerAt(bitmapBytes + w * wordSize, wordSize, true);
+      if (word == 0) {
+        continue;
+      }
+      for (long b = 0; b < bitsPerWord; b++) {
+        long index = w * bitsPerWord + b;
+        if (index >= slotCount) {
+          break;
+        }
+        if (((word >>> b) & 1) == 0) {
+          continue;
+        }
+        long offset = headerBytes + index * oopSize;
+        OopField field;
+        if (vm.isCompressedOopsEnabled()) {
+          field = new NarrowOopField(new IndexableFieldIdentifier((int) index), offset, false);
+        } else {
+          field = new OopField(new IndexableFieldIdentifier((int) index), offset, false);
+        }
+        visitor.doOop(field, false);
+      }
+    }
+  }
 }
