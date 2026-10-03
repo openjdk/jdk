@@ -2490,13 +2490,6 @@ void ShenandoahHeap::finish_concurrent_roots() {
   if (unload_classes()) {
     _unloader.finish();
   }
-
-  if (has_self_forwarded_objects()) {
-    const uint nworkers = workers()->active_workers();
-    ShenandoahRootUpdater root_updater(nworkers, ShenandoahPhaseTimings::final_update_refs_self_forwards);
-    ShenandoahUpdateRootsTask update_roots(&root_updater, true);
-    workers()->run_task(&update_roots);
-  }
 }
 
 #ifdef ASSERT

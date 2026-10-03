@@ -195,22 +195,6 @@ public:
   void roots_do(OopClosure* cl);
 };
 
-// Update all roots at a safepoint
-class ShenandoahRootUpdater : public ShenandoahRootProcessor {
-private:
-  ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
-  ShenandoahClassLoaderDataRoots<false /*concurrent*/>      _cld_roots;
-  ShenandoahThreadRoots                                     _thread_roots;
-  ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
-  ShenandoahCodeCacheRoots                                  _code_roots;
-
-public:
-  ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase);
-
-  template<typename IsAlive, typename KeepAlive>
-  void roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive);
-};
-
 // Adjuster all roots at a safepoint during full gc
 class ShenandoahRootAdjuster : public ShenandoahRootProcessor {
 private:
@@ -224,20 +208,6 @@ public:
   ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTimings::Phase phase);
 
   void roots_do(uint worker_id, OopClosure* oops);
-};
-
-class ShenandoahUpdateRootsTask : public WorkerTask {
-private:
-  ShenandoahRootUpdater*  _root_updater;
-  bool                    _check_alive;
-public:
-  ShenandoahUpdateRootsTask(ShenandoahRootUpdater* root_updater, bool check_alive) :
-    WorkerTask("Shenandoah Update Roots"),
-    _root_updater(root_updater),
-    _check_alive(check_alive){
-  }
-
-  void work(uint worker_id) override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
