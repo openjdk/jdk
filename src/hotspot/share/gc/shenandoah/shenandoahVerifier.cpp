@@ -117,8 +117,8 @@ private:
       oop obj = CompressedOops::decode_raw_not_null(o);
       verify_oop_at_basic(p, obj);
 
-      if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
-        obj = ShenandoahForwarding::get_forwardee(obj);
+      if (is_instance_ref_klass(ShenandoahForwarding::klass(obj)) && ShenandoahForwarding::is_forwarded(obj)) {
+        obj = ShenandoahForwarding::get_forwardee_raw(obj);
       }
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
@@ -201,7 +201,10 @@ private:
       }
     }
 
-    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+    oop fwd = obj;
+    if (ShenandoahForwarding::is_forwarded(fwd)) {
+      fwd = ShenandoahForwarding::get_forwardee_raw(obj);
+    }
 
     ShenandoahHeapRegion* fwd_reg = nullptr;
 
@@ -237,9 +240,8 @@ private:
       check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + ShenandoahForwarding::size(fwd)) <= fwd_reg->top(),
              "Forwardee end should be within the region");
 
-      oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
-      check(ShenandoahAsserts::_safe_oop, obj, (fwd == fwd2),
-             "Double forwarding");
+      check(ShenandoahAsserts::_safe_oop, obj, !ShenandoahForwarding::is_forwarded(fwd),
+            "Double forwarding");
     } else {
       fwd_reg = obj_reg;
     }
@@ -288,12 +290,12 @@ private:
         // skip
         break;
       case ShenandoahVerifier::_verify_forwarded_none: {
-        check(ShenandoahAsserts::_safe_all, obj, (obj == fwd),
+        check(ShenandoahAsserts::_safe_all, obj, !ShenandoahForwarding::is_forwarded(obj),
                "Should not be forwarded");
         break;
       }
       case ShenandoahVerifier::_verify_forwarded_allow: {
-        if (obj != fwd) {
+        if (ShenandoahForwarding::is_forwarded(obj) && !ShenandoahForwarding::is_self_forwarded(obj)) {
           check(ShenandoahAsserts::_safe_all, obj, obj_reg != fwd_reg,
                  "Forwardee should be in another region");
         }
@@ -369,8 +371,11 @@ public:
     // oop_iterate() can not deal with forwarded objects, because
     // it needs to load klass(), which may be overridden by the
     // forwarding pointer.
-    oop fwd = ShenandoahForwarding::get_forwardee_raw(obj);
-    fwd->oop_iterate(this);
+    oop resolved = obj;
+    if (ShenandoahForwarding::is_forwarded(obj)) {
+      resolved = ShenandoahForwarding::get_forwardee_raw(obj);
+    }
+    resolved->oop_iterate(this);
     _loc = nullptr;
   }
 
@@ -1269,8 +1274,7 @@ private:
       oop obj = CompressedOops::decode_raw_not_null(o);
       ShenandoahAsserts::assert_correct(p, obj, __FILE__, __LINE__);
 
-      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (obj != fwd) {
+      if (ShenandoahForwarding::is_forwarded(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                          "Verify Roots", "Should not be forwarded", __FILE__, __LINE__);
       }
@@ -1303,8 +1307,7 @@ private:
                 "Verify Roots In To-Space", "Should not be in collection set", __FILE__, __LINE__);
       }
 
-      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (obj != fwd) {
+      if (ShenandoahForwarding::is_forwarded(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be forwarded", __FILE__, __LINE__);
       }
