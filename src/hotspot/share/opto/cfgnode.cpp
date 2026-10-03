@@ -2941,10 +2941,19 @@ private:
           _nodes_from_phi.push(in);
         }
       } else if (n->is_ValueType()) {
-        Node* buf = n->as_ValueType()->get_oop();
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* buf = value_type->get_oop();
         if (buf != nullptr) {
           _nodes_from_phi.push(buf);
           _subgraph_to_clone.push(n);
+        }
+        // We may have a cycle through one the ValueType's field so follow those inputs
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          const Type* field_type = _phase->type(field);
+          if (field_type->isa_instptr() && !field_type->is_valueklassptr() && field_type->is_instptr()->can_be_value_type()) {
+            _nodes_from_phi.push(field);
+          }
         }
       }
     }
@@ -3012,11 +3021,21 @@ private:
         assert(in_clone != nullptr, "must be cloned");
         n_clone->set_req(1, in_clone);
       } else if (n->is_ValueType()) {
-        Node* in = n->as_ValueType()->get_oop();
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* in = value_type->get_oop();
         Node* in_clone = get_clone(in);
         if (in_clone != nullptr) {
           _phase->is_IterGVN()->rehash_node_delayed(n);
-          n->as_ValueType()->set_oop(*_phase, in_clone);
+          value_type->set_oop(*_phase, in_clone);
+        }
+        // If the ValueType is reached from one of its field's input, make sure we update that input to not have a cycle
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          Node* field_clone = get_clone(field);
+          if (field_clone != nullptr) {
+            _phase->is_IterGVN()->rehash_node_delayed(n);
+            value_type->set_field_value(j, field_clone);
+          }
         }
       }
     }
@@ -3101,9 +3120,17 @@ private:
         }
       } else if (n->is_ValueType()) {
         assert(i < init_nodes, "");
-        Node* buf = n->as_ValueType()->get_oop();
+        ValueTypeNode* value_type = n->as_ValueType();
+        Node* buf = value_type->get_oop();
         if (buf != nullptr) {
           after.push(buf);
+        }
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          const Type* field_type = _phase->type(field);
+          if (field_type->isa_instptr() && !field_type->is_valueklassptr() && field_type->is_instptr()->can_be_value_type()) {
+            after.push(field);
+          }
         }
       }
     }
