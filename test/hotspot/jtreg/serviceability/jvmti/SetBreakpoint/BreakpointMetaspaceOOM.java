@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8888888
+ * @bug 8352077
  * @summary A breakpoint set while metaspace is exhausted must not be left half-installed.
  * @requires vm.jvmti & vm.compiler1.enabled & vm.flagless
  * @library /test/lib
