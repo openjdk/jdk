@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 import javax.swing.event.DocumentEvent;
@@ -436,8 +438,9 @@ public class JFormattedTextField extends JTextField {
      * <code>AbstractFormatter</code> will be used based on the
      * <code>Class</code> of the value. <code>NumberFormatter</code> will
      * be used for <code>Number</code>s, <code>DateFormatter</code> will
-     * be used for <code>Dates</code>, otherwise <code>DefaultFormatter</code>
-     * will be used.
+     * be used for <code>Dates</code>, <code>DTFormatter</code> will be
+     * used for <code></code>DateTimeFormatter</code>,
+     * </code>otherwise <code>DefaultFormatter</code> will be used.
      * <p>
      * This is a JavaBeans bound property.
      *
@@ -540,6 +543,11 @@ public class JFormattedTextField extends JTextField {
      * @return Last valid value
      */
     public Object getValue() {
+        if (value instanceof DateTimeFormatter formatter) {
+            if (getText() != null && !getText().isEmpty()) {
+                return LocalDate.parse(getText(), formatter);
+            }
+        }
         return value;
     }
 
@@ -873,9 +881,41 @@ public class JFormattedTextField extends JTextField {
             return new DefaultFormatterFactory(displayFormatter,
                                                displayFormatter,editFormatter);
         }
+        if (type instanceof DateTimeFormatter formatter) {
+            return new DefaultFormatterFactory(new DTFormatter(formatter));
+        }
         return new DefaultFormatterFactory(new DefaultFormatter());
     }
 
+    /**
+     * Returns a DateTimeFormatter configured with specified format
+     */
+    public static class DTFormatter extends DefaultFormatter {
+        DateTimeFormatter formatter;
+
+        /**
+         * Returns a DateTimeFormatter configured with specified format
+         *
+         * @param format Format used to dictate legal values
+         */
+        public DTFormatter(DateTimeFormatter format) {
+            formatter = format;
+        }
+
+        @Override
+        public Object stringToValue(String text) throws ParseException {
+            return formatter.parse(text);
+        }
+
+        @Override
+        public String valueToString(Object value) throws ParseException {
+            if (value != null) {
+                DateTimeFormatter format = (DateTimeFormatter) value;
+                return format.toString();
+            }
+            return "";
+        }
+    }
 
     /**
      * Instances of <code>AbstractFormatterFactory</code> are used by
