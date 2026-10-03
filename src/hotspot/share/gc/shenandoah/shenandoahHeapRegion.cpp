@@ -515,10 +515,9 @@ size_t get_card_count(size_t words) {
   return words / CardTable::card_size_in_words();
 }
 
-void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* blk,
-                                                             HeapWord* start, size_t words, bool write_table) const {
+void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* blk, HeapWord* start,
+                                                             size_t words, bool write_table) const {
   assert(is_humongous(), "only humongous region here");
-
   ShenandoahHeapRegion* r = humongous_start_region();
   oop obj = cast_to_oop(r->bottom());
   size_t num_cards = get_card_count(words);
