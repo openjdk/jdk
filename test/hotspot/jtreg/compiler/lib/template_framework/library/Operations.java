@@ -44,7 +44,6 @@ import static compiler.lib.template_framework.library.CodeGenerationDataNameType
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.VECTOR_ELEMENT_TYPES;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INTEGRAL_VECTOR_ELEMENT_TYPES;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.FLOATING_VECTOR_ELEMENT_TYPES;
-import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INT_LONG_VECTOR_ELEMENT_TYPES;
 
 /**
  * This class provides various lists of {@link Expression}s, that represent Java operators or library
@@ -357,12 +356,12 @@ public final class Operations {
         new VOP("BIT_COUNT",            VOPType.UNARY,                INTEGRAL_VECTOR_ELEMENT_TYPES),
         new VOP("BITWISE_BLEND",        VOPType.TERNARY,              INTEGRAL_VECTOR_ELEMENT_TYPES),
         new VOP("CBRT",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
-        new VOP("COMPRESS_BITS",        VOPType.BINARY,               INT_LONG_VECTOR_ELEMENT_TYPES),
+        new VOP("COMPRESS_BITS",        VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
         new VOP("COS",                  VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
         new VOP("COSH",                 VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 2.5 ulp
         new VOP("DIV",                  VOPType.BINARY,               FLOATING_VECTOR_ELEMENT_TYPES),
         new VOP("EXP",                  VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
-        new VOP("EXPAND_BITS",          VOPType.BINARY,               INT_LONG_VECTOR_ELEMENT_TYPES),
+        new VOP("EXPAND_BITS",          VOPType.BINARY,               INTEGRAL_VECTOR_ELEMENT_TYPES),
         new VOP("EXPM1",                VOPType.UNARY,                FLOATING_VECTOR_ELEMENT_TYPES, false), // 1 ulp
         new VOP("FIRST_NONZERO",        VOPType.ASSOCIATIVE,          VECTOR_ELEMENT_TYPES),
         new VOP("FMA",                  VOPType.TERNARY,              FLOATING_VECTOR_ELEMENT_TYPES),

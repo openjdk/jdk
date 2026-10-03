@@ -588,12 +588,10 @@ public final class VectorOperators {
     public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateRight(a,n)}.  Integral only. */
     public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT+VO_NOFP);
-    /** Produce {@code compress(a,n)}. Integral, {@code int} and {@code long}, only.
-     * @since 19
+    /** Produce {@code compress(a,n)}. Integral only.
      */
     public static final /*bitwise*/ Binary COMPRESS_BITS = binary("COMPRESS_BITS", "compressBits", VectorSupport.VECTOR_OP_COMPRESS_BITS, VO_NOFP);
-    /** Produce {@code expand(a,n)}. Integral, {@code int} and {@code long}, only.
-     * @since 19
+    /** Produce {@code expand(a,n)}. Integral only.
      */
     public static final /*bitwise*/ Binary EXPAND_BITS = binary("EXPAND_BITS", "expandBits", VectorSupport.VECTOR_OP_EXPAND_BITS, VO_NOFP);
 

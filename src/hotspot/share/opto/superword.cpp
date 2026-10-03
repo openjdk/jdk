@@ -2516,6 +2516,8 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_ReverseI:
   case Op_CountLeadingZerosI:
   case Op_CountTrailingZerosI:
+  case Op_CompressBits:
+  case Op_ExpandBits:
   case Op_IsFiniteF:
   case Op_IsFiniteD:
   case Op_IsInfiniteF:
