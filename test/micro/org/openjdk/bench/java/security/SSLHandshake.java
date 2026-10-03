@@ -123,7 +123,8 @@ public class SSLHandshake {
 
         return switch (authProfile) {
             case TestCertificates.AUTH_PROFILE_ECDSA_P256 ->
-                    new String[] {"ecdsa_secp256r1_sha256"};
+                    new String[] {"ecdsa_secp256r1_sha256",
+                            "rsa_pkcs1_sha384"};
             case TestCertificates.AUTH_PROFILE_MLDSA65 ->
                     new String[] {"mldsa65", "rsa_pkcs1_sha384"};
             default -> throw new IllegalArgumentException(
