@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,6 @@
 
 ################################################################################
 
-# The base module should be built with all warnings enabled. When a
-# new warning is added to javac, it can be temporarily added to the
-# disabled warnings list.
-
 DISABLED_WARNINGS_java += suppression
-
-DOCLINT += -Xdoclint:all/protected \
-    '-Xdoclint/package:java.*,javax.*'
-JAVAC_FLAGS += -XDstringConcat=inline
-COPY += .icu .dat .spp .nrm .txt content-types.properties \
-    hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
-CLEAN += intrinsic.properties
-
-EXCLUDE_FILES += \
-  $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java
-
-# Exclude BreakIterator classes that are just used in compile process to generate
-# data files and shouldn't go in the product
-EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
-
-ifeq ($(call isTargetOs, macosx aix), false)
-  EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
-endif
-
-ifeq ($(call isTargetOs, windows), true)
-  EXCLUDE_FILES += \
-      sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
-      #
-endif
 
 ################################################################################
