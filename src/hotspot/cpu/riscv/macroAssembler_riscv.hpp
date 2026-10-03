@@ -1465,7 +1465,9 @@ INSN(sd_release, sd, sd_rl);
   void kernel_crc32c_clmul_barrett_64_to_32(Register accum_lo, Register clmul_table,
         Register k, Register tmp);
 
-#ifdef COMPILER2
+  // The vector variants below are used by the CRC32 stub, which is also
+  // reached from the template interpreter and from C1, so they must not
+  // depend on C2 being present.
   void vector_update_crc32(Register crc, Register buf, Register len,
                            Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                            Register table0, Register table3);
@@ -1488,6 +1490,7 @@ INSN(sd_release, sd, sd_rl);
   void kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Register buf, Register len,
                                               Register vclmul_table, Register tmp1, Register tmp2);
 
+#ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
   void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m);
