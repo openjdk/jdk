@@ -290,7 +290,9 @@ public class Attr extends JCTree.Visitor {
              &&
              ((v.flags() & STATIC) != 0) == Resolve.isStatic(env));
         boolean insideCompactConstructor = env.enclMethod != null && TreeInfo.isCompactConstructor(env.enclMethod);
-        return isAssignable & !insideCompactConstructor;
+        boolean assigningRecordField = (v.flags() & RECORD) != 0;
+        // Only record component fields are non-assignable in a compact constructor.
+        return isAssignable && (!insideCompactConstructor || !assigningRecordField);
     }
 
     /** Check that variable can be assigned to.
