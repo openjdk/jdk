@@ -123,6 +123,10 @@
 #if INCLUDE_SERIALGC
 #include "gc/serial/serialHeap.hpp"
 #endif // INCLUDE_SERIALGC
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#endif // INCLUDE_SHENANDOAHGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -694,6 +698,18 @@ WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
 WB_END
 
 #endif // INCLUDE_G1GC
+
+#if INCLUDE_SHENANDOAHGC
+
+WB_ENTRY(void, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
+  if (UseShenandoahGC && ShenandoahHeap::heap()->mode()->is_generational()) {
+    ShenandoahGenerationalHeap::heap()->wait_for_old_collection();
+    return;
+  }
+  THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahOldGC: Generational mode for Shenandoah GC is not enabled");
+WB_END
+
+#endif // INCLUDE_SHENANDOAHGC
 
 // Alloc memory using the test memory tag so that we can use that to see if
 // NMT picks it up correctly
@@ -2981,6 +2997,9 @@ static JNINativeMethod methods[] = {
   {CC"g1MemoryNodeIds",    CC"()[I",                  (void*)&WB_G1MemoryNodeIds },
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_G1GC
+#if INCLUDE_SHENANDOAHGC
+  {CC"shenandoahOldGC",     CC"()V",                  (void*)&WB_ShenandoahOldGC },
+#endif // INCLUDE_SHENANDOAHGC
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
   {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},
