@@ -187,6 +187,16 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
   return nullptr;
 }
 
+bool ShenandoahCollectionSet::all_regions_claimed() const {
+  const size_t max = _heap->num_regions();
+  for (size_t index = _current_index.load_relaxed(); index < max; index++) {
+    if (is_in(index)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void ShenandoahCollectionSet::print_on(outputStream* out) const {
   out->print_cr("Collection Set: Regions: "
                 "%zu, Garbage: %zu%s, Live: %zu%s, Used: %zu%s", count(),

@@ -85,20 +85,13 @@ public:
   void initialize();
 
   // At completion of each GC cycle (not including interrupted cycles), we invoke one of the following to record the
-  // GC utilization during this cycle.  Incremental efforts spent in an interrupted GC cycle will be accumulated into
-  // the CPU time reports for the subsequent completed [degenerated or full] GC cycle.
-  //
-  // We may redundantly record degen and full in the case that a degen upgrades to full.  When this happens, we will invoke
-  // both record_full() and record_degenerated() with the same value of gcid.  record_full() is called first and the log
-  // reports such a cycle as a FULL cycle.
+  // GC utilization during this cycle.
   void record_young(size_t gcid);
   void record_global(size_t gcid);
   void record_bootstrap(size_t gcid);
   void record_old_marking_increment(bool old_marking_done);
   void record_mixed(size_t gcid);
   void record_full(size_t gcid);
-  // Records GC utilization for a degenerated cycle, where "msg" describes the degeneration type.
-  void record_degenerated(size_t gcid, const char* msg);
 
   // This is called by the periodic task timer. The interval is defined by
   // GCPauseIntervalMillis and defaults to 5 seconds. This method computes

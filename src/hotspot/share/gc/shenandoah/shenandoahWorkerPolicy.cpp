@@ -24,6 +24,7 @@
 
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 
 uint ShenandoahWorkerPolicy::calc_workers_for_init_marking() {
@@ -31,11 +32,11 @@ uint ShenandoahWorkerPolicy::calc_workers_for_init_marking() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_marking() {
-  return ConcGCThreads;
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_rs_scanning() {
-  return ConcGCThreads;
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_final_marking() {
@@ -43,27 +44,23 @@ uint ShenandoahWorkerPolicy::calc_workers_for_final_marking() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_refs_processing() {
-  return ConcGCThreads;
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing() {
-  return ConcGCThreads;
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_evac() {
-  return ConcGCThreads;
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_fullgc() {
   return ParallelGCThreads;
 }
 
-uint ShenandoahWorkerPolicy::calc_workers_for_stw_degenerated() {
-  return ParallelGCThreads;
-}
-
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref() {
-  return ConcGCThreads;
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_final_update_ref() {
@@ -71,9 +68,13 @@ uint ShenandoahWorkerPolicy::calc_workers_for_final_update_ref() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_reset() {
-  return ConcGCThreads;
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup() {
-  return ConcGCThreads;
+  return concurrent_workers_count();
+}
+
+uint ShenandoahWorkerPolicy::concurrent_workers_count() {
+  return checked_cast<uint>(ShenandoahHeap::heap()->control_thread()->concurrent_worker_count());
 }

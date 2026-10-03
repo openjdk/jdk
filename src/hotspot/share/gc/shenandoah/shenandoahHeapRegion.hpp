@@ -176,6 +176,7 @@ public:
 
   // Allowed transitions from the outside code:
   void make_regular_allocation(ShenandoahAffiliation affiliation);
+  void make_regular_for_partial_recycling();
   void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
@@ -220,6 +221,7 @@ public:
   // Macro-properties:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
+  bool is_update_required()        const { return is_active() && (!is_cset() || has_self_forwards()); }
 
   RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
@@ -524,6 +526,8 @@ public:
   }
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
+
+  void partially_recycle();
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;

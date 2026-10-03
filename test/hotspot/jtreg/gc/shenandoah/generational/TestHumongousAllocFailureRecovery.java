@@ -25,7 +25,7 @@
 /*
  * @test id=generational
  * @bug 8391591
- * @summary Humongous allocation failure triggers a degenerated cycle.
+ * @summary Humongous allocation failure should recover without full GC.
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run main/othervm
@@ -33,22 +33,25 @@
  *      -XX:ShenandoahGCMode=generational -Xmx128m -Xms128m
  *      -XX:ShenandoahRegionSize=1m -XX:+AlwaysPreTouch
  *      -XX:ConcGCThreads=1 -XX:ParallelGCThreads=1
- *      TestHumongousAllocFailureDegeneration
+ *      TestHumongousAllocFailureRecovery
  */
 
 import com.sun.management.GarbageCollectionNotificationInfo;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.Notification;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationListener;
 import javax.management.openmbean.CompositeData;
 
-public class TestHumongousAllocFailureDegeneration {
+public class TestHumongousAllocFailureRecovery {
     private static final int MB = 1024 * 1024;
     private static final int HUMONGOUS_SIZE_MB = 32;
     private static final int ITERATIONS = 16;
@@ -70,20 +73,26 @@ public class TestHumongousAllocFailureDegeneration {
         }
     }
 
-    private static boolean isHumongousAllocFailureDegen(GarbageCollectionNotificationInfo info) {
+    private static boolean isFullGC(GarbageCollectionNotificationInfo info) {
         return info.getGcName().equals("Shenandoah Pauses")
-            && info.getGcAction().contains("Degenerated")
-            && info.getGcCause().equals("Humongous Allocation Failure");
+            && info.getGcAction().contains("Full");
+    }
+
+    private static boolean isSystemGC(GarbageCollectionNotificationInfo info) {
+        return info.getGcCause().contains("System.gc");
     }
 
     public static void main(String[] args) throws Exception {
-        final AtomicBoolean sawDegenForHumongous = new AtomicBoolean(false);
+        final List<String> unexpectedFullGCs = Collections.synchronizedList(new ArrayList<>());
+        final CountDownLatch sawSystemGC = new CountDownLatch(1);
 
         NotificationListener listener = (Notification n, Object o) -> {
             if (isCollectorNotification(n)) {
                 GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
-                if (isHumongousAllocFailureDegen(info)) {
-                    sawDegenForHumongous.set(true);
+                if (isSystemGC(info)) {
+                    sawSystemGC.countDown();
+                } else if (isFullGC(info)) {
+                    unexpectedFullGCs.add(info.getGcCause());
                 }
             }
         };
@@ -96,17 +105,17 @@ public class TestHumongousAllocFailureDegeneration {
             sink = new byte[MB * HUMONGOUS_SIZE_MB];
         }
 
-        // Wait for gc notifications until we've encountered a degenerated cycle caused by
-        // humongous allocation failure. Fail if none arrives before the deadline.
-        long deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
-        while (!sawDegenForHumongous.get()) {
-            if (System.nanoTime() > deadlineNanos) {
-                throw new RuntimeException("Timed out waiting for a degenerated cycle caused by "
-                                         + "humongous allocation failure");
-            }
-            Thread.sleep(10);
+        // Invoke an explicit GC. When our stream listener hears this, we know the test is complete.
+        System.gc();
+
+        if (!sawSystemGC.await(30, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Timed out waiting for System.gc");
         }
 
         unsubscribeToCollectorNotifications(listener);
+
+        if (!unexpectedFullGCs.isEmpty()) {
+            throw new RuntimeException("Unexpected full GCs: " + unexpectedFullGCs);
+        }
     }
 }
