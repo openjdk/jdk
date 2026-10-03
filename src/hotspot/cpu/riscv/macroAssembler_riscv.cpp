@@ -122,6 +122,8 @@ bool MacroAssembler::is_movptr_at(address instr) {
       return is_movptr_sv39_at(instr);
     case VM_Version::VM_SV48:
       return is_movptr1_sv48_at(instr) || is_movptr2_sv48_at(instr);
+    case VM_Version::VM_SV57:
+      return is_movptr1_sv57_at(instr) || is_movptr2_sv57_at(instr);
     default:
       ShouldNotReachHere();
       return false;
@@ -159,6 +161,32 @@ bool MacroAssembler::is_movptr2_sv48_at(address instr) {
           is_jalr_at(instr + MacroAssembler::instruction_size * 4) ||
           is_load_at(instr + MacroAssembler::instruction_size * 4)) && // Addi/Jalr/Load
          check_movptr2_sv48_data_dependency(instr);
+}
+
+bool MacroAssembler::is_movptr1_sv57_at(address instr) {
+  return is_lui_at(instr) &&
+         is_addi_at(instr + MacroAssembler::instruction_size) &&
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 2, 11) &&
+         is_addi_at(instr + MacroAssembler::instruction_size * 3) &&
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 4, 10) &&
+         is_addi_at(instr + MacroAssembler::instruction_size * 5) &&
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 6, 6) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size * 7) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 7) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 7)) &&
+         check_movptr1_sv57_data_dependency(instr);
+}
+
+bool MacroAssembler::is_movptr2_sv57_at(address instr) {
+  return is_lui_at(instr) &&
+         is_addi_at(instr + MacroAssembler::instruction_size) &&
+         is_lui_at(instr + MacroAssembler::instruction_size * 2) &&
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 3, 30) &&
+         is_add_at(instr + MacroAssembler::instruction_size * 4) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 5)) &&
+         check_movptr2_sv57_data_dependency(instr);
 }
 
 bool MacroAssembler::is_li16u_at(address instr) {
@@ -3295,6 +3323,123 @@ struct Movptr2Sv48Parts {
   }
 };
 
+// A canonical Sv57 address uses this eight-instruction sequence for movptr1_sv57.
+// movptr1_sv57 emits the first seven instructions; the caller emits the final
+// instruction using offset:
+//
+//   lui, addi, slli 11, addi, slli 10, addi, slli 6, addi/jalr/load
+struct Movptr1Sv57Parts {
+  int64_t lui_imm;
+  int64_t addi_imm;
+  int32_t upper_middle_imm;
+  int32_t lower_middle_imm;
+  int32_t offset;
+
+  static Movptr1Sv57Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper30 = addr >> 27;
+    const int64_t addi_imm = Assembler::sextract((uint32_t)upper30, 11, 0);
+    const int64_t lui_imm = upper30 - addi_imm;
+    const uintptr_t raw_addr = (uintptr_t)addr;
+    const int32_t upper_middle_imm = (raw_addr >> 16) & 0x7ff;
+    const int32_t lower_middle_imm = (raw_addr >> 6) & 0x3ff;
+    const int32_t offset = raw_addr & 0x3f;
+    return Movptr1Sv57Parts{ lui_imm, addi_imm, upper_middle_imm,
+                            lower_middle_imm, offset };
+  }
+
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    const int64_t lui_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 0), 31, 12);
+    const int64_t addi_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20);
+    const int32_t upper_middle_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 3), 31, 20);
+    const int32_t lower_middle_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 5), 31, 20);
+    const int32_t offset = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 7), 31, 20);
+    uintptr_t target = (uintptr_t)lui_imm << 12;
+    target += (uintptr_t)addi_imm;
+    target <<= 11;
+    target += (uintptr_t)upper_middle_imm;
+    target <<= 10;
+    target += (uintptr_t)lower_middle_imm;
+    target <<= 6;
+    target += (uintptr_t)offset;
+    return (address)target;
+  }
+
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr1Sv57Parts parts = from_address((intptr_t)target);
+
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.addi_imm & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 3, 31, 20, parts.upper_middle_imm);
+    Assembler::patch(patch_addr + insn_size * 5, 31, 20, parts.lower_middle_imm);
+    Assembler::patch(patch_addr + insn_size * 7, 31, 20, parts.offset);
+
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr1_sv57_instruction_size;
+  }
+};
+
+// A canonical Sv57 address uses this six-instruction sequence for movptr2_sv57.
+// movptr2_sv57 emits the first five instructions; the caller emits the final
+// instruction using offset:
+//
+//   lui, addi, lui, slli 30, add, addi/jalr/load
+struct Movptr2Sv57Parts {
+  int64_t upper_lui_imm;
+  int64_t upper_addi_imm;
+  int64_t middle_lui_imm;
+  int32_t offset;
+
+  static Movptr2Sv57Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper27 = addr >> 30;
+    const int64_t upper_addi_imm = Assembler::sextract((uint32_t)upper27, 11, 0);
+    const int64_t upper_lui_imm = upper27 - upper_addi_imm;
+    const int64_t lower30 = (uintptr_t)addr & 0x3fffffff;
+    const int64_t offset = Assembler::sextract((uint32_t)lower30, 11, 0);
+    const int64_t middle_lui_imm = lower30 - offset;
+    return Movptr2Sv57Parts{ upper_lui_imm, upper_addi_imm,
+                            middle_lui_imm, (int32_t)offset };
+  }
+
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    const int64_t upper_lui_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 0), 31, 12);
+    const int64_t upper_addi_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20);
+    const int64_t middle_lui_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 2), 31, 12);
+    const int64_t offset = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 5), 31, 20);
+    uintptr_t target = (uintptr_t)upper_lui_imm << 12;
+    target += (uintptr_t)upper_addi_imm;
+    target <<= 30;
+    target += (uintptr_t)middle_lui_imm << 12;
+    target += (uintptr_t)offset;
+    return (address)target;
+  }
+
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr2Sv57Parts parts = from_address((intptr_t)target);
+
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.upper_lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.upper_addi_imm & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 2, 31, 12, (parts.middle_lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 5, 31, 20, parts.offset & 0xfff);
+
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr2_sv57_instruction_size;
+  }
+};
+
 static int patch_addr_in_movptr(address instruction_address, address target) {
   assert(MacroAssembler::is_movptr_at(instruction_address), "must be a movptr");
   switch (VM_Version::satp_mode.value()) {
@@ -3306,6 +3451,12 @@ static int patch_addr_in_movptr(address instruction_address, address target) {
       }
       assert(MacroAssembler::is_movptr2_sv48_at(instruction_address), "must be movptr2_sv48");
       return Movptr2Sv48Parts::patch(instruction_address, target);
+    case VM_Version::VM_SV57:
+      if (MacroAssembler::is_movptr1_sv57_at(instruction_address)) {
+        return Movptr1Sv57Parts::patch(instruction_address, target);
+      }
+      assert(MacroAssembler::is_movptr2_sv57_at(instruction_address), "must be movptr2_sv57");
+      return Movptr2Sv57Parts::patch(instruction_address, target);
     default:
       ShouldNotReachHere();
       return 0;
@@ -3373,6 +3524,12 @@ static address get_target_of_movptr(address insn_addr) {
       }
       assert(MacroAssembler::is_movptr2_sv48_at(insn_addr), "must be movptr2_sv48");
       return Movptr2Sv48Parts::decode(insn_addr);
+    case VM_Version::VM_SV57:
+      if (MacroAssembler::is_movptr1_sv57_at(insn_addr)) {
+        return Movptr1Sv57Parts::decode(insn_addr);
+      }
+      assert(MacroAssembler::is_movptr2_sv57_at(insn_addr), "must be movptr2_sv57");
+      return Movptr2Sv57Parts::decode(insn_addr);
     default:
       ShouldNotReachHere();
       return nullptr;
@@ -3497,6 +3654,13 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
         movptr2_sv48(Rd, uimm64, offset, temp);
       }
       break;
+    case VM_Version::VM_SV57:
+      if (temp == noreg) {
+        movptr1_sv57(Rd, uimm64, offset);
+      } else {
+        movptr2_sv57(Rd, uimm64, offset, temp);
+      }
+      break;
     default:
       ShouldNotReachHere();
   }
@@ -3509,6 +3673,9 @@ int MacroAssembler::movptr_instruction_size(bool use_temp) {
     case VM_Version::VM_SV48:
       return use_temp ? movptr2_sv48_instruction_size
                       : movptr1_sv48_instruction_size;
+    case VM_Version::VM_SV57:
+      return use_temp ? movptr2_sv57_instruction_size
+                      : movptr1_sv57_instruction_size;
     default:
       ShouldNotReachHere();
       return 0;
@@ -3542,6 +3709,34 @@ void MacroAssembler::movptr2_sv48(Register Rd, uint64_t addr, int32_t &offset, R
   lui(Rd, parts.middle_lui_imm);
 
   slli(tmp, tmp, 18);
+  add(Rd, Rd, tmp);
+
+  offset = parts.offset;
+}
+
+void MacroAssembler::movptr1_sv57(Register Rd, uint64_t addr, int32_t &offset) {
+  const Movptr1Sv57Parts parts = Movptr1Sv57Parts::from_address((intptr_t)addr);
+  lui(Rd, parts.lui_imm);
+  addi(Rd, Rd, parts.addi_imm);
+
+  slli(Rd, Rd, 11);
+  addi(Rd, Rd, parts.upper_middle_imm);
+  slli(Rd, Rd, 10);
+  addi(Rd, Rd, parts.lower_middle_imm);
+  slli(Rd, Rd, 6);
+
+  offset = parts.offset;
+}
+
+void MacroAssembler::movptr2_sv57(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
+  assert_different_registers(Rd, tmp, noreg);
+
+  const Movptr2Sv57Parts parts = Movptr2Sv57Parts::from_address((intptr_t)addr);
+  lui(tmp, parts.upper_lui_imm);
+  addi(tmp, tmp, parts.upper_addi_imm);
+  lui(Rd, parts.middle_lui_imm);
+
+  slli(tmp, tmp, 30);
   add(Rd, Rd, tmp);
 
   offset = parts.offset;

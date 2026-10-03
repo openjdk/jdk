@@ -66,6 +66,8 @@ class NativeInstruction {
   bool is_movptr_sv39()                     const { return MacroAssembler::is_movptr_sv39_at(addr_at(0));  }
   bool is_movptr1_sv48()                    const { return MacroAssembler::is_movptr1_sv48_at(addr_at(0)); }
   bool is_movptr2_sv48()                    const { return MacroAssembler::is_movptr2_sv48_at(addr_at(0)); }
+  bool is_movptr1_sv57()                    const { return MacroAssembler::is_movptr1_sv57_at(addr_at(0)); }
+  bool is_movptr2_sv57()                    const { return MacroAssembler::is_movptr2_sv57_at(addr_at(0)); }
   bool is_auipc()                           const { return MacroAssembler::is_auipc_at(addr_at(0));       }
   bool is_jump()                            const { return MacroAssembler::is_jump_at(addr_at(0));        }
   bool is_call()                            const { return is_call_at(addr_at(0));                        }
@@ -169,7 +171,8 @@ class NativeMovConstReg: public NativeInstruction {
     movptr_sv39_instruction_size        =    MacroAssembler::movptr_sv39_instruction_size,
     movptr1_sv48_instruction_size       =    MacroAssembler::movptr1_sv48_instruction_size,
     movptr2_sv48_instruction_size       =    MacroAssembler::movptr2_sv48_instruction_size,
-
+    movptr1_sv57_instruction_size       =    MacroAssembler::movptr1_sv57_instruction_size,
+    movptr2_sv57_instruction_size       =    MacroAssembler::movptr2_sv57_instruction_size,
     load_pc_relative_instruction_size   =    MacroAssembler::load_pc_relative_instruction_size // auipc, ld
   };
 
@@ -252,7 +255,7 @@ class NativeGeneralJump: public NativeJump {
 public:
   enum RISCV_specific_constants {
     // Maximum sequence size, used by shared C1 code-buffer estimates.
-    instruction_size            =    5 * NativeInstruction::instruction_size, // sv48: lui, lui, slli, add, jalr
+    instruction_size            =    6 * NativeInstruction::instruction_size, // sv57: lui, addi, lui, slli, add, jalr
   };
 
   address jump_destination() const;

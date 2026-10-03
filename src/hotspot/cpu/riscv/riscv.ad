@@ -1439,7 +1439,9 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 {
   // skip the movptr in MacroAssembler::ic_call():
-  // lui, lui, slli, add, addi (sv39: lui, addi, slli, addi)
+  // sv39: lui, addi, slli, addi
+  // sv48: lui, lui, slli, add, addi
+  // sv57: lui, addi, lui, slli, add, addi
   // Though movptr() has already 4-byte aligned with or without RVC,
   // We need to prevent from further changes by explicitly calculating the size.
   current_offset += MacroAssembler::movptr_instruction_size(/* use_temp */ true);
