@@ -112,6 +112,9 @@ public:
   void varshiftq(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vlen_enc, XMMRegister vtmp = xnoreg);
   void varshiftbw(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp);
   void evarshiftb(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp);
+  // Uniform byte shift via GFNI affine instruction. shift holds the scalar count.
+  void vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift,
+                    Register rtmp, Register rbase, int vlen_enc);
 
   void insert(BasicType typ, XMMRegister dst, Register val, int idx);
   void vinsert(BasicType typ, XMMRegister dst, XMMRegister src, Register val, int idx);

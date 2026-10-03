@@ -1425,6 +1425,38 @@ address StubGenerator::generate_vector_byte_perm_mask() {
   return start;
 }
 
+// 24 matrices: logical-left, logical-right, arithmetic-right, each for counts 0..7.
+address StubGenerator::generate_vector_byte_shift_gfni_matrix() {
+  StubId stub_id = StubId::stubgen_vector_byte_shift_gfni_matrix_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
+
+  static const uint64_t mats[24] = {
+    // logical left
+    0x0102040810204080ULL, 0x0001020408102040ULL, 0x0000010204081020ULL, 0x0000000102040810ULL,
+    0x0000000001020408ULL, 0x0000000000010204ULL, 0x0000000000000102ULL, 0x0000000000000001ULL,
+    // logical right
+    0x0102040810204080ULL, 0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL,
+    0x1020408000000000ULL, 0x2040800000000000ULL, 0x4080000000000000ULL, 0x8000000000000000ULL,
+    // arithmetic right
+    0x0102040810204080ULL, 0x0204081020408080ULL, 0x0408102040808080ULL, 0x0810204080808080ULL,
+    0x1020408080808080ULL, 0x2040808080808080ULL, 0x4080808080808080ULL, 0x8080808080808080ULL
+  };
+  for (int i = 0; i < 24; i++) {
+    __ emit_data64((jlong)mats[i], relocInfo::none);
+  }
+
+  store_archive_data(stub_id, start, __ pc());
+  return start;
+}
+
 address StubGenerator::generate_vector_fp_mask(StubId stub_id, int64_t mask) {
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
@@ -5015,6 +5047,7 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask(StubId::stubgen_vector_int_mask_cmp_bits_id, 0x0000000100000001);
   StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask(StubId::stubgen_vector_short_to_byte_mask_id, 0x00ff00ff00ff00ff);
   StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask();
+  StubRoutines::x86::_vector_byte_shift_gfni_matrix = generate_vector_byte_shift_gfni_matrix();
   StubRoutines::x86::_vector_int_to_byte_mask = generate_vector_mask(StubId::stubgen_vector_int_to_byte_mask_id, 0x000000ff000000ff);
   StubRoutines::x86::_vector_int_to_short_mask = generate_vector_mask(StubId::stubgen_vector_int_to_short_mask_id, 0x0000ffff0000ffff);
   StubRoutines::x86::_vector_32_bit_mask = generate_vector_custom_i32(StubId::stubgen_vector_32_bit_mask_id, Assembler::AVX_512bit,
