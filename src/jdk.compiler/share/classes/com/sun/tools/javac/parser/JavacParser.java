@@ -1646,7 +1646,9 @@ public class JavacParser implements Parser {
                         }
 
                         List<JCAnnotation> tyannos = null;
-                        if (isMode(TYPE) && token.kind == MONKEYS_AT) {
+                        boolean memberRef = false;
+                        if (token.kind == MONKEYS_AT &&
+                            (isMode(TYPE) || (memberRef = isParameterizedTypePrefix()))) {
                             tyannos = typeAnnotationsOpt();
                         }
                         // typeArgs saved for next loop iteration.
@@ -1661,6 +1663,9 @@ public class JavacParser implements Parser {
                         }
                         if (tyannos != null && tyannos.nonEmpty()) {
                             t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
+                            if (memberRef) {
+                                return finishMemberRef(t, typeArgs);
+                            }
                         }
                         break;
                     case ELLIPSIS:
@@ -1685,19 +1690,7 @@ public class JavacParser implements Parser {
                             }
                             accept(GT);
                             t = toP(F.at(pos1).TypeApply(t, args.toList()));
-                            while (token.kind == DOT) {
-                                nextToken();
-                                selectTypeMode();
-                                t = toP(F.at(token.pos).Select(t, ident()));
-                                t = typeApplyOpt(t);
-                            }
-                            t = bracketsOpt(t);
-                            if (token.kind != COLCOL) {
-                                //method reference expected here
-                                t = illegal();
-                            }
-                            selectExprMode();
-                            return term3Rest(t, typeArgs);
+                            return finishMemberRef(t, typeArgs);
                         }
                         break loop;
                     default:
@@ -1766,6 +1759,29 @@ public class JavacParser implements Parser {
             }
             return illegal();
         }
+        return term3Rest(t, typeArgs);
+    }
+
+    private JCExpression finishMemberRef(JCExpression t, List<JCExpression> typeArgs) {
+        while (token.kind == DOT) {
+            nextToken();
+            selectTypeMode();
+            List<JCAnnotation> tyannos = null;
+            if (token.kind == MONKEYS_AT) {
+                tyannos = typeAnnotationsOpt();
+            }
+            t = toP(F.at(token.pos).Select(t, ident()));
+            if (tyannos != null && tyannos.nonEmpty()) {
+                t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
+            }
+            t = typeApplyOpt(t);
+        }
+        t = bracketsOpt(t);
+        if (token.kind != COLCOL) {
+            //method reference expected here
+            t = illegal();
+        }
+        selectExprMode();
         return term3Rest(t, typeArgs);
     }
 
@@ -1926,28 +1942,10 @@ public class JavacParser implements Parser {
                 case DOT: case RBRACKET: case LBRACKET: case COMMA:
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR:
-                case MONKEYS_AT:
                     break;
-
-                case LPAREN:
-                    // skip annotation values
-                    int nesting = 0;
-                    for (; ; pos++) {
-                        TokenKind tk2 = S.token(pos).kind;
-                        switch (tk2) {
-                            case EOF:
-                                return false;
-                            case LPAREN:
-                                nesting++;
-                                break;
-                            case RPAREN:
-                                nesting--;
-                                if (nesting == 0) {
-                                    continue outer;
-                                }
-                                break;
-                        }
-                    }
+                case MONKEYS_AT:
+                    pos = skipAnnotation(pos);
+                    break;
 
                 case LT:
                     depth++; break;
@@ -1965,6 +1963,8 @@ public class JavacParser implements Parser {
                             nextKind == TokenKind.COLCOL;
                     }
                     break;
+                case COLCOL:
+                    return true;
                 default:
                     return false;
             }
