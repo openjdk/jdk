@@ -37,33 +37,36 @@ import jtreg.SkippedException;
 
 /**
  * @test id=xcomp
- * @bug 8370176
+ * @bug 8370176 8392926
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp
  */
 
 /**
  * @test id=xcomp-preserve-frame-pointer
- * @bug 8370176
+ * @bug 8370176 8392926
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp -XX:+PreserveFramePointer
  */
 
 /**
  * @test id=xcomp-disable-tiered-compilation
- * @bug 8370176
+ * @bug 8370176 8392926
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp -XX:-TieredCompilation
  */

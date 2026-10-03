@@ -37,11 +37,11 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8374482 8376264 8376284 8377395
+ * @bug 8374482 8376264 8376284 8377395 8392926
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires os.arch == "amd64"
+ * @requires (os.arch == "amd64") | (os.arch == "riscv64")
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedCore
  */
@@ -66,7 +66,8 @@ public class TestJhsdbJstackMixedCore {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        out.shouldContain("__restore_rt <signal trampoline>");
+        out.shouldContain((Platform.isRISCV64() ? "__vdso_rt_sigreturn" : "__restore_rt")
+                          + " <signal trampoline>");
         out.shouldContain("Java_jdk_test_lib_apps_LingeredApp_crash");
         out.shouldContain("jdk.test.lib.apps.LingeredApp.crash()");
     }
@@ -82,7 +83,7 @@ public class TestJhsdbJstackMixedCore {
         // SA distinguishes the frame is signal trampoline if the function
         // is named "__restore_rt".
         // SA cannot unwind problematic frame from it if the symbol not found.
-        if (!SATestUtils.isSymbolAvailable(libc, "__restore_rt")) {
+        if (!Platform.isRISCV64() && !SATestUtils.isSymbolAvailable(libc, "__restore_rt")) {
             throw new SkippedException("Signal trampoline (__restore_rt) not found in libc.");
         }
 
