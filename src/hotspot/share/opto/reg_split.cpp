@@ -327,10 +327,26 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
     for (uint i = 1; i < def->req(); i++) {
       Node *in = def->in(i);
       uint lidx = _lrg_map.live_range_id(in);
+      // rematerializing a node could cause one of its inputs that's killed by some other node to be used after it's
+      // killed.
+      bool killed = false;
+      for (DUIterator_Fast jmax, j = in->fast_outs(jmax); j < jmax && !killed; j++) {
+        Node* u = in->fast_out(j);
+        if (u != def && u->is_Mach() && u->as_Mach()->has_killed_inputs()) {
+          MachNode* mach = u->as_Mach();
+          for (uint k = 0; k < u->req(); ++k) {
+            Node* m_in = mach->in(k);
+            if (m_in == in && mach->is_killed_input(k)) {
+              killed = true;
+            }
+          }
+        }
+      }
+
       // We do not need this for live ranges that are only defined once.
       // However, this is not true for spill copies that are added in this
       // Split() pass, since they might get coalesced later on in this pass.
-      if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).is_singledef()) {
+      if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).is_singledef() && !killed) {
         continue;
       }
 
@@ -1034,11 +1050,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             bool dup = UPblock[slidx];
             bool uup = umask.is_UP();
 
-            // Need special logic to handle bound USES. Insert a split at this
-            // bound use if we can't rematerialize the def, or if we need the
-            // split to form a misaligned pair.
-            if (!umask.is_infinite_stack() &&
-                (int)umask.size() <= lrgs(useidx).num_regs() &&
+            // Need special logic to handle bound USES and killed inputs. Insert a split at this use if we can't
+            // rematerialize the def, or if we need the split to form a misaligned pair.
+            if (((!umask.is_infinite_stack() &&
+                (int)umask.size() <= lrgs(useidx).num_regs()) || (mach && mach->has_killed_inputs() && mach->is_killed_input(inpidx))) &&
                 (!def->rematerialize() ||
                  (!is_vect && umask.is_misaligned_pair()))) {
               // These need a Split regardless of overlap or pressure

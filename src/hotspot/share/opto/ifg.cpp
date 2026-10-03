@@ -892,6 +892,23 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
       Node* n = block->get_node(location);
       uint lid = _lrg_map.live_range_id(n);
 
+      // A killed input that's live after the node that kills it must be spilled
+      if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
+        const MachNode* mach = n->as_Mach();
+        for (uint i = 1; i < n->req(); i++) {
+          if (mach->is_killed_input(i)) {
+            uint lidx = _lrg_map.live_range_id(n->in(i));
+            assert(lidx != 0, "");
+            if (liveout.member(lidx)) {
+              LRG &lrg = lrgs(lidx);
+              must_spill++;
+              lrg._must_spill = 1;
+              lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
+            }
+          }
+        }
+      }
+
       if (lid) {
         LRG& lrg = lrgs(lid);
 
@@ -939,6 +956,19 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
         interfere_with_live(lid, &liveout);
         if (C->failing()) {
           return 0;
+        }
+      }
+      // A killed input could be a MachSpillCopy that was inserted because the input was live after the current node.
+      // A MachSpillCopy doesn't interfere with its input in general but for killed inputs we must make sure it does
+      // otherwise the MachSpillCopy and its input could coalesce.
+      if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
+        const MachNode* mach = n->as_Mach();
+        for (uint i = 1; i < n->req(); i++) {
+          if (mach->is_killed_input(i)) {
+            uint lidx = _lrg_map.live_range_id(n->in(i));
+            assert(lidx != 0, "");
+            interfere_with_live(lidx, &liveout);
+          }
         }
       }
 
