@@ -419,7 +419,7 @@ public:
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
   static size_t readonly_total();
-  MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
+  MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs, os::PlaceholderRegion& archive_placeholder);
   void  unmap_regions(int regions[], int num_regions);
 
   // Object loading support
@@ -491,7 +491,7 @@ public:
   bool  open_for_read();
   void  seek_to_position(size_t pos);
 
-  MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
+  MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs, os::PlaceholderRegion& archive_placeholder);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
   char* map_auxiliary_region(int region_index, bool read_only);
 

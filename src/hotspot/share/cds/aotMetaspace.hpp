@@ -30,6 +30,7 @@
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
+#include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
 class ArchiveBuilder;
@@ -204,11 +205,12 @@ private:
                                                   bool use_archive_base_addr,
                                                   ReservedSpace& total_space_rs,
                                                   ReservedSpace& archive_space_rs,
-                                                  ReservedSpace& class_space_rs);
+                                                  ReservedSpace& class_space_rs,
+                                                  os::PlaceholderRegion& archive_placeholder);
  static void release_reserved_spaces(ReservedSpace& total_space_rs,
                                      ReservedSpace& archive_space_rs,
                                      ReservedSpace& class_space_rs);
-  static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
+  static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs, os::PlaceholderRegion& archive_placeholder);
   static void unmap_archive(FileMapInfo* mapinfo);
   static void get_default_classlist(char* default_classlist, const size_t buf_size);
 };
