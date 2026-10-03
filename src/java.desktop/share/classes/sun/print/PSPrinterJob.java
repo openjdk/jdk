@@ -470,6 +470,9 @@ public class PSPrinterJob extends RasterPrinterJob {
         if (outputBin != null) {
             mOptions += " output-bin=" + outputBin;
         }
+        if (isCollated()) {
+            mOptions += " collate=true";
+        }
     }
 
     /**
@@ -697,7 +700,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                 String fileName = spoolFile.getAbsolutePath();
                 String[] execCmd = printExecCmd(mDestination, mOptions,
                                mNoJobSheet, getJobNameInt(),
-                                                1, fileName);
+                                                getCopiesInt(), fileName);
 
                 Process process = Runtime.getRuntime().exec(execCmd);
                 process.waitFor();
