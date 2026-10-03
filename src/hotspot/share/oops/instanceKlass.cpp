@@ -3116,6 +3116,19 @@ void InstanceKlass::remove_unshareable_info() {
   // being added to class hierarchy (see InstanceKlass:::add_to_hierarchy()).
   _init_state = allocated;
 
+  // Classes without an AOT-initialized mirror will run <clinit> again. Restore
+  // the initial status of their strict static fields for that execution.
+  if (has_strict_static_fields() && !has_aot_initialized_mirror()) {
+    for (int index = 0; index < fields_status()->length(); index++) {
+      FieldInfo fi = field(index);
+      if (fi.access_flags().is_strict() && fi.access_flags().is_static() && fi.initializer_index() == 0) {
+        FieldStatus& fs = *fields_status()->adr_at(index);
+        fs.update_strict_static_unset(true);
+        fs.update_strict_static_unread(true);
+      }
+    }
+  }
+
   { // Otherwise this needs to take out the Compile_lock.
     assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
     init_implementor();
