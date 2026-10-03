@@ -90,7 +90,7 @@ NEEDS_CLEANUP // remove this definitions ?
 const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
-#define __ _masm->
+#define __ masm()->
 
 static void select_different_registers(Register preserve,
                                        Register extra,
@@ -405,6 +405,8 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
     __ mov(rbx, rax);  // Preserve the exception (rbx is always callee-saved)
   }
+
+  __ restore_profile_rng();
 
   // Perform needed unlocking
   MonitorExitStub* stub = nullptr;
@@ -1329,12 +1331,71 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
+
+static jlong get_counter(address md_base_address, int offset, BasicType type) {
+  address counter_addr = md_base_address + offset;
+  switch (type) {
+    case T_INT:
+      return *(jint*)counter_addr; break;
+    case T_LONG:
+      return *(jlong*)counter_addr; break;
+    default:
+      ShouldNotReachHere();
+      return 0; // unreachable
+  }
+}
+
+static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src, Register temp,
+                          address md_base_address) {
+  intptr_t counter_contents = (ProfileCaptureRatio > 1
+                               && md_base_address != nullptr
+                               && dst.index() == noreg && dst.disp() != 0)
+    ? get_counter(md_base_address, dst.disp(), T_LONG) : 0;
+
+  auto as_C1_masm = C1_masm->as_C1_MacroAssembler();
+  auto masm = [=]() { return as_C1_masm; };
+  __ block_comment("increment_mdo {");
+  if (ProfileCaptureRatio == 1) {
+    __ addptr(dst, src);
+  } else if (counter_contents != 0 || AggressiveProfileReduction) {
+    if (counter_contents == 0) {
+      // Make sure the counter in memory is nonzero
+      Label nonzero;
+      __ block_comment("AggressiveProfileReduction");
+      __ cmpptr(dst, 0);
+      __ jccb(Assembler::notEqual, nonzero);
+      __ movq(dst, src);
+      __ bind(nonzero);
+    }
+    Label nope;
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
+    auto threshold = (UCONST64(1) << 32) >> ratio_shift;
+    __ cmpl(r_profile_rng, (uint32_t)threshold);
+    __ jccb(Assembler::aboveEqual, nope); {
+      __ addptr(dst, src << ratio_shift);
+    } __ bind(nope);
+    __ step_random(r_profile_rng, temp);
+  } else {
+    __ addptr(dst, src);
+  }
+  __ block_comment("} increment_mdo");
+}
+
+static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src, Register tmp) {
+  increment_mdo(C1_masm, dst, src, tmp, /*const_mdo*/nullptr);
+}
+
 void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
-                                        Register recv) {
+                                        Register recv, Register temp) {
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
-  __ profile_receiver_type(recv, mdo, mdp_offset);
+  if (ProfileCaptureRatio > 1) {
+    __ profile_receiver_type(recv, mdo, mdp_offset, temp, &increment_mdo);
+  } else {
+    __ profile_receiver_type(recv, mdo, mdp_offset, temp);
+  }
 }
+
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
@@ -1357,7 +1418,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
     data = md->bci_to_data(bci);
-    assert(data != nullptr,                "need data for type check");
+    assert(data != nullptr,             "need data for type check");
     assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
   }
   Label* success_target = success;
@@ -1390,6 +1451,10 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ orb(data_addr, header_bits);
       __ jmp(*obj_is_null);
       __ bind(not_null);
+
+      Register recv = k_RInfo;
+      __ load_klass(recv, obj, tmp_load_klass);
+      type_profile_helper(mdo, md, data, recv, Rtmp1);
     } else {
       __ jcc(Assembler::equal, *obj_is_null);
     }
@@ -1398,7 +1463,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   if (op->should_profile()) {
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv);
+    type_profile_helper(mdo, md, data, recv, Rtmp1);
   }
 
   if (!k->is_loaded()) {
@@ -1518,7 +1583,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
       Register recv = k_RInfo;
       __ load_klass(recv, value, tmp_load_klass);
-      type_profile_helper(mdo, md, data, recv);
+      type_profile_helper(mdo, md, data, recv, Rtmp1);
     } else {
       __ jcc(Assembler::equal, done);
     }
@@ -2314,12 +2379,19 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 
+void LIR_Assembler::save_profile_rng() {
+  __ save_profile_rng();
+}
+
+
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   assert((__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
   __ call(AddressLiteral(op->addr(), rtype));
   add_call_info(code_offset(), op->info(), op->maybe_return_as_fields());
   __ post_call_nop();
+
+  __ restore_profile_rng();
 }
 
 
@@ -2329,6 +2401,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
   __ post_call_nop();
+  __ restore_profile_rng();
 }
 
 
@@ -2933,10 +3006,188 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
+long is_zero, is_nonzero;
+
+void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
+                                          LIR_Opr freq_opr, LIR_Opr md_reg,
+                                          LIR_Opr md_opr, LIR_Opr md_offset_opr,
+                                          CodeStub* overflow_stub) {
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("increment_profile_ctr" " {");
+  }
+#endif
+
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
+  auto threshold = (UCONST64(1) << 32) >> ratio_shift;
+
+  assert(threshold > 0, "must be");
+
+  Register dest = dest_opr->as_pointer_register();
+  const BasicType type = dest_opr->type();
+  assert(type == T_INT || type == T_LONG, "must be");
+
+  address md_base_address =
+    md_opr->type() == T_METADATA ? (address)md_opr->as_constant_ptr()->as_metadata()
+                                 : (address)md_opr->as_constant_ptr()->as_pointer();
+
+  LIR_Address *counter_address_opr
+    = md_offset_opr->is_constant()
+      ? new LIR_Address(md_reg, md_offset_opr->as_constant_ptr()->as_jint(), type)
+      : new LIR_Address(md_reg, md_offset_opr, type);
+
+  constexpr jlong UNKNOWN = min_jlong;
+  jlong counter_contents = UNKNOWN;
+  if (md_offset_opr->is_constant()) {
+    counter_contents
+      = get_counter(md_base_address, md_offset_opr->as_constant_ptr()->as_jint(),
+                    type);
+  }
+
+  switch (counter_contents) {
+    case 0:
+      __ block_comment("counter is zero");  break;
+    case UNKNOWN:
+      __ block_comment("counter is unknown");  break;
+    default:
+      __ block_comment("counter is set");  break;
+  }
+
+  // AggressiveProfileReduction controls what we do when a profile
+  // counter's value is unknown at code generation time. With
+  // AggressiveProfileReduction true we insert a runtime check.
+  const bool do_decimate = ProfileCaptureRatio > 1
+    && (AggressiveProfileReduction || counter_contents > 0);
+  ProfileStub *counter_stub = do_decimate ? new ProfileStub() : nullptr;
+
+  auto lambda = [counter_stub, overflow_stub, freq_opr, ratio_shift, step_opr,
+                 md_reg, md_opr, md_offset_opr, dest_opr, dest, type,
+                 counter_address_opr, do_decimate, threshold] (LIR_Assembler* ce, LIR_Op* op) {
+
+    auto masm = [ce]() { return ce->masm(); };
+
+    if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
+
+    int capture_ratio = do_decimate ? ProfileCaptureRatio : 1;
+    assert(md_opr->is_valid(), "must be");
+
+    if (!do_decimate || md_offset_opr->is_constant()) {
+      ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
+      ce->mem2reg(counter_address_opr, dest_opr,
+                  type, lir_patch_none, nullptr, /*wide*/false);
+    }
+
+    if (step_opr->is_register()) {
+      Register inc = step_opr->as_register();
+      if (capture_ratio > 1) {
+        __ shll(inc, ratio_shift);
+      }
+      __ lea(dest, Address(dest, inc, Address::times_1));
+      ce->reg2mem(dest_opr, counter_address_opr,
+                  type, lir_patch_none, nullptr, /*wide*/false);
+      if (capture_ratio > 1) {
+        __ shrl(inc, ratio_shift);
+      }
+    } else {
+      jint inc = step_opr->as_constant_ptr()->as_jint_bits() * capture_ratio;
+      __ lea(dest, Address(dest, inc, Address::times_1));
+      ce->reg2mem(dest_opr, counter_address_opr,
+                  type, lir_patch_none, nullptr, /*wide*/false);
+    }
+
+    if (overflow_stub != nullptr) {
+      guarantee(step_opr->is_valid(), "must be");
+      if (!freq_opr->is_valid()) {
+        if (!step_opr->is_constant()) {
+          __ cmpl(step_opr->as_register(), 0);
+          __ jcc(Assembler::equal, *overflow_stub->entry());
+        } else {
+          __ jmp(*overflow_stub->entry());
+        }
+      } else {
+        if (!step_opr->is_constant()) {
+          guarantee(dest != step_opr->as_register(), "must be");
+          // If step_opr is 0, make sure the stub check below always fails
+          __ cmpl(step_opr->as_register(), 0);
+          __ movl(rscratch1,
+                  InvocationCounter::count_increment * capture_ratio);
+          __ cmovl(Assembler::equal, dest, rscratch1);
+        }
+
+        // If (dest & mask) < step, we just overflowed.
+        __ andl(dest, freq_opr->as_jint());
+        switch (capture_ratio) {
+          case 1:
+            __ jcc(Assembler::equal, *overflow_stub->entry());
+            break;
+          default:
+            if (step_opr->is_register()) {
+              __ mov(rscratch1, step_opr->as_register());
+              __ shll(rscratch1, ratio_shift);
+              __ cmpl(dest, rscratch1);
+            } else {
+              __ cmpl(dest, step_opr->as_constant_ptr()->as_jint_bits() << ratio_shift);
+            }
+            __ jcc(Assembler::below, *overflow_stub->entry());
+            break;
+        }
+      }
+
+      __ bind(*overflow_stub->continuation());
+    }
+
+    if (counter_stub != nullptr) {
+      __ jmp(*counter_stub->continuation());
+    }
+  };
+
+  if (do_decimate) {
+    if (counter_contents == UNKNOWN) {
+      // Make sure the counter in memory is nonzero
+      // to make sure we don't miss its first increment.
+      const2reg(md_opr, md_reg, lir_patch_none, nullptr);
+      switch(type) {
+        case T_INT:  __ cmpl(as_Address(counter_address_opr), 0);  break;
+        case T_LONG: __ cmpq(as_Address(counter_address_opr), 0);  break;
+        default: ShouldNotReachHere();
+      }
+      Label nope;
+      __ jccb(Assembler::notEqual, nope);
+      __ movl(dest, step_opr->as_constant_ptr()->as_jint_bits());
+      reg2mem(dest_opr, counter_address_opr,
+              type, lir_patch_none, nullptr, /*wide*/false);
+      __ bind(nope);
+    }
+
+    __ cmpl(r_profile_rng, checked_cast<uint32_t>(threshold));
+    __ jcc(Assembler::below, *counter_stub->entry());
+    __ bind(*counter_stub->continuation());
+    __ step_random(r_profile_rng, dest);
+
+    counter_stub->set_action(lambda, nullptr);
+    counter_stub->set_name("IncrementProfileCtr");
+    append_code_stub(counter_stub);
+  } else {
+    lambda(this, nullptr);
+  }
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} increment_profile_ctr");
+  }
+#endif
+}
+
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
   Register tmp_load_klass = rscratch1;
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("profile_call {");
+  }
+#endif
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -2963,9 +3214,13 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       for (uint i = 0; i < VirtualCallData::row_limit(); i++) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
+#ifndef PRODUCT
+          __ block_comment("known_klass->equals(receiver)");
+#endif // PRODUCT
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addptr(data_addr, DataLayout::counter_increment);
-          return;
+          increment_mdo(masm(), data_addr, DataLayout::counter_increment,
+                        op->tmp1()->as_register_lo());
+          goto exit;
         }
       }
       // Receiver type is not found in profile data.
@@ -2974,11 +3229,19 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     } else {
       __ load_klass(recv, recv, tmp_load_klass);
     }
-    type_profile_helper(mdo, md, data, recv);
+    type_profile_helper(mdo, md, data, recv, op->tmp1()->as_register_lo());
   } else {
     // Static call
-    __ addptr(counter_addr, DataLayout::counter_increment);
+    increment_mdo(masm(), counter_addr, DataLayout::counter_increment,
+                  op->tmp1()->as_register_lo(), (address)md->constant_encoding());
   }
+ exit: {}
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} profile_call");
+  }
+#endif
 }
 
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
@@ -3000,6 +3263,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   assert(do_null || do_update, "why are we here?");
   assert(!TypeEntries::was_null_seen(current_klass) || do_update, "why are we here?");
 
+  __ block_comment("emit_profile_type {");
   __ verify_oop(obj);
 
 #ifdef ASSERT
@@ -3148,6 +3412,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       }
     }
   }
+  __ block_comment("} emit_profile_type");
   __ bind(next);
 }
 
