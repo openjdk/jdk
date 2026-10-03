@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1968,7 +1968,7 @@ public abstract class ClassLoader {
      * This method does not throw IllegalArgumentException.
      */
     Package definePackage(Class<?> c) {
-        if (c.isPrimitive() || c.isArray()) {
+        if (!c.isClassOrInterface()) {
             return null;
         }
 

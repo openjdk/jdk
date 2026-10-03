@@ -98,11 +98,18 @@ import sun.reflect.generics.repository.ClassRepository;
 import sun.reflect.generics.scope.ClassScope;
 import sun.reflect.annotation.*;
 
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
+import static java.lang.classfile.ClassFile.ACC_FINAL;
+
 /**
- * Instances of the class {@code Class} represent classes and
- * interfaces in a running Java application. An enum class and a record
- * class are kinds of class; an annotation interface is a kind of
- * interface. Every array also belongs to a class that is reflected as
+ * Instances of the class {@code Class} represent types in a running
+ * Java application. The two kinds of types are {@linkplain #isPrimitive()
+ * primitive types and void} and reference types. Reference types consist of
+ * {@linkplain #isClassOrInterface() classes and interfaces} and {@linkplain
+ * #isArray() array types}. An {@linkplain #isEnum() enum} class and a
+ * {@linkplain #isRecord() record} class are kinds of class; an {@linkplain
+ * #isAnnotation() annotation} interface is a kind of {@linkplain #isInterface()
+ * interface}. Every array also belongs to an array type that is reflected as
  * a {@code Class} object that is shared by all arrays with the same
  * element type and number of dimensions.  The primitive Java types
  * ({@code boolean}, {@code byte}, {@code char}, {@code short}, {@code
@@ -173,7 +180,7 @@ import sun.reflect.annotation.*;
  * A class or interface created by the invocation of
  * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
  * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <dfn>hidden</dfn>}
- * class or interface.
+ * {@linkplain #isClassOrInterface() class or interface}.
  * All kinds of class, including enum classes and record classes, may be
  * hidden classes; all kinds of interface, including annotation interfaces,
  * may be hidden interfaces.
@@ -835,6 +842,10 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Determines if this {@code Class} object represents an
      * interface type.
+     * <p>
+     * Interfaces are often grouped with classes, called "{@linkplain
+     * #isClassOrInterface() classes and interfaces}", as kinds of {@linkplain
+     * ##referencetype reference types}.
      *
      * @return  {@code true} if this {@code Class} object represents an interface;
      *          {@code false} otherwise.
@@ -845,11 +856,17 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Determines if this {@code Class} object represents an array class.
+     * Determines if this {@code Class} object represents an array type.
+     * <p>
+     * Array types are {@linkplain ##referencetype reference types}. Every array
+     * type has a unique {@linkplain #componentType() component type}, and
+     * {@linkplain #arrayType() vice versa}.
      *
-     * @return  {@code true} if this {@code Class} object represents an array class;
-     *          {@code false} otherwise.
-     * @since   1.1
+     * @return {@code true} if this {@code Class} object represents an array
+     *         type; {@code false} otherwise.
+     * @jls 10 Arrays
+     * @jls 10.8 {@code Class} Objects for Arrays
+     * @since 1.1
      */
     public boolean isArray() {
         return componentType != null;
@@ -867,8 +884,11 @@ public final class Class<T> implements java.io.Serializable,
      * represent, namely {@code boolean}, {@code byte}, {@code char},
      * {@code short}, {@code int}, {@code long}, {@code float}, and
      * {@code double}.
-     *
-     * <p>No other class objects are considered primitive.
+     * <p>
+     * No other class objects are considered primitive; they are
+     * collectively called <dfn>{@index "reference type"}s</dfn>, which are
+     * further classified into {@linkplain #isClassOrInterface() classes and
+     * interfaces} and {@linkplain #isArray() array types}.
      *
      * @apiNote
      * A {@code Class} object represented by a primitive type can be
@@ -896,6 +916,27 @@ public final class Class<T> implements java.io.Serializable,
      */
     public boolean isPrimitive() {
         return primitive;
+    }
+
+    private static final int NON_CLASS_FILE_MODIFIER_MASK = ACC_ABSTRACT | ACC_FINAL;
+
+    /**
+     * Determines if this {@code Class} object represents a class or {@linkplain
+     * #isInterface() interface}.
+     * <p>
+     * Classes and interfaces are {@linkplain ##referencetype reference types}.
+     * They are derived from {@code class} files and can declare fields and
+     * methods.
+     *
+     * @return {@code true} if and only if this {@code Class} object represents
+     *         a class or interface
+     * @jls 8 Classes
+     * @jls 9 Interfaces
+     * @jvms 4 The {@code class} File Format
+     * @since 28
+     */
+    public boolean isClassOrInterface() {
+        return (modifiers & NON_CLASS_FILE_MODIFIER_MASK) != NON_CLASS_FILE_MODIFIER_MASK;
     }
 
     /**
@@ -1158,7 +1199,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return the package of this class.
      */
     public Package getPackage() {
-        if (isPrimitive() || isArray()) {
+        if (!isClassOrInterface()) {
             return null;
         }
         ClassLoader cl = classLoader;
@@ -1521,7 +1562,7 @@ public final class Class<T> implements java.io.Serializable,
      * Set the signers of this class.
      */
     void setSigners(Object[] signers) {
-        if (!isPrimitive() && !isArray()) {
+        if (isClassOrInterface()) {
             this.signers = signers;
         }
     }
@@ -3431,7 +3472,9 @@ public final class Class<T> implements java.io.Serializable,
      * @since  1.4
      */
     public boolean desiredAssertionStatus() {
-        if (isPrimitive() || isArray()) return false;
+        if (!isClassOrInterface()) {
+            return false;
+        }
 
         ClassLoader loader = classLoader;
         // If the loader is null this is a system class, so ask the VM
@@ -3832,9 +3875,7 @@ public final class Class<T> implements java.io.Serializable,
     public AnnotatedType getAnnotatedSuperclass() {
         if (this == Object.class ||
                 isInterface() ||
-                isArray() ||
-                isPrimitive() ||
-                this == Void.TYPE) {
+                !isClassOrInterface()) {
             return null;
         }
 
@@ -3906,7 +3947,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jvms 5.4.4 Access Control
      */
     public Class<?> getNestHost() {
-        if (isPrimitive() || isArray()) {
+        if (!isClassOrInterface()) {
             return this;
         }
         return getNestHost0();
@@ -3929,8 +3970,7 @@ public final class Class<T> implements java.io.Serializable,
         if (this == c) {
             return true;
         }
-        if (isPrimitive() || isArray() ||
-            c.isPrimitive() || c.isArray()) {
+        if (!isClassOrInterface() || !c.isClassOrInterface()) {
             return false;
         }
 
@@ -3978,7 +4018,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jvms 4.7.29 The {@code NestMembers} Attribute
      */
     public Class<?>[] getNestMembers() {
-        if (isPrimitive() || isArray()) {
+        if (!isClassOrInterface()) {
             return new Class<?>[] { this };
         }
         Class<?>[] members = getNestMembers0();
@@ -4113,9 +4153,8 @@ public final class Class<T> implements java.io.Serializable,
    }
 
     /**
-     * Returns {@code true} if and only if the underlying class is a hidden class.
-     *
-     * @return {@code true} if and only if this class is a hidden class.
+     * {@return {@code true} if and only if the underlying class is a hidden
+     * {@linkplain #isClassOrInterface() class or interface}}
      *
      * @since 15
      * @see MethodHandles.Lookup#defineHiddenClass
@@ -4155,7 +4194,7 @@ public final class Class<T> implements java.io.Serializable,
      */
     public Class<?>[] getPermittedSubclasses() {
         Class<?>[] subClasses;
-        if (isArray() || isPrimitive() || (subClasses = getPermittedSubclasses0()) == null) {
+        if (!isClassOrInterface() || (subClasses = getPermittedSubclasses0()) == null) {
             return null;
         }
         if (subClasses.length > 0) {
@@ -4197,7 +4236,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 17
      */
     public boolean isSealed() {
-        if (isArray() || isPrimitive()) {
+        if (!isClassOrInterface()) {
             return false;
         }
         return getPermittedSubclasses() != null;
@@ -4221,18 +4260,18 @@ public final class Class<T> implements java.io.Serializable,
 
     private native int getClassFileVersion0();
 
-     /**
-      * Return the access flags as they were in the class's bytecode, including
-      * the original setting of ACC_SUPER.
-      *
-      * If this {@code Class} object represents a primitive type or
-      * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
-      * {@code FINAL}.
-      * If this {@code Class} object represents an array type, return 0.
-      */
-     int getClassFileAccessFlags() {
-         return classFileAccessFlags;
-     }
+    /**
+     * Return the access flags as they were in the class's bytecode, including
+     * the original setting of ACC_SUPER.
+     *
+     * If this {@code Class} object represents a primitive type or
+     * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
+     * {@code FINAL}.
+     * If this {@code Class} object represents an array type, return 0.
+     */
+    int getClassFileAccessFlags() {
+        return classFileAccessFlags;
+    }
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
     private static void validateClassNameLength(String name) throws ClassNotFoundException {
