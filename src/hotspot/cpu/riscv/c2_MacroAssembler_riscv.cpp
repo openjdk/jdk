@@ -3345,6 +3345,9 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
     slidedown_v(vtmp, src, idx);
     vmv_x_s(dst, vtmp);
   }
+  if (is_unsigned_subword_type(bt)) {
+    narrow_subword_type(dst, bt);
+  }
 }
 
 // Extract a scalar element from a vector at position 'idx'.
@@ -3356,6 +3359,9 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
   vsetvli_helper(bt, 1);
   vslidedown_vx(vtmp, src, idx);
   vmv_x_s(dst, vtmp);
+  if (is_unsigned_subword_type(bt)) {
+    narrow_subword_type(dst, bt);
+  }
 }
 
 // Extract a scalar element from an vector at position 'idx'.
