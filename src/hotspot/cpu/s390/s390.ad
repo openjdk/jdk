@@ -9928,38 +9928,54 @@ instruct cmpb_RegN_immN_Far(cmpOpT boolnode, iRegN src1, immN8 src2, label labl,
 // both forms beat the trinary form of long-compare and both are very useful
 // on platforms which have few registers.
 
+// Convert condition code into -1,0,1, where
+// -1 means less
+//  0 means equal
+//  1 means greater.
+
 // Manifest a CmpL3 result in an integer register. Very painful.
 // This is the test to avoid.
 instruct cmpL3_reg_reg(iRegI dst, iRegL src1, iRegL src2, flagsReg cr) %{
   match(Set dst (CmpL3 src1 src2));
   effect(KILL cr);
-  ins_cost(DEFAULT_COST * 5 + BRANCH_COST);
-  size(24);
+  ins_cost(DEFAULT_COST * 4);
+  size(22);
   format %{ "CmpL3 $dst,$src1,$src2" %}
   ins_encode %{
-    Label done;
-    // compare registers
     __ z_cgr($src1$$Register, $src2$$Register);
-    // Convert condition code into -1,0,1, where
-    // -1 means less
-    //  0 means equal
-    //  1 means greater.
-    if (VM_Version::has_LoadStoreConditional()) {
-      Register one       = Z_R0_scratch;
-      Register minus_one = Z_R1_scratch;
-      __ z_lghi(minus_one, -1);
-      __ z_lghi(one, 1);
-      __ z_lghi( $dst$$Register, 0);
-      __ z_locgr($dst$$Register, one,       Assembler::bcondHigh);
-      __ z_locgr($dst$$Register, minus_one, Assembler::bcondLow);
-    } else {
-      __ clear_reg($dst$$Register, true, false);
-      __ z_bre(done);
-      __ z_lhi($dst$$Register, 1);
-      __ z_brh(done);
-      __ z_lhi($dst$$Register, -1);
-    }
-    __ bind(done);
+    __ z_lochi($dst$$Register, 1, Assembler::bcondHigh);
+    __ z_lochi($dst$$Register, 0, Assembler::bcondEqual);
+    __ z_lochi($dst$$Register, -1, Assembler::bcondLow);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct cmpU3_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr)%{
+  match(Set dst (CmpU3 src1 src2));
+  effect(KILL cr);
+  ins_cost(DEFAULT_COST * 4);
+  size(20);
+  format %{ "cmpU3 $dst,$src1,$src2" %}
+  ins_encode %{
+    __ z_clr($src1$$Register, $src2$$Register);
+    __ z_lochi($dst$$Register, 1, Assembler::bcondHigh);
+    __ z_lochi($dst$$Register, 0, Assembler::bcondEqual);
+    __ z_lochi($dst$$Register, -1, Assembler::bcondLow);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct cmpUL3_reg_reg(iRegI dst, iRegL src1, iRegL src2, flagsReg cr)%{
+  match(Set dst (CmpUL3 src1 src2));
+  effect(KILL cr);
+  ins_cost(DEFAULT_COST * 4);
+  size(22);
+  format %{ "cmpUL3 $dst,$src1,$src2" %}
+  ins_encode %{
+    __ z_clgr($src1$$Register, $src2$$Register);
+    __ z_lochi($dst$$Register, 1, Assembler::bcondHigh);
+    __ z_lochi($dst$$Register, 0, Assembler::bcondEqual);
+    __ z_lochi($dst$$Register, -1, Assembler::bcondLow);
   %}
   ins_pipe(pipe_class_dummy);
 %}
