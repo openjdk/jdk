@@ -28,6 +28,7 @@
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "sanitizers/address.hpp"
+#include "gtestRandom.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
 
@@ -135,7 +136,7 @@ TEST_VM(NMT, random_reallocs) {
   GtestUtils::mark_range_with(p, size, content);
 
   for (int n = 0; n < 100; n ++) {
-    size_t new_size = (size_t)(os::random() % 512) + 1;
+    size_t new_size = (size_t)(GtestRandom::random() % 512) + 1;
     // LOG_HERE("reallocating %zu->%zu", size, new_size);
     p = do_realloc(p, size, new_size, content, nmt_enabled);
     size = new_size;

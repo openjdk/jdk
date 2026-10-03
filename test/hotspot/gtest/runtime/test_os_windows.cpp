@@ -29,6 +29,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safefetch.hpp"
+#include "gtestRandom.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
@@ -229,9 +230,9 @@ static bool unnormalize_path(wchar_t* result, size_t size, bool is_dir, const wc
     path_start = wcschr(src + 1, L'\\');
   }
 
-  bool allow_sep_change = (mods_filter & Allow_Sep_Mods) && (os::random() & 1) == 0;
-  bool allow_dot_change = (mods_filter & Allow_Dot_Path) && (os::random() & 1) == 0;
-  bool allow_dotdot_change = (mods_filter & Allow_Dot_Dot_Path) && (os::random() & 1) == 0;
+  bool allow_sep_change = (mods_filter & Allow_Sep_Mods) && (GtestRandom::random() & 1) == 0;
+  bool allow_dot_change = (mods_filter & Allow_Dot_Path) && (GtestRandom::random() & 1) == 0;
+  bool allow_dotdot_change = (mods_filter & Allow_Dot_Dot_Path) && (GtestRandom::random() & 1) == 0;
 
   while ((*src != L'\0') && (result + size > dest)) {
     wchar_t c = *src;
@@ -240,15 +241,15 @@ static bool unnormalize_path(wchar_t* result, size_t size, bool is_dir, const wc
     ++dest;
 
     if (c == L'\\') {
-      if (allow_sep_change && (os::random() & 3) == 3) {
-        int i = os::random() % (sizeof(sep_replacements) / sizeof(sep_replacements[0]));
+      if (allow_sep_change && (GtestRandom::random() & 3) == 3) {
+        int i = GtestRandom::random() % (sizeof(sep_replacements) / sizeof(sep_replacements[0]));
 
         if (i >= 0) {
           const wchar_t* replacement = sep_replacements[i];
           dest = my_wcscpy_s(dest - 1, size,  result, replacement);
         }
       } else if (path_start != nullptr) {
-        if (allow_dotdot_change && (src > path_start + 1) && ((os::random() & 7) == 7)) {
+        if (allow_dotdot_change && (src > path_start + 1) && ((GtestRandom::random() & 7) == 7)) {
           wchar_t const* last_sep = src - 2;
 
           while (last_sep[0] != L'\\') {
@@ -259,14 +260,14 @@ static bool unnormalize_path(wchar_t* result, size_t size, bool is_dir, const wc
             dest = my_wcscpy_s(dest, size, result, L"../");
             src = last_sep + 1;
           }
-        } else if (allow_dot_change && (src > path_start + 1) && ((os::random() & 7) == 7)) {
+        } else if (allow_dot_change && (src > path_start + 1) && ((GtestRandom::random() & 7) == 7)) {
           dest = my_wcscpy_s(dest, size, result, L"./");
         }
       }
     }
   }
 
-  while (is_dir && ((os::random() & 15) == 1)) {
+  while (is_dir && ((GtestRandom::random() & 15) == 1)) {
     dest = my_wcscpy_s(dest, size, result, L"/");
   }
 

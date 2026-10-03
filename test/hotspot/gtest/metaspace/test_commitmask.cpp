@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,14 +27,14 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
 using metaspace::CommitMask;
 using metaspace::Settings;
 
-static int get_random(int limit) { return os::random() % limit; }
+static int get_random(int limit) { return GtestRandom::random() % limit; }
 
 class CommitMaskTest {
   const MetaWord* const _base;
@@ -224,7 +224,7 @@ class CommitMaskTest {
       // A random range
       SizeRange r = SizeRange(_word_size).random_aligned_subrange(Settings::commit_granule_words());
 
-      if (os::random() % 100 < 50) {
+      if (GtestRandom::random() % 100 < 50) {
         _mask.mark_range_as_committed(_base + r.lowest(), r.size());
         map.set_range(r.lowest(), r.end());
       } else {
@@ -336,9 +336,9 @@ TEST_VM(metaspace, commit_mask_random) {
 
     // make up a range out of thin air
     const MetaWord* const base =
-        align_down( (const MetaWord*) ((uintptr_t) os::random() * os::random()),
+        align_down( (const MetaWord*) ((uintptr_t) GtestRandom::random() * GtestRandom::random()),
                     Settings::commit_granule_bytes());
-    const size_t len = align_up( 1 + (os::random() % M),
+    const size_t len = align_up( 1 + (GtestRandom::random() % M),
                     Settings::commit_granule_words());
 
     CommitMaskTest test(base, len);

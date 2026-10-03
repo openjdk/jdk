@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "logging/logStream.hpp"
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "unittest.hpp"
 
@@ -245,21 +246,21 @@ class BitMapTruncateTest {
       ResourceMark rm;
 
       const size_t max_size = 1024;
-      const size_t size = os::random() % max_size + 1;
-      const size_t truncate_size = os::random() % size + 1;
-      const size_t truncate_start = size == truncate_size ? 0 : os::random() % (size - truncate_size);
+      const size_t size = GtestRandom::random() % max_size + 1;
+      const size_t truncate_size = GtestRandom::random() % size + 1;
+      const size_t truncate_start = size == truncate_size ? 0 : GtestRandom::random() % (size - truncate_size);
 
       ResizableBitMapClass map(size);
       ResizableBitMapClass result(truncate_size);
 
       for (BitMap::idx_t idx = 0; idx < truncate_start; idx++) {
-        if (os::random() % 2 == 0) {
+        if (GtestRandom::random() % 2 == 0) {
           map.set_bit(idx);
         }
       }
 
       for (BitMap::idx_t idx = 0; idx < truncate_size; idx++) {
-        if (os::random() % 2 == 0) {
+        if (GtestRandom::random() % 2 == 0) {
           map.set_bit(truncate_start + idx);
           result.set_bit(idx);
         }
