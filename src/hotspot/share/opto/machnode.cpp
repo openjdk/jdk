@@ -726,6 +726,94 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
   return *Compile::current()->matcher()->idealreg2spillmask[in(idx)->ideal_reg()];
 }
 
+bool MachSafePointNode::is_uncommon_trap(int32_t *out_trap_request) const {
+  int32_t trap_request = 0;
+  bool is_trap_request = false;
+  if (is_MachCallStaticJava()) {
+    trap_request = as_MachCallStaticJava()->uncommon_trap_request();
+    is_trap_request = (trap_request != 0);
+  } else if (is_MachUncommonTrap()) {
+    trap_request = as_MachUncommonTrap()->trap_request();
+    is_trap_request = true;
+  }
+
+  if (is_trap_request && out_trap_request != nullptr) {
+    *out_trap_request = trap_request;
+  }
+
+  return is_trap_request;
+}
+
+#ifndef PRODUCT
+void MachSafePointNode::format_jvms_and_oopmap(PhaseRegAlloc* ra, outputStream* st) const {
+  if (_jvms) {
+    _jvms->format(ra, this, st);
+  } else {
+    st->print_cr("        No JVM State Info");
+  }
+  st->print("        # ");
+  if (_jvms && _oop_map) {
+    _oop_map->print_on(st);
+  }
+}
+
+// Helper for summarizing uncommon_trap arguments.
+void MachSafePointNode::dump_trap_args(outputStream *st) const {
+  int trap_req;
+  if (is_uncommon_trap(&trap_req)) {
+    char buf[100];
+    st->print("(%s)",
+               Deoptimization::format_trap_request(buf, sizeof(buf),
+                                                   trap_req));
+  }
+}
+
+#endif
+
+//=============================================================================
+
+const RegMask &MachUncommonTrapNode::in_RegMask(uint idx) const {
+  // Control, I_O, Memory, FramePtr, ReturnAdr
+  if (idx < TypeFunc::Parms) return _in_rms[idx];
+
+  // Debug inputs
+  assert(in(idx)->ideal_reg() != Op_RegFlags, "flags register is not spillable");
+  return *Compile::current()->matcher()->idealreg2spillmask[in(idx)->ideal_reg()];
+}
+
+void MachUncommonTrapNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+  if constexpr (Matcher::use_mach_uncommon_trap_node) {
+    emit_impl(masm, ra_);
+  } else {
+    Unimplemented();
+  }
+}
+
+uint MachUncommonTrapNode::size(PhaseRegAlloc *ra_) const {
+  if constexpr (Matcher::use_mach_uncommon_trap_node) {
+    return size_impl(ra_);
+  } else {
+    Unimplemented();
+  }
+}
+
+int MachUncommonTrapNode::ret_addr_offset() const {
+  if constexpr (Matcher::use_mach_uncommon_trap_node) {
+    return ret_addr_offset_impl();
+  } else {
+    Unimplemented();
+  }
+}
+
+#ifndef PRODUCT
+void MachUncommonTrapNode::format(PhaseRegAlloc* ra, outputStream* st) const {
+  st->print("UNCOMMON TRAP");
+
+  dump_trap_args(st);
+  st->cr();
+  format_jvms_and_oopmap(ra, st);
+}
+#endif
 
 //=============================================================================
 
@@ -842,17 +930,6 @@ int MachCallStaticJavaNode::uncommon_trap_request() const {
 }
 
 #ifndef PRODUCT
-// Helper for summarizing uncommon_trap arguments.
-void MachCallStaticJavaNode::dump_trap_args(outputStream *st) const {
-  int trap_req = uncommon_trap_request();
-  if (trap_req != 0) {
-    char buf[100];
-    st->print("(%s)",
-               Deoptimization::format_trap_request(buf, sizeof(buf),
-                                                   trap_req));
-  }
-}
-
 void MachCallStaticJavaNode::dump_spec(outputStream *st) const {
   st->print("Static ");
   if (_name != nullptr) {

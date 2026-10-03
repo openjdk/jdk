@@ -29,6 +29,18 @@
  * @run main/othervm compiler.uncommontrap.UncommonTrapStackBang
  */
 
+/**
+ * @test
+ * @bug 8026775
+ * @summary Uncommon trap blob did not bang all the stack shadow pages
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm
+ *            -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *            compiler.uncommontrap.UncommonTrapStackBang
+ */
+
 /*
  * Note: This test does not reproduce the problem with absolute
  * certainty. Empirically the bug reproduces on Windows some 80+% of
