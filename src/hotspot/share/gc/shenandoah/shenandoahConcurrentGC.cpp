@@ -237,6 +237,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     if (!heap->collection_set()->all_regions_claimed()) {
       // Self forward objects stranded in the collection set
       entry_self_forward_stranded_objects();
+      if (check_cancellation_and_abort()) {
+        return false;
+      }
     }
 
     // Perform update-refs phase.
