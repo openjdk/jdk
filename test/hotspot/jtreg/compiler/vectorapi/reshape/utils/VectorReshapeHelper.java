@@ -71,8 +71,6 @@ public class VectorReshapeHelper {
     public static final VectorSpecies<Float>   FSPEC512 =  FloatVector.SPECIES_512;
     public static final VectorSpecies<Double>  DSPEC512 = DoubleVector.SPECIES_512;
 
-    public static final String REINTERPRET_NODE = IRNode.VECTOR_REINTERPRET;
-
     public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {
         var test = new TestFramework(testClass);
         test.setDefaultWarmup(1);
