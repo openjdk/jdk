@@ -277,7 +277,7 @@
    <!ELEMENT errorlink (#PCDATA|jvmti|code|i|b|tm)*>
    <!ATTLIST errorlink id CDATA #REQUIRED>
 
-   <!ELEMENT externallink (#PCDATA|jvmti|code|i|b|tm)*>
+   <!ELEMENT externallink (#PCDATA|jvmti|code|i|b|tm|sup)*>
    <!ATTLIST externallink id CDATA #REQUIRED>
 
    <!ELEMENT vmspec EMPTY>
@@ -324,6 +324,9 @@
    <!ELEMENT pre ANY>
 
    <!ELEMENT space EMPTY>
+
+   <!ELEMENT sup (#PCDATA)>
+   <!ATTLIST sup class CDATA #IMPLIED>
 
    <!ELEMENT jvmti EMPTY>
 
@@ -3400,8 +3403,18 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         method named <code>&lt;clinit&gt;</code> with a return type of
         <code>void</code>.
         <p/>
-        When preview features are enabled, this function can not be used to return
-        early from the constructor of a value class.
+        When preview features are enabled, this function can not be used to force
+        a return when the current frame is a constructor of a class with
+        <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
+        strictly-initialized<sup>PREVIEW</sup></externallink> instance fields in the
+        class or any of its superclasses, or the current frame is the class initializer
+        of a class with strictly-initialized static fields.
+        <p/>
+        <b>API Note:</b>
+        <externallink id="../api/java.base/java/lang/Class.html#isValue()">
+        Value classes<sup>PREVIEW</sup></externallink> rely upon strict field
+        initialization. This function can not be used to return from a constructor
+        of a value class with one or more instance fields.
       </description>
       <origin>new</origin>
       <capabilities>
@@ -3418,8 +3431,11 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           The implementation is unable to force the current frame to return
-          (e.g. current frame is executing a native method or if preview features
-           are enabled, the current frame is the constructor for a value class)
+          (e.g. the current frame is executing a native method or, if preview features
+          are enabled, either the current frame is a constructor of a class with
+          strictly-initialized instance fields in its class hierarchy or the current
+          frame is the class initializer of a class with strictly-initialized static
+          fields.)
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The called method has a result type.

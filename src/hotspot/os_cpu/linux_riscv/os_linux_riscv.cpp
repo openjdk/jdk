@@ -49,7 +49,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
-#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -94,7 +93,7 @@ char* os::non_memory_address_word() {
   // even in its subfields (as defined by the CPU immediate fields,
   // if the CPU splits constants across multiple instructions).
 
-  return (char*) ((1ull << VM_Version::max_va_bits()) - 1);
+  return (char*) -1;
 }
 
 address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
@@ -289,7 +288,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
     // and the heap gets shrunk before the field access.
-    if ((sig == SIGSEGV) || (sig == SIGBUS)) {
+    if (stub == nullptr && ((sig == SIGSEGV) || (sig == SIGBUS))) {
       address addr_slow = JNI_FastGetField::find_slowcase_pc(pc);
       if (addr_slow != (address)-1) {
         stub = addr_slow;

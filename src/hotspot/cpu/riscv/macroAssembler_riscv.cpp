@@ -27,7 +27,8 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "ci/ciInlineKlass.hpp"
+#include "ci/ciValueKlass.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -115,6 +116,20 @@ bool MacroAssembler::is_load_pc_relative_at(address instr) {
          check_load_pc_relative_data_dependency(instr);
 }
 
+bool MacroAssembler::is_movptr_at(address instr) {
+  switch (VM_Version::satp_mode.value()) {
+    case VM_Version::VM_SV39:
+      return is_movptr_sv39_at(instr);
+    case VM_Version::VM_SV48:
+      return is_movptr1_sv48_at(instr) || is_movptr2_sv48_at(instr);
+    case VM_Version::VM_SV57:
+      return is_movptr1_sv57_at(instr) || is_movptr2_sv57_at(instr);
+    default:
+      ShouldNotReachHere();
+      return false;
+  }
+}
+
 bool MacroAssembler::is_movptr_sv39_at(address instr) {
   return is_lui_at(instr) && // lui
          is_addi_at(instr + MacroAssembler::instruction_size) && // addi
@@ -197,8 +212,7 @@ uint32_t MacroAssembler::get_membar_kind(address addr) {
   assert_cond(addr != nullptr);
   assert(is_membar(addr), "no membar found");
 
-  uint32_t insn = Bytes::get_native_u4(addr);
-
+  uint32_t insn = Assembler::ld_instr(addr);
   uint32_t predecessor = Assembler::extract(insn, 27, 24);
   uint32_t successor = Assembler::extract(insn, 23, 20);
 
@@ -214,7 +228,7 @@ void MacroAssembler::set_membar_kind(address addr, uint32_t order_kind) {
 
   MacroAssembler::membar_mask_to_pred_succ(order_kind, predecessor, successor);
 
-  uint32_t insn = Bytes::get_native_u4(addr);
+  uint32_t insn = Assembler::ld_instr(addr);
   address pInsn = (address) &insn;
   Assembler::patch(pInsn, 27, 24, predecessor);
   Assembler::patch(pInsn, 23, 20, successor);
@@ -530,9 +544,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
-  lbu(tmp, Address(klass, InstanceKlass::init_state_offset()));
-  membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  la(tmp, Address(klass, InstanceKlass::init_state_offset()));
+  lbu_acquire(tmp, tmp);
   sub(tmp, tmp, InstanceKlass::fully_initialized);
   beqz(tmp, *L_fast_path);
 
@@ -559,20 +572,25 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop {");
 
   push_reg(RegSet::of(ra, t0, t1, c_rarg0), sp);
 
   mv(c_rarg0, reg); // c_rarg0 : x10
-  {
-    // The length of the instruction sequence emitted should not depend
-    // on the address of the char buffer so that the size of mach nodes for
-    // scratch emit and normal emit matches.
-    IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
-  }
+  // The length of the instruction sequence emitted should not depend
+  // on the address of the char buffer so that the size of mach nodes for
+  // scratch emit and normal emit matches.
+  la(t0, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -745,7 +763,15 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
@@ -758,13 +784,10 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ld(x10, addr);
   }
 
-  {
-    // The length of the instruction sequence emitted should not depend
-    // on the address of the char buffer so that the size of mach nodes for
-    // scratch emit and normal emit matches.
-    IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
-  }
+  // The length of the instruction sequence emitted should not depend
+  // on the address of the char buffer so that the size of mach nodes for
+  // scratch emit and normal emit matches.
+  la(t0, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -788,7 +811,7 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
     return Address(esp, arg_slot.as_constant() * stackElementSize + offset);
   } else {
     assert_different_registers(t0, arg_slot.as_register());
-    shadd(t0, arg_slot.as_register(), esp, t0, exact_log2(stackElementSize));
+    shift_left_add(t0, arg_slot.as_register(), esp, exact_log2(stackElementSize));
     return Address(t0, offset);
   }
 }
@@ -871,7 +894,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
 
   bind(tagged);
   // Test for jweak tag.
-  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
+  static_assert(JNIHandles::TypeTag::weak_global == 0b1);
   test_bit(tmp1, value, exact_log2(JNIHandles::TypeTag::weak_global));
   bnez(tmp1, weak_tagged);
 
@@ -898,7 +921,7 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 
 #ifdef ASSERT
   {
-    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
+    static_assert(JNIHandles::TypeTag::global == 0b10);
     Label valid_global_tag;
     test_bit(tmp1, value, exact_log2(JNIHandles::TypeTag::global)); // Test for global tag.
     bnez(tmp1, valid_global_tag);
@@ -945,7 +968,7 @@ void MacroAssembler::emit_static_call_stub() {
 
   // Jump to the entry point of the c2i stub.
   int32_t offset = 0;
-  movptr(t1, (address)0, offset, t0); // lui + lui + slli + add (sv39: lui + addi + slli)
+  movptr(t1, (address)0, offset, t0);
   jr(t1, offset);
 }
 
@@ -1291,13 +1314,33 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
 
 #undef INSN
 
-// cmov
+// cmov_zicond_eqz: dst = (cond == 0) ? src : dst
+void MacroAssembler::cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp) {
+  assert(UseZicond, "UseZicond must be enabled");
+  assert_different_registers(dst, src, cond);
+  czero_eqz(dst, dst, cond);
+  if (src != zr) {
+    czero_nez(tmp, src, cond);
+    add(dst, dst, tmp);
+  }
+}
+
+// cmov_zicond_nez: dst = (cond != 0) ? src : dst
+void MacroAssembler::cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp) {
+  assert(UseZicond, "UseZicond must be enabled");
+  assert_different_registers(dst, src, cond);
+  czero_nez(dst, dst, cond);
+  if (src != zr) {
+    czero_eqz(tmp, src, cond);
+    add(dst, dst, tmp);
+  }
+}
+
 void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     xorr(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0 , src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1307,11 +1350,10 @@ void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     xorr(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0 , src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1321,11 +1363,10 @@ void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp2, cmp1);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1335,11 +1376,10 @@ void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp2, cmp1);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1349,11 +1389,10 @@ void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1363,11 +1402,10 @@ void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1377,11 +1415,10 @@ void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1391,11 +1428,10 @@ void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1405,11 +1441,10 @@ void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp2, cmp1);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1419,11 +1454,10 @@ void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp2, cmp1);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -2131,7 +2165,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
 
   xorr(val, val, crc);
   zext(val, val, 8);
-  shadd(val, val, table, val, 2);
+  shift_left_add(val, val, table, 2);
   lwu(val, Address(val));
   srli(crc, crc, 8);
   xorr(crc, val, crc);
@@ -2161,7 +2195,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(v, v, crc);
 
   zext(tmp1, v, 8);
-  shadd(tmp1, tmp1, table3, tmp2, 2);
+  shift_left_add(tmp1, tmp1, table3, 2);
   lwu(crc, Address(tmp1));
 
   slli(tmp1, v, 16);
@@ -2170,10 +2204,10 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   srliw(tmp1, tmp1, 24);
   srliw(tmp3, tmp3, 24);
 
-  shadd(tmp1, tmp1, table2, tmp1, 2);
+  shift_left_add(tmp1, tmp1, table2, 2);
   lwu(tmp2, Address(tmp1));
 
-  shadd(tmp3, tmp3, table1, tmp3, 2);
+  shift_left_add(tmp3, tmp3, table1, 2);
   xorr(crc, crc, tmp2);
 
   lwu(tmp2, Address(tmp3));
@@ -2184,7 +2218,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
     srliw(tmp1, v, 24);
 
   // no need to clear bits other than lowest two
-  shadd(tmp1, tmp1, table0, tmp1, 2);
+  shift_left_add(tmp1, tmp1, table0, 2);
   xorr(crc, crc, tmp2);
   lwu(tmp2, Address(tmp1));
   xorr(crc, crc, tmp2);
@@ -2278,7 +2312,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
         xorr(crc, crc, tmp2);
         for (int j = 0; j < W; j++) {
           andr(t1, crc, tmp5);
-          shadd(t1, t1, table0, tmp1, 2);
+          shift_left_add(t1, t1, table0, 2);
           lwu(t1, Address(t1, 0));
           srli(tmp2, crc, 8);
           xorr(crc, tmp2, t1);
@@ -2777,6 +2811,184 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     andn(crc, tmp5, crc);
 }
 
+// Advance buf to the next 8-byte boundary, folding each byte into crc via the
+// byte lookup table. tmp1 holds the alignment count, tmp2 the loaded byte.
+void MacroAssembler::kernel_crc32c_clmul_align(Register crc, Register buf, Register len,
+        Register table, Register tmp1, Register tmp2) {
+  assert_different_registers(crc, buf, len, table, tmp1, tmp2);
+  Label L_adjust, L_loop, L_done;
+
+  // bytes to next 8-byte boundary: (-buf) & 7 = 8 - (buf & 7)
+  neg(tmp1, buf);
+  andi(tmp1, tmp1, 7);
+
+  // tmp1 = min(tmp1, len)
+  bleu(tmp1, len, L_adjust);
+  mv(tmp1, len);
+  bind(L_adjust);
+    subw(len, len, tmp1);
+    beqz(tmp1, L_done);
+
+  bind(L_loop);
+    lbu(tmp2, Address(buf, 0));
+    addi(buf, buf, 1);
+    update_byte_crc32(crc, tmp2, table);
+    addi(tmp1, tmp1, -1);
+    bnez(tmp1, L_loop);
+  bind(L_done);
+}
+
+// Fold 128 bits of input into the 128-bit accumulator (accum_hi:accum_lo).
+// With the next 16 input bytes as (data_hi:data_lo) and * = carry-less mul:
+//   accum_lo' = (accum_lo*k1)[63:0] XOR (accum_hi*k2)[63:0] XOR data_lo
+//   accum_hi' = (accum_lo*k1)[127:64] XOR (accum_hi*k2)[127:64] XOR data_hi
+void MacroAssembler::kernel_crc32c_clmul_fold_128(Register accum_lo, Register accum_hi,
+        Register k1, Register k2, Register buf, Register tmp1, Register tmp2) {
+  assert_different_registers(accum_lo, accum_hi, k1, k2, buf, tmp1, tmp2);
+
+  clmul(tmp1, accum_lo, k1);
+  clmulh(tmp2, accum_lo, k1);
+
+  clmul(accum_lo, accum_hi, k2);
+  clmulh(accum_hi, accum_hi, k2);
+
+  xorr(accum_lo, accum_lo, tmp1);
+  ld(tmp1, Address(buf, 0));      // tmp1 = data_lo
+  xorr(accum_lo, accum_lo, tmp1);
+
+  xorr(accum_hi, accum_hi, tmp2);
+  ld(tmp1, Address(buf, 8));      // tmp1 = data_hi
+  xorr(accum_hi, accum_hi, tmp1);
+}
+
+// Reduce the 128-bit accumulator (accum_hi:accum_lo) to 64 bits using the
+// ISA-L two-constant method. With rk1 at OFF_REDUCE_HI and rk2 at OFF_REDUCE_LO:
+//   x = accum_lo
+//   y0 = accum_hi XOR clmul(x, rk1)[63:0]
+//   y1 = clmulh(x, rk1)[95:64]
+//   accum_lo' = clmul(y0[31:0], rk2)[63:0] XOR (y1 : y0[63:32])
+void MacroAssembler::kernel_crc32c_clmul_reduce_128_to_64(Register accum_lo, Register accum_hi,
+        Register clmul_table, Register k, Register tmp1, Register tmp2) {
+  assert_different_registers(accum_lo, accum_hi, clmul_table, k, tmp1, tmp2);
+
+  const int OFF_REDUCE_LO = 16;
+  const int OFF_REDUCE_HI = 24;
+
+  ld(k, Address(clmul_table, OFF_REDUCE_HI));
+  clmul(tmp1, accum_lo, k);   // tmp1 = clmul(x, rk1)[63:0]
+  clmulh(tmp2, accum_lo, k);  // tmp2 = clmulh(x, rk1) = clmul(x, rk1)[127:64]
+
+  xorr(accum_hi, accum_hi, tmp1); // y0 = accum_hi XOR clmul(x, rk1)[63:0]
+
+  zext(tmp1, accum_hi, 32);   // tmp1 = y0[31:0]
+  srli(accum_hi, accum_hi, 32); // accum_hi = y0[63:32]
+
+  ld(k, Address(clmul_table, OFF_REDUCE_LO));
+  clmul(accum_lo, tmp1, k);   // accum_lo' = clmul(y0[31:0], rk2)[63:0]
+
+  slli(tmp2, tmp2, 32);       // tmp2 = clmul(x, rk1)[95:64] << 32 = y1 : 0
+  xorr(tmp2, tmp2, accum_hi); // tmp2 = y1 : y0[63:32]
+  xorr(accum_lo, accum_lo, tmp2); // accum_lo' XOR= (y1 : y0[63:32])
+}
+
+// Reduce the 64-bit accumulator accum_lo to a residue mod P (the 33-bit
+// CRC32C polynomial) using Barrett reduction, with mu = floor(x^64/P) at
+// OFF_BARRETT_MU and poly = P at OFF_BARRETT_POLY:
+//   q = (accum_lo[31:0] * mu)[31:0]      // quotient estimate
+//   accum_lo XOR= (q * poly)[63:0]       // subtract q*P
+// The high 32 bits of accum_lo then hold the final CRC.
+void MacroAssembler::kernel_crc32c_clmul_barrett_64_to_32(Register accum_lo, Register clmul_table,
+        Register k, Register tmp) {
+  assert_different_registers(accum_lo, clmul_table, k, tmp);
+
+  const int OFF_BARRETT_MU   = 32;
+  const int OFF_BARRETT_POLY = 40;
+
+  zext(tmp, accum_lo, 32);   // tmp = accum_lo[31:0]
+
+  ld(k, Address(clmul_table, OFF_BARRETT_MU));
+  clmul(tmp, tmp, k);
+  zext(tmp, tmp, 32);        // tmp = q = (accum_lo[31:0] * mu)[31:0]
+
+  ld(k, Address(clmul_table, OFF_BARRETT_POLY));
+  clmul(tmp, tmp, k);
+
+  xorr(accum_lo, accum_lo, tmp);
+}
+
+void MacroAssembler::kernel_crc32c_clmul_fold(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
+  assert_different_registers(crc, buf, len, byte_table, clmul_table, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  Label L_fold_loop, L_tail, L_tail_loop, L_exit;
+
+  const int FOLD_THRESHOLD = 64;  // fold only for inputs >= 4 FOLD_STEPs
+  const int FOLD_STEP      = 16;
+  const int OFF_FOLD_K1    =  0;
+  const int OFF_FOLD_K2    =  8;
+
+  mv(tmp4, FOLD_THRESHOLD);
+  blt(len, tmp4, L_tail);
+
+  kernel_crc32c_clmul_align(crc, buf, len, byte_table, tmp4, tmp5);
+  beqz(len, L_exit);
+
+  // fold_end = buf + len - (len mod 16); len = tail
+  const Register fold_end = tmp6;
+  add(fold_end, buf, len);
+  andi(len, len, FOLD_STEP - 1);
+  sub(fold_end, fold_end, len);
+
+  // accum = (buf[0:8] XOR crc) : buf[8:16]
+  const Register accum_lo = crc;
+  const Register accum_hi = tmp1;
+  ld(tmp4, Address(buf, 0));
+  xorr(accum_lo, tmp4, crc);
+  ld(accum_hi, Address(buf, 8));
+  addi(buf, buf, FOLD_STEP);
+
+  ld(tmp2, Address(clmul_table, OFF_FOLD_K1));
+  ld(tmp3, Address(clmul_table, OFF_FOLD_K2));
+
+  bind(L_fold_loop);
+    kernel_crc32c_clmul_fold_128(accum_lo, accum_hi, tmp2, tmp3, buf, tmp4, tmp5);
+    addi(buf, buf, 16);
+    blt(buf, fold_end, L_fold_loop);
+
+  // reduce 128->64 (ISA-L) then 64->32 (Barrett); tmp2 = k; tmp4..tmp5 reused as scratch
+  kernel_crc32c_clmul_reduce_128_to_64(accum_lo, accum_hi, clmul_table, tmp2, tmp4, tmp5);
+  kernel_crc32c_clmul_barrett_64_to_32(accum_lo, clmul_table, tmp2, tmp4);
+  srli(crc, accum_lo, 32);
+
+  bind(L_tail);
+    add(tmp5, buf, len); // tmp5 = tail_end
+  bind(L_tail_loop);
+    bgeu(buf, tmp5, L_exit);
+    lbu(tmp4, Address(buf, 0));
+    addi(buf, buf, 1);
+    update_byte_crc32(crc, tmp4, byte_table);
+    j(L_tail_loop);
+
+  bind(L_exit);
+}
+
+void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
+  assert_different_registers(crc, buf, len, byte_table, clmul_table, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+
+  zext(crc, crc, 32);
+
+  // _crc32c_table is followed by the clmul constants
+  const int64_t single_table_size = 256;
+  const ExternalAddress table_addr = StubRoutines::crc32c_table_addr();
+  la(byte_table, table_addr);
+  add(clmul_table, byte_table, 1 * single_table_size * sizeof(juint), tmp4);
+
+  kernel_crc32c_clmul_fold(crc, buf, len, byte_table, clmul_table,
+                           tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+}
+
 #ifdef COMPILER2
 // Push vector registers in the bitset supplied.
 // Return the number of words pushed
@@ -2887,8 +3099,8 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_byte
 }
 
 static int patch_offset_in_jal(address branch, int64_t offset) {
-  assert(Assembler::is_simm21(offset) && ((offset % 2) == 0),
-         "offset (%ld) is too large to be patched in one jal instruction!\n", offset);
+  guarantee(Assembler::is_simm21(offset) && ((offset % 2) == 0),
+            "offset (%ld) is too large to be patched in one jal instruction!", offset);
   Assembler::patch(branch, 31, 31, (offset >> 20) & 0x1);                       // offset[20]    ==> branch[31]
   Assembler::patch(branch, 30, 21, (offset >> 1)  & 0x3ff);                     // offset[10:1]  ==> branch[30:21]
   Assembler::patch(branch, 20, 20, (offset >> 11) & 0x1);                       // offset[11]    ==> branch[20]
@@ -2897,8 +3109,8 @@ static int patch_offset_in_jal(address branch, int64_t offset) {
 }
 
 static int patch_offset_in_conditional_branch(address branch, int64_t offset) {
-  assert(Assembler::is_simm13(offset) && ((offset % 2) == 0),
-         "offset (%ld) is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!\n", offset);
+  guarantee(Assembler::is_simm13(offset) && ((offset % 2) == 0),
+            "offset (%ld) is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!", offset);
   Assembler::patch(branch, 31, 31, (offset >> 12) & 0x1);                       // offset[12]    ==> branch[31]
   Assembler::patch(branch, 30, 25, (offset >> 5)  & 0x3f);                      // offset[10:5]  ==> branch[30:25]
   Assembler::patch(branch, 7,  7,  (offset >> 11) & 0x1);                       // offset[11]    ==> branch[7]
@@ -2913,125 +3125,342 @@ static int patch_offset_in_pc_relative(address branch, int64_t offset) {
   return PC_RELATIVE_INSTRUCTION_NUM * MacroAssembler::instruction_size;
 }
 
-static int patch_addr_in_movptr_sv39(address instruction_address, address target) {
-  uintptr_t addr = (uintptr_t)target;
+// A canonical Sv39 address uses the following four-instruction sequence.
+// movptr_sv39 emits the first three instructions; the final instruction
+// consumes its offset:
+//
+//   lui             Rd = LUI immediate; encoded field is instruction[31:12]
+//   addi            Rd = Rd + sign-extended 12-bit ADDI immediate
+//   slli 9          Rd = Rd << 9
+//   addi/jalr/load  uses `offset` in its 12-bit immediate field
+//
+// The target is split into the fields consumed by those instructions:
+//
+//   target[63:39]  canonical sign extension
+//   target[38:21]  adjusted LUI contribution
+//   target[20:9]   signed ADDI contribution
+//   target[8:0]    final offset
+//
+// so that lui + addi yield address[38:9], slli 9 shifts that into position,
+// and the final instruction supplies address[8:0]. LUI sign-extends its
+// U-immediate result on RV64, while ADDI sign-extends its 12-bit immediate.
+// `addi_imm` is the signed value from target[20:9], and `lui_imm` is adjusted
+// so that their sum yields address[38:9].
+struct MovptrSv39Parts {
+  int64_t lui_imm;   // full immediate passed to the first lui()
+  int64_t addi_imm;  // signed 12-bit immediate passed to the second addi()
+  int32_t offset;    // low 9-bit offset passed to the final addi/jalr/load
 
-  assert(addr < (1ull << 39), "39-bit overflow in address constant");
-  uint64_t upper30 = addr >> 9;
-  int64_t lower12 = ((int64_t)(upper30 << 52)) >> 52;
-  int64_t hi20 = upper30 - lower12;
+  static MovptrSv39Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper30 = addr >> 9;
+    // ADDI sign-extends its 12-bit immediate; compensate in LUI imm.
+    const int64_t addi_imm = Assembler::sextract((uint32_t)upper30, 11, 0);
+    // Invariant: lui_imm + addi_imm == upper30
+    const int64_t lui_imm = upper30 - addi_imm;
+    return MovptrSv39Parts{ lui_imm, addi_imm, (int32_t)(addr & 0x1ff) };
+  }
 
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 0), 31, 12, (hi20 >> 12) & 0xfffff); // Lui.            target[38:21]
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 1), 31, 20, lower12 & 0xfff);        // Addi.           target[20: 9]
-                                                                                                                  // Slli.
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 3), 31, 20, addr & 0x1ff);           // Addi/Jalr/Load. target[ 8: 0]
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
 
-  assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
+    // Insn1: LUI imm [31:12]; cast to int64_t to get sign-extension
+    const int64_t lui_imm = (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12);
+    // Insn2: ADDI imm [31:20]
+    const int64_t addi_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20);
+    // Insn3: SLLI
+    // Skipped
+    // Insn4: ADDI/JALR imm [31:20]
+    const int32_t offset = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 3), 31, 20);
 
-  return MacroAssembler::movptr_sv39_instruction_size;
-}
+    uint64_t target;
+    // To unsigned for left-shift
+    target = ((uint64_t)lui_imm) << 12;
+    target += (uint64_t)addi_imm;
+    target <<= 9;
+    // The final ADDI/JALR/load also sign-extends its 12-bit immediate.
+    target += (uintptr_t)offset;
 
-static int patch_addr_in_movptr1_sv48(address branch, address target) {
-  int32_t lower = ((intptr_t)target << 35) >> 35;
-  int64_t upper = ((intptr_t)target - lower) >> 29;
-  Assembler::patch(branch + 0,  31, 12, upper & 0xfffff);                       // Lui.             target[48:29] + target[28] ==> branch[31:12]
-  Assembler::patch(branch + 4,  31, 20, (lower >> 17) & 0xfff);                 // Addi.            target[28:17] ==> branch[31:20]
-  Assembler::patch(branch + 12, 31, 20, (lower >> 6) & 0x7ff);                  // Addi.            target[16: 6] ==> branch[31:20]
-  Assembler::patch(branch + 20, 31, 20, lower & 0x3f);                          // Addi/Jalr/Load.  target[ 5: 0] ==> branch[31:20]
-  return MacroAssembler::movptr1_sv48_instruction_size;
-}
+    return (address)target;
+  }
 
-static int patch_addr_in_movptr2_sv48(address instruction_address, address target) {
-  uintptr_t addr = (uintptr_t)target;
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const MovptrSv39Parts parts = from_address((intptr_t)target);
 
-  assert(addr < (1ull << 48), "48-bit overflow in address constant");
-  unsigned int upper18 = (addr >> 30ull);
-  int lower30 = (addr & 0x3fffffffu);
-  int low12 = (lower30 << 20) >> 20;
-  int mid18 = ((lower30 - low12) >> 12);
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.addi_imm & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 3, 31, 20, (uint32_t)parts.offset);
 
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 0), 31, 12, (upper18 & 0xfffff)); // Lui
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 1), 31, 12, (mid18   & 0xfffff)); // Lui
-                                                                                                                  // Slli
-                                                                                                                  // Add
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 4), 31, 20, low12 & 0xfff);      // Addi/Jalr/Load
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr_sv39_instruction_size;
+  }
+};
 
-  assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
+// A canonical Sv48 address uses this six-instruction sequence for movptr1_sv48.
+// movptr1_sv48 emits the first five instructions; the caller emits the final
+// instruction using offset:
+//
+//   lui             Rd = upper target portion
+//   addi            Rd = Rd + signed target[28:17]
+//   slli 11         Rd = Rd << 11
+//   addi            Rd = Rd + target[16:6]
+//   slli 6          Rd = Rd << 6
+//   addi/jalr/load  uses target[5:0]
+//
+//   target[63:48]  canonical sign extension
+//   target[47:29]  adjusted LUI contribution
+//   target[28:17]  signed ADDI contribution
+//   target[16:6]   second ADDI contribution
+//   target[5:0]    final offset
+//
+// The first LUI field includes the canonical sign bit and may be adjusted to
+// compensate for the signed ADDI immediate.
+struct Movptr1Sv48Parts {
+  int64_t lui_imm;     // full immediate passed to the first lui()
+  int64_t addi_imm;    // signed 12-bit immediate passed to the first addi()
+  int32_t middle_imm;  // unsigned 11-bit immediate passed to the second addi()
+  int32_t offset;      // low 6-bit offset passed to the final addi/jalr/load
 
-  return MacroAssembler::movptr2_sv48_instruction_size;
-}
+  static Movptr1Sv48Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper31 = addr >> 17;
+    const int64_t addi_imm = Assembler::sextract((uint32_t)upper31, 11, 0);
+    const int64_t lui_imm = upper31 - addi_imm;
+    const uintptr_t raw_addr = (uintptr_t)addr;
+    const int32_t middle_imm = (raw_addr >> 6) & 0x7ff;
+    const int32_t offset = raw_addr & 0x3f;
+    return Movptr1Sv48Parts{ lui_imm, addi_imm, middle_imm, offset };
+  }
 
-static int patch_addr_in_movptr1_sv57(address instruction_address, address target) {
-  uintptr_t addr = (uintptr_t)target;
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    uintptr_t target = (uintptr_t)(intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 0), 31, 12) << 29;
+    target += (uintptr_t)(intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20) << 17;
+    target += (uintptr_t)(intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 3), 31, 20) << 6;
+    target += (intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 5), 31, 20);
+    return (address)target;
+  }
 
-  assert(addr < (1ull << 57), "57-bit overflow in address constant");
-  uint64_t upper30 = addr >> 27;
-  int64_t lower12 = ((int64_t)(upper30 << 52)) >> 52;
-  int64_t hi20 = upper30 - lower12;
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr1Sv48Parts parts = from_address((intptr_t)target);
 
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 0), 31, 12, (hi20 >> 12) & 0xfffff);
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 1), 31, 20, lower12 & 0xfff);
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 3), 31, 20, (addr >> 16) & 0x7ff);
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 5), 31, 20, (addr >> 6) & 0x3ff);
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 7), 31, 20, addr & 0x3f);
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.addi_imm & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 3, 31, 20, parts.middle_imm);
+    Assembler::patch(patch_addr + insn_size * 5, 31, 20, parts.offset);
 
-  assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr1_sv48_instruction_size;
+  }
+};
 
-  return MacroAssembler::movptr1_sv57_instruction_size;
-}
+// A canonical Sv48 address uses this five-instruction sequence for movptr2_sv48.
+// movptr2_sv48 emits the first four instructions; the caller emits the final
+// instruction using offset:
+//
+//   lui             tmp = upper target portion
+//   lui             Rd  = middle target portion
+//   slli 18         tmp = tmp << 18
+//   add             Rd  = Rd + tmp
+//   addi/jalr/load  uses signed target[11:0]
+//
+//   target[63:48]  canonical sign extension
+//   target[47:30]  upper LUI contribution
+//   target[29:12]  middle LUI contribution
+//   target[11:0]   signed final offset
+//
+struct Movptr2Sv48Parts {
+  int64_t upper_lui_imm;   // full immediate passed to the temporary register's lui()
+  int64_t middle_lui_imm;  // full immediate passed to the destination register's lui()
+  int32_t offset;          // signed 12-bit offset passed to the final addi/jalr/load
 
-static int patch_addr_in_movptr2_sv57(address instruction_address, address target) {
-  uintptr_t addr = (uintptr_t)target;
+  static Movptr2Sv48Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper18 = addr >> 30;
+    const int64_t lower30 = (uintptr_t)addr & 0x3fffffff;
+    const int64_t offset = Assembler::sextract((uint32_t)lower30, 11, 0);
+    // Avoid left-shifting a potentially negative signed value.
+    const int64_t upper_lui_imm = upper18 * 0x1000;
+    const int64_t middle_lui_imm = lower30 - offset;
+    return Movptr2Sv48Parts{ upper_lui_imm, middle_lui_imm, (int32_t)offset };
+  }
 
-  assert(addr < (1ull << 57), "57-bit overflow in address constant");
-  uint64_t upper27 = addr >> 30;
-  int64_t upper_lower12 = ((int64_t)(upper27 << 52)) >> 52;
-  int64_t upper_hi20 = upper27 - upper_lower12;
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    const int64_t upper18 = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 0), 31, 12);
+    const int64_t middle18 = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 12);
+    const int64_t offset = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 4), 31, 20);
+    uintptr_t target = (uintptr_t)upper18 << 30;
+    target += (uintptr_t)middle18 << 12;
+    target += offset;
+    return (address)target;
+  }
 
-  uint64_t lower30 = addr & 0x3fffffff;
-  int64_t lower12 = ((int64_t)(lower30 << 52)) >> 52;
-  int64_t mid18 = (lower30 - lower12) >> 12;
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr2Sv48Parts parts = from_address((intptr_t)target);
 
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 0), 31, 12, (upper_hi20 >> 12) & 0xfffff);
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 1), 31, 20, upper_lower12 & 0xfff);
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 2), 31, 12, mid18 & 0xfffff);
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 5), 31, 20, lower12 & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.upper_lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 12, (parts.middle_lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 4, 31, 20, parts.offset & 0xfff);
 
-  assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr2_sv48_instruction_size;
+  }
+};
 
-  return MacroAssembler::movptr2_sv57_instruction_size;
-}
+// A canonical Sv57 address uses this eight-instruction sequence for movptr1_sv57.
+// movptr1_sv57 emits the first seven instructions; the caller emits the final
+// instruction using offset:
+//
+//   lui, addi, slli 11, addi, slli 10, addi, slli 6, addi/jalr/load
+struct Movptr1Sv57Parts {
+  int64_t lui_imm;
+  int64_t addi_imm;
+  int32_t upper_middle_imm;
+  int32_t lower_middle_imm;
+  int32_t offset;
 
-static bool patch_addr_in_movptr_for_mode(address instruction_address, address target, int& patched_size) {
+  static Movptr1Sv57Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper30 = addr >> 27;
+    const int64_t addi_imm = Assembler::sextract((uint32_t)upper30, 11, 0);
+    const int64_t lui_imm = upper30 - addi_imm;
+    const uintptr_t raw_addr = (uintptr_t)addr;
+    const int32_t upper_middle_imm = (raw_addr >> 16) & 0x7ff;
+    const int32_t lower_middle_imm = (raw_addr >> 6) & 0x3ff;
+    const int32_t offset = raw_addr & 0x3f;
+    return Movptr1Sv57Parts{ lui_imm, addi_imm, upper_middle_imm,
+                            lower_middle_imm, offset };
+  }
+
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    const int64_t lui_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 0), 31, 12);
+    const int64_t addi_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20);
+    const int32_t upper_middle_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 3), 31, 20);
+    const int32_t lower_middle_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 5), 31, 20);
+    const int32_t offset = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 7), 31, 20);
+    uintptr_t target = (uintptr_t)lui_imm << 12;
+    target += (uintptr_t)addi_imm;
+    target <<= 11;
+    target += (uintptr_t)upper_middle_imm;
+    target <<= 10;
+    target += (uintptr_t)lower_middle_imm;
+    target <<= 6;
+    target += (uintptr_t)offset;
+    return (address)target;
+  }
+
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr1Sv57Parts parts = from_address((intptr_t)target);
+
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.addi_imm & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 3, 31, 20, parts.upper_middle_imm);
+    Assembler::patch(patch_addr + insn_size * 5, 31, 20, parts.lower_middle_imm);
+    Assembler::patch(patch_addr + insn_size * 7, 31, 20, parts.offset);
+
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr1_sv57_instruction_size;
+  }
+};
+
+// A canonical Sv57 address uses this six-instruction sequence for movptr2_sv57.
+// movptr2_sv57 emits the first five instructions; the caller emits the final
+// instruction using offset:
+//
+//   lui, addi, lui, slli 30, add, addi/jalr/load
+struct Movptr2Sv57Parts {
+  int64_t upper_lui_imm;
+  int64_t upper_addi_imm;
+  int64_t middle_lui_imm;
+  int32_t offset;
+
+  static Movptr2Sv57Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper27 = addr >> 30;
+    const int64_t upper_addi_imm = Assembler::sextract((uint32_t)upper27, 11, 0);
+    const int64_t upper_lui_imm = upper27 - upper_addi_imm;
+    const int64_t lower30 = (uintptr_t)addr & 0x3fffffff;
+    const int64_t offset = Assembler::sextract((uint32_t)lower30, 11, 0);
+    const int64_t middle_lui_imm = lower30 - offset;
+    return Movptr2Sv57Parts{ upper_lui_imm, upper_addi_imm,
+                            middle_lui_imm, (int32_t)offset };
+  }
+
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    const int64_t upper_lui_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 0), 31, 12);
+    const int64_t upper_addi_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20);
+    const int64_t middle_lui_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 2), 31, 12);
+    const int64_t offset = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 5), 31, 20);
+    uintptr_t target = (uintptr_t)upper_lui_imm << 12;
+    target += (uintptr_t)upper_addi_imm;
+    target <<= 30;
+    target += (uintptr_t)middle_lui_imm << 12;
+    target += (uintptr_t)offset;
+    return (address)target;
+  }
+
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr2Sv57Parts parts = from_address((intptr_t)target);
+
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.upper_lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.upper_addi_imm & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 2, 31, 12, (parts.middle_lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 5, 31, 20, parts.offset & 0xfff);
+
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr2_sv57_instruction_size;
+  }
+};
+
+static int patch_addr_in_movptr(address instruction_address, address target) {
+  assert(MacroAssembler::is_movptr_at(instruction_address), "must be a movptr");
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
-      if (MacroAssembler::is_movptr_sv39_at(instruction_address)) {
-        patched_size = patch_addr_in_movptr_sv39(instruction_address, target);
-        return true;
-      }
-      break;
+      return MovptrSv39Parts::patch(instruction_address, target);
     case VM_Version::VM_SV48:
       if (MacroAssembler::is_movptr1_sv48_at(instruction_address)) {
-        patched_size = patch_addr_in_movptr1_sv48(instruction_address, target);
-        return true;
-      } else if (MacroAssembler::is_movptr2_sv48_at(instruction_address)) {
-        patched_size = patch_addr_in_movptr2_sv48(instruction_address, target);
-        return true;
+        return Movptr1Sv48Parts::patch(instruction_address, target);
       }
-      break;
+      assert(MacroAssembler::is_movptr2_sv48_at(instruction_address), "must be movptr2_sv48");
+      return Movptr2Sv48Parts::patch(instruction_address, target);
     case VM_Version::VM_SV57:
       if (MacroAssembler::is_movptr1_sv57_at(instruction_address)) {
-        patched_size = patch_addr_in_movptr1_sv57(instruction_address, target);
-        return true;
-      } else if (MacroAssembler::is_movptr2_sv57_at(instruction_address)) {
-        patched_size = patch_addr_in_movptr2_sv57(instruction_address, target);
-        return true;
+        return Movptr1Sv57Parts::patch(instruction_address, target);
       }
-      break;
+      assert(MacroAssembler::is_movptr2_sv57_at(instruction_address), "must be movptr2_sv57");
+      return Movptr2Sv57Parts::patch(instruction_address, target);
     default:
       ShouldNotReachHere();
+      return 0;
   }
-  return false;
 }
 
 static int patch_imm_in_li16u(address branch, uint16_t target) {
@@ -3084,87 +3513,27 @@ static long get_offset_of_pc_relative(address insn_addr) {
   return offset;
 }
 
-static address get_target_of_movptr_sv39(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12; // Lui.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 1), 31, 20)); // Addi.
-  target_address <<= 9;                                                                                                            // Slli.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 3), 31, 20)); // Addi/Jalr/Load.
-  return (address)target_address;
-}
-
-static address get_target_of_movptr1_sv48(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 29; // Lui.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 17;                 // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 12), 31, 20)) << 6;                 // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 20), 31, 20));                      // Addi/Jalr/Load.
-  return (address) target_address;
-}
-
-static address get_target_of_movptr2_sv48(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  int32_t upper18 = ((Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 0), 31, 12)) & 0xfffff); // Lui
-  int32_t mid18   = ((Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 1), 31, 12)) & 0xfffff); // Lui
-                                                                                                                       // 2                              // Slli
-                                                                                                                       // 3                              // Add
-  int32_t low12  = ((Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 4), 31, 20))); // Addi/Jalr/Load.
-  address ret = (address)(((intptr_t)upper18<<30ll) + ((intptr_t)mid18<<12ll) + low12);
-  return ret;
-}
-
-static address get_target_of_movptr1_sv57(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12;
-  target_address += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 1), 31, 20);
-  target_address <<= 11;
-  target_address += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 3), 31, 20);
-  target_address <<= 10;
-  target_address += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 5), 31, 20);
-  target_address <<= 6;
-  target_address += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 7), 31, 20);
-  return (address)target_address;
-}
-
-static address get_target_of_movptr2_sv57(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  intptr_t upper27 = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12;
-  upper27 += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 1), 31, 20);
-  intptr_t mid18 = ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 2), 31, 12)) & 0xfffff;
-  intptr_t low12 = (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 5), 31, 20);
-  return (address)((upper27 << 30) + (mid18 << 12) + low12);
-}
-
-static bool get_target_of_movptr_for_mode(address insn_addr, address& target) {
+static address get_target_of_movptr(address insn_addr) {
+  assert(MacroAssembler::is_movptr_at(insn_addr), "must be a movptr");
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
-      if (MacroAssembler::is_movptr_sv39_at(insn_addr)) {
-        target = get_target_of_movptr_sv39(insn_addr);
-        return true;
-      }
-      break;
+      return MovptrSv39Parts::decode(insn_addr);
     case VM_Version::VM_SV48:
       if (MacroAssembler::is_movptr1_sv48_at(insn_addr)) {
-        target = get_target_of_movptr1_sv48(insn_addr);
-        return true;
-      } else if (MacroAssembler::is_movptr2_sv48_at(insn_addr)) {
-        target = get_target_of_movptr2_sv48(insn_addr);
-        return true;
+        return Movptr1Sv48Parts::decode(insn_addr);
       }
-      break;
+      assert(MacroAssembler::is_movptr2_sv48_at(insn_addr), "must be movptr2_sv48");
+      return Movptr2Sv48Parts::decode(insn_addr);
     case VM_Version::VM_SV57:
       if (MacroAssembler::is_movptr1_sv57_at(insn_addr)) {
-        target = get_target_of_movptr1_sv57(insn_addr);
-        return true;
-      } else if (MacroAssembler::is_movptr2_sv57_at(insn_addr)) {
-        target = get_target_of_movptr2_sv57(insn_addr);
-        return true;
+        return Movptr1Sv57Parts::decode(insn_addr);
       }
-      break;
+      assert(MacroAssembler::is_movptr2_sv57_at(insn_addr), "must be movptr2_sv57");
+      return Movptr2Sv57Parts::decode(insn_addr);
     default:
       ShouldNotReachHere();
+      return nullptr;
   }
-  return false;
 }
 
 address MacroAssembler::get_target_of_li32(address insn_addr) {
@@ -3178,16 +3547,17 @@ address MacroAssembler::get_target_of_li32(address insn_addr) {
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address instruction_address, address target) {
   assert_cond(instruction_address != nullptr);
-  int64_t offset = target - instruction_address;
-  int movptr_size = 0;
   if (MacroAssembler::is_jal_at(instruction_address)) {                         // jal
+    const int64_t offset = target - instruction_address;
     return patch_offset_in_jal(instruction_address, offset);
   } else if (MacroAssembler::is_branch_at(instruction_address)) {               // beq/bge/bgeu/blt/bltu/bne
+    const int64_t offset = target - instruction_address;
     return patch_offset_in_conditional_branch(instruction_address, offset);
   } else if (MacroAssembler::is_pc_relative_at(instruction_address)) {          // auipc, addi/jalr/load
+    const int64_t offset = target - instruction_address;
     return patch_offset_in_pc_relative(instruction_address, offset);
-  } else if (patch_addr_in_movptr_for_mode(instruction_address, target, movptr_size)) {
-    return movptr_size;
+  } else if (MacroAssembler::is_movptr_at(instruction_address)) {
+    return patch_addr_in_movptr(instruction_address, target);
   } else if (MacroAssembler::is_li32_at(instruction_address)) {                 // li32
     int64_t imm = (intptr_t)target;
     return patch_imm_in_li32(instruction_address, (int32_t)imm);
@@ -3207,7 +3577,6 @@ int MacroAssembler::pd_patch_instruction_size(address instruction_address, addre
 
 address MacroAssembler::target_addr_for_insn(address insn_addr) {
   long offset = 0;
-  address target = nullptr;
   assert_cond(insn_addr != nullptr);
   if (MacroAssembler::is_jal_at(insn_addr)) {                     // jal
     offset = get_offset_of_jal(insn_addr);
@@ -3215,8 +3584,8 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
     offset = get_offset_of_conditional_branch(insn_addr);
   } else if (MacroAssembler::is_pc_relative_at(insn_addr)) {      // auipc, addi/jalr/load
     offset = get_offset_of_pc_relative(insn_addr);
-  } else if (get_target_of_movptr_for_mode(insn_addr, target)) {
-    return target;
+  } else if (MacroAssembler::is_movptr_at(insn_addr)) {
+    return get_target_of_movptr(insn_addr);
   } else if (MacroAssembler::is_li32_at(insn_addr)) {             // li32
     return get_target_of_li32(insn_addr);
   } else {
@@ -3226,20 +3595,16 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
 }
 
 int MacroAssembler::patch_oop(address insn_addr, address o) {
-  // OOPs are either narrow (32 bits) or wide (up to 57 bits, depending on
-  // the satp mode). We encode narrow OOPs by setting the upper 16 bits in the
+  // OOPs are either narrow (32 bits) or wide (full VA bits).
+  // We encode narrow OOPs by setting the upper 16 bits in the
   // first instruction.
-  int movptr_size = 0;
   if (MacroAssembler::is_li32_at(insn_addr)) {
     // Move narrow OOP
     uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     return patch_imm_in_li32(insn_addr, (int32_t)n);
-  } else if (patch_addr_in_movptr_for_mode(insn_addr, o, movptr_size)) {
-    // Move wide OOP
-    return movptr_size;
   }
-  ShouldNotReachHere();
-  return -1;
+  assert(MacroAssembler::is_movptr_at(insn_addr), "must be a movptr");
+  return patch_addr_in_movptr(insn_addr, o);
 }
 
 void MacroAssembler::reinit_heapbase() {
@@ -3266,6 +3631,9 @@ void MacroAssembler::movptr(Register Rd, address addr, Register temp) {
 }
 
 void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register temp) {
+  assert(VM_Version::is_canonical_address(addr),
+         "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+
   uint64_t uimm64 = (uint64_t)addr;
 #ifndef PRODUCT
   {
@@ -3275,29 +3643,22 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
   }
 #endif
 
-  assert(uimm64 < (1ull << VM_Version::max_va_bits()),
-         "%d-bit overflow in address constant", VM_Version::max_va_bits());
-
-  movptr_for_mode(Rd, uimm64, offset, temp);
-}
-
-void MacroAssembler::movptr_for_mode(Register Rd, uint64_t addr, int32_t &offset, Register temp) {
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
-      movptr_sv39(Rd, addr, offset);
+      movptr_sv39(Rd, uimm64, offset);
       break;
     case VM_Version::VM_SV48:
       if (temp == noreg) {
-        movptr1_sv48(Rd, addr, offset);
+        movptr1_sv48(Rd, uimm64, offset);
       } else {
-        movptr2_sv48(Rd, addr, offset, temp);
+        movptr2_sv48(Rd, uimm64, offset, temp);
       }
       break;
     case VM_Version::VM_SV57:
       if (temp == noreg) {
-        movptr1_sv57(Rd, addr, offset);
+        movptr1_sv57(Rd, uimm64, offset);
       } else {
-        movptr2_sv57(Rd, addr, offset, temp);
+        movptr2_sv57(Rd, uimm64, offset, temp);
       }
       break;
     default:
@@ -3305,133 +3666,80 @@ void MacroAssembler::movptr_for_mode(Register Rd, uint64_t addr, int32_t &offset
   }
 }
 
-int MacroAssembler::movptr_instruction_size() {
+int MacroAssembler::movptr_instruction_size(bool use_temp) {
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
       return movptr_sv39_instruction_size;
     case VM_Version::VM_SV48:
-      return movptr2_sv48_instruction_size;
+      return use_temp ? movptr2_sv48_instruction_size
+                      : movptr1_sv48_instruction_size;
     case VM_Version::VM_SV57:
-      return movptr2_sv57_instruction_size;
-    default: ShouldNotReachHere(); return 0;
+      return use_temp ? movptr2_sv57_instruction_size
+                      : movptr1_sv57_instruction_size;
+    default:
+      ShouldNotReachHere();
+      return 0;
   }
 }
 
 void MacroAssembler::movptr_sv39(Register Rd, uint64_t addr, int32_t &offset) {
-  // addr: [upper30[hi20, low12], lower9]
-  //
-  // Load upper 30 bits, i.e. addr >> 9. Since addr < 2^39, upper30 < 2^30,
-  // so even when the sign-extended low12 borrows from hi20 (see movptr1_sv48
-  // below for the trick), hi20 never reaches the sign bit of the lui
-  // immediate. This covers the whole [0, 2^39) range exactly.
-  uint64_t upper30 = addr >> 9;
-  int64_t lower12 = ((int64_t)(upper30 << 52)) >> 52;
-  int64_t hi20 = upper30 - lower12;
-  lui(Rd, hi20);
-  addi(Rd, Rd, lower12);
-
+  const MovptrSv39Parts parts = MovptrSv39Parts::from_address((intptr_t)addr);
+  lui(Rd, parts.lui_imm);
+  addi(Rd, Rd, parts.addi_imm);
   slli(Rd, Rd, 9);
-
   // This offset will be used by following jalr/ld.
-  offset = addr & 0x1ff;
+  offset = parts.offset;
 }
 
 void MacroAssembler::movptr1_sv48(Register Rd, uint64_t imm64, int32_t &offset) {
-  // Load upper 31 bits
-  //
-  // In case of 11th bit of `lower` is 0, it's straightforward to understand.
-  // In case of 11th bit of `lower` is 1, it's a bit tricky, to help understand,
-  // imagine divide both `upper` and `lower` into 2 parts respectively, i.e.
-  // [upper_20, upper_12], [lower_20, lower_12], they are the same just before
-  // `lower = (lower << 52) >> 52;`.
-  // After `upper -= lower;`,
-  //    upper_20' = upper_20 - (-1) == upper_20 + 1
-  //    upper_12 = 0x000
-  // After `lui(Rd, upper);`, `Rd` = upper_20' << 12
-  // Also divide `Rd` into 2 parts [Rd_20, Rd_12],
-  //    Rd_20 == upper_20'
-  //    Rd_12 == 0x000
-  // After `addi(Rd, Rd, lower);`,
-  //    Rd_20 = upper_20' + (-1) == upper_20 + 1 - 1 = upper_20
-  //    Rd_12 = lower_12
-  // So, finally Rd == [upper_20, lower_12]
-  int64_t imm = imm64 >> 17;
-  int64_t upper = imm, lower = imm;
-  lower = (lower << 52) >> 52;
-  upper -= lower;
-  upper = (int32_t)upper;
-  lui(Rd, upper);
-  addi(Rd, Rd, lower);
-
-  // Load the rest 17 bits.
+  const Movptr1Sv48Parts parts = Movptr1Sv48Parts::from_address((intptr_t)imm64);
+  lui(Rd, parts.lui_imm);
+  addi(Rd, Rd, parts.addi_imm);
   slli(Rd, Rd, 11);
-  addi(Rd, Rd, (imm64 >> 6) & 0x7ff);
+  addi(Rd, Rd, parts.middle_imm);
   slli(Rd, Rd, 6);
-
-  // This offset will be used by following jalr/ld.
-  offset = imm64 & 0x3f;
+  offset = parts.offset;
 }
 
 void MacroAssembler::movptr2_sv48(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
   assert_different_registers(Rd, tmp, noreg);
 
-  // addr: [upper18, lower30[mid18, lower12]]
-
-  int64_t upper18 = addr >> 18;
-  lui(tmp, upper18);
-
-  int64_t lower30 = addr & 0x3fffffff;
-  int64_t mid18 = lower30, lower12 = lower30;
-  lower12 = (lower12 << 52) >> 52;
-  // For this tricky part (`mid18 -= lower12;` + `offset = lower12;`),
-  // please refer to movptr1_sv48 above.
-  mid18 -= (int32_t)lower12;
-  lui(Rd, mid18);
+  const Movptr2Sv48Parts parts = Movptr2Sv48Parts::from_address((intptr_t)addr);
+  lui(tmp, parts.upper_lui_imm);
+  lui(Rd, parts.middle_lui_imm);
 
   slli(tmp, tmp, 18);
   add(Rd, Rd, tmp);
 
-  offset = lower12;
+  offset = parts.offset;
 }
 
 void MacroAssembler::movptr1_sv57(Register Rd, uint64_t addr, int32_t &offset) {
-  // addr: [upper30[hi20, low12], mid11, mid10, lower6]
-  // Keeping the initial value within 30 bits avoids sign extension by lui
-  // and covers the complete [0, 2^57) range, including non-address sentinels.
-  uint64_t upper30 = addr >> 27;
-  int64_t lower12 = ((int64_t)(upper30 << 52)) >> 52;
-  int64_t hi20 = upper30 - lower12;
-  lui(Rd, hi20);
-  addi(Rd, Rd, lower12);
+  const Movptr1Sv57Parts parts = Movptr1Sv57Parts::from_address((intptr_t)addr);
+  lui(Rd, parts.lui_imm);
+  addi(Rd, Rd, parts.addi_imm);
 
   slli(Rd, Rd, 11);
-  addi(Rd, Rd, (addr >> 16) & 0x7ff);
+  addi(Rd, Rd, parts.upper_middle_imm);
   slli(Rd, Rd, 10);
-  addi(Rd, Rd, (addr >> 6) & 0x3ff);
+  addi(Rd, Rd, parts.lower_middle_imm);
   slli(Rd, Rd, 6);
 
-  offset = addr & 0x3f;
+  offset = parts.offset;
 }
 
 void MacroAssembler::movptr2_sv57(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
   assert_different_registers(Rd, tmp, noreg);
 
-  // addr: [upper27(bits 56:30), lower30(mid18, lower12)]
-  uint64_t upper27 = addr >> 30;
-  int64_t upper_lower12 = ((int64_t)(upper27 << 52)) >> 52;
-  int64_t upper_hi20 = upper27 - upper_lower12;
-  lui(tmp, upper_hi20);
-  addi(tmp, tmp, upper_lower12);
-
-  uint64_t lower30 = addr & 0x3fffffff;
-  int64_t lower12 = ((int64_t)(lower30 << 52)) >> 52;
-  int64_t mid18 = lower30 - lower12;
-  lui(Rd, mid18);
+  const Movptr2Sv57Parts parts = Movptr2Sv57Parts::from_address((intptr_t)addr);
+  lui(tmp, parts.upper_lui_imm);
+  addi(tmp, tmp, parts.upper_addi_imm);
+  lui(Rd, parts.middle_lui_imm);
 
   slli(tmp, tmp, 30);
   add(Rd, Rd, tmp);
 
-  offset = lower12;
+  offset = parts.offset;
 }
 
 // floating point imm move
@@ -3848,7 +4156,7 @@ void MacroAssembler::cmp_klass_bne(Register obj, Register klass,
 }
 
 // Move an oop into a register.
-void MacroAssembler::movoop(Register dst, jobject obj) {
+void MacroAssembler::movoop(Register dst, jobject obj, Register tmp) {
   int oop_index;
   if (obj == nullptr) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -3864,7 +4172,7 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
   if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
-    movptr(dst, Address((address)obj, rspec));
+    movptr(dst, Address((address)obj, rspec), tmp);
   } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld(dst, Address(dummy, rspec));
@@ -3872,9 +4180,9 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
 }
 
 // Move a metadata address into a register.
-void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
-  assert((uintptr_t)obj < (1ull << VM_Version::max_va_bits()),
-         "%d-bit overflow in metadata", VM_Version::max_va_bits());
+void MacroAssembler::mov_metadata(Register dst, Metadata* obj, Register tmp) {
+  assert(VM_Version::is_canonical_address((address)obj),
+         "metadata address must be canonical for %d-bit VA", VM_Version::max_va_bits());
   int oop_index;
   if (obj == nullptr) {
     oop_index = oop_recorder()->allocate_metadata_index(obj);
@@ -3882,12 +4190,12 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
     oop_index = oop_recorder()->find_index(obj);
   }
   RelocationHolder rspec = metadata_Relocation::spec(oop_index);
-  movptr(dst, Address((address)obj, rspec));
+  movptr(dst, Address((address)obj, rspec), tmp);
 }
 
-void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
   assert_different_registers(holder_klass, index, layout_info);
-  InlineLayoutInfo array[2];
+  ValueFieldLayoutInfo array[2];
   int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
   if (is_power_of_2(size)) {
     slli(index, index, log2i_exact(size)); // Scale index by power of 2
@@ -3895,28 +4203,28 @@ void MacroAssembler::inline_layout_info(Register holder_klass, Register index, R
     mv(layout_info, size);
     mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
   }
-  ld(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
-  add(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  ld(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
+  add(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
   add(layout_info, layout_info, index);
   la(layout_info, Address(layout_info));
 }
 
 void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register inline_layout_info) {
+                                     Register value_field_layout_info) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
-void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
-  ld(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
-  lwu(offset, Address(offset, InlineKlass::payload_offset_offset()));
+void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  ld(offset, Address(value_klass, ValueKlass::adr_members_offset()));
+  lwu(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
-void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass) {
+void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
   assert_different_registers(data, t0);
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? t0 : data;
-  payload_offset(inline_klass, offset);
+  payload_offset(value_klass, offset);
   if (data == oop) {
     add(data, data, offset);
   } else {
@@ -4010,14 +4318,14 @@ void MacroAssembler::null_check(Register reg, int offset) {
   }
 }
 
-void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free_inline_type) {
-  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  bnez(temp_reg, is_null_free_inline_type);
+void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  bnez(temp_reg, is_null_free_value_type);
 }
 
-void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type) {
-  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  beqz(temp_reg, not_null_free_inline_type);
+void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  beqz(temp_reg, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
@@ -4025,24 +4333,24 @@ void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label
   bnez(temp_reg, is_flat);
 }
 
-void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
   assert_different_registers(markword, t1);
-  mv(t1, markWord::inline_type_pattern_mask);
+  mv(t1, markWord::value_type_pattern_mask);
   andr(markword, markword, t1);
-  mv(t1, markWord::inline_type_pattern);
-  beq(markword, t1, is_inline_type);
+  mv(t1, markWord::value_type_pattern);
+  beq(markword, t1, is_value_type);
 }
 
-void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
   assert_different_registers(tmp, t0);
   if (can_be_null) {
-    beqz(object, not_inline_type);
+    beqz(object, not_value_type);
   }
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   ld(tmp, Address(object, oopDesc::mark_offset_in_bytes()));
-  mv(t0, is_inline_type_mask);
+  mv(t0, is_value_type_mask);
   andr(tmp, tmp, t0);
-  bne(tmp, t0, not_inline_type);
+  bne(tmp, t0, not_value_type);
 }
 
 void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label) {
@@ -4102,11 +4410,17 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
       mv(d, s);
     }
   } else {
-    Label notNull;
-    sub(d, s, xheapbase);
-    bgez(d, notNull);
-    mv(d, zr);
-    bind(notNull);
+    if (UseZicond) {
+      assert_different_registers(s, t0);
+      sub(t0, s, xheapbase);
+      czero_eqz(d, t0, s);  // d = s == 0 ? 0 : t0
+    } else {
+      Label notNull;
+      sub(d, s, xheapbase);
+      bgez(d, notNull);
+      mv(d, zr);
+      bind(notNull);
+    }
     if (CompressedOops::shift() != 0) {
       assert (LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
       srli(d, d, CompressedOops::shift());
@@ -4180,11 +4494,6 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   decode_klass_not_null(dst, tmp);
 }
 
-void MacroAssembler::load_prototype_header(Register dst, Register src, Register tmp) {
-  load_klass(dst, src, tmp);
-  ld(dst, Address(dst, Klass::prototype_header_offset()));
-}
-
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   // FIXME: Should this be a store release? concurrent gcs assumes
   // klass length is valid if klass field is not null.
@@ -4233,7 +4542,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
 
   if (CompressedKlassPointers::shift() != 0) {
     // dst = (src << shift) + xbase
-    shadd(dst, src, xbase, dst /* temporary, dst != xbase */, CompressedKlassPointers::shift());
+    shift_left_add(dst, src, xbase, CompressedKlassPointers::shift());
   } else {
     add(dst, xbase, src);
   }
@@ -4318,11 +4627,18 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
       slli(d, s, CompressedOops::shift());
     }
   } else {
-    Label done;
-    mv(d, s);
-    beqz(s, done);
-    shadd(d, s, xheapbase, d, LogMinObjAlignmentInBytes);
-    bind(done);
+    assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
+    if (UseZicond) {
+      assert_different_registers(s, t0);
+      shift_left_add(t0, s, xheapbase, LogMinObjAlignmentInBytes);
+      czero_eqz(d, t0, s);   // d = s == 0 ? 0 : t0
+    } else {
+      Label done;
+      mv(d, s);
+      beqz(s, done);
+      shift_left_add(d, s, xheapbase, LogMinObjAlignmentInBytes);
+      bind(done);
+    }
   }
   verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
@@ -4376,7 +4692,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   lwu(scan_tmp, Address(recv_klass, Klass::vtable_length_offset()));
 
   // Could store the aligned, prescaled offset in the klass.
-  shadd(scan_tmp, scan_tmp, recv_klass, scan_tmp, 3);
+  shift_left_add(scan_tmp, scan_tmp, recv_klass, 3);
   add(scan_tmp, scan_tmp, vtable_base);
 
   if (return_method) {
@@ -4451,7 +4767,7 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   //                            + sizeof(vtableEntry) * (recv_klass->_vtable_len);
   // scan_temp = &(itable[0]._interface)
   // temp_itbl_klass = itable[0]._interface;
-  shadd(scan_temp, scan_temp, recv_klass, scan_temp, vte_scale);
+  shift_left_add(scan_temp, scan_temp, recv_klass, vte_scale);
   ld(temp_itbl_klass, Address(scan_temp));
   mv(holder_offset, zr);
 
@@ -4529,7 +4845,7 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
   int vtable_offset_in_bytes = in_bytes(base + vtableEntry::method_offset());
 
   if (vtable_index.is_register()) {
-    shadd(method_result, vtable_index.as_register(), recv_klass, method_result, LogBytesPerWord);
+    shift_left_add(method_result, vtable_index.as_register(), recv_klass, LogBytesPerWord);
     ld(method_result, Address(method_result, vtable_offset_in_bytes));
   } else {
     vtable_offset_in_bytes += vtable_index.as_constant() * wordSize;
@@ -4693,7 +5009,16 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   Label retry, fail, done;
 
   if (UseZacas) {
-    lw(result, aligned_addr);
+    // This word load pre-checks the target byte/short. A mismatch branches
+    // directly to fail, so the acquiring amocas below is never executed.
+    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
+    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
+    // the required RCsc ordering on this failure path.
+    if (UseZalasr && (acquire == Assembler::aq)) {
+      lw_aq(result, aligned_addr);
+    } else {
+      lw(result, aligned_addr);
+    }
 
     bind(retry); // amocas loads the current value into result
     notr(scratch1, mask);
@@ -4768,7 +5093,16 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   Label fail, done;
 
   if (UseZacas) {
-    lw(result, aligned_addr);
+    // This word load pre-checks the target byte/short. A mismatch branches
+    // directly to fail, so the acquiring amocas below is never executed.
+    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
+    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
+    // the required RCsc ordering on this failure path.
+    if (UseZalasr && (acquire == Assembler::aq)) {
+      lw_aq(result, aligned_addr);
+    } else {
+      lw(result, aligned_addr);
+    }
 
     notr(scratch1, mask);
 
@@ -5383,7 +5717,7 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
   assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
   assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
 
-  shadd(result, r_array_index, r_array_base, result, LogBytesPerWord);
+  shift_left_add(result, r_array_index, r_array_base, LogBytesPerWord);
   ld(result, Address(result));
   xorr(result, result, r_super_klass);
   beqz(result, L_fallthrough); // Found a match
@@ -5475,7 +5809,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   // We will consult the secondary-super array.
   ld(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
 
-  shadd(result, r_array_index, r_array_base, result, LogBytesPerWord);
+  shift_left_add(result, r_array_index, r_array_base, LogBytesPerWord);
   ld(result, Address(result));
   xorr(result, result, r_super_klass);
   beqz(result, L_success ? *L_success : L_fallthrough); // Found a match
@@ -5565,7 +5899,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     mv(r_array_index, zr);
     bind(skip);
 
-    shadd(t0, r_array_index, r_array_base, t0, LogBytesPerWord);
+    shift_left_add(t0, r_array_index, r_array_base, LogBytesPerWord);
     ld(t0, Address(t0));
     beq(t0, r_super_klass, L_matched);
 
@@ -5633,7 +5967,9 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     mv(x11, r_sub_klass);
     mv(x12, tmp3);
     mv(x13, result);
-    mv(x14, (address)("mismatch"));
+    const char* msg = "mismatch";
+    const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+    la(x14, ExternalAddress((address) str));
     rt_call(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure));
     should_not_reach_here();
   }
@@ -5756,26 +6092,26 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
   return false;
 }
 
-// Read all fields from an inline type oop and store the values in registers/stack slots
-bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
-                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
-                                          RegState reg_state[]) {
+// Read all fields from a value type oop and store the values in registers/stack slots
+bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                                         VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                                         RegState reg_state[]) {
 
   Unimplemented();
   return false;
 }
 
-// Pack fields back into an inline type oop
-bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
-                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
-                                        RegState reg_state[], Register val_array) {
+// Pack fields back into a value type oop
+bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                                       VMRegPair* from, int from_count, int& from_index, VMReg to,
+                                       RegState reg_state[], Register val_array) {
   Unimplemented();
   return false;
 }
 
-// Calculate the extra stack space required for packing or unpacking inline
+// Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer
-int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
   Unimplemented();
   return false;
 }
@@ -5979,17 +6315,8 @@ int MacroAssembler::max_reloc_call_address_stub_size() {
 }
 
 int MacroAssembler::static_call_stub_size() {
-  switch (VM_Version::satp_mode.value()) {
-    case VM_Version::VM_SV39:
-      return 2 * movptr_sv39_instruction_size;
-    case VM_Version::VM_SV48:
-      return movptr1_sv48_instruction_size + movptr2_sv48_instruction_size;
-    case VM_Version::VM_SV57:
-      return movptr1_sv57_instruction_size + movptr2_sv57_instruction_size;
-    default:
-      ShouldNotReachHere();
-      return 0;
-  }
+  return movptr_instruction_size(/* use_temp */ false) +
+         movptr_instruction_size(/* use_temp */ true);
 }
 
 Address MacroAssembler::add_memory_helper(const Address dst, Register tmp) {
@@ -6239,7 +6566,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
   subiw(xstart, xstart, 1);
   bltz(xstart, L_one_x);
 
-  shadd(t0, xstart, x, t0, LogBytesPerInt);
+  shift_left_add(t0, xstart, x, LogBytesPerInt);
   ld(x_xstart, Address(t0, 0));
   ror(x_xstart, x_xstart, 32); // convert big-endian to little-endian
 
@@ -6249,7 +6576,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
   subiw(idx, idx, 1);
   bltz(idx, L_one_y);
 
-  shadd(t0, idx, y, t0, LogBytesPerInt);
+  shift_left_add(t0, idx, y, LogBytesPerInt);
   ld(y_idx, Address(t0, 0));
   ror(y_idx, y_idx, 32); // convert big-endian to little-endian
   bind(L_multiply);
@@ -6257,11 +6584,11 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
   mulhu(t0, x_xstart, y_idx);
   mul(product, x_xstart, y_idx);
   cad(product, product, carry, t1);
-  adc(carry, t0, zr, t1);
+  add(carry, t0, t1);
 
   subiw(kdx, kdx, 2);
   ror(product, product, 32); // back to big-endian
-  shadd(t0, kdx, z, t0, LogBytesPerInt);
+  shift_left_add(t0, kdx, z, LogBytesPerInt);
   sd(product, Address(t0, 0));
 
   j(L_first_loop);
@@ -6315,11 +6642,11 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   bltz(jdx, L_third_loop_exit);
   subw(idx, idx, 4);
 
-  shadd(t0, idx, y, t0, LogBytesPerInt);
+  shift_left_add(t0, idx, y, LogBytesPerInt);
   ld(yz_idx2, Address(t0, 0));
   ld(yz_idx1, Address(t0, wordSize));
 
-  shadd(tmp6, idx, z, t0, LogBytesPerInt);
+  shift_left_add(tmp6, idx, z, LogBytesPerInt);
 
   ror(yz_idx1, yz_idx1, 32); // convert big-endian to little-endian
   ror(yz_idx2, yz_idx2, 32);
@@ -6337,12 +6664,12 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   mulhu(carry2, product_hi, yz_idx2);
 
   cad(tmp3, tmp3, carry, carry);
-  adc(tmp4, tmp4, zr, carry);
+  add(tmp4, tmp4, carry);
   cad(tmp3, tmp3, t0, t0);
   cadc(tmp4, tmp4, tmp, t0);
-  adc(carry, carry2, zr, t0);
+  add(carry, carry2, t0);
   cad(tmp4, tmp4, t1, carry2);
-  adc(carry, carry, zr, carry2);
+  add(carry, carry, carry2);
 
   ror(tmp3, tmp3, 32); // convert little-endian to big-endian
   ror(tmp4, tmp4, 32);
@@ -6360,14 +6687,14 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   subiw(idx, idx, 2);
   bltz(idx, L_check_1);
 
-  shadd(t0, idx, y, t0, LogBytesPerInt);
+  shift_left_add(t0, idx, y, LogBytesPerInt);
   ld(yz_idx1, Address(t0, 0));
   ror(yz_idx1, yz_idx1, 32);
 
   mul(tmp3, product_hi, yz_idx1); //  yz_idx1 * product_hi -> tmp4:tmp3
   mulhu(tmp4, product_hi, yz_idx1);
 
-  shadd(t0, idx, z, t0, LogBytesPerInt);
+  shift_left_add(t0, idx, z, LogBytesPerInt);
   ld(yz_idx2, Address(t0, 0));
   ror(yz_idx2, yz_idx2, 32, tmp);
 
@@ -6381,17 +6708,17 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   andi(idx, idx, 0x1);
   subiw(idx, idx, 1);
   bltz(idx, L_post_third_loop_done);
-  shadd(t0, idx, y, t0, LogBytesPerInt);
+  shift_left_add(t0, idx, y, LogBytesPerInt);
   lwu(tmp4, Address(t0, 0));
   mul(tmp3, tmp4, product_hi); //  tmp4 * product_hi -> carry2:tmp3
   mulhu(carry2, tmp4, product_hi);
 
-  shadd(t0, idx, z, t0, LogBytesPerInt);
+  shift_left_add(t0, idx, z, LogBytesPerInt);
   lwu(tmp4, Address(t0, 0));
 
   add2_with_carry(carry2, carry2, tmp3, tmp4, carry, t0);
 
-  shadd(t0, idx, z, t0, LogBytesPerInt);
+  shift_left_add(t0, idx, z, LogBytesPerInt);
   sw(tmp3, Address(t0, 0));
 
   slli(t0, carry2, 32);
@@ -6451,13 +6778,13 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   subiw(kdx, kdx, 1);
   beqz(kdx, L_carry);
 
-  shadd(t0, kdx, z, t0, LogBytesPerInt);
+  shift_left_add(t0, kdx, z, LogBytesPerInt);
   sw(carry, Address(t0, 0));
   srli(carry, carry, 32);
   subiw(kdx, kdx, 1);
 
   bind(L_carry);
-  shadd(t0, kdx, z, t0, LogBytesPerInt);
+  shift_left_add(t0, kdx, z, LogBytesPerInt);
   sw(carry, Address(t0, 0));
 
   // Second and third (nested) loops.
@@ -6486,12 +6813,12 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   sd(z, Address(sp, 0));
 
   Label L_last_x;
-  shadd(t0, xstart, z, t0, LogBytesPerInt);
+  shift_left_add(t0, xstart, z, LogBytesPerInt);
   addi(z, t0, 4);
   subiw(xstart, xstart, 1); // i = xstart-1;
   bltz(xstart, L_last_x);
 
-  shadd(t0, xstart, x, t0, LogBytesPerInt);
+  shift_left_add(t0, xstart, x, LogBytesPerInt);
   ld(product_hi, Address(t0, 0));
   ror(product_hi, product_hi, 32); // convert big-endian to little-endian
 
@@ -6510,14 +6837,14 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   addi(sp, sp, 4 * wordSize);
 
   addiw(tmp3, xlen, 1);
-  shadd(t0, tmp3, z, t0, LogBytesPerInt);
+  shift_left_add(t0, tmp3, z, LogBytesPerInt);
   sw(carry, Address(t0, 0));
 
   subiw(tmp3, tmp3, 1);
   bltz(tmp3, L_done);
 
   srli(carry, carry, 32);
-  shadd(t0, tmp3, z, t0, LogBytesPerInt);
+  shift_left_add(t0, tmp3, z, LogBytesPerInt);
   sw(carry, Address(t0, 0));
   j(L_second_loop_aligned);
 
@@ -6720,7 +7047,7 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 
   andi(t0, cnt, unroll - 1);
   sub(cnt, cnt, t0);
-  shadd(base, t0, base, t1, 3);
+  shift_left_add(base, t0, base, 3, t1);
   la(t1, entry);
   slli(t0, t0, 2);
   sub(t1, t1, t0);
@@ -6991,7 +7318,7 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
   andi(t0, len, unroll - 1);  // t0 = cnt % unroll
   sub(len, len, t0);          // cnt -= unroll
   // tmp always points to the end of the region we're about to zero
-  shadd(tmp, t0, addr, t1, LogBytesPerWord);
+  shift_left_add(tmp, t0, addr, LogBytesPerWord);
   la(t1, entry);
   slli(t0, t0, 2);
   sub(t1, t1, t0);
@@ -7012,26 +7339,35 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
 
 // shift left by shamt and add
 // Rd = (Rs1 << shamt) + Rs2
-void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt) {
-  if (UseZba) {
-    if (shamt == 1) {
-      sh1add(Rd, Rs1, Rs2);
-      return;
-    } else if (shamt == 2) {
-      sh2add(Rd, Rs1, Rs2);
-      return;
-    } else if (shamt == 3) {
-      sh3add(Rd, Rs1, Rs2);
-      return;
-    }
+void MacroAssembler::shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt) {
+  shift_left_add(Rd, Rs1, Rs2, shamt, Rd);
+}
+
+void MacroAssembler::shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp) {
+  assert_different_registers(Rs2, tmp);
+  if (UseZba && (1 <= shamt && shamt <= 3)) {
+    shadd(Rd, Rs1, Rs2, shamt);
+    return;
   }
 
   if (shamt != 0) {
-    assert_different_registers(Rs2, tmp);
     slli(tmp, Rs1, shamt);
     add(Rd, Rs2, tmp);
   } else {
     add(Rd, Rs1, Rs2);
+  }
+}
+
+// emits sh1add/sh2add/sh3add for shamt 1/2/3
+void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, int shamt) {
+  assert(UseZba, "shadd requires Zba");
+  assert(1 <= shamt && shamt <= 3, "shamt is invalid");
+  if (shamt == 1) {
+    sh1add(Rd, Rs1, Rs2);
+  } else if (shamt == 2) {
+    sh2add(Rd, Rs1, Rs2);
+  } else if (shamt == 3) {
+    sh3add(Rd, Rs1, Rs2);
   }
 }
 
@@ -7390,13 +7726,13 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
 
   // Try to lock. Transition lock-bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
-  ori(mark, mark, markWord::unlocked_value);
+  ori(mark, mark, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
-    // Mask inline_type bit such that we go to the slow path if object is an inline type
-    andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+    // Mask value_type bit such that we go to the slow path if object is a value type
+    andi(mark, mark, ~((int) markWord::value_type_bit_in_place));
   }
 
-  xori(t, mark, markWord::unlocked_value);
+  xori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
   bne(mark, t, slow, /* is_far */ true);
@@ -7459,7 +7795,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   Label not_unlocked;
-  test_bit(t, mark, exact_log2(markWord::unlocked_value));
+  test_bit(t, mark, exact_log2(markWord::lock_neutral_value));
   beqz(t, not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
@@ -7467,7 +7803,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 
   // Try to unlock. Transition lock bits 0b00 => 0b01
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-  ori(t, mark, markWord::unlocked_value);
+  ori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ t);
   beq(mark, t, unlocked);

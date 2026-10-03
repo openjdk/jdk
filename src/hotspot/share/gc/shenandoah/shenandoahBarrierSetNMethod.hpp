@@ -35,11 +35,17 @@ class ShenandoahBarrierSetNMethod : public BarrierSetNMethod {
 private:
   ShenandoahHeap* _heap;
 
+  void cross_modify_fence();
+
 public:
   ShenandoahBarrierSetNMethod(ShenandoahHeap* heap) : _heap(heap) {
   }
 
-  virtual bool nmethod_entry_barrier(nmethod* nm);
+  bool nmethod_entry_barrier(nmethod* nm) override;
+
+  void finalize_relocations(nmethod* nm) override;
+
+  void arm_all_nmethods() override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETNMETHOD_HPP

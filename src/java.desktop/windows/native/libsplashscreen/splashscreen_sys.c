@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,7 +577,6 @@ SplashGetScaledImageName(const char* jarName, const char* fileName,
 {
     float dpiScaleX = -1.0f;
     float dpiScaleY = -1.0f;
-    FILE *fp = NULL;
     *scaleFactor = 1.0;
     GetScreenDpi(getPrimaryMonitor(), &dpiScaleX, &dpiScaleY);
     *scaleFactor = dpiScaleX > 0 ? dpiScaleX / 96 : *scaleFactor;

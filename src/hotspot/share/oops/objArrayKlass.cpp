@@ -38,7 +38,6 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/layoutKind.hpp"
@@ -49,6 +48,7 @@
 #include "oops/oopCast.inline.hpp"
 #include "oops/refArrayKlass.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valueKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -183,7 +183,7 @@ ArrayDescription ObjArrayKlass::array_layout_selection(Klass* element, ArrayProp
   if (!UseArrayFlattening || element->is_array_klass() || element->is_identity_class() || element->is_abstract()) {
     return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
   }
-  InlineKlass* vk = InlineKlass::cast(element);
+  ValueKlass* vk = ValueKlass::cast(element);
   if (!vk->maybe_flat_in_array()) {
     return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
   }

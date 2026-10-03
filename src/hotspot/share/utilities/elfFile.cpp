@@ -107,7 +107,7 @@ MarkedFileReader::~MarkedFileReader() {
 }
 
 ElfFile::ElfFile(const char* filepath) :
-  _next(nullptr), _filepath(os::strdup(filepath)), _file(nullptr),
+  _next(nullptr), _filepath(os::strdup(filepath, mtInternal)), _file(nullptr),
   _symbol_tables(nullptr), _string_tables(nullptr), _shdr_string_table(nullptr), _funcDesc_table(nullptr),
   _status(NullDecoder::no_error), _dwarf_file(nullptr) {
   memset(&_elfHdr, 0, sizeof(_elfHdr));
