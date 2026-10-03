@@ -1953,6 +1953,10 @@ void Compile::remove_from_post_loop_opts_igvn(Node* n) {
 }
 
 void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
+  if (has_loops()) {
+    PhaseIdealLoop::remove_unneeded_rce_side_loop_safepoints(igvn);
+  }
+
   // Verify that all previous optimizations produced a valid graph
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);

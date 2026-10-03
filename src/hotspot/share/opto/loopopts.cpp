@@ -2635,6 +2635,10 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
       newhead->as_Loop()->clear_strip_mined();
       _igvn.replace_input_of(newhead, LoopNode::EntryControl, newhead->in(LoopNode::EntryControl)->in(LoopNode::EntryControl));
       set_idom(newhead, newhead->in(LoopNode::EntryControl), dd);
+      if (mode == CloneIncludesSafepoint) {
+        new_sfpt = sfpt->clone();
+        old_new.map(sfpt->_idx, new_sfpt);
+      }
     }
     // Look at data node that were assigned a control in the outer
     // loop: they are kept in the outer loop by the safepoint so start
@@ -2666,7 +2670,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
             }
           }
         } else {
-          assert(n == sfpt && mode != CloneIncludesStripMined, "where's the safepoint clone?");
+          assert(n == sfpt && mode == ControlAroundStripMined, "where's the safepoint clone?");
         }
         if (n != sfpt) {
           extra_data_nodes.push(n);
@@ -2681,6 +2685,23 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     if (mode == CloneIncludesStripMined) {
       _igvn.register_new_node_with_optimizer(new_sfpt);
       _igvn.register_new_node_with_optimizer(new_cle_out);
+    } else if (mode == CloneIncludesSafepoint) {
+      OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(new_cl, new_cle_out->as_IfFalse(),
+                                                                        &_igvn, this);
+      Node* sfpt_ctrl = new_cle->in(CountedLoopEndNode::TestControl);
+      for (uint i = 0; i < extra_data_nodes.size(); i++) {
+        Node* n = old_new[extra_data_nodes.at(i)->_idx];
+        set_ctrl(n, sfpt_ctrl);
+        if (n->in(0) == new_cle_out) {
+          _igvn.replace_input_of(n, 0, sfpt_ctrl);
+        }
+      }
+      new_sfpt->set_req(TypeFunc::Control, sfpt_ctrl);
+      set_loop(new_sfpt, outer_loop->_parent);
+      set_idom(new_sfpt, sfpt_ctrl, dd);
+      _igvn.replace_input_of(new_cle, CountedLoopEndNode::TestControl, new_sfpt);
+      set_idom(new_cle, new_sfpt, dd);
+      _igvn.register_new_node_with_optimizer(new_sfpt);
     }
     // Some other transformation may have pessimistically assigned some
     // data nodes to the outer loop. Set their control so they are out

@@ -145,6 +145,7 @@ class NeverBranchNode;
 class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
+class OpaqueRCESideLoopNode;
 class OpaqueMultiversioningNode;
 class OpaqueConstantBoolNode;
 class OpaqueInitializedAssertionPredicateNode;
@@ -834,7 +835,8 @@ public:
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
       DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
       DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
-      DEFINE_CLASS_ID(OpaqueMultiversioning, Opaque1, 2)
+      DEFINE_CLASS_ID(OpaqueRCESideLoop, Opaque1, 2)
+      DEFINE_CLASS_ID(OpaqueMultiversioning, Opaque1, 3)
     DEFINE_CLASS_ID(OpaqueConstantBool,  Node, 17)
     DEFINE_CLASS_ID(OpaqueInitializedAssertionPredicate,  Node, 18)
     DEFINE_CLASS_ID(OpaqueTemplateAssertionPredicate,  Node, 19)
@@ -1027,6 +1029,7 @@ public:
   DEFINE_CLASS_QUERY(OpaqueTemplateAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
+  DEFINE_CLASS_QUERY(OpaqueRCESideLoop)
   DEFINE_CLASS_QUERY(OpaqueMultiversioning)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
