@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,9 @@
  * @author Brad Wetmore
  */
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 
 /*
@@ -67,6 +68,13 @@ public class GCMAPI {
 
         updateAADFail((ByteBuffer) null);
         updateAADPass(bb);
+
+        try(Arena arena = Arena.ofConfined()) {
+            bb = arena.allocate(bytes.length).asByteBuffer();
+            bb.put(bytes);
+            bb.clear();
+            updateAADPass(bb);
+        }
 
         if (failed != 0) {
             throw new Exception("Test(s) failed");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,11 @@
  * @run main ByteBuffers SHA-1
  */
 
-import java.util.*;
-import java.nio.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.util.Arrays;
+import java.util.Random;
+import java.nio.ByteBuffer;
 
 import java.security.*;
 
@@ -76,6 +79,18 @@ public class ByteBuffers {
         byte[] d4 = digest(md, b4, random);
         if (Arrays.equals(d1, d4) == false) {
             throw new Exception("Test 3 failed");
+        }
+
+        // test 4: ByteBuffer backed by a MemorySegment
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(t.length);
+            ByteBuffer b5 = segment.asByteBuffer();
+            b5.put(t);
+            b5.clear();
+            byte [] d5 = digest(md, b5, random);
+            if (Arrays.equals(d1, d5) == false) {
+                throw new Exception("Test 4 failed");
+            }
         }
         System.out.println("All tests passed");
     }
