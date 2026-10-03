@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,6 @@
 // key: compiler.warn.has.been.deprecated.for.removal
 // options: --enable-preview  -source ${jdk.version}
 
-value class ValueWithFinalizeMethod {
+abstract value class AbstractValueClassWithFinalizeMethod {
     protected void finalize() throws Throwable { }
 }
