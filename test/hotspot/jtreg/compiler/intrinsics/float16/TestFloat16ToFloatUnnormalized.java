@@ -57,7 +57,7 @@ public class TestFloat16ToFloatUnnormalized {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("UnnormalizedFloat16"), cb ->
             cb.withMethodBody("convert", MethodTypeDesc.of(CD_float, CD_int),
                 ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC, code -> {
-                    // Short parameters verify as int; deliberately omit i2s.
+                    // Unlike Java source, bytecode accepts int for short parameters; omit i2s to keep upper bits.
                     code.iload(0)
                         .invokestatic(ClassDesc.of("java.lang.Float"), "float16ToFloat",
                                       MethodTypeDesc.of(CD_float, CD_short))
