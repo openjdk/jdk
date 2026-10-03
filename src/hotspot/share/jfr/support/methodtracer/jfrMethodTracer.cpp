@@ -104,7 +104,6 @@ static void register_placeholder(const InstanceKlass* ik, const JfrMethodProcess
   JfrTraceTagging::tag_sticky(ik, mp);
   assert(!placeholder_table()->contains(JfrTraceId::load_raw(ik)), "invariant");
   placeholder_table()->put(JfrTraceId::load_raw(ik), ik);
-  placeholder_table()->maybe_grow();
 }
 
 // Quick and unlocked check to see if the Method Tracer has been activated.

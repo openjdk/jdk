@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,9 @@ template<
     AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
     MemTag MEM_TAG = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
-    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
+    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>,
+    int LOAD_FACTOR = 8,
+    bool USE_LARGE_TABLE_SIZE = false
     >
 class ResizeableHashTable : public HashTableBase<
     ResizeableHashTableStorage<K, V, ALLOC_TYPE, MEM_TAG>,
@@ -87,7 +89,7 @@ class ResizeableHashTable : public HashTableBase<
   NONCOPYABLE(ResizeableHashTable);
 
   // Calculate next "good" hashtable size based on requested count
-  int calculate_resize(bool use_large_table_sizes) const {
+  int calculate_resize() const {
     const int resize_factor = 2;     // by how much we will resize using current number of entries
 
     // possible hashmap sizes - odd primes that roughly double in size.
@@ -99,7 +101,7 @@ class ResizeableHashTable : public HashTableBase<
     const int large_array_size = sizeof(large_table_sizes)/sizeof(int);
 
     int requested = resize_factor * BASE::number_of_entries();
-    int start_at = use_large_table_sizes ? 8 : 0;
+    int start_at = USE_LARGE_TABLE_SIZE ? 8 : 0;
     int newsize;
     for (int i = start_at; i < large_array_size; i++) {
       newsize = large_table_sizes[i];
@@ -110,24 +112,24 @@ class ResizeableHashTable : public HashTableBase<
     return requested; // greater than a size in the table
   }
 
-public:
-  ResizeableHashTable(unsigned size, unsigned max_size)
-  : BASE(size), _max_size(max_size) {
-    assert(size <= 0x3fffffff && max_size <= 0x3fffffff, "avoid overflow in resize");
-  }
-
-  bool maybe_grow(int load_factor = 8, bool use_large_table_sizes = false) {
+  bool maybe_grow() {
     unsigned old_size = BASE::_table_size;
     if (old_size >= _max_size) {
       return false;
     }
-    if (BASE::number_of_entries() / int(old_size) > load_factor) {
-      unsigned new_size = MIN2<unsigned>(calculate_resize(use_large_table_sizes), _max_size);
+    if (BASE::number_of_entries() / int(old_size) > LOAD_FACTOR) {
+      unsigned new_size = MIN2<unsigned>(calculate_resize(), _max_size);
       resize(new_size);
       return true;
     } else {
       return false;
     }
+  }
+
+public:
+  ResizeableHashTable(unsigned size, unsigned max_size)
+  : BASE(size), _max_size(max_size) {
+    assert(size <= 0x3fffffff && max_size <= 0x3fffffff, "avoid overflow in resize");
   }
 
   void resize(unsigned new_size) {
@@ -157,27 +159,37 @@ public:
     BASE::_table_size = new_size;
   }
 
-#ifdef ASSERT
-  int verify() {
-    Node** table = BASE::_table;
-    // Return max bucket size.  If hashcode is broken, this will be
-    // too high.
-    int max_bucket_size = 0;
-    int index = 0;
-    Node* const* bucket = table;
-    while (bucket < &table[BASE::_table_size]) {
-      int count = 0;
-      Node* node = *bucket;
-      while (node != nullptr) {
-        count++;
-        node = node->_next;
-      }
-      max_bucket_size = MAX2(count, max_bucket_size);
-      ++bucket;
+  bool put(K const& key, V const& value) {
+    bool created = BASE::put(key, value);
+    if (created) {
+      maybe_grow();
     }
-    return max_bucket_size;
+    return created;
   }
-#endif // ASSERT
+
+  bool put_when_absent(K const& key, V const& value) {
+    bool created = BASE::put_when_absent(key, value);
+    if (created) {
+      maybe_grow();
+    }
+    return created;
+  }
+
+  V* put_if_absent(K const& key, bool* p_created) {
+    V* node = BASE::put_if_absent(key, p_created);
+    if (*p_created) {
+      maybe_grow();
+    }
+    return node;
+  }
+
+  V* put_if_absent(K const& key, V const& value, bool* p_created) {
+    V* node = BASE::put_if_absent(key, value, p_created);
+    if (*p_created) {
+      maybe_grow();
+    }
+    return node;
+  }
 };
 
 #endif // SHARE_UTILITIES_RESIZABLEHASHTABLE_HPP
