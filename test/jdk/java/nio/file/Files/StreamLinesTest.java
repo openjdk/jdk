@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8072773
+ * @bug 8072773 8393016
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run junit/othervm StreamLinesTest
@@ -46,15 +46,18 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Spliterator;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 import jdk.test.lib.RandomFactory;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class StreamLinesTest {
 
@@ -194,6 +197,18 @@ public class StreamLinesTest {
         expected = readAllLines(p, cs);
         try (Stream<String> s = Files.lines(p, cs)) {
             assertEquals(expected, s.toList());
+        }
+    }
+
+    @Test
+    public void testNullAction() throws IOException {
+        Path file = generateTempFileWithLines(i -> "L" + i, i -> LineSeparator.N, 5, StandardCharsets.UTF_8, false);
+        try (Stream<String> s = Files.lines(file, StandardCharsets.UTF_8)) {
+            Spliterator<String> sp = s.spliterator();
+            sp.forEachRemaining(line -> { });
+
+            assertThrows(NullPointerException.class, () -> sp.tryAdvance(null));
+            assertThrows(NullPointerException.class, () -> sp.forEachRemaining(null));
         }
     }
 }
