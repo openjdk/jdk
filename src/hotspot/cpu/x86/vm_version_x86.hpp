@@ -414,7 +414,7 @@ protected:
     decl(VZEROUPPER,        vzeroupper        ) /* Vzeroupper instruction */ \
     decl(AVX512_VPOPCNTDQ,  avx512_vpopcntdq  ) /* Vector popcount */ \
     decl(AVX512_VPCLMULQDQ, avx512_vpclmulqdq ) /* Vector carryless multiplication */ \
-    decl(AVX512_VAES,       avx512_vaes       ) /* Vector AES instruction */ \
+    decl(VAES,              vaes              ) /* Vector AES instruction */ \
     decl(AVX512_VNNI,       avx512_vnni       ) /* Vector Neural Network Instructions */ \
     decl(FLUSHOPT,          clflushopt        ) /* flusopth instruction */ \
     decl(CLWB,              clwb              ) /* clwb instruction */ \
@@ -902,7 +902,7 @@ public:
   static bool supports_vzeroupper()   { return _features.supports_feature(CPU_VZEROUPPER); }
   static bool supports_avx512_vpopcntdq()  { return _features.supports_feature(CPU_AVX512_VPOPCNTDQ); }
   static bool supports_avx512_vpclmulqdq() { return _features.supports_feature(CPU_AVX512_VPCLMULQDQ); }
-  static bool supports_avx512_vaes()  { return _features.supports_feature(CPU_AVX512_VAES); }
+  static bool supports_vaes()         { return _features.supports_feature(CPU_VAES); }
   static bool supports_gfni()         { return _features.supports_feature(CPU_GFNI); }
   static bool supports_avx512_vnni()  { return _features.supports_feature(CPU_AVX512_VNNI); }
   static bool supports_avx512_bitalg()  { return _features.supports_feature(CPU_AVX512_BITALG); }
