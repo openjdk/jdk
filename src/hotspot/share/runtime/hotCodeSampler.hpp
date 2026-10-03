@@ -40,24 +40,26 @@ static inline uint rand_sampling_period_ms() {
 }
 
 class ThreadSampler;
+class nmethod;
 
 class Candidates : public StackObj {
  private:
-  GrowableArray<Pair<nmethod*, int>> _candidates;
+  GrowableArray<Pair<uint64_t, int>> _candidates;
   int _hot_sample_count;
   int _non_profiled_sample_count;
 
  public:
   Candidates(ThreadSampler& sampler);
 
-  void add_candidate(nmethod* nm, int count);
-  void add_hot_sample_count(int count);
-  void add_non_profiled_sample_count(int count);
+  void move_samples_to_hot(int count);
   void sort();
 
   bool has_candidates();
-  nmethod* get_candidate();
+  Pair<uint64_t, int> get_candidate();
   double get_hot_sample_percent();
+
+  static uint32_t nmethod_compile_id(uint64_t nm_id);
+  static nmethod* nmethod_from_id(uint64_t id);
 };
 
 class GetPCTask : public SuspendedThreadTask {
@@ -85,10 +87,14 @@ class ThreadSampler : public StackObj {
   static const int INITIAL_TABLE_SIZE = 109;
 
   // Table of nmethods found during profiling with sample count
-  ResizeableHashTable<nmethod*, int, AnyObj::C_HEAP, mtInternal> _samples;
+  ResizeableHashTable<uint64_t, int, AnyObj::C_HEAP, mtInternal> _samples;
+
+  int _hot_sample_count;
+  int _non_profiled_sample_count;
 
  public:
-  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs) {}
+  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs), _hot_sample_count(0),
+      _non_profiled_sample_count(0) {}
 
   // Iterate over and sample all Java threads. Return false if sampling was interrupted by JFR sampling.
   bool sample_all_java_threads();
@@ -97,6 +103,14 @@ class ThreadSampler : public StackObj {
   template<typename Function>
   void iterate_samples(Function func) {
     _samples.iterate_all(func);
+  }
+
+  int hot_sample_count() const {
+    return _hot_sample_count;
+  }
+
+  int non_profiled_sample_count() const {
+    return _non_profiled_sample_count;
   }
 };
 
