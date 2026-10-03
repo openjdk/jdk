@@ -3005,51 +3005,57 @@ class StubGenerator: public StubCodeGenerator {
   // Emit full AES decrypt: shared head (vaesz + 9 vaesdm) + key-size divergent tail.
   // round_keys[] must be right-aligned: AES-128 uses rk[4..14], AES-192 uses rk[2..14], AES-256 uses rk[0..14].
   // Dispatches on keylen at runtime; clobbers t2.
-  void aes_decrypt_all(VectorRegister data[], int n, Register keylen, VectorRegister rk[]) {
+  void aes_decrypt_all(VectorRegister data, Register keylen, VectorRegister rk[]) {
     Label L128, L192, Ltail;
     __ mv(t2, AES_192_KEYLEN_INTS);
-    for (int d = 0; d < n; d++) __ vaesz_vs(data[d], rk[14]);
-    for (int r = 13; r >= 5; r--)
-      for (int d = 0; d < n; d++) __ vaesdm_vs(data[d], rk[r]);
+    __ vaesz_vs(data, rk[14]);
+    for (int r = 13; r >= 5; r--) {
+      __ vaesdm_vs(data, rk[r]);
+    }
     __ bltu(keylen, t2, L128);
     __ beq(keylen, t2, L192);
-    for (int r = 4; r >= 1; r--)
-      for (int d = 0; d < n; d++) __ vaesdm_vs(data[d], rk[r]);
-    for (int d = 0; d < n; d++) __ vaesdf_vs(data[d], rk[0]);
+    for (int r = 4; r >= 1; r--) {
+      __ vaesdm_vs(data, rk[r]);
+    }
+    __ vaesdf_vs(data, rk[0]);
     __ j(Ltail);
     __ bind(L192);
-    for (int r = 4; r >= 3; r--)
-      for (int d = 0; d < n; d++) __ vaesdm_vs(data[d], rk[r]);
-    for (int d = 0; d < n; d++) __ vaesdf_vs(data[d], rk[2]);
+    for (int r = 4; r >= 3; r--) {
+      __ vaesdm_vs(data, rk[r]);
+    }
+    __ vaesdf_vs(data, rk[2]);
     __ j(Ltail);
     __ bind(L128);
-    for (int d = 0; d < n; d++) __ vaesdf_vs(data[d], rk[4]);
+    __ vaesdf_vs(data, rk[4]);
     __ bind(Ltail);
   }
 
   // Emit full AES encrypt: key-size divergent head + shared tail (vaesz + 9 vaesem + vaesef).
   // round_keys[] right-aligned: AES-128 uses rk[4..14], AES-192 uses rk[2..14], AES-256 uses rk[0..14].
   // Dispatches on keylen at runtime; clobbers t2.
-  void aes_encrypt_all(VectorRegister data[], int n, Register keylen, VectorRegister rk[]) {
+  void aes_encrypt_all(VectorRegister data, Register keylen, VectorRegister rk[]) {
     Label L128, L192, Ltail;
     __ mv(t2, AES_192_KEYLEN_INTS);
     __ bltu(keylen, t2, L128);
     __ beq(keylen, t2, L192);
-    for (int d = 0; d < n; d++) __ vaesz_vs(data[d], rk[0]);
-    for (int r = 1; r <= 4; r++)
-      for (int d = 0; d < n; d++) __ vaesem_vs(data[d], rk[r]);
+    __ vaesz_vs(data, rk[0]);
+    for (int r = 1; r <= 4; r++) {
+      __ vaesem_vs(data, rk[r]);
+    }
     __ j(Ltail);
     __ bind(L192);
-    for (int d = 0; d < n; d++) __ vaesz_vs(data[d], rk[2]);
-    for (int r = 3; r <= 4; r++)
-      for (int d = 0; d < n; d++) __ vaesem_vs(data[d], rk[r]);
+    __ vaesz_vs(data, rk[2]);
+    for (int r = 3; r <= 4; r++) {
+      __ vaesem_vs(data, rk[r]);
+    }
     __ j(Ltail);
     __ bind(L128);
-    for (int d = 0; d < n; d++) __ vaesz_vs(data[d], rk[4]);
+    __ vaesz_vs(data, rk[4]);
     __ bind(Ltail);
-    for (int r = 5; r <= 13; r++)
-      for (int d = 0; d < n; d++) __ vaesem_vs(data[d], rk[r]);
-    for (int d = 0; d < n; d++) __ vaesef_vs(data[d], rk[14]);
+    for (int r = 5; r <= 13; r++) {
+      __ vaesem_vs(data, rk[r]);
+    }
+    __ vaesef_vs(data, rk[14]);
   }
 
   // Generate the ECB loop: an m1/e32 bulk loop with VL = VLMAX followed by a
@@ -3062,8 +3068,6 @@ class StubGenerator: public StubCodeGenerator {
                 VectorRegister rk[], bool encrypt) {
     const Register batch_bytes = t0;
     Label L_bulk_loop, L_tail_loop, L_done;
-    VectorRegister data[1] = {v20};
-
     // m1/e32 with VL = VLMAX; batch_bytes = VL * 4.
     __ vsetvli(batch_bytes, x0, Assembler::e32, Assembler::m1);
     __ slli(batch_bytes, batch_bytes, 2);
@@ -3072,8 +3076,8 @@ class StubGenerator: public StubCodeGenerator {
     __ bltu(len, batch_bytes, L_tail_loop);
     __ vle32_v(v20, from);
     __ add(from, from, batch_bytes);
-    if (encrypt) aes_encrypt_all(data, 1, keylen, rk);
-    else         aes_decrypt_all(data, 1, keylen, rk);
+    if (encrypt) aes_encrypt_all(v20, keylen, rk);
+    else         aes_decrypt_all(v20, keylen, rk);
     __ vse32_v(v20, to);
     __ add(to, to, batch_bytes);
     __ sub(len, len, batch_bytes);
@@ -3085,8 +3089,8 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(v20, from);
     __ addi(from, from, 16);
-    if (encrypt) aes_encrypt_all(data, 1, keylen, rk);
-    else         aes_decrypt_all(data, 1, keylen, rk);
+    if (encrypt) aes_encrypt_all(v20, keylen, rk);
+    else         aes_decrypt_all(v20, keylen, rk);
     __ vse32_v(v20, to);
     __ addi(to, to, 16);
     __ subi(len, len, 16);
