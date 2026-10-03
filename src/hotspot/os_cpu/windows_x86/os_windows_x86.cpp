@@ -386,7 +386,11 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 }
 
 extern "C" int SpinPause () {
-   return 0 ;
+   // pause == rep:nop
+   // On systems that don't support pause a rep:nop
+   // is executed as a nop.  The rep: prefix is ignored.
+   YieldProcessor();
+   return 1 ;
 }
 
 juint os::cpu_microcode_revision() {
