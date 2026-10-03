@@ -143,11 +143,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
-  if (UseVectorizedMismatchIntrinsic) {
-    warning("VectorizedMismatch intrinsic is not available on this CPU.");
-    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
-  }
-
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
     FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
@@ -531,6 +526,16 @@ void VM_Version::c2_initialize() {
       warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvkg support");
       FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
     }
+  }
+
+  if (UseRVV && UseZbb
+      && (MaxVectorSize == 16 || MaxVectorSize == 32)) {
+    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, true);
+    }
+  } else if (UseVectorizedMismatchIntrinsic) {
+    warning("VectorizedMismatch intrinsic requires RVV and Zbb (not available on this CPU).");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 }
 
