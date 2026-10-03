@@ -849,6 +849,16 @@ public class IRNode {
         vectorNode(DIV_VD, "DivVD", TYPE_DOUBLE);
     }
 
+    public static final String DOT_V = VECTOR_PREFIX + "DOT_V" + POSTFIX;
+    static {
+        vectorNode(DOT_V, "DotV", TYPE_INT);
+    }
+
+    public static final String UDOT_V = VECTOR_PREFIX + "UDOT_V" + POSTFIX;
+    static {
+        vectorNode(UDOT_V, "UDotV", TYPE_INT);
+    }
+
     public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
     static {
         callOfNodes(DYNAMIC_CALL_OF_METHOD, "CallDynamicJava", IS_REPLACED);

@@ -126,6 +126,9 @@ public class VectorSupport {
     public static final int VECTOR_OP_UMIN  = 123;
     public static final int VECTOR_OP_UMAX  = 124;
 
+    public static final int VECTOR_OP_DOT  = 125;
+    public static final int VECTOR_OP_UDOT = 126;
+
     // See src/hotspot/share/opto/subnode.hpp
     //     struct BoolTest, and enclosed enum mask
     public static final int BT_eq = 0;  // 0000
@@ -400,6 +403,21 @@ public class VectorSupport {
     }
 
     /* ============================================================================ */
+
+    public interface VectorDotOp<VOUT extends VectorPayload,
+                                  VIN extends VectorPayload> {
+        VOUT apply(VIN v1, VIN v2, VOUT acc);
+    }
+
+    @IntrinsicCandidate
+    public static <VOUT extends VectorPayload,
+                    VIN extends VectorPayload>
+    VOUT dot(int oprId, Class<?> fromVectorClass, int fromLaneType, int fromVLen,
+             Class<?> toVectorClass, int toLaneType, int toVLen, VIN v1, VIN v2, VOUT acc,
+             VectorDotOp<VOUT, VIN> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, acc);
+    }
 
     /* ============================================================================ */
 
