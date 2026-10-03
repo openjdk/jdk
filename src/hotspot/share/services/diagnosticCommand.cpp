@@ -104,6 +104,7 @@ void DCmd::register_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSecurityPropertiesDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemLoggingLevelDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMInfoDCmd>(full_export));
@@ -902,6 +903,67 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
     Events::print_one(output(), log_name, max);
   } else {
     Events::print_all(output(), max);
+  }
+}
+
+SystemLoggingLevelDCmd::SystemLoggingLevelDCmd(outputStream* output, bool heap) :
+                                           DCmdWithParser(output, heap),
+  _loggername("logger", "Name of logger to be adjusted", "STRING", true),
+  _levelvalue("level", "System.Logger Level (e.g. INFO, DEBUG)", "STRING", false, "OFF"),
+  _outputvalue("output", "Output for log records: logger, stdout, or stderr", "STRING", false, "logger") {
+  _dcmdparser.add_dcmd_option(&_loggername);
+  _dcmdparser.add_dcmd_option(&_levelvalue);
+  _dcmdparser.add_dcmd_option(&_outputvalue);
+}
+
+void SystemLoggingLevelDCmd::execute(DCmdSource source, TRAPS) {
+  char* logger = _loggername.value();
+  char* level = _levelvalue.value();
+  char* log_output = _outputvalue.value();
+  setLevel(logger, level, log_output, CHECK);
+}
+
+
+void SystemLoggingLevelDCmd::setLevel(const char* logger, const char* level, const char* log_output, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Handle h_logger = java_lang_String::create_from_str(logger, CHECK);
+  Handle h_level = java_lang_String::create_from_str(level, CHECK);
+  Handle h_output = java_lang_String::create_from_str(log_output, CHECK);
+  // load VMSupport
+  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
+  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->should_be_initialized()) {
+    ik->initialize(THREAD);
+  }
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                            k,
+                            vmSymbols::setLogLevel_name(),
+                            vmSymbols::setLogLevel_signature(),
+                            h_logger,
+                            h_level,
+                            h_output,
+                            THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  oop status = result.get_oop();
+  if (status != nullptr) {
+    output()->print_cr("%s", java_lang_String::as_utf8_string(status));
   }
 }
 
