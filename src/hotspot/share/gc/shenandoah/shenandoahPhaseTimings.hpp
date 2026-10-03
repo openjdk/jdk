@@ -31,8 +31,8 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 
-class ShenandoahCollectorPolicy;
 class outputStream;
+class ShenandoahCollectorPolicy;
 
 #define SHENANDOAH_WORKER_PHASE_DO(NAME_PREFIX, DESC_PREFIX, f)             \
   f(NAME_PREFIX ## Work,                 DESC_PREFIX "Work",        false)  \

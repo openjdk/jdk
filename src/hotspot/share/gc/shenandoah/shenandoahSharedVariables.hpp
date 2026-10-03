@@ -26,8 +26,9 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSHAREDVARIABLES_HPP
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 typedef int32_t ShenandoahSharedValue;
 typedef struct ShenandoahSharedFlag {

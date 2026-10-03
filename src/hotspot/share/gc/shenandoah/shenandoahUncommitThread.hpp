@@ -22,10 +22,13 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD
-#define SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "runtime/mutex.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeap;
 
@@ -94,4 +97,4 @@ protected:
 };
 
 
-#endif //SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD_HPP

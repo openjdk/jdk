@@ -22,17 +22,29 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_HPP
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "memory/universe.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
-class PLAB;
-class ShenandoahRegulatorThread;
-class ShenandoahGenerationalControlThread;
+class CollectedHeap;
+class MemoryPool;
 class ShenandoahAgeCensus;
+class ShenandoahCollectorPolicy;
+class ShenandoahGeneration;
+class ShenandoahHeapRegion;
+class ShenandoahMarkingContext;
+class ShenandoahRegulatorThread;
+class Thread;
+class ThreadClosure;
 
 class ShenandoahGenerationalHeap : public ShenandoahHeap {
   void stop() override;
@@ -139,4 +151,4 @@ private:
   MemoryPool* _old_gen_memory_pool;
 };
 
-#endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_HPP

@@ -25,10 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
 
-#include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class ShenandoahAllocRequest;
+class ShenandoahHeapRegion;
 
 // ShenandoahPartitionAllocator is the serial (lock-based) partition allocator.
 // It uses ShenandoahFreeSet APIs to find regions and performs allocation within them

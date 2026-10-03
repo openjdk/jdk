@@ -28,6 +28,8 @@
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 
+class Thread;
+
 class ShenandoahSATBMarkQueueSet : public SATBMarkQueueSet {
 private:
   bool _filter_out_young;

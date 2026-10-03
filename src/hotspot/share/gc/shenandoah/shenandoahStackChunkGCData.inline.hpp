@@ -27,7 +27,11 @@
 #include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 
 #include "oops/instanceStackChunkKlass.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline ShenandoahStackChunkGCData* ShenandoahStackChunkGCData::data(stackChunkOop chunk) {
 #ifdef ASSERT

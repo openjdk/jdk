@@ -27,7 +27,9 @@
 
 #include "gc/shenandoah/shenandoahStripedCounter.hpp"
 
+#include "runtime/atomicAccess.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline uint32_t ShenandoahStripedCounter::current_stripe() const {
   if (_num_stripes == 1u) {

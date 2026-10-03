@@ -27,9 +27,12 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shenandoah/shenandoahAllocRequest.hpp"
-#include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class ShenandoahAllocRequest;
 
 /**
  * This interface exposes methods necessary for the heap to interact

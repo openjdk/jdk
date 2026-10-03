@@ -28,8 +28,15 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
+class JavaThread;
 
 class ShenandoahLock {
 private:

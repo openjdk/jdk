@@ -29,9 +29,15 @@
 
 #include "gc/shenandoah/shenandoahStripedCounter.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "logging/log.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
-
 
 inline size_t ShenandoahAnticipatedConsumption::baseline_consumption() const {
   return shenandoah_safe_size_cast(_baseline * _duration_seconds);
