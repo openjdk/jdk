@@ -3485,6 +3485,11 @@ public class IRNode {
         beforeMatchingNameRegex(OPAQUE_CONSTANT_BOOL, "OpaqueConstantBool");
     }
 
+    public static final String BIMORPHIC_TRAP = PREFIX + "BIMORPHIC_TRAP" + POSTFIX;
+    static {
+        trapNodes(BIMORPHIC_TRAP, "bimorphic");
+    }
+
     /*
      * Value type nodes.
      */

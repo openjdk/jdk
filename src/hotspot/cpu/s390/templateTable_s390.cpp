@@ -865,7 +865,7 @@ void TemplateTable::aaload() {
   // Index is in Z_tos.
   Register index = Z_tos;
   index_check(Z_tmp_1, index, shift);
-  __ profile_array_type<ArrayLoadData>(/*array=*/Z_tmp_1, Z_tmp_2, Z_ARG2);
+  __ profile_multiple_array_types(Z_tmp_1, Z_tmp_2, Z_ARG2);
 
   if (UseArrayFlattening) {
     NearLabel is_flat_array, done;
@@ -1219,7 +1219,7 @@ void TemplateTable::aastore() {
   __ load_address(Rstore_addr, Address(Rarray, Rindex, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 
   // profile_multiple_element_types uses Rarray_klass as tmp3 scratch - it clobbers it.
-  __ profile_array_type<ArrayStoreData>(Rarray, Rscratch, Rscratch2);
+  __ profile_array_type(Rarray, Rscratch, Rscratch2);
   __ profile_multiple_element_types(Rvalue, Rscratch, Rscratch2, Rarray_klass);
 
   __ compareU64_and_branch(Rvalue, (intptr_t)0, Assembler::bcondEqual, is_null);
