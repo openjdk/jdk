@@ -885,8 +885,9 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
       break;
     }
     case T_ARRAY:  // fall-through
-    case T_OBJECT:
-      if (!fd->is_null_free_value_type()) {
+    case T_OBJECT: {
+      bool is_flattened = fd->is_null_free_value_type() && fd->is_flat();
+      if (!is_flattened) {
         _out->print("%s", fd->signature()->as_quoted_ascii());
         oop value =  mirror->obj_field_acquire(fd->offset());
         if (value == nullptr) {
@@ -935,8 +936,8 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         } else {
           ShouldNotReachHere();
         }
-        break;
       } else {
+        assert(fd->is_flat() == is_flat, "mismatch");
         // handling of null free value type
         _out->print("%s", fd->signature()->as_quoted_ascii());
         ResetNoHandleMark rnhm;
@@ -958,8 +959,9 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         }
         ValueTypeFieldPrinter print_field(_out, obj);
         vk->do_nonstatic_fields(&print_field);
-        break;
       }
+      break;
+    }
     default:
       ShouldNotReachHere();
   }
