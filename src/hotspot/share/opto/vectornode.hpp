@@ -1778,6 +1778,18 @@ class VectorMaskCmpNode : public VectorNode {
 #endif // !PRODUCT
 };
 
+// Specialized lane-wise compare for Float16 (IEEE binary16) vectors.
+class VectorMaskCmpHFNode : public VectorMaskCmpNode {
+ protected:
+  virtual uint size_of() const { return sizeof(VectorMaskCmpHFNode); }
+
+ public:
+  VectorMaskCmpHFNode(BoolTest::mask predicate, Node* in1, Node* in2, ConINode* predicate_node, const TypeVect* vt) :
+      VectorMaskCmpNode(predicate, in1, in2, predicate_node, vt) {}
+
+  virtual int Opcode() const;
+};
+
 // Used to wrap other vector nodes in order to add masking functionality.
 class VectorMaskWrapperNode : public VectorNode {
  public:
