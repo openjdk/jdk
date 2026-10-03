@@ -180,6 +180,7 @@ public class Flags {
 
     /** Marks a type as a value class */
     @Use({FlagTarget.CLASS})
+    @CustomToStringValue("value")
     public static final int VALUE_CLASS      = 1<<20;
 
     /** A parameter of a lambda function.
