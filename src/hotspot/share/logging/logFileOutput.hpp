@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class LogFileOutput : public LogFileStreamOutput {
 
   void archive();
   void rotate();
-  char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
+  char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string) const;
 
   bool should_rotate() {
     return _file_count > 0 && _rotate_size > 0 && _current_size >= _rotate_size;
@@ -96,6 +96,7 @@ class LogFileOutput : public LogFileStreamOutput {
   }
 
   const char* cur_log_file_name();
+  virtual bool matches_name(const char* name) const;
   static const char* const Prefix;
   static void set_file_name_parameters(jlong start_time);
 };
