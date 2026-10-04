@@ -24,41 +24,12 @@
  */
 package sun.jvm.hotspot.oops;
 
-import sun.jvm.hotspot.debugger.Address;
-import sun.jvm.hotspot.runtime.VM;
-import sun.jvm.hotspot.runtime.VMObject;
-import sun.jvm.hotspot.types.Type;
-import sun.jvm.hotspot.types.TypeDataBase;
-import sun.jvm.hotspot.types.WrongTypeException;
 
+public class LayoutKindHelper {
 
-public class ValueFieldLayoutInfo extends VMObject {
-
-    private static MetadataField klassField;
-    private static CIntField kindField;
-
-    static {
-        VM.registerVMInitializedObserver((_, _) -> initialize(VM.getVM().getTypeDataBase()));
-    }
-
-    private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-        Type type = db.lookupType("ValueFieldLayoutInfo");
-
-        klassField = new MetadataField(type.getAddressField("_klass"), 0);
-        kindField = new CIntField(type.getCIntegerField("_kind"), 0);
-    }
-
-    public ValueFieldLayoutInfo(Address addr) {
-        super(addr);
-    }
-
-    public ValueKlass getKlass() {
-        return (ValueKlass)klassField.getValue(this);
-    }
-
-    public LayoutKind getKind() {
-        int rawVal = (int)kindField.getValue(this);
-        return LayoutKind.valueOf(rawVal);
+    public static boolean isNullableFlat(LayoutKind layoutKind) {
+        return layoutKind.equals(LayoutKind.NULLABLE_ATOMIC_FLAT) ||
+               layoutKind.equals(LayoutKind.NULLABLE_NON_ATOMIC_FLAT);
     }
 
 }

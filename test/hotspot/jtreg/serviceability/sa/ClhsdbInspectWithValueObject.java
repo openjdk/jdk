@@ -77,7 +77,9 @@ public class ClhsdbInspectWithValueObject {
             var cmds = List.of(
                 "inspect " + addresses.getProperty("valObj"),
                 "inspect " + addresses.getProperty("nonNullValObj"),
-                "inspect " + addresses.getProperty("nonFlattenedValObj")
+                "inspect " + addresses.getProperty("nonFlattenedValObj"),
+                "inspect " + addresses.getProperty("valObjArray"),
+                "inspect " + addresses.getProperty("nonFlattenedValObjArray")
             );
 
             var expStrMap = Map.of(
@@ -97,6 +99,28 @@ public class ClhsdbInspectWithValueObject {
               cmds.get(2) /* nonFlattenedValObj */ , List.of(
                 "a: 100",
                 "obj: Oop for java/lang/Object"
+              ),
+              cmds.get(3) /* valObjArray */ , List.of(
+                "0:",
+                  "a: 1",
+                  "rec:",
+                    "recA: 10",
+                    "recB: 20",
+                  "nullField: null",
+                "1:",
+                  "a: 2",
+                  "rec:",
+                    "recA: 30",
+                    "recB: 40",
+                  "nullField: null"
+              ),
+              cmds.get(4) /* nonFlattenedValObjArray */ , List.of(
+                "0:",
+                  "a: 100",
+                  "obj: Oop for java/lang/Object",
+                "1:",
+                  "a: 200",
+                  "obj: Oop for java/lang/Object"
               )
             );
             test.run(theApp.getPid(), cmds, expStrMap, null);
