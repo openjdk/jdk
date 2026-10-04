@@ -91,6 +91,41 @@ public class LineBreakLineWidth {
         }
     }
 
+    /**
+     * The manifest version header is written before all other main attributes,
+     * but it is still subject to the manifest line-length limit.
+     */
+    @Test
+    public void testWriteLongVersionHeader() throws IOException {
+        String version = "1.".repeat(TEST_WIDTH_RANGE) + "1";
+        Manifest mf = new Manifest();
+        mf.getMainAttributes().put(Name.MANIFEST_VERSION, version);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        mf.write(out);
+        byte[] bytes = out.toByteArray();
+
+        int lineStart = 0;
+        int nonEmptyLineCount = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            if (bytes[i] == '\n') {
+                assertEquals('\r', bytes[i - 1]);
+                int lineLength = i - lineStart - 1;
+                assertTrue(lineLength <= 72,
+                        "manifest line exceeds 72 bytes");
+                if (lineLength > 0 && nonEmptyLineCount++ > 0) {
+                    assertEquals(' ', bytes[lineStart],
+                            "continuation line does not start with a space");
+                }
+                lineStart = i + 1;
+            }
+        }
+
+        Manifest read = new Manifest(new ByteArrayInputStream(bytes));
+        assertEquals(version,
+                read.getMainAttributes().getValue(Name.MANIFEST_VERSION));
+    }
+
     static void writeValidManifest(String name, String value)
             throws IOException {
         byte[] mfBytes = writeManifest(name, value);
