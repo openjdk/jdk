@@ -2028,6 +2028,12 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseHashcodeFastPath, true, DIAGNOSTIC,                      \
           "Use fast path for identityHashCode.")                            \
+                                                                            \
+  product(bool, AlignArrayElements, false,                                  \
+          "Align the first element of arrays to a machine-word boundary"    \
+          " which can use more footprint but improves performance for "     \
+          " vectorization and intrinsics.")                                 \
+                                                                            \
 
 // end of RUNTIME_FLAGS
 

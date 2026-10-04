@@ -1434,7 +1434,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
   const TypeAryPtr* ta = tj->isa_aryptr();
   if( ta && is_known_inst ) {
     if ( offset != Type::OffsetBot &&
-         offset > arrayOopDesc::length_offset_in_bytes() ) {
+         offset >= arrayOopDesc::base_offset_in_bytes(T_BYTE) ) {
       offset = Type::OffsetBot; // Flatten constant access into array body only
       tj = ta = ta->
               remove_speculative()->

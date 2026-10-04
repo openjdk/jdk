@@ -311,7 +311,7 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
   assert((_buffer_used % MIN_GC_REGION_ALIGNMENT) == 0,
          "Pre-condition: Roots start at aligned boundary: %zu", _buffer_used);
 
-  int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - arrayOopDesc::header_size_in_bytes()) / heapOopSize);
+  int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - objArrayOopDesc::base_offset_in_bytes()) / heapOopSize);
   assert(refArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
          "Should match exactly");
 
