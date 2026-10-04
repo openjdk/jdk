@@ -29,6 +29,10 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HtmlPage implements AutoCloseable {
     static final String STYLE_SHEET_FILENAME = "failure-handler-style.css";
@@ -59,11 +63,20 @@ public class HtmlPage implements AutoCloseable {
         if (htmlFileName.isBlank()) {
             throw new IllegalArgumentException("HTML file name cannot be blank");
         }
+        final Set<String> existingIds = new HashSet<>();
+        if (append && Files.isRegularFile(dir.resolve(htmlFileName))) {
+            final Matcher m = Pattern.compile("div id='([^']*)'")
+                    .matcher(Files.readString(dir.resolve(htmlFileName)));
+            while (m.find()) {
+                existingIds.add(m.group(1));
+            }
+        }
         final FileWriter fileWriter = new FileWriter(dir.resolve(htmlFileName).toFile(), append);
         this.writer = new PrintWriter(fileWriter, true);
         createScriptFile(dir);
         createStyleSheetFile(dir);
         rootSection = new HtmlSection(writer);
+        rootSection.preregisterIds(existingIds);
     }
 
 
