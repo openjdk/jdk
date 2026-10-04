@@ -126,8 +126,12 @@ final class SSLConfiguration implements Cloneable {
         if (supportExtendedMasterSecret) {
             try {
                 KeyGenerator.getInstance("SunTlsExtendedMasterSecret");
-            } catch (NoSuchAlgorithmException nae) {
-                supportExtendedMasterSecret = false;
+            } catch (NoSuchAlgorithmException _) {
+                try {
+                    KeyGenerator.getInstance("SunTls12ExtendedMasterSecret");
+                } catch (NoSuchAlgorithmException _) {
+                    supportExtendedMasterSecret = false;
+                }
             }
         }
         useExtendedMasterSecret = supportExtendedMasterSecret;
