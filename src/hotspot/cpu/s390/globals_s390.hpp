@@ -76,7 +76,7 @@ define_pd_global(uintx, TypeProfileLevel, 111);
 define_pd_global(bool, CompactStrings, true);
 
 // 8146801 (Short Array Allocation): No performance work done here yet.
-define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
+define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
 define_pd_global(bool, ValueTypePassFieldsAsArgs, false);
 define_pd_global(bool, ValueTypeReturnedAsFields, false);

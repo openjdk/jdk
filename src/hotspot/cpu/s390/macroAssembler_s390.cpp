@@ -5012,25 +5012,59 @@ unsigned int MacroAssembler::Clear_Array_Const_Big(long cnt, Register base_point
 }
 
 // Fill words with a non-zero value.
-void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp) {
+void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp,  bool is_large, VectorRegister Vtmp) {
   assert_different_registers(base, cnt, value, tmp);
-  NearLabel loop, loop_end;
-
   BLOCK_COMMENT("fill_words {");
 
-  // 2x unrolled loop; cnt == 0 is handled correctly (both branches skip, falls to done)
-  z_srag(tmp, cnt, 1);    // tmp = cnt / 2, sets CC
-  z_bre(loop_end);         // skip pair loop if cnt < 2
+  if (!is_large) {
+    NearLabel loop, loop_end;
+
+    // 2x unrolled loop; cnt == 0 is handled correctly (both branches skip, falls to done)
+    z_srag(tmp, cnt, 1);     // tmp = cnt / 2, sets CC
+    z_bre(loop_end);         // skip pair loop if cnt < 2
+
+    bind(loop);
+    z_stg(value, 0, base);
+    z_stg(value, 8, base);
+    add2reg(base, 16);
+    z_brctg(tmp, loop);      // 64-bit decrement-and-branch
+
+    bind(loop_end);
+
+    z_tmll(cnt, 1);
+    z_stocg(value, 0, base, bcondNotAllZero);
+
+    BLOCK_COMMENT("} fill_words");
+
+    return;
+  }
+
+#ifdef ASSERT
+  // Sanity, This implementation will fail only if cnt < 4
+  NearLabel correct_cnt;
+  compare64_and_branch(cnt, 0x4, Assembler::bcondNotLow, correct_cnt);
+  stop("cnt must be atleast 4");
+  bind(correct_cnt);
+#endif //ASSERT
+
+  NearLabel loop, skip;
+
+  z_vlvgp(Vtmp, value, value);      // populate the Vector register with value
+  z_srlg(tmp, cnt, 0x2);            // tmp = cnt / 4
 
   bind(loop);
-  z_stg(value, 0, base);
-  z_stg(value, 8, base);
-  z_la(base, 16, base);
-  z_brctg(tmp, loop);      // 64-bit decrement-and-branch
+  z_vst(Vtmp, Address(base, 0));
+  z_vst(Vtmp, Address(base, 16));
+  add2reg(base, 32);
+  z_brctg(tmp, loop);
 
-  bind(loop_end);
+  z_tmll(cnt, 0x2);
+  branch_optimized(Assembler::bcondAllZero, skip);
+  z_vst(Vtmp, Address(base, 0));
+  add2reg(base, 16);
+  bind(skip);
 
-  z_tmll(cnt, 1);
+  z_tmll(cnt, 0x1);
   z_stocg(value, 0, base, bcondNotAllZero);
 
   BLOCK_COMMENT("} fill_words");
