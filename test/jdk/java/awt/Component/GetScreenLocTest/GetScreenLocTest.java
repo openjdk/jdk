@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
-import java.awt.AWTException;
-import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -42,23 +44,15 @@ import java.awt.event.MouseEvent;
  * @bug 4356202
  * @summary Tests that getLocationOnScreen returns valid value(WindowMaker
  *          only).
- * @author dom@sparc.spb.su:
+ * @run main/othervm -Dsun.java2d.uiScale=1 GetScreenLocTest
  */
+
 public class GetScreenLocTest {
-    //Declare things used in the test, like buttons and labels here
-    static Robot robot = null;
-    private static class MyCanvas extends Canvas {
-        public Dimension getPreferredSize() {
-            return new Dimension(100, 100);
-        }
-        public void paint(Graphics g) {
-            super.paint(g);
-            g.setColor(Color.blue);
-            Rectangle r = getBounds();
-            g.fillRect(0, 0, r.width, r.height);
-        }
-    }
+    static Frame bigFrame, smallFrame;
+    static Canvas canvas;
     static int state = 0; // there are three states - (-1,-1),(0,0),(1,1)
+    static Robot robot;
+    static Point p;
 
     static void bigPause() {
         Toolkit.getDefaultToolkit().sync();
@@ -68,24 +62,52 @@ public class GetScreenLocTest {
 
     static void doPress(Point p) {
         robot.mouseMove(p.x, p.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
-    public static void main(final String[] args) throws AWTException {
+    private static void test() throws Exception {
         robot = new Robot();
-        Frame bigOne = new Frame();
-        bigOne.setSize(200, 200);
-        bigOne.setLocationRelativeTo(null);
-        bigOne.setVisible(true);
-        Frame f = new Frame();
-        f.setLayout(new BorderLayout());
-        f.setSize(120, 150);
-        f.setLocationRelativeTo(null);
-        Canvas c = new MyCanvas();
-        f.add(c, BorderLayout.CENTER);
-        c.addMouseListener(new MouseAdapter() {
+        robot.setAutoDelay(100);
+        bigPause();
+
+        EventQueue.invokeAndWait(() -> {
+            p = canvas.getLocationOnScreen();
+        });
+        doPress(p);
+        p.x += 1;
+        p.y += 1;
+        doPress(p);
+        p.x -= 2;
+        p.y -= 2;
+        doPress(p);
+        bigPause();
+
+        // ...and at the end the state should be 2
+        if (state != 2) {
+            throw new RuntimeException("wrong state: " + state);
+        }
+    }
+    private static void createAndShowGUI() {
+        bigFrame = new Frame();
+        bigFrame.setSize(200, 200);
+        bigFrame.setLocationRelativeTo(null);
+        bigFrame.setVisible(true);
+        smallFrame = new Frame();
+        smallFrame.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(5, 5, 5, 5);
+        c.fill = GridBagConstraints.BOTH;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        smallFrame.setSize(120, 150);
+
+        canvas = new MyCanvas();
+        smallFrame.add(canvas, c);
+
+        canvas.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
+                System.out.println("Received mouse press at:" + e);
                 switch(state) {
                     case 0: // the first event should be (0,0)
                         if (e.getX() != 0 || e.getY() != 0) {
@@ -103,29 +125,42 @@ public class GetScreenLocTest {
                         break;
                     case 2: // this should never happen
                         System.out.println("state 2: wrong location " + e);
+                        throw new RuntimeException("Received invalid" +
+                            " mouse event");
                 }
             }
         });
-        f.pack();
-        f.setVisible(true);
-        bigPause();
+        smallFrame.pack();
+        smallFrame.setLocationRelativeTo(null);
+        smallFrame.setAlwaysOnTop(true);
+        smallFrame.setVisible(true);
+    }
 
-        Point p = c.getLocationOnScreen();
-        doPress(p);
-        p.x += 1;
-        p.y += 1;
-        doPress(p);
-        p.x -= 2;
-        p.y -= 2;
-        doPress(p);
-        bigPause();
+    private static class MyCanvas extends Canvas {
+        public Dimension getPreferredSize() {
+            return new Dimension(100, 100);
+        }
+        public void paint(Graphics g) {
+            super.paint(g);
+            g.setColor(Color.blue);
+            Rectangle r = getBounds();
+            g.fillRect(0, 0, r.width, r.height);
+        }
+    }
 
-        f.dispose();
-        bigOne.dispose();
-
-        // ...and at the end the state should be 2
-        if (state != 2) {
-            throw new RuntimeException("wrong state: " + state);
+    public static void main(String[] args) throws Exception {
+        try {
+            EventQueue.invokeAndWait(GetScreenLocTest::createAndShowGUI);
+            test();
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (smallFrame != null) {
+                    smallFrame.dispose();
+                }
+                if (bigFrame != null) {
+                    bigFrame.dispose();
+                }
+            });
         }
     }
 }
