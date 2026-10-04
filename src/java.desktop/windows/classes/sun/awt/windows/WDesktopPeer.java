@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,12 @@ final class WDesktopPeer implements DesktopPeer {
 
     @Override
     public void browse(URI uri) throws IOException {
-        this.launchUriInBrowser(uri);
+        if (isBrowseInsecureAllowed(uri)) {
+            this.ShellExecute(uri, ACTION_OPEN_VERB);
+        } else {
+            // Fall back to opening the URI in browser
+            this.launchUriInBrowser(uri);
+        }
     }
 
     private void ShellExecute(File file, String verb) throws IOException {
