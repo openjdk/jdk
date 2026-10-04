@@ -63,7 +63,7 @@ do
 
 EOF
 
-for w in AOT DYNAMIC STATIC; do
+for w in AOT AOT-Retrain AOT-Retrain2 DYNAMIC STATIC; do
     id=$(echo "$w" | awk '{print tolower($0)}')
 
     cat << EOF >> $fname
@@ -73,7 +73,7 @@ for w in AOT DYNAMIC STATIC; do
  * @requires vm.cds & vm.compMode != "Xcomp"
 EOF
 
-    if test "$w" == "AOT"; then
+    if test "$w" == "AOT" -o "$w" == "AOT-Retrain" -o "$w" == "AOT-Retrain2" ; then
         cat << EOF >> $fname
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635

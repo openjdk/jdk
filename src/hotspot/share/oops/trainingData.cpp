@@ -70,10 +70,19 @@ CompileTrainingData::CompileTrainingData() : _level(-1), _is_osr(false), _compil
 void TrainingData::initialize() {
   // this is a nop if training modes are not enabled
   if (have_data() || need_data()) {
-    // Data structures that we have do not currently support iterative training. So you cannot replay
-    // and train at the same time. Going forward we may want to adjust iteration/search to enable that.
-    guarantee(have_data() != need_data(), "Iterative training is not supported");
     TrainingDataLocker::initialize();
+  }
+
+  if (have_data() && need_data()) {
+    TrainingDataLocker l;
+    archived_training_data_dictionary()->iterate_all([&](TrainingData* td) {
+      training_data_set()->install(td);
+    });
+  }
+
+  if (have_data() && AOTVerifyTrainingData) {
+    TrainingDataLocker l;
+    verify();
   }
 }
 
@@ -84,7 +93,7 @@ static void verify_archived_entry(TrainingData* td, const TrainingData::Key* k) 
 }
 
 void TrainingData::verify() {
-  if (TrainingData::have_data() && !TrainingData::assembling_data()) {
+  if (have_data() && !need_data() && !assembling_data()) {
     archived_training_data_dictionary()->iterate_all([&](TrainingData* td) {
       if (td->is_KlassTrainingData()) {
         KlassTrainingData* ktd = td->as_KlassTrainingData();
@@ -103,7 +112,7 @@ void TrainingData::verify() {
       }
     });
   }
-  if (TrainingData::need_data()) {
+  if (need_data()) {
     TrainingDataLocker l;
     training_data_set()->iterate([&](TrainingData* td) {
       if (td->is_KlassTrainingData()) {
@@ -165,7 +174,7 @@ MethodTrainingData* MethodTrainingData::make(const methodHandle& method, bool nu
   TrainingData* td = nullptr;
 
   Key key(method());
-  if (have_data()) {
+  if (have_data() && !need_data()) {
     td = lookup_archived_training_data(&key);
     if (td != nullptr) {
       mtd = td->as_MethodTrainingData();
@@ -218,8 +227,11 @@ void MethodTrainingData::print_on(outputStream* st, bool name_only) const {
   if (!has_holder()) {
     st->print("[SYM]");
   }
-  if (_level_mask) {
-    st->print(" LM%d", _level_mask);
+  if (_iterations[CURRENT]._level_mask) {
+    st->print(" LMC%d", _iterations[CURRENT]._level_mask);
+  }
+  if (_iterations[NEXT]._level_mask) {
+    st->print(" LMN%d", _iterations[NEXT]._level_mask);
   }
   st->print(" mc=%p mdo=%p", _final_counters, _final_profile);
 }
@@ -240,7 +252,7 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
   mtd->notice_compilation(level);
 
   TrainingDataLocker l;
-  CompileTrainingData*& last_ctd = mtd->_last_toplevel_compiles[level - 1];
+  CompileTrainingData*& last_ctd = mtd->_iterations[MethodTrainingData::NEXT]._last_toplevel_compiles[level - 1];
   CompileTrainingData* ctd = nullptr;
   if (last_ctd == nullptr ||                                                   // no previous CTD
       (last_ctd->is_osr() == is_osr && last_ctd->compile_id() < compile_id) || // newer compile for same OSR status
@@ -259,6 +271,10 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
 
 
 void CompileTrainingData::dec_init_deps_left_release(KlassTrainingData* ktd) {
+  if (_init_deps_left == -1) {
+    assert(need_data(), "init_deps_left can only be -1 when we are in training mode");
+    return;
+  }
   LogStreamHandle(Trace, training) log;
   if (log.is_enabled()) {
     log.print("CTD "); print_on(&log); log.cr();
@@ -358,7 +374,59 @@ void KlassTrainingData::prepare(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
+  for (int i = 0; i < comp_dep_count(); i++) {
+    CompileTrainingData* ctd = comp_dep(i);
+    ctd->prepare(visitor);
+  }
   _comp_deps.prepare();
+}
+
+void MethodTrainingData::merge(Visitor& visitor) {
+  if (visitor.is_visited(this)) {
+    return;
+  }
+  visitor.visit(this);
+  klass()->merge(visitor);
+  // Merge NEXT into CURRENT
+  _iterations[CURRENT]._highest_top_level = MAX2(_iterations[CURRENT]._highest_top_level, _iterations[NEXT]._highest_top_level);
+  _iterations[CURRENT]._level_mask = _iterations[CURRENT]._level_mask | _iterations[NEXT]._level_mask;
+  _iterations[CURRENT]._was_toplevel = _iterations[CURRENT]._was_toplevel || _iterations[NEXT]._was_toplevel;
+  for (int i = 0; i < CompLevel_count - 1; i++) {
+    CompileTrainingData*& ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
+    CompileTrainingData*& new_ctd = _iterations[NEXT]._last_toplevel_compiles[i];
+    if (new_ctd != nullptr) {
+      if (ctd != nullptr) {
+        ctd->clear_init_deps();
+      }
+      ctd = new_ctd;
+      new_ctd = nullptr;
+    }
+    if (ctd != nullptr) {
+      ctd->merge(visitor);
+    }
+  }
+}
+
+void KlassTrainingData::merge(Visitor& visitor) {
+  if (visitor.is_visited(this)) {
+    return;
+  }
+  visitor.visit(this);
+  for (int i = 0; i < comp_dep_count(); i++) {
+    CompileTrainingData* ctd = comp_dep(i);
+    ctd->merge(visitor);
+  }
+}
+
+void CompileTrainingData::merge(Visitor& visitor) {
+  if (visitor.is_visited(this)) {
+    return;
+  }
+  visitor.visit(this);
+  method()->merge(visitor);
+  for (int i = 0; i < _init_deps.length(); i++) {
+    _init_deps.at(i)->merge(visitor);
+   }
 }
 
 void MethodTrainingData::prepare(Visitor& visitor) {
@@ -375,7 +443,8 @@ void MethodTrainingData::prepare(Visitor& visitor) {
     _backedge_count = holder()->backedge_count();
   }
   for (int i = 0; i < CompLevel_count - 1; i++) {
-    CompileTrainingData* ctd = _last_toplevel_compiles[i];
+    CompileTrainingData* ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
+    assert(_iterations[NEXT]._last_toplevel_compiles[i] == nullptr, "");
     if (ctd != nullptr) {
       ctd->prepare(visitor);
     }
@@ -389,7 +458,10 @@ void CompileTrainingData::prepare(Visitor& visitor) {
   visitor.visit(this);
   method()->prepare(visitor);
   _init_deps.prepare();
-  _ci_records.prepare();
+  for (int i = 0; i < _init_deps.length(); i++) {
+    _init_deps.at(i)->prepare(visitor);
+   }
+  _ci_records.prepare(visitor);
 }
 
 KlassTrainingData* KlassTrainingData::make(InstanceKlass* holder, bool null_if_not_found) {
@@ -397,7 +469,7 @@ KlassTrainingData* KlassTrainingData::make(InstanceKlass* holder, bool null_if_n
     return nullptr;
   }
   Key key(holder);
-  TrainingData* td = CDS_ONLY(have_data() ? lookup_archived_training_data(&key) :) nullptr;
+  TrainingData* td = CDS_ONLY((have_data() && !need_data()) ? lookup_archived_training_data(&key) :) nullptr;
   KlassTrainingData* ktd = nullptr;
   if (td != nullptr) {
     ktd = td->as_KlassTrainingData();
@@ -485,25 +557,28 @@ void KlassTrainingData::notice_fully_initialized() {
 }
 
 void TrainingData::init_dumptime_table(TRAPS) {
-  precond((!assembling_data() && !need_data()) || need_data() != assembling_data());
-  if (assembling_data()) {
+  if (assembling_data() && !need_data()) {
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     _archived_training_data_dictionary.iterate_all([&](TrainingData* record) {
       _dumptime_training_data_dictionary->append(record);
     });
   }
   if (need_data()) {
-    _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     TrainingDataLocker l;
-    TrainingDataLocker::snapshot();
     ResourceMark rm;
-    Visitor visitor(training_data_set()->size());
+    Visitor merge_visitor(training_data_set()->size());
     training_data_set()->iterate([&](TrainingData* td) {
-      td->prepare(visitor);
+      td->merge(merge_visitor);
+    });
+    _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
+    Visitor prepare_visitor(training_data_set()->size());
+    training_data_set()->iterate([&](TrainingData* td) {
+      td->prepare(prepare_visitor);
       if (!td->is_CompileTrainingData()) {
         _dumptime_training_data_dictionary->append(td);
       }
     });
+    TrainingDataLocker::snapshot();
   }
 
   if (AOTVerifyTrainingData) {
@@ -511,11 +586,20 @@ void TrainingData::init_dumptime_table(TRAPS) {
   }
 }
 
-void TrainingData::iterate_roots(MetaspaceClosure* it) {
+void TrainingData::dumptime_iterate_roots(MetaspaceClosure* it) {
   if (_dumptime_training_data_dictionary != nullptr) {
     for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
       _dumptime_training_data_dictionary->at(i).metaspace_pointers_do(it);
     }
+  }
+}
+
+void TrainingData::runtime_iterate_roots(MetaspaceClosure* it) {
+  if (have_data()) {
+    TrainingDataLocker l;
+    archived_training_data_dictionary()->iterate_all([&](TrainingData* td) {
+      td->metaspace_pointers_do(it);
+    });
   }
 }
 
@@ -608,7 +692,12 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
     }
   }
   for (int i = 0; i < CompLevel_count - 1; i++) {
-    CompileTrainingData* ctd = _last_toplevel_compiles[i];
+    CompileTrainingData* ctd;
+    ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
+    if (ctd != nullptr) {
+      ctd->cleanup(visitor);
+    }
+    ctd = _iterations[NEXT]._last_toplevel_compiles[i];
     if (ctd != nullptr) {
       ctd->cleanup(visitor);
     }
@@ -647,7 +736,7 @@ void CompileTrainingData::verify(bool verify_dep_counter) {
     }
     if (!ktd->_comp_deps.contains(this)) {
       print_on(tty); tty->cr();
-      ktd->print_on(tty); tty->cr();
+      ktd->print_on(tty); tty->print(" deps: %d", ktd->comp_dep_count()); tty->cr();
     }
     guarantee(ktd->_comp_deps.contains(this), "");
   }
@@ -737,6 +826,7 @@ uint TrainingData::Key::cds_hash(const Key* const& k) {
 }
 
 TrainingData* TrainingData::lookup_archived_training_data(const Key* k) {
+  assert(!need_data(), "Should be used only in read-only mode");
   // For this to work, all components of the key must be in shared metaspace.
   if (!TrainingData::Key::can_compute_cds_hash(k) || _archived_training_data_dictionary.empty()) {
     return nullptr;
@@ -772,7 +862,8 @@ void MethodTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
   iter->push(&_klass);
   iter->push((Method**)&_holder);
   for (int i = 0; i < CompLevel_count - 1; i++) {
-    iter->push(&_last_toplevel_compiles[i]);
+    iter->push(&(_iterations[CURRENT]._last_toplevel_compiles[i]));
+    iter->push(&(_iterations[NEXT]._last_toplevel_compiles[i]));
   }
   iter->push(&_final_profile);
   iter->push(&_final_counters);
@@ -794,6 +885,7 @@ void TrainingData::DepList<T>::prepare() {
     for (int i = 0; i < len; i++) {
       _deps->at_put(i, _deps_dyn->at(i)); // copy
     }
+    _deps_dyn = nullptr;
   }
 }
 
