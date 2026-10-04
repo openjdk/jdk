@@ -76,10 +76,10 @@ import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.NoteTree;
 import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
-import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
@@ -130,6 +130,7 @@ import jdk.javadoc.internal.html.Text;
 import jdk.javadoc.internal.html.TextBuilder;
 
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
+import static com.sun.source.doctree.DocTree.Kind.NOTE;
 import static com.sun.source.doctree.DocTree.Kind.START_ELEMENT;
 import static com.sun.source.doctree.DocTree.Kind.TEXT;
 
@@ -179,7 +180,7 @@ public abstract class HtmlDocletWriter {
 
     protected final HtmlIds htmlIds;
 
-    private final Set<String> headingIds = new HashSet<>();
+    private final Set<String> existingIds = new HashSet<>();
 
     protected final TableOfContents tableOfContents;
 
@@ -1033,6 +1034,15 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
+     * {@return a set of known existing IDs used in the current HTML page}
+     * Taglets and other embedded components can use this to check for
+     * duplicate IDs and register the IDs they create.
+     */
+    public Set<String> getExistingIds() {
+        return existingIds;
+    }
+
+    /**
      * Add the class link, with only class name as the strong link and prefixing
      * plain package name.
      *
@@ -1352,7 +1362,7 @@ public abstract class HtmlDocletWriter {
             }
         };
         CommentHelper ch = utils.getCommentHelper(element);
-        configuration.tagletManager.checkTags(element, trees);
+        configuration.tagletManager.checkTags(element, trees, true);
         commentRemoved = false;
         List<Name> openTags = new ArrayList<>();
 
@@ -1601,7 +1611,7 @@ public abstract class HtmlDocletWriter {
                         list.add(code.getLiteral());
                     }
                 });
-                return htmlIds.forHeading(String.join(" ", list), headingIds);
+                return htmlIds.forHeading(String.join(" ", list), existingIds);
             }
         }
     }
@@ -1883,11 +1893,11 @@ public abstract class HtmlDocletWriter {
         String headingContent = sb.toString().trim();
         if (id == null) {
             // Generate id attribute
-            HtmlId htmlId = htmlIds.forHeading(headingContent, headingIds);
+            HtmlId htmlId = htmlIds.forHeading(headingContent, existingIds);
             id = htmlId.name();
             attrs.add("id=\"").add(htmlId.name()).add("\"");
         } else {
-            headingIds.add(id);
+            existingIds.add(id);
         }
         // Generate index item
         if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
@@ -2493,11 +2503,12 @@ public abstract class HtmlDocletWriter {
 
     public void addPreviewInfo(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
-            // Preview note tag may be used to provide an alternative preview note.
-            String previewNoteTag = configuration.getOptions().previewNoteTag();
-            if (previewNoteTag != null) {
-                List<? extends UnknownBlockTagTree> tags = utils.getBlockTags(forWhat,
-                        t -> t.getTagName().equals(previewNoteTag), UnknownBlockTagTree.class);
+            // Preview feature tag is used to provide alternative preview note.
+            String previewFeatureTag = configuration.getOptions().previewFeatureTag();
+            if (previewFeatureTag != null) {
+                var tags = utils.getBlockTags(forWhat, t -> t.getKind() == NOTE
+                        && t.getTagName().equals(previewFeatureTag), NoteTree.class);
+
                 if (tags != null && !tags.isEmpty()) {
                     if (tags.size() > 1) {
                         messages.warning(utils.getCommentHelper(forWhat).getDocTreePath(tags.get(1)),
@@ -2506,7 +2517,7 @@ public abstract class HtmlDocletWriter {
                     var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
                     previewDiv.setId(htmlIds.forPreviewSection(forWhat));
                     previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment,
-                            commentTagsToContent(forWhat, tags.getFirst().getContent(), false)));
+                            commentTagsToContent(forWhat, tags.getFirst().getBody(), false)));
                     target.add(previewDiv);
                     return;
                 }
