@@ -34,35 +34,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.IntFunction;
 
 public class Frequency {
     static final int N = 100;
 
     public static void main(String[] args) {
-        test(new ArrayList<Integer>());
-        test(new LinkedList<Integer>());
-        testValue();
+        test(new ArrayList<Integer>(), Integer::valueOf);
+        test(new LinkedList<Integer>(), Integer::valueOf);
+        test(new ArrayList<VClass>(), i -> new VClass(i, new int[] { i }));
+        test(new LinkedList<VClass>(), i -> new VClass(i, new int[] { i }));
     }
 
-    static void test(List<Integer> list) {
+    static <T> void test(List<T> list, IntFunction<T> factory) {
         for (int i = 0; i < N; i++)
             for (int j = 0; j < i; j++)
-                list.add(i);
+                list.add(factory.apply(i));
         Collections.shuffle(list);
 
         for (int i = 0; i < N; i++)
-            if (Collections.frequency(list, i) != i)
+            if (Collections.frequency(list, factory.apply(i)) != i)
                 throw new RuntimeException(list.getClass() + ": " + i);
-    }
-
-    static void testValue() {
-        List<VClass> values = new ArrayList<>();
-        for (int i = 0; i < N; i++)
-            for (int j = 0; j < i; j++)
-                values.add(new VClass(i, new int[] { i }));
-        Collections.shuffle(values);
-        for (int i = 0; i < N; i++)
-            if (Collections.frequency(values, new VClass(i, new int[] { i })) != i)
-                throw new RuntimeException("value frequency: " + i);
     }
 }

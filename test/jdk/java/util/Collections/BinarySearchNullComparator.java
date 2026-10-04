@@ -36,15 +36,14 @@ import java.util.List;
 public class BinarySearchNullComparator {
 
     public static void main(String[] args) throws Exception {
-        List list = Arrays.asList(new String[] {"I", "Love", "You"});
+        test(Arrays.asList("I", "Love", "You"), "You", 2);
+        test(Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), new VClass(3, new int[] { 3 })),
+             new VClass(3, new int[] { 3 }), 2);
+    }
 
-        int result = Collections.binarySearch(list, "You", null);
-        if (result != 2)
+    private static <T> void test(List<T> list, T key, int expected) throws Exception {
+        int result = Collections.binarySearch(list, key, null);
+        if (result != expected)
             throw new Exception("Result: " + result);
-
-        List<VClass> values = Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), new VClass(3, new int[] { 3 }));
-        int vresult = Collections.binarySearch(values, new VClass(3, new int[] { 3 }), null);
-        if (vresult != 2)
-            throw new Exception("Value result: " + vresult);
     }
 }

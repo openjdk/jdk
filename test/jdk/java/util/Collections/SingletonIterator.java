@@ -41,6 +41,9 @@ import static org.testng.Assert.fail;
 
 @Test(groups = "unit")
 public class SingletonIterator {
+
+    static class SingletonException extends RuntimeException { }
+
     static void assertIteratorExhausted(Iterator<?> it) {
         assertFalse(it.hasNext());
         try {
@@ -50,31 +53,23 @@ public class SingletonIterator {
         it.forEachRemaining(e -> { throw new AssertionError("action called incorrectly"); });
     }
 
-    public void testForEachRemaining() {
-        Iterator<String> it = Collections.singleton("TheOne").iterator();
+    private static <T> void checkSingletonIterator(T value) {
+        Iterator<T> it = Collections.singleton(value).iterator();
         AtomicInteger cnt = new AtomicInteger(0);
-
-        it.forEachRemaining(s -> {
-            assertEquals("TheOne", s);
+        it.forEachRemaining(v -> {
+            assertEquals(v, value);
             cnt.incrementAndGet();
         });
-
         assertEquals(cnt.get(), 1);
         assertIteratorExhausted(it);
     }
 
-    static class SingletonException extends RuntimeException { }
+    public void testForEachRemaining() {
+        checkSingletonIterator("TheOne");
+    }
 
-    @Test
     public void testValueSingletonIterator() {
-        Iterator<VClass> it = Collections.singleton(new VClass(42, new int[] { 42 })).iterator();
-        AtomicInteger cnt = new AtomicInteger(0);
-        it.forEachRemaining(v -> {
-            if (!v.equals(new VClass(42, new int[] { 42 }))) throw new RuntimeException("wrong value");
-            cnt.incrementAndGet();
-        });
-        assertEquals(cnt.get(), 1);
-        assertIteratorExhausted(it);
+        checkSingletonIterator(new VClass(42, new int[] { 42 }));
     }
 
     public void testThrowFromForEachRemaining() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
  * @test
  * @bug 4163207
  * @summary AddAll was prepending instead of appending!
+ * @library /test/lib
  */
+
+import jdk.test.lib.valueclass.VClass;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,8 +37,13 @@ import java.util.List;
 
 public class AddAll {
     public static void main(String[] args) throws Exception {
-        List head = Collections.nCopies(7, "deadly sin");
-        List tail = Collections.nCopies(4, "basic food group");
+        testAddAll(Collections.nCopies(7, "deadly sin"),
+                   Collections.nCopies(4, "basic food group"));
+        testAddAll(Collections.nCopies(7, new VClass(7, new int[] { 1 })),
+                   Collections.nCopies(4, new VClass(4, new int[] { 2 })));
+    }
+
+    private static void testAddAll(List head, List tail) {
         List l1 = new ArrayList(head);
         List l2 = new LinkedList(head);
         l1.addAll(tail);

@@ -60,16 +60,16 @@ public class T6433170 {
                  checkedCollection(new Vector(), String.class),
                  Object.class));
 
-        Collection<VClass> vc = checkedCollection(new ArrayList<>(), VClass.class);
-        List mixed = Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), "not a Tuple");
-        THROWS(ClassCastException.class,
-               new F(){void f(){ vc.addAll(mixed); }});
-        checkEmpty(vc);
+        test(checkedCollection(new ArrayList<>(), VClass.class),
+             Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), "not a Tuple"));
     }
 
     void test(final Collection checked) {
+        test(checked, Arrays.asList("1", 2, "3"));
+    }
+
+    void test(final Collection checked, final List mixedList) {
         checkEmpty(checked);
-        final List mixedList = Arrays.asList("1", 2, "3");
         THROWS(ClassCastException.class,
                new F(){void f(){ checked.addAll(mixedList); }});
         checkEmpty(checked);

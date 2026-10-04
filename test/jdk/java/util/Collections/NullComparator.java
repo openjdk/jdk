@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.IntFunction;
 
 public class NullComparator {
 
@@ -54,28 +55,25 @@ public class NullComparator {
         if (Arrays.binarySearch(a, new Integer(69)) != 69)
             throw new Exception("Arrays.binarySearch");
 
-        List tmp = new ArrayList(list);
-        Collections.sort(tmp, null);
-        if (!tmp.equals(sorted))
-            throw new Exception("Collections.sort");
-        if (Collections.binarySearch(tmp, new Integer(69)) != 69)
-            throw new Exception("Collections.binarySearch");
-        if (!Collections.min(list, null).equals(new Integer(0)))
-            throw new Exception("Collections.min");
-        if (!Collections.max(list, null).equals(new Integer(99)))
-            throw new Exception("Collections.max");
+        testCollectionsNullComparator(list, Integer::valueOf, "");
 
         List<VClass> vlist = new ArrayList<>();
         for (int i = 0; i < 100; i++) vlist.add(new VClass(i, new int[] { i }));
         Collections.shuffle(vlist);
-        Collections.sort(vlist, null);
-        for (int i = 0; i < 100; i++)
-            if (!vlist.get(i).equals(new VClass(i, new int[] { i }))) throw new Exception("value Collections.sort");
-        if (Collections.binarySearch(vlist, new VClass(69, new int[] { 69 }), null) != 69)
-            throw new Exception("value binarySearch");
-        if (!Collections.min(vlist, null).equals(new VClass(0, new int[] { 0 })))
-            throw new Exception("value min");
-        if (!Collections.max(vlist, null).equals(new VClass(99, new int[] { 99 })))
-            throw new Exception("value max");
+        testCollectionsNullComparator(vlist, i -> new VClass(i, new int[] { i }), "value ");
+    }
+
+    private static <T> void testCollectionsNullComparator(List<T> list, IntFunction<T> factory, String label) throws Exception {
+        List<T> tmp = new ArrayList<>(list);
+        Collections.sort(tmp, null);
+        for (int i = 0; i < tmp.size(); i++)
+            if (!tmp.get(i).equals(factory.apply(i)))
+                throw new Exception(label + "Collections.sort");
+        if (Collections.binarySearch(tmp, factory.apply(69), null) != 69)
+            throw new Exception(label + "Collections.binarySearch");
+        if (!Collections.min(list, null).equals(factory.apply(0)))
+            throw new Exception(label + "Collections.min");
+        if (!Collections.max(list, null).equals(factory.apply(99)))
+            throw new Exception(label + "Collections.max");
     }
 }
