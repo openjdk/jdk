@@ -141,11 +141,11 @@ final class Renderer {
     private void checkFrameConsistencyAfterRendering() {
         // Ensure CodeFrame consistency.
         if (baseCodeFrame != currentCodeFrame) {
-            throw new RuntimeException("Internal error: Renderer did not end up at base CodeFrame.");
+            throw new TemplateFrameworkException("Renderer did not end up at base CodeFrame.");
         }
         // Ensure TemplateFrame consistency.
         if (baseTemplateFrame != currentTemplateFrame) {
-            throw new RuntimeException("Internal error: Renderer did not end up at base TemplateFrame.");
+            throw new TemplateFrameworkException("Renderer did not end up at base TemplateFrame.");
         }
     }
 
@@ -202,7 +202,7 @@ final class Renderer {
                 return "Float.NEGATIVE_INFINITY";
             }
         } else {
-            throw new RuntimeException("Not handled: " + f);
+            throw new TemplateFrameworkException("Not handled: " + f);
         }
     }
 
@@ -218,7 +218,7 @@ final class Renderer {
                 return "Double.NEGATIVE_INFINITY";
             }
         } else {
-            throw new RuntimeException("Not handled: " + d);
+            throw new TemplateFrameworkException("Not handled: " + d);
         }
     }
 
@@ -235,7 +235,7 @@ final class Renderer {
         renderScopeToken(templateToken.instantiate());
 
         if (currentTemplateFrame != templateFrame) {
-            throw new RuntimeException("Internal error: TemplateFrame mismatch!");
+            throw new TemplateFrameworkException("TemplateFrame mismatch!");
         }
         currentTemplateFrame = currentTemplateFrame.parent;
     }
@@ -249,7 +249,7 @@ final class Renderer {
                                            boolean isTransparentForNames,
                                            boolean isTransparentForHashtags,
                                            boolean isTransparentForSetFuelCost))) {
-            throw new RuntimeException("Internal error: could not unpack ScopeTokenImpl.");
+            throw new TemplateFrameworkException("Could not unpack ScopeTokenImpl.");
         }
 
         // We need the CodeFrame for local names.
@@ -278,7 +278,7 @@ final class Renderer {
 
         if (!isTransparentForHashtags || !isTransparentForSetFuelCost) {
             if (currentTemplateFrame != innerTemplateFrame) {
-                throw new RuntimeException("Internal error: TemplateFrame mismatch!");
+                throw new TemplateFrameworkException("TemplateFrame mismatch!");
             }
             currentTemplateFrame = currentTemplateFrame.parent;
         }
@@ -409,7 +409,7 @@ final class Renderer {
             renderToken(t);
         }
         if (codeFrame != currentCodeFrame) {
-            throw new RuntimeException("Internal error: CodeFrame mismatch.");
+            throw new TemplateFrameworkException("CodeFrame mismatch.");
         }
     }
 
