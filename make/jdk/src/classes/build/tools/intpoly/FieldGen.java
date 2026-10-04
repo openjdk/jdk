@@ -88,24 +88,6 @@ public class FieldGen {
         return result;
     }
 
-    static FieldParams P384 = new FieldParams(
-            "IntegerPolynomialP384", 28, 14, 2, 384,
-            Arrays.asList(
-                    new Term(128, -1),
-                    new Term(96, -1),
-                    new Term(32, 1),
-                    new Term(0, -1)
-            ),
-            P384CrSequence(), simpleSmallCrSequence(14)
-    );
-
-    private static List<CarryReduce> P384CrSequence() {
-        List<CarryReduce> result = new ArrayList<CarryReduce>();
-        result.addAll(fullReduce(14));
-        result.addAll(simpleSmallCrSequence(14));
-        return result;
-    }
-
     static FieldParams P521 = new FieldParams(
             "IntegerPolynomialP521", 28, 19, 2, 521,
             Arrays.asList(
@@ -194,7 +176,7 @@ public class FieldGen {
     }
 
     static final FieldParams[] ALL_FIELDS = {
-            Curve448, P256, P384, P521, O256, O384, O521, O25519, O448
+            Curve448, P256, P521, O256, O384, O521, O25519, O448
     };
 
     public static class Term {
