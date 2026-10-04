@@ -28,9 +28,10 @@ package sun.security.util;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.TimeZone;
 import java.util.Comparator;
 import java.util.Arrays;
 import java.util.Locale;
@@ -485,18 +486,28 @@ public final class DerOutputStream
     /**
      * 1/1/1950 is the lowest date that RFC 2630 serializes to UTC time
      */
-    private static final Date utcLow = new Date(-631152000000L); // Dates before 1/1/1950
+    private static final Instant utcLow = Instant.ofEpochSecond(-631152000L); // Dates before 1/1/1950
 
     /**
      * 12/31/2049 is the highest date that RFC 2630 serializes to UTC time
      */
-    private static final Date utcHigh = new Date(2524607999000L);
+    private static final Instant utcHigh = Instant.ofEpochSecond(2524607999L);
 
     /**
-     * Takes a Date and chooses UTC or GeneralizedTime as per RFC 2630
+     * 1/1/0001 is the lowest date representable by the GeneralizedTime
      */
-    public DerOutputStream putTime(Date d) {
-        return (d.before(utcLow) || d.after(utcHigh)) ? putGeneralizedTime(d) : putUTCTime(d);
+    private static final Instant generalizedLow = Instant.ofEpochSecond(-62135596800L);
+
+    /**
+     * 12/31/9999 is the highest date representable by the GeneralizedTime
+     */
+    private static final Instant generalizedHigh = Instant.ofEpochSecond(253402300799L);
+
+    /**
+     * Takes an instant and chooses UTC or GeneralizedTime as per RFC 2630.
+     */
+    public DerOutputStream putTime(Instant d) {
+        return (d.isBefore(utcLow) || d.isAfter(utcHigh)) ? putGeneralizedTime(d) : putUTCInstant(d);
     }
 
     /**
@@ -506,6 +517,16 @@ public final class DerOutputStream
      * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public DerOutputStream putUTCTime(Date d) {
+        return putUTCInstant(d.toInstant());
+    }
+
+    /**
+     * Marshals a DER UTC time/date value.
+     *
+     * <P>YYMMDDhhmmss{Z|+hhmm|-hhmm} ... emits only using Zulu time
+     * and with seconds (even if seconds=0) as per RFC 5280.
+     */
+    public DerOutputStream putUTCInstant(Instant d) {
         return putTime(d, DerValue.tag_UtcTime);
     }
 
@@ -516,6 +537,16 @@ public final class DerOutputStream
      * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public DerOutputStream putGeneralizedTime(Date d) {
+        return putGeneralizedTime(d.toInstant());
+    }
+
+    /**
+     * Marshals a DER Generalized Time/date value.
+     *
+     * <P>YYYYMMDDhhmmss{Z|+hhmm|-hhmm} ... emits only using Zulu time
+     * and with seconds (even if seconds=0) as per RFC 5280.
+     */
+    public DerOutputStream putGeneralizedTime(Instant d) {
         return putTime(d, DerValue.tag_GeneralizedTime);
     }
 
@@ -526,25 +557,34 @@ public final class DerOutputStream
      * @param d the date to be marshalled
      * @param tag the tag for UTC Time or Generalized Time
      */
-    private DerOutputStream putTime(Date d, byte tag) {
+    private DerOutputStream putTime(Instant d, byte tag) {
 
         /*
          * Format the date.
          */
-
-        TimeZone tz = TimeZone.getTimeZone("GMT");
         String pattern;
 
         if (tag == DerValue.tag_UtcTime) {
             pattern = "yyMMddHHmmss'Z'";
+            if (d.isBefore(utcLow)) {
+                d = utcLow;
+            } else if (d.isAfter(utcHigh)) {
+                d = utcHigh;
+            }
         } else {
             tag = DerValue.tag_GeneralizedTime;
             pattern = "yyyyMMddHHmmss'Z'";
+            if (d.isBefore(generalizedLow)) {
+                d = generalizedLow;
+            } else if (d.isAfter(generalizedHigh)) {
+                d = generalizedHigh;
+            }
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.US);
-        sdf.setTimeZone(tz);
-        byte[] time = (sdf.format(d)).getBytes(ISO_8859_1);
+        DateTimeFormatter dateTimeFormatter =
+                DateTimeFormatter.ofPattern(pattern, Locale.US);
+        byte[] time = d.atZone(ZoneId.of("GMT")).format(dateTimeFormatter)
+                .getBytes(ISO_8859_1);
 
         /*
          * Write the formatted date.
