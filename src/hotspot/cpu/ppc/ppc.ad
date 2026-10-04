@@ -1052,6 +1052,7 @@ source_hpp %{
   // will do an acquire. If so, this node must not do the acquire
   // operation.
   bool followed_by_acquire(const Node *n);
+
 %}
 
 source %{
@@ -3776,6 +3777,15 @@ operand immN() %{
   interface(CONST_INTER);
 %}
 
+operand immN_31bit() %{
+  predicate(MacroAssembler::compressed_oop_constants_fit_in_31_bits());
+  match(ConN);
+
+  op_cost(5);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // nullptr Pointer Immediate
 operand immN_0() %{
   predicate(n->get_narrowcon() == 0);
@@ -5674,6 +5684,21 @@ instruct loadBase(iRegLdst dst) %{
   format %{ "LoadConst $dst, heapbase" %}
   ins_encode %{
     __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct loadConN_31bit(iRegNdst dst, immN_31bit src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST*2);
+
+  format %{ "LIS/ORI $dst, $src" %}
+  size(8);
+  ins_encode %{
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src$$constant);
+    __ lis($dst$$Register, 0);                              // Will get patched.
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
+    __ ori($dst$$Register, $dst$$Register, 0);              // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}

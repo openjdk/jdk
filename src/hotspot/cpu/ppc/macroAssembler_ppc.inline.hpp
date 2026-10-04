@@ -147,15 +147,11 @@ inline bool MacroAssembler::is_set_narrow_oop(address a, address bound) {
   const int dst = inv_rta_field(inst2);
   if (inv_rs_field(inst2) != dst) return false;
 
-  // Now, find the preceding addis which writes to dst.
-  int inst1 = 0;
-  address inst1_addr = inst2_addr - BytesPerInstWord;
-  while (inst1_addr >= bound) {
-    inst1 = *(int *) inst1_addr;
-    if (is_lis(inst1) && inv_rs_field(inst1) == dst) return true;
-    inst1_addr -= BytesPerInstWord;
-  }
-  return false;
+  // The preceding instruction must be the lis which writes dst.
+  const address inst1_addr = inst2_addr - BytesPerInstWord;
+  if (inst1_addr < bound) return false;
+  const int inst1 = *(int *) inst1_addr;
+  return is_lis(inst1) && inv_rs_field(inst1) == dst;
 }
 #endif
 
