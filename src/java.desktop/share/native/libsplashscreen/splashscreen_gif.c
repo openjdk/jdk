@@ -281,7 +281,8 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
 
                 if (colorMap &&
                     colorMap->Colors &&
-                    transparentColor < 0) {
+                    transparentColor < 0 &&
+                    gif->SBackGroundColor < colorMap->ColorCount) {
                     fillColor= MAKE_QUAD_GIF(
                         colorMap->Colors[gif->SBackGroundColor], 0xff);
                 }
