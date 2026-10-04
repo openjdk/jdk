@@ -112,7 +112,6 @@ class LatestMethodCache {
 };
 
 static LatestMethodCache _finalizer_register_cache;         // Finalizer.register()
-static LatestMethodCache _loader_addClass_cache;            // ClassLoader.addClass()
 static LatestMethodCache _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError()
 static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError()
 static LatestMethodCache _do_stack_walk_cache;              // AbstractStackWalker.doStackWalk()
@@ -1083,7 +1082,6 @@ Method* LatestMethodCache::get_method() {
 }
 
 Method* Universe::finalizer_register_method()        { return _finalizer_register_cache.get_method(); }
-Method* Universe::loader_addClass_method()           { return _loader_addClass_cache.get_method(); }
 Method* Universe::throw_illegal_access_error()       { return _throw_illegal_access_error_cache.get_method(); }
 Method* Universe::throw_no_such_method_error()       { return _throw_no_such_method_error_cache.get_method(); }
 Method* Universe::do_stack_walk_method()             { return _do_stack_walk_cache.get_method(); }
@@ -1106,12 +1104,6 @@ void Universe::initialize_known_methods(JavaThread* current) {
                           vmClasses::internal_Unsafe_klass(),
                           "throwNoSuchMethodError",
                           vmSymbols::void_method_signature(), true);
-
-  // Set up method for registering loaded classes in class loader vector
-  _loader_addClass_cache.init(current,
-                          vmClasses::ClassLoader_klass(),
-                          "addClass",
-                          vmSymbols::class_void_signature(), false);
 
   // Set up method for stack walking
   _do_stack_walk_cache.init(current,
