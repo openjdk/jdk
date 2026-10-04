@@ -3850,7 +3850,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
 
   // Make sure there is an appropriate fill routine
   BasicType t = msg == nullptr ?
-    store->adr_type()->isa_aryptr()->elem()->array_element_basic_type() : T_VOID;
+    store->out_adr_type()->isa_aryptr()->elem()->array_element_basic_type() : T_VOID;
   const char* fill_name;
   if (msg == nullptr &&
       StubRoutines::select_fill_function(t, false, fill_name) == nullptr) {
@@ -4097,7 +4097,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 #endif
   }
 
-  BasicType t = store->adr_type()->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType t = store->out_adr_type()->isa_aryptr()->elem()->array_element_basic_type();
   bool aligned = false;
   if (offset != nullptr && head->init_trip()->is_Con()) {
     int element_size = type2aelembytes(t);
@@ -4122,8 +4122,9 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   Node* result_ctrl;
   Node* result_mem;
   const TypeFunc* call_type = OptoRuntime::array_fill_Type();
-  CallLeafNode *call = new CallLeafNoFPNode(call_type, fill,
-                                            fill_name, TypeAryPtr::get_array_body_type(t));
+  const TypePtr* adr_type = TypeAryPtr::get_array_body_type(t);
+  assert(adr_type == mem_phi->out_adr_type(), "incorrect adr_type");
+  CallLeafNode *call = new CallLeafNoFPNode(call_type, fill, fill_name, adr_type, adr_type);
   uint cnt = 0;
   call->init_req(TypeFunc::Parms + cnt++, from);
   call->init_req(TypeFunc::Parms + cnt++, store_value);

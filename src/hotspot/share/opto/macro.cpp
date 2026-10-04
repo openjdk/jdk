@@ -122,8 +122,8 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
 
   // Slow-path call
  CallNode *call = leaf_name
-   ? (CallNode*)new CallLeafNode      ( slow_call_type, slow_call, leaf_name, TypeRawPtr::BOTTOM )
-   : (CallNode*)new CallStaticJavaNode( slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), TypeRawPtr::BOTTOM );
+   ? (CallNode*)new CallLeafNode      (slow_call_type, slow_call, leaf_name, TypeRawPtr::BOTTOM, TypePtr::BOTTOM)
+   : (CallNode*)new CallStaticJavaNode(slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), TypeRawPtr::BOTTOM, TypePtr::BOTTOM);
 
   // Slow path call has no side-effects, uses few values
   copy_predefined_input_for_runtime_call(slow_path, oldcall, call );
@@ -193,7 +193,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
 #endif
       }
     } else if (mem->is_Store()) {
-      const TypePtr* atype = mem->as_Store()->adr_type();
+      const TypePtr* atype = mem->as_Store()->out_adr_type();
       int adr_idx = phase->C->get_alias_index(atype);
       if (adr_idx == alias_idx) {
         assert(atype->isa_oopptr(), "address type must be oopptr");
@@ -598,12 +598,12 @@ Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, co
       if (mem == nullptr) {
         done = true; // Something went wrong.
       } else if (mem->is_Store()) {
-        const TypePtr* atype = mem->as_Store()->adr_type();
+        const TypePtr* atype = mem->as_Store()->out_adr_type();
         assert(C->get_alias_index(atype) == Compile::AliasIdxRaw, "store is correct memory slice");
         done = true;
       }
     } else if (mem->is_Store()) {
-      const TypeOopPtr* atype = mem->as_Store()->adr_type()->isa_oopptr();
+      const TypeOopPtr* atype = mem->as_Store()->out_adr_type()->isa_oopptr();
       assert(atype != nullptr, "address type must be oopptr");
       assert(C->get_alias_index(atype) == alias_idx &&
              atype->is_known_instance_field() && atype->flat_offset() == offset &&
@@ -1891,7 +1891,7 @@ void PhaseMacroExpand::expand_allocate_common(
   // Generate slow-path call
   CallNode *call = new CallStaticJavaNode(slow_call_type, slow_call_address,
                                OptoRuntime::stub_name(slow_call_address),
-                               TypePtr::BOTTOM);
+                               TypePtr::BOTTOM, TypePtr::BOTTOM);
   call->init_req(TypeFunc::Control,   slow_region);
   call->init_req(TypeFunc::I_O,       top());    // does no i/o
   call->init_req(TypeFunc::Memory,    slow_mem); // may gc ptrs
@@ -2135,7 +2135,7 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       transform_later(ctrl);
       Node* old_raw_mem_proj = nullptr;
       auto find_raw_mem = [&](ProjNode* proj) {
-        if (C->get_alias_index(proj->adr_type()) == Compile::AliasIdxRaw) {
+        if (C->get_alias_index(proj->out_adr_type()) == Compile::AliasIdxRaw) {
           assert(old_raw_mem_proj == nullptr, "only one expected");
           old_raw_mem_proj = proj;
         }
@@ -2175,7 +2175,7 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
                                           CAST_FROM_FN_PTR(address,
                                           static_cast<int (*)(JavaThread*, oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
                                           "dtrace_object_alloc",
-                                          TypeRawPtr::BOTTOM);
+                                          TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM);
 
     // Get base of thread-local storage area
     Node* thread = new ThreadLocalNode();
@@ -2896,7 +2896,7 @@ void PhaseMacroExpand::expand_mh_intrinsic_return(CallStaticJavaNode* call) {
     handler_call = new CallLeafNoFPNode(OptoRuntime::pack_value_type_Type(),
                                         nullptr,
                                         "pack handler",
-                                        TypeRawPtr::BOTTOM);
+                                        TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM);
     handler_call->init_req(TypeFunc::Control, fast_oop_ctrl);
     handler_call->init_req(TypeFunc::Memory, fast_oop_rawmem);
     handler_call->init_req(TypeFunc::I_O, top());
@@ -2912,7 +2912,7 @@ void PhaseMacroExpand::expand_mh_intrinsic_return(CallStaticJavaNode* call) {
   CallStaticJavaNode* slow_call = new CallStaticJavaNode(OptoRuntime::store_value_type_fields_Type(),
                                                          SharedRuntime::store_value_type_fields_to_buf_entry(),
                                                          "store_value_type_fields",
-                                                         TypePtr::BOTTOM);
+                                                         TypePtr::BOTTOM, TypePtr::BOTTOM);
   slow_call->init_req(TypeFunc::Control, needgc_ctrl);
   slow_call->init_req(TypeFunc::Memory, mem);
   slow_call->init_req(TypeFunc::I_O, io);

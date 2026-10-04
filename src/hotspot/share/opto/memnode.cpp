@@ -57,6 +57,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/traceMergeStoresTag.hpp"
+#include "opto/type.hpp"
 #include "opto/valuetypenode.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/arguments.hpp"
@@ -76,7 +77,7 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
 //=============================================================================
 uint MemNode::size_of() const { return sizeof(*this); }
 
-const TypePtr *MemNode::adr_type() const {
+const TypePtr* MemNode::in_adr_type_impl() const {
   Node* adr = in(Address);
   if (adr == nullptr)  return nullptr; // node is dead
   const TypePtr* cross_check = nullptr;
@@ -358,7 +359,7 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *l
   if (is_instance && igvn != nullptr && result->is_Phi()) {
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
-    const TypePtr *t = mphi->adr_type();
+    const TypePtr* t = mphi->out_adr_type();
     bool do_split = false;
     // In the following cases, Load memory input can be further optimized based on
     // its precise address type
@@ -518,7 +519,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 
   if (can_reshape && igvn != nullptr &&
       (igvn->_worklist.member(address) ||
-       (igvn->_worklist.size() > 0 && t_adr != adr_type())) ) {
+       (igvn->_worklist.size() > 0 && t_adr != in_adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
     igvn->_worklist.push(this);
@@ -554,7 +555,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     MergeMemNode* mmem = mem->as_MergeMem();
     const TypePtr *tp = t_adr->is_ptr();
 
-    mem = step_through_mergemem(phase, mmem, tp, adr_type(), tty);
+    mem = step_through_mergemem(phase, mmem, tp, in_adr_type(), tty);
   }
 
   if (mem != old_mem) {
@@ -916,7 +917,7 @@ AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n)
   _base      = AddPNode::Ideal_base_and_offset(adr, _phase, _offset);
   _maybe_raw = MemNode::check_if_adr_maybe_raw(adr);
   _alloc     = AllocateNode::Ideal_allocation(_base);
-  _adr_type = _n->adr_type();
+  _adr_type  = _n->in_adr_type();
 
   if (_adr_type != nullptr && _adr_type->base() != TypePtr::AnyPtr) {
     // Avoid the cases that will upset Compile::get_alias_index
@@ -1107,7 +1108,7 @@ void LoadNode::dump_spec(outputStream *st) const {
       st->print("unknown control");
     } else if (control_dependency() == Pinned) {
       st->print("pinned");
-    } else if (adr_type() == TypeRawPtr::BOTTOM) {
+    } else if (in_adr_type() == TypeRawPtr::BOTTOM) {
       st->print("raw access");
     } else {
       st->print("unknown reason");
@@ -2227,7 +2228,7 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
   // Is there a dominating load that loads the same value?  Leave
   // anything that is not a load of a field/array element (like
   // barriers etc.) alone
-  if (in(0) != nullptr && !adr_type()->isa_rawptr() && can_reshape) {
+  if (in(0) != nullptr && !in_adr_type()->isa_rawptr() && can_reshape) {
     for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
       Node* use = mem->fast_out(i);
       if (use != this &&
@@ -2986,7 +2987,7 @@ LoadNode* LoadNode::clone_pinned() const {
 // those case, since there is not a dependency between the node and its control input, we do not
 // need to pin it.
 LoadNode* LoadNode::pin_node_under_control_impl() const {
-  const TypePtr* adr_type = this->adr_type();
+  const TypePtr* adr_type = this->in_adr_type();
   if (adr_type != nullptr && adr_type->isa_aryptr()) {
     // Only array accesses have dependencies on their control input
     return clone_pinned();
@@ -3766,7 +3767,7 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
   Node* first_mem   = first_store->in(MemNode::Memory);
   Node* first_adr   = first_store->in(MemNode::Address);
 
-  const TypePtr* new_adr_type = _store->adr_type();
+  const TypePtr* new_adr_type = _store->out_adr_type();
 
   int new_memory_size = _store->memory_size() * merge_list.size();
   BasicType bt = T_ILLEGAL;
@@ -3817,7 +3818,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Back-to-back stores to same address?  Fold em up.  Generally
   // unsafe if I have intervening uses...
   if ((!this->is_StoreVector() || this->Opcode() == Op_StoreVector) &&
-      phase->C->get_adr_type(phase->C->get_alias_index(adr_type())) != TypeAryPtr::INLINES) {
+      phase->C->get_adr_type(phase->C->get_alias_index(out_adr_type())) != TypeAryPtr::INLINES) {
     Node* st = mem;
     // If Store 'st' has more than one use, we cannot fold 'st' away.
     // For example, 'st' might be the final state at a conditional
@@ -3833,7 +3834,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       assert(Opcode() == st->Opcode() ||
              st->Opcode() == Op_StoreVector ||
              Opcode() == Op_StoreVector ||
-             phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
+             phase->C->get_alias_index(out_adr_type()) == Compile::AliasIdxRaw ||
              (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI) || // expanded ClearArrayNode
              (Opcode() == Op_StoreI && st->Opcode() == Op_StoreL) || // initialization by arraycopy
              (Opcode() == Op_StoreL && st->Opcode() == Op_StoreN) ||
@@ -4366,7 +4367,7 @@ LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Ty
   init_req(MemNode::Address, adr);
   init_req(MemNode::ValueIn, val);
   init_class_id(Class_LoadStore);
-  DEBUG_ONLY(_adr_type = at; adr_type();)
+  DEBUG_ONLY(_adr_type = at; out_adr_type();)
 }
 
 //------------------------------Value-----------------------------------------
@@ -4390,7 +4391,7 @@ const Type* LoadStoreNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-const TypePtr* LoadStoreNode::adr_type() const {
+const TypePtr* LoadStoreNode::out_adr_type_impl() const {
   const TypePtr* cross_check = DEBUG_ONLY(_adr_type) NOT_DEBUG(nullptr);
   return MemNode::calculate_adr_type(in(MemNode::Address)->bottom_type(), cross_check);
 }
@@ -4483,7 +4484,7 @@ const Type* LoadStoreConditionalNode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //-------------------------------adr_type--------------------------------------
-const TypePtr* ClearArrayNode::adr_type() const {
+const TypePtr* ClearArrayNode::out_adr_type_impl() const {
   Node *adr = in(3);
   if (adr == nullptr)  return nullptr; // node is dead
   return MemNode::calculate_adr_type(adr->bottom_type());
@@ -4689,9 +4690,9 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 }
 
 //=============================================================================
-MemBarNode::MemBarNode(Compile* C, int alias_idx, Node* precedent)
+MemBarNode::MemBarNode(Compile* C, const TypePtr* out_adr_type, const TypePtr* in_adr_type, Node* precedent)
   : MultiNode(TypeFunc::Parms + (precedent == nullptr? 0: 1)),
-    _adr_type(C->get_adr_type(alias_idx)), _kind(Standalone)
+    _out_adr_type(out_adr_type), _in_adr_type(in_adr_type), _kind(Standalone)
 #ifdef ASSERT
   , _pair_idx(0)
 #endif
@@ -4713,22 +4714,23 @@ bool MemBarNode::cmp( const Node &n ) const {
 
 //------------------------------make-------------------------------------------
 MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
+  const TypePtr* adr_type = C->get_adr_type(atp);
   switch (opcode) {
-  case Op_MemBarAcquire:     return new MemBarAcquireNode(C, atp, pn);
-  case Op_LoadFence:         return new LoadFenceNode(C, atp, pn);
-  case Op_MemBarRelease:     return new MemBarReleaseNode(C, atp, pn);
-  case Op_StoreFence:        return new StoreFenceNode(C, atp, pn);
-  case Op_MemBarStoreStore:  return new MemBarStoreStoreNode(C, atp, pn);
-  case Op_StoreStoreFence:   return new StoreStoreFenceNode(C, atp, pn);
-  case Op_MemBarAcquireLock: return new MemBarAcquireLockNode(C, atp, pn);
-  case Op_MemBarReleaseLock: return new MemBarReleaseLockNode(C, atp, pn);
-  case Op_MemBarStoreLoad:   return new MemBarStoreLoadNode(C, atp, pn);
-  case Op_MemBarVolatile:    return new MemBarVolatileNode(C, atp, pn);
-  case Op_MemBarFull:        return new MemBarFullNode(C, atp, pn);
-  case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
-  case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
-  case Op_Initialize:        return new InitializeNode(C, atp, pn);
-  default: ShouldNotReachHere(); return nullptr;
+    case Op_MemBarAcquire:     return new MemBarAcquireNode(C, adr_type, adr_type, pn);
+    case Op_LoadFence:         return new LoadFenceNode(C, adr_type, adr_type, pn);
+    case Op_MemBarRelease:     return new MemBarReleaseNode(C, adr_type, adr_type, pn);
+    case Op_StoreFence:        return new StoreFenceNode(C, adr_type, adr_type, pn);
+    case Op_MemBarStoreStore:  return new MemBarStoreStoreNode(C, adr_type, adr_type, pn);
+    case Op_StoreStoreFence:   return new StoreStoreFenceNode(C, adr_type, adr_type, pn);
+    case Op_MemBarAcquireLock: return new MemBarAcquireLockNode(C, adr_type, adr_type, pn);
+    case Op_MemBarReleaseLock: return new MemBarReleaseLockNode(C, adr_type, adr_type, pn);
+    case Op_MemBarStoreLoad:   return new MemBarStoreLoadNode(C, adr_type, adr_type, pn);
+    case Op_MemBarVolatile:    return new MemBarVolatileNode(C, adr_type, adr_type, pn);
+    case Op_MemBarFull:        return new MemBarFullNode(C, adr_type, adr_type, pn);
+    case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, adr_type, adr_type, pn);
+    case Op_OnSpinWait:        return new OnSpinWaitNode(C, adr_type, adr_type, pn);
+    case Op_Initialize:        return new InitializeNode(C, pn);
+    default: ShouldNotReachHere(); return nullptr;
   }
 }
 
@@ -5092,13 +5094,11 @@ MemBarNode* MemBarNode::leading_membar() const {
 // reasonable limit on the complexity of optimized initializations.
 
 //---------------------------InitializeNode------------------------------------
-InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop)
-  : MemBarNode(C, adr_type, rawoop),
+InitializeNode::InitializeNode(Compile* C, Node* rawoop)
+  : MemBarNode(C, TypeRawPtr::BOTTOM, TypePtr::BOTTOM, rawoop),
     _is_complete(Incomplete), _does_not_escape(false)
 {
   init_class_id(Class_Initialize);
-
-  assert(adr_type == Compile::AliasIdxRaw, "only valid atp");
   assert(in(RawAddress) == rawoop, "proper init");
   // Note:  allocation() can be null, for secondary initialization barriers
 }
@@ -6015,7 +6015,7 @@ void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
 
 bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const {
   auto find_proj = [&](ProjNode* proj) {
-    if (proj->adr_type() == adr_type) {
+    if (proj->out_adr_type() == adr_type) {
       return BREAK_AND_RETURN_CURRENT_PROJ;
     }
     return CONTINUE;
@@ -6420,7 +6420,7 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
     n = n->as_MergeMem()->memory_at(alias_idx);
   }
   Compile* C = Compile::current();
-  const TypePtr* n_adr_type = n->adr_type();
+  const TypePtr* n_adr_type = n->out_adr_type();
   if (n == m->empty_memory()) {
     // Implicit copy of base_memory()
   } else if (n_adr_type != TypePtr::BOTTOM) {
@@ -6461,9 +6461,9 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
     n = base_memory();
     assert(Node::in_dump()
            || n == nullptr || n->bottom_type() == Type::TOP
-           || n->adr_type() == nullptr // address is TOP
-           || n->adr_type() == TypePtr::BOTTOM
-           || n->adr_type() == TypeRawPtr::BOTTOM
+           || n->out_adr_type() == nullptr // address is TOP
+           || n->out_adr_type() == TypePtr::BOTTOM
+           || n->out_adr_type() == TypeRawPtr::BOTTOM
            || n->is_NarrowMemProj()
            || !Compile::current()->do_aliasing(),
            "must be a wide memory");

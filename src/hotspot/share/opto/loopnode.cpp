@@ -548,7 +548,7 @@ void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Nod
     address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
     const TypePtr* no_memory_effects = nullptr;
     CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
-                                           no_memory_effects);
+                                           no_memory_effects, TypePtr::BOTTOM);
 
     Node* mem = nullptr;
     Node* i_o = nullptr;
@@ -599,7 +599,7 @@ static bool no_side_effect_since_safepoint(Compile* C, const Node* head, const N
     Node* u = head->fast_out(i);
     if (u->is_memory_phi()) {
       Node* m = u->in(LoopNode::LoopBackControl);
-      if (u->adr_type() == TypePtr::BOTTOM) {
+      if (u->out_adr_type() == TypePtr::BOTTOM) {
         if (m->is_MergeMem() && mem->is_MergeMem()) {
           if (m != mem DEBUG_ONLY(|| true)) {
             // MergeMemStream can modify m, for example to adjust the length to mem.
@@ -629,11 +629,11 @@ static bool no_side_effect_since_safepoint(Compile* C, const Node* head, const N
         }
       } else {
         if (mem->is_MergeMem()) {
-          if (m != mem->as_MergeMem()->memory_at(C->get_alias_index(u->adr_type()))) {
+          if (m != mem->as_MergeMem()->memory_at(C->get_alias_index(u->out_adr_type()))) {
             return false;
           }
 #ifdef ASSERT
-          mm->set_memory_at(C->get_alias_index(u->adr_type()), mem->as_MergeMem()->base_memory());
+          mm->set_memory_at(C->get_alias_index(u->out_adr_type()), mem->as_MergeMem()->base_memory());
 #endif
         } else {
           if (m != mem) {
@@ -3360,14 +3360,14 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
     for (DUIterator_Fast imax, i = cle_out->fast_outs(imax); i < imax; i++) {
       Node* u = cle_out->fast_out(i);
       if (u->is_Store()) {
-        int alias_idx = igvn->C->get_alias_index(u->adr_type());
+        int alias_idx = igvn->C->get_alias_index(u->out_adr_type());
         Node* first = u;
         for (;;) {
           Node* next = first->in(MemNode::Memory);
           if (!next->is_Store() || next->in(0) != cle_out) {
             break;
           }
-          assert(igvn->C->get_alias_index(next->adr_type()) == alias_idx, "");
+          assert(igvn->C->get_alias_index(next->out_adr_type()) == alias_idx, "");
           first = next;
         }
         Node* last = u;
@@ -3378,7 +3378,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
             if (uu->is_Store() && uu->in(0) == cle_out) {
               assert(next == nullptr, "only one in the outer loop");
               next = uu;
-              assert(igvn->C->get_alias_index(next->adr_type()) == alias_idx, "");
+              assert(igvn->C->get_alias_index(next->out_adr_type()) == alias_idx, "");
             }
           }
           if (next == nullptr) {
@@ -3392,10 +3392,10 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
           if (uu->is_Phi()) {
             Node* be = uu->in(LoopNode::LoopBackControl);
             if (be->is_Store() && be->in(0) == inner_cl->in(LoopNode::LoopBackControl)) {
-              assert(igvn->C->get_alias_index(uu->adr_type()) != alias_idx && igvn->C->get_alias_index(uu->adr_type()) != Compile::AliasIdxBot, "unexpected store");
+              assert(igvn->C->get_alias_index(uu->out_adr_type()) != alias_idx && igvn->C->get_alias_index(uu->out_adr_type()) != Compile::AliasIdxBot, "unexpected store");
             }
             if (be == last || be == first->in(MemNode::Memory)) {
-              assert(igvn->C->get_alias_index(uu->adr_type()) == alias_idx || igvn->C->get_alias_index(uu->adr_type()) == Compile::AliasIdxBot, "unexpected alias");
+              assert(igvn->C->get_alias_index(uu->out_adr_type()) == alias_idx || igvn->C->get_alias_index(uu->out_adr_type()) == Compile::AliasIdxBot, "unexpected alias");
               assert(phi == nullptr, "only one phi");
               phi = uu;
             }
@@ -3405,9 +3405,9 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
         for (DUIterator_Fast jmax, j = inner_cl->fast_outs(jmax); j < jmax; j++) {
           Node* uu = inner_cl->fast_out(j);
           if (uu->is_memory_phi()) {
-            if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
+            if (uu->out_adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->out_adr_type()))) {
               assert(phi == uu, "what's that phi?");
-            } else if (uu->adr_type() == TypePtr::BOTTOM) {
+            } else if (uu->out_adr_type() == TypePtr::BOTTOM) {
               Node* n = uu->in(LoopNode::LoopBackControl);
               uint limit = igvn->C->live_nodes();
               uint i = 0;
@@ -3421,7 +3421,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
                 } else if (n->is_Phi()) {
                   n = n->in(1);
                 } else if (n->is_MergeMem()) {
-                  n = n->as_MergeMem()->memory_at(igvn->C->get_alias_index(u->adr_type()));
+                  n = n->as_MergeMem()->memory_at(igvn->C->get_alias_index(u->out_adr_type()));
                 } else if (n->is_Store() || n->is_LoadStore() || n->is_ClearArray()) {
                   n = n->in(MemNode::Memory);
                 } else {
@@ -3438,7 +3438,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
           // inner loop has no phi for that memory
           // slice, create one for the outer loop
           phi = PhiNode::make(inner_cl, first->in(MemNode::Memory), Type::MEMORY,
-                              igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type())));
+                              igvn->C->get_adr_type(igvn->C->get_alias_index(u->out_adr_type())));
           phi->set_req(LoopNode::LoopBackControl, last);
           phi = register_new_node(phi, inner_cl, igvn, iloop);
           igvn->replace_input_of(first, MemNode::Memory, phi);
@@ -4234,7 +4234,7 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
       PhiNode* n = out->as_Phi();
       igvn.hash_delete(n);      // Delete from hash before hacking edges
       Node *hot_phi = nullptr;
-      Node *phi = new PhiNode(r, n->type(), n->adr_type());
+      Node *phi = new PhiNode(r, n->type(), n->out_adr_type());
       // Check all inputs for the ones to peel out
       uint j = 1;
       for( uint i = 2; i < n->req(); i++ ) {
@@ -6772,7 +6772,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
 // dominated by early is considered a potentially interfering store.
 // This can produce false positives.
 Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA) {
-  int load_alias_idx = C->get_alias_index(n->adr_type());
+  int load_alias_idx = C->get_alias_index(n->in_adr_type());
   if (C->alias_type(load_alias_idx)->is_rewritable()) {
     Unique_Node_List worklist;
 
@@ -6796,7 +6796,7 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
         Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
         assert(sctrl != nullptr || !s->is_reachable_from_root(), "must have control");
         if (sctrl != nullptr && !sctrl->is_top() && is_dominator(early, sctrl)) {
-          const TypePtr* adr_type = s->adr_type();
+          const TypePtr* adr_type = s->out_adr_type();
           if (s->is_ArrayCopy()) {
             // Copy to known instance needs destination type to test for aliasing
             const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
@@ -6826,7 +6826,7 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
     if (LCA != early) {
       for (uint i = 0; i < worklist.size(); i++) {
         Node* s = worklist.at(i);
-        if (s->is_Phi() && C->can_alias(s->adr_type(), load_alias_idx)) {
+        if (s->is_Phi() && C->can_alias(s->out_adr_type(), load_alias_idx)) {
           Node* r = s->in(0);
           for (uint j = 1; j < s->req(); j++) {
             Node* in = s->in(j);

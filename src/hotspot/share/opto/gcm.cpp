@@ -736,7 +736,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, const bool
 
   // Compute the alias index.  Loads and stores with different alias indices
   // do not need anti-dependence edges.
-  int load_alias_idx = C->get_alias_index(load->adr_type());
+  int load_alias_idx = C->get_alias_index(load->in_adr_type());
 #ifdef ASSERT
   assert(Compile::AliasIdxTop <= load_alias_idx && load_alias_idx < C->num_alias_types(), "Invalid alias index");
   if (load_alias_idx == Compile::AliasIdxBot && C->do_aliasing() &&
@@ -904,7 +904,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, const bool
     // Compute the alias index. If the use_mem_state has an alias index
     // different from the load's, it is not anti-dependent. Wide MemBar's
     // are anti-dependent with everything (except immutable memories).
-    const TypePtr* adr_type = use_mem_state->adr_type();
+    const TypePtr* adr_type = use_mem_state->out_adr_type();
     if (!C->can_alias(adr_type, load_alias_idx))  continue;
 
     // Most slow-path runtime calls do NOT modify Java memory, but
