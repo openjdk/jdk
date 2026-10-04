@@ -343,18 +343,21 @@ void AOTCodeCache::initialize() {
     return;
   }
   if (is_dumping) {
-    // After JDK-8380476 FIXME: We cannot dump the AOT cache if these flags get set wrong.
-    // But the FLAG_SET_DEFAULT macro seems to allow the flag setting to change later.
+    // We cannot dump the AOT code if these flags get set wrong.
     // FoldStableValues=true can compile bad code, folding the wrong values for production runs.
     // ForceUnreachable=false calls might not reach their targets in the production.
     // DelayCompilerStubsGeneration=true the address table would fail to mention stubs.
-    // Such settings must be enforced, not just set as defaults.
-    // Consider adding checks before and after AOT compialtion that they still have
-    // the same values.
-    FLAG_SET_DEFAULT(FoldStableValues, false);
-    FLAG_SET_DEFAULT(ForceUnreachable, true);
+    // Such settings must be enforced.
+    FLAG_SET_ERGO(FoldStableValues, false);
+    FLAG_SET_ERGO(ForceUnreachable, true);
+#if defined(COMPILER2) && !defined(PRODUCT)
+    // With PrintLockStatistics=true C2 creates dynamic named counters embedded
+    // into code. We can't record dynamic addresses in AOT external address table
+    // and, as result, can't patch them when loading AOT code.
+    FLAG_SET_ERGO(PrintLockStatistics, false);
+#endif
   }
-  FLAG_SET_DEFAULT(DelayCompilerStubsGeneration, false);
+  FLAG_SET_ERGO(DelayCompilerStubsGeneration, false);
 }
 
 static AOTCodeCache*  opened_cache = nullptr; // Use this until we verify the cache
@@ -4562,6 +4565,12 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::buffer_value_args_no_receiver);
     ADD_EXTERNAL_ADDRESS(Runtime1::throw_identity_exception);
     ADD_EXTERNAL_ADDRESS(Runtime1::throw_illegal_monitor_state_exception);
+
+    ResourceMark rm;
+    GrowableArray<address> external_addresses;
+    // publish static addresses referred to by C1 runtime
+    Runtime1::init_AOTAddressTable(external_addresses);
+    add_external_addresses(external_addresses);
   }
 #endif // COMPILER1
 

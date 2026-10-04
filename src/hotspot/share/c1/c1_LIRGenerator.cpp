@@ -2502,7 +2502,11 @@ void LIRGenerator::do_Throw(Throw* x) {
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    increment_counter(Runtime1::throw_count_address(), T_INT);
+    BasicTypeList signature;
+    LIR_OprList* args = new LIR_OprList();
+    call_runtime(&signature, args,
+                 CAST_FROM_FN_PTR(address, Runtime1::increment_throw_count),
+                 voidType, nullptr);
   }
 #endif
 

@@ -165,8 +165,55 @@ address Runtime1::arraycopy_count_address(BasicType type) {
   }
 }
 
+JRT_LEAF(void, Runtime1::increment_throw_count())
+  _throw_count++;
+JRT_END
 
-#endif
+#endif // not PRODUCT
+
+#if INCLUDE_CDS
+// publish external addresses defined in this file
+void Runtime1::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
+#define ADD(count) external_addresses.append((address)(&count));
+#ifndef PRODUCT
+  ADD(_generic_arraycopystub_cnt);
+  ADD(_arraycopy_slowcase_cnt);
+  ADD(_arraycopy_checkcast_cnt);
+  ADD(_arraycopy_checkcast_attempt_cnt);
+  ADD(_new_type_array_slowcase_cnt);
+  ADD(_new_object_array_slowcase_cnt);
+  ADD(_new_null_free_array_slowcase_cnt);
+  ADD(_new_instance_slowcase_cnt);
+  ADD(_new_multi_array_slowcase_cnt);
+  ADD(_load_flat_array_slowcase_cnt);
+  ADD(_store_flat_array_slowcase_cnt);
+  ADD(_substitutability_check_slowcase_cnt);
+  ADD(_buffer_value_args_slowcase_cnt);
+  ADD(_buffer_value_args_no_receiver_slowcase_cnt);
+  ADD(_monitorenter_slowcase_cnt);
+  ADD(_monitorexit_slowcase_cnt);
+  ADD(_patch_code_slowcase_cnt);
+  ADD(_throw_range_check_exception_count);
+  ADD(_throw_index_exception_count);
+  ADD(_throw_div0_exception_count);
+  ADD(_throw_null_pointer_exception_count);
+  ADD(_throw_class_cast_exception_count);
+  ADD(_throw_incompatible_class_change_error_count);
+  ADD(_throw_illegal_monitor_state_exception_count);
+  ADD(_throw_identity_exception_count);
+  ADD(_throw_count);
+
+  ADD(_byte_arraycopy_stub_cnt);
+  ADD(_short_arraycopy_stub_cnt);
+  ADD(_int_arraycopy_stub_cnt);
+  ADD(_long_arraycopy_stub_cnt);
+  ADD(_oop_arraycopy_stub_cnt);
+
+  ADD(increment_throw_count); // function
+#endif // not PRODUCT
+#undef ADD
+}
+#endif // INCLUDE_CDS
 
 // Simple helper to see if the caller of a runtime stub which
 // entered the VM has been deoptimized
@@ -380,6 +427,10 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::dsinh());
   FUNCTION_CASE(entry, StubRoutines::dtanh());
   FUNCTION_CASE(entry, StubRoutines::dcbrt());
+
+#ifndef PRODUCT
+  FUNCTION_CASE(entry, increment_throw_count);
+#endif
 
 #undef FUNCTION_CASE
 
