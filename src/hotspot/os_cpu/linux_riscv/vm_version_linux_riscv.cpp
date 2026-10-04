@@ -284,8 +284,8 @@ char* VM_Version::os_uarch_additional_features() {
   // that only holds because the kernel clamps the window it allocates from by
   // default to the SV48 range: MMAP_VA_BITS_64 is MIN(VA_BITS, VA_BITS_SV48),
   // so DEFAULT_MAP_WINDOW and STACK_TOP stay at 2^47 on SV48 and SV57 alike.
-  // That clamp arrived in 6.6; SV57 kernels before that one allocate from the
-  // full SV57 range and cannot be supported.
+  // SV57 kernels before Linux v6.6 lack that clamp, allocate from the full SV57
+  // range and cannot be supported.
   if (mode >= VM_SV57) {
     long major, minor, patch;
     os::Linux::kernel_version(&major, &minor, &patch);
