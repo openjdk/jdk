@@ -86,6 +86,12 @@
                                  Register tmp3, Register tmp4,
                                  int needle_con_cnt, Register result, int ae);
 
+  void string_indexof_v(Register haystack, Register needle,
+                        Register haystack_len, Register needle_len,
+                        Register tmp1, Register tmp2,
+                        Register tmp3, Register tmp4,
+                        Register result, int ae);
+
   void arrays_equals(Register r1, Register r2,
                      Register tmp1, Register tmp2, Register tmp3,
                      Register result, int elem_size);
