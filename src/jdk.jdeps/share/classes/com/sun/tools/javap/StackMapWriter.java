@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,8 @@ public class StackMapWriter extends InstructionDetailWriter {
         if (m != null) {
             print("StackMap locals: ", m.locals(), true);
             print("StackMap stack: ", m.stack(), false);
-            if (m.locals().contains(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
+            if (m.locals().contains(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS) ||
+                    m.stack().contains(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
                 printFields("StackMap unset fields: ", m.unsetFields());
             }
         }

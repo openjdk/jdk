@@ -126,7 +126,7 @@ public sealed interface StackMapFrameInfo
      *         {@code stack}, or {@code unsetFields} exceeds the limit of
      *         {@link java.lang.classfile##u2 u2}; or if unset fields has
      *         elements, but no {@link SimpleVerificationTypeInfo#UNINITIALIZED_THIS
-     *         uninitializedThis} is present in {@code locals}
+     *         uninitializedThis} is present in {@code locals} or {@code stack}
      * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
