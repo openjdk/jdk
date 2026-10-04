@@ -23,6 +23,7 @@
  */
 
 #include "ci/bcEscapeAnalyzer.hpp"
+#include "ci/ciStreams.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -494,6 +495,28 @@ bool ConnectionGraph::compute_escape() {
   return has_non_escaping_obj;
 }
 
+// Rematerialization of a scalar-replaced object can fail with OOME
+// during deoptimization. If the original allocation is protected by
+// an OOME handler, popping the affected (inlined) frames
+// by the deoptimizer would bypass such handler. Don't scalarize
+// such allocations when reducing allocation merges.
+static bool allocation_oome_is_caught(AllocateNode* alloc, ciEnv* env) {
+  for (JVMState* jvms = alloc->jvms(); jvms != nullptr; jvms = jvms->caller()) {
+    // InvocationEntryBci = -1 may represent method entry JVMState.
+    // No exception handler can cover this pseudo-BCI.
+    if (jvms->has_method() && jvms->bci() >= 0) {
+      // determine potential exception handlers
+      ciExceptionHandlerStream handlers(jvms->method(), jvms->bci(),
+                                        env->OutOfMemoryError_klass(),
+                                        true /* is_exact */);
+      if (!handlers.is_done() && !handlers.handler()->is_rethrow()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Check if it's profitable to reduce the Phi passed as parameter.  Returns true
 // if at least one scalar replaceable allocation participates in the merge.
 bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
@@ -510,7 +533,9 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
         continue;
       }
 
-      if (PhaseMacroExpand::can_eliminate_allocation(_igvn, alloc, nullptr)) {
+      if (allocation_oome_is_caught(alloc, _compile->env())) {
+        ptn->set_scalar_replaceable(false);
+      } else if (PhaseMacroExpand::can_eliminate_allocation(_igvn, alloc, nullptr)) {
         found_sr_allocate = true;
       } else {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("%dth input of Phi %d is SR but can't be eliminated.", i, ophi->_idx);)
