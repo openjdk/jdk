@@ -3079,6 +3079,16 @@ operand immL_M1()
   interface(CONST_INTER);
 %}
 
+operand immL_1()
+%{
+  predicate(n->get_long() == 1);
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 
 // 64 bit integer valid for add immediate
 operand immLAdd()
