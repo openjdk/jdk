@@ -360,6 +360,27 @@ JvmtiEnvBase::check_for_periodic_clean_up() {
   }
 }
 
+// Clone value object.
+valueOop JvmtiEnvBase::clone_value_object(JavaThread *thread, Handle obj_h) {
+  assert(obj_h() != nullptr, "expected non-null oop");
+  assert(obj_h()->is_value(), "expected inline oop");
+
+  ValueKlass* klass = ValueKlass::cast(obj_h()->klass());
+  valueOop obj_copy = klass->allocate_instance(thread);
+
+  if (obj_copy != nullptr) {
+    valueOop thisObj = valueOop(obj_h());
+    // copy object payload into the object snapshot
+    BufferedValuePayload src(thisObj);
+    BufferedValuePayload dst(obj_copy, klass);
+    src.copy_to(dst);
+
+    // Must ensure the content of the buffered value is visible
+    // before publishing the buffered value oop
+    OrderAccess::storestore();
+  }
+  return obj_copy;
+}
 
 void
 JvmtiEnvBase::record_first_time_class_file_load_hook_enabled() {

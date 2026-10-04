@@ -255,6 +255,9 @@ class JvmtiEnvBase : public CHeapObj<mtServiceability> {
 
   static void check_for_periodic_clean_up();
 
+  // Clone value object.
+  static valueOop clone_value_object(JavaThread *thread, Handle obj_h);
+
   JvmtiEnvEventEnable *env_event_enable() {
     return &_env_event_enable;
   }
