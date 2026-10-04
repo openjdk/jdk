@@ -482,21 +482,34 @@ public final class System {
 
     /**
      * Returns the same hash code for the given object as
-     * would be returned by the default method hashCode(),
+     * would be returned by the default method {@linkplain Object#hashCode hashCode()},
      * whether or not the given object's class overrides
-     * hashCode().
+     * {@code hashCode()}.
      * The hash code for the null reference is zero.
      *
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          The "identity hash code" of a {@linkplain Class#isValue() value object}
-     *          is computed by combining the identity hash codes of the value object's fields recursively.
+     *          The hash code produced by this method is always
+     *          compatible with the {@code ==} operator.  That is,
+     *          if two object references are
+     *          {@linkplain Object##Indistinguishability indistinguishable},
+     *          their hashes will be identical as well.
+     *          <p>
+     *          For a {@linkplain Class#isValue() value object}, which
+     *          lacks object identity, the hash code may be computed
+     *          by a recursive walk of the value tree, combining (in
+     *          an unspecified manner) identity hash codes of
+     *          reference fields and bits from the primitive fields.
+     *          <p>
+     *          Despite its name, {@code identityHashCode} can accept both
+     *          value objects and identity objects, because it is behaviorally
+     *          compatible with the default {@code hashCode()} method.
      *      </div>
      * </div>
      * @apiNote
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          Note that, like ==, this hash code exposes information about a value object's
+     *          Note that, like {@code ==}, this hash code may expose information about a value object's
      *          private fields that might otherwise be hidden by an identity object.
      *          Developers should be cautious about storing sensitive secrets in value object fields.
      *      </div>
