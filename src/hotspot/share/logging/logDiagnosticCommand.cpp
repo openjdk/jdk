@@ -81,5 +81,4 @@ void LogDiagnosticCommand::execute(DCmdSource source, TRAPS) {
     // If no argument was provided, print usage
     print_help(LogDiagnosticCommand::name());
   }
-
 }
