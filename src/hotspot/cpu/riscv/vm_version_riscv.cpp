@@ -478,8 +478,12 @@ void VM_Version::c2_initialize() {
     }
   }
 
-  // SHA-3
-  if (UseSHA3Intrinsics) {
+  // SHA-3 uses scalar Zbb instructions.
+  if (UseSHA && UseZbb) {
+    if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+    }
+  } else if (UseSHA3Intrinsics) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
