@@ -535,6 +535,8 @@ class SerializeClosure;
   template(hash_code_no_hash_name,                    "HASH_CODE_NO_HASH")                        \
   template(during_unsafe_access_name,                 "during_unsafe_access")                     \
   template(checkIndex_name,                           "checkIndex")                               \
+  template(checkFromToIndex_name,                     "checkFromToIndex")                         \
+  template(checkFromIndexSize_name,                   "checkFromIndexSize")                       \
   template(jfr_epoch_name,                            "jfr_epoch")                                \
   template(maxThawingSize_name,                       "maxThawingSize")                           \
   template(lockStackSize_name,                        "lockStackSize")                            \
