@@ -40,7 +40,8 @@ frame JavaThread::pd_last_frame() {
     pc = (address) *(sp + 14);
   }
 
-  return frame(sp, pc);
+  // Likely the frame of a RuntimeStub (e.g. after a call to the VM).
+  return frame(sp, pc, frame::kind::code_blob);
 }
 
 bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava) {
@@ -64,7 +65,8 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       return false;
     }
 
-    frame ret_frame((intptr_t*)uc->uc_mcontext.gregs[15/*Z_SP*/], pc);
+    // pc is from ucontext — could be anywhere (native, compiled, unknown).
+    frame ret_frame((intptr_t*)uc->uc_mcontext.gregs[15/*Z_SP*/], pc, frame::kind::unknown);
 
     if (ret_frame.fp() == nullptr) {
       // The found frame does not have a valid frame pointer.
