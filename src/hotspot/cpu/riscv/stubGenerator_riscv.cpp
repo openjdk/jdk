@@ -4224,6 +4224,52 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::riscv::_string_indexof_linear_ul = generate_string_indexof_linear(StubId::stubgen_string_indexof_linear_ul_id);
   }
 
+  /**
+  *  Arguments:
+  *
+  *  Input:
+  *    c_rarg0   - obja     address
+  *    c_rarg1   - objb     address
+  *    c_rarg2   - length   length               (number of elements)
+  *    c_rarg3   - scale    log2_array_indxscale (element size)
+  *
+  *  Output:
+  *        x10   - int >= 0 mismatched index, < 0 bitwise complement of tail
+  */
+  address generate_vectorizedMismatch()
+  {
+    StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+
+    start = __ pc();
+
+    const Register result = c_rarg0;
+    const Register obja   = c_rarg0;
+    const Register objb   = c_rarg1;
+    const Register length = c_rarg2;
+    const Register scale  = c_rarg3;
+    const Register tmp1   = x28;
+    const Register tmp2   = x29;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter();
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2);
+    __ leave();
+    __ ret();
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
 #ifdef COMPILER2
   void generate_lookup_secondary_supers_table_stub() {
     StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_id;
@@ -7994,6 +8040,10 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
+
+    if (UseVectorizedMismatchIntrinsic) {
+      StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
+    }
 
     StubRoutines::riscv::set_completed();
   }
