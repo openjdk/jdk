@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -55,7 +55,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: Feb 2025
+ * @LastModified: Aug 2026
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -1043,7 +1043,12 @@ abstract public class ToStream extends SerializerBase {
 
                 if (null != outputStringForChar)
                 {
-                    writer.write(outputStringForChar);
+                    if (m_encodingInfo != null && m_encodingInfo.isInEncoding(ch)) {
+                        writer.write(ch);  // Write UTF-8 character directly
+                    }
+                    else {
+                        writer.write(outputStringForChar);
+                    }
                 }
                 else
                     return i;
