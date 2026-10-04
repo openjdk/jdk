@@ -127,11 +127,22 @@ public class InstanceStackChunkKlass extends InstanceKlass {
           continue;
         }
         long offset = headerBytes + index * oopSize;
+        // Slot fields carry no field info, so answer isFlat() here
         OopField field;
         if (vm.isCompressedOopsEnabled()) {
-          field = new NarrowOopField(new IndexableFieldIdentifier((int) index), offset, false);
+          field = new NarrowOopField(new IndexableFieldIdentifier((int) index), offset, false) {
+            @Override
+            public boolean isFlat() {
+              return false;
+            }
+          };
         } else {
-          field = new OopField(new IndexableFieldIdentifier((int) index), offset, false);
+          field = new OopField(new IndexableFieldIdentifier((int) index), offset, false) {
+            @Override
+            public boolean isFlat() {
+              return false;
+            }
+          };
         }
         visitor.doOop(field, false);
       }
