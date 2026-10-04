@@ -21,7 +21,7 @@
  * questions.
  */
 
-package org.openjdk.bench.valhalla.sandbox.corelibs.corelibs.mapprotos;
+package org.openjdk.bench.valhalla.sandbox.corelibs.mapprotos;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -55,7 +55,7 @@ import static java.util.stream.Collectors.toMap;
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(1)
+@Fork(value = 1, jvmArgsAppend = {"--enable-preview"})
 @State(Scope.Thread)
 public class HashMapBench {
     private IntFunction<Map<Integer, Integer>> mapSupplier;
@@ -65,8 +65,8 @@ public class HashMapBench {
     private int size;
 
     @Param(value = {
-            "org.openjdk.bench.valhalla.corelibs.mapprotos.HashMap",
-//            "org.openjdk.bench.valhalla.corelibs.mapprotos.XHashMap",
+            "org.openjdk.bench.valhalla.sandbox.corelibs.mapprotos.HashMap",
+//            "org.openjdk.bench.valhalla.sandbox.corelibs.mapprotos.XHashMap",
             "java.util.HashMap",
         })
     private String mapType;
