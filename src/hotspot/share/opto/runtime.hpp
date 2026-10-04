@@ -77,7 +77,7 @@ private:
 
  public:
   NamedCounter(const char *n, CounterTag tag = NoTag):
-    _name(n == nullptr ? nullptr : os::strdup(n)),
+    _name(n == nullptr ? nullptr : os::strdup(n, mtCompiler)),
     _count(0),
     _tag(tag),
     _next(nullptr) {}
