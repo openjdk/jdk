@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,7 +319,7 @@ class TestMemorySegmentImpl {
         fillRandom(b);
 
         // Add all tests to list
-        tests.put("testMemorySegmentBadExitCheck",                 () -> testMemorySegmentBadExitCheck(copy(a)));
+        tests.put("testIntLoop_iv_byte_long_limit",                () -> testIntLoop_iv_byte_long_limit(copy(a)));
         tests.put("testIntLoop_iv_byte",                           () -> testIntLoop_iv_byte(copy(a)));
         tests.put("testIntLoop_longIndex_intInvar_sameAdr_byte",   () -> testIntLoop_longIndex_intInvar_sameAdr_byte(copy(a), 0));
         tests.put("testIntLoop_longIndex_longInvar_sameAdr_byte",  () -> testIntLoop_longIndex_longInvar_sameAdr_byte(copy(a), 0));
@@ -478,7 +478,7 @@ class TestMemorySegmentImpl {
         }
     }
 
-    @Run(test = {"testMemorySegmentBadExitCheck",
+    @Run(test = {"testIntLoop_iv_byte_long_limit",
                  "testIntLoop_iv_byte",
                  "testIntLoop_longIndex_intInvar_sameAdr_byte",
                  "testIntLoop_longIndex_longInvar_sameAdr_byte",
@@ -517,16 +517,16 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // FAILS
     // Exit check: iv < long_limit      ->     (long)iv < long_limit
-    // Thus, we have an int-iv, but a long-exit-check.
-    // Is not properly recognized by either CountedLoop or LongCountedLoop
-    static Object[] testMemorySegmentBadExitCheck(MemorySegment a) {
+    // Syntactically, we have an int-iv, but a long-exit-check.
+    // With JDK-8336759, the exit condition is optimistically and speculatively converted to: iv < (int) long_limit
+    // Making this case similar to the next one where counted loop optimizations are possible.
+    static Object[] testIntLoop_iv_byte_long_limit(MemorySegment a) {
         for (int i = 0; i < a.byteSize(); i++) {
             long adr = i;
             byte v = a.get(ValueLayout.JAVA_BYTE, adr);
