@@ -479,6 +479,7 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDSSupportsAOTCodeCaching() {
       if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
+          !"true".equals(isPreviewEnabled()) &&
           !"zero".equals(vmFlavor()) &&
           (Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64())) {
         return "true";

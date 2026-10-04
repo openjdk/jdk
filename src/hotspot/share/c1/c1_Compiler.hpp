@@ -28,13 +28,14 @@
 #include "compiler/abstractCompiler.hpp"
 
 class DirectiveSet;
+class CompilerThread;
 
 // There is one instance of the Compiler per CompilerThread.
 
 class Compiler: public AbstractCompiler {
  private:
   static bool init_c1_runtime();
-  BufferBlob* init_buffer_blob();
+  BufferBlob* init_buffer_blob(CompilerThread* thread);
 
  public:
   // Creation
