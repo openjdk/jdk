@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /test/lib
  * @bug 5028661
  * @summary Test the error conditions of Cipher initialized
  * with wrong mode with EncryptedPrivateKeyInfo.getKeySpec
@@ -31,13 +32,14 @@
  * @run main GetKeySpecException2 PBEWithMD5AndDES
  * @run main GetKeySpecException2 PBEWithSHA1AndDESede
  */
-import java.security.*;
-import java.util.Arrays;
-import java.util.Vector;
-import java.security.spec.*;
-import javax.crypto.*;
+
+import java.security.AlgorithmParameters;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.Cipher;
+import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.interfaces.PBEKey;
-import javax.crypto.spec.*;
+
+import jdk.test.lib.valueclass.AsValueClass;
 
 public class GetKeySpecException2 {
     private static final char[] passwd = { 'p','a','s','s','w','d' };
@@ -78,9 +80,10 @@ public class GetKeySpecException2 {
     }
 }
 
+@AsValueClass
 class MyPBEKey implements PBEKey {
 
-    private char[] password = null;
+    private char[] password;
 
     MyPBEKey(char[] password) {
         this.password = (char[]) password.clone();
