@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ package java.util.function;
  *
  * <p>This is a <a href="package-summary.html">functional interface</a>
  * whose functional method is {@link #getAsInt()}.
+ *
+ * <p>The method (vacuously) conforms to the {@linkplain
+ * java.util.function##functionsAndNull null handling policy} for
+ * interfaces in this package.
  *
  * @see Supplier
  * @since 1.8
