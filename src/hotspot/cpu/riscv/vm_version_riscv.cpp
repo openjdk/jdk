@@ -104,14 +104,17 @@ void VM_Version::common_initialize() {
 
   setup_cpu_available_features();
 
-  // check if satp.mode is supported, currently supports up to SV57(RV64).
-  // On Sv57 systems the Linux kernel keeps the default userspace address
-  // window within the Sv48 range, so userspace pointers stay below 2^48
+  // Check if satp.mode is supported, currently supports up to SV57(RV64).
+  // The code generator assumes that every address it embeds in an instruction
+  // sequence fits in 48 bits, see movptr() and mov_metadata(). SV57 is usable
+  // because the addresses handed out by the OS stay inside the SV48 range; the
+  // OS specific part of that check lives in os_cpu, and we keep the VM itself
+  // from probing above the SV48 range in os::vm_page_table_expansion_point().
   if (satp_mode.value() > VM_SV57 || satp_mode.value() < VM_MBARE) {
-  vm_exit_during_initialization(
-    err_msg(
-        "Unsupported satp mode: SV%d. Only satp modes up to sv57 are supported for now.",
-        (int)satp_mode.value()));
+    vm_exit_during_initialization(
+      err_msg(
+         "Unsupported satp mode: SV%d. Only satp modes up to sv57 are supported for now.",
+         (int)satp_mode.value()));
   }
 
   if (UseRVA20U64) {
