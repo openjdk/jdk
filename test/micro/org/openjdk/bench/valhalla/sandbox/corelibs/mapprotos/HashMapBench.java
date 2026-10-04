@@ -55,7 +55,7 @@ import static java.util.stream.Collectors.toMap;
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(1)
+@Fork(value = 1, jvmArgsAppend = {"--enable-preview"})
 @State(Scope.Thread)
 public class HashMapBench {
     private IntFunction<Map<Integer, Integer>> mapSupplier;
