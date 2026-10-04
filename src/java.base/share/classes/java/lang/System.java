@@ -59,6 +59,7 @@ import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.javac.Restricted;
 import jdk.internal.loader.NativeLibraries;
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
@@ -2222,6 +2223,10 @@ public final class System {
 
             public byte stringCoder(String str) {
                 return str.coder();
+            }
+
+            public MemorySegment asReadOnlyMemorySegment(String str) {
+                return str.asReadOnlyMemorySegment();
             }
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
