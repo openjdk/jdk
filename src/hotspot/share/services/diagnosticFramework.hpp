@@ -30,13 +30,15 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ostream.hpp"
 
 enum DCmdSource {
   DCmd_Source_Internal  = 0x01U,  // invocation from the JVM
   DCmd_Source_AttachAPI = 0x02U,  // invocation via the attachAPI
-  DCmd_Source_MBean     = 0x04U   // invocation via a MBean
+  DCmd_Source_MBean     = 0x04U,  // invocation via a MBean
+  DCmd_Source_Revival   = 0x08U   // invocation via process revival
 };
 
 // CmdLine is the class used to handle a command line containing a single
@@ -199,6 +201,7 @@ public:
   GenDCmdArgument* arguments_list() const { return _arguments_list; };
   void check(TRAPS);
   void parse(CmdLine* line, char delim, TRAPS);
+  void parse(CmdLine* line, char delim, outputStream* out, TRAPS);
   void print_help(outputStream* out, const char* cmd_name) const;
   void reset(TRAPS);
   void cleanup();
