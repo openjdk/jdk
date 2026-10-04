@@ -284,8 +284,7 @@ char* VM_Version::os_uarch_additional_features() {
   // that only holds because the kernel clamps the window it allocates from by
   // default to the SV48 range: MMAP_VA_BITS_64 is MIN(VA_BITS, VA_BITS_SV48),
   // so DEFAULT_MAP_WINDOW and STACK_TOP stay at 2^47 on SV48 and SV57 alike.
-  // That clamp arrived in 6.6 with add2cc6b6515f7 "RISC-V: mm: Restrict address
-  // space for sv39,sv48,sv57"; SV57 kernels before that one allocate from the
+  // That clamp arrived in 6.6; SV57 kernels before that one allocate from the
   // full SV57 range and cannot be supported.
   if (mode >= VM_SV57) {
     long major, minor, patch;
