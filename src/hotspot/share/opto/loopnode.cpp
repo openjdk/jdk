@@ -4233,8 +4233,8 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
     if( out->is_Phi() ) {
       PhiNode* n = out->as_Phi();
       igvn.hash_delete(n);      // Delete from hash before hacking edges
-      Node *hot_phi = nullptr;
-      Node *phi = new PhiNode(r, n->type(), n->out_adr_type());
+      Node* hot_phi = nullptr;
+      Node* phi = new PhiNode(r, n->type(), n->out_adr_type());
       // Check all inputs for the ones to peel out
       uint j = 1;
       for( uint i = 2; i < n->req(); i++ ) {

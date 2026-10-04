@@ -121,7 +121,7 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
                                            Node* parm0, Node* parm1, Node* parm2) {
 
   // Slow-path call
- CallNode *call = leaf_name
+ CallNode* call = leaf_name
    ? (CallNode*)new CallLeafNode      (slow_call_type, slow_call, leaf_name, TypeRawPtr::BOTTOM, TypePtr::BOTTOM)
    : (CallNode*)new CallStaticJavaNode(slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), TypeRawPtr::BOTTOM, TypePtr::BOTTOM);
 
@@ -1889,7 +1889,7 @@ void PhaseMacroExpand::expand_allocate_common(
   }
 
   // Generate slow-path call
-  CallNode *call = new CallStaticJavaNode(slow_call_type, slow_call_address,
+  CallNode* call = new CallStaticJavaNode(slow_call_type, slow_call_address,
                                OptoRuntime::stub_name(slow_call_address),
                                TypePtr::BOTTOM, TypePtr::BOTTOM);
   call->init_req(TypeFunc::Control,   slow_region);
