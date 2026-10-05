@@ -44,7 +44,7 @@ import java.awt.event.MouseEvent;
  * @bug 4356202
  * @summary Tests that getLocationOnScreen returns valid value(WindowMaker
  *          only).
- * @run main/othervm -Dsun.java2d.uiScale=1 GetScreenLocTest
+ * @run main/othervm GetScreenLocTest
  */
 
 public class GetScreenLocTest {
@@ -71,9 +71,7 @@ public class GetScreenLocTest {
         robot.setAutoDelay(100);
         bigPause();
 
-        EventQueue.invokeAndWait(() -> {
-            p = canvas.getLocationOnScreen();
-        });
+        p = canvas.getLocationOnScreen();
         doPress(p);
         p.x += 1;
         p.y += 1;
