@@ -117,15 +117,19 @@ inline size_t ShenandoahForwarding::size(oop obj) {
 
 inline uint ShenandoahForwarding::age(oop obj) {
   markWord mark = obj->mark();
+  uint age;
   if (!mark.is_marked()) {
     // Object has trustworthy mark.
-    assert(mark.age() <= markWord::max_age, "Age is in bounds");
-    return mark.age();
+    age = mark.age();
   } else {
-    // Otherwise resolve the forwardee and try again.
+    // Otherwise resolve the forwardee and pick age from there.
     oop fwd = get_forwardee_raw(obj, mark);
-    return age(fwd);
+    markWord fwd_mark = fwd->mark();
+    assert(!fwd_mark.is_marked(), "Must not be");
+    age = fwd_mark.age();
   }
+  assert(age <= markWord::max_age, "Age is in bounds");
+  return age;
 }
 
 inline void ShenandoahForwarding::increase_age(oop obj, uint add) {
