@@ -246,28 +246,29 @@ void CompilerConfig::set_legacy_emulation_flags() {
 
 
 void CompilerConfig::set_compilation_policy_flags() {
-  if (is_tiered()) {
-    // Increase the code cache size - tiered compiles a lot more.
+  if (is_c1_profiling()) {
+    // Increase the code cache size
     if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
       FLAG_SET_ERGO(ReservedCodeCacheSize,
                     MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
     }
-    // Enable SegmentedCodeCache if tiered compilation is enabled, ReservedCodeCacheSize >= 240M
-    // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
+    // Enable SegmentedCodeCache if tiered compilation is enabled or C1 profiling is enabled. Also
+    // require that ReservedCodeCacheSize >= 240M and the code cache contains at least 8 pages
+    // (segmentation disables advantage of huge pages).
     if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M &&
         8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
       FLAG_SET_ERGO(SegmentedCodeCache, true);
     }
-    if (Arguments::is_compiler_only()) { // -Xcomp
-      // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
-      // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
-      // compile a level 4 (C2) and then continue executing it.
-      if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
-        FLAG_SET_CMDLINE(Tier3InvokeNotifyFreqLog, 0);
-      }
-      if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
-        FLAG_SET_CMDLINE(Tier4InvocationThreshold, 0);
-      }
+  }
+  if (is_tiered() && Arguments::is_compiler_only()) { // -Xcomp
+    // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
+    // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
+    // compile a level 4 (C2) and then continue executing it.
+    if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
+      FLAG_SET_CMDLINE(Tier3InvokeNotifyFreqLog, 0);
+    }
+    if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
+      FLAG_SET_CMDLINE(Tier4InvocationThreshold, 0);
     }
   }
 
