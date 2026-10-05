@@ -1,0 +1,4 @@
+InfiniteLoopGLBTest.java:13:17: compiler.err.not.within.bounds: ? super java.util.List<java.lang.Double>, N
+- compiler.note.unchecked.filename: InfiniteLoopGLBTest.java
+- compiler.note.unchecked.recompile
+1 error

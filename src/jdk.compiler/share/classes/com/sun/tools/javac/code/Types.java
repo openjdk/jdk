@@ -4192,7 +4192,12 @@ public class Types {
         }
         return t1;
     }
-    //where
+
+    /* A retry with capture variables replaced by their lower bounds can
+     * recreate the same pair when computing its closure.
+     */
+    private final Set<Pair<Type, Type>> activeGlb = new HashSet<>();
+
     public Type glb(Type t, Type s) {
         if (s == null)
             return t;
@@ -4203,8 +4208,15 @@ public class Types {
         else if (isSubtypeNoCapture(s, t))
             return s;
 
-        List<Type> closure = union(closure(t), closure(s));
-        return glbFlattened(closure, t);
+        Pair<Type, Type> pair = new Pair<>(t, s);
+        if (!activeGlb.add(pair))
+            return createErrorType(t);
+        try {
+            List<Type> closure = union(closure(t), closure(s));
+            return glbFlattened(closure, t);
+        } finally {
+            activeGlb.remove(pair);
+        }
     }
     //where
     /**
