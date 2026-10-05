@@ -5896,11 +5896,13 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @param combiner method handle to call initially on the incoming arguments
      * @return method handle which incorporates the specified argument folding logic
      * @throws NullPointerException if either argument is null
-     * @throws IllegalArgumentException if either of the following two conditions holds:
+     * @throws IllegalArgumentException if any of the following conditions holds:
      *          (1) {@code combiner}'s return type is non-{@code void} and not the same as the argument type at position
      *              {@code pos} of the target signature;
      *          (2) the {@code N} argument types at position {@code pos} of the target signature (skipping one matching
-     *              the {@code combiner}'s return type) are not identical with the argument types of {@code combiner}.
+     *              the {@code combiner}'s return type) are not identical with the argument types of {@code combiner};
+     *          (3) {@code pos} is negative or greater than the target's arity minus the combiner's arity,
+     *              minus one more if the combiner's return type is non-{@code void}.
      *
      * @see #foldArguments(MethodHandle, MethodHandle)
      * @since 9
@@ -5924,15 +5926,15 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         int foldArgs   = combinerType.parameterCount();
         Class<?> rtype = combinerType.returnType();
         int foldVals = rtype == void.class ? 0 : 1;
-        boolean ok = foldPos >= 0 &&
-                foldPos <= targetType.parameterCount() - foldVals - foldArgs;
-        if (ok) {
-            int afterInsertPos = foldPos + foldVals;
-            for (int i = 0; i < foldArgs; i++) {
-                if (combinerType.parameterType(i) != targetType.parameterType(i + afterInsertPos)) {
-                    ok = false;
-                    break;
-                }
+        if (foldPos < 0 || foldPos > targetType.parameterCount() - foldVals - foldArgs) {
+            throw newIllegalArgumentException("position is out of range for target and combiner", foldPos);
+        }
+        boolean ok = true;
+        int afterInsertPos = foldPos + foldVals;
+        for (int i = 0; i < foldArgs; i++) {
+            if (combinerType.parameterType(i) != targetType.parameterType(i + afterInsertPos)) {
+                ok = false;
+                break;
             }
         }
         if (ok && foldVals != 0 && combinerType.returnType() != targetType.parameterType(foldPos))
