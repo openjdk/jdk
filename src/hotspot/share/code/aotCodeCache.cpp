@@ -2337,7 +2337,7 @@ const char* AOTCodeAddressTable::add_C_string(const char* str) {
   // Add one new string.
   // Passed in string can be freed and used space become inaccessible.
   // Duplicate string for future compare.
-  const char* dup = os::strdup(str);
+  const char* dup = os::strdup(str, mtCode);
   _C_strings->at_put_grow(_C_strings_count, dup);
   _C_strings_id->at_put_grow(_C_strings_count, -1);
   log_trace(aot, codecache, stringtable)("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);

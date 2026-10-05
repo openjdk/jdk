@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@ import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+
+
 public class KDFDelayedProviderThreadingTest {
     /// This number of iterations is enough to see a case where the threads
     /// arrange themselves such that both `deriveData` attempts cause "ERROR",
@@ -54,6 +58,21 @@ public class KDFDelayedProviderThreadingTest {
     static final HKDFParameterSpec input
             = HKDFParameterSpec.ofExtract().extractOnly();
 
+    private static final CyclicBarrier START = new CyclicBarrier(3);
+    private static final CyclicBarrier FINISH = new CyclicBarrier(3);
+    private static volatile KDF kdf;
+
+    static void wait(CyclicBarrier cb) {
+        try {
+            cb.await();
+        } catch (InterruptedException exc) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(exc);
+        } catch (BrokenBarrierException exc) {
+            throw new RuntimeException(exc);
+        }
+    }
+
     static String derive(KDF kdf) {
         try {
             return Arrays.toString(kdf.deriveData(input));
@@ -62,10 +81,37 @@ public class KDFDelayedProviderThreadingTest {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    static void main(String[] args) throws Exception {
+
+        var t1 = new Thread(() -> {
+            for (int i = 0 ; i < ITERATIONS ; ++i) {
+                wait(START);
+                out = derive(kdf);
+                wait(FINISH);
+            }
+        }, "KDF-derive");
+
+        var t2 = new Thread(() -> {
+            for (int i = 0 ; i < ITERATIONS ; ++i) {
+                wait(START);
+                kdf.getProviderName();
+                wait(FINISH);
+            }
+        }, "KDF-provider-name");
+        t1.start();
+        t2.start();
+
         Security.insertProviderAt(new P(), 1);
         for (int i = 0; i < ITERATIONS; i++) {
-            test();
+            kdf = KDF.getInstance("HKDF-SHA256");
+            wait(START);
+            wait(FINISH);
+
+            String out2 = derive(kdf);
+            Asserts.assertEquals(out, out2);
+            if (out.length() < 10) { // "error"
+                threadOrderReversalCounter++;
+            }
         }
 
         // If the value of threadOrderReversalCounter is consistently zero,
@@ -77,22 +123,6 @@ public class KDFDelayedProviderThreadingTest {
         System.out.println("Also tested atypical threading condition "
                            + threadOrderReversalCounter + "/" + ITERATIONS
                            + " iterations (depends on hardware specs/utilization).");
-    }
-
-    static void test() throws Exception {
-        var k = KDF.getInstance("HKDF-SHA256");
-        var t1 = new Thread(() -> out = derive(k));
-        var t2 = new Thread(() -> k.getProviderName());
-        t1.start();
-        t2.start();
-        t1.join();
-        t2.join();
-
-        String out2 = derive(k);
-        Asserts.assertEquals(out, out2);
-        if (out.length() < 10) { // "error"
-            threadOrderReversalCounter++;
-        }
     }
 
     public static class P extends Provider {

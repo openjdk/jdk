@@ -49,7 +49,7 @@ public class DwarfCFrame extends BasicCFrame {
 
     /**
      * @return DwarfParser instance for the PC, null if native library relates to the pc not found.
-     * @throws DebuggerException if DWARF processing is failed.
+     * @throws DwarfException if DWARF processing is failed.
      *         For example: pc is not covered in this DWARF, Common Information Entry (CIE) has
      *         language personality routine and/or Language Data Area (LSDA).
      */
@@ -60,13 +60,13 @@ public class DwarfCFrame extends BasicCFrame {
                                                                     : new DwarfParser(libptr);
             try {
                 dwarf.processDwarf(pc);
-            } catch (DebuggerException e) {
-                // DebuggerException might be thrown from unwinding signal trampoline
+            } catch (DwarfException e) {
+                // DwarfException might be thrown from unwinding signal trampoline
                 // (e.g. __restore_rt on AMD64) because it might have DW_CFA_def_cfa_expression
                 // DWARF instruction.
                 // However SA can ignore the case safely because it does not rely on DWARF,
                 // would restore register values from the stack directly.
-                // Thus DebuggerException would be rethrown if the pc is not in signal trampoline.
+                // Thus DwarfException would be rethrown if the pc is not in signal trampoline.
                 if (!linuxDbg.isSignalTrampoline(pc)) {
                     throw e;
                 }

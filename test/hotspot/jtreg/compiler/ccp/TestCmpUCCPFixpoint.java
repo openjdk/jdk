@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 8389218
+ * @bug 8389218 8392563
  * @summary Test that PhaseCCP reaches a fixpoint for CmpU with a wrapped
- *          AddI range.
+ *          AddI range or SubI range.
  * @run main/othervm -Xcomp -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   ${test.main.class}
  */
 
@@ -36,12 +36,15 @@ package compiler.ccp;
 public class TestCmpUCCPFixpoint {
     static int iFld;
     static int limit;
+    static float f;
 
     public static void main(String[] args) {
-        test();
+        test1();
+        test2();
     }
 
-    static void test() {
+    // CmpU with a wrapped AddI range.
+    static void test1() {
         short x = -100;
 
         for (int i = 0; i < limit; i++) {
@@ -53,6 +56,17 @@ public class TestCmpUCCPFixpoint {
             case Short.MIN_VALUE + 1:
             case Short.MAX_VALUE:
                 iFld = 2;
+        }
+    }
+
+    // CmpU with a wrapped SubI range.
+    static void test2() {
+        byte b;
+        for (b = 0; b < 6; b++) {}
+        switch (-b) {
+            case 966:
+            case -126:
+                f = 0;
         }
     }
 }

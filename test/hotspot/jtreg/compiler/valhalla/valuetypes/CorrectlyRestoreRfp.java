@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @key randomness
+ * @key stress randomness
  * @summary When needing some stack extension for unpacking arguments from the non-scalarized entry point,
  *          on Aarch64, LR (x30) and RFP (x29) are duplicated on the stack. But x29 can be used as an ordinary
  *          register, and hold an oop whose value can be updated by the GC, which is aware of only one copy
