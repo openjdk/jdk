@@ -117,7 +117,7 @@ private:
       oop obj = CompressedOops::decode_raw_not_null(o);
       verify_oop_at_basic(p, obj);
 
-      if (is_instance_ref_klass(ShenandoahForwarding::klass(obj)) && ShenandoahForwarding::is_forwarded(obj)) {
+      if (ShenandoahForwarding::is_forwarded(obj) && is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee_raw(obj);
       }
       if (in_generation(obj) && _map->par_mark(obj)) {
