@@ -726,6 +726,12 @@ static int setQTables(JNIEnv *env,
 
         for (j = 0; j < 64; j++) {
             quant_ptr->quantval[j] = (UINT16)qdataBody[j];
+            if (quant_ptr->quantval[j] < 1) {
+                quant_ptr->quantval[j] = 1;
+            }
+            if (quant_ptr->quantval[j] > 255) { // ImageIO supports baseline only
+                quant_ptr->quantval[j] = 255;
+            }
         }
         quant_ptr->sent_table = !write;
         (*env)->ReleasePrimitiveArrayCritical(env,
@@ -747,9 +753,11 @@ static boolean setHuffTable(JNIEnv *env,
     int i;
 
     // lengths
+    CHECK_NULL_RETURN(table, FALSE);
     huffLens = (*env)->GetObjectField(env,
                                       table,
                                       JPEGHuffmanTable_lengthsID);
+    CHECK_NULL_RETURN(huffLens, FALSE);
     hlensLen = (*env)->GetArrayLength(env, huffLens);
     hlensBody = (*env)->GetShortArrayElements(env,
                                               huffLens,
@@ -803,6 +811,9 @@ static int setHTables(JNIEnv *env,
     JHUFF_TBL *huff_ptr;
     j_compress_ptr comp;
     j_decompress_ptr decomp;
+    if ((DCHuffmanTables == NULL) || (ACHuffmanTables == NULL)) {
+        return 0;
+    }
     jsize hlen = (*env)->GetArrayLength(env, DCHuffmanTables);
 
     if (hlen > NUM_HUFF_TBLS) {
