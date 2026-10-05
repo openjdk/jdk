@@ -108,6 +108,10 @@ public:
     return _consecutive_young_gcs;
   }
 
+  size_t reclaiming_gc_count() const {
+    return _success_concurrent_gcs + _success_full_gcs + _success_old_gcs;
+  }
+
 private:
   static int cause_priority(GCCause::Cause cause);
   void update_young(bool is_young);
