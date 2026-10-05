@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ inline bool StackChunkFrameStream<frame_kind>::is_in_frame(void* p0) const {
   assert(!is_done(), "");
   intptr_t* p = (intptr_t*)p0;
   int frame_size = _cb->frame_size();
-  if (is_compiled()) {
-    nmethod* nm = _cb->as_nmethod_or_null();
+  if (is_compiled() && !_cb->as_nmethod()->is_osr_method()) {
+    nmethod* nm = _cb->as_nmethod();
     if (nm->needs_stack_repair()) {
       frame f = to_frame();
       bool augmented = f.was_augmented_on_entry(frame_size);

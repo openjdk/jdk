@@ -213,8 +213,12 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_available0(JNIEnv *env, jobject this, job
     }
 
     jlong available = size - position;
-    return available > java_lang_Integer_MAX_VALUE ?
-        java_lang_Integer_MAX_VALUE : (jint)available;
+    if (available > java_lang_Integer_MAX_VALUE) {
+        available = java_lang_Integer_MAX_VALUE;
+    } else if (available < 0) {
+        available = 0;
+    }
+    return (jint)available;
 }
 
 JNIEXPORT jboolean JNICALL

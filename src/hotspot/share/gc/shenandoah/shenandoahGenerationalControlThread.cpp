@@ -94,6 +94,9 @@ void ShenandoahGenerationalControlThread::run_service() {
   notify_gc_waiters();
   notify_alloc_failure_waiters();
   set_gc_mode(stopped);
+
+  // We're done writing GC stats, so print them here.
+  _heap->print_gc_stats_at_exit();
 }
 
 void ShenandoahGenerationalControlThread::stop_service() {
@@ -784,8 +787,9 @@ void ShenandoahGenerationalControlThread::set_gc_mode(GCMode new_mode) {
 
 void ShenandoahGenerationalControlThread::set_gc_mode(MonitorLocker& ml, GCMode new_mode) {
   if (_gc_mode != new_mode) {
-    log_debug(gc, thread)("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
-    EventMark event("Control thread transition from: %s, to %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    FormatBuffer<> msg("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    log_debug(gc, thread)("%s", msg.buffer());
+    Events::log(this, "%s", msg.buffer());
     _gc_mode = new_mode;
     ml.notify_all();
   }

@@ -1002,8 +1002,6 @@ void Klass::print_on(outputStream* st) const {
   st->cr();
 }
 
-#define BULLET  " - "
-
 // Caller needs ResourceMark
 void Klass::oop_print_on(oop obj, outputStream* st) {
   // print title
@@ -1014,14 +1012,14 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
      // print header
      obj->mark().print_on(st);
      st->cr();
-     st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
+     st->print(" - prototype_header: " INTPTR_FORMAT, _prototype_header.value());
      st->cr();
   }
 
   // print class
-  st->print(BULLET"klass: ");
+  st->print(" - klass: ");
   obj->klass()->print_value_on(st);
-  st->print(BULLET"flags: "); _misc_flags.print_on(st); st->cr();
+  st->print(" - flags: "); _misc_flags.print_on(st); st->cr();
   st->cr();
 }
 
