@@ -196,8 +196,6 @@ void NAME_SCALE_BLIT(UshortIndexed, UshortIndexed)
 {
     DeclareUshortIndexedLoadVars(SrcRead)
     DeclareUshortIndexedLoadVars(DstRead)
-    jint srcScan = pSrcInfo->scanStride;
-    jint dstScan = pDstInfo->scanStride;
     DeclareUshortIndexedStoreVars(DstWrite)
 
     InitUshortIndexedLoadVars(SrcRead, pSrcInfo);

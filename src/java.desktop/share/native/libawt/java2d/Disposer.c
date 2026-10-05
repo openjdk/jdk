@@ -48,7 +48,7 @@ Disposer_AddRecord(JNIEnv *env, jobject obj, GeneralDisposeFunc disposer, jlong 
 
     if (dispClass == NULL) {
         /* Needed to initialize the Disposer class as it may be not yet referenced */
-        jclass clazz = (*env)->FindClass(env, "sun/java2d/Disposer");
+        (*env)->FindClass(env, "sun/java2d/Disposer");
         if ((*env)->ExceptionCheck(env)) {
             // If there's exception pending, we'll just return.
             return;

@@ -102,10 +102,7 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     char buf[MAXPATHLEN];
     int32_t len;
     char *p, *tk;
-    JNI_OnLoad_type *JNI_OnLoad_ptr;
-    struct utsname name;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(vm, JNI_VERSION_1_2);
-    void *v;
 
     if (awtHandle != NULL) {
         /* Avoid several loading attempts */

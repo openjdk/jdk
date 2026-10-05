@@ -190,8 +190,6 @@ void NAME_SCALE_BLIT(Index8Gray, Index8Gray)
 {
     DeclareIndex8GrayLoadVars(SrcRead)
     DeclareIndex8GrayLoadVars(DstRead)
-    jint srcScan = pSrcInfo->scanStride;
-    jint dstScan = pDstInfo->scanStride;
     DeclareIndex8GrayStoreVars(DstWrite)
 
     InitIndex8GrayLoadVars(SrcRead, pSrcInfo);

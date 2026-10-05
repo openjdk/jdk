@@ -205,8 +205,6 @@ void NAME_SCALE_BLIT(ByteIndexed, ByteIndexed)
 {
     DeclareByteIndexedLoadVars(SrcRead)
     DeclareByteIndexedLoadVars(DstRead)
-    jint srcScan = pSrcInfo->scanStride;
-    jint dstScan = pDstInfo->scanStride;
     DeclareByteIndexedStoreVars(DstWrite)
 
     InitByteIndexedLoadVars(SrcRead, pSrcInfo);
