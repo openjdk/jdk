@@ -403,9 +403,8 @@ BOOL D3DPPLM_OsVersionMatches(USHORT osInfo) {
                         J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS_7_OR_8\n");
                         currentOS = OS_WINDOWS_7_OR_8;
                     } else {
-                        J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008R2 or newer\n");
-                        // this detects also 2012 (R2)
-                        currentOS = OS_WINSERV_2008R2;
+                        J2dRlsTrace(J2D_TRACE_INFO, "Windows server 2008R2, 2012 or 2012R2\n");
+                        currentOS = OS_WINSERVER_2008R2_2012_OR_2012R2;
                     }
                 } else {
                     J2dRlsTrace(J2D_TRACE_INFO,
