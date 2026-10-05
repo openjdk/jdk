@@ -153,7 +153,6 @@ public:
     }
 
     inline void set_destination_count(uint count);
-    inline void set_live_obj_size(size_t words);
 
     inline void set_completed();
     inline bool claim_unsafe();
@@ -288,12 +287,6 @@ ParallelCompactData::RegionData::set_destination_count(uint count)
   assert(count <= (dc_completed >> dc_shift), "count too large");
   const region_sz_t live_sz = (region_sz_t) live_obj_size();
   _dc_and_los.store_relaxed((count << dc_shift) | live_sz);
-}
-
-inline void ParallelCompactData::RegionData::set_live_obj_size(size_t words)
-{
-  assert(words <= los_mask, "would overflow");
-  _dc_and_los.store_relaxed(destination_count_raw() | (region_sz_t)words);
 }
 
 inline void ParallelCompactData::RegionData::decrement_destination_count()

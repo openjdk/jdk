@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8389895
+ * @bug 8389895 8393054
  * @summary LoadN followed by DecodeN is matched into a single lwu when
  *          compressed oops are unscaled.
  * @library /test/lib /
@@ -45,6 +45,7 @@ public class TestLoadN2PUnscaled {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
+        framework.addFlags("-Xms64m", "-XX:HeapBaseMinAddress=1g");
         framework.addScenarios(
             // A small heap is placed below 4GB, so compressed oops are
             // unscaled and decoding is a no-op zero-extension.

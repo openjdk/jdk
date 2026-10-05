@@ -295,7 +295,7 @@ void VM_Version::initialize() {
                (has_multiprocessing_extensions() ? ", mp_ext" : ""));
 
   // buf is started with ", " or is empty
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
 
   if (has_simd()) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
