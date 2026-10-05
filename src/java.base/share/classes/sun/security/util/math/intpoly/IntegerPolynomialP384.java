@@ -42,6 +42,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
 
     private static BigInteger evaluateModulus() {
         BigInteger result = BigInteger.valueOf(2).pow(384);
+
         result = result.subtract(BigInteger.valueOf(1).shiftLeft(128));
         result = result.subtract(BigInteger.valueOf(1).shiftLeft(96));
         result = result.add(BigInteger.valueOf(1).shiftLeft(32));
@@ -117,8 +118,8 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         limbs[i - 3] += v >> 1;
         limbs[i - 6] -= (v << 41) & LIMB_MASK;
         limbs[i - 5] -= v >> 14;
-        limbs[i - 6] += (v << 1) & LIMB_MASK;
-        limbs[i - 5] += v >> 54;
+        limbs[i - 7] += (v << 1) & LIMB_MASK;
+        limbs[i - 6] += v >> 54;
     }
 
     /**
@@ -129,6 +130,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
      */
     protected void finalCarryReduceLast(long[] limbs) {
         long carry = limbs[6] >> 54;
+
         limbs[6] -= carry << 54;
         limbs[2] += (carry << 18) & LIMB_MASK;
         limbs[3] += carry >> 37;
@@ -201,23 +203,25 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
     }
 
     private void carryReduce0(long[] c) {
-        // carry from position 5
+        long c7 = 0;
         long carry = (c[5] + CARRY_ADD) >> BITS_PER_LIMB;
+
+        // carry from position 5
         c[5] -= carry << BITS_PER_LIMB;
         c[6] += carry;
         // carry from position 6
         carry = (c[6] + CARRY_ADD) >> BITS_PER_LIMB;
         c[6] -= carry << BITS_PER_LIMB;
-        c[7] += carry;
+        c7 += carry;
         // reduce from position 7
-        c[4] += (c[7] << 32) & LIMB_MASK;
-        c[5] += c[7] >> 23;
-        c[3] += (c[7] << 54) & LIMB_MASK;
-        c[4] += c[7] >> 1;
-        c[1] -= (c[7] << 41) & LIMB_MASK;
-        c[2] -= c[7] >> 14;
-        c[0] += (c[7] << 1) & LIMB_MASK;
-        c[1] += c[7] >> 54;
+        c[4] += (c7 << 32) & LIMB_MASK;
+        c[5] += c7 >> 23;
+        c[3] += (c7 << 54) & LIMB_MASK;
+        c[4] += c7 >> 1;
+        c[1] -= (c7 << 41) & LIMB_MASK;
+        c[2] -= c7 >> 14;
+        c[0] += (c7 << 1) & LIMB_MASK;
+        c[1] += c7 >> 54;
         // carry from position 0
         carry = (c[0] + CARRY_ADD) >> BITS_PER_LIMB;
         c[0] -= carry << BITS_PER_LIMB;
@@ -343,7 +347,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[5] += d4 + dd3;
         c[6] += d5 + dd4;
         c[7] += d6 + dd5;
-        c[8] = dd6;
+        c[8]  = dd6;
 
         // Row 2 - multiply by aa2
         d0 = aa2 * bb0;
@@ -381,7 +385,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[6] += d4 + dd4;
         c[7] += d5 + dd5;
         c[8] += d6 + dd6;
-        c[9] = dd6;
+        c[9]  = dd6;
 
         // Row 3 - multiply by aa3
         d0 = aa3 * bb0;
@@ -419,7 +423,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[7]  += d4 + dd3;
         c[8]  += d5 + dd4;
         c[9]  += d6 + dd5;
-        c[10] = dd6;
+        c[10]  = dd6;
 
         // Row 4 - multiply by aa4
         d0 = aa4 * bb0;
@@ -457,7 +461,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[8]  += d4 + dd4;
         c[9]  += d5 + dd5;
         c[10] += d6 + dd6;
-        c[11] = dd6;
+        c[11]  = dd6;
 
         // Row 5 - multiply by aa5
         d0 = aa5 * bb0;
@@ -495,7 +499,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[9]  += d4 + dd3;
         c[10] += d5 + dd4;
         c[11] += d6 + dd5;
-        c[12] = dd6;
+        c[12]  = dd6;
 
         // Row 6 - multiply by aa6
         d0 = aa6 * bb0;
@@ -533,7 +537,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[10] += d4 + dd3;
         c[11] += d5 + dd4;
         c[12] += d6 + dd5;
-        c[13] = dd6;
+        c[13]  = dd6;
 
         carryReduce(c);
 
@@ -552,6 +556,8 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
      * @param limbs [in|out] the limbs to carry and reduce.
      */
     protected void reduce(long[] limbs) {
+        carryReduce0(limbs);
+/*
         long carry = (limbs[3] + CARRY_ADD) >> BITS_PER_LIMB;
         limbs[3] -= carry << BITS_PER_LIMB;
         limbs[4] += carry;
@@ -576,6 +582,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         carry = (limbs[3] + CARRY_ADD) >> BITS_PER_LIMB;
         limbs[3] -= carry << BITS_PER_LIMB;
         limbs[4] += carry;
+*/
     }
 
     /**
