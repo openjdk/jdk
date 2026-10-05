@@ -130,12 +130,11 @@ inline uint ShenandoahForwarding::age(oop obj) {
 
 inline void ShenandoahForwarding::increase_age(oop obj, uint add) {
   // This method is expected to be called on new copy before it is exposed.
-  // This means that mark word is safe to modify.
+  // It also means mark is safe to modify with a non-CAS store.
   markWord mark = obj->mark();
-  if (!mark.is_marked()) {
-    mark = mark.set_age(MIN2(markWord::max_age, mark.age() + add));
-    obj->set_mark(mark);
-  }
+  assert(!mark.is_marked(), "Must not be");
+  mark = mark.set_age(MIN2(markWord::max_age, mark.age() + add));
+  obj->set_mark(mark);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP
