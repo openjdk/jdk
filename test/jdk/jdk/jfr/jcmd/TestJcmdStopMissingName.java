@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,27 @@
  * questions.
  */
 
-package jdk.jfr.event.profiling;
+package jdk.jfr.jcmd;
 
-import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
- * @requires vm.hasJFR & vm.continuations
- * @requires vm.opt.DeoptimizeALot != true
- * @library /test/lib
- * @build jdk.jfr.event.profiling.StackTraceTestMatrix
- * @run main/othervm jdk.jfr.event.profiling.TestFullStackTrace
+ * @summary Verify JFR.stop reports an error when the name parameter is missing
+ * @requires vm.flagless
+ * @requires vm.hasJFR
+ * @library /test/lib /test/jdk
+ * @run main/othervm jdk.jfr.jcmd.TestJcmdStopMissingName
  */
-public class TestFullStackTrace {
-
-    public static void main(String[] args) throws Throwable {
-        StackTraceTestMatrix.runAllThreadKinds(EventNames.ExecutionSample, "sampledThread");
+public class TestJcmdStopMissingName {
+    public static void main(String[] args) throws Exception {
+        String name = "foo";
+        OutputAnalyzer output = JcmdHelper.jcmd("JFR.start", "name=" + name);
+        JcmdAsserts.assertRecordingHasStarted(output);
+        JcmdHelper.waitUntilRunning(name);
+        output = JcmdHelper.jcmd("JFR.stop");
+        output.shouldContain("Missing mandatory argument 'name'. Use JFR.check to list recording names.");
+        JcmdHelper.assertRecordingIsRunning(name);
+        JcmdHelper.stopAndCheck(name);
     }
-
 }
