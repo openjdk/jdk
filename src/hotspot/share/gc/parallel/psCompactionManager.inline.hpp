@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psStringDedup.hpp"
 #include "gc/shared/partialArrayState.hpp"
-#include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
@@ -107,7 +106,7 @@ inline void ParCompactionManager::follow_array(objArrayOop obj, size_t start, si
 
 inline void ParCompactionManager::follow_contents(const ScannerTask& task, bool stolen) {
   if (task.is_partial_array_state()) {
-    assert(PSParallelCompact::mark_bitmap()->is_marked(task.to_partial_array_state()->source()), "should be marked");
+    assert(PSParallelCompact::mark_bitmap()->is_marked(task.to_partial_array_state()->array()), "should be marked");
     process_array_chunk(task.to_partial_array_state(), stolen);
   } else {
     oop obj = task.to_oop();
