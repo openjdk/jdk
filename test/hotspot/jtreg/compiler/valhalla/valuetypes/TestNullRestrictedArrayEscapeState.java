@@ -55,6 +55,7 @@ class TestNullRestrictedArrayEscapeState {
         }
     }
 
+    static ValueHolder globalHolder = null;
     static ValueHolder[] globalHolders = null;
 
     @ForceInline
@@ -66,6 +67,14 @@ class TestNullRestrictedArrayEscapeState {
         }
         return holder;
     }
+
+    @DontInline
+    static void escapeFirstHolder(ValueHolder[] holders) {
+        globalHolder = holders[0];
+    }
+
+    @DontInline
+    static void dontUse(ValueHolder[] holders) {}
 
     // Allocate a null-restricted atomic array, initialize it with a holder that
     // references an identity object, and make it escape globally. C2 should
@@ -88,5 +97,31 @@ class TestNullRestrictedArrayEscapeState {
         ValueHolder[] holders =
             (ValueHolder[])ValueClass.newNullRestrictedNonAtomicArray(ValueHolder.class, 1, holder);
         globalHolders = holders;
+    }
+
+    // Variant of the above test where the holder, rather than the array itself,
+    // escapes within a non-inlined call. C2 should propagate the global escape
+    // state of the array's fields to the referenced identity object, and
+    // preserve the synchronization operations.
+    @Test
+    @IR(counts = {IRNode.FAST_LOCK, "> 0", IRNode.FAST_UNLOCK, "> 0"})
+    static void testAllocateNullRestrictedAtomicArrayWithEscapingElements() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder[] holders =
+            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, holder);
+        escapeFirstHolder(holders);
+    }
+
+    // Allocate a null-restricted atomic array and initialize it with a holder
+    // that references an identity object. Since the non-inlined call does not
+    // access the array at all, C2 should classify the identity object as not
+    // globally escaping and optimize away the synchronization operations.
+    @Test
+    @IR(failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    static void testAllocateNullRestrictedAtomicArrayWithNonEscapingElements() {
+        ValueHolder holder = createValueHolderWithSynchronizedFieldWrite();
+        ValueHolder[] holders =
+            (ValueHolder[])ValueClass.newNullRestrictedAtomicArray(ValueHolder.class, 1, holder);
+        dontUse(holders);
     }
 }
