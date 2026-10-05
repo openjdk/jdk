@@ -24,6 +24,9 @@
 /* @test
  * @bug 8393106
  * @summary Check file system loop exception structure
+ * @comment `Files.new{Input,Output}Stream()` doesn't trigger a
+ *          `FileSystemLoopException` on Windows, and therefore it's excluded
+ * @requires os.family != "windows"
  * @library ..
  * @run junit ${test.main.class}
  */
