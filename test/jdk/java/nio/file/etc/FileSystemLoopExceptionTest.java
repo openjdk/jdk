@@ -31,6 +31,8 @@
  * @run junit ${test.main.class}
  */
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -49,25 +51,30 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class FileSystemLoopExceptionTest {
+    private static Path link;
+
+    @BeforeAll
+    static void beforeAll() throws Exception {
+        link = Files.createTempDirectory("loop_test").resolve("link");
+        assumeTrue(TestUtil.supportsSymbolicLinks(link.getParent()), "Test requires symbolic links support");
+        Files.createSymbolicLink(link, link);
+    }
+
+    @AfterAll
+    static void afterAll() throws Exception {
+        Files.delete(link);
+        Files.delete(link.getParent());
+    }
 
     @ParameterizedTest
     @MethodSource
-    public void symlinkLoop(Function<Path, Executable> executableProvider) throws Exception {
-        Path link = Files.createTempDirectory("loop_test").resolve("link");
-        assumeTrue(TestUtil.supportsSymbolicLinks(link.getParent()), "Test requires symbolic links support");
-        Files.createSymbolicLink(link, link);
+    public void symlinkLoop(Function<Path, Executable> executableProvider) {
+        FileSystemLoopException expectedException = new FileSystemLoopException(link.toString());
+        FileSystemLoopException actualException = assertThrowsExactly(FileSystemLoopException.class, executableProvider.apply(link));
 
-        try {
-            FileSystemLoopException expectedException = new FileSystemLoopException(link.toString());
-            FileSystemLoopException actualException = assertThrowsExactly(FileSystemLoopException.class, executableProvider.apply(link));
-
-            assertEquals(expectedException.getFile(), actualException.getFile());
-            assertEquals(expectedException.getOtherFile(), actualException.getOtherFile());
-            assertEquals(expectedException.getReason(), actualException.getReason());
-        } finally {
-            Files.delete(link);
-            Files.delete(link.getParent());
-        }
+        assertEquals(expectedException.getFile(), actualException.getFile());
+        assertEquals(expectedException.getOtherFile(), actualException.getOtherFile());
+        assertEquals(expectedException.getReason(), actualException.getReason());
     }
 
     static private Stream<Arguments> symlinkLoop() {
