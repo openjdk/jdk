@@ -366,8 +366,9 @@ find_file(const int fd, zentry *entry, const char *file_name)
     }
     p = bp;
     /*
-     * Loop through the Central Directory Headers. Note that a valid zip/jar
-     * must have an ENDHDR (with ENDSIG) after the Central Directory.
+     * The presence of ENDHDR (with ENDSIG) has been confirmed
+     * (through find_positions). We now loop through the Central Directory Headers
+     * to locate the entry we are looking for.
      */
     while (CENSIG_AT(p)) {
 
