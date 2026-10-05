@@ -306,13 +306,18 @@ class ReductionNode : public Node {
     init_class_id(Class_Reduction);
   }
 
-  static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt,
+  // Make a new reduction node for a vector reduction opcode.
+  static ReductionNode* make(int vopc, Node* ctrl, Node* in1, Node* in2, BasicType bt,
                              // This only effects floating-point add and mul reductions.
                              bool requires_strict_order = true);
   static int  opcode(int opc, BasicType bt);
+  // Map a vector opcode that has no scalar ideal node, such as Op_UMinV,
+  // to its vector reduction opcode.
+  static int  opcode_from_vector(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
-  // Make an identity scalar (zero for add, one for mul, etc) for scalar opc.
-  static Node* make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType bt);
+  // Make an identity scalar (zero for add, one for mul, etc) for a vector
+  // reduction opcode.
+  static Node* make_identity_con_scalar(PhaseGVN& gvn, int vopc, BasicType bt);
 
   virtual const Type* bottom_type() const {
     return _bottom_type;

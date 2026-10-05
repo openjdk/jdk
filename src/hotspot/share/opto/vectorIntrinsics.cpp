@@ -1538,8 +1538,10 @@ bool LibraryCallKit::inline_vector_reduction() {
   }
 
   int num_elem = vlen->get_con();
+  bool has_scalar_op = VectorSupport::has_scalar_op(opr->get_con());
   int opc  = VectorSupport::vop2ideal(opr->get_con(), vltype);
-  int sopc = ReductionNode::opcode(opc, elem_bt);
+  int sopc = has_scalar_op ? ReductionNode::opcode(opc, elem_bt)
+                           : ReductionNode::opcode_from_vector(opc, elem_bt);
 
   // Ensure reduction operation for lanewise operation
   // When using mask, mask use type needs to be VecMaskUseLoad.
@@ -1578,7 +1580,7 @@ bool LibraryCallKit::inline_vector_reduction() {
     }
   }
 
-  Node* init = ReductionNode::make_identity_con_scalar(gvn(), opc, elem_bt);
+  Node* init = ReductionNode::make_identity_con_scalar(gvn(), sopc, elem_bt);
   Node* value = opd;
 
   assert(mask != nullptr || !is_masked_op, "Masked op needs the mask value never null");
@@ -1589,7 +1591,7 @@ bool LibraryCallKit::inline_vector_reduction() {
 
   // Make an unordered Reduction node. This affects only AddReductionVF/VD and MulReductionVF/VD,
   // as these operations are allowed to be associative (not requiring strict order) in VectorAPI.
-  value = trace_vector(ReductionNode::make(opc, nullptr, init, value, elem_bt, /* requires_strict_order */ false));
+  value = trace_vector(ReductionNode::make(sopc, nullptr, init, value, elem_bt, /* requires_strict_order */ false));
 
   if (mask != nullptr && use_predicate) {
     value->add_req(mask);
