@@ -112,9 +112,6 @@ public:
   // Used by concurrent GC to reset remembered set.
   void swap_card_tables();
 
-  // Update the read cards with the state of the write table (write table is not cleared).
-  void merge_write_table();
-
   // Called before init mark, expected to prepare regions for marking.
   virtual void prepare_gc();
 

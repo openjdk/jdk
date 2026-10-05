@@ -83,24 +83,6 @@ public:
   bool is_thread_safe() override { return true; }
 };
 
-// Copy the write-version of the card-table into the read-version, clearing the
-// write-copy.
-class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahScanRemembered* _scanner;
-public:
-  ShenandoahMergeWriteTable(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
-
-  void heap_region_do(ShenandoahHeapRegion* r) override {
-    assert(r->is_old(), "Don't waste time doing this for non-old regions");
-    _scanner->merge_write_table(r->bottom(), ShenandoahHeapRegion::region_size_words());
-  }
-
-  bool is_thread_safe() override {
-    return true;
-  }
-};
-
 // Add [TAMS, top) volume over young regions. Used to correct age 0 cohort census
 // for adaptive tenuring when census is taken during marking.
 // In non-product builds, for the purposes of verification, we also collect the total
@@ -226,20 +208,6 @@ void ShenandoahGeneration::swap_card_tables() {
 
   ShenandoahOldGeneration* old_generation = heap->old_generation();
   old_generation->card_scan()->swap_card_tables();
-}
-
-// Copy the write-version of the card-table into the read-version, clearing the
-// write-version. The work is done at a safepoint and in parallel by the GC
-// worker threads.
-void ShenandoahGeneration::merge_write_table() {
-  // This should only happen for degenerated cycles
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-  heap->assert_gc_workers(heap->workers()->active_workers());
-  shenandoah_assert_safepoint();
-
-  ShenandoahOldGeneration* old_generation = heap->old_generation();
-  ShenandoahMergeWriteTable task(old_generation->card_scan());
-  old_generation->parallel_heap_region_iterate(&task);
 }
 
 void ShenandoahGeneration::prepare_gc() {
