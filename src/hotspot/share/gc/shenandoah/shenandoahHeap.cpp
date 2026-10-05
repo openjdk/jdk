@@ -26,6 +26,7 @@
 
 
 #include "cds/aotMappedHeapWriter.hpp"
+#include "gc/shared/allocTracer.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -975,6 +976,12 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       //   a) We experienced a GC that had good progress, or
       //   b) We experienced at least one Full GC (whether or not it had good progress)
 
+      ResourceMark rm; // for Thread::name()
+      const size_t req_byte = req.size() * HeapWordSize;
+      const double start = os::elapsedTime();
+      log_debug(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"", PROPERFMTARGS(req_byte), Thread::current()->name());
+      AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(control_thread()->get_gc_id()));
+
       const size_t original_count = shenandoah_policy()->reclaiming_gc_count();
       while (result == nullptr && !control_thread()->should_terminate()) {
         control_thread()->handle_alloc_failure(req);
@@ -991,12 +998,14 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
         }
       }
 
+      log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\", %.3fms, Succeeded: %s",
+                   PROPERFMTARGS(req_byte), Thread::current()->name(), (os::elapsedTime() - start) * MILLIUNITS, BOOL_TO_STR(result != nullptr));
+
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
         notify_gc_progress();
       }
       if (log_develop_is_enabled(Debug, gc, alloc)) {
-        ResourceMark rm;
         log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: %zu"
                              ", Original: %zu, Latest: %zu",
                              Thread::current()->name(), p2i(result), req.type_string(), req.size(),

@@ -23,7 +23,6 @@
  *
  */
 
-#include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
@@ -48,26 +47,18 @@ size_t ShenandoahController::get_gc_id() const {
 
 void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &req) {
   assert(current()->is_Java_thread(), "expect Java thread here");
-  ResourceMark rm; // for Thread::name()
-  const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
-  const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
 
-  const double start = os::elapsedTime();
-  const size_t req_byte = req.size() * HeapWordSize;
-  log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"", PROPERFMTARGS(req_byte), current()->name());
-  AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
-
-  // This is the inner part of a larger retry loop, so just wait here
-  MonitorLocker ml(&_alloc_waiters_lock);
   _alloc_stall_count.add_then_fetch(1UL);
   increase_concurrent_worker_count();
   ShenandoahHeap::heap()->shenandoah_policy()->record_allocation_stall(get_phase());
+  const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
+  const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
+  MonitorLocker ml(&_alloc_waiters_lock);
   notify_alloc_stall(cause);
   if (!should_terminate()) {
+    // This is the inner part of a larger retry loop, so just wait here
     ml.wait();
   }
-  log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\", %.3fms",
-               PROPERFMTARGS(req_byte), current()->name(), (os::elapsedTime() - start) * MILLIUNITS);
 }
 
 void ShenandoahController::handle_alloc_failure_full() {
