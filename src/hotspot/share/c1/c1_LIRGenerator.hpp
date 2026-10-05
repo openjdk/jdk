@@ -209,8 +209,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr rlock(Value instr);                      // lock a free register
   LIR_Opr rlock_result(Value instr);
   LIR_Opr rlock_result(Value instr, BasicType type);
-  LIR_Opr rlock_byte(BasicType type);
-  LIR_Opr rlock_callee_saved(BasicType type);
+  LIR_Opr rlock_byte();
 
   // get a constant into a register and get track of what register was used
   LIR_Opr load_constant(Constant* x);
@@ -334,7 +333,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // specific implementations
   void array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo* store_check_info, ciMethod* profiled_method, int profiled_bci);
 
-  static LIR_Opr result_register_for(ValueType* type, bool callee = false);
+  static LIR_Opr result_register_for(ValueType* type);
 
   ciObject* get_jobject_constant(Value value);
 

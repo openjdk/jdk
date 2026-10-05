@@ -1318,11 +1318,13 @@ public:
 
 void ShenandoahVerifier::verify_roots_in_to_space(ShenandoahGeneration* generation) {
   ShenandoahVerifyInToSpaceClosure cl;
+  ShenandoahGCStateResetter resetter;
   ShenandoahRootVerifier::roots_do(&cl, generation);
 }
 
 void ShenandoahVerifier::verify_roots_no_forwarded(ShenandoahGeneration* generation) {
   ShenandoahVerifyNoForwarded cl;
+  ShenandoahGCStateResetter resetter;
   ShenandoahRootVerifier::roots_do(&cl, generation);
 }
 

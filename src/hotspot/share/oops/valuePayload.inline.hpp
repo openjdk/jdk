@@ -39,6 +39,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
@@ -183,31 +184,9 @@ inline void ValuePayload::set_offset(ptrdiff_t offset) {
 }
 
 inline void ValuePayload::copy(const ValuePayload& src,
-                               const ValuePayload& dst,
-                               LayoutKind copy_layout_kind) {
-  assert_pre_copy_invariants(src, dst, copy_layout_kind);
-
-  ValueKlass* const klass = src.klass();
-
-  switch (copy_layout_kind) {
-  case LayoutKind::NULLABLE_ATOMIC_FLAT:
-  case LayoutKind::NULLABLE_NON_ATOMIC_FLAT: {
-    if (src.is_payload_null()) {
-      HeapAccess<>::value_store_null(dst);
-    } else {
-      HeapAccess<>::value_copy(src, dst);
-    }
-  } break;
-  case LayoutKind::BUFFERED:
-  case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-  case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
-    if (!klass->is_empty_value_type()) {
-      HeapAccess<>::value_copy(src, dst);
-    }
-  } break;
-  default:
-    ShouldNotReachHere();
-  }
+                               const ValuePayload& dst) {
+  assert_pre_copy_invariants(src, dst);
+  HeapAccess<>::value_copy(src, dst);
 }
 
 inline void ValuePayload::mark_as_non_null() {
@@ -218,6 +197,14 @@ inline void ValuePayload::mark_as_non_null() {
 inline void ValuePayload::mark_as_null() {
   precond(has_null_marker());
   klass()->mark_payload_as_null(addr());
+}
+
+inline bool ValuePayload::has_null_marker() const {
+  return klass()->layout_has_null_marker(layout_kind());
+}
+
+inline bool ValuePayload::is_payload_null() const {
+  return has_null_marker() && klass()->is_payload_marked_as_null(addr());
 }
 
 inline bool ValuePayload::uses_absolute_addr() const {
@@ -360,8 +347,7 @@ inline void ValuePayload::assert_post_construction_invariants() const {
 }
 
 inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
-                                                     const ValuePayload& dst,
-                                                     LayoutKind copy_layout_kind) {
+                                                     const ValuePayload& dst) {
   OnVMError on_assertion_failuire([&](outputStream* st) {
     st->print_cr("=== assert_post_construction_invariants failure ===");
     StreamIndentor si(st);
@@ -377,18 +363,14 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
       dst.print_on(st);
       st->cr();
     }
-    {
-      st->print_cr("--- copy layout kind ---");
-      StreamIndentor si(st);
-      LayoutKindHelper::print_on(copy_layout_kind, st);
-      st->cr();
-    }
   });
 
   const ValueKlass* const src_klass = src.klass();
   const ValueKlass* const dst_klass = dst.klass();
 
   precond(src_klass == dst_klass);
+
+  const LayoutKind copy_layout_kind = LayoutKindHelper::get_copy_layout(src.layout_kind(), dst.layout_kind());
 
   const bool src_is_buffered = src.layout_kind() == LayoutKind::BUFFERED;
   const bool dst_is_buffered = dst.layout_kind() == LayoutKind::BUFFERED;
@@ -407,17 +389,12 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
     precond(!src_klass->supports_nullable_layouts() || container != src_klass->null_reset_value());
   }
 
-  const int src_layout_size_in_bytes = src_klass->layout_size_in_bytes(src.layout_kind());
-  const int dst_layout_size_in_bytes = dst_klass->layout_size_in_bytes(dst.layout_kind());
-  const int copy_layout_size_in_bytes =
-      src_has_copy_layout
-          ? src_layout_size_in_bytes
-          : dst_layout_size_in_bytes;
+  const size_t src_layout_size_in_bytes = src.size_in_bytes();
+  const size_t dst_layout_size_in_bytes = dst.size_in_bytes();
+  const size_t copy_layout_size_in_bytes = copy_size_in_bytes(src, dst);
 
   precond(copy_layout_size_in_bytes <= src_layout_size_in_bytes);
   precond(copy_layout_size_in_bytes <= dst_layout_size_in_bytes);
-  precond(LayoutKindHelper::get_copy_layout(src.layout_kind(),
-                                            dst.layout_kind()) == copy_layout_kind);
 }
 
 #endif // ASSERT
@@ -441,12 +418,15 @@ inline address ValuePayload::addr() const {
       : (cast_from_oop<address>(container()) + offset());
 }
 
-inline bool ValuePayload::has_null_marker() const {
-  return klass()->layout_has_null_marker(layout_kind());
+inline size_t ValuePayload::size_in_bytes() const {
+  return integer_cast<size_t>(klass()->layout_size_in_bytes(layout_kind()));
 }
 
-inline bool ValuePayload::is_payload_null() const {
-  return has_null_marker() && klass()->is_payload_marked_as_null(addr());
+inline size_t ValuePayload::copy_size_in_bytes(const ValuePayload& src, const ValuePayload& dst) {
+  precond(src.klass() == dst.klass());
+
+  const LayoutKind copy_layout_kind = LayoutKindHelper::get_copy_layout(src.layout_kind(), dst.layout_kind());
+  return integer_cast<size_t>(src.klass()->layout_size_in_bytes(copy_layout_kind));
 }
 
 inline ValuePayload ValuePayload::construct_from_parts(address absolute_addr,
@@ -473,14 +453,16 @@ inline valueOop BufferedValuePayload::container() const {
 }
 
 inline void BufferedValuePayload::copy_to(const BufferedValuePayload& dst) {
-  copy(*this, dst, LayoutKind::BUFFERED);
+  copy(*this, dst);
 }
 
 inline FlatValuePayload::FlatValuePayload(oop container,
                                           ptrdiff_t offset,
                                           ValueKlass* klass,
                                           LayoutKind layout_kind)
-    : ValuePayload(container, offset, klass, layout_kind) {}
+    : ValuePayload(container, offset, klass, layout_kind) {
+  postcond(LayoutKindHelper::is_flat(layout_kind));
+}
 
 inline valueOop FlatValuePayload::allocate_instance(TRAPS) {
   // Preserve the container oop across the instance allocation.
@@ -495,7 +477,7 @@ inline bool FlatValuePayload::copy_to(BufferedValuePayload& dst) {
   // Copy from FLAT to BUFFERED, null marker fix may be required.
 
   // Copy the payload to the buffered object.
-  copy(*this, dst, layout_kind());
+  copy(*this, dst);
 
   if (!has_null_marker() && dst.has_null_marker()) {
     // We must fix the null marker if the src does not have a null marker but
@@ -523,39 +505,30 @@ inline void FlatValuePayload::copy_from(BufferedValuePayload& src) {
     // valid non null value.
     src.mark_as_non_null();
   }
-  copy(src, *this, layout_kind());
+  copy(src, *this);
 }
 
 inline void FlatValuePayload::copy_to(const FlatValuePayload& dst) {
-  copy(*this, dst, layout_kind());
+  copy(*this, dst);
 }
 
 inline valueOop FlatValuePayload::read(TRAPS) {
-  switch (layout_kind()) {
-  case LayoutKind::NULLABLE_ATOMIC_FLAT:
-  case LayoutKind::NULLABLE_NON_ATOMIC_FLAT: {
-    if (is_payload_null()) {
-      return nullptr;
-    }
-  } // Fallthrough
-  case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-  case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT: {
-    valueOop res = allocate_instance(CHECK_NULL);
-    BufferedValuePayload dst(res, klass());
-    if (!copy_to(dst)) {
-      // copy_to may fail if the payload has been updated with a null value
-      // between our is_payload_null() check above and the copy.
-      // In this case we have copied a null value into the buffer the payload.
-      return nullptr;
-    }
-    // Must ensure the content of the buffered value is visible
-    // before publishing the buffered value oop
-    OrderAccess::storestore();
-    return res;
-  } break;
-  default:
-    ShouldNotReachHere();
+  if (is_payload_null()) {
+    return nullptr;
   }
+
+  valueOop res = allocate_instance(CHECK_NULL);
+  BufferedValuePayload dst(res, klass());
+  if (!copy_to(dst)) {
+    // copy_to may fail if the payload has been updated with a null value
+    // between our is_payload_null() check above and the copy.
+    // In this case we have copied a null value into the buffer the payload.
+    return nullptr;
+  }
+  // Must ensure the content of the buffered value is visible
+  // before publishing the buffered value oop
+  OrderAccess::storestore();
+  return res;
 }
 
 inline void FlatValuePayload::write_without_nullability_check(valueOop obj) {
@@ -576,6 +549,14 @@ inline void FlatValuePayload::write(valueOop obj, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Value is null");
   }
   write_without_nullability_check(obj);
+}
+
+inline bool FlatValuePayload::has_null_marker() const {
+  return ValuePayload::has_null_marker();
+}
+
+inline bool FlatValuePayload::is_payload_null() const {
+  return ValuePayload::is_payload_null();
 }
 
 inline FlatValuePayload FlatValuePayload::construct_from_parts(oop container,

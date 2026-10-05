@@ -225,7 +225,7 @@ void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
   assert(Thread::current() == t, "invariant");
   assert(!tl->is_dead(), "invariant");
   assert(tl->shelved_buffer() == nullptr, "invariant");
-  tl->_dead = true;
+  AtomicAccess::store(&tl->_dead, true);
   tl->release(t);
 }
 
@@ -379,7 +379,6 @@ bool JfrThreadLocal::is_impersonating(const Thread* t) {
 
 void JfrThreadLocal::impersonate(const Thread* t, traceid other_thread_id) {
   assert(t != nullptr, "invariant");
-  assert(other_thread_id != 0, "invariant");
   JfrThreadLocal* const tl = t->jfr_thread_local();
   tl->_thread_id_alias = other_thread_id;
 }

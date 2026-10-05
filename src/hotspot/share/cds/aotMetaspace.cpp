@@ -1033,22 +1033,6 @@ void AOTMetaspace::init_heap_settings() {
   if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
     return;
   }
-  // CDS heap dumping requires all string oops to have an offset
-  // from the heap bottom that can be encoded in 32-bit.
-  julong max_heap_size = (julong)(4 * G);
-
-  if (MinHeapSize > max_heap_size) {
-    log_debug(aot)("Setting MinHeapSize to 4G for CDS dumping, original size = %zuM", MinHeapSize/M);
-    FLAG_SET_ERGO(MinHeapSize, max_heap_size);
-  }
-  if (InitialHeapSize > max_heap_size) {
-    log_debug(aot)("Setting InitialHeapSize to 4G for CDS dumping, original size = %zuM", InitialHeapSize/M);
-    FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
-  }
-  if (MaxHeapSize > max_heap_size) {
-    log_debug(aot)("Setting MaxHeapSize to 4G for CDS dumping, original size = %zuM", MaxHeapSize/M);
-    FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
-  }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 

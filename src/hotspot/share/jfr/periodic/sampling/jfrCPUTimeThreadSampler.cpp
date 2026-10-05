@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -313,7 +314,7 @@ void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
   tl->deallocate_cpu_time_jfr_queue();
   s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
   if (lost_samples > 0) {
-    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
+    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), lost_samples);
   }
   tl->release_cpu_time_jfr_queue_lock();
 }
@@ -404,11 +405,10 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
 
 static volatile size_t count = 0;
 
-void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, traceid tid, Tickspan cpu_time_period) {
+void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, Tickspan cpu_time_period) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(true);
   event.set_starttime(start_time);
-  event.set_eventThread(tid);
   event.set_stackTrace(0);
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(false);
@@ -418,11 +418,10 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, trac
 
 static volatile size_t biased_count = 0;
 
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
+void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, Tickspan cpu_time_period, bool biased) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(false);
   event.set_starttime(start_time);
-  event.set_eventThread(tid);
   event.set_stackTrace(sid);
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(biased);
@@ -436,14 +435,13 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid si
   }
 }
 
-void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &time, traceid tid, s4 lost_samples) {
+void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &time, s4 lost_samples) {
   if (!EventCPUTimeSamplesLost::is_enabled()) {
     return;
   }
   EventCPUTimeSamplesLost event(UNTIMED);
   event.set_starttime(time);
   event.set_lostSamples(lost_samples);
-  event.set_eventThread(tid);
   event.commit();
 }
 

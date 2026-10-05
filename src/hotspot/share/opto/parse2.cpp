@@ -1618,7 +1618,7 @@ static bool counters_are_meaningful(int counter1, int counter2, int min) {
   }
   // check for integer overflow of the sum
   int64_t sum = (int64_t)counter1 + (int64_t)counter2;
-  STATIC_ASSERT(sizeof(counter1) < sizeof(sum));
+  static_assert(sizeof(counter1) < sizeof(sum));
   if (sum > INT_MAX) {
     return false;
   }
@@ -1678,13 +1678,13 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   }
 
   // Compute frequency that we arrive here
-  float sum = taken + not_taken;
+  cnt = taken + not_taken;
   // Adjust, if this block is a cloned private block but the
   // Jump counts are shared.  Taken the private counts for
   // just this path instead of the shared counts.
-  if( block()->count() > 0 )
-    sum = block()->count();
-  cnt = sum / FreqCountInvocations;
+  if (block()->count() > 0) {
+    cnt = block()->count();
+  }
 
   // Pin probability to sane limits
   float prob;

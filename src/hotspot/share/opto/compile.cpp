@@ -467,13 +467,17 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
       assert(useful.member(n->unique_out()), "do not push a useless node");
-      worklist.push(n->unique_out());
+      PhaseIterGVN::add_users_to_worklist(n, worklist);
     }
     if (n->outcnt() == 0) {
       worklist.push(n);
     }
   }
 
+  // Useless nodes might be added to the worklist during parsing and in
+  // the loop above. Let's remove them from the worklist now they are
+  // not in the graph anymore.
+  worklist.remove_useless_nodes(useful.member_set());
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
   remove_useless_nodes(_parse_predicates,   useful); // remove useless Parse Predicate nodes
   // Remove useless Template Assertion Predicate opaque nodes
@@ -2079,6 +2083,26 @@ bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, 
 }
 
 void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
+#ifdef ASSERT
+  {
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(C->root());
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* n = wq.at(i);
+      if (n->is_Phi()) {
+        assert(!n->as_Phi()->can_push_value_types_down(&igvn), "should have been processed by igvn");
+      }
+      for (uint j = 0; j < n->req(); j++) {
+        Node* in = n->in(j);
+        if (in != nullptr) {
+          wq.push(in);
+        }
+      }
+    }
+  }
+#endif
+
   // Make sure that the return value does not keep an otherwise unused allocation alive
   if (tf()->returns_value_type_as_fields()) {
     Node* ret = nullptr;
