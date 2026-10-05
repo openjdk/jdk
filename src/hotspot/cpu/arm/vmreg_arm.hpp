@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,20 +36,20 @@
   inline Register as_Register() {
     assert(is_Register(), "must be");
     assert(is_concrete(), "concrete register expected");
-    return ::as_Register(value() >> ConcreteRegisterImpl::log_vmregs_per_gpr);
+    return ::as_Register(value() / Register::max_slots_per_register);
   }
 
   inline FloatRegister as_FloatRegister() {
     assert(is_FloatRegister(), "must be");
     assert(is_concrete(), "concrete register expected");
-    return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) >> ConcreteRegisterImpl::log_vmregs_per_fpr);
+    return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) / FloatRegister::max_slots_per_register);
   }
 
   inline bool is_concrete() {
     if (is_Register()) {
-      return ((value() & right_n_bits(ConcreteRegisterImpl::log_vmregs_per_gpr)) == 0);
+      return (value() % Register::max_slots_per_register == 0);
     } else if (is_FloatRegister()) {
-      return (((value() - ConcreteRegisterImpl::max_gpr) & right_n_bits(ConcreteRegisterImpl::log_vmregs_per_fpr)) == 0);
+      return (value() % FloatRegister::max_slots_per_register == 0); // Single slot
     } else {
       return false;
     }

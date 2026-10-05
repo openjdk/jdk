@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,34 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
- * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessFloat
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
+ * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessFloat
  */
-
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
     static final float static_final_v = 1.0f;
 
-    static float static_v;
+    static float static_v = 1.0f;
 
-    final float final_v = 1.0f;
+    final float final_v;
 
     float v;
 
@@ -60,7 +62,13 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
-    @BeforeClass
+    public VarHandleTestMethodHandleAccessFloat() {
+        final_v = 1.0f;
+        v = 1.0f;
+        super();
+    }
+
+    @BeforeAll
     public void setup() throws Exception {
         vhFinalField = MethodHandles.lookup().findVarHandle(
                 VarHandleTestMethodHandleAccessFloat.class, "final_v", float.class);
@@ -77,8 +85,6 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         vhArray = MethodHandles.arrayElementVarHandle(float[].class);
     }
 
-
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -111,7 +117,8 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -120,13 +127,12 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         }
     }
 
-
     static void testInstanceField(VarHandleTestMethodHandleAccessFloat recv, Handles hs) throws Throwable {
         // Plain
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "set float value");
+            assertEquals(1.0f, x, "set float value");
         }
 
 
@@ -134,21 +140,21 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET_VOLATILE).invokeExact(recv, 2.0f);
             float x = (float) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(recv);
-            assertEquals(x, 2.0f, "setVolatile float value");
+            assertEquals(2.0f, x, "setVolatile float value");
         }
 
         // Lazy
         {
             hs.get(TestAccessMode.SET_RELEASE).invokeExact(recv, 1.0f);
             float x = (float) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(recv);
-            assertEquals(x, 1.0f, "setRelease float value");
+            assertEquals(1.0f, x, "setRelease float value");
         }
 
         // Opaque
         {
             hs.get(TestAccessMode.SET_OPAQUE).invokeExact(recv, 2.0f);
             float x = (float) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(recv);
-            assertEquals(x, 2.0f, "setOpaque float value");
+            assertEquals(2.0f, x, "setOpaque float value");
         }
 
         hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
@@ -158,56 +164,56 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, 1.0f, 2.0f);
             assertEquals(r, true, "success compareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "success compareAndSet float value");
+            assertEquals(2.0f, x, "success compareAndSet float value");
         }
 
         {
             boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, 1.0f, 3.0f);
             assertEquals(r, false, "failing compareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "failing compareAndSet float value");
+            assertEquals(2.0f, x, "failing compareAndSet float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 2.0f, 1.0f);
             assertEquals(r, 2.0f, "success compareAndExchange float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "success compareAndExchange float value");
+            assertEquals(1.0f, x, "success compareAndExchange float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 2.0f, 3.0f);
             assertEquals(r, 1.0f, "failing compareAndExchange float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "failing compareAndExchange float value");
+            assertEquals(1.0f, x, "failing compareAndExchange float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, 1.0f, 2.0f);
             assertEquals(r, 1.0f, "success compareAndExchangeAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "success compareAndExchangeAcquire float value");
+            assertEquals(2.0f, x, "success compareAndExchangeAcquire float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, 1.0f, 3.0f);
             assertEquals(r, 2.0f, "failing compareAndExchangeAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "failing compareAndExchangeAcquire float value");
+            assertEquals(2.0f, x, "failing compareAndExchangeAcquire float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, 2.0f, 1.0f);
             assertEquals(r, 2.0f, "success compareAndExchangeRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "success compareAndExchangeRelease float value");
+            assertEquals(1.0f, x, "success compareAndExchangeRelease float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, 2.0f, 3.0f);
             assertEquals(r, 1.0f, "failing compareAndExchangeRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "failing compareAndExchangeRelease float value");
+            assertEquals(1.0f, x, "failing compareAndExchangeRelease float value");
         }
 
         {
@@ -219,14 +225,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetPlain float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+            assertEquals(2.0f, x, "success weakCompareAndSetPlain float value");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(recv, 1.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetPlain float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
+            assertEquals(2.0f, x, "failing weakCompareAndSetPlain float value");
         }
 
         {
@@ -238,14 +244,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+            assertEquals(1.0f, x, "success weakCompareAndSetAcquire float");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 2.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
+            assertEquals(1.0f, x, "failing weakCompareAndSetAcquire float value");
         }
 
         {
@@ -257,14 +263,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+            assertEquals(2.0f, x, "success weakCompareAndSetRelease float");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 1.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "failing weakCompareAndSetRelease float value");
+            assertEquals(2.0f, x, "failing weakCompareAndSetRelease float value");
         }
 
         {
@@ -276,22 +282,42 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "success weakCompareAndSet float");
+            assertEquals(1.0f, x, "success weakCompareAndSet float");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 2.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "failing weakCompareAndSet float value");
+            assertEquals(1.0f, x, "failing weakCompareAndSet float value");
         }
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
+
             float o = (float) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, 2.0f);
-            assertEquals(o, 1.0f, "getAndSet float");
+            assertEquals(1.0f, o, "getAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "getAndSet float value");
+            assertEquals(2.0f, x, "getAndSet float value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
+
+            float o = (float) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, 2.0f);
+            assertEquals(1.0f, o, "getAndSetAcquire float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(2.0f, x, "getAndSetAcquire float value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
+
+            float o = (float) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, 2.0f);
+            assertEquals(1.0f, o, "getAndSetRelease float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(2.0f, x, "getAndSetRelease float value");
         }
 
         // get and add, add and get
@@ -299,27 +325,27 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 2.0f);
-            assertEquals(o, 1.0f, "getAndAdd float");
+            assertEquals(1.0f, o, "getAndAdd float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
+            assertEquals((float)(1.0f + 2.0f), x, "getAndAdd float value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(recv, 2.0f);
-            assertEquals(o, 1.0f, "getAndAddAcquire float");
+            assertEquals(1.0f, o, "getAndAddAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (float)(1.0f + 2.0f), "getAndAddAcquire float value");
+            assertEquals((float)(1.0f + 2.0f), x, "getAndAddAcquire float value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, 1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(recv, 2.0f);
-            assertEquals(o, 1.0f, "getAndAddRelease float");
+            assertEquals(1.0f, o, "getAndAddRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (float)(1.0f + 2.0f), "getAndAddRelease float value");
+            assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
         }
 
     }
@@ -340,7 +366,7 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0f);
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "set float value");
+            assertEquals(1.0f, x, "set float value");
         }
 
 
@@ -348,21 +374,21 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET_VOLATILE).invokeExact(2.0f);
             float x = (float) hs.get(TestAccessMode.GET_VOLATILE).invokeExact();
-            assertEquals(x, 2.0f, "setVolatile float value");
+            assertEquals(2.0f, x, "setVolatile float value");
         }
 
         // Lazy
         {
             hs.get(TestAccessMode.SET_RELEASE).invokeExact(1.0f);
             float x = (float) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact();
-            assertEquals(x, 1.0f, "setRelease float value");
+            assertEquals(1.0f, x, "setRelease float value");
         }
 
         // Opaque
         {
             hs.get(TestAccessMode.SET_OPAQUE).invokeExact(2.0f);
             float x = (float) hs.get(TestAccessMode.GET_OPAQUE).invokeExact();
-            assertEquals(x, 2.0f, "setOpaque float value");
+            assertEquals(2.0f, x, "setOpaque float value");
         }
 
         hs.get(TestAccessMode.SET).invokeExact(1.0f);
@@ -372,56 +398,56 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(1.0f, 2.0f);
             assertEquals(r, true, "success compareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "success compareAndSet float value");
+            assertEquals(2.0f, x, "success compareAndSet float value");
         }
 
         {
             boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(1.0f, 3.0f);
             assertEquals(r, false, "failing compareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "failing compareAndSet float value");
+            assertEquals(2.0f, x, "failing compareAndSet float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(2.0f, 1.0f);
             assertEquals(r, 2.0f, "success compareAndExchange float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "success compareAndExchange float value");
+            assertEquals(1.0f, x, "success compareAndExchange float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(2.0f, 3.0f);
             assertEquals(r, 1.0f, "failing compareAndExchange float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "failing compareAndExchange float value");
+            assertEquals(1.0f, x, "failing compareAndExchange float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(1.0f, 2.0f);
             assertEquals(r, 1.0f, "success compareAndExchangeAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "success compareAndExchangeAcquire float value");
+            assertEquals(2.0f, x, "success compareAndExchangeAcquire float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(1.0f, 3.0f);
             assertEquals(r, 2.0f, "failing compareAndExchangeAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "failing compareAndExchangeAcquire float value");
+            assertEquals(2.0f, x, "failing compareAndExchangeAcquire float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(2.0f, 1.0f);
             assertEquals(r, 2.0f, "success compareAndExchangeRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "success compareAndExchangeRelease float value");
+            assertEquals(1.0f, x, "success compareAndExchangeRelease float value");
         }
 
         {
             float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(2.0f, 3.0f);
             assertEquals(r, 1.0f, "failing compareAndExchangeRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "failing compareAndExchangeRelease float value");
+            assertEquals(1.0f, x, "failing compareAndExchangeRelease float value");
         }
 
         {
@@ -433,14 +459,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetPlain float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+            assertEquals(2.0f, x, "success weakCompareAndSetPlain float value");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(1.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetPlain float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
+            assertEquals(2.0f, x, "failing weakCompareAndSetPlain float value");
         }
 
         {
@@ -452,7 +478,7 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+            assertEquals(1.0f, x, "success weakCompareAndSetAcquire float");
         }
 
         {
@@ -460,7 +486,7 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             boolean success = (boolean) mh.invokeExact(2.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
+            assertEquals(1.0f, x, "failing weakCompareAndSetAcquire float value");
         }
 
         {
@@ -472,14 +498,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+            assertEquals(2.0f, x, "success weakCompareAndSetRelease float");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(1.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "failing weakCompareAndSetRelease float value");
+            assertEquals(2.0f, x, "failing weakCompareAndSetRelease float value");
         }
 
         {
@@ -491,14 +517,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "success weakCompareAndSet float");
+            assertEquals(1.0f, x, "success weakCompareAndSet float");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(2.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "failing weakCompareAndSetRe float value");
+            assertEquals(1.0f, x, "failing weakCompareAndSet float value");
         }
 
         // Compare set and get
@@ -506,29 +532,27 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_SET).invokeExact(2.0f);
-            assertEquals(o, 1.0f, "getAndSet float");
+            assertEquals(1.0f, o, "getAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "getAndSet float value");
+            assertEquals(2.0f, x, "getAndSet float value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(2.0f);
-            assertEquals(o, 1.0f, "getAndSetAcquire float");
+            assertEquals(1.0f, o, "getAndSetAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "getAndSetAcquire float value");
+            assertEquals(2.0f, x, "getAndSetAcquire float value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(2.0f);
-            assertEquals(o, 1.0f, "getAndSetRelease float");
+            assertEquals(1.0f, o, "getAndSetRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "getAndSetRelease float value");
+            assertEquals(2.0f, x, "getAndSetRelease float value");
         }
 
         // get and add, add and get
@@ -536,27 +560,27 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(2.0f);
-            assertEquals(o, 1.0f, "getAndAdd float");
+            assertEquals(1.0f, o, "getAndAdd float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
+            assertEquals((float)(1.0f + 2.0f), x, "getAndAdd float value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(2.0f);
-            assertEquals(o, 1.0f, "getAndAddAcquire float");
+            assertEquals(1.0f, o, "getAndAddAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (float)(1.0f + 2.0f), "getAndAddAcquire float value");
+            assertEquals((float)(1.0f + 2.0f), x, "getAndAddAcquire float value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0f);
 
             float o = (float) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(2.0f);
-            assertEquals(o, 1.0f, "getAndAddRelease float");
+            assertEquals(1.0f, o, "getAndAddRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (float)(1.0f + 2.0f), "getAndAddRelease float value");
+            assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
         }
 
     }
@@ -580,7 +604,7 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "get float value");
+                assertEquals(1.0f, x, "get float value");
             }
 
 
@@ -588,21 +612,21 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET_VOLATILE).invokeExact(array, i, 2.0f);
                 float x = (float) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(array, i);
-                assertEquals(x, 2.0f, "setVolatile float value");
+                assertEquals(2.0f, x, "setVolatile float value");
             }
 
             // Lazy
             {
                 hs.get(TestAccessMode.SET_RELEASE).invokeExact(array, i, 1.0f);
                 float x = (float) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(array, i);
-                assertEquals(x, 1.0f, "setRelease float value");
+                assertEquals(1.0f, x, "setRelease float value");
             }
 
             // Opaque
             {
                 hs.get(TestAccessMode.SET_OPAQUE).invokeExact(array, i, 2.0f);
                 float x = (float) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(array, i);
-                assertEquals(x, 2.0f, "setOpaque float value");
+                assertEquals(2.0f, x, "setOpaque float value");
             }
 
             hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
@@ -612,56 +636,56 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, 1.0f, 2.0f);
                 assertEquals(r, true, "success compareAndSet float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "success compareAndSet float value");
+                assertEquals(2.0f, x, "success compareAndSet float value");
             }
 
             {
                 boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, 1.0f, 3.0f);
                 assertEquals(r, false, "failing compareAndSet float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "failing compareAndSet float value");
+                assertEquals(2.0f, x, "failing compareAndSet float value");
             }
 
             {
                 float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 2.0f, 1.0f);
                 assertEquals(r, 2.0f, "success compareAndExchange float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "success compareAndExchange float value");
+                assertEquals(1.0f, x, "success compareAndExchange float value");
             }
 
             {
                 float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 2.0f, 3.0f);
                 assertEquals(r, 1.0f, "failing compareAndExchange float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "failing compareAndExchange float value");
+                assertEquals(1.0f, x, "failing compareAndExchange float value");
             }
 
             {
                 float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, 1.0f, 2.0f);
                 assertEquals(r, 1.0f, "success compareAndExchangeAcquire float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "success compareAndExchangeAcquire float value");
+                assertEquals(2.0f, x, "success compareAndExchangeAcquire float value");
             }
 
             {
                 float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, 1.0f, 3.0f);
                 assertEquals(r, 2.0f, "failing compareAndExchangeAcquire float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "failing compareAndExchangeAcquire float value");
+                assertEquals(2.0f, x, "failing compareAndExchangeAcquire float value");
             }
 
             {
                 float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, 2.0f, 1.0f);
                 assertEquals(r, 2.0f, "success compareAndExchangeRelease float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "success compareAndExchangeRelease float value");
+                assertEquals(1.0f, x, "success compareAndExchangeRelease float value");
             }
 
             {
                 float r = (float) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, 2.0f, 3.0f);
                 assertEquals(r, 1.0f, "failing compareAndExchangeRelease float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "failing compareAndExchangeRelease float value");
+                assertEquals(1.0f, x, "failing compareAndExchangeRelease float value");
             }
 
             {
@@ -673,14 +697,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetPlain float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+                assertEquals(2.0f, x, "success weakCompareAndSetPlain float value");
             }
 
             {
                 boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(array, i, 1.0f, 3.0f);
                 assertEquals(success, false, "failing weakCompareAndSetPlain float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
+                assertEquals(2.0f, x, "failing weakCompareAndSetPlain float value");
             }
 
             {
@@ -692,14 +716,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+                assertEquals(1.0f, x, "success weakCompareAndSetAcquire float");
             }
 
             {
                 boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 2.0f, 3.0f);
                 assertEquals(success, false, "failing weakCompareAndSetAcquire float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
+                assertEquals(1.0f, x, "failing weakCompareAndSetAcquire float value");
             }
 
             {
@@ -711,14 +735,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetRelease float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+                assertEquals(2.0f, x, "success weakCompareAndSetRelease float");
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 1.0f, 3.0f);
-                assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 1.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSetRelease float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "failing weakCompareAndSetAcquire float value");
+                assertEquals(2.0f, x, "failing weakCompareAndSetRelease float value");
             }
 
             {
@@ -730,14 +754,14 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSet float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "success weakCompareAndSet float");
+                assertEquals(1.0f, x, "success weakCompareAndSet float");
             }
 
             {
                 boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 2.0f, 3.0f);
                 assertEquals(success, false, "failing weakCompareAndSet float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "failing weakCompareAndSet float value");
+                assertEquals(1.0f, x, "failing weakCompareAndSet float value");
             }
 
             // Compare set and get
@@ -745,27 +769,27 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
 
                 float o = (float) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, 2.0f);
-                assertEquals(o, 1.0f, "getAndSet float");
+                assertEquals(1.0f, o, "getAndSet float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "getAndSet float value");
+                assertEquals(2.0f, x, "getAndSet float value");
             }
 
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
 
                 float o = (float) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(array, i, 2.0f);
-                assertEquals(o, 1.0f, "getAndSetAcquire float");
+                assertEquals(1.0f, o, "getAndSetAcquire float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "getAndSetAcquire float value");
+                assertEquals(2.0f, x, "getAndSetAcquire float value");
             }
 
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
 
                 float o = (float) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(array, i, 2.0f);
-                assertEquals(o, 1.0f, "getAndSetRelease float");
+                assertEquals(1.0f, o, "getAndSetRelease float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "getAndSetRelease float value");
+                assertEquals(2.0f, x, "getAndSetRelease float value");
             }
 
             // get and add, add and get
@@ -773,27 +797,27 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
 
                 float o = (float) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 2.0f);
-                assertEquals(o, 1.0f, "getAndAdd float");
+                assertEquals(1.0f, o, "getAndAdd float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (float)(1.0f + 2.0f), "getAndAdd float value");
+                assertEquals((float)(1.0f + 2.0f), x, "getAndAdd float value");
             }
 
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
 
                 float o = (float) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(array, i, 2.0f);
-                assertEquals(o, 1.0f, "getAndAddAcquire float");
+                assertEquals(1.0f, o, "getAndAddAcquire float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (float)(1.0f + 2.0f), "getAndAddAcquire float value");
+                assertEquals((float)(1.0f + 2.0f), x, "getAndAddAcquire float value");
             }
 
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, 1.0f);
 
                 float o = (float) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(array, i, 2.0f);
-                assertEquals(o, 1.0f, "getAndAddRelease float");
+                assertEquals(1.0f, o, "getAndAddRelease float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (float)(1.0f + 2.0f), "getAndAddRelease float value");
+                assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
             }
 
         }

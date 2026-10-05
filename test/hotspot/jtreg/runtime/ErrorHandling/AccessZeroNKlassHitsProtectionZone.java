@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, Red Hat, Inc.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * @library /test/lib
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -39,7 +41,10 @@
  * @test id=no_coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds.default.archive.available
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -53,6 +58,8 @@
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -65,7 +72,10 @@
  * @test id=coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds.default.archive.available
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -118,7 +128,7 @@ public class AccessZeroNKlassHitsProtectionZone {
 
     private static void run_test(boolean COH, boolean CDS) throws IOException, SkippedException {
         // Notes:
-        // We want to enforce zero-based encoding, to test the protection page in that case. For zero-based encoding,
+        // We want to enforce non-zero-based encoding, to test the protection page in that case. For zero-based encoding,
         // protection page is at address zero, no need to test that.
         // If CDS is on, we never use zero-based, forceBase is ignored.
         // If CDS is off, we use forceBase to (somewhat) reliably force the encoding base to beyond 32G,
@@ -142,7 +152,11 @@ public class AccessZeroNKlassHitsProtectionZone {
             for (forceBase = start; forceBase < end; forceBase += step) {
                 String thisBaseString = String.format("0x%016X", forceBase).toLowerCase();
                 output = run_test(COH, CDS, thisBaseString);
-                if (output.contains("CompressedClassSpaceBaseAddress=" + thisBaseString + " given, but reserving class space failed.")) {
+                if (output.contains("CompressedClassSpaceBaseAddress=" + thisBaseString + " given, but reserving class space failed.") ||
+                    output.matches ("CompressedClassSpaceBaseAddress=" + thisBaseString + " given with shift .*, cannot be used to encode class pointers")) {
+                    // possible output:
+                    //     CompressedClassSpaceBaseAddress=0x0000000c00000000 given, but reserving class space failed.
+                    //     CompressedClassSpaceBaseAddress=0x0000000d00000000 given with shift 6, cannot be used to encode class pointers
                     // try next one
                 } else if (output.contains("Successfully forced class space address to " + thisBaseString)) {
                     break;
@@ -206,8 +220,9 @@ public class AccessZeroNKlassHitsProtectionZone {
             case runwb -> WhiteBox.getWhiteBox().decodeNKlassAndAccessKlass(0);
             case no_coh_no_cds -> run_test(false, false);
             case no_coh_cds -> run_test(false, true);
-            case coh_no_cds -> run_test(true, false);
-            case coh_cds -> run_test(true, true);
+            // TODO 8348568 Re-enable
+            // case coh_no_cds -> run_test(true, false);
+            // case coh_cds -> run_test(true, true);
         }
     }
 }

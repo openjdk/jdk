@@ -31,11 +31,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.nio.channels.NetworkChannel;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,7 +41,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLParameters;
@@ -81,9 +78,6 @@ abstract class HttpQuicConnection extends HttpConnection {
     // the alt-service which was advertised, from some origin, for this connection co-ordinates.
     // can be null, which indicates this wasn't created because of an alt-service
     private final AltService sourceAltService;
-    // HTTP/2 MUST use TLS version 1.3 or higher for HTTP/3 over TLS
-    private static final Predicate<String> testRequiredHTTP3TLSVersion = proto ->
-            proto.equals("TLSv1.3");
 
 
     HttpQuicConnection(Origin originServer, InetSocketAddress address, HttpClientImpl client,
@@ -179,19 +173,6 @@ abstract class HttpQuicConnection extends HttpConnection {
     }
 
     /**
-     * Returns true if the given client's SSL parameter protocols contains at
-     * least one TLS version that HTTP/3 requires.
-     */
-    private static boolean hasRequiredHTTP3TLSVersion(HttpClient client) {
-        String[] protos = client.sslParameters().getProtocols();
-        if (protos != null) {
-            return Arrays.stream(protos).anyMatch(testRequiredHTTP3TLSVersion);
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * Called when the HTTP/3 connection is established, either successfully or
      * unsuccessfully
      * @param connection the HTTP/3 connection, if successful, or null, otherwise
@@ -260,7 +241,7 @@ abstract class HttpQuicConnection extends HttpConnection {
         // to using HTTP/2
         var debug = h3client.debug();
         var where = "HttpQuicConnection.getHttpQuicConnection";
-        if (proxy != null || !hasRequiredHTTP3TLSVersion(client)) {
+        if (proxy != null || !client.hasRequiredHTTP3TLSVersion()) {
             if (debug.on())
                 debug.log("%s: proxy required or SSL version mismatch", where);
             return null;
@@ -499,22 +480,28 @@ abstract class HttpQuicConnection extends HttpConnection {
                 }, exchange.parentExecutor.safeDelegate());
             }
 
-            Optional<Duration> timeout = client().connectTimeout();
             CompletableFuture<CompletableFuture<Void>> fxi = handshakeCfCf;
 
             // In case of connection timeout, set up a timeout on the handshakeCfCf.
             // Note: this is a different timeout than the direct connection timeout.
-            if (timeout.isPresent()) {
+            Duration timeout = client().connectTimeout().orElse(null);
+            if (timeout != null) {
                 // In case of timeout we need to close the quic connection
-                debug.log("setting up quic connect timeout: " + timeout.get().toMillis());
+                debug.log("setting up quic connect timeout: " + timeout);
+                long timeoutMillis;
+                try {
+                    timeoutMillis = timeout.toMillis();
+                } catch (ArithmeticException _) {
+                    timeoutMillis = Long.MAX_VALUE;
+                }
                 fxi = handshakeCfCf.completeOnTimeout(
                         MinimalFuture.failedFuture(new HttpConnectTimeoutException("quic connect timeout")),
-                        timeout.get().toMillis(), TimeUnit.MILLISECONDS);
+                        timeoutMillis, TimeUnit.MILLISECONDS);
             }
 
             // If we have set up any timeout, arrange to close the quicConnection
             // if one of the timeout expires
-            if (timeout.isPresent() || directTimeout.isPresent()) {
+            if (timeout != null || directTimeout.isPresent()) {
                 fxi = fxi.handleAsync(this::handleTimeout, exchange.parentExecutor.safeDelegate());
             }
             return fxi.thenCompose(Function.identity());

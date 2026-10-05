@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,24 @@ import java.io.FileOutputStream;
 import java.io.RandomAccessFile;
 import java.lang.Throwable;
 import java.lang.reflect.Field;
+import java.net.Socket;
 
 /**
  * Helper class to enable JFR tracing.
  */
 public final class JFRTracing {
 
-  public static void enable() throws NoSuchFieldException, IllegalAccessException {
+  public static void enable() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
       enable(Throwable.class);
       enable(FileInputStream.class);
       enable(FileOutputStream.class);
       enable(FileChannelImpl.class);
       enable(RandomAccessFile.class);
+      enable(Class.forName("sun.nio.ch.AsynchronousFileChannelImpl"));
+      enable(Socket.class);
+      enable(Class.forName("sun.nio.ch.SocketChannelImpl"));
+      enable(Class.forName("sun.nio.ch.SocketInputStream"));
+      enable(Class.forName("sun.nio.ch.SocketOutputStream"));
   }
 
   private static void enable(Class<?> clazz) throws NoSuchFieldException, IllegalAccessException {

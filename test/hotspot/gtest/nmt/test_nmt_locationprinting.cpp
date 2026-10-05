@@ -63,7 +63,7 @@ static void test_for_live_c_heap_block(size_t sz, ssize_t offset) {
     // NMT disabled: we should see nothing.
     test_pointer(c + offset, false, "");
   }
-  FREE_C_HEAP_ARRAY(char, c);
+  FREE_C_HEAP_ARRAY(c);
 }
 
 #ifdef LINUX
@@ -90,7 +90,7 @@ static void test_for_dead_c_heap_block(size_t sz, ssize_t offset) {
   test_pointer(c + offset, true, expected_string);
 
   hdr->revive();
-  FREE_C_HEAP_ARRAY(char, c);
+  FREE_C_HEAP_ARRAY(c);
 }
 #endif
 

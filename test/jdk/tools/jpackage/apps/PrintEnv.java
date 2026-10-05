@@ -69,6 +69,7 @@ public class PrintEnv {
                 lines.add(ModuleFinder.ofSystem().findAll().stream()
                         .map(ModuleReference::descriptor)
                         .map(ModuleDescriptor::name)
+                        .sorted()
                         .collect(Collectors.joining(",")));
             } else if (arg.equals(PRINT_WORK_DIR)) {
                 lines.add("$CD=" + Path.of("").toAbsolutePath());

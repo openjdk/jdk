@@ -1,2 +1,2 @@
-ExplicitlyAbstractEnum1.java:9:10: compiler.err.mod.not.allowed.here: abstract
+ExplicitlyAbstractEnum1.java:8:10: compiler.err.mod.not.allowed.here: abstract
 1 error

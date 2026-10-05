@@ -64,8 +64,8 @@ CompileLog::~CompileLog() {
   _out = nullptr;
   // Remove partial file after merging in CompileLog::finish_log_on_error
   unlink(_file);
-  FREE_C_HEAP_ARRAY(char, _identities);
-  FREE_C_HEAP_ARRAY(char, _file);
+  FREE_C_HEAP_ARRAY(_identities);
+  FREE_C_HEAP_ARRAY(_file);
 }
 
 
@@ -96,7 +96,7 @@ int CompileLog::identify(ciBaseObject* obj) {
   if (id >= _identities_capacity) {
     int new_cap = _identities_capacity * 2;
     if (new_cap <= id)  new_cap = id + 100;
-    _identities = REALLOC_C_HEAP_ARRAY(char, _identities, new_cap, mtCompiler);
+    _identities = REALLOC_C_HEAP_ARRAY(_identities, new_cap, mtCompiler);
     _identities_capacity = new_cap;
   }
   while (id >= _identities_limit) {

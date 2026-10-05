@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,14 @@ bool Monitor::wait(uint64_t timeout) {
   set_owner(nullptr);
 
   // Check safepoint state after resetting owner and possible NSV.
-  check_safepoint_state(self);
+  // Although the (HotSpot) monitor is logically released, the underlying
+  // OS monitor is still held. Do not execute GC-a-lot here because
+  // garbage collection may (in)directly require the current monitor to
+  // progress.
+  {
+    SkipGCALot sgcalot(self);
+    check_safepoint_state(self);
+  }
 
   int wait_status;
   InFlightMutexRelease ifmr(this);
@@ -287,13 +294,14 @@ Mutex::~Mutex() {
 Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != nullptr, "Mutex requires a name");
-  _name = os::strdup(name, mtInternal);
+  _name = os::strdup(name, mtSynchronizer);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = rank;
   _skip_rank_check = false;
 
-  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %s: %s", rank_name(), name);
+  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %d outside [0, %d]: %s",
+         static_cast<int>(rank), static_cast<int>(safepoint), name);
 
   // The allow_vm_block also includes allowing other non-Java threads to block or
   // allowing Java threads to block in native.
@@ -324,25 +332,33 @@ static const char* _rank_names[] = { "event", "service", "stackwatermark", "tty"
 
 static const int _num_ranks = 7;
 
-static const char* rank_name_internal(Mutex::Rank r) {
+static void print_rank_name_internal(outputStream* st, Mutex::Rank r) {
   // Find closest rank and print out the name
-  stringStream st;
   for (int i = 0; i < _num_ranks; i++) {
     if (r == _ranks[i]) {
-      return _rank_names[i];
+      st->print("%s", _rank_names[i]);
     } else if (r  > _ranks[i] && (i < _num_ranks-1 && r < _ranks[i+1])) {
       int delta = static_cast<int>(_ranks[i+1]) - static_cast<int>(r);
-      st.print("%s-%d", _rank_names[i+1], delta);
-      return st.as_string();
+      st->print("%s-%d", _rank_names[i+1], delta);
     }
   }
-  return "fail";
+}
+
+// Requires caller to have ResourceMark.
+static const char* rank_name_internal(Mutex::Rank r) {
+  stringStream st;
+  print_rank_name_internal(&st, r);
+  return st.as_string();
 }
 
 const char* Mutex::rank_name() const {
   return rank_name_internal(_rank);
 }
 
+// Does not require caller to have ResourceMark.
+void Mutex::print_rank_name(outputStream* st) const {
+  print_rank_name_internal(st, _rank);
+}
 
 void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
   int i = 0;
@@ -364,7 +380,8 @@ void Mutex::print_on(outputStream* st) const {
   if (_allow_vm_block) {
     st->print("%s", " allow_vm_block");
   }
-  DEBUG_ONLY(st->print(" %s", rank_name()));
+  st->print(" ");
+  DEBUG_ONLY(print_rank_name(st));
   st->cr();
 }
 

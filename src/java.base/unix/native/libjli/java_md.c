@@ -276,6 +276,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jdkroot[], jint so_jdkroot,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
+    /* Compute/set the name of the executable */
+    SetExecname(*pargv);
+
     if (JLI_IsStaticallyLinked()) {
         // With static builds, all JDK and VM natives are statically linked
         // with the launcher executable. No need to manipulate LD_LIBRARY_PATH
@@ -296,9 +299,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     char** newenvp = NULL; /* current environment */
     size_t new_runpath_size;
 #endif  /* SETENV_REQUIRED */
-
-    /* Compute/set the name of the executable */
-    SetExecname(*pargv);
 
     /* Check to see if the jvmpath exists */
     /* Find out where the JDK is that we will be using. */

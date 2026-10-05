@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class TestCanReduceCheckUsersDifferentIfs {
         // (6) CastPP(phi1) ends up at IfFalse of OuterStripMinedLoopEnd of loop (L).
         // (7) EA tries to reduce phi1(CheckCastPP(B), CheckCastPP(c)) and looks at
         //     OuterStripMinedLoopEnd and asserts that if it's not an IfNode that it has
-        //     an OpaqueNotNull which obviously is not the case and the assert fails.
+        //     an OpaqueConstantBool which obviously is not the case and the assert fails.
 
         // (5) Found to be false after PhaseIdealLoop before EA and is folded away.
         if (y == 76) {
@@ -77,7 +77,7 @@ public class TestCanReduceCheckUsersDifferentIfs {
     }
 
     // Same as testOuterStripMinedLoopEnd() but we find in (7) a ParsePredicate from the
-    // removed loop (L) which also does not have an OpaqueNotNull and the assert fails.
+    // removed loop (L) which also does not have an OpaqueConstantBool and the assert fails.
     static void testParsePredicate() {
         A a = flag ? new B() : new C();
 

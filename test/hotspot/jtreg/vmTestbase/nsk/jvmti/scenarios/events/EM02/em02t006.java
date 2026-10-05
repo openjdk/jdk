@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.whitebox.WhiteBox;
 
 public class em02t006 extends DebugeeClass {
 
@@ -62,7 +63,7 @@ public class em02t006 extends DebugeeClass {
             }
 
             logger.display("ObjectFree:: Provoke JVMTI_EVENT_OBJECT_FREE");
-            ClassUnloader.eatMemory();
+            WhiteBox.getWhiteBox().fullGC();
 
             if (checkStatus(Consts.TEST_PASSED) == Consts.TEST_FAILED) {
                 status = Consts.TEST_FAILED;

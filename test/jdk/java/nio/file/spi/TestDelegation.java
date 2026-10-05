@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,6 @@
  * questions.
  */
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
@@ -34,26 +29,34 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import static org.testng.AssertJUnit.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
  * @summary Verifies that a FileSystemProvider's implementation of the exists
  * and readAttributesIfExists methods are invoked
  * @compile testfsp/testfsp/TestProvider.java
- * @run testng TestDelegation
+ * @run junit TestDelegation
  */
 public class TestDelegation {
 
     // Non-existent Path to be used by the test
-    private Path nonExistentFile;
+    private static Path nonExistentFile;
     // Path to Temp directory used by the test
-    private Path tempDirectory;
+    private static Path tempDirectory;
     // Valid file Path used by the test
-    private Path fileThatExists;
+    private static Path fileThatExists;
     // The FileSystemProvider used by the test
-    private MyProvider myProvider;
+    private static MyProvider myProvider;
 
     /**
      * Create the FileSystemProvider, the FileSystem and
@@ -61,8 +64,8 @@ public class TestDelegation {
      *
      * @throws IOException if an error occurs
      */
-    @BeforeClass
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         myProvider = new MyProvider();
         FileSystem fs = myProvider.getFileSystem(URI.create("/"));
         // Path to Current Working Directory
@@ -73,7 +76,7 @@ public class TestDelegation {
     }
 
     /**
-     * DataProvider that is used to test Files::exists. The DataProvider's
+     * MethodSource that is used to test Files::exists. The Arguments'
      * elements are:
      * <UL>
      *     <li>Path to validate</li>
@@ -81,17 +84,14 @@ public class TestDelegation {
      * </UL>
      * @return The test parameter data
      */
-    @DataProvider
-    private Object[][] testExists() {
-        return new Object[][]{
-                {tempDirectory, true},
-                {fileThatExists, true},
-                {nonExistentFile, false}
-        };
+    private static Stream<Arguments> testExists() {
+        return Stream.of(Arguments.of(tempDirectory, true),
+                         Arguments.of(fileThatExists, true),
+                         Arguments.of(nonExistentFile, false));
     }
 
     /**
-     * DataProvider that is used to test Files::isDirectory. The DataProvider's
+     * MethodSource that is used to test Files::isDirectory. The Arguments'
      * elements are:
      * <UL>
      *     <li>Path to validate</li>
@@ -99,16 +99,13 @@ public class TestDelegation {
      * </UL>
      * @return The test parameter data
      */
-    @DataProvider
-    private Object[][] testIsDirectory() {
-        return new Object[][]{
-                {tempDirectory, true},
-                {fileThatExists, false},
-                {nonExistentFile, false}
-        };
+    private static Stream<Arguments> testIsDirectory() {
+        return Stream.of(Arguments.of(tempDirectory, true),
+                         Arguments.of(fileThatExists, false),
+                         Arguments.of(nonExistentFile, false));
     }
     /**
-     * DataProvider that is used to test Files::isRegularFile. The DataProvider's
+     * MethodSource that is used to test Files::isRegularFile. The MethodSource's
      * elements are:
      * <UL>
      *     <li>Path to validate</li>
@@ -116,19 +113,16 @@ public class TestDelegation {
      * </UL>
      * @return The test parameter data
      */
-    @DataProvider
-    private Object[][] testIsRegularFile() {
-        return new Object[][]{
-                {tempDirectory, false},
-                {fileThatExists, true},
-                {nonExistentFile, false}
-        };
+    private static Stream<Arguments> testIsRegularFile() {
+        return Stream.of(Arguments.of(tempDirectory, false),
+                         Arguments.of(fileThatExists, true),
+                         Arguments.of(nonExistentFile, false));
     }
 
     /**
      * Clear our Map prior to each test run
      */
-    @BeforeMethod
+    @BeforeEach
     public void resetParams() {
         myProvider.resetCalls();
     }
@@ -140,9 +134,10 @@ public class TestDelegation {
      * @param p      the path to the file to test
      * @param exists does the path exist
      */
-    @Test(dataProvider = "testExists")
+    @ParameterizedTest
+    @MethodSource("testExists")
     public void testExists(Path p, boolean exists) {
-        assertEquals(Files.exists(p), exists);
+        assertEquals(exists, Files.exists(p));
         // We should only have called exists once
         assertEquals(1, myProvider.findCall("exists").size());
         assertEquals(0, myProvider.findCall("readAttributesIfExists").size());
@@ -155,9 +150,10 @@ public class TestDelegation {
      * @param p      the path to the file to test
      * @param isDir  is the path a directory
      */
-    @Test(dataProvider = "testIsDirectory")
+    @ParameterizedTest
+    @MethodSource("testIsDirectory")
     public void testIsDirectory(Path p, boolean isDir) {
-        assertEquals(Files.isDirectory(p), isDir);
+        assertEquals(isDir, Files.isDirectory(p));
         // We should only have called readAttributesIfExists once
         assertEquals(0, myProvider.findCall("exists").size());
         assertEquals(1, myProvider.findCall("readAttributesIfExists").size());
@@ -170,9 +166,10 @@ public class TestDelegation {
      * @param p      the path to the file to test
      * @param isFile is the path a regular file
      */
-    @Test(dataProvider = "testIsRegularFile")
+    @ParameterizedTest
+    @MethodSource("testIsRegularFile")
     public void testIsRegularFile(Path p, boolean isFile) {
-        assertEquals(Files.isRegularFile(p), isFile);
+        assertEquals(isFile, Files.isRegularFile(p));
         // We should only have called readAttributesIfExists once
         assertEquals(0, myProvider.findCall("exists").size());
         assertEquals(1, myProvider.findCall("readAttributesIfExists").size());

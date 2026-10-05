@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.RandomFactory
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit HttpResponseLimitingTest
+ * @run junit ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -107,15 +107,7 @@ class HttpResponseLimitingTest {
 
     private record ServerClientPair(HttpTestServer server, HttpClient client, HttpRequest request, boolean secure) {
 
-        private static final SSLContext SSL_CONTEXT = createSslContext();
-
-        private static SSLContext createSslContext() {
-            try {
-                return new SimpleSSLContext().get();
-            } catch (IOException exception) {
-                throw new UncheckedIOException(exception);
-            }
-        }
+        private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
         private ServerClientPair {
             try {

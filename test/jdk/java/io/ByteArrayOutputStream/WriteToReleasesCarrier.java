@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test ByteArrayOutputStream.writeTo releases carrier thread
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
+ * @library /test/lib
  * @run main WriteToReleasesCarrier
  */
 
@@ -34,14 +35,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
+import jdk.test.lib.thread.VThreadScheduler;
 
 public class WriteToReleasesCarrier {
     public static void main(String[] args) throws Exception {
@@ -53,7 +54,7 @@ public class WriteToReleasesCarrier {
         var target = new ParkingOutputStream();
 
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = virtualThreadBuilder(scheduler);
+            Thread.Builder builder = VThreadScheduler.virtualThreadBuilder(scheduler);
             var started = new CountDownLatch(1);
             var vthread1 = builder.start(() -> {
                 started.countDown();
@@ -117,15 +118,5 @@ public class WriteToReleasesCarrier {
         byte[] toByteArray() {
             return baos.toByteArray();
         }
-    }
-
-    /**
-     * Returns a builder to create virtual threads that use the given scheduler.
-     */
-    static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) throws Exception {
-        Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-        Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
-        ctor.setAccessible(true);
-        return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
     }
 }

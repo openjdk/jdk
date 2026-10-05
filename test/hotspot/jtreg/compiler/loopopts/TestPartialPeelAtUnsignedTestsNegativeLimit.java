@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 /*
  * @test id=Xbatch
+ * @key randomness
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
+ * @library /test/lib
  * @run main/othervm/timeout=480 -Xbatch -XX:-TieredCompilation
  *                   -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::test*
  *                   compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
@@ -32,8 +34,10 @@
 
 /*
  * @test id=Xcomp-run-inline
+ * @key randomness
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
+ * @library /test/lib
  * @run main/othervm/timeout=480 -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::run*,*TestPartialPeel*::test*
  *                   -XX:CompileCommand=inline,*TestPartialPeelAtUnsignedTestsNegativeLimit::test*
@@ -43,24 +47,29 @@
 
 /*
  * @test id=Xcomp-compile-test
+ * @key randomness
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
+ * @library /test/lib
  * @run main/othervm/timeout=480 -Xcomp -XX:-TieredCompilation -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::test*
  *                   compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
  */
 
 /*
  * @test id=vanilla
+ * @key randomness
  * @bug 8332920
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
  *          Only run this test with C2 since it is time-consuming and only tests a C2 issue.
+ * @library /test/lib
  * @run main/timeout=480 compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
  */
 
 package compiler.loopopts;
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 import static java.lang.Integer.*;
 
@@ -69,7 +78,7 @@ public class TestPartialPeelAtUnsignedTestsNegativeLimit {
     static int iterations = 0;
     static int iFld2;
     static boolean flag;
-    final static Random RANDOM = new Random();
+    final static Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
         compareUnsigned(3, 3); // Load Integer class for -Xcomp

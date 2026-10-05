@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import java.lang.ref.WeakReference;
  * @author Thomas Ball
  */
 @SuppressWarnings("serial") // JDK-implementation class
-public final class WindowsDesktopManager extends DefaultDesktopManager
+public class WindowsDesktopManager extends DefaultDesktopManager
         implements java.io.Serializable, javax.swing.plaf.UIResource {
 
     /* The frame which is currently selected/activated.
@@ -80,10 +80,13 @@ public final class WindowsDesktopManager extends DefaultDesktopManager
                         if (f.isMaximizable()) {
                             if (!f.isMaximum()) {
                                 f.setMaximum(true);
-                            } else if (f.isMaximum() && f.isIcon()) {
-                                f.setIcon(false);
                             } else {
-                                f.setMaximum(false);
+                                // If frame being activated is set to maximised
+                                // and iconified, let it be maximised
+                                // else remain non-maximised
+                                if (f.isIcon()) {
+                                    f.setIcon(false);
+                                }
                             }
                         }
                     }

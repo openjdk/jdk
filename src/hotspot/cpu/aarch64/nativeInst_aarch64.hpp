@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,9 +30,6 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciExceptions.hpp"
-#endif
 
 
 // We have interfaces for the following instructions:
@@ -42,7 +39,6 @@
 // - - NativeMovRegMem
 // - - NativeJump
 // - - - NativeGeneralJump
-// - - NativeIllegalInstruction
 // - - NativeCallTrampolineStub
 // - - NativeMembar
 // - - NativeLdSt
@@ -78,28 +74,37 @@ public:
   inline bool is_nop() const;
   bool is_jump();
   bool is_general_jump();
-  inline bool is_jump_or_nop();
   inline bool is_cond_jump();
   bool is_safepoint_poll();
   bool is_movz();
   bool is_movk();
   bool is_stop();
 
+  bool is_udf(uint16_t imm) {
+    uint32_t insn = uint_at(0);
+    return Instruction_aarch64::extract(insn, 31, 16) == 0 &&
+      Instruction_aarch64::extract(insn, 15, 0) == imm;
+  }
+
+  enum : uint16_t { udf_stop = 1, udf_deopt };
+
 protected:
   address addr_at(int offset) const { return address(this) + offset; }
 
   s_char sbyte_at(int offset) const { return *(s_char*)addr_at(offset); }
   u_char ubyte_at(int offset) const { return *(u_char*)addr_at(offset); }
-  jint int_at(int offset) const { return *(jint*)addr_at(offset); }
-  juint uint_at(int offset) const { return *(juint*)addr_at(offset); }
-  address ptr_at(int offset) const { return *(address*)addr_at(offset); }
-  oop oop_at(int offset) const { return *(oop*)addr_at(offset); }
+  jint int_at(int offset) const     { return *(jint*)addr_at(offset); }
+  juint uint_at(int offset) const   { return *(juint*)addr_at(offset); }
+  address ptr_at(int offset) const  { return *(address*)addr_at(offset); }
+  oop oop_at(int offset) const      { return *(oop*)addr_at(offset); }
 
-  void set_char_at(int offset, char c) { *addr_at(offset) = (u_char)c; }
-  void set_int_at(int offset, jint i) { *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint i) { *(juint*)addr_at(offset) = i; }
-  void set_ptr_at(int offset, address ptr) { *(address*)addr_at(offset) = ptr; }
-  void set_oop_at(int offset, oop o) { *(oop*)addr_at(offset) = o; }
+#define MACOS_WX_WRITE MACOS_AARCH64_ONLY(os::thread_wx_enable_write())
+  void set_char_at(int offset, char c)     { MACOS_WX_WRITE;  *addr_at(offset) = (u_char)c; }
+  void set_int_at(int offset, jint i)      { MACOS_WX_WRITE;  *(jint*)addr_at(offset) = i; }
+  void set_uint_at(int offset, juint i)    { MACOS_WX_WRITE;  *(juint*)addr_at(offset) = i; }
+  void set_ptr_at(int offset, address ptr) { MACOS_WX_WRITE;  *(address*)addr_at(offset) = ptr; }
+  void set_oop_at(int offset, oop o)       { MACOS_WX_WRITE;  *(oop*)addr_at(offset) = o; }
+#undef MACOS_WX_WRITE
 
   void wrote(int offset);
 
@@ -109,10 +114,22 @@ public:
 
   static bool is_adrp_at(address instr);
 
-  static bool is_ldr_literal_at(address instr);
+  static bool is_load_literal_at(address instr);
 
-  bool is_ldr_literal() {
-    return is_ldr_literal_at(addr_at(0));
+  bool is_load_literal() {
+    return is_load_literal_at(addr_at(0));
+  }
+
+  static bool is_ldr_gpr_literal_at(address instr);
+
+  bool is_ldr_gpr_literal() {
+    return is_ldr_gpr_literal_at(addr_at(0));
+  }
+
+  static bool is_ldrw_gpr_literal_at(address instr);
+
+  bool is_ldrw_gpr_literal() {
+    return is_ldrw_gpr_literal_at(addr_at(0));
   }
 
   static bool is_ldrw_to_zr(address instr);
@@ -127,7 +144,7 @@ public:
   }
 
   static bool maybe_cpool_ref(address instr) {
-    return is_adrp_at(instr) || is_ldr_literal_at(instr);
+    return is_adrp_at(instr) || is_load_literal_at(instr);
   }
 
   bool is_Membar() {
@@ -141,6 +158,29 @@ public:
     return Instruction_aarch64::extract(insn, 29, 27) == 0b111 &&
       Instruction_aarch64::extract(insn, 23, 23) == 0b0 &&
       Instruction_aarch64::extract(insn, 26, 25) == 0b00;
+  }
+
+  static bool is_neon_vector_mov_alias(uint32_t insn) {
+    if (Instruction_aarch64::extract(insn, 31, 31) != 0 ||
+        Instruction_aarch64::extract(insn, 29, 21) != 0b001110101 ||
+        Instruction_aarch64::extract(insn, 15, 10) != 0b000111) {
+      return false;
+    }
+    return Instruction_aarch64::extract(insn, 9, 5) ==
+           Instruction_aarch64::extract(insn, 20, 16);
+  }
+
+  static bool is_sve_vector_mov_alias(uint32_t insn) {
+    if (Instruction_aarch64::extract(insn, 31, 21) != 0b00000100011 ||
+        Instruction_aarch64::extract(insn, 15, 10) != 0b001100) {
+      return false;
+    }
+    return Instruction_aarch64::extract(insn, 9, 5) ==
+           Instruction_aarch64::extract(insn, 20, 16);
+  }
+
+  static uint32_t encode_sve_movprfx(uint32_t dst, uint32_t src) {
+    return 0x1082f << 10 | (src << 5) | dst;
   }
 };
 
@@ -177,13 +217,11 @@ public:
   address destination() const;
 
   void set_destination(address dest) {
-    int offset = dest - instruction_address();
-    unsigned int insn = 0b100101 << 26;
+    int64_t offset = dest - instruction_address();
+    juint insn = 0b100101u << 26u;
     assert((offset & 3) == 0, "should be");
-    offset >>= 2;
-    offset &= (1 << 26) - 1; // mask off insn part
-    insn |= offset;
-    set_int_at(displacement_offset, insn);
+    Instruction_aarch64::spatch(reinterpret_cast<address>(&insn), 25, 0, offset >> 2);
+    set_uint_at(displacement_offset, insn);
   }
 
   void verify_alignment() { ; }
@@ -216,9 +254,6 @@ public:
   void set_destination_mt_safe(address dest);
 
   address get_trampoline();
-#if INCLUDE_JVMCI
-  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
-#endif
 };
 
 inline NativeCall* nativeCall_at(address address) {
@@ -251,7 +286,7 @@ public:
       return addr_at(instruction_size);
     else if (is_adrp_at(instruction_address()))
       return addr_at(2*4);
-    else if (is_ldr_literal_at(instruction_address()))
+    else if (is_load_literal_at(instruction_address()))
       return(addr_at(4));
     assert(false, "Unknown instruction in NativeMovConstReg");
     return nullptr;
@@ -380,7 +415,6 @@ public:
   void set_jump_destination(address dest);
 
   static void replace_mt_safe(address instr_addr, address code_buffer);
-  static void verify();
 };
 
 inline NativeGeneralJump* nativeGeneralJump_at(address address) {
@@ -388,12 +422,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   DEBUG_ONLY(jump->verify());
   return jump;
 }
-
-class NativeIllegalInstruction: public NativeInstruction {
-public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
 
 inline bool NativeInstruction::is_nop() const{
   uint32_t insn = *(uint32_t*)addr_at(0);
@@ -417,10 +445,6 @@ inline bool NativeInstruction::is_jump() {
     return true;
   } else
     return false;
-}
-
-inline bool NativeInstruction::is_jump_or_nop() {
-  return is_nop() || is_jump();
 }
 
 // Call trampoline stubs.
@@ -526,14 +550,31 @@ inline NativeLdSt* NativeLdSt_at(address addr) {
 // can store an offset from the initial nop to the nmethod.
 
 class NativePostCallNop: public NativeInstruction {
+private:
+  static bool is_movk_to_zr(uint32_t insn) {
+    return ((insn & 0xffe0001f) == 0xf280001f);
+  }
+
 public:
+  enum AArch64_specific_constants {
+    // The two parts should be checked separately to prevent out of bounds access in case
+    // the return address points to the deopt handler stub code entry point which could be
+    // at the end of page.
+    first_check_size = instruction_size
+  };
+
   bool check() const {
-    uint64_t insns = *(uint64_t*)addr_at(0);
-    // Check for two instructions: nop; movk zr, xx
-    // These instructions only ever appear together in a post-call
-    // NOP, so it's unnecessary to check that the third instruction is
-    // a MOVK as well.
-    return (insns & 0xffe0001fffffffff) == 0xf280001fd503201f;
+    // Check the first instruction is NOP.
+    if (is_nop()) {
+      uint32_t insn = *(uint32_t*)addr_at(first_check_size);
+      // Check next instruction is MOVK zr, xx.
+      // These instructions only ever appear together in a post-call
+      // NOP, so it's unnecessary to check that the third instruction is
+      // a MOVK as well.
+      return is_movk_to_zr(insn);
+    }
+
+    return false;
   }
 
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
@@ -581,8 +622,7 @@ class NativeDeoptInstruction: public NativeInstruction {
 
   static bool is_deopt_at(address instr) {
     assert(instr != nullptr, "");
-    uint32_t value = *(uint32_t *) instr;
-    return value == 0xd4ade001;
+    return nativeInstruction_at(instr)->is_udf(udf_deopt);
   }
 
   // MT-safe patching

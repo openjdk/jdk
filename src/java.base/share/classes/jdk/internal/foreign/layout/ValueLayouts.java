@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.ValueBased;
 import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.Unsafe;
@@ -55,6 +56,7 @@ import java.util.Optional;
  *
  * @implSpec This class and its subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
+@ValueBased
 public final class ValueLayouts {
 
     // Suppresses default constructor, ensuring non-instantiability.
@@ -168,6 +170,7 @@ public final class ValueLayouts {
         }
     }
 
+    @ValueBased
     public static final class OfBooleanImpl extends AbstractValueLayout<OfBooleanImpl> implements ValueLayout.OfBoolean {
 
         private OfBooleanImpl(ByteOrder order, long byteAlignment, Optional<String> name) {
@@ -184,6 +187,7 @@ public final class ValueLayouts {
         }
     }
 
+    @ValueBased
     public static final class OfByteImpl extends AbstractValueLayout<OfByteImpl> implements ValueLayout.OfByte {
 
         private OfByteImpl(ByteOrder order, long byteAlignment, Optional<String> name) {
@@ -200,6 +204,7 @@ public final class ValueLayouts {
         }
     }
 
+    @ValueBased
     public static final class OfCharImpl extends AbstractValueLayout<OfCharImpl> implements ValueLayout.OfChar {
 
         private OfCharImpl(ByteOrder order, long byteAlignment, Optional<String> name) {
@@ -216,6 +221,7 @@ public final class ValueLayouts {
         }
     }
 
+    @ValueBased
     public static final class OfShortImpl extends AbstractValueLayout<OfShortImpl> implements ValueLayout.OfShort {
 
         private OfShortImpl(ByteOrder order, long byteAlignment, Optional<String> name) {
@@ -232,6 +238,7 @@ public final class ValueLayouts {
         }
     }
 
+    @ValueBased
     public static final class OfIntImpl extends AbstractValueLayout<OfIntImpl> implements ValueLayout.OfInt {
 
         private OfIntImpl(ByteOrder order, long byteAlignment, Optional<String> name) {
@@ -248,6 +255,7 @@ public final class ValueLayouts {
         }
     }
 
+    @ValueBased
     public static final class OfFloatImpl extends AbstractValueLayout<OfFloatImpl> implements ValueLayout.OfFloat {
 
         private OfFloatImpl(ByteOrder order, long byteAlignment, Optional<String> name) {
@@ -264,6 +272,7 @@ public final class ValueLayouts {
         }
     }
 
+    @ValueBased
     public static final class OfLongImpl extends AbstractValueLayout<OfLongImpl> implements ValueLayout.OfLong {
 
         private OfLongImpl(ByteOrder order, long byteAlignment, Optional<String> name) {
@@ -280,6 +289,7 @@ public final class ValueLayouts {
         }
     }
 
+    @ValueBased
     public static final class OfDoubleImpl extends AbstractValueLayout<OfDoubleImpl> implements ValueLayout.OfDouble {
 
         private OfDoubleImpl(ByteOrder order, long byteAlignment, Optional<String> name) {
@@ -297,6 +307,7 @@ public final class ValueLayouts {
 
     }
 
+    @ValueBased
     public static final class OfAddressImpl extends AbstractValueLayout<OfAddressImpl> implements AddressLayout {
 
         private final MemoryLayout targetLayout;

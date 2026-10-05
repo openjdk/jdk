@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug     6267846 6275009
  * @summary Test Collections.nCopies
  * @author  Martin Buchholz
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.AbstractList;
@@ -135,6 +137,22 @@ public class NCopies {
         check(Collections.nCopies(0, null).equals(Collections.nCopies(0, "non-null")));
     }
 
+    private static void checkReversed() {
+        List<String> copies = Collections.nCopies(10, "content");
+        check(copies.equals(copies.reversed()));
+        List<String> empty = Collections.nCopies(0, "content");
+        check(empty.equals(empty.reversed()));
+    }
+
+    private static void checkValueCopies() {
+        List<VClass> copies = Collections.nCopies(10, new VClass(7, new int[] { 7 }));
+        check(copies.indexOf(new VClass(7, new int[] { 7 })) == 0);
+        check(copies.lastIndexOf(new VClass(7, new int[] { 7 })) == 9);
+        check(copies.equals(referenceNCopies(10, new VClass(7, new int[] { 7 }))));
+        check(copies.hashCode() == referenceNCopies(10, new VClass(7, new int[] { 7 })).hashCode());
+        check(copies.equals(copies.reversed()));
+    }
+
     public static void main(String[] args) {
         try {
             List<String> empty = Collections.nCopies(0, "foo");
@@ -148,6 +166,10 @@ public class NCopies {
             checkHashCode();
 
             checkEquals();
+
+            checkReversed();
+
+            checkValueCopies();
 
         } catch (Throwable t) { unexpected(t); }
 

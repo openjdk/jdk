@@ -33,18 +33,9 @@ extern void reg_mask_init();
 
 void Compile::pd_compiler2_init() {
   guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
-  // QQQ presumably all 64bit cpu's support this. Seems like the ifdef could
-  // simply be left out.
-#ifndef AMD64
-  if (!VM_Version::supports_cmov()) {
-    ConditionalMoveLimit = 0;
-  }
-#endif // AMD64
-
   if (UseAVX < 3) {
     int delta = XMMRegister::max_slots_per_register * XMMRegister::number_of_registers;
     int bottom = ConcreteRegisterImpl::max_fpr;
-    int top = bottom + delta;
     int middle = bottom + (delta / 2);
     int xmm_slots = XMMRegister::max_slots_per_register;
     int lower = xmm_slots / 2;

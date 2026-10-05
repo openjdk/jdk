@@ -55,7 +55,7 @@ NativeCallStackStorage::NativeCallStackStorage(bool is_detailed_mode, int table_
   }
 }
 NativeCallStackStorage::~NativeCallStackStorage() {
-  FREE_C_HEAP_ARRAY(LinkPtr, _table);
+  FREE_C_HEAP_ARRAY(_table);
 }
 
 NativeCallStackStorage::NativeCallStackStorage(const NativeCallStackStorage& other)

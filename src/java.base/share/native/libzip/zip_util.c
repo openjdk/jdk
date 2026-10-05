@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,10 @@ DEF_STATIC_JNI_OnLoad
 /*
  * Opens the named file for reading, returning a ZFILE.
  *
- * Compare this with winFileHandleOpen in windows/native/java/io/io_util_md.c.
+ * Compare this with winFileHandleOpen in windows/native/libjava/io_util_md.c.
  * This function does not take JNIEnv* and uses CreateFile (instead of
- * CreateFileW).  The expectation is that this function will be called only
- * from ZIP_Open_Generic, which in turn is used by the JVM, where we do not
+ * CreateFileW). The expectation is that this function will be called only
+ * from ZIP_Open, which in turn is used by the JVM, where we do not
  * need to concern ourselves with wide chars.
  */
 static ZFILE
@@ -568,7 +568,7 @@ static jlong
 readCEN(jzfile *zip, jint knownTotal)
 {
     /* Following are unsigned 32-bit */
-    jlong endpos, end64pos, cenpos, cenlen, cenoff;
+    jlong endpos, end64pos, cenpos, cenlen, cenoff, total64;
     /* Following are unsigned 16-bit */
     jint total, tablelen, i, j;
     unsigned char *cenbuf = NULL;
@@ -604,7 +604,16 @@ readCEN(jzfile *zip, jint knownTotal)
         if ((end64pos = findEND64(zip, end64buf, endpos)) != -1) {
             cenlen = ZIP64_ENDSIZ(end64buf);
             cenoff = ZIP64_ENDOFF(end64buf);
-            total = (jint)ZIP64_ENDTOT(end64buf);
+            total64 = ZIP64_ENDTOT(end64buf);
+            /* ZIP64 size, offset and total-count fields are unsigned 64-bit
+             * values. Sizes and offsets that do not fit in signed jlong
+             * (i.e., >= 2^63), or total values that do not fit in jint, are
+             * not supported and indicate a corrupt or invalid zip file.
+             */
+            if (cenlen < 0 || cenoff < 0 || total64 < 0 || total64 > INT_MAX) {
+                ZIP_FORMAT_ERROR("Zip64 END values exceed supported size");
+            }
+            total = (jint)total64;
             endpos = end64pos;
 #ifdef USE_MMAP
             endhdrlen = ZIP64_ENDHDR;
@@ -758,39 +767,13 @@ readCEN(jzfile *zip, jint knownTotal)
 }
 
 /*
- * Opens a zip file with the specified mode. Returns the jzfile object
- * or NULL if an error occurred. If a zip error occurred then *pmsg will
- * be set to the error message text if pmsg != 0. Otherwise, *pmsg will be
- * set to NULL. Caller doesn't need to free the error message.
- * The error message, if set, points to a static thread-safe buffer.
- */
-jzfile *
-ZIP_Open_Generic(const char *name, char **pmsg, int mode, jlong lastModified)
-{
-    jzfile *zip = NULL;
-
-    /* Clear zip error message */
-    if (pmsg != NULL) {
-        *pmsg = NULL;
-    }
-
-    zip = ZIP_Get_From_Cache(name, pmsg, lastModified);
-
-    if (zip == NULL && pmsg != NULL && *pmsg == NULL) {
-        ZFILE zfd = ZFILE_Open(name, mode);
-        zip = ZIP_Put_In_Cache(name, zfd, pmsg, lastModified);
-    }
-    return zip;
-}
-
-/*
  * Returns the jzfile corresponding to the given file name from the cache of
  * zip files, or NULL if the file is not in the cache.  If the name is longer
  * than PATH_MAX or a zip error occurred then *pmsg will be set to the error
  * message text if pmsg != 0. Otherwise, *pmsg will be set to NULL. Caller
  * doesn't need to free the error message.
  */
-jzfile *
+static jzfile *
 ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
 {
     char buf[PATH_MAX];
@@ -818,8 +801,9 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
     MLOCK(zfiles_lock);
     for (zip = zfiles; zip != NULL; zip = zip->next) {
         if (strcmp(name, zip->name) == 0
-            && (zip->lastModified == lastModified || zip->lastModified == 0)
-            && zip->refs < MAXREFS) {
+                && (zip->lastModified == lastModified || zip->lastModified == 0)
+                && zip->refs < MAXREFS) {
+
             zip->refs++;
             break;
         }
@@ -835,16 +819,8 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
  * pmsg != 0. Otherwise, *pmsg will be set to NULL. Caller doesn't need to
  * free the error message.
  */
-
-jzfile *
+static jzfile *
 ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified)
-{
-    return ZIP_Put_In_Cache0(name, zfd, pmsg, lastModified, JNI_TRUE);
-}
-
-jzfile *
-ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
-                 jboolean usemmap)
 {
     char errbuf[256];
     jlong len;
@@ -855,7 +831,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     }
 
 #ifdef USE_MMAP
-    zip->usemmap = usemmap;
+    zip->usemmap = JNI_TRUE;
 #endif
     zip->refs = 1;
     zip->lastModified = lastModified;
@@ -907,15 +883,28 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
 
 /*
  * Opens a zip file for reading. Returns the jzfile object or NULL
- * if an error occurred. If a zip error occurred then *msg will be
- * set to the error message text if msg != 0. Otherwise, *msg will be
+ * if an error occurred. If a zip error occurred then *pmsg will be
+ * set to the error message text if pmsg != NULL. Otherwise, *pmsg will be
  * set to NULL. Caller doesn't need to free the error message.
+ * The error message, if set, points to a static thread-safe buffer.
  */
 JNIEXPORT jzfile *
 ZIP_Open(const char *name, char **pmsg)
 {
-    jzfile *file = ZIP_Open_Generic(name, pmsg, O_RDONLY, 0);
-    return file;
+    jzfile *zip = NULL;
+
+    /* Clear zip error message */
+    if (pmsg != NULL) {
+        *pmsg = NULL;
+    }
+    const jlong lastModified = 0;
+    zip = ZIP_Get_From_Cache(name, pmsg, lastModified);
+
+    if (zip == NULL && pmsg != NULL && *pmsg == NULL) {
+        ZFILE zfd = ZFILE_Open(name, O_RDONLY);
+        zip = ZIP_Put_In_Cache(name, zfd, pmsg, lastModified);
+    }
+    return zip;
 }
 
 /*
@@ -1115,6 +1104,24 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
 }
 
 /*
+ * Locks the specified zip file for reading.
+ */
+static void
+ZIP_Lock(jzfile *zip)
+{
+    MLOCK(zip->lock);
+}
+
+/*
+ * Unlocks the specified zip file.
+ */
+static void
+ZIP_Unlock(jzfile *zip)
+{
+    MUNLOCK(zip->lock);
+}
+
+/*
  * Free the given jzentry.
  * In fact we maintain a one-entry cache of the most recently used
  * jzentry for each zip.  This optimizes a common access pattern.
@@ -1137,20 +1144,8 @@ ZIP_FreeEntry(jzfile *jz, jzentry *ze)
     }
 }
 
-/*
- * Returns the zip entry corresponding to the specified name, or
- * NULL if not found.
- */
-jzentry *
-ZIP_GetEntry(jzfile *zip, char *name, jint ulen)
-{
-    if (ulen == 0) {
-        return ZIP_GetEntry2(zip, name, (jint)strlen(name), JNI_FALSE);
-    }
-    return ZIP_GetEntry2(zip, name, ulen, JNI_TRUE);
-}
-
-jboolean equals(char* name1, int len1, char* name2, int len2) {
+static jboolean
+equals(const char* name1, int len1, const char* name2, int len2) {
     if (len1 != len2) {
         return JNI_FALSE;
     }
@@ -1162,16 +1157,12 @@ jboolean equals(char* name1, int len1, char* name2, int len2) {
     return JNI_TRUE;
 }
 
-/*
- * Returns the zip entry corresponding to the specified name, or
- * NULL if not found.
- * This method supports embedded null character in "name", use ulen
- * for the length of "name".
- */
 jzentry *
-ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash)
+ZIP_GetEntry(jzfile *zip, const char *name)
 {
-    unsigned int hsh = hashN(name, ulen);
+    // length of the entry name being searched for
+    const jint name_len =  (jint) strlen(name);
+    const unsigned int hsh = hashN(name, name_len);
     jint idx;
     jzentry *ze = 0;
 
@@ -1182,79 +1173,47 @@ ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash)
 
     idx = zip->table[hsh % zip->tablelen];
 
-    /*
-     * This while loop is an optimization where a double lookup
-     * for name and name+/ is being performed. The name char
-     * array has enough room at the end to try again with a
-     * slash appended if the first table lookup does not succeed.
-     */
-    while(1) {
-
-        /* Check the cached entry first */
-        ze = zip->cache;
-        if (ze && equals(ze->name, ze->nlen, name, ulen)) {
-            /* Cache hit!  Remove and return the cached entry. */
-            zip->cache = 0;
-            ZIP_Unlock(zip);
-            return ze;
-        }
-        ze = 0;
-
-        /*
-         * Search down the target hash chain for a cell whose
-         * 32 bit hash matches the hashed name.
-         */
-        while (idx != ZIP_ENDCHAIN) {
-            jzcell *zc = &zip->entries[idx];
-
-            if (zc->hash == hsh) {
-                /*
-                 * OK, we've found a ZIP entry whose 32 bit hashcode
-                 * matches the name we're looking for.  Try to read
-                 * its entry information from the CEN.  If the CEN
-                 * name matches the name we're looking for, we're
-                 * done.
-                 * If the names don't match (which should be very rare)
-                 * we keep searching.
-                 */
-                ze = newEntry(zip, zc, ACCESS_RANDOM);
-                if (ze && equals(ze->name, ze->nlen, name, ulen)) {
-                    break;
-                }
-                if (ze != 0) {
-                    /* We need to release the lock across the free call */
-                    ZIP_Unlock(zip);
-                    ZIP_FreeEntry(zip, ze);
-                    ZIP_Lock(zip);
-                }
-                ze = 0;
-            }
-            idx = zc->next;
-        }
-
-        /* Entry found, return it */
-        if (ze != 0) {
-            break;
-        }
-
-        /* If no need to try appending slash, we are done */
-        if (!addSlash) {
-            break;
-        }
-
-        /* Slash is already there? */
-        if (ulen > 0 && name[ulen - 1] == '/') {
-            break;
-        }
-
-        /* Add slash and try once more */
-        name[ulen++] = '/';
-        name[ulen] = '\0';
-        hsh = hash_append(hsh, '/');
-        idx = zip->table[hsh % zip->tablelen];
-        addSlash = JNI_FALSE;
+    /* Check the cached entry first */
+    ze = zip->cache;
+    if (ze && equals(ze->name, ze->nlen, name, name_len)) {
+        /* Cache hit!  Remove and return the cached entry. */
+        zip->cache = 0;
+        ZIP_Unlock(zip);
+        return ze;
     }
+    ze = 0;
 
+    /*
+     * Search down the target hash chain for a cell whose
+     * 32 bit hash matches the hashed name.
+     */
+    while (idx != ZIP_ENDCHAIN) {
+        jzcell *zc = &zip->entries[idx];
+
+        if (zc->hash == hsh) {
+            /*
+             * OK, we've found a ZIP entry whose 32 bit hashcode
+             * matches the name we're looking for.  Try to read
+             * its entry information from the CEN.  If the CEN
+             * name matches the name we're looking for, we're
+             * done.
+             * If the names don't match (which should be very rare)
+             * we keep searching.
+             */
+            ze = newEntry(zip, zc, ACCESS_RANDOM);
+            if (ze && equals(ze->name, ze->nlen, name, name_len)) {
+                break;
+            }
+            if (ze != 0) {
+                /* We need to release the lock across the free call */
+                ZIP_Unlock(zip);
+                ZIP_FreeEntry(zip, ze);
+                ZIP_Lock(zip);
+            }
+            ze = 0;
+        }
+        idx = zc->next;
+    }
 Finally:
     ZIP_Unlock(zip);
     return ze;
@@ -1278,29 +1237,11 @@ ZIP_GetNextEntry(jzfile *zip, jint n)
 }
 
 /*
- * Locks the specified zip file for reading.
- */
-void
-ZIP_Lock(jzfile *zip)
-{
-    MLOCK(zip->lock);
-}
-
-/*
- * Unlocks the specified zip file.
- */
-void
-ZIP_Unlock(jzfile *zip)
-{
-    MUNLOCK(zip->lock);
-}
-
-/*
  * Returns the offset of the entry data within the zip file.
  * Returns -1 if an error occurred, in which case zip->msg will
  * contain the error text.
  */
-jlong
+static jlong
 ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
 {
     /* The Zip file spec explicitly allows the LOC extra data size to
@@ -1336,7 +1277,7 @@ ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
  * The current implementation does not support reading an entry that
  * has the size bigger than 2**32 bytes in ONE invocation.
  */
-jint
+static jint
 ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len)
 {
     jlong entry_size;
@@ -1466,9 +1407,9 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
  * has the size bigger than 2**32 bytes in ONE invocation.
  */
 JNIEXPORT jzentry *
-ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP)
+ZIP_FindEntry(jzfile *zip, const char *name, jint *sizeP, jint *nameLenP)
 {
-    jzentry *entry = ZIP_GetEntry(zip, name, 0);
+    jzentry *entry = ZIP_GetEntry(zip, name);
     if (entry) {
         *sizeP = (jint)entry->size;
         *nameLenP = (jint)strlen(entry->name);

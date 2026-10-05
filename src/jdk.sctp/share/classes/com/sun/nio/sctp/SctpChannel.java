@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.UnresolvedAddressException
      *          If the given remote address is not fully resolved
@@ -422,7 +422,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.UnresolvedAddressException
      *          If the given remote address is not fully resolved
@@ -438,7 +438,7 @@ public abstract class SctpChannel
     /**
      * Connects this channel's socket.
      *
-     * <P> This is a convience method and is equivalent to evaluating the
+     * <P> This is a convenience method and is equivalent to evaluating the
      * following expression:
      * <blockquote><pre>
      * setOption(SctpStandardSocketOptions.SCTP_INIT_MAXSTREAMS, SctpStandardSocketOption.InitMaxStreams.create(maxInStreams, maxOutStreams))
@@ -483,7 +483,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.UnresolvedAddressException
      *          If the given remote address is not fully resolved
@@ -552,7 +552,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -723,7 +723,7 @@ public abstract class SctpChannel
      * does not contain the complete message, then an invocation of {@link
      * MessageInfo#isComplete isComplete} on the returned {@code
      * MessageInfo} will return {@code false}, and more invocations of this
-     * method will be necessary to completely consume the messgae. Only
+     * method will be necessary to completely consume the message. Only
      * one message at a time will be partially delivered in any stream. The
      * socket option {@link SctpStandardSocketOptions#SCTP_FRAGMENT_INTERLEAVE
      * SCTP_FRAGMENT_INTERLEAVE} controls various aspects of what interlacing of
@@ -776,7 +776,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.NotYetConnectedException
      *          If this channel is not yet connected
@@ -829,7 +829,7 @@ public abstract class SctpChannel
      *          output buffer
      *
      * @throws  InvalidStreamException
-     *          If {@code streamNumner} is negative or greater than or equal to
+     *          If {@code streamNumber} is negative or greater than or equal to
      *          the maximum number of outgoing streams
      *
      * @throws  java.nio.channels.ClosedChannelException
@@ -843,7 +843,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.NotYetConnectedException
      *          If this channel is not yet connected

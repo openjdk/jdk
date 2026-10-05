@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,7 @@ public class ReferenceQueue<@jdk.internal.RequiresIdentity T> {
     private volatile Reference<? extends T> head;
     private long queueLength = 0;
 
-    private static class Lock { };
-    private final Lock lock = new Lock();
+    private final Object lock = new Object();
 
     /**
      * Constructs a new reference-object queue.

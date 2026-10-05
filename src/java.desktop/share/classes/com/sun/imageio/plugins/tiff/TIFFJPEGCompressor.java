@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class TIFFJPEGCompressor extends TIFFBaseJPEGCompressor {
     private static class JPEGSPIFilter implements ServiceRegistry.Filter {
         JPEGSPIFilter() {}
 
+        @Override
         public boolean filter(Object provider) {
             ImageReaderSpi readerSPI = (ImageReaderSpi)provider;
 
@@ -112,6 +113,7 @@ public class TIFFJPEGCompressor extends TIFFBaseJPEGCompressor {
      *
      * @see #getMetadata()
      */
+    @Override
     public void setMetadata(IIOMetadata metadata) {
         super.setMetadata(metadata);
 

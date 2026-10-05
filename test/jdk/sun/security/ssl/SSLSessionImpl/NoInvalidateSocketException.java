@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,18 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class NoInvalidateSocketException extends SSLSocketTemplate {
+
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl,session
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = Boolean.getBoolean("test.debug");
+
     private static final int ITERATIONS = 10;
 
     // This controls how long the main thread waits before closing the socket.
@@ -73,8 +85,8 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     private static volatile boolean finished = false;
 
     public static void main(String[] args) throws Exception {
-        if (System.getProperty("javax.net.debug") == null) {
-            System.setProperty("javax.net.debug", "session");
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl,session");
         }
 
         if (args != null && args.length >= 1) {

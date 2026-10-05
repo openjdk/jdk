@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ class RegMask {
   friend class RegMaskIterator;
 
   // RM_SIZE_IN_INTS is aligned to 64-bit - assert that this holds
-  LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE_IN_INTS, 2)));
+  LP64_ONLY(static_assert(is_aligned(RM_SIZE_IN_INTS, 2)));
 
   static const unsigned int WORD_BIT_MASK = BitsPerWord - 1U;
 
@@ -105,11 +105,11 @@ class RegMask {
       LP64_ONLY(((RM_SIZE_IN_INTS_MAX + 1) & ~1) >> 1) NOT_LP64(RM_SIZE_IN_INTS_MAX);
 
   // Sanity check
-  STATIC_ASSERT(RM_SIZE_IN_INTS <= RM_SIZE_IN_INTS_MAX);
+  static_assert(RM_SIZE_IN_INTS <= RM_SIZE_IN_INTS_MAX);
 
   // Ensure that register masks cannot grow beyond the point at which
   // OptoRegPair can no longer index the whole mask
-  STATIC_ASSERT(OptoRegPair::can_fit((RM_SIZE_IN_INTS_MAX << 5) - 1));
+  static_assert(OptoRegPair::can_fit((RM_SIZE_IN_INTS_MAX << 5) - 1));
 
   union {
     // Array of Register Mask bits. The array should be
@@ -285,8 +285,9 @@ class RegMask {
         _rm_word_ext = NEW_ARENA_ARRAY(_arena, uintptr_t, new_ext_size);
       } else {
         assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
-        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, uintptr_t, _rm_word_ext,
+        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, _rm_word_ext,
                                            old_ext_size, new_ext_size);
+
       }
       if (initialize_by_infinite_stack) {
         int fill = 0;
@@ -297,39 +298,6 @@ class RegMask {
         set_range(old_size, fill, _rm_size_in_words - old_size);
       }
     }
-  }
-
-  // Make us a copy of src
-  void copy(const RegMask& src) {
-    assert(_offset == src._offset, "offset mismatch");
-    _hwm = src._hwm;
-    _lwm = src._lwm;
-
-    // Copy base mask
-    memcpy(_rm_word, src._rm_word, sizeof(uintptr_t) * RM_SIZE_IN_WORDS);
-    _infinite_stack = src._infinite_stack;
-
-    // Copy extension
-    if (src._rm_word_ext != nullptr) {
-      assert(src._rm_size_in_words > RM_SIZE_IN_WORDS, "sanity");
-      assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
-      grow(src._rm_size_in_words, false);
-      memcpy(_rm_word_ext, src._rm_word_ext,
-             sizeof(uintptr_t) * (src._rm_size_in_words - RM_SIZE_IN_WORDS));
-    }
-
-    // If the source is smaller than us, we need to set the gap according to
-    // the sources infinite_stack flag.
-    if (src._rm_size_in_words < _rm_size_in_words) {
-      int value = 0;
-      if (src.is_infinite_stack()) {
-        value = 0xFF;
-        _hwm = rm_word_max_index();
-      }
-      set_range(src._rm_size_in_words, value, _rm_size_in_words - src._rm_size_in_words);
-    }
-
-    assert(valid_watermarks(), "post-condition");
   }
 
   // Make the watermarks as tight as possible.
@@ -387,16 +355,12 @@ public:
   }
 
   // SlotsPerLong is 2, since slots are 32 bits and longs are 64 bits.
-  // Also, consider the maximum alignment size for a normally allocated
-  // value.  Since we allocate register pairs but not register quads (at
-  // present), this alignment is SlotsPerLong (== 2).  A normally
-  // aligned allocated register is either a single register, or a pair
-  // of adjacent registers, the lower-numbered being even.
-  // See also is_aligned_Pairs() below, and the padding added before
-  // Matcher::_new_SP to keep allocated pairs aligned properly.
-  // If we ever go to quad-word allocations, SlotsPerQuad will become
-  // the controlling alignment constraint.  Note that this alignment
-  // requirement is internal to the allocator, and independent of any
+  // We allocate single registers for 32 bit values and register pairs for 64
+  // bit values. The number of registers allocated for vectors match their size. E.g. for 128 bit
+  // vectors (VecX) we allocate a set of 4 registers. Allocated sets are adjacent and aligned.
+  // See RegMask::find_first_set(), is_aligned_pairs(), is_aligned_sets(), and the padding added before
+  // Matcher::_new_SP to keep allocated pairs and sets aligned properly.
+  // Note that this alignment requirement is internal to the allocator, and independent of any
   // particular platform.
   enum { SlotsPerLong = 2,
          SlotsPerVecA = 4,
@@ -449,31 +413,62 @@ public:
   RegMask(OptoReg::Name reg,
           Arena* arena DEBUG_ONLY(COMMA bool read_only = false))
       : RegMask(arena DEBUG_ONLY(COMMA read_only)) {
-    Insert(reg);
+    insert(reg);
   }
   explicit RegMask(OptoReg::Name reg) : RegMask(reg, nullptr) {}
 
-  // ----------------------------------------
-  // Deep copying constructors and assignment
-  // ----------------------------------------
+  // Make us represent the same set of registers as src.
+  void assignFrom(const RegMask& src) {
+    assert(_offset == src._offset, "offset mismatch");
+    _hwm = src._hwm;
+    _lwm = src._lwm;
 
+    // Copy base mask
+    memcpy(_rm_word, src._rm_word, sizeof(uintptr_t) * RM_SIZE_IN_WORDS);
+    _infinite_stack = src._infinite_stack;
+
+    // Copy extension
+    if (src._rm_word_ext != nullptr) {
+      assert(src._rm_size_in_words > RM_SIZE_IN_WORDS, "sanity");
+      assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
+      grow(src._rm_size_in_words, false);
+      memcpy(_rm_word_ext, src._rm_word_ext,
+             sizeof(uintptr_t) * (src._rm_size_in_words - RM_SIZE_IN_WORDS));
+    }
+
+    // If the source is smaller than us, we need to set the gap according to
+    // the sources infinite_stack flag.
+    if (src._rm_size_in_words < _rm_size_in_words) {
+      int value = 0;
+      if (src.is_infinite_stack()) {
+        value = 0xFF;
+        _hwm = rm_word_max_index();
+      }
+      set_range(src._rm_size_in_words, value, _rm_size_in_words - src._rm_size_in_words);
+    }
+
+    assert(valid_watermarks(), "post-condition");
+  }
+
+  // Construct from other register mask (deep copy) and register an arena
+  // for potential register mask extension. Passing nullptr as arena disables
+  // extension.
   RegMask(const RegMask& rm, Arena* arena)
       : _arena(arena), _rm_size_in_words(RM_SIZE_IN_WORDS), _offset(rm._offset) {
-    copy(rm);
+    assignFrom(rm);
   }
 
-  RegMask(const RegMask& rm) : RegMask(rm, nullptr) {}
+  // Copy constructor (deep copy). By default does not allow extension.
+  explicit RegMask(const RegMask& rm) : RegMask(rm, nullptr) {}
 
-  RegMask& operator=(const RegMask& rm) {
-    copy(rm);
-    return *this;
-  }
+  // Disallow copy assignment (use assignFrom instead)
+  RegMask& operator=(const RegMask&) = delete;
 
   // ----------------
   // End deep copying
   // ----------------
 
-  bool Member(OptoReg::Name reg) const {
+  bool member(OptoReg::Name reg) const {
     reg = reg - offset_bits();
     if (reg < 0) {
       return false;
@@ -486,7 +481,7 @@ public:
   }
 
   // Empty mask check. Ignores registers included through the infinite_stack flag.
-  bool is_Empty() const {
+  bool is_empty() const {
     assert(valid_watermarks(), "sanity");
     for (unsigned i = _lwm; i <= _hwm; i++) {
       if (rm_word(i) != 0) {
@@ -642,7 +637,7 @@ public:
   bool is_UP() const;
 
   // Clear a register mask. Does not clear any offset.
-  void Clear() {
+  void clear() {
     _lwm = rm_word_max_index();
     _hwm = 0;
     set_range(0, 0, _rm_size_in_words);
@@ -651,13 +646,13 @@ public:
   }
 
   // Fill a register mask with 1's
-  void Set_All() {
+  void set_all() {
     assert(_offset == 0, "offset non-zero");
-    Set_All_From_Offset();
+    set_all_from_offset();
   }
 
   // Fill a register mask with 1's from the current offset.
-  void Set_All_From_Offset() {
+  void set_all_from_offset() {
     _lwm = 0;
     _hwm = rm_word_max_index();
     set_range(0, 0xFF, _rm_size_in_words);
@@ -666,7 +661,7 @@ public:
   }
 
   // Fill a register mask with 1's starting from the given register.
-  void Set_All_From(OptoReg::Name reg) {
+  void set_all_from(OptoReg::Name reg) {
     reg = reg - offset_bits();
     assert(reg != OptoReg::Bad, "sanity");
     assert(reg != OptoReg::Special, "sanity");
@@ -689,7 +684,7 @@ public:
   }
 
   // Insert register into mask
-  void Insert(OptoReg::Name reg) {
+  void insert(OptoReg::Name reg) {
     reg = reg - offset_bits();
     assert(reg != OptoReg::Bad, "sanity");
     assert(reg != OptoReg::Special, "sanity");
@@ -706,7 +701,7 @@ public:
   }
 
   // Remove register from mask
-  void Remove(OptoReg::Name reg) {
+  void remove(OptoReg::Name reg) {
     reg = reg - offset_bits();
     assert(reg >= 0, "register outside mask");
     assert(reg < (int)rm_size_in_bits(), "register outside mask");
@@ -714,8 +709,8 @@ public:
     rm_word(r >> LogBitsPerWord) &= ~(uintptr_t(1) << (r & WORD_BIT_MASK));
   }
 
-  // OR 'rm' into 'this'
-  void OR(const RegMask &rm) {
+  // Or 'rm' into 'this'
+  void or_with(const RegMask& rm) {
     assert(_offset == rm._offset, "offset mismatch");
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
     grow(rm._rm_size_in_words);
@@ -736,8 +731,8 @@ public:
     assert(valid_watermarks(), "sanity");
   }
 
-  // AND 'rm' into 'this'
-  void AND(const RegMask &rm) {
+  // And 'rm' into 'this'
+  void and_with(const RegMask& rm) {
     assert(_offset == rm._offset, "offset mismatch");
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
     grow(rm._rm_size_in_words);
@@ -768,7 +763,7 @@ public:
   }
 
   // Subtract 'rm' from 'this'.
-  void SUBTRACT(const RegMask &rm) {
+  void subtract(const RegMask& rm) {
     assert(_offset == rm._offset, "offset mismatch");
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
     grow(rm._rm_size_in_words);
@@ -791,15 +786,13 @@ public:
   // Subtract 'rm' from 'this', but ignore everything in 'rm' that does not
   // overlap with us and do not modify our infinite_stack flag. Supports masks of
   // differing offsets. Does not support 'rm' with the infinite_stack flag set.
-  void SUBTRACT_inner(const RegMask& rm) {
+  void subtract_inner(const RegMask& rm) {
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
     assert(!rm.is_infinite_stack(), "not supported");
     // Various translations due to differing offsets
     int rm_index_diff = _offset - rm._offset;
     int rm_hwm_tr = (int)rm._hwm - rm_index_diff;
     int rm_lwm_tr = (int)rm._lwm - rm_index_diff;
-    int rm_rm_max_tr = (int)rm.rm_word_max_index() - rm_index_diff;
-    int rm_rm_size_tr = (int)rm._rm_size_in_words - rm_index_diff;
     int hwm = MIN2((int)_hwm, rm_hwm_tr);
     int lwm = MAX2((int)_lwm, rm_lwm_tr);
     for (int i = lwm; i <= hwm; i++) {
@@ -821,12 +814,12 @@ public:
       return false;
     }
     _offset += _rm_size_in_words;
-    Set_All_From_Offset();
+    set_all_from_offset();
     return true;
   }
 
   // Compute size of register mask: number of bits
-  uint Size() const {
+  uint size() const {
     uint sum = 0;
     assert(valid_watermarks(), "sanity");
     for (unsigned i = _lwm; i <= _hwm; i++) {
@@ -895,8 +888,8 @@ public:
   void dump_hex(outputStream* st = tty) const; // Print a mask (raw hex)
 #endif
 
-  static const RegMask Empty;   // Common empty mask
-  static const RegMask All;     // Common all mask
+  static const RegMask EMPTY; // Common empty mask
+  static const RegMask ALL;   // Common all mask
 
   bool can_represent(OptoReg::Name reg, unsigned int size = 1) const {
     reg = reg - offset_bits();

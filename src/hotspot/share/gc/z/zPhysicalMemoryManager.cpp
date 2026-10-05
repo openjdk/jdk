@@ -108,7 +108,7 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   // Test if uncommit is supported by the operating system by committing
   // and then uncommitting a granule.
   const ZVirtualMemory vmem(zoffset(0), ZGranuleSize);
-  if (!commit(vmem, (uint32_t)-1) || !uncommit(vmem)) {
+  if (!commit(vmem, 0) || !uncommit(vmem)) {
     log_info_p(gc, init)("Uncommit: Implicitly Disabled (Not supported by operating system)");
     FLAG_SET_ERGO(ZUncommit, false);
     return;
@@ -293,7 +293,7 @@ void ZPhysicalMemoryManager::map(const ZVirtualMemory& vmem, uint32_t numa_id) c
 
   // Setup NUMA preferred for large pages
   if (ZNUMA::is_enabled() && ZLargePages::is_explicit()) {
-    os::numa_make_local((char*)addr, size, (int)numa_id);
+    os::numa_make_local((char*)addr, size, ZNUMA::numa_id_to_node(numa_id));
   }
 }
 

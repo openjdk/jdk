@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,6 +433,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 jlong pDst = NEXT_LONG(b);
                 if (oglc != NULL) {
                     RESET_PREVIOUS_OP();
+                    OGLSD_Flush(env);
                 }
                 oglc = OGLContext_SetSurfaces(env, pSrc, pDst);
                 dstOps = (OGLSDOps *)jlong_to_ptr(pDst);
@@ -443,6 +444,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 jlong pConfigInfo = NEXT_LONG(b);
                 if (oglc != NULL) {
                     RESET_PREVIOUS_OP();
+                    OGLSD_Flush(env);
                 }
                 oglc = OGLSD_SetScratchSurface(env, pConfigInfo);
                 dstOps = NULL;

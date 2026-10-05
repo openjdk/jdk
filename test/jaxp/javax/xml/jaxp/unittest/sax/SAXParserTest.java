@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,25 @@
 
 package sax;
 
-import static jaxp.library.JAXPTestUtilities.getSystemProperty;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8213734
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng sax.SAXParserTest
- * @summary Tests functionalities for SAXParser.
+ * @run junit sax.SAXParserTest
+ * @summary Tests that failed parsing closes the file correctly.
  */
 public class SAXParserTest {
 
@@ -51,35 +52,24 @@ public class SAXParserTest {
      */
     @Test
     public void testCloseReaders() throws Exception {
-        if (!getSystemProperty("os.name").contains("Windows")) {
-            System.out.println("This test only needs to be run on Windows.");
-            return;
-        }
-        Path testFile = createTestFile(null, "Test");
+        Path testFile = createTestFile("Test");
         System.out.println("Test file: " + testFile.toString());
         SAXParserFactory factory = SAXParserFactory.newDefaultInstance();
         SAXParser parser = factory.newSAXParser();
-        try {
-            parser.parse(testFile.toFile(), new DefaultHandler() {
-                @Override
-                public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-                    throw new SAXException("Stop the parser.");
-                }
-            });
-        } catch (SAXException e) {
-            // Do nothing
-        }
-
-        // deletion failes on Windows when the file is not closed
-        Files.deleteIfExists(testFile);
+        DefaultHandler explodingHandler = new DefaultHandler() {
+            @Override
+            public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+                throw new SAXException("Stop the parser.");
+            }
+        };
+        assertThrows(SAXException.class, () -> parser.parse(testFile.toFile(), explodingHandler));
+        // Deletion would fail on Windows if the file was not closed.
+        Files.delete(testFile);
     }
 
-    private static Path createTestFile(Path dir, String name) throws IOException {
+    private static Path createTestFile(String name) throws IOException {
         Path path = Files.createTempFile(name, ".xml");
-            byte[] bytes = "<?xml version=\"1.0\"?><test a1=\"x\" a2=\"y\"/>"
-        .getBytes(StandardCharsets.UTF_8);
-
-        Files.write(path, bytes);
+        Files.writeString(path, "<?xml version=\"1.0\"?><test a1=\"x\" a2=\"y\"/>");
         return path;
     }
 }

@@ -163,6 +163,7 @@ void CodeHeap::mark_segmap_as_used(size_t beg, size_t end, bool is_FreeBlock_joi
 
 void CodeHeap::invalidate(size_t beg, size_t end, size_t hdr_size) {
 #ifndef PRODUCT
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   // Fill the given range with some bad value.
   // length is expected to be in segment_size units.
   // This prevents inadvertent execution of code leftover from previous use.
@@ -172,11 +173,13 @@ void CodeHeap::invalidate(size_t beg, size_t end, size_t hdr_size) {
 }
 
 void CodeHeap::clear(size_t beg, size_t end) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   mark_segmap_as_free(beg, end);
   invalidate(beg, end, 0);
 }
 
 void CodeHeap::clear() {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   _next_segment = 0;
   clear(_next_segment, _number_of_committed_segments);
 }
@@ -190,6 +193,7 @@ static size_t align_to_page_size(size_t size) {
 
 
 bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_size) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   assert(rs.size() >= committed_size, "reserved < committed");
   assert(is_aligned(committed_size, rs.page_size()), "must be page aligned");
   assert(segment_size >= sizeof(FreeBlock), "segment size is too small");
@@ -230,6 +234,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
 
 
 bool CodeHeap::expand_by(size_t size) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   assert_locked_or_safepoint(CodeCache_lock);
 
   // expand _memory space
@@ -259,6 +264,7 @@ bool CodeHeap::expand_by(size_t size) {
 
 
 void* CodeHeap::allocate(size_t instance_size) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   size_t number_of_segments = size_to_segments(instance_size + header_size());
   assert(segments_to_size(number_of_segments) >= sizeof(FreeBlock), "not enough room for FreeList");
   assert_locked_or_safepoint(CodeCache_lock);

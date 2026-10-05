@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -63,6 +64,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedKlass.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -78,8 +80,9 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_dynamic_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_static_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_dynamic_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_dumping;
 
 DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = nullptr;
 
@@ -88,11 +91,9 @@ DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 
 #ifdef ASSERT
 static void check_klass_after_loading(const Klass* k) {
-#ifdef _LP64
-  if (k != nullptr && UseCompressedClassPointers) {
+  if (k != nullptr) {
     CompressedKlassPointers::check_encodable(k);
   }
-#endif
 }
 #endif
 
@@ -133,8 +134,8 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
     return nullptr;
   }
 
-  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
-                                               &_dynamic_archive._unregistered_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._unregistered_dictionary,
+                                               &_info_for_dynamic_archive._unregistered_dictionary,
                                                class_name);
   if (record == nullptr) {
     return nullptr;
@@ -201,6 +202,20 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   DumpTimeClassInfo* info = _dumptime_table->get_info(k);
   assert(info != nullptr, "must be");
   return info;
+}
+
+void SystemDictionaryShared::check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) {
+  if (CDSConfig::is_dumping_preimage_static_archive() && !is_builtin_loader(ik->class_loader_data())) {
+    if (cfs == nullptr || cfs->source() == nullptr || strncmp(cfs->source(), "file:", 5) != 0) {
+      // AOT cache filtering:
+      // For non-built-in loaders, cache only the classes that have a file: code source, so
+      // we can avoid caching dynamically generated classes that are likely to change from
+      // run to run. This is similar to the filtering in ClassListWriter::write_to_stream()
+      // for the classic CDS static archive.
+      SystemDictionaryShared::log_exclusion(ik, "Not loaded from \"file:\" code source");
+      SystemDictionaryShared::set_excluded(ik);
+    }
+  }
 }
 
 bool SystemDictionaryShared::should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info) {
@@ -283,6 +298,18 @@ class SystemDictionaryShared::ExclusionCheckCandidates
         }
         return true; // Keep iterating.
       });
+    }
+
+    // Value fields need to have their layouts preserved between dumptime and runtime.
+    // To ensure this, the types of the fields must be stored in the archive along with
+    // the field holder.
+    if (k->has_flat_fields() || k->has_null_restricted_static_fields()) {
+      for (AllFieldStream fs(k); !fs.done(); fs.next()) {
+        if (fs.is_flat() || fs.is_null_free_value_type()) {
+          ValueKlass* field_klass = k->get_value_type_field_klass(fs.index());
+          add_candidate(InstanceKlass::cast(field_klass));
+        }
+      }
     }
   }
 
@@ -370,11 +397,6 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
     k = k->super();
   }
   return false;
-}
-
-bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = _dumptime_table->get(ik);
-  return (info != nullptr) ? info->is_early_klass() : false;
 }
 
 bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
@@ -508,6 +530,20 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
     if (excluded) {
       // At least one verification constraint class has been excluded
       return true;
+    }
+  }
+
+  // If any of the null restricted or flat field types are excluded, the current
+  // klass must be excluded as well, otherwise there is no guarantee that the
+  // field layouts will be consistent at runtime.
+  if (k->has_flat_fields() || k->has_null_restricted_static_fields()) {
+    for (AllFieldStream fs(k); !fs.done(); fs.next()) {
+      if (fs.is_flat() || fs.is_null_free_value_type()) {
+        ValueKlass* field_klass = k->get_value_type_field_klass(fs.index());
+        if (is_dependency_excluded(k, InstanceKlass::cast(field_klass), "value field type")) {
+          return true;
+        }
+      }
     }
   }
 
@@ -693,7 +729,7 @@ void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlas
   precond(klass->in_aot_cache());
 
   // A shared class must have a RunTimeClassInfo record
-  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._unregistered_dictionary,
                                                nullptr, klass->name());
   precond(record != nullptr);
   precond(record->klass() == klass);
@@ -855,6 +891,28 @@ public:
   }
 };
 
+void SystemDictionaryShared::link_all_exclusion_check_candidates(InstanceKlass* ik) {
+  bool need_to_link = false;
+  {
+    MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+    ExclusionCheckCandidates candidates(ik);
+
+    candidates.iterate_all([&] (InstanceKlass* k, DumpTimeClassInfo* info) {
+      if (!k->is_linked()) {
+        need_to_link = true;
+      }
+    });
+  }
+  if (need_to_link) {
+    JavaThread* THREAD = JavaThread::current();
+    if (log_is_enabled(Info, aot, link)) {
+      ResourceMark rm(THREAD);
+      log_info(aot, link)("Link all loaded classes for %s", ik->external_name());
+    }
+    AOTMetaspace::link_all_loaded_classes(THREAD);
+  }
+}
+
 // Returns true if the class should be excluded. This can be called by
 // AOTConstantPoolResolver before or after we enter the CDS safepoint.
 // When called before the safepoint, we need to link the class so that
@@ -878,27 +936,19 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
     if (!SafepointSynchronize::is_at_safepoint()) {
-      if (!ik->is_linked()) {
-        // should_be_excluded_impl() below doesn't link unlinked classes. We come
-        // here only when we are trying to aot-link constant pool entries, so
-        // we'd better link the class.
-        JavaThread* THREAD = JavaThread::current();
-        ik->link_class(THREAD);
-        if (HAS_PENDING_EXCEPTION) {
-          CLEAR_PENDING_EXCEPTION;
-          return true; // linking failed -- let's exclude it
+      {
+        // fast path
+        MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+        DumpTimeClassInfo* p = get_info_locked(ik);
+        if (p->has_checked_exclusion()) {
+          return p->is_excluded();
         }
-
-        // Also link any classes that were loaded for the verification of ik or its supertypes.
-        // Otherwise we might miss the verification constraints of those classes.
-        AOTMetaspace::link_all_loaded_classes(THREAD);
       }
+
+      link_all_exclusion_check_candidates(ik);
 
       MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
       DumpTimeClassInfo* p = get_info_locked(ik);
-      if (p->is_excluded()) {
-        return true;
-      }
       return should_be_excluded_impl(ik, p);
     } else {
       // When called within the CDS safepoint, the correctness of this function
@@ -912,7 +962,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
 
       // No need to check for is_linked() as all eligible classes should have
       // already been linked in AOTMetaspace::link_class_for_cds().
-      // Can't take the lock as we are in safepoint.
+      // Don't take DumpTimeTable_lock as we are in safepoint.
       DumpTimeClassInfo* p = _dumptime_table->get(ik);
       if (p->is_excluded()) {
         return true;
@@ -1222,8 +1272,8 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
             log.print(" succeeded]");
         }
       }
-      return true; // for all recorded constraints added successfully.
     }
+    return true; // Recorded constraints, if any, have all been added successfully.
   }
   if (log.is_enabled()) {
     ResourceMark rm(current);
@@ -1255,7 +1305,7 @@ unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({
-        if (MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr)) {
+        if (AOTMetaspace::in_aot_cache(ptr)) {
           assert(hash == SystemDictionaryShared::hash_for_shared_dictionary_quick(ptr), "must be");
         }
       });
@@ -1268,11 +1318,10 @@ unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
 class CopySharedClassInfoToArchive : StackObj {
   CompactHashtableWriter* _writer;
   bool _is_builtin;
-  ArchiveBuilder *_builder;
 public:
   CopySharedClassInfoToArchive(CompactHashtableWriter* writer,
                                bool is_builtin)
-    : _writer(writer), _is_builtin(is_builtin), _builder(ArchiveBuilder::current()) {}
+    : _writer(writer), _is_builtin(is_builtin) {}
 
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
@@ -1285,11 +1334,10 @@ public:
       Symbol* name = info._klass->name();
       name = ArchiveBuilder::current()->get_buffered_addr(name);
       hash = SystemDictionaryShared::hash_for_shared_dictionary((address)name);
-      u4 delta = _builder->buffer_to_offset_u4((address)record);
       if (_is_builtin && info._klass->is_hidden()) {
         // skip
       } else {
-        _writer->add(hash, delta);
+        _writer->add(hash, AOTCompressedPointers::encode_not_null(record));
       }
       if (log_is_enabled(Trace, aot, hashtables)) {
         ResourceMark rm;
@@ -1315,7 +1363,7 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
 }
 
 void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
-  ArchiveInfo* archive = get_archive(is_static_archive);
+  ArchiveInfo* archive = get_archive(is_static_archive, /*is_dumping=*/true);
 
   write_dictionary(&archive->_builtin_dictionary, true);
   write_dictionary(&archive->_unregistered_dictionary, false);
@@ -1328,7 +1376,7 @@ void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
 
 void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
                                                           bool is_static_archive) {
-  ArchiveInfo* archive = get_archive(is_static_archive);
+  ArchiveInfo* archive = get_archive(is_static_archive, soc->writing());
 
   archive->_builtin_dictionary.serialize_header(soc);
   archive->_unregistered_dictionary.serialize_header(soc);
@@ -1375,8 +1423,8 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
 }
 
 InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
-  const RunTimeClassInfo* record = find_record(&_static_archive._builtin_dictionary,
-                                               &_dynamic_archive._builtin_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._builtin_dictionary,
+                                               &_info_for_dynamic_archive._builtin_dictionary,
                                                name);
   if (record != nullptr) {
     assert(!record->klass()->is_hidden(), "hidden class cannot be looked up by name");
@@ -1417,7 +1465,12 @@ const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
 }
 
 void SystemDictionaryShared::get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes) {
-  get_archive(is_static_archive)->_builtin_dictionary.iterate([&] (const RunTimeClassInfo* record) {
+  ArchiveInfo* archive = get_archive(is_static_archive, /*is_dumping=*/false);
+  archive->_builtin_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
+      classes->append(record->klass());
+    });
+
+  archive->_unregistered_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
       classes->append(record->klass());
     });
 }
@@ -1446,9 +1499,9 @@ void SystemDictionaryShared::ArchiveInfo::print_on(const char* prefix,
   st->print_cr("%sShared Dictionary", prefix);
   SharedDictionaryPrinter p(st);
   st->print_cr("%sShared Builtin Dictionary", prefix);
-  _builtin_dictionary.iterate(&p);
+  _builtin_dictionary.iterate_all(&p);
   st->print_cr("%sShared Unregistered Dictionary", prefix);
-  _unregistered_dictionary.iterate(&p);
+  _unregistered_dictionary.iterate_all(&p);
   LambdaProxyClassDictionary::print_on(prefix, st, p.index(), is_static_archive);
 }
 
@@ -1464,10 +1517,10 @@ void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* pre
 void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
   if (CDSConfig::is_using_archive()) {
     if (is_static) {
-      _static_archive.print_on("", st, true);
+      _info_for_static_archive.print_on("", st, true);
     } else {
       if (DynamicArchive::is_mapped()) {
-        _dynamic_archive.print_on("Dynamic ", st, false);
+        _info_for_dynamic_archive.print_on("Dynamic ", st, false);
       }
     }
   }
@@ -1480,9 +1533,9 @@ void SystemDictionaryShared::print_on(outputStream* st) {
 
 void SystemDictionaryShared::print_table_statistics(outputStream* st) {
   if (CDSConfig::is_using_archive()) {
-    _static_archive.print_table_statistics("Static ", st, true);
+    _info_for_static_archive.print_table_statistics("Static ", st, true);
     if (DynamicArchive::is_mapped()) {
-      _dynamic_archive.print_table_statistics("Dynamic ", st, false);
+      _info_for_dynamic_archive.print_table_statistics("Dynamic ", st, false);
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/growableArray.hpp"
 
 void G1AbstractSubTask::record_work_item(uint worker_id, uint index, size_t count) {
@@ -40,7 +39,7 @@ const char* G1AbstractSubTask::name() const {
 }
 
 bool G1BatchedTask::try_claim_serial_task(int& task) {
-  task = AtomicAccess::fetch_then_add(&_num_serial_tasks_done, 1);
+  task = _num_serial_tasks_done.fetch_then_add(1);
   return task < _serial_tasks.length();
 }
 
@@ -96,8 +95,8 @@ void G1BatchedTask::work(uint worker_id) {
 }
 
 G1BatchedTask::~G1BatchedTask() {
-  assert(AtomicAccess::load(&_num_serial_tasks_done) >= _serial_tasks.length(),
-         "Only %d tasks of %d claimed", AtomicAccess::load(&_num_serial_tasks_done), _serial_tasks.length());
+  assert(_num_serial_tasks_done.load_relaxed() >= _serial_tasks.length(),
+         "Only %d tasks of %d claimed", _num_serial_tasks_done.load_relaxed(), _serial_tasks.length());
 
   for (G1AbstractSubTask* task : _parallel_tasks) {
     delete task;

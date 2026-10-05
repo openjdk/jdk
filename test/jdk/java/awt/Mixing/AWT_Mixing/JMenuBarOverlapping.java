@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 
-import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Robot;
@@ -30,12 +29,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
@@ -53,7 +54,7 @@ import test.java.awt.regtesthelpers.Util;
  *          java.desktop/java.awt.peer
  * @build java.desktop/java.awt.Helper
  * @build Util
- * @run main JMenuBarOverlapping
+ * @run main/timeout=180 JMenuBarOverlapping
  */
 public class JMenuBarOverlapping extends OverlappingTestBase {
 
@@ -72,6 +73,7 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.setLayout(new GridLayout(0,1));
         frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         menuBar = new JMenuBar();
@@ -104,7 +106,6 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         frame.setJMenuBar(menuBar);
 
         propagateAWTControls(frame);
-        frame.setVisible(true);
     }
 
     @Override
@@ -121,6 +122,7 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         // run robot
         Robot robot = Util.createRobot();
         robot.setAutoDelay(ROBOT_DELAY);
+        robot.mouseMove(0, 0);// Avoid capturing mouse cursor
 
         loc2.translate(75, 75);
         pixelPreCheck(robot, loc2, currentAwtControl);

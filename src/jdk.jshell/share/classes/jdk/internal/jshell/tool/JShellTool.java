@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1130,7 +1130,20 @@ public class JShellTool implements MessageHandler {
                         ? currentNameSpace.tid(sn)
                         : errorNamespace.tid(sn))
                 .remoteVMOptions(options.remoteVmOptions())
-                .compilerOptions(options.compilerOptions());
+                .compilerOptions(options.compilerOptions())
+                .binarySourceMapping(binary -> {
+                    String binaryPath = binary.toString();
+                    if (binaryPath.toLowerCase(Locale.ROOT).endsWith(".jar")) {
+                        String sourceCandidatePath =
+                                binaryPath.substring(0, binaryPath.length() - ".jar".length()) + "-sources.jar";
+                        Path sourceCandidate = Path.of(sourceCandidatePath);
+
+                        if (Files.exists(sourceCandidate)) {
+                            return List.of(binary, sourceCandidate);
+                        }
+                    }
+                    return List.of(binary);
+                });
         if (executionControlSpec != null) {
             builder.executionEngine(executionControlSpec);
         }
@@ -3362,7 +3375,19 @@ public class JShellTool implements MessageHandler {
             // error occurred, already reported
             return false;
         }
-        try (BufferedWriter writer = Files.newBufferedWriter(toPathResolvingUserHome(filename),
+        // Create missing parent directories before writing to target file
+        Path target;
+        try {
+            target = toPathResolvingUserHome(filename);
+            Path parent = target.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+        } catch (Exception e) {
+            errormsg("jshell.err.file.exception", "/save", filename, e);
+            return false;
+        }
+        try (BufferedWriter writer = Files.newBufferedWriter(target,
                 Charset.defaultCharset(),
                 CREATE, TRUNCATE_EXISTING, WRITE)) {
             if (at.hasOption("-history")) {

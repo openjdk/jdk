@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,23 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.ToLongBiFunction;
+import java.util.stream.Stream;
 import static java.nio.file.StandardOpenOption.*;
 
-import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
  * @bug 8293502
  * @requires (os.family == "linux")
  * @summary Ensure that copying from a file in /proc works
- * @run testng/othervm CopyProcFile
+ * @run junit/othervm CopyProcFile
  */
 public class CopyProcFile {
     static final String SOURCE = "/proc/version";
@@ -112,8 +115,8 @@ public class CopyProcFile {
         }
     }
 
-    @BeforeTest(alwaysRun=true)
-    public void createBufferedCopy() throws IOException {
+    @BeforeAll
+    public static void createBufferedCopy() throws IOException {
         System.out.printf("Using source file \"%s\"%n", SOURCE);
         try {
             theSize = bufferedCopy(SOURCE, BUFFERED_COPY);
@@ -129,8 +132,8 @@ public class CopyProcFile {
         }
     }
 
-    @AfterTest(alwaysRun=true)
-    public void deleteBufferedCopy() {
+    @AfterAll
+    public static void deleteBufferedCopy() {
         try {
             Files.delete(Path.of(BUFFERED_COPY));
         } catch (IOException ignore) {}
@@ -148,18 +151,17 @@ public class CopyProcFile {
         }
     }
 
-    @DataProvider
-    static Object[][] functions() throws IOException {
-        List<Object[]> funcs = new ArrayList<>();
-        funcs.add(new Object[] {new FHolder((s, d) -> copy(s, d))});
-        funcs.add(new Object[] {new FHolder((s, d) -> transferToIO(s, d))});
-        funcs.add(new Object[] {new FHolder((s, d) -> transferToNIO(s, d))});
-        funcs.add(new Object[] {new FHolder((s, d) -> transferFrom(s, d))});
-        return funcs.toArray(Object[][]::new);
+    static Stream<FHolder> functions() throws IOException {
+        return Stream.of
+            (new FHolder((s, d) -> copy(s, d)),
+             new FHolder((s, d) -> transferToIO(s, d)),
+             new FHolder((s, d) -> transferToNIO(s, d)),
+             new FHolder((s, d) -> transferFrom(s, d)));
     }
 
-    @Test(dataProvider = "functions")
-    public static void testCopyAndTransfer(FHolder f) throws IOException {
+    @ParameterizedTest
+    @MethodSource("functions")
+    public void testCopyAndTransfer(FHolder f) throws IOException {
         try {
             long size = f.apply(SOURCE, TARGET);
             if (size != theSize) {
@@ -168,9 +170,7 @@ public class CopyProcFile {
             }
             long mismatch = Files.mismatch(Path.of(BUFFERED_COPY),
                                            Path.of(TARGET));
-            if (mismatch != -1) {
-                throw new RuntimeException("Target does not match copy");
-            }
+            assertEquals(-1, mismatch, "Target does not match copy");
         } finally {
             try {
                 Files.delete(Path.of(TARGET));

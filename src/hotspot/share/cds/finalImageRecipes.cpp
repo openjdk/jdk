@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "cds/finalImageRecipes.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -89,7 +90,9 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
         if (field_entries != nullptr) {
           for (int i = 0; i < field_entries->length(); i++) {
             ResolvedFieldEntry* rfe = field_entries->adr_at(i);
-            if (rfe->is_resolved(Bytecodes::_getfield) ||
+            if (rfe->is_resolved(Bytecodes::_getstatic) ||
+                rfe->is_resolved(Bytecodes::_putstatic) ||
+                rfe->is_resolved(Bytecodes::_getfield) ||
                 rfe->is_resolved(Bytecodes::_putfield)) {
               cp_indices.append(rfe->constant_pool_index());
               flags |= CP_RESOLVE_FIELD_AND_METHOD;
@@ -127,6 +130,14 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
     }
 
     if (cp_indices.length() > 0) {
+      LogStreamHandle(Trace, aot, resolve) log;
+      if (log.is_enabled()) {
+        log.print("ConstantPool entries for %s to be pre-resolved:", k->external_name());
+        for (int i = 0; i < cp_indices.length(); i++) {
+          log.print(" %d", cp_indices.at(i));
+        }
+        log.print("\n");
+      }
       tmp_cp_recipes.append(ArchiveUtils::archive_array(&cp_indices));
     } else {
       tmp_cp_recipes.append(nullptr);
@@ -196,6 +207,8 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
 
         if (ik->has_aot_safe_initializer() && (flags & WAS_INITED) != 0) {
           assert(ik->class_loader() == nullptr, "supported only for boot classes for now");
+          ResourceMark rm(THREAD);
+          log_info(aot, init)("Initializing %s", ik->external_name());
           ik->initialize(CHECK);
         }
       }

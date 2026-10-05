@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import javax.crypto.spec.*;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.security.util.Debug;
 import sun.security.jca.*;
 import sun.security.util.KnownOIDs;
@@ -263,7 +265,7 @@ public class Cipher {
     }
 
     /**
-     * Creates a {code Cipher} object. Called internally by {code NullCipher}.
+     * Creates a {@code Cipher} object. Called internally by {@code NullCipher}.
      *
      * @param cipherSpi the delegate
      * @param transformation the transformation
@@ -286,7 +288,32 @@ public class Cipher {
         this.lock = new Object();
     }
 
-    private static final String SHA512TRUNCATED = "SHA512/2";
+    // for special handling SHA-512/224, SHA-512/256, SHA512/224, SHA512/256
+    static int indexOfRealSlash(String s, int fromIndex) {
+        while (true) {
+            int pos = s.indexOf('/', fromIndex);
+            // 512/2
+            if (pos > 3 && pos + 1 < s.length()
+                    && s.charAt(pos - 3) == '5'
+                    && s.charAt(pos - 2) == '1'
+                    && s.charAt(pos - 1) == '2'
+                    && s.charAt(pos + 1) == '2') {
+                fromIndex = pos + 1;
+                // see 512/2, find next
+            } else {
+                return pos;
+            }
+        }
+    }
+
+    static String reqNonEmpty(String in, String msg)
+            throws NoSuchAlgorithmException {
+        in = in.trim();
+        if (in.isEmpty()) {
+            throw new NoSuchAlgorithmException(msg);
+        }
+        return in;
+    }
 
     // Parse the specified cipher transformation for algorithm and the
     // optional mode and padding. If the transformation contains only
@@ -305,42 +332,34 @@ public class Cipher {
          * 2) feedback component (e.g., CFB) - optional
          * 3) padding component (e.g., PKCS5Padding) - optional
          */
-
-        // check if the transformation contains algorithms with "/" in their
-        // name which can cause the parsing logic to go wrong
-        int sha512Idx = transformation.toUpperCase(Locale.ENGLISH)
-                .indexOf(SHA512TRUNCATED);
-        int startIdx = (sha512Idx == -1 ? 0 :
-                sha512Idx + SHA512TRUNCATED.length());
-        int endIdx = transformation.indexOf('/', startIdx);
-
-        boolean algorithmOnly = (endIdx == -1);
-        String algo = (algorithmOnly ? transformation.trim() :
-                transformation.substring(0, endIdx).trim());
-        if (algo.isEmpty()) {
-            throw new NoSuchAlgorithmException("Invalid transformation: " +
-                                   "algorithm not specified-"
-                                   + transformation);
+        int endIdx = indexOfRealSlash(transformation, 0);
+        if (endIdx == -1) { // algo only, done
+            return new String[] { reqNonEmpty(transformation,
+                        "Invalid transformation: algorithm not specified")
+            };
         }
-        if (algorithmOnly) { // done
-            return new String[] { algo };
+        // must be algo/mode/padding
+        String algo = reqNonEmpty(transformation.substring(0, endIdx),
+                    "Invalid transformation: algorithm not specified");
+
+        int startIdx = endIdx + 1;
+        endIdx = indexOfRealSlash(transformation, startIdx);
+        if (endIdx == -1) {
+            throw new NoSuchAlgorithmException(
+                    "Invalid transformation format: " + transformation);
+        }
+        String mode = reqNonEmpty(transformation.substring(startIdx,
+                endIdx), "Invalid transformation: missing mode");
+
+        startIdx = endIdx + 1;
+        endIdx = indexOfRealSlash(transformation, startIdx);
+        if (endIdx == -1) {
+            return new String[] { algo, mode,
+                    reqNonEmpty(transformation.substring(startIdx),
+                            "Invalid transformation: missing padding") };
         } else {
-            // continue parsing mode and padding
-            startIdx = endIdx+1;
-            endIdx = transformation.indexOf('/', startIdx);
-            if (endIdx == -1) {
-                throw new NoSuchAlgorithmException("Invalid transformation"
-                            + " format:" + transformation);
-            }
-            String mode = transformation.substring(startIdx, endIdx).trim();
-            String padding = transformation.substring(endIdx+1).trim();
-            // ensure mode and padding are specified
-            if (mode.isEmpty() || padding.isEmpty()) {
-                throw new NoSuchAlgorithmException("Invalid transformation: " +
-                                   "missing mode and/or padding-"
-                                   + transformation);
-            }
-            return new String[] { algo, mode, padding };
+            throw new NoSuchAlgorithmException(
+                    "Invalid transformation format: " + transformation);
         }
     }
 
@@ -498,8 +517,18 @@ public class Cipher {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -524,6 +553,7 @@ public class Cipher {
      *
      * @see java.security.Provider
      */
+    @CallerSensitive
     public static final Cipher getInstance(String transformation)
             throws NoSuchAlgorithmException, NoSuchPaddingException
     {
@@ -535,6 +565,11 @@ public class Cipher {
         if (!CryptoAlgorithmConstraints.permits("Cipher", transformation)) {
             throw new NoSuchAlgorithmException(transformation +
                     " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("Cipher", transformation)) {
+            CryptoAlgorithmConstraints.warn("Cipher", transformation,
+                    Reflection.getCallerClass());
         }
 
         List<Transform> transforms = getTransforms(transformation);
@@ -606,11 +641,24 @@ public class Cipher {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
@@ -643,6 +691,7 @@ public class Cipher {
      *
      * @see java.security.Provider
      */
+    @CallerSensitive
     public static final Cipher getInstance(String transformation,
                                            String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException,
@@ -659,7 +708,7 @@ public class Cipher {
             throw new NoSuchProviderException("No such provider: " +
                                               provider);
         }
-        return getInstance(transformation, p);
+        return getInstance(transformation, p, Reflection.getCallerClass());
     }
 
     private String getProviderName() {
@@ -688,11 +737,24 @@ public class Cipher {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
@@ -722,6 +784,7 @@ public class Cipher {
      *
      * @see java.security.Provider
      */
+    @CallerSensitive
     public static final Cipher getInstance(String transformation,
                                            Provider provider)
             throws NoSuchAlgorithmException, NoSuchPaddingException
@@ -733,10 +796,25 @@ public class Cipher {
             throw new IllegalArgumentException("Missing provider");
         }
 
+        return getInstance(transformation, provider, Reflection.getCallerClass());
+    }
+
+    private static Cipher getInstance(String transformation, Provider provider,
+            Class<?> callerClass)
+            throws NoSuchAlgorithmException, NoSuchPaddingException {
+        if (provider == null) {
+            throw new IllegalArgumentException("Missing provider");
+        }
+
         // throws NoSuchAlgorithmException if java.security disables it
         if (!CryptoAlgorithmConstraints.permits("Cipher", transformation)) {
             throw new NoSuchAlgorithmException(transformation +
                     " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("Cipher", transformation)) {
+            CryptoAlgorithmConstraints.warn("Cipher", transformation,
+                    callerClass);
         }
 
         Exception failure = null;
@@ -2673,7 +2751,7 @@ public class Cipher {
     }
 
     /**
-     * Returns an {code AlgorithmParameterSpec} object which contains
+     * Returns an {@code AlgorithmParameterSpec} object which contains
      * the maximum {@code Cipher} parameter value according to the
      * jurisdiction policy file. If JCE unlimited strength jurisdiction
      * policy files are installed or there is no maximum limit on the
@@ -2681,7 +2759,7 @@ public class Cipher {
      * {@code null} will be returned.
      *
      * @param transformation the cipher transformation
-     * @return an {code AlgorithmParameterSpec} object which holds the maximum
+     * @return an {@code AlgorithmParameterSpec} object which holds the maximum
      * value or {@code null}
      * @throws NullPointerException if {@code transformation}
      * is {@code null}

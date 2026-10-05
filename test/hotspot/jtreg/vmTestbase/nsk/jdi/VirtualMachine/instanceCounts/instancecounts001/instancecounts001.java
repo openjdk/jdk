@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
  *      - the debugger process checks that instanceCounts returns 0 and no
  *        com.sun.jdi.ObjectCollectedException is thrown
  *
- * @requires !vm.graal.enabled
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.VirtualMachine.instanceCounts.instancecounts001.instancecounts001

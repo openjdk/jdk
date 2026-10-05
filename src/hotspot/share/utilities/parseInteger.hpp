@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,14 +26,14 @@
 #ifndef SHARE_UTILITIES_PARSE_INTEGER_HPP
 #define SHARE_UTILITIES_PARSE_INTEGER_HPP
 
+#include "cppstdlib/cstdlib.hpp"
+#include "cppstdlib/limits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include <errno.h>
-#include <limits>
-#include <stdlib.h>
 
 // *************************************************************************
 // ** Attention compatibility!                                            **
@@ -46,7 +46,7 @@ template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) =
 inline bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   // Don't use strtol -- on 64-bit builds, "long" could be either 32- or 64-bits
   // so the range tests could be tautological and might cause compiler warnings.
-  STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
+  static_assert(sizeof(long long) >= 8); // C++ specification
   errno = 0; // errno is thread safe
   long long v = strtoll(s, endptr, base);
   if (errno != 0 || v < min_jint || v > max_jint) {
@@ -62,7 +62,7 @@ inline bool parse_integer_impl(const char *s, char **endptr, int base, T* result
     return false;
   }
   // Don't use strtoul -- same reason as above.
-  STATIC_ASSERT(sizeof(unsigned long long) >= 8); // C++ specification
+  static_assert(sizeof(unsigned long long) >= 8); // C++ specification
   errno = 0; // errno is thread safe
   unsigned long long v = strtoull(s, endptr, base);
   if (errno != 0 || v > max_juint) {
@@ -115,7 +115,7 @@ inline bool multiply_by_1k(T& n) {
 // Example: "1024M:oom" will yield true, result=1G, endptr pointing to ":oom"
 
 template<typename T>
-static bool parse_integer(const char *s, char **endptr, T* result) {
+inline bool parse_integer(const char *s, char **endptr, T* result) {
 
   if (!isdigit(s[0]) && s[0] != '-') {
     // strtoll/strtoull may allow leading spaces. Forbid it.
@@ -124,7 +124,7 @@ static bool parse_integer(const char *s, char **endptr, T* result) {
 
   T n = 0;
   bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
-                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
+                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[2] == 'X'));
   char* remainder;
 
   if (!parse_integer_impl<T>(s, &remainder, (is_hex ? 16 : 10), &n)) {
@@ -163,7 +163,7 @@ static bool parse_integer(const char *s, char **endptr, T* result) {
 // characters. No remainder are allowed here.
 // Example: "100m" - okay, "100m:oom" -> not okay
 template<typename T>
-static bool parse_integer(const char *s, T* result) {
+inline bool parse_integer(const char *s, T* result) {
   char* remainder;
   bool rc = parse_integer(s, &remainder, result);
   rc = rc && (*remainder == '\0');

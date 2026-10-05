@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.jfr.internal;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -71,7 +72,7 @@ public final class JVM {
     /**
      * Begin recording events
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      */
     public static native void beginRecording();
 
@@ -83,7 +84,7 @@ public final class JVM {
     /**
      * End recording events, which includes flushing data in thread buffers
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      */
     public static native void endRecording();
@@ -144,7 +145,7 @@ public final class JVM {
     /**
      * Return unique identifier for stack trace.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @param skipCount number of frames to skip, or 0 if no frames should be
      *                  skipped
@@ -295,7 +296,7 @@ public final class JVM {
     /**
      * Sets the file where data should be written.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * <pre>
      * Recording  Previous  Current  Action
@@ -380,7 +381,7 @@ public final class JVM {
      * chunk, data should be written after GMT offset and size of metadata event
      * should be adjusted
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @param bytes binary representation of metadata descriptor
      */
@@ -409,7 +410,7 @@ public final class JVM {
     /**
      * Destroys native part of JFR. If already destroy, call is ignored.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @return if an instance was actually destroyed.
      *
@@ -658,6 +659,12 @@ public final class JVM {
     public static native long hostTotalSwapMemory();
 
     /**
+     * Returns the amount of memory used in the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostMemoryUsage();
+
+    /**
      * Emit a jdk.DataLoss event for the specified amount of bytes.
      *
      * @param bytes number of bytes that were lost
@@ -768,4 +775,14 @@ public final class JVM {
      * @return the unloaded IDs, or null if no unloading has occurred.
      */
     public static native long[] drainStaleMethodTracerIds();
+
+    /**
+     * The tryUpdateEpoch() method(s) takes a state object as an argument
+     * and returns true if the epoch was exclusively updated by the current thread.
+     *
+     * @param root A {@link java.lang.reflect.Field} instance root, not {@code null}
+     * @return {@code true} if the epoch was updated by the current thread.
+     */
+    @IntrinsicCandidate
+    public static native boolean tryUpdateEpoch(Field root);
 }

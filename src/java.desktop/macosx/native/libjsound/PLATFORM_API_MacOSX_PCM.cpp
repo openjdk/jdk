@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,8 +162,7 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
                 sampleRate,                 // sample rate
                 DAUDIO_PCM,                 // only accept PCM
                 bits == 8 ? FALSE : TRUE,   // signed
-                bits == 8 ? FALSE           // little-endian for 8bit
-                    : UTIL_IsBigEndianPlatform());
+                FALSE);                     // all supported macOS versions run on LE
         }
     }
     // add default format
@@ -175,7 +174,7 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
             defSampleRate,                  // sample rate
             DAUDIO_PCM,                     // PCM
             TRUE,                           // signed
-            UTIL_IsBigEndianPlatform());    // native endianness
+            FALSE);                         // native endianness; all supported macOS versions run on LE
     }
 
     TRACE0("<<DAUDIO_GetFormats\n");
@@ -765,10 +764,16 @@ static OSStatus InputCallback(void                          *inRefCon,
             }
             device->lastWrittenSampleTime = sampleTime + inNumberFrames;
 
-            int bytesWritten = device->resampler->Process(abl.mBuffers[0].mData, (int)abl.mBuffers[0].mDataByteSize, &device->ringBuffer);
+#ifdef USE_TRACE
+            int bytesWritten =
+#endif
+            device->resampler->Process(abl.mBuffers[0].mData, (int)abl.mBuffers[0].mDataByteSize, &device->ringBuffer);
             TRACE2("<<InputCallback (RESAMPLED, saved %d bytes of %d)\n", bytesWritten, (int)abl.mBuffers[0].mDataByteSize);
         } else {
-            int bytesWritten = device->ringBuffer.Write(abl.mBuffers[0].mData, (int)abl.mBuffers[0].mDataByteSize, false);
+#ifdef USE_TRACE
+            int bytesWritten =
+#endif
+            device->ringBuffer.Write(abl.mBuffers[0].mData, (int)abl.mBuffers[0].mDataByteSize, false);
             TRACE2("<<InputCallback (saved %d bytes of %d)\n", bytesWritten, (int)abl.mBuffers[0].mDataByteSize);
         }
     }

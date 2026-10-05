@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,16 +73,16 @@ public class ClearDirectivesFileStackTest extends AbstractTestBase {
                 // skip invalid command
                 command = Command.COMPILEONLY;
             }
-            CompileCommand compileCommand = new CompileCommand(command,
+            CompileCommand compileCommand = new CompileCommand(command, true,
                     methodDescriptor, cmdGen.generateCompiler(),
                     Scenario.Type.DIRECTIVE);
             builder.add(compileCommand);
         }
         // clear the stack
-        builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
+        builder.add(new JcmdCommand(Command.NONEXISTENT, true, null, null,
                 Scenario.Type.JCMD, Scenario.JcmdType.CLEAR));
         // print all directives after the clear
-        builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
+        builder.add(new JcmdCommand(Command.NONEXISTENT, true, null, null,
                 Scenario.Type.JCMD, Scenario.JcmdType.PRINT));
         Scenario scenario = builder.build();
         scenario.execute();

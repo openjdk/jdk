@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class ObjectHeap {
 
   /** iterate objects of given Klass. param 'includeSubtypes' tells whether to
    *  include objects of subtypes or not */
-  public void iterateObjectsOfKlass(HeapVisitor visitor, final Klass k, boolean includeSubtypes) {
+  public void iterateObjectsOfKlass(HeapVisitor visitor, final InstanceKlass k, boolean includeSubtypes) {
     if (includeSubtypes) {
       if (k.isFinal()) {
         // do the simpler "exact" klass loop
@@ -124,7 +124,7 @@ public class ObjectHeap {
   }
 
   /** iterate objects of given Klass (objects of subtypes included) */
-  public void iterateObjectsOfKlass(HeapVisitor visitor, final Klass k) {
+  public void iterateObjectsOfKlass(HeapVisitor visitor, final InstanceKlass k) {
     iterateObjectsOfKlass(visitor, k, true);
   }
 
@@ -180,7 +180,12 @@ public class ObjectHeap {
     Klass klass = Oop.getKlassForOopHandle(handle);
     if (klass != null) {
       if (klass instanceof TypeArrayKlass) return new TypeArray(handle, this);
+      if (klass instanceof FlatArrayKlass) return new FlatArray(handle, this);
       if (klass instanceof ObjArrayKlass) return new ObjArray(handle, this);
+
+      // ValueKlass should be evaluated before InstanceKlass
+      // because ValueKlass inherits InstanceKlass.
+      if (klass instanceof ValueKlass)    return new Value(handle, this);
       if (klass instanceof InstanceKlass) return new Instance(handle, this);
     }
 
@@ -190,6 +195,17 @@ public class ObjectHeap {
     }
 
     throw new UnknownOopException(handle.toString());
+  }
+
+  // This method is used to instantiate a holder object that contains
+  // the flattened field payload.
+  public Oop newOop(Address payload, ValueKlass klass, OopField field) {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(payload != null, "payload should not be null");
+    }
+    return field.hasNullMarker() && klass.isPayloadMarkedAsNull(payload)
+               ? null
+               : new FlattenedValue(payload, this, klass);
   }
 
   // Print all objects in the object heap

@@ -25,6 +25,7 @@ import java.text.*;
 import java.util.*;
 import java.io.*;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -170,10 +171,8 @@ public class DateFormatRegression {
     @Test
     public void Test4059917() {
         Locale locale = Locale.getDefault();
-        if (!TestUtils.usesAsciiDigits(locale)) {
-            System.out.println("Skipping this test because locale is " + locale);
-            return;
-        }
+        Assumptions.assumeTrue(TestUtils.usesAsciiDigits(locale),
+                locale + " does not use ASCII digits");
 
         SimpleDateFormat fmt;
         String myDate;

@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8359388
+ * @bug 8359388 8368984
  * @summary test that the Cipher.getInstance() would reject improper
  *     transformations with empty mode and/or padding.
  */
@@ -67,6 +67,9 @@ public class TestEmptyModePadding {
             "PBEWithHmacSHA512/256AndAES_128/CBC/ ",
             "PBEWithHmacSHA512/256AndAES_128//PKCS5Padding",
             "PBEWithHmacSHA512/256AndAES_128/ /PKCS5Padding",
+            // 4 or more components transformations
+            "PBEWithHmacSHA512///PKCS5Padding",
+            "AES/GCM/NoPadding///",
         };
 
         for (String t : testTransformations) {

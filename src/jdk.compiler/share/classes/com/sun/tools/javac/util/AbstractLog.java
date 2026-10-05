@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,16 @@ public abstract class AbstractLog {
      */
     public void warning(int pos, Warning warningKey) {
         report(diags.warning(null, source, wrap(pos), warningKey));
+    }
+
+    /** Report a warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param flag   A flag to set on the diagnostic
+     *  @param pos    The source position at which to report the warning.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void warning(DiagnosticFlag flag, int pos, Warning warningKey) {
+        report(diags.warning(flag, source, wrap(pos), warningKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.

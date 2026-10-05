@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     /**
      * Returns a user presentable description of this GTKColorChooserPane.
      */
+    @Override
     public String getDisplayName() {
         return (String)UIManager.get("GTKColorChooserPanel.nameText");
     }
@@ -129,6 +130,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     /**
      * Returns the mnemonic to use with <code>getDisplayName</code>.
      */
+    @Override
     public int getMnemonic() {
         String m = (String)UIManager.get("GTKColorChooserPanel.mnemonic");
 
@@ -145,6 +147,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     /**
      * Character to underline that represents the mnemonic.
      */
+    @Override
     public int getDisplayedMnemonicIndex() {
         String m = (String)UIManager.get(
                            "GTKColorChooserPanel.displayedMnemonicIndex");
@@ -159,14 +162,17 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         return -1;
     }
 
+    @Override
     public Icon getSmallDisplayIcon() {
         return null;
     }
 
+    @Override
     public Icon getLargeDisplayIcon() {
         return null;
     }
 
+    @Override
     public void uninstallChooserPanel(JColorChooser enclosingChooser) {
         super.uninstallChooserPanel(enclosingChooser);
         removeAll();
@@ -175,6 +181,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     /**
      * Builds and configures the widgets for the GTKColorChooserPanel.
      */
+    @Override
     protected void buildChooser() {
         triangle = new ColorTriangle();
         triangle.setName("GTKColorChooserPanel.triangle");
@@ -307,6 +314,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     /**
      * Refreshes the display from the model.
      */
+    @Override
     public void updateChooser() {
         if (!settingColor) {
             lastLabel.setBackground(getColorFromModel());
@@ -490,6 +498,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     /**
      * ChangeListener method, updates the necessary display widgets.
      */
+    @Override
     public void stateChanged(ChangeEvent e) {
         if (settingColor) {
             return;
@@ -687,6 +696,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
             return circleY + getIndicatorSize() / 2 - getWheelYOrigin();
         }
 
+        @Override
         protected void processEvent(AWTEvent e) {
 
             if (!(getGTKColorChooserPanel().isEnabled())) {
@@ -741,6 +751,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
             super.processEvent(e);
         }
 
+        @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
 
@@ -1259,6 +1270,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
             this.type = type;
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             ColorTriangle triangle = (ColorTriangle)e.getSource();
 
@@ -1318,6 +1330,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class OpaqueLabel extends JLabel {
+        @Override
         public boolean isOpaque() {
             return true;
         }

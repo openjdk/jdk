@@ -439,7 +439,7 @@ class MethodFamily : public ResourceObj {
     StreamIndentor si(str, indent * 2);
     str->print("Selected method: ");
     print_method(str, _selected_target);
-    Klass* method_holder = _selected_target->method_holder();
+    InstanceKlass* method_holder = _selected_target->method_holder();
     if (!method_holder->is_interface()) {
       str->print(" : in superclass");
     }

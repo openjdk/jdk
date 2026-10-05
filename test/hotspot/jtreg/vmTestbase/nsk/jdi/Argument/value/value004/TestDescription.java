@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@
  *     4778296 TEST_BUG: debuggee VM intemittently hangs after resuming
  *     - debuggee wrapper is used to handle VMStartEvent
  *
+ * @requires vm.flagless
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.Argument.value.value004

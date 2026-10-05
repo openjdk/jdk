@@ -34,7 +34,7 @@ package template_framework.examples;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 
 public class TestSimple {
 
@@ -61,7 +61,7 @@ public class TestSimple {
     // Generate a source Java file as String
     public static String generate() {
         // Create a Template with two arguments.
-        var template = Template.make("arg1", "arg2", (Integer arg1, String arg2) -> body(
+        var template = Template.make("arg1", "arg2", (Integer arg1, String arg2) -> scope(
             """
             package p.xyz;
             public class InnerTest {

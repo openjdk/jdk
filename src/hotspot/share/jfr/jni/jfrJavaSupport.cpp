@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -228,7 +229,7 @@ void JfrJavaSupport::new_object_global_ref(JfrJavaArguments* args, TRAPS) {
 jstring JfrJavaSupport::new_string(const char* c_str, TRAPS) {
   assert(c_str != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
-  const oop result = java_lang_String::create_oop_from_str(c_str, THREAD);
+  const oop result = java_lang_String::create_oop_from_str(c_str, CHECK_NULL);
   return (jstring)local_jni_handle(result, THREAD);
 }
 
@@ -528,7 +529,7 @@ const char* JfrJavaSupport::c_str(jstring string, Thread* thread, bool c_heap /*
 
 void JfrJavaSupport::free_c_str(const char* str, bool c_heap) {
   if (c_heap) {
-    FREE_C_HEAP_ARRAY(char, str);
+    FREE_C_HEAP_ARRAY(str);
   }
 }
 
@@ -542,7 +543,7 @@ Symbol** JfrJavaSupport::symbol_array(jobjectArray string_array, JavaThread* thr
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   assert(string_array != nullptr, "invariant");
   assert(result_array_size != nullptr, "invariant");
-  objArrayOop arrayOop = objArrayOop(resolve_non_null(string_array));
+  refArrayOop arrayOop = oop_cast<refArrayOop>(resolve_non_null(string_array));
   const int length = arrayOop->length();
   *result_array_size = length;
   Symbol** result_array = allocate_symbol_array(c_heap, length, thread);

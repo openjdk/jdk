@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,6 +80,10 @@
 #define   RISCV_HWPROBE_EXT_ZTSO                (1ULL << 33)
 #define   RISCV_HWPROBE_EXT_ZACAS               (1ULL << 34)
 #define   RISCV_HWPROBE_EXT_ZICOND              (1ULL << 35)
+#define   RISCV_HWPROBE_EXT_ZCB                 (1ULL << 44)
+#define   RISCV_HWPROBE_EXT_ZAWRS               (1ULL << 48)
+#define   RISCV_HWPROBE_EXT_ZABHA               (1ULL << 58)
+#define   RISCV_HWPROBE_EXT_ZALASR              (1ULL << 59)
 
 #define RISCV_HWPROBE_KEY_CPUPERF_0     5
 #define   RISCV_HWPROBE_MISALIGNED_UNKNOWN      (0 << 0)
@@ -167,26 +171,19 @@ static bool is_set(int64_t key, uint64_t value_mask) {
 void RiscvHwprobe::add_features_from_query_result() {
   assert(rw_hwprobe_completed, "hwprobe not init yet.");
 
-  if (is_valid(RISCV_HWPROBE_KEY_MVENDORID)) {
-    VM_Version::mvendorid.enable_feature(query[RISCV_HWPROBE_KEY_MVENDORID].value);
-  }
-  if (is_valid(RISCV_HWPROBE_KEY_MARCHID)) {
-    VM_Version::marchid.enable_feature(query[RISCV_HWPROBE_KEY_MARCHID].value);
-  }
-  if (is_valid(RISCV_HWPROBE_KEY_MIMPID)) {
-    VM_Version::mimpid.enable_feature(query[RISCV_HWPROBE_KEY_MIMPID].value);
-  }
+  // ====== extensions ======
+  //
   if (is_set(RISCV_HWPROBE_KEY_BASE_BEHAVIOR, RISCV_HWPROBE_BASE_BEHAVIOR_IMA)) {
-    VM_Version::ext_I.enable_feature();
-    VM_Version::ext_M.enable_feature();
-    VM_Version::ext_A.enable_feature();
-  }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_FD)) {
-    VM_Version::ext_F.enable_feature();
-    VM_Version::ext_D.enable_feature();
+    VM_Version::ext_a.enable_feature();
+    VM_Version::ext_i.enable_feature();
+    VM_Version::ext_m.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_C)) {
-    VM_Version::ext_C.enable_feature();
+    VM_Version::ext_c.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_FD)) {
+    VM_Version::ext_d.enable_feature();
+    VM_Version::ext_f.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_V)) {
     // Linux signal return bug when using vector with vlen > 128b in pre 6.8.5.
@@ -199,66 +196,53 @@ void RiscvHwprobe::add_features_from_query_result() {
         log.info("Vector not enabled automatically via hwprobe, but can be turned on with -XX:+UseRVV.");
       }
     } else {
-      VM_Version::ext_V.enable_feature();
+      VM_Version::ext_v.enable_feature();
     }
   }
+
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
+    VM_Version::ext_Zacas.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZABHA)) {
+    VM_Version::ext_Zabha.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZALASR)) {
+    VM_Version::ext_Zalasr.enable_feature();
+  }
+#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBA)) {
     VM_Version::ext_Zba.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBB)) {
     VM_Version::ext_Zbb.enable_feature();
   }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
-    VM_Version::ext_Zbs.enable_feature();
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBC)) {
+    VM_Version::ext_Zbc.enable_feature();
   }
 #ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
-    VM_Version::ext_Zicboz.enable_feature();
-  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBKB)) {
     VM_Version::ext_Zbkb.enable_feature();
   }
 #endif
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
+    VM_Version::ext_Zbs.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFA)) {
+    VM_Version::ext_Zfa.enable_feature();
+  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
     VM_Version::ext_Zfh.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFHMIN)) {
     VM_Version::ext_Zfhmin.enable_feature();
   }
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBB)) {
-    VM_Version::ext_Zvbb.enable_feature();
-  }
-#endif
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBC)) {
-    VM_Version::ext_Zvbc.enable_feature();
-  }
-#endif
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNED) &&
-      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNHB) &&
-      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKB)   &&
-      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKT)) {
-    VM_Version::ext_Zvkn.enable_feature();
-  }
-#endif
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
-    VM_Version::ext_Zvfh.enable_feature();
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZCB)) {
+    VM_Version::ext_Zcb.enable_feature();
   }
 #ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFA)) {
-    VM_Version::ext_Zfa.enable_feature();
-  }
-#endif
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
-    VM_Version::ext_Ztso.enable_feature();
-  }
-#endif
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
-    VM_Version::ext_Zacas.enable_feature();
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
+    VM_Version::ext_Zicboz.enable_feature();
   }
   // Currently tests shows that cmove using Zicond instructions will bring
   // performance regression, but to get a test coverage all the time, will
@@ -266,7 +250,51 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
     VM_Version::ext_Zicond.enable_feature();
   }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
+    VM_Version::ext_Ztso.enable_feature();
+  }
 #endif
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBC)) {
+    VM_Version::ext_Zvbc.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBB)) {
+    VM_Version::ext_Zvbb.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
+    VM_Version::ext_Zvfh.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFHMIN)) {
+    VM_Version::ext_Zvfhmin.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNED) &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNHB) &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKB)   &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKT)) {
+    VM_Version::ext_Zvkn.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKG)) {
+    VM_Version::ext_Zvkg.enable_feature();
+  }
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZAWRS)) {
+    VM_Version::ext_Zawrs.enable_feature();
+  }
+#endif
+
+  // ====== non-extensions ======
+  //
+  // For value-type keys, the kernel returns (uint64_t)-1 when CPUs in the
+  // query set disagree (different core types). Skip these as the value is
+  // not meaningful for the system as a whole.
+  if (is_valid(RISCV_HWPROBE_KEY_MARCHID) && query[RISCV_HWPROBE_KEY_MARCHID].value != (uint64_t)-1) {
+    VM_Version::marchid.enable_feature(query[RISCV_HWPROBE_KEY_MARCHID].value);
+  }
+  if (is_valid(RISCV_HWPROBE_KEY_MIMPID) && query[RISCV_HWPROBE_KEY_MIMPID].value != (uint64_t)-1) {
+    VM_Version::mimpid.enable_feature(query[RISCV_HWPROBE_KEY_MIMPID].value);
+  }
+  if (is_valid(RISCV_HWPROBE_KEY_MVENDORID) && query[RISCV_HWPROBE_KEY_MVENDORID].value != (uint64_t)-1) {
+    VM_Version::mvendorid.enable_feature(query[RISCV_HWPROBE_KEY_MVENDORID].value);
+  }
   // RISCV_HWPROBE_KEY_CPUPERF_0 is deprecated and returns similar values
   // to RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF. Keep it there for backward
   // compatibility with old kernels.
@@ -277,7 +305,6 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::unaligned_scalar.enable_feature(
        query[RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF].value);
   }
-
   if (is_valid(RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF)) {
     VM_Version::unaligned_vector.enable_feature(
        query[RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF].value);

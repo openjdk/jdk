@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,7 +476,6 @@ void AllocClass::forms_do(FormClosure* f) {
 FrameForm::FrameForm() {
   _sync_stack_slots = nullptr;
   _inline_cache_reg = nullptr;
-  _interpreter_frame_pointer_reg = nullptr;
   _cisc_spilling_operand_name = nullptr;
   _frame_pointer = nullptr;
   _c_frame_pointer = nullptr;

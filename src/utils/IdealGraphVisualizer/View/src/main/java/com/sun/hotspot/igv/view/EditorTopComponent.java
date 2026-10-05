@@ -28,8 +28,10 @@ import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputLiveRange;
 import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.util.StringUtils;
@@ -37,8 +39,14 @@ import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.*;
+import java.util.Set;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import org.openide.actions.RedoAction;
@@ -132,7 +140,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         }
 
         diagramViewModel.addTitleCallback(changedGraph -> {
-            setDisplayName(changedGraph.getDisplayName());
+            setDisplayName(getGraphDisplayName(changedGraph));
             setToolTipText(diagramViewModel.getGroup().getDisplayName());
         });
 
@@ -252,9 +260,23 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     }
 
     private void graphChanged(DiagramViewModel model) {
-        setDisplayName(model.getGraph().getDisplayName());
+        setDisplayName(getGraphDisplayName(model.getGraph()));
         setToolTipText(model.getGroup().getDisplayName());
         graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
+    }
+
+    public static String getGraphDisplayName(InputGraph graph) {
+        if (graph.isDiffGraph()) {
+            return getGraphDisplayName(graph.getFirstGraph()) + " Δ " +
+                   getGraphDisplayName(graph.getSecondGraph());
+        } else {
+            String suffixTemplate = Settings.get().get(Settings.GRAPH_NAME_SUFFIX,
+                                                       Settings.GRAPH_NAME_SUFFIX_DEFAULT);
+            String suffix = graph.getProperties().resolveString(suffixTemplate);
+            String emptySuffix = new Properties().resolveString(suffixTemplate);
+            String graphNameSuffix = suffix.equals(emptySuffix) ? "" : " " + suffix;
+            return graph.getIndex() + 1 + ". " + graph.getName() + graphNameSuffix;
+        }
     }
 
     public DiagramViewModel getModel() {

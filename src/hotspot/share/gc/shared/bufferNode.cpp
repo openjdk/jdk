@@ -22,11 +22,10 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/debug.hpp"
-
-#include <new>
 
 BufferNode::AllocatorConfig::AllocatorConfig(size_t size)
   : _buffer_capacity(size)
@@ -42,7 +41,7 @@ void* BufferNode::AllocatorConfig::allocate() {
 
 void BufferNode::AllocatorConfig::deallocate(void* node) {
   assert(node != nullptr, "precondition");
-  FREE_C_HEAP_ARRAY(char, node);
+  FREE_C_HEAP_ARRAY(node);
 }
 
 BufferNode::Allocator::Allocator(const char* name, size_t buffer_capacity) :

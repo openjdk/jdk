@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * @build jdk.test.lib.net.SimpleSSLContext
  * @summary Verify that QuicTransportExceptions thrown by transport parameter consumer
  *      are propagated to the QuicTLSEngine user
- * @run junit/othervm QuicTLSEngineBadParametersTest
+ * @run junit/othervm ${test.main.class}
  */
 public class QuicTLSEngineBadParametersTest {
 
     @Test
     void testServerConsumerExceptionPropagated() throws IOException {
-        SSLContext ctx = SimpleSSLContext.getContext("TLSv1.3");
+        SSLContext ctx = SimpleSSLContext.findSSLContext("TLSv1.3");
         QuicTLSContext qctx = new QuicTLSContext(ctx);
         QuicTLSEngine clientEngine = createClientEngine(qctx);
         QuicTLSEngine serverEngine = createServerEngine(qctx);
@@ -68,7 +68,7 @@ public class QuicTLSEngineBadParametersTest {
 
     @Test
     void testClientConsumerExceptionPropagated() throws IOException, QuicTransportException {
-        SSLContext ctx = SimpleSSLContext.getContext("TLSv1.3");
+        SSLContext ctx = SimpleSSLContext.findSSLContext("TLSv1.3");
         QuicTLSContext qctx = new QuicTLSContext(ctx);
         QuicTLSEngine clientEngine = createClientEngine(qctx);
         QuicTLSEngine serverEngine = createServerEngine(qctx);

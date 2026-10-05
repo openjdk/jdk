@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,8 @@ class ICache : public AbstractICache {
 
  public:
   enum {
-    // Actually, cache line size is 64, but keeping it as it is to be
-    // on the safe side on ALL PPC64 implementations.
-    log2_line_size = 5,
+    // Cache line size is 128 on all supported PPC64 implementations.
+    log2_line_size = 7,
     line_size      = 1 << log2_line_size
   };
 

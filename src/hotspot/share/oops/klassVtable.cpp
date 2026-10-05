@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1066,7 +1066,7 @@ void klassVtable::dump_vtable() {
     Method* m = unchecked_method_at(i);
     if (m != nullptr) {
       tty->print("      (%5d)  ", i);
-      m->access_flags().print_on(tty);
+      m->print_access_flags(tty);
       if (m->is_default_method()) {
         tty->print("default ");
       }
@@ -1230,10 +1230,10 @@ void klassItable::initialize_itable_and_check_constraints(TRAPS) {
 }
 
 inline bool interface_method_needs_itable_index(Method* m) {
-  if (m->is_static())             return false; // e.g., Stream.empty
-  if (m->is_object_initializer()) return false; // <init>
-  if (m->is_static_initializer()) return false; // <clinit>
-  if (m->is_private())            return false; // uses direct call
+  if (m->is_static())             return false;   // e.g., Stream.empty
+  if (m->is_private())            return false;   // uses direct call
+  if (m->is_object_constructor()) return false;   // <init>(...)V
+  if (m->is_class_initializer())  return false;   // <clinit>()V
   // If an interface redeclares a method from java.lang.Object,
   // it should already have a vtable index, don't touch it.
   // e.g., CharSequence.toString (from initialize_vtable)
@@ -1421,7 +1421,7 @@ void klassItable::dump_itable() {
     Method* m = ime->method();
     if (m != nullptr) {
       tty->print("      (%5d)  ", i);
-      m->access_flags().print_on(tty);
+      m->print_access_flags(tty);
       if (m->is_default_method()) {
         tty->print("default ");
       }

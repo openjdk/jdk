@@ -65,8 +65,8 @@ void G1SurvRateGroup::start_adding_regions() {
 
 void G1SurvRateGroup::stop_adding_regions() {
   if (_num_added_regions > _stats_arrays_length) {
-    _accum_surv_rate_pred = REALLOC_C_HEAP_ARRAY(double, _accum_surv_rate_pred, _num_added_regions, mtGC);
-    _surv_rate_predictors = REALLOC_C_HEAP_ARRAY(TruncatedSeq*, _surv_rate_predictors, _num_added_regions, mtGC);
+    _accum_surv_rate_pred = REALLOC_C_HEAP_ARRAY(_accum_surv_rate_pred, _num_added_regions, mtGC);
+    _surv_rate_predictors = REALLOC_C_HEAP_ARRAY(_surv_rate_predictors, _num_added_regions, mtGC);
 
     for (uint i = _stats_arrays_length; i < _num_added_regions; ++i) {
       // Initialize predictors and accumulated survivor rate predictions.

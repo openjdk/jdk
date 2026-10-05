@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@ package jdk.test.lib.jittester;
 
 import java.lang.reflect.Executable;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
@@ -35,7 +35,7 @@ import static org.testng.Assert.*;
  * @library /test/lib
  *          /test/hotspot/jtreg/testlibrary/jittester/src
  *
- * @run testng jdk.test.lib.jittester.MethodTemplateTest
+ * @run junit jdk.test.lib.jittester.MethodTemplateTest
  */
 public class MethodTemplateTest {
 

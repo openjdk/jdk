@@ -850,6 +850,9 @@ public class Compatibility {
             if (Test.CERTIFICATE_SELF_SIGNED.equals(line)) continue;
             if (Test.HAS_EXPIRED_CERT_VERIFYING_WARNING.equals(line)
                     && signItem.certInfo.expired) continue;
+
+            if (line.contains(Test.OUTDATED_KEYSTORE_WARNING1)) continue;
+            if (line.contains(Test.OUTDATED_KEYSTORE_WARNING2)) continue;
             System.out.println("verifyingStatus: unexpected line: " + line);
             return Status.ERROR; // treat unexpected warnings as error
         }

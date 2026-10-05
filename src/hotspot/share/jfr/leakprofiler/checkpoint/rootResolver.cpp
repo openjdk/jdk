@@ -26,7 +26,6 @@
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
@@ -325,12 +324,7 @@ bool ReferenceToThreadRootClosure::do_thread_roots(JavaThread* jt) {
   return false;
 }
 
-class RootResolverMarkScope : public MarkScope {
-};
-
 void RootResolver::resolve(RootCallback& callback) {
-  RootResolverMarkScope mark_scope;
-
   // thread local roots
   ReferenceToThreadRootClosure rtrc(callback);
   if (rtrc.complete()) {

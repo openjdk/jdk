@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,19 @@
  *
  */
 
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "oops/method.hpp"
 #include "oops/resolvedMethodEntry.hpp"
+
+static_assert(std::is_trivially_copyable_v<ResolvedMethodEntry>);
+
+// Detect inadvertently introduced trailing padding.
+class ResolvedMethodEntryWithExtra : public ResolvedMethodEntry {
+  u1 _extra_field;
+};
+static_assert(sizeof(ResolvedMethodEntryWithExtra) > sizeof(ResolvedMethodEntry));
 
 bool ResolvedMethodEntry::check_no_old_or_obsolete_entry() {
   // return false if m refers to a non-deleted old or obsolete method
@@ -39,20 +49,28 @@ bool ResolvedMethodEntry::check_no_old_or_obsolete_entry() {
 void ResolvedMethodEntry::reset_entry() {
   if (has_resolved_references_index()) {
     u2 saved_resolved_references_index = _entry_specific._resolved_references_index;
-    u2 saved_cpool_index = _cpool_index;
-    memset(this, 0, sizeof(*this));
+    *this = ResolvedMethodEntry(_cpool_index);
     set_resolved_references_index(saved_resolved_references_index);
-    _cpool_index = saved_cpool_index;
   } else {
-    u2 saved_cpool_index = _cpool_index;
-    memset(this, 0, sizeof(*this));
-    _cpool_index = saved_cpool_index;
+    *this = ResolvedMethodEntry(_cpool_index);
   }
 }
 
 #if INCLUDE_CDS
 void ResolvedMethodEntry::remove_unshareable_info() {
   reset_entry();
+}
+
+// Called from AOTArtifactFinder.
+void ResolvedMethodEntry::record_archivable_classes() {
+  if (_method == nullptr) {
+    assert(bytecode2() == Bytecodes::_invokevirtual, "");
+  } else {
+    AOTArtifactFinder::add_cached_class(_method->method_holder());
+  }
+  if (bytecode1() == Bytecodes::_invokeinterface) {
+    AOTArtifactFinder::add_cached_class(_entry_specific._interface_klass);
+  }
 }
 
 void ResolvedMethodEntry::mark_and_relocate(ConstantPool* src_cp) {

@@ -1,4 +1,4 @@
-# Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -93,9 +93,10 @@ JAVADOC_DISABLED_DOCLINT_WARNINGS := missing
 JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 
 # The initial set of options for javadoc
-JAVADOC_OPTIONS := -use -keywords -notimestamp \
+JAVADOC_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
     -serialwarn -encoding utf-8 -docencoding utf-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
+    --enable-preview -source $(JDK_SOURCE_TARGET_VERSION) \
     --override-methods=summary
 
 # The reference options must stay stable to allow for comparisons across the
@@ -291,8 +292,7 @@ define SetupApiDocsGenerationBody
   $1_INDIRECT_EXPORTS := $$(call FindTransitiveIndirectDepsForModules, $$($1_MODULES))
   $1_ALL_MODULES := $$(sort $$($1_MODULES) $$($1_INDIRECT_EXPORTS))
 
-  $1_JAVA_ARGS := -Dextlink.spec.version=$$(VERSION_SPECIFICATION) \
-	-Djspec.version=$$(VERSION_SPECIFICATION)
+  $1_JAVA_ARGS := -Dextlink.spec.version=$$(VERSION_SPECIFICATION)
 
   ifeq ($$(ENABLE_FULL_DOCS), true)
     $1_SEALED_GRAPHS_DIR := $$(SUPPORT_OUTPUTDIR)/docs/$1-sealed-graphs

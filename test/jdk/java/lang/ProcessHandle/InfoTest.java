@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,15 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import org.testng.Assert;
-import org.testng.TestNG;
-import org.testng.annotations.Test;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
+ * @summary Functions of ProcessHandle.Info
  * @bug 8077350 8081566 8081567 8098852 8136597
  * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
@@ -59,8 +59,7 @@ import jdk.test.lib.Utils;
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- * @run testng InfoTest
- * @summary Functions of ProcessHandle.Info
+ * @run junit InfoTest
  * @author Roger Riggs
  */
 
@@ -82,19 +81,11 @@ public class InfoTest {
         }
     }
 
-    // Main can be used to run the tests from the command line with only testng.jar.
-    public static void main(String[] args) {
-        Class<?>[] testclass = {InfoTest.class};
-        TestNG testng = new TestNG();
-        testng.setTestClasses(testclass);
-        testng.run();
-    }
-
     /**
      * Test that cputime used shows up in ProcessHandle.info
      */
     @Test
-    public static void test1() {
+    public void test1() {
         System.out.println("Note: when run in samevm mode the cputime of the " +
                 "test runner is included.");
         ProcessHandle self = ProcessHandle.current();
@@ -108,7 +99,7 @@ public class InfoTest {
         System.out.printf(" info: %s%n", info);
         Optional<Duration> totalCpu = info.totalCpuDuration();
         if (totalCpu.isPresent() && (totalCpu.get().compareTo(someCPU) < 0)) {
-            Assert.fail("reported cputime less than expected: " + someCPU + ", " +
+            Assertions.fail("reported cputime less than expected: " + someCPU + ", " +
                     "actual: " + info.totalCpuDuration());
         }
     }
@@ -117,7 +108,7 @@ public class InfoTest {
      * Spawn a child with arguments and check they are visible via the ProcessHandle.
      */
     @Test
-    public static void test2() {
+    public void test2() {
         try {
             long cpuLoopTime = 100;             // 100 ms
             String[] extraArgs = {"pid", "parent", "stdin"};
@@ -170,7 +161,7 @@ public class InfoTest {
                         String expected = Platform.isWindows() ? javaExe + ".exe" : javaExe;
                         Path expectedPath = Paths.get(expected);
                         Path actualPath = Paths.get(command.get());
-                        Assert.assertTrue(Files.isSameFile(expectedPath, actualPath),
+                        Assertions.assertTrue(Files.isSameFile(expectedPath, actualPath),
                                 "Command: expected: " + javaExe + ", actual: " + command.get());
                     }
 
@@ -179,22 +170,20 @@ public class InfoTest {
 
                         int offset = args.length - extraArgs.length;
                         for (int i = 0; i < extraArgs.length; i++) {
-                            Assert.assertEquals(args[offset + i], extraArgs[i],
+                            Assertions.assertEquals(extraArgs[i], args[offset + i],
                                                 "Actual argument mismatch, index: " + i);
                         }
 
                         // Now check that the first argument is not the same as the executed command
-                        if (args.length > 0) {
-                            Assert.assertNotEquals(args[0], command,
-                                    "First argument should not be the executable: args[0]: "
-                                            + args[0] + ", command: " + command);
-                        }
+                        Assertions.assertNotEquals(command, args[0],
+                                "First argument should not be the executable: args[0]: "
+                                        + args[0] + ", command: " + command);
                     }
 
                     if (command.isPresent() && info.arguments().isPresent()) {
                         // If both, 'command' and 'arguments' are present,
                         // 'commandLine' is just the concatenation of the two.
-                        Assert.assertTrue(info.commandLine().isPresent(),
+                        Assertions.assertTrue(info.commandLine().isPresent(),
                                           "commandLine() must be available");
 
                         String javaExe = System.getProperty("test.jdk") +
@@ -204,15 +193,15 @@ public class InfoTest {
                         String commandLine = info.commandLine().get();
                         String commandLineCmd = commandLine.split(" ")[0];
                         Path commandLineCmdPath = Paths.get(commandLineCmd);
-                        Assert.assertTrue(Files.isSameFile(commandLineCmdPath, expectedPath),
+                        Assertions.assertTrue(Files.isSameFile(commandLineCmdPath, expectedPath),
                                           "commandLine() should start with: " + expectedPath +
                                           " but starts with " + commandLineCmdPath);
 
-                        Assert.assertTrue(commandLine.contains(command.get()),
+                        Assertions.assertTrue(commandLine.contains(command.get()),
                                 "commandLine() must contain the command: " + command.get());
                         List<String> allArgs = p1.getArgs();
                         for (int i = 1; i < allArgs.size(); i++) {
-                            Assert.assertTrue(commandLine.contains(allArgs.get(i)),
+                            Assertions.assertTrue(commandLine.contains(allArgs.get(i)),
                                               "commandLine() must contain argument: " + allArgs.get(i));
                         }
                     } else if (info.commandLine().isPresent() &&
@@ -222,14 +211,14 @@ public class InfoTest {
                         String commandLine = info.commandLine().get();
                         String javaExe = "java" + (Platform.isWindows() ? ".exe" : "");
                         int pos = commandLine.indexOf(javaExe);
-                        Assert.assertTrue(pos > 0, "commandLine() should at least contain 'java'");
+                        Assertions.assertTrue(pos > 0, "commandLine() should at least contain 'java'");
 
                         pos += javaExe.length() + 1; // +1 for the space after the command
                         List<String> allArgs = p1.getArgs();
                         // First argument is the command - skip it here as we've already checked that.
                         for (int i = 1; (i < allArgs.size()) &&
                                         (pos + allArgs.get(i).length() < commandLine.length()); i++) {
-                            Assert.assertTrue(commandLine.contains(allArgs.get(i)),
+                            Assertions.assertTrue(commandLine.contains(allArgs.get(i)),
                                               "commandLine() must contain argument: " + allArgs.get(i));
                             pos += allArgs.get(i).length() + 1;
                         }
@@ -242,14 +231,14 @@ public class InfoTest {
                             System.out.printf(" info.totalCPU: %s, childCpuTime: %s, diff: %s%n",
                                     totalCPU.toNanos(), childCpuTime.toNanos(),
                                     childCpuTime.toNanos() - totalCPU.toNanos());
-                            Assert.assertTrue(checkEpsilon(childCpuTime, totalCPU, epsilon),
+                            Assertions.assertTrue(checkEpsilon(childCpuTime, totalCPU, epsilon),
                                     childCpuTime + " should be within " +
                                             epsilon + " of " + totalCPU);
                         }
-                        Assert.assertTrue(totalCPU.toNanos() > 0L,
+                        Assertions.assertTrue(totalCPU.toNanos() > 0L,
                                 "total cpu time expected > 0ms, actual: " + totalCPU);
                         long t = Utils.adjustTimeout(10L);  // Adjusted timeout seconds
-                        Assert.assertTrue(totalCPU.toNanos() < lastCpu.toNanos() + t * 1_000_000_000L,
+                        Assertions.assertTrue(totalCPU.toNanos() < lastCpu.toNanos() + t * 1_000_000_000L,
                                 "total cpu time expected < " + t
                                         + " seconds more than previous iteration, actual: "
                                         + (totalCPU.toNanos() - lastCpu.toNanos()));
@@ -258,18 +247,18 @@ public class InfoTest {
 
                     if (info.startInstant().isPresent()) {
                         Instant startTime = info.startInstant().get();
-                        Assert.assertTrue(startTime.isBefore(afterStart),
+                        Assertions.assertTrue(startTime.isBefore(afterStart),
                                 "startTime after process spawn completed"
                                         + startTime + " + > " + afterStart);
                     }
                 }
             }
             p1.sendAction("exit");
-            Assert.assertTrue(p1.waitFor(Utils.adjustTimeout(30L), TimeUnit.SECONDS),
+            Assertions.assertTrue(p1.waitFor(Utils.adjustTimeout(30L), TimeUnit.SECONDS),
                     "timeout waiting for process to terminate");
         } catch (IOException | InterruptedException ie) {
             ie.printStackTrace(System.out);
-            Assert.fail("unexpected exception", ie);
+            Assertions.fail("unexpected exception", ie);
         } finally {
             // Destroy any children that still exist
             ProcessUtil.destroyProcessTree(ProcessHandle.current());
@@ -280,7 +269,7 @@ public class InfoTest {
      * Spawn a child with arguments and check they are visible via the ProcessHandle.
      */
     @Test
-    public static void test3() {
+    public void test3() {
         try {
             for (long sleepTime : Arrays.asList(Utils.adjustTimeout(30), Utils.adjustTimeout(32))) {
                 Process p = spawn("sleep", String.valueOf(sleepTime));
@@ -302,22 +291,22 @@ public class InfoTest {
                         Path executable = Files.readSymbolicLink(Paths.get("/bin/sleep"));
                         expected = executable.getFileName().toString();
                     }
-                    Assert.assertTrue(command.endsWith(expected), "Command: expected: \'" +
+                    Assertions.assertTrue(command.endsWith(expected), "Command: expected: \'" +
                             expected + "\', actual: " + command);
 
                     // Verify the command exists and is executable
                     File exe = new File(command);
-                    Assert.assertTrue(exe.exists(), "command must exist: " + exe);
-                    Assert.assertTrue(exe.canExecute(), "command must be executable: " + exe);
+                    Assertions.assertTrue(exe.exists(), "command must exist: " + exe);
+                    Assertions.assertTrue(exe.canExecute(), "command must be executable: " + exe);
                 }
                 if (info.arguments().isPresent()) {
                     String[] args = info.arguments().get();
                     if (args.length > 0) {
-                        Assert.assertEquals(args[0], String.valueOf(sleepTime));
+                        Assertions.assertEquals(String.valueOf(sleepTime), args[0]);
                     }
                 }
                 p.destroy();
-                Assert.assertTrue(p.waitFor(Utils.adjustTimeout(30), TimeUnit.SECONDS),
+                Assertions.assertTrue(p.waitFor(Utils.adjustTimeout(30), TimeUnit.SECONDS),
                         "timeout waiting for process to terminate");
             }
         } catch (IOException | InterruptedException ex) {
@@ -332,7 +321,7 @@ public class InfoTest {
      * Cross check the cputime reported from java.management with that for the current process.
      */
     @Test
-    public static void test4() {
+    public void test4() {
         Duration myCputime1 = ProcessUtil.MXBeanCpuTime();
 
         if (Platform.isAix()) {
@@ -367,26 +356,26 @@ public class InfoTest {
                     Objects.toString(total2), myCputime2, myCputime2.minus(total2));
 
             Duration epsilon = Duration.ofMillis(200L);      // Epsilon is 200ms.
-            Assert.assertTrue(checkEpsilon(myCputime1, myCputime2, epsilon),
+            Assertions.assertTrue(checkEpsilon(myCputime1, myCputime2, epsilon),
                     myCputime1.toNanos() + " should be within " + epsilon
                             + " of " + myCputime2.toNanos());
-            Assert.assertTrue(checkEpsilon(total1, total2, epsilon),
+            Assertions.assertTrue(checkEpsilon(total1, total2, epsilon),
                     total1.toNanos() + " should be within " + epsilon
                             + " of " + total2.toNanos());
-            Assert.assertTrue(checkEpsilon(myCputime1, total1, epsilon),
+            Assertions.assertTrue(checkEpsilon(myCputime1, total1, epsilon),
                     myCputime1.toNanos() + " should be within " + epsilon
                             + " of " + total1.toNanos());
-            Assert.assertTrue(checkEpsilon(total1, myCputime2, epsilon),
+            Assertions.assertTrue(checkEpsilon(total1, myCputime2, epsilon),
                     total1.toNanos() + " should be within " + epsilon
                             + " of " + myCputime2.toNanos());
-            Assert.assertTrue(checkEpsilon(myCputime2, total2, epsilon),
+            Assertions.assertTrue(checkEpsilon(myCputime2, total2, epsilon),
                     myCputime2.toNanos() + " should be within " + epsilon
                             + " of " + total2.toNanos());
         }
     }
 
     @Test
-    public static void test5() {
+    public void test5() {
         ProcessHandle self = ProcessHandle.current();
         Random r = new Random();
         for (int i = 0; i < 30; i++) {
@@ -458,13 +447,12 @@ public class InfoTest {
             return;
         }
         String user = info.user().get();
-        Assert.assertNotNull(user, "User name");
+        Assertions.assertNotNull(user, "User name");
         if (Platform.isWindows() && "BUILTIN\\Administrators".equals(whoami)) {
             int bsi = user.lastIndexOf("\\");
-            Assert.assertEquals(bsi == -1 ? user : user.substring(bsi + 1),
-                    System.getProperty("user.name"), "User name");
+            Assertions.assertEquals(System.getProperty("user.name"), bsi == -1 ? user : user.substring(bsi + 1), "User name");
         } else {
-            Assert.assertEquals(user, whoami, "User name");
+            Assertions.assertEquals(whoami, user, "User name");
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -626,7 +626,7 @@ public class AnnotatedMemoryPanel extends JPanel {
 
   public static void main(String[] args) {
     JFrame frame = new JFrame();
-    DummyDebugger debugger = new DummyDebugger(new MachineDescriptionIntelX86());
+    DummyDebugger debugger = new DummyDebugger(new MachineDescriptionAMD64());
     AnnotatedMemoryPanel anno = new AnnotatedMemoryPanel(debugger);
     frame.getContentPane().add(anno);
     anno.addAnnotation(new Annotation(debugger.parseAddress("0x80000000"),

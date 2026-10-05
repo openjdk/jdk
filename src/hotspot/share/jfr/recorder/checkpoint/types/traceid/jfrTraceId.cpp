@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ static void check_klass(const Klass* klass) {
 
 void JfrTraceId::assign(const Klass* klass) {
   assert(klass != nullptr, "invariant");
+  assert(klass->trace_id() == 0, "invariant");
   klass->set_trace_id(next_class_id());
   check_klass(klass);
   const Klass* const super = klass->super();
@@ -291,3 +292,10 @@ void JfrTraceId::untag_jdk_jfr_event_sub(const Klass* k) {
   }
   assert(IS_NOT_AN_EVENT_SUB_KLASS(k), "invariant");
 }
+
+#ifdef ASSERT
+traceid JfrTraceId::preload_bits(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  return PRELOAD_TAG_BITS_OF(k);
+}
+#endif

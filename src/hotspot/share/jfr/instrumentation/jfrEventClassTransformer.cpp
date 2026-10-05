@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stackMapTable.hpp"
@@ -1427,10 +1428,10 @@ static void transform(InstanceKlass*& ik, ClassFileParser& parser, JavaThread* t
   } else {
     JfrClassTransformer::cache_class_file_data(new_ik, stream, thread);
   }
+  JfrClassTransformer::copy_traceid(ik, new_ik);
   if (is_instrumented && JdkJfrEvent::is_subklass(new_ik)) {
     bless_commit_method(new_ik);
   }
-  JfrClassTransformer::copy_traceid(ik, new_ik);
   JfrClassTransformer::rewrite_klass_pointer(ik, new_ik, parser, thread);
 }
 

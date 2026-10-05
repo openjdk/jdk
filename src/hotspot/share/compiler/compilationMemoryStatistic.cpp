@@ -72,7 +72,7 @@ union chunkstamp_t {
     uint16_t phase_id;
   };
 };
-STATIC_ASSERT(sizeof(chunkstamp_t) == sizeof(chunkstamp_t::raw));
+static_assert(sizeof(chunkstamp_t) == sizeof(chunkstamp_t::raw));
 
 ArenaCounterTable::ArenaCounterTable() {
   memset(_v, 0, sizeof(_v));
@@ -487,7 +487,7 @@ public:
 
   void clean_details() {
     if (_detail_stats != nullptr) {
-      FREE_C_HEAP_ARRAY(Details, _detail_stats);
+      FREE_C_HEAP_ARRAY(_detail_stats);
       _detail_stats = nullptr;
     }
   }
@@ -1010,8 +1010,10 @@ void CompilationMemoryStatistic::print_error_report(outputStream* st) {
     oom_stats->print_peak_state_on(st);
     st->cr();
   }
-  st->print_cr("Compiler Memory Statistic, 10 most expensive compilations:");
-  print_all_by_size(st, false, false, 0, 10);
+  if (Thread::current_or_null_safe() != nullptr) {
+    st->print_cr("Compiler Memory Statistic, 10 most expensive compilations:");
+    print_all_by_size(st, false, false, 0, 10);
+  }
 }
 
 void CompilationMemoryStatistic::print_final_report(outputStream* st) {

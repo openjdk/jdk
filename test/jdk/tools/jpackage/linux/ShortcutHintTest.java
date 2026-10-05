@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.test.AdditionalLauncher;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.LinuxHelper;
-import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --linux-shortcut parameter. Output of the test should be
@@ -146,7 +148,7 @@ public class ShortcutHintTest {
      */
     @Test
     public static void testDesktopFileFromResourceDir() throws IOException {
-        final String expectedVersionString = "Version=12345678";
+        final String expectedTryExecDesktopEntry = "TryExec=notify-send";
 
         final Path tempDir = TKit.createTempDirectory("resources");
 
@@ -164,19 +166,33 @@ public class ShortcutHintTest {
                             "Exec=APPLICATION_LAUNCHER",
                             "Terminal=false",
                             "Type=Application",
-                            "Comment=",
+                            "Comment=APPLICATION_DESCRIPTION",
                             "Icon=APPLICATION_ICON",
                             "Categories=DEPLOY_BUNDLE_CATEGORY",
-                            expectedVersionString
+                            expectedTryExecDesktopEntry
                     ));
         })
         .addInstallVerifier(cmd -> {
             Path desktopFile = LinuxHelper.getDesktopFile(cmd);
             TKit.assertFileExists(desktopFile);
-            TKit.assertTextStream(expectedVersionString)
+            TKit.assertTextStream(expectedTryExecDesktopEntry)
                     .label(String.format("[%s] file", desktopFile))
                     .predicate(String::equals)
                     .apply(Files.readAllLines(desktopFile));
         }).run();
+    }
+
+    /**
+     * Test "--linux-menu-group" option.
+     *
+     * @param menuGroup value of "--linux-menu-group" option
+     */
+    @Test
+    // Values from https://specifications.freedesktop.org/menu/latest/category-registry.html#main-category-registry
+    @Parameter("Development")
+    public static void testMenuGroup(String menuGroup) {
+        createTest().addInitializer(JPackageCommand::setFakeRuntime).addInitializer(cmd -> {
+            cmd.addArgument("--linux-shortcut").setArgumentValue("--linux-menu-group", menuGroup);
+        }).run(Action.CREATE_AND_UNPACK);
     }
 }

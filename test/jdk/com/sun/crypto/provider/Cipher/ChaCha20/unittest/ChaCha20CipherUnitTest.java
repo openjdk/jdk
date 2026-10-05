@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153029 8360463
+ * @bug 8153029 8360463 8368984
  * @library /test/lib
  * @run main ChaCha20CipherUnitTest
  * @summary Unit test for com.sun.crypto.provider.ChaCha20Cipher.
@@ -72,10 +72,12 @@ public class ChaCha20CipherUnitTest {
 
         checkTransformation("ChaCha20", null);
         checkTransformation("ChaCha20/None/NoPadding", null);
-        checkTransformation("ChaCha20-Poly1305", null);
-        checkTransformation("ChaCha20-Poly1305/None/NoPadding", null);
+        checkTransformation("ChaCha20/None//", NSAE);
         checkTransformation("ChaCha20/ECB/NoPadding", NSAE);
         checkTransformation("ChaCha20/None/PKCS5Padding", NSPE);
+        checkTransformation("ChaCha20-Poly1305", null);
+        checkTransformation("ChaCha20-Poly1305/None/NoPadding", null);
+        checkTransformation("ChaCha20-Poly1305/None//", NSAE);
         checkTransformation("ChaCha20-Poly1305/ECB/NoPadding", NSAE);
         checkTransformation("ChaCha20-Poly1305/None/PKCS5Padding", NSPE);
     }

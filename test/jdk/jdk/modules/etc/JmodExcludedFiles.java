@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
  * @test
  * @bug 8159927
  * @modules java.base/jdk.internal.util
+ * @library /test/lib
  * @requires jlink.packagedModules
- * @run main JmodExcludedFiles
- * @summary Test that JDK JMOD files do not include native debug symbols
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JmodExcludedFiles
+ * @summary Test that JDK JMOD files do not include native debug symbols when it is not configured
  */
 
 import java.nio.file.DirectoryStream;
@@ -37,9 +40,11 @@ import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import jdk.internal.util.OperatingSystem;
+import jdk.test.whitebox.WhiteBox;
 
 public class JmodExcludedFiles {
     private static String javaHome = System.getProperty("java.home");
+    private static final boolean expectSymbols = WhiteBox.getWhiteBox().shipsDebugInfo();
 
     public static void main(String[] args) throws Exception {
         Path jmods = Path.of(javaHome, "jmods");
@@ -76,24 +81,19 @@ public class JmodExcludedFiles {
                     if (i != -1) {
                         if (n.substring(0, i).endsWith(".dSYM")) {
                             System.err.println("Found symbols in " + jmod + ": " + name);
-                            return true;
+                            return expectSymbols ? false: true;
                         }
                     }
                 }
                 if (OperatingSystem.isWindows() && name.endsWith(".pdb")) {
-                    // on Windows we check if we should have public symbols through --with-external-symbols-in-bundles=public (JDK-8237192)
-                    String strippedpdb = javaHome + "/bin/" + name.substring(index + 1, name.length() - 4) + ".stripped.pdb";
-                    if (!Files.exists(Paths.get(strippedpdb))) {
-                        System.err.println("Found symbols in " + jmod + ": " + name +
-                                ". No stripped pdb file " + strippedpdb + " exists.");
-                        return true;
-                    }
+                    System.err.println("Found symbols in " + jmod + ": " + name);
+                    return expectSymbols ? false: true;
                 }
                 if (name.endsWith(".diz")
                         || name.endsWith(".debuginfo")
                         || name.endsWith(".map")) {
                     System.err.println("Found symbols in " + jmod + ": " + name);
-                    return true;
+                    return expectSymbols ? false: true;
                 }
             }
             return false;

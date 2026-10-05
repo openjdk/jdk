@@ -43,8 +43,8 @@ import java.util.Map;
  *  should use the appropriate {@code Connection} method such as
  *  {@code setAutoCommit} or {@code setTransactionIsolation}.
  *  Applications should not invoke SQL commands directly to change the connection's
- *   configuration when there is a JDBC method available.  By default a {@code Connection} object is in
- * auto-commit mode, which means that it automatically commits changes
+ *  configuration when there is a JDBC method available.  By default, a {@code Connection}
+ *  object is in auto-commit mode, which means that it automatically commits changes
  * after executing each statement. If auto-commit mode has been
  * disabled, the method {@code commit} must be called explicitly in
  * order to commit changes; otherwise, database changes will not be saved.
@@ -77,7 +77,7 @@ import java.util.Map;
  *      con.setTypeMap(map);
  * </pre>
  *
- * @see DriverManager#getConnection
+ * @see DriverManager#getConnection(String)
  * @see Statement
  * @see ResultSet
  * @see DatabaseMetaData
@@ -1505,7 +1505,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * </ul>
      * @throws SQLException if an error occurs
      * @since 9
-     * @see endRequest
+     * @see #endRequest()
      * @see javax.sql.PooledConnection
      */
     default void beginRequest() throws SQLException {
@@ -1548,7 +1548,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * </ul>
      * @throws SQLException if an error occurs
      * @since 9
-     * @see beginRequest
+     * @see #beginRequest()
      * @see javax.sql.PooledConnection
      */
     default void endRequest() throws SQLException {
@@ -1676,5 +1676,311 @@ public interface Connection extends Wrapper, AutoCloseable {
     default void setShardingKey(ShardingKey shardingKey) throws SQLException {
         throw new SQLFeatureNotSupportedException("setShardingKey not implemented");
     }
+    // JDBC 4.5
 
+    /**
+     * Returns a {@code String} enclosed in single quotes. Any occurrence of a
+     * single quote within the string will be replaced by two single quotes.
+     *
+     * <blockquote>
+     * <table class="striped">
+     * <caption>Examples of the conversion:</caption>
+     * <thead>
+     * <tr><th scope="col">Value</th><th scope="col">Result</th></tr>
+     * </thead>
+     * <tbody style="text-align:center">
+     * <tr> <th scope="row">Hello</th> <td>'Hello'</td> </tr>
+     * <tr> <th scope="row">G'Day</th> <td>'G''Day'</td> </tr>
+     * <tr> <th scope="row">'G''Day'</th>
+     * <td>'''G''''Day'''</td> </tr>
+     * <tr> <th scope="row">I'''M</th> <td>'I''''''M'</td>
+     * </tr>
+     *
+     * </tbody>
+     * </table>
+     * </blockquote>
+     * @implSpec
+     * The default implementation creates the literal as:
+     * {@code "'" + val.replace("'", "''") + "'"}.
+     * @implNote
+     * JDBC driver implementations may need to provide their own implementation
+     * of this method in order to meet the requirements of the underlying
+     * datasource.
+     * @param val a character string
+     * @return A string enclosed by single quotes with every single quote
+     * converted to two single quotes
+     * @throws NullPointerException if val is {@code null}
+     * @throws SQLException if a database access error occurs
+     *
+     * @since 26
+     */
+    default String enquoteLiteral(String val) throws SQLException {
+        return SQLUtils.enquoteLiteral(val);
+    }
+
+    /**
+     * Returns a {@link #isSimpleIdentifier(String) simple SQL identifier} or a
+     * delimited identifier.  A delimited identifier represents the name of a
+     * database object such as a table, column, or view that is enclosed by a
+     * delimiter, which is typically a double quote as defined by the SQL standard.
+     * <p>
+     * If {@code identifier} is a simple SQL identifier:
+     * <ul>
+     * <li>If {@code alwaysDelimit} is {@code false}, return the original value</li>
+     * <li>if {@code alwaysDelimit} is {@code true}, enquote the original value
+     * and return as a delimited identifier</li>
+     * </ul>
+     *
+     * If {@code identifier} is not a simple SQL identifier, the delimited
+     * {@code identifier} to be returned must be enclosed by the delimiter
+     * returned from {@link DatabaseMetaData#getIdentifierQuoteString}. If
+     * the datasource does not support delimited identifiers, a
+     * {@code SQLFeatureNotSupportedException} is thrown.
+     * <p>
+     * A {@code SQLException} will be thrown if {@code identifier} contains any
+     * invalid characters within a delimited identifier or the identifier length
+     * is invalid for the datasource.
+     *
+     * @implSpec
+     * The default implementation uses the following criteria to
+     * determine a valid simple SQL identifier:
+     * <ul>
+     * <li>The string is not enclosed in double quotes</li>
+     * <li>The first character is an alphabetic character from a ({@code '\u005C0061'})
+     * through z ({@code '\u005Cu007A'}), or from A ({@code '\u005Cu0041'})
+     * through Z ({@code '\u005Cu005A'})</li>
+     * <li>The name only contains alphanumeric characters([0-9A-Za-z])
+     * or the character "_"</li>
+     * </ul>
+     *
+     * The default implementation will throw a {@code SQLException} if:
+     * <ul>
+     * <li> {@link DatabaseMetaData#getIdentifierQuoteString} does not return a
+     * double quote</li>
+     * <li>{@code identifier} contains a {@code null} character or double quote</li>
+     * <li>The length of {@code identifier} is less than 1 or greater than 128 characters
+     * </ul>
+     * <blockquote>
+     * <table class="striped" >
+     * <caption>Examples of the conversion:</caption>
+     * <thead>
+     * <tr>
+     * <th scope="col">identifier</th>
+     * <th scope="col">alwaysDelimit</th>
+     * <th scope="col">Result</th></tr>
+     * </thead>
+     * <tbody>
+     * <tr>
+     * <th scope="row">Hello</th>
+     * <td>false</td>
+     * <td>Hello</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">Hello</th>
+     * <td>true</td>
+     * <td>"Hello"</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">G'Day</th>
+     * <td>false</td>
+     * <td>"G'Day"</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"Bruce Wayne"</th>
+     * <td>false</td>
+     * <td>"Bruce Wayne"</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"Bruce Wayne"</th>
+     * <td>true</td>
+     * <td>"Bruce Wayne"</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"select"</th>
+     * <td>false</td>
+     * <td>"select"</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"select"</th>
+     * <td>true</td>
+     * <td>"select"</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">GoodDay$</th>
+     * <td>false</td>
+     * <td>"GoodDay$"</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">Hello"World</th>
+     * <td>false</td>
+     * <td>SQLException</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"Hello"World"</th>
+     * <td>false</td>
+     * <td>SQLException</td>
+     * </tr>
+     * </tbody>
+     * </table>
+     * </blockquote>
+     * @implNote
+     * JDBC driver implementations may need to provide their own implementation
+     * of this method in order to meet the requirements of the underlying
+     * datasource.
+     * @param identifier a SQL identifier
+     * @param alwaysDelimit indicates if a simple SQL identifier should be
+     * returned as a delimited identifier
+     * @return A simple SQL identifier or a delimited identifier
+     * @throws SQLException if identifier is not a valid identifier
+     * @throws SQLFeatureNotSupportedException if the datasource does not support
+     * delimited identifiers
+     * @throws NullPointerException if identifier is {@code null}
+     *
+     * @since 26
+     */
+    default String enquoteIdentifier(String identifier, boolean alwaysDelimit) throws SQLException {
+        String delimiter = this.getMetaData().getIdentifierQuoteString();
+        return SQLUtils.enquoteIdentifier(delimiter, identifier, alwaysDelimit);
+    }
+
+    /**
+     * Returns whether {@code identifier} is a simple SQL identifier.
+     * A simple SQL identifier is referred to as regular (or ordinary) identifier
+     * within the SQL standard.  A regular identifier represents the name of a database
+     * object such as a table, column, or view.
+     * <p>
+     * The rules for a regular Identifier are:
+     * <ul>
+     * <li>The first character is an alphabetic character from a ({@code '\u005Cu0061'})
+     * through z ({@code '\u005Cu007A'}), or from A ({@code '\u005Cu0041'})
+     * through Z ({@code '\u005Cu005A'})</li>
+     * <li>The name only contains alphanumeric characters([0-9A-Za-z])
+     * or the character "_"</li>
+     * <li>It cannot be a SQL reserved word</li>
+     * </ul>
+     * <p>
+     * A datasource may have additional rules for a regular identifier such as:
+     * <ul>
+     * <li>Supports additional characters within the name based on
+     * the locale being used</li>
+     * <li>Supports a different maximum length for the identifier</li>
+     * </ul>
+     *
+     * @implSpec The default implementation uses the following criteria to
+     * determine a valid simple SQL identifier:
+     * <ul>
+     * <li>The identifier is not enclosed in double quotes</li>
+     * <li>The first character is an alphabetic character from a through z, or
+     * from A through Z</li>
+     * <li>The identifier only contains alphanumeric characters([0-9A-Za-z]) or
+     * the character "_"</li>
+     * <li>The identifier is not a SQL reserved word</li>
+     * <li>The identifier is between 1 and 128 characters in length inclusive</li>
+     * </ul>
+     *
+     * <blockquote>
+     * <table class="striped" >
+     * <caption>Examples of the conversion:</caption>
+     * <thead>
+     * <tr>
+     * <th scope="col">identifier</th>
+     * <th scope="col">Simple Identifier</th>
+     * </thead>
+     *
+     * <tbody>
+     * <tr>
+     * <th scope="row">Hello</th>
+     * <td>true</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">G'Day</th>
+     * <td>false</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"Bruce Wayne"</th>
+     * <td>false</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">GoodDay$</th>
+     * <td>false</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">Hello"World</th>
+     * <td>false</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"Hello"World"</th>
+     * <td>false</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"select"</th>
+     * <td>false</td>
+     * <tr>
+     * <th scope="row">"from"</th>
+     * <td>false</td>
+     * </tr>
+     * </tbody>
+     * </table>
+     * </blockquote>
+     * @implNote JDBC driver implementations may need to provide their own
+     * implementation of this method in order to meet the requirements of the
+     * underlying datasource.
+     * @param identifier a SQL identifier
+     * @return true if a simple SQL identifier, false otherwise
+     * @throws NullPointerException if identifier is {@code null}
+     * @throws SQLException if a database access error occurs
+     *
+     * @since 26
+     */
+    default boolean isSimpleIdentifier(String identifier) throws SQLException {
+        return SQLUtils.isSimpleIdentifier(identifier);
+    }
+
+    /**
+     * Returns a {@code String} representing a National Character Set Literal
+     * enclosed in single quotes and prefixed with a upper case letter N.
+     * Any occurrence of a single quote within the string will be replaced
+     * by two single quotes.
+     *
+     * <blockquote>
+     * <table class="striped">
+     * <caption>Examples of the conversion:</caption>
+     * <thead>
+     * <tr>
+     * <th scope="col">Value</th>
+     * <th scope="col">Result</th>
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr> <th scope="row">Hello</th> <td>N'Hello'</td> </tr>
+     * <tr> <th scope="row">G'Day</th> <td>N'G''Day'</td> </tr>
+     * <tr> <th scope="row">'G''Day'</th>
+     * <td>N'''G''''Day'''</td> </tr>
+     * <tr> <th scope="row">I'''M</th> <td>N'I''''''M'</td>
+     * <tr> <th scope="row">N'Hello'</th> <td>N'N''Hello'''</td> </tr>
+     *
+     * </tbody>
+     * </table>
+     * </blockquote>
+     * @implSpec
+     * The default implementation creates the literal as:
+     * {@code "N'" + val.replace("'", "''") + "'"}.
+     * @implNote
+     * JDBC driver implementations may need to provide their own implementation
+     * of this method in order to meet the requirements of the underlying
+     * datasource. An implementation of enquoteNCharLiteral may accept a different
+     * set of characters than that accepted by the same drivers implementation of
+     * enquoteLiteral.
+     * @param val a character string
+     * @return the result of replacing every single quote character in the
+     * argument by two single quote characters where this entire result is
+     * then prefixed with 'N'.
+     * @throws NullPointerException if val is {@code null}
+     * @throws SQLException if a database access error occurs
+     *
+     * @since 26
+     */
+    default String enquoteNCharLiteral(String val) throws SQLException {
+        return SQLUtils.enquoteNCharLiteral(val);
+    }
 }

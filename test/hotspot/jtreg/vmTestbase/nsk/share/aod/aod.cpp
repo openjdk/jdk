@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,20 @@
 extern "C" {
 
 static volatile int internalError = 0;
+
+/*
+ * Check for pending JNI exceptions after a JNI call.
+ * If an exception is found, describe it, clear it, and return failure.
+ */
+static int nsk_aod_checkJNIException(JNIEnv* jni) {
+    if (jni->ExceptionCheck()) {
+        jni->ExceptionDescribe();
+        jni->ExceptionClear();
+        NSK_COMPLAIN0("Unexpected exception after JNI call\n");
+        return NSK_FALSE;
+    }
+    return NSK_TRUE;
+}
 
 /*
  * This function can be used to inform AOD framework that some non critical for test logic
@@ -227,6 +241,10 @@ int nsk_aod_agentLoaded(JNIEnv* jni, const char* agentName) {
 
     jni->CallStaticVoidMethod(targetAppClass, agentLoadedMethod, agentNameString);
 
+    if (!nsk_aod_checkJNIException(jni)) {
+        return NSK_FALSE;
+    }
+
     return NSK_TRUE;
 }
 
@@ -262,6 +280,10 @@ int nsk_aod_agentFinished(JNIEnv* jni, const char* agentName, int success) {
         return NSK_FALSE;
 
     jni->CallStaticVoidMethod(targetAppClass, agentFinishedMethod, agentNameString, success ? JNI_TRUE : JNI_FALSE);
+
+    if (!nsk_aod_checkJNIException(jni)) {
+        return NSK_FALSE;
+    }
 
     return NSK_TRUE;
 }

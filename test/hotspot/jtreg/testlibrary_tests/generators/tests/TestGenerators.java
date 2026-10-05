@@ -391,13 +391,13 @@ public class TestGenerators {
 
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformDoubles(1, 0));
         Asserts.assertNotNull(G.uniformDoubles(0, 1));
-        Asserts.assertNotNull(G.uniformDoubles(0, 0));
+        Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformDoubles(0, 0));
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformDoubles(0, 1).restricted(1.1d, 2.4d));
         Asserts.assertNotNull(G.uniformDoubles(0, 1).restricted(0.9d, 2.4d));
 
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformFloats(1, 0));
         Asserts.assertNotNull(G.uniformFloats(0, 1));
-        Asserts.assertNotNull(G.uniformFloats(0, 0));
+        Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformFloats(0, 0));
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformFloats(0, 1).restricted(1.1f, 2.4f));
         Asserts.assertNotNull(G.uniformFloats(0, 1).restricted(0.9f, 2.4f));
 
@@ -592,8 +592,13 @@ public class TestGenerators {
 
         var floatBoundGen = G.uniformFloats();
         for (int j = 0; j < 500; j++) {
-            float a = floatBoundGen.next(), b = floatBoundGen.next();
-            float lo = Math.min(a, b), hi = Math.max(a, b);
+            float lo = 1, hi = 0;
+            // Failure of a single round is very rare, repeated failure even rarer.
+            while (lo >= hi) {
+                float a = floatBoundGen.next(), b = floatBoundGen.next();
+                lo = Math.min(a, b);
+                hi = Math.max(a, b);
+            }
             var gb = G.uniformFloats(lo, hi);
             for (int i = 0; i < 10_000; i++) {
                 float x = gb.next();
@@ -604,8 +609,13 @@ public class TestGenerators {
 
         var doubleBoundGen = G.uniformDoubles();
         for (int j = 0; j < 500; j++) {
-            double a = doubleBoundGen.next(), b = doubleBoundGen.next();
-            double lo = Math.min(a, b), hi = Math.max(a, b);
+            double lo = 1, hi = 0;
+            // Failure of a single round is very rare, repeated failure even rarer.
+            while (lo >= hi) {
+                double a = doubleBoundGen.next(), b = doubleBoundGen.next();
+                lo = Math.min(a, b);
+                hi = Math.max(a, b);
+            }
             var gb = G.uniformDoubles(lo, hi);
             for (int i = 0; i < 10_000; i++) {
                 double x = gb.next();

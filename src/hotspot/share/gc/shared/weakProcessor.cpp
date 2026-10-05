@@ -72,7 +72,6 @@ void WeakProcessor::oops_do(OopClosure* closure) {
 }
 
 uint WeakProcessor::ergo_workers(uint max_workers) {
-  // Ignore ParallelRefProcEnabled; that's for j.l.r.Reference processing.
   if (ReferencesPerThread == 0) {
     // Configuration says always use all the threads.
     return max_workers;

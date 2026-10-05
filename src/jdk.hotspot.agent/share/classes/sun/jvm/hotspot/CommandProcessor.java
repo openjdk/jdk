@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,17 +56,16 @@ import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
 import sun.jvm.hotspot.oops.DefaultHeapVisitor;
 import sun.jvm.hotspot.oops.HeapVisitor;
+import sun.jvm.hotspot.oops.Value;
 import sun.jvm.hotspot.oops.InstanceKlass;
 import sun.jvm.hotspot.oops.Klass;
 import sun.jvm.hotspot.oops.Metadata;
 import sun.jvm.hotspot.oops.Method;
-import sun.jvm.hotspot.oops.MethodData;
 import sun.jvm.hotspot.oops.Oop;
 import sun.jvm.hotspot.oops.RawHeapVisitor;
 import sun.jvm.hotspot.oops.Symbol;
 import sun.jvm.hotspot.oops.UnknownOopException;
 import sun.jvm.hotspot.runtime.CompiledVFrame;
-import sun.jvm.hotspot.runtime.CompilerThread;
 import sun.jvm.hotspot.runtime.JavaThread;
 import sun.jvm.hotspot.runtime.JavaVFrame;
 import sun.jvm.hotspot.runtime.Threads;
@@ -258,12 +257,20 @@ public class CommandProcessor {
             out.println("Usage: " + usage);
         }
 
-        void printNode(SimpleTreeNode node) {
+        void printNode(SimpleTreeNode node, int indent) {
+            String blanks = (indent == 0) ? ""
+                                          : String.format("%" + (indent * 2) + "s", "");
             int count = node.getChildCount();
             for (int i = 0; i < count; i++) {
+                out.print(blanks);
                 try {
                     SimpleTreeNode field = node.getChild(i);
-                    out.println(field);
+                    if (field instanceof OopTreeNodeAdapter of && of.getOop() instanceof Value oop) {
+                        out.println(of.getName() + ": ");
+                        printNode(new OopTreeNodeAdapter(oop, null), indent + 1);
+                    } else {
+                        out.println(field);
+                    }
                 } catch (Exception e) {
                     out.println();
                     out.println("Error: " + e);
@@ -272,6 +279,10 @@ public class CommandProcessor {
                     }
                 }
             }
+        }
+
+        void printNode(SimpleTreeNode node) {
+            printNode(node, 0);
         }
     }
 
@@ -860,44 +871,8 @@ public class CommandProcessor {
                 }
             }
         },
-        new Command("printmdo", "printmdo [ -a | expression ]", false) {
-            // Print every MDO in the heap or the one referenced by expression.
-            public void doit(Tokens t) {
-                if (t.countTokens() != 1) {
-                    usage();
-                } else {
-                    String s = t.nextToken();
-                    if (s.equals("-a")) {
-                        ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
-                        cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
-                                public void visit(Klass k) {
-                                    if (k instanceof InstanceKlass) {
-                                        MethodArray methods = ((InstanceKlass)k).getMethods();
-                                        for (int i = 0; i < methods.length(); i++) {
-                                            Method m = methods.at(i);
-                                            MethodData mdo = m.getMethodData();
-                                            if (mdo != null) {
-                                                out.println("MethodData " + mdo.getAddress() + " for " +
-                                                    "method " + m.getMethodHolder().getName().asString() + "." +
-                                                    m.getName().asString() +
-                                                            m.getSignature().asString() + "@" + m.getAddress());
-                                                mdo.printDataOn(out);
-                                    }
-                                }
-                                    }
-                                }
-                            }
-                            );
-                    } else {
-                        Address a = VM.getVM().getDebugger().parseAddress(s);
-                        MethodData mdo = (MethodData) Metadata.instantiateWrapperFor(a);
-                        mdo.printDataOn(out);
-                    }
-                }
-            }
-        },
         new Command("printall", "printall", false) {
-            // Print every MDO in the heap or the one referenced by expression.
+            // Print every Method for every class loaded.
             public void doit(Tokens t) {
                 if (t.countTokens() != 0) {
                     usage();

@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.18)
-project(SLEEF VERSION 3.6.1 LANGUAGES C)
+
+set(SLEEF_VERSION 3.9.0)
+
+message(STATUS "Configuring SLEEF ${SLEEF_VERSION}")
+project(SLEEF VERSION ${SLEEF_VERSION} LANGUAGES C CXX)
 
 set(SLEEF_SOVERSION ${SLEEF_VERSION_MAJOR})
+
+set(CMAKE_CXX_STANDARD 20)
 
 # Options
 
@@ -13,27 +19,95 @@ option(SLEEF_BUILD_QUAD "libsleefquad will be built." OFF)
 option(SLEEF_BUILD_GNUABI_LIBS "libsleefgnuabi will be built." ON)
 option(SLEEF_BUILD_SCALAR_LIB "libsleefscalar will be built." OFF)
 option(SLEEF_BUILD_TESTS "Tests will be built." ON)
+option(SLEEF_BUILD_BENCH "Bench will be built." OFF)
+option(SLEEF_BUILD_BENCH_REF "Benchmark script for reference (e.g. system libm) will be built." OFF)
 option(SLEEF_BUILD_INLINE_HEADERS "Build header for inlining whole SLEEF functions" OFF)
+
+option(SLEEF_ENFORCE_DFT "Build fails if DFT is not built" OFF)
+option(SLEEFDFT_ENABLE_STREAM "Streaming instructions are utilized in DFT." OFF)
 
 option(SLEEF_TEST_ALL_IUT "Perform tests on implementations with all vector extensions" OFF)
 option(SLEEF_SHOW_CONFIG "Show SLEEF configuration status messages." ON)
 option(SLEEF_SHOW_ERROR_LOG "Show cmake error log." OFF)
 option(SLEEF_ASAN "Enable address sanitizing on all targets." OFF)
 
+option(SLEEF_ENABLE_TESTER "Enable testing libm with tester" OFF)
 option(SLEEF_ENFORCE_TESTER "Build fails if tester is not available" OFF)
+
 option(SLEEF_ENFORCE_TESTER3 "Build fails if tester3 is not built" OFF)
+
+option(SLEEF_ENABLE_TESTER4 "Enable testing with tester4" ON)
+option(SLEEF_ENFORCE_TESTER4 "Build fails if tester4 is not available" OFF)
 
 option(SLEEF_ENABLE_ALTDIV  "Enable alternative division method (aarch64 only)" OFF)
 option(SLEEF_ENABLE_ALTSQRT "Enable alternative sqrt method (aarch64 only)" OFF)
 
 option(SLEEF_DISABLE_FFTW "Disable testing the DFT library with FFTW" OFF)
 option(SLEEF_DISABLE_MPFR "Disable testing with the MPFR library" OFF)
+option(SLEEF_ENABLE_TLFLOAT "Enable use of TLFloat library" ON)
+
 option(SLEEF_DISABLE_SSL "Disable testing with the SSL library" OFF)
+set(OPENSSL_EXTRA_LIBRARIES "" CACHE STRING "Extra libraries for openssl")
 
 option(SLEEF_ENABLE_CUDA "Enable CUDA" OFF)
-option(SLEEF_ENABLE_CXX "Enable C++" OFF)
+
+option(SLEEF_BUILD_WITH_LIBM "build libsleef with libm, can turn off on Windows to solve mutiple math functions issue." ON)
+
+option(SLEEF_DISABLE_LONG_DOUBLE "Disable long double" OFF)
+option(SLEEF_ENFORCE_LONG_DOUBLE "Build fails if long double is not supported by the compiler" OFF)
+
+option(SLEEF_DISABLE_FLOAT128 "Disable float128" OFF)
+option(SLEEF_ENFORCE_FLOAT128 "Build fails if float128 is not supported by the compiler" OFF)
+
+option(SLEEF_DISABLE_SSE2 "Disable SSE2" OFF)
+option(SLEEF_ENFORCE_SSE2 "Build fails if SSE2 is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_SSE4 "Disable SSE4" OFF)
+option(SLEEF_ENFORCE_SSE4 "Build fails if SSE4 is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_AVX "Disable AVX" OFF)
+option(SLEEF_ENFORCE_AVX "Build fails if AVX is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_FMA4 "Disable FMA4" OFF)
+option(SLEEF_ENFORCE_FMA4 "Build fails if FMA4 is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_AVX2 "Disable AVX2" OFF)
+option(SLEEF_ENFORCE_AVX2 "Build fails if AVX2 is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_AVX512F "Disable AVX512F" OFF)
+option(SLEEF_ENFORCE_AVX512F "Build fails if AVX512F is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_SVE "Disable SVE" OFF)
+option(SLEEF_ENFORCE_SVE "Build fails if SVE is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_VSX "Disable VSX" OFF)
+option(SLEEF_ENFORCE_VSX "Build fails if VSX is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_VSX3 "Disable VSX3" OFF)
+option(SLEEF_ENFORCE_VSX3 "Build fails if VSX3 is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_VXE "Disable VXE" OFF)
+option(SLEEF_ENFORCE_VXE "Build fails if VXE is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_VXE2 "Disable VXE2" OFF)
+option(SLEEF_ENFORCE_VXE2 "Build fails if VXE2 is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_RVVM1 "Disable RVVM1" OFF)
+option(SLEEF_ENFORCE_RVVM1 "Build fails if RVVM1 is not supported by the compiler" OFF)
+option(SLEEF_DISABLE_RVVM2 "Disable RVVM2" OFF)
+option(SLEEF_ENFORCE_RVVM2 "Build fails if RVVM2 is not supported by the compiler" OFF)
+
+option(SLEEF_ENFORCE_CUDA "Build fails if CUDA is not supported" OFF)
+
+option(SLEEF_DISABLE_OPENMP "Disable OPENMP" OFF)
+option(SLEEF_ENFORCE_OPENMP "Build fails if OPENMP is not supported by the compiler" OFF)
 
 #
+
+if ((NOT "${CMAKE_C_COMPILER_ID}" STREQUAL "${CMAKE_CXX_COMPILER_ID}") OR
+    (NOT CMAKE_C_COMPILER_VERSION VERSION_EQUAL CMAKE_CXX_COMPILER_VERSION))
+  message(FATAL_ERROR "Different versions of C compiler and C++ compiler")
+endif()
+
+#
+
+if (SLEEF_BUILD_BENCH_REF)
+  if (NOT SLEEF_BUILD_BENCH)
+    message(FATAL_ERROR "SLEEF_BUILD_BENCH must be on when SLEEF_BUILD_BENCH_REF is enabled.")
+  endif ()
+  if(NOT CMAKE_SYSTEM_NAME MATCHES Linux)
+     message(FATAL_ERROR "Libm benchmarking not supported in this OS.")
+  endif()
+endif ()
 
 if (DEFINED SLEEF_BUILD_SHARED_LIBS)
   set(BUILD_SHARED_LIBS ${SLEEF_BUILD_SHARED_LIBS})
@@ -133,13 +207,11 @@ set(COSTOVERRIDE_RVVM2NOFMA 20)
 #
 
 enable_testing()
-
-if (SLEEF_ENABLE_CXX)
-  enable_language(CXX)
-endif()
+enable_language(CXX)
 
 if (SLEEF_ENABLE_CUDA)
   enable_language(CUDA)
+  set(CMAKE_CUDA_ARCHITECTURES all-major)
 endif()
 
 # For specifying installation directories
@@ -197,6 +269,7 @@ include(Configure.cmake)
 configure_file(
   ${PROJECT_SOURCE_DIR}/sleef-config.h.in
   ${PROJECT_BINARY_DIR}/include/sleef-config.h @ONLY)
+include_directories(AFTER "${PROJECT_BINARY_DIR}/include")
 
 # We like to have a documented index of all targets in the project. The
 # variables listed below carry the names of the targets defined throughout
@@ -228,7 +301,9 @@ set(TARGET_MKALIAS "mkalias")
 # Generates static library common
 # Defined in src/common/CMakeLists.txt via command add_library
 set(TARGET_LIBCOMMON_OBJ "common")
-set(TARGET_LIBARRAYMAP_OBJ "arraymap")
+set(TARGET_PSHA_OBJ "psha_obj")
+set(TARGET_TESTERUTIL_OBJ "testerutil_obj")
+set(TARGET_QTESTERUTIL_OBJ "qtesterutil_obj")
 
 # Function used to add an executable that is executed on host
 function(add_host_executable TARGETNAME)
@@ -239,15 +314,23 @@ function(add_host_executable TARGETNAME)
       target_compile_options(${TARGETNAME} PRIVATE -arch "${CMAKE_HOST_SYSTEM_PROCESSOR}")
       target_link_options(${TARGETNAME} PRIVATE -arch "${CMAKE_HOST_SYSTEM_PROCESSOR}")
     endif()
+  elseif (DEFINED ENV{SLEEF_TARGET_EXEC_USE_QEMU})
+    if($ENV{SLEEF_TARGET_EXEC_USE_QEMU})
+      add_executable(${TARGETNAME} ${ARGN})
+    endif()
   else()
     add_executable(${TARGETNAME} IMPORTED GLOBAL)
-    set_property(TARGET ${TARGETNAME} PROPERTY IMPORTED_LOCATION ${NATIVE_BUILD_DIR}/bin/${TARGETNAME})
+    if(CMAKE_HOST_WIN32)
+      set_property(TARGET ${TARGETNAME} PROPERTY IMPORTED_LOCATION ${NATIVE_BUILD_DIR}/bin/${TARGETNAME}.exe)
+    else()
+      set_property(TARGET ${TARGETNAME} PROPERTY IMPORTED_LOCATION ${NATIVE_BUILD_DIR}/bin/${TARGETNAME})
+    endif()
   endif()
 endfunction()
 
 function(host_target_AAVPCS_definitions TARGETNAME)
   if (NOT CMAKE_CROSSCOMPILING)
-    target_compile_definitions(${TARGETNAME} PRIVATE ENABLE_AAVPCS=1)
+#    target_compile_definitions(${TARGETNAME} PRIVATE ENABLE_AAVPCS=1)
   endif()
 endfunction()
 
@@ -303,6 +386,7 @@ if(SLEEF_SHOW_CONFIG)
   message("   Detected C compiler: ${CMAKE_C_COMPILER_ID} @ ${CMAKE_C_COMPILER}")
   message("   CMake: ${CMAKE_VERSION}")
   message("   Make program: ${CMAKE_MAKE_PROGRAM}")
+  message("   CMake build type: ${CMAKE_BUILD_TYPE}")
   if(CMAKE_CROSSCOMPILING)
     message("   Crosscompiling SLEEF.")
     message("   Native build dir: ${NATIVE_BUILD_DIR}")
@@ -317,6 +401,7 @@ if(SLEEF_SHOW_CONFIG)
   message(STATUS "GMP : " ${LIBGMP})
   message(STATUS "RT : " ${LIBRT})
   message(STATUS "FFTW3 : " ${LIBFFTW3})
+  message(STATUS "FFTW3F : " ${LIBFFTW3F})
   message(STATUS "OPENSSL : " ${OPENSSL_VERSION})
   message(STATUS "SDE : " ${SDE_COMMAND})
   if (SLEEF_BUILD_INLINE_HEADERS)
@@ -337,3 +422,4 @@ if(SLEEF_SHOW_CONFIG)
     message(STATUS "Building SLEEF with AArch64 Vector PCS support")
   endif()
 endif(SLEEF_SHOW_CONFIG)
+

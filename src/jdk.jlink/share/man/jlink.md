@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,72 +57,83 @@ Developers are responsible for updating their custom runtime images.
 
 ## jlink Options
 
-`--add-modules` *mod*\[`,`*mod*...\]
+[`--add-modules`]{#option--add-modules} *mod*\[`,`*mod*...\]
 :   Adds the named modules, *mod*, to the default set of root modules. The
     default set of root modules is empty.
 
-`--bind-services`
+[`--bind-services`]{#option--bind-services}
 :   Link service provider modules and their dependencies.
 
-`-c ={0|1|2}` or `--compress={0|1|2}`
-:   Enable compression of resources:
+[`-c zip-{0-9}`]{#option--compress} or `--compress=zip-{0-9}`
+:   Enable compression of resources. The accepted values are:
+    zip-{0-9}, where zip-0 provides no compression,
+    and zip-9 provides the best compression. Default is zip-6.
 
-    -   `0`: No compression
+:   Deprecated values to be removed in a future release:
+
+    -   `0`: No compression. Use zip-0 instead.
     -   `1`: Constant string sharing
-    -   `2`: ZIP
+    -   `2`: ZIP. Use zip-6 instead.
 
-`--disable-plugin` *pluginname*
+[`--disable-plugin`]{#option--disable-plugin} *pluginname*
 :   Disables the specified plug-in. See [jlink Plug-ins] for the list of
     supported plug-ins.
 
-`--endian` {`little`\|`big`}
+[`--endian`]{#option--endian} {`little`\|`big`}
 :   Specifies the byte order of the generated image. The default value is the
     format of your system's architecture.
 
 `-h` or `--help`
 :   Prints the help message.
 
-`--ignore-signing-information`
+[`--ignore-signing-information`]{#option--ignore-signing-information}
 :   Suppresses a fatal error when signed modular JARs are linked in the runtime
     image. The signature-related files of the signed modular JARs aren't copied
     to the runtime image.
 
-`--launcher` *command*`=`*module* or `--launcher` *command*`=`*module*`/`*main*
+[`--launcher`]{#option--launcher} *command*`=`*module* or `--launcher` *command*`=`*module*`/`*main*
 :   Specifies the launcher command name for the module or the command name for
     the module and main class (the module and the main class names are
     separated by a slash (`/`)).
 
-`--limit-modules` *mod*\[`,`*mod*...\]
+[`--limit-modules`]{#option--limit-modules} *mod*\[`,`*mod*...\]
 :   Limits the universe of observable modules to those in the transitive
     closure of the named modules, `mod`, plus the main module, if any, plus any
     further modules specified in the `--add-modules` option.
 
-`--list-plugins`
+[`--list-plugins`]{#option--list-plugins}
 :   Lists available plug-ins, which you can access through command-line
     options; see [jlink Plug-ins].
 
-`-p` or `--module-path` *modulepath*
-:   Specifies the module path.
+[`-p`]{#option-module-path} or `--module-path` *modulepath*
+:   A ":"-separated list of elements (";" on Windows), each of which is a file
+    path to a module or a directory containing modules. Each module is either a
+    modular JAR file, a JMOD file, or an exploded-module directory.
 
-    If this option is not specified, then the default module path is
-    `$JAVA_HOME/jmods`. This directory contains the `java.base` module and the
-    other standard and JDK modules. If this option is specified but the
-    `java.base` module cannot be resolved from it, then the `jlink` command
-    appends `$JAVA_HOME/jmods` to the module path.
+    If the specified module path does not contain `java.base`, it is prepended to
+    the default module path. The default module path contains the standard and
+    JDK modules provided by the JDK running `jlink`. This allows `jlink` to find
+    `java.base` and other modules without specifying their locations to the
+    `--module-path` option. If the `--module-path` option is not specified, then
+    only the default module path is used.
 
-`--no-header-files`
+    When creating a run-time image for a different target platform (cross-linking),
+    the specified module path must contain all modules required for the target
+    platform, including `java.base`.
+
+[`--no-header-files`]{#option--no-header-files}
 :   Excludes header files.
 
-`--no-man-pages`
+[`--no-man-pages`]{#option--no-man-pages}
 :   Excludes man pages.
 
-`--output` *path*
+[`--output`]{#option--output} *path*
 :   Specifies the location of the generated runtime image.
 
-`--save-opts` *filename*
+[`--save-opts`]{#option--save-opts} *filename*
 :   Saves `jlink` options in the specified file.
 
-`--suggest-providers` \[*name*`,` ...\]
+[`--suggest-providers`]{#option--suggest-providers} \[*name*`,` ...\]
 :   Suggest providers that implement the given service types from the module
     path.
 
@@ -170,14 +181,19 @@ For a complete list of all available plug-ins, run the command
 ### Plugin `compress`
 
 Options
-:   `--compress=`{`0`\|`1`\|`2`}\[`:filter=`*pattern-list*\]
+:   `--compress=zip-`{`0`-`9`}\[`:filter=`*pattern-list*\]
 
 Description
 :   Compresses all resources in the output image.
+    Accepted values are:
+    zip-{0-9}, where zip-0 provides no compression,
+    and zip-9 provides the best compression. Default is zip-6.
 
-    -   Level 0: No compression
+:   Deprecated values to be removed in a future release:
+
+    -   Level 0: No compression. Use zip-0 instead.
     -   Level 1: Constant string sharing
-    -   Level 2: ZIP
+    -   Level 2: ZIP. Use zip-6 instead.
 
     An optional *pattern-list* filter can be specified to list the pattern of
     files to include.
@@ -218,6 +234,14 @@ Options
 Description
 :   Strips debug information from the output image.
 
+    Source-file names, source-debug extensions, line numbers, and local-variable
+    information are removed from class files. Consequently, stack traces for
+    affected classes omit source-file names and line numbers, and debuggers lose
+    source-line and local-variable information. On supported platforms, native
+    debug symbols are also stripped. External debug-symbol files and directories,
+    such as `.pdb`, `.map`, `.dSYM`, `.debuginfo`, and `.diz`, are excluded from
+    the output image.
+
 ### Plugin `generate-cds-archive`
 
 Options
@@ -225,6 +249,16 @@ Options
 
 Description
 :   Generate CDS archive if the runtime image supports the CDS feature.
+
+### Plugin `cacerts`
+
+Options
+:   `--cacerts=`*alias*\[`,`*alias*\]\*
+
+Description
+:   Create the `cacerts` keystore in the output image with only the
+    certificates of the specified aliases. *alias* is the name of an alias
+    in the `cacerts` keystore in the java.base module.
 
 ## jlink Examples
 
@@ -279,8 +313,6 @@ Suggested providers:
   java.smartcardio provides java.security.Provider used by java.base
   java.xml.crypto provides java.security.Provider used by java.base
   jdk.crypto.cryptoki provides java.security.Provider used by java.base
-  jdk.crypto.ec provides java.security.Provider used by java.base
-  jdk.crypto.mscapi provides java.security.Provider used by java.base
   jdk.security.jgss provides java.security.Provider used by java.base
 ```
 

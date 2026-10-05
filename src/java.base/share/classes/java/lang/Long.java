@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,17 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.PreviewFeatures;
+import jdk.internal.value.Deserializer;
+import jdk.internal.value.ValueClass;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
-import static java.lang.String.LATIN1;
-import static java.lang.String.UTF16;
 
 /**
  * The {@code Long} class is the {@linkplain
@@ -56,10 +58,19 @@ import static java.lang.String.UTF16;
  * with a {@code long}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Long} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
+ *
  *
  * <p>Implementation note: The implementations of the "bit twiddling"
  * methods (such as {@link #highestOneBit(long) highestOneBit} and
@@ -68,14 +79,11 @@ import static java.lang.String.UTF16;
  * Delight</cite>, (Addison Wesley, 2002) and <cite>Hacker's
  * Delight, Second Edition</cite>, (Pearson Education, 2013).
  *
- * @author  Lee Boynton
- * @author  Arthur van Hoff
- * @author  Josh Bloch
- * @author  Joseph D. Darcy
  * @since   1.0
  */
 @jdk.internal.ValueBased
-public final class Long extends Number
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Long extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
     /**
      * A constant holding the minimum value a {@code long} can
@@ -395,15 +403,9 @@ public final class Long extends Number
         // assert shift > 0 && shift <=5 : "Illegal shift value";
         int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
         int chars = Math.max(((mag + (shift - 1)) / shift), 1);
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[chars];
-            formatUnsignedLong0(val, shift, buf, 0, chars);
-            return new String(buf, LATIN1);
-        } else {
-            byte[] buf = new byte[chars * 2];
-            formatUnsignedLong0UTF16(val, shift, buf, 0, chars);
-            return new String(buf, UTF16);
-        }
+        byte[] buf = new byte[chars];
+        formatUnsignedLong0(val, shift, buf, 0, chars);
+        return String.newStringWithLatin1Bytes(buf);
     }
 
     /**
@@ -428,27 +430,6 @@ public final class Long extends Number
     }
 
     /**
-     * Format a long (treated as unsigned) into a byte buffer (UTF16 version). If
-     * {@code len} exceeds the formatted ASCII representation of {@code val},
-     * {@code buf} will be padded with leading zeroes.
-     *
-     * @param val the unsigned long to format
-     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
-     * @param buf the byte buffer to write to
-     * @param offset the offset in the destination buffer to start at
-     * @param len the number of characters to write
-     */
-    private static void formatUnsignedLong0UTF16(long val, int shift, byte[] buf, int offset, int len) {
-        int charPos = offset + len;
-        int radix = 1 << shift;
-        int mask = radix - 1;
-        do {
-            StringUTF16.putChar(buf, --charPos, Integer.digits[((int) val) & mask]);
-            val >>>= shift;
-        } while (charPos > offset);
-    }
-
-    /**
      * Returns a {@code String} object representing the specified
      * {@code long}.  The argument is converted to signed decimal
      * representation and returned as a string, exactly as if the
@@ -460,15 +441,9 @@ public final class Long extends Number
      */
     public static String toString(long i) {
         int size = DecimalDigits.stringSize(i);
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[size];
-            DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
-            return new String(buf, LATIN1);
-        } else {
-            byte[] buf = new byte[size * 2];
-            DecimalDigits.uncheckedGetCharsUTF16(i, size, buf);
-            return new String(buf, UTF16);
-        }
+        byte[] buf = new byte[size];
+        DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
+        return String.newStringWithLatin1Bytes(buf);
     }
 
     /**
@@ -950,6 +925,10 @@ public final class Long extends Number
         return Long.valueOf(parseLong(s, 10));
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
+    @AOTSafeClassInitializer
     private static final class LongCache {
         private LongCache() {}
 
@@ -963,7 +942,7 @@ public final class Long extends Number
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(LongCache.class);
             if (archivedCache == null) {
-                Long[] c = new Long[size];
+                Long[] c = newCacheArray(size);
                 long value = -128;
                 for(int i = 0; i < size; i++) {
                     c[i] = new Long(value++);
@@ -973,19 +952,38 @@ public final class Long extends Number
             cache = archivedCache;
             assert cache.length == size;
         }
+
+        private static Long[] newCacheArray(int size) {
+            // ValueClass.newReferenceArray requires a value class component.
+            if (PreviewFeatures.isEnabled()) {
+                return (Long[]) ValueClass.newReferenceArray(Long.class, size);
+            }
+            return new Long[size];
+        }
     }
 
     /**
      * Returns a {@code Long} instance representing the specified
      * {@code long} value.
-     * If a new {@code Long} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Long(long)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
-     *
-     * This method will always cache values in the range -128 to 127,
-     * inclusive, and may cache other values outside of this range.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Long} is an identity class.
+     *              If a new {@code Long} instance is not required, this method
+     *              should generally be used in preference to the constructor
+     *              {@link #Long(long)}, as this method is likely to yield
+     *              significantly better space and time performance by caching
+     *              frequently requested values.
+     *              This method will always cache values in the range -128 to 127,
+     *              inclusive, and may cache other values outside of this range.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Long} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor,
+     *              whether cached or not.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  l a long value.
      * @return a {@code Long} instance representing {@code l}.
@@ -993,9 +991,9 @@ public final class Long extends Number
      */
     @IntrinsicCandidate
     public static Long valueOf(long l) {
-        final int offset = 128;
         if (l >= -128 && l <= 127) { // will cache
-            return LongCache.cache[(int)l + offset];
+            final int offset = 128;
+            return LongCache.cache[(int) l + offset];
         }
         return new Long(l);
     }
@@ -1110,6 +1108,7 @@ public final class Long extends Number
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
+    @Deserializer("value")
     public Long(long value) {
         this.value = value;
     }
@@ -1448,6 +1447,7 @@ public final class Long extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned quotient of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #remainderUnsigned
      * @since 1.8
      */
@@ -1471,6 +1471,7 @@ public final class Long extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned remainder of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #divideUnsigned
      * @since 1.8
      */

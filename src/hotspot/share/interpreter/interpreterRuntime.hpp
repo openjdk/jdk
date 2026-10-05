@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,13 @@ class InterpreterRuntime: AllStatic {
   static void    anewarray     (JavaThread* current, ConstantPool* pool, int index, jint size);
   static void    multianewarray(JavaThread* current, jint* first_size_address);
   static void    register_finalizer(JavaThread* current, oopDesc* obj);
+  static void    read_flat_field(JavaThread* current, oopDesc* object, ResolvedFieldEntry* entry);
+  static void    write_flat_field(JavaThread* current, oopDesc* object, oopDesc* value, ResolvedFieldEntry* entry);
+
+  static void flat_array_load(JavaThread* current, arrayOopDesc* array, int index);
+  static void flat_array_store(JavaThread* current, oopDesc* val, arrayOopDesc* array, int index);
+
+  static jboolean is_substitutable(JavaThread* current, oopDesc* aobj, oopDesc* bobj);
 
   // Quicken instance-of and check-cast bytecodes
   static void    quicken_io_cc(JavaThread* current);
@@ -94,7 +101,7 @@ class InterpreterRuntime: AllStatic {
 
   // Used by AOTConstantPoolResolver
   static void resolve_get_put(Bytecodes::Code bytecode, int field_index,
-                              methodHandle& m, constantPoolHandle& pool, bool initialize_holder, TRAPS);
+                              methodHandle& m, constantPoolHandle& pool, ClassInitMode init_mode, TRAPS);
   static void cds_resolve_invoke(Bytecodes::Code bytecode, int method_index,
                                  constantPoolHandle& pool, TRAPS);
   static void cds_resolve_invokehandle(int raw_index,
@@ -103,12 +110,12 @@ class InterpreterRuntime: AllStatic {
                                         constantPoolHandle& pool, TRAPS);
 private:
   // Statics & fields
-  static void resolve_get_put(JavaThread* current, Bytecodes::Code bytecode);
+  static void resolve_get_put(Bytecodes::Code bytecode, TRAPS);
 
   // Calls
-  static void resolve_invoke(JavaThread* current, Bytecodes::Code bytecode);
-  static void resolve_invokehandle (JavaThread* current);
-  static void resolve_invokedynamic(JavaThread* current);
+  static void resolve_invoke(Bytecodes::Code bytecode, TRAPS);
+  static void resolve_invokehandle (TRAPS);
+  static void resolve_invokedynamic(TRAPS);
 
   static void update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
                                            methodHandle& resolved_method,
@@ -121,6 +128,7 @@ private:
 
   static void    throw_illegal_monitor_state_exception(JavaThread* current);
   static void    new_illegal_monitor_state_exception(JavaThread* current);
+  static void    throw_identity_exception(JavaThread* current, oopDesc* obj);
 
   // Breakpoints
   static void _breakpoint(JavaThread* current, Method* method, address bcp);
@@ -146,8 +154,8 @@ private:
                                         Method* method,
                                         intptr_t* from, intptr_t* to);
 
-#if defined(IA32) || defined(AMD64) || defined(ARM)
-  // Popframe support (only needed on x86, AMD64 and ARM)
+#if defined(AMD64) || defined(ARM)
+  // Popframe support (only needed on AMD64 and ARM)
   static void popframe_move_outgoing_args(JavaThread* current, void* src_address, void* dest_address);
 #endif
 
@@ -170,6 +178,11 @@ private:
   static void    verify_mdp(Method* method, address bcp, address mdp);
 #endif // ASSERT
   static MethodCounters* build_method_counters(JavaThread* current, Method* m);
+
+  // Virtual Thread Preemption
+  DEBUG_ONLY(static bool is_preemptable_call(address entry_point);)
+
+  DEBUG_ONLY(static void generate_oop_map_alot();)
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@
 
 #include "code/relocInfo.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+class ciValueKlass;
+class SigEntry;
+class VMRegPair;
 
 // Introduced AddressLiteral and its subclasses to ease portability from
 // x86 and avoid relocation issues
@@ -445,7 +449,7 @@ public:
   int should_not_call_this() {
     raw_push(FP, LR);
     should_not_reach_here();
-    flush();
+    invalidate_icache();
     return 2; // frame_size_in_words (FP+LR)
   }
 
@@ -1010,23 +1014,23 @@ public:
   void cas_for_lock_acquire(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
   void cas_for_lock_release(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
 
-  // Attempt to lightweight-lock an object
+  // Attempt to fast-lock an object
   // Registers:
   //  - obj: the object to be locked
   //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
   // Result:
   //  - Success: fallthrough
   //  - Error:   break to slow, Z cleared.
-  void lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+  void fast_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
 
-  // Attempt to lightweight-unlock an object
+  // Attempt to fast-unlock an object
   // Registers:
   //  - obj: the object to be unlocked
   //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
   // Result:
   //  - Success: fallthrough
   //  - Error:   break to slow, Z cleared.
-  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+  void fast_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
 
 #ifndef PRODUCT
   // Preserves flags and all registers.
@@ -1081,6 +1085,11 @@ public:
 
   static int ic_check_size();
   int ic_check(int end_alignment);
+
+  // Value type specific methods
+  #include "asm/macroAssembler_common.hpp"
+
+  void remove_frame(int initial_framesize);
 };
 
 

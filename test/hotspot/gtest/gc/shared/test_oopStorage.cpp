@@ -47,7 +47,7 @@ public:
   typedef OopStorage::ActiveArray ActiveArray;
 
   static ActiveArray& active_array(const OopStorage& storage) {
-    return *storage._active_array;
+    return *storage._active_array.load_relaxed();
   }
 
   static AllocationList& allocation_list(OopStorage& storage) {
@@ -90,7 +90,7 @@ public:
   }
 
   static void block_array_set_block_count(ActiveArray* blocks, size_t count) {
-    blocks->_block_count = count;
+    blocks->_block_count.store_relaxed(count);
   }
 
   static const oop* get_block_pointer(const Block& block, unsigned index) {
@@ -486,7 +486,7 @@ public:
 
     EXPECT_EQ(storage().block_count(), empty_block_count(storage()));
 
-    FREE_C_HEAP_ARRAY(oop*, to_release);
+    FREE_C_HEAP_ARRAY(to_release);
   }
 
   struct PointerCompare {
@@ -534,7 +534,7 @@ TEST_VM_F(OopStorageTest, invalid_malloc_pointer) {
   oop* ptr = reinterpret_cast<oop*>(align_down(mem + 250, sizeof(oop)));
   // Predicate returns false for some malloc'ed block.
   EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
-  FREE_C_HEAP_ARRAY(char, mem);
+  FREE_C_HEAP_ARRAY(mem);
 }
 
 TEST_VM_F(OopStorageTest, invalid_random_pointer) {

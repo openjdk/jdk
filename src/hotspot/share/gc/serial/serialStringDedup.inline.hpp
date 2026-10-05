@@ -30,9 +30,9 @@
 #include "oops/oop.inline.hpp"
 
 bool SerialStringDedup::is_candidate_from_evacuation(oop obj,
+                                                     const Klass* klass,
                                                      bool obj_is_tenured) {
-  return StringDedup::is_enabled() &&
-         java_lang_String::is_instance(obj) &&
+  return StringDedup::is_enabled_string(klass) &&
          (obj_is_tenured ?
           StringDedup::is_below_threshold_age(obj->age()) :
           StringDedup::is_threshold_age(obj->age()));

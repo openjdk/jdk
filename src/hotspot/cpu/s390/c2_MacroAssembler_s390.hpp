@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,9 +29,9 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  public:
-  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in s390.ad file.
-  void fast_lock_lightweight(Register obj, Register box, Register temp1, Register temp2);
-  void fast_unlock_lightweight(Register obj, Register box, Register temp1, Register temp2);
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in s390.ad file.
+  void fast_lock(Register obj, Register box, Register temp1, Register temp2);
+  void fast_unlock(Register obj, Register box, Register temp1, Register temp2);
 
   void load_narrow_klass_compact_c2(Register dst, Address src);
 

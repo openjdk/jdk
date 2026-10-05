@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ class ChannelInputStream extends InputStream {
         if (len == 0)
             return 0;
 
+        len = Math.min(len, Streams.MAX_BUFFER_SIZE);
         ByteBuffer bb = ((this.bs == bs)
                          ? this.bb
                          : ByteBuffer.wrap(bs));

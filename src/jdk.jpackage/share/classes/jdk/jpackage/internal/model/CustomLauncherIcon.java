@@ -29,11 +29,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Custom application launcher icon.
+ * Custom application launcher icon sourced from an external file.
  * <p>
  * Use {@link #create(Path)} method to create an instance of this type.
  */
-public interface CustomLauncherIcon extends LauncherIcon {
+public sealed interface CustomLauncherIcon extends LauncherIcon {
 
     /**
      * Returns path to icon file.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class TIFFJPEGDecompressor extends TIFFDecompressor {
 
     public TIFFJPEGDecompressor() {}
 
+    @Override
     public void beginDecoding() {
         // Initialize the JPEG reader if needed.
         if(this.JPEGReader == null) {
@@ -90,6 +91,7 @@ public class TIFFJPEGDecompressor extends TIFFDecompressor {
         }
     }
 
+    @Override
     public void decodeRaw(byte[] b,
                           int dstOffset,
                           int bitsPerPixel,

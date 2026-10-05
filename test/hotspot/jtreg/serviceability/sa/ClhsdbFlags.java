@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @bug 8217845
  * @summary Test clhsdb flags command
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver ClhsdbFlags
@@ -108,7 +109,7 @@ public class ClhsdbFlags {
                 "-XX:NativeMemoryTracking=off",    // ccstr
                 "-XX:OnError='echo error'",        // ccstrlist
                 "-XX:CompileThresholdScaling=1.0", // double
-                "-XX:ErrorLogTimeout=120");        // uint64_t
+                "-XX:MaxDirectMemorySize=4294967297");        // uint64_t
             theApp = new LingeredApp();
             LingeredApp.startAppExactJvmOpts(theApp, vmArgs);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
@@ -126,7 +127,7 @@ public class ClhsdbFlags {
                     "NativeMemoryTracking = \"off\"",
                     "OnError = \"'echo error'\"",
                     "CompileThresholdScaling = 1.0",
-                    "ErrorLogTimeout = 120"));
+                    "MaxDirectMemorySize = 4294967297"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (Exception ex) {

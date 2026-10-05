@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@
 
 //------------------------------generate_exception_blob---------------------------
 // Creates exception blob at the end.
-// Using exception blob, this code is jumped from a compiled method.
 //
 // Given an exception pc at a call we call into the runtime for the
 // handler in this method. This handler might merely restore state
@@ -142,8 +141,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ mtlr(R4_ARG2);
   __ bctr();
 
-  // Make sure all code is generated.
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   // Set exception blob.
   return ExceptionBlob::create(&buffer, oop_maps,

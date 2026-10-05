@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.Set;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
-import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -429,13 +428,41 @@ public class Reflection {
     }
 
     private static String msgSuffix(int modifiers) {
-        boolean packageAccess =
-            ((Modifier.PRIVATE |
-              Modifier.PROTECTED |
-              Modifier.PUBLIC) & modifiers) == 0;
-        return packageAccess ?
-            " with package access" :
-            " with modifiers \"" + Modifier.toString(modifiers) + "\"";
+        return " with " + accessControlStatus(modifiers) + " access";
+    }
+
+    /**
+     * Returns a display string for the access control modifier status.
+     * In particular, this prints "package-private" status.
+     * Reports upon an illegal modifier input.
+     *
+     * @param modifiers modifier input
+     * @return the display string
+     */
+    public static String accessControlStatus(int modifiers) {
+        modifiers &= (Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC);
+        return switch (modifiers) {
+            case 0 -> "package-private";
+            case Modifier.PUBLIC -> "public";
+            case Modifier.PRIVATE -> "private";
+            case Modifier.PROTECTED -> "protected";
+            default -> "(illegal modifiers 0x%x)".formatted(modifiers);
+        };
+    }
+
+    /**
+     * Adds the public/protected/private access control modifiers to a display buffer.
+     *
+     * @param sb the buffer
+     * @param modifiers the modifiers
+     */
+    public static void appendAccessControlModifiers(StringBuilder sb, int modifiers) {
+        if (Modifier.isPublic(modifiers))
+            sb.append("public ");
+        if (Modifier.isProtected(modifiers))
+            sb.append("protected ");
+        if (Modifier.isPrivate(modifiers))
+            sb.append("private ");
     }
 
     /**

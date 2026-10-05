@@ -27,7 +27,6 @@
  * @test
  * @summary Test PrintVMInfoAtExit
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @requires vm.flagless
  * @requires vm.bits == "64"
  * @run driver PrintVMInfoAtExitTest
@@ -35,6 +34,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+
 
 public class PrintVMInfoAtExitTest {
 
@@ -48,12 +48,21 @@ public class PrintVMInfoAtExitTest {
             "-XX:CompressedClassSpaceSize=256m",
             "-version");
 
+    // How many kb of committed memory we expect in the NMT summary.
+    int committed_kb = 65536;
     OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
     output_detail.shouldContain("# JRE version:");
     output_detail.shouldContain("--  S U M M A R Y --");
     output_detail.shouldContain("Command Line: -Xmx64M -Xms64M -XX:-CreateCoredumpOnCrash -XX:+UnlockDiagnosticVMOptions -XX:+PrintVMInfoAtExit -XX:NativeMemoryTracking=summary -XX:CompressedClassSpaceSize=256m");
     output_detail.shouldContain("Native Memory Tracking:");
-    output_detail.shouldContain("Java Heap (reserved=65536KB, committed=65536KB)");
+    // Make sure the heap summary is present.
+    output_detail.shouldMatch("Java Heap \\(reserved=[0-9]+KB, committed=" + committed_kb + "KB\\)");
+    // Check reserved >= committed.
+    String reserved_kb_string = output_detail.firstMatch("Java Heap \\(reserved=([0-9]+)KB, committed=" + committed_kb + "KB\\)", 1);
+    int reserved_kb = Integer.parseInt(reserved_kb_string);
+    if (reserved_kb < committed_kb) {
+        throw new RuntimeException("committed more memory than reserved");
+    }
   }
 }
 

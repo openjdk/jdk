@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,25 @@
 
 package test.astro;
 
-import static java.lang.String.valueOf;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
-import static test.astro.AstroConstants.ASTROCAT;
-import static test.astro.AstroConstants.GOLDEN_DIR;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.transform.sax.TransformerHandler;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static java.lang.String.valueOf;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static test.astro.AstroConstants.ASTROCAT;
+import static test.astro.AstroConstants.GOLDEN_DIR;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.astro.AstroTest
+ * @run junit/othervm test.astro.AstroTest
  * @summary run astro application, test xslt
  *
  * There are vast amounts of textual astronomical data, typically user is
@@ -67,10 +66,11 @@ import org.testng.annotations.Test;
  * AstroProcessor to test different JAXP classes and features.
  *
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AstroTest {
     private FiltersAndGolden[] data;
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         data = new FiltersAndGolden[4];
         data[0] = new FiltersAndGolden(getGoldenFileName(1), astro -> astro.getRAFilter(0.106, 0.108));
@@ -82,8 +82,7 @@ public class AstroTest {
     /*
      * Provide permutations of InputSourceFactory and FilterFactory for test.
      */
-    @DataProvider(name = "factories")
-    public Object[][] getQueryFactories() {
+    public static Object[][] getQueryFactories() {
         return new Object[][] {
                 { StreamFilterFactoryImpl.class, InputSourceFactoryImpl.class },
                 { SAXFilterFactoryImpl.class, InputSourceFactoryImpl.class },
@@ -92,7 +91,8 @@ public class AstroTest {
                 { StreamFilterFactoryImpl.class, DOML3InputSourceFactoryImpl.class } };
     }
 
-    @Test(dataProvider = "factories")
+    @ParameterizedTest
+    @MethodSource("getQueryFactories")
     public void test(Class<FilterFactory> fFactClass, Class<InputSourceFactory> isFactClass) throws Exception {
         System.out.println(fFactClass.getName() +" : " + isFactClass.getName());
         AstroProcessor astro = new AstroProcessor(fFactClass, ASTROCAT, isFactClass);
@@ -108,10 +108,12 @@ public class AstroTest {
         for (int i = 0; i < filterCreators.length; i++)
             filters[i] = filterCreators[i].createFilter(astro);
 
-        String outputfile = Files.createTempFile(Paths.get(USER_DIR), "query" + processNum + ".out.", null).toString();
+        String outputfile = Files.createTempFile(Paths.get("."), "query" + processNum + ".out.", null).toString();
         System.out.println("output file: " + outputfile);
         astro.process(outputfile, filters);
-        assertTrue(compareWithGold(goldenFileName, outputfile));
+        assertLinesMatch(
+                Files.readAllLines(Path.of(goldenFileName)),
+                Files.readAllLines(Path.of(outputfile)));
     }
 
     private String getGoldenFileName(int num) {
@@ -124,8 +126,8 @@ public class AstroTest {
     }
 
     private static class FiltersAndGolden {
-        private FilterCreator[] filters;
-        private String goldenFileName;
+        private final FilterCreator[] filters;
+        private final String goldenFileName;
 
         FiltersAndGolden(String goldenFileName, FilterCreator... filters) {
             this.filters = filters;

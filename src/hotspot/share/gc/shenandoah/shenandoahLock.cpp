@@ -24,7 +24,6 @@
 
 
 #include "gc/shenandoah/shenandoahLock.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
@@ -46,8 +45,8 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   int ctr = os::is_MP() ? 0xFF : 0;
   int yields = 0;
   // Apply TTAS to avoid more expensive CAS calls if the lock is still held by other thread.
-  while (AtomicAccess::load(&_state) == locked ||
-         AtomicAccess::cmpxchg(&_state, unlocked, locked) != unlocked) {
+  while (_state.load_relaxed() == locked ||
+         _state.compare_exchange(unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
       // Lightly contended, spin a little if no safepoint is pending.
       SpinPause();
@@ -90,53 +89,24 @@ void ShenandoahLock::yield_or_sleep(int &yields) {
   }
 }
 
-ShenandoahSimpleLock::ShenandoahSimpleLock() {
+ShenandoahSimpleLock::ShenandoahSimpleLock() : _owner(nullptr) {
   assert(os::mutex_init_done(), "Too early!");
 }
 
-void ShenandoahSimpleLock::lock() {
+bool ShenandoahSimpleLock::lock() {
+  if (_owner.load_relaxed() == Thread::current()) {
+    return false;
+  }
+
   _lock.lock();
+  assert(_owner.load_relaxed() == nullptr, "No owner yet.");
+  _owner.store_relaxed(Thread::current());
+
+  return true;
 }
 
 void ShenandoahSimpleLock::unlock() {
+  assert(_owner.load_relaxed() == Thread::current(), "Lock must be held by current thread.");
+  _owner.store_relaxed(nullptr);
   _lock.unlock();
-}
-
-ShenandoahReentrantLock::ShenandoahReentrantLock() :
-  ShenandoahSimpleLock(), _owner(nullptr), _count(0) {
-  assert(os::mutex_init_done(), "Too early!");
-}
-
-ShenandoahReentrantLock::~ShenandoahReentrantLock() {
-  assert(_count == 0, "Unbalance");
-}
-
-void ShenandoahReentrantLock::lock() {
-  Thread* const thread = Thread::current();
-  Thread* const owner = AtomicAccess::load(&_owner);
-
-  if (owner != thread) {
-    ShenandoahSimpleLock::lock();
-    AtomicAccess::store(&_owner, thread);
-  }
-
-  _count++;
-}
-
-void ShenandoahReentrantLock::unlock() {
-  assert(owned_by_self(), "Invalid owner");
-  assert(_count > 0, "Invalid count");
-
-  _count--;
-
-  if (_count == 0) {
-    AtomicAccess::store(&_owner, (Thread*)nullptr);
-    ShenandoahSimpleLock::unlock();
-  }
-}
-
-bool ShenandoahReentrantLock::owned_by_self() const {
-  Thread* const thread = Thread::current();
-  Thread* const owner = AtomicAccess::load(&_owner);
-  return owner == thread;
 }

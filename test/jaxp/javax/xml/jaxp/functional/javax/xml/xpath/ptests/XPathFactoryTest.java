@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,24 @@
 
 package javax.xml.xpath.ptests;
 
-import static javax.xml.xpath.XPathConstants.DOM_OBJECT_MODEL;
-import static javax.xml.xpath.XPathFactory.DEFAULT_OBJECT_MODEL_URI;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNotSame;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
+import jaxp.library.JAXPDataProvider;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
 
-import jaxp.library.JAXPDataProvider;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static javax.xml.xpath.XPathConstants.DOM_OBJECT_MODEL;
+import static javax.xml.xpath.XPathFactory.DEFAULT_OBJECT_MODEL_URI;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class containing the test cases for XPathFactory API.
@@ -48,7 +49,8 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.xpath.ptests.XPathFactoryTest
+ * @build jaxp.library.JAXPDataProvider
+ * @run junit/othervm javax.xml.xpath.ptests.XPathFactoryTest
  */
 public class XPathFactoryTest {
     /**
@@ -78,9 +80,11 @@ public class XPathFactoryTest {
      *
      * @return a data provider contains XPathFactory instantiation parameters.
      */
-    @DataProvider(name = "parameters")
-    public Object[][] getValidateParameters() {
-        return new Object[][] { { VALID_URL, XPATH_FACTORY_CLASSNAME, null }, { VALID_URL, XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    public static Object[][] getValidateParameters() {
+        return new Object[][] {
+                { VALID_URL, XPATH_FACTORY_CLASSNAME, null },
+                { VALID_URL, XPATH_FACTORY_CLASSNAME, XPathFactoryTest.class.getClassLoader() },
+        };
     }
 
     /**
@@ -94,8 +98,8 @@ public class XPathFactoryTest {
         XPathFactory xpf2 = XPathFactory.newInstance(DEFAULT_OBJECT_MODEL_URI);
         assertNotSame(xpf1, xpf2, "same instance returned:");
         assertSame(xpf1.getClass(), xpf2.getClass(),
-                  "unexpected class mismatch for newDefaultInstance():");
-        assertEquals(xpf1.getClass().getName(), DEFAULT_IMPL_CLASS);
+                "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(DEFAULT_IMPL_CLASS, xpf1.getClass().getName());
         assertTrue(xpf1.isObjectModelSupported(DEFAULT_OBJECT_MODEL_URI),
                    "isObjectModelSupported(DEFAULT_OBJECT_MODEL_URI):");
         assertFalse(xpf1.isObjectModelSupported(INVALID_URL),
@@ -107,13 +111,9 @@ public class XPathFactoryTest {
      * factoryClassName, java.lang.ClassLoader classLoader) factoryClassName
      * points to correct implementation of javax.xml.xpath.XPathFactory , should
      * return newInstance of XPathFactory
-     *
-     * @param uri
-     * @param factoryClassName
-     * @param classLoader
-     * @throws XPathFactoryConfigurationException
      */
-    @Test(dataProvider = "parameters")
+    @ParameterizedTest
+    @MethodSource("getValidateParameters")
     public void testNewInstance(String uri, String factoryClassName, ClassLoader classLoader) throws XPathFactoryConfigurationException {
         XPathFactory xpf = XPathFactory.newInstance(uri, factoryClassName, classLoader);
         XPath xpath = xpf.newXPath();
@@ -123,39 +123,34 @@ public class XPathFactoryTest {
     /**
      * Test for XPathFactory.newInstance(java.lang.String uri, java.lang.String
      * factoryClassName, java.lang.ClassLoader classLoader)
-     *
-     * @param factoryClassName
-     * @param classLoader
-     * @throws XPathFactoryConfigurationException
-     *             is expected when factoryClassName is null
      */
-    @Test(expectedExceptions = XPathFactoryConfigurationException.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
-    public void testNewInstanceWithNullFactoryClassName(String factoryClassName, ClassLoader classLoader) throws XPathFactoryConfigurationException {
-        XPathFactory.newInstance(VALID_URL, factoryClassName, classLoader);
+    @ParameterizedTest
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
+    public void testNewInstanceWithNullFactoryClassName(String factoryClassName, ClassLoader classLoader) {
+        assertThrows(
+                XPathFactoryConfigurationException.class,
+                () -> XPathFactory.newInstance(VALID_URL, factoryClassName, classLoader));
     }
 
     /**
      * Test for XPathFactory.newInstance(java.lang.String uri, java.lang.String
      * factoryClassName, java.lang.ClassLoader classLoader) uri is null , should
      * throw NPE
-     *
-     * @throws XPathFactoryConfigurationException
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNewInstanceWithNullUri() throws XPathFactoryConfigurationException {
-        XPathFactory.newInstance(null, XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader());
+    @Test
+    public void testNewInstanceWithNullUri() {
+        assertThrows(
+                NullPointerException.class,
+                () -> XPathFactory.newInstance(null, XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader()));
     }
 
     /**
      * Test for XPathFactory.newInstance(java.lang.String uri, java.lang.String
      * factoryClassName, java.lang.ClassLoader classLoader)
-     *
-     * @throws IllegalArgumentException
-     *             is expected when uri is empty
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testNewInstanceWithEmptyUri() throws XPathFactoryConfigurationException {
-        XPathFactory.newInstance("", XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader());
+    @Test
+    public void testNewInstanceWithEmptyUri() {
+        assertThrows(IllegalArgumentException.class, () -> XPathFactory.newInstance("", XPATH_FACTORY_CLASSNAME, this.getClass().getClassLoader()));
     }
 
     /**
@@ -169,24 +164,20 @@ public class XPathFactoryTest {
     /**
      * XPathFactory.newInstance(String uri) throws NPE if uri is null.
      *
-     * @throws XPathFactoryConfigurationException If the specified object model
-    *          is unavailable, or if there is a configuration error.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testCheckXPathFactory02() throws XPathFactoryConfigurationException {
-        XPathFactory.newInstance(null);
+    @Test
+    public void testCheckXPathFactory02() {
+        assertThrows(NullPointerException.class, () -> XPathFactory.newInstance(null));
     }
 
     /**
      * XPathFactory.newInstance(String uri) throws XPFCE if uri is just a blank
      * string.
      *
-     * @throws XPathFactoryConfigurationException If the specified object model
-    *          is unavailable, or if there is a configuration error.
      */
-    @Test(expectedExceptions = XPathFactoryConfigurationException.class)
-    public void testCheckXPathFactory03() throws XPathFactoryConfigurationException {
-        XPathFactory.newInstance(" ");
+    @Test
+    public void testCheckXPathFactory03() {
+        assertThrows(XPathFactoryConfigurationException.class, () -> XPathFactory.newInstance(" "));
     }
 
     /**
@@ -205,12 +196,10 @@ public class XPathFactoryTest {
      * Test for constructor - XPathFactory.newInstance(String uri) with invalid
      * url - "http://java.sun.com/jaxp/xpath/dom1".
      *
-     * @throws XPathFactoryConfigurationException If the specified object model
-    *          is unavailable, or if there is a configuration error.
      */
-    @Test(expectedExceptions = XPathFactoryConfigurationException.class)
-    public void testCheckXPathFactory05() throws XPathFactoryConfigurationException {
-        XPathFactory.newInstance(INVALID_URL);
+    @Test
+    public void testCheckXPathFactory05() {
+        assertThrows(XPathFactoryConfigurationException.class, () -> XPathFactory.newInstance(INVALID_URL));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.code;
 
 import java.lang.ref.SoftReference;
+import java.lang.runtime.ExactConversionsSupport;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Locale;
@@ -120,7 +121,12 @@ public class Types {
         capturedName = names.fromString("<captured wildcard>");
         messages = JavacMessages.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        noWarnings = new Warner(null);
+        noWarnings = new Warner(null) {
+            @Override
+            public String toString() {
+                return "NO_WARNINGS";
+            }
+        };
         Options options = Options.instance(context);
         dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
@@ -992,10 +998,12 @@ public class Types {
 
        @Override
        public boolean test(Symbol sym) {
+           List<MethodSymbol> msyms;
            return sym.kind == MTH &&
                    (sym.flags() & (ABSTRACT | DEFAULT)) == ABSTRACT &&
                    !overridesObjectMethod(origin, sym) &&
-                   (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
+                   (msyms = interfaceCandidates(origin.type, (MethodSymbol)sym)).nonEmpty() &&
+                   (msyms.head.flags() & DEFAULT) == 0;
        }
     }
 
@@ -1346,7 +1354,7 @@ public class Types {
          * Type-equality relation - type variables are considered
          * equals if they share the same object identity.
          */
-        TypeRelation isSameTypeVisitor = new TypeRelation() {
+        abstract class TypeEqualityVisitor extends TypeRelation {
 
             public Boolean visitType(Type t, Type s) {
                 if (t.equalsIgnoreMetadata(s))
@@ -1385,9 +1393,11 @@ public class Types {
                 } else {
                     WildcardType t2 = (WildcardType)s;
                     return (t.kind == t2.kind || (t.isExtendsBound() && s.isExtendsBound())) &&
-                            isSameType(t.type, t2.type);
+                            sameTypeComparator(t.type, t2.type);
                 }
             }
+
+            abstract boolean sameTypeComparator(Type t, Type s);
 
             @Override
             public Boolean visitClassType(ClassType t, Type s) {
@@ -1419,8 +1429,10 @@ public class Types {
                 }
                 return t.tsym == s.tsym
                     && visit(t.getEnclosingType(), s.getEnclosingType())
-                    && containsTypeEquivalent(t.getTypeArguments(), s.getTypeArguments());
+                    && sameTypeArguments(t.getTypeArguments(), s.getTypeArguments());
             }
+
+            abstract boolean sameTypeArguments(List<Type> ts, List<Type> ss);
 
             @Override
             public Boolean visitArrayType(ArrayType t, Type s) {
@@ -1431,7 +1443,7 @@ public class Types {
                     return visit(s, t);
 
                 return s.hasTag(ARRAY)
-                    && containsTypeEquivalent(t.elemtype, elemtype(s));
+                    && visit(t.elemtype, elemtype(s));
             }
 
             @Override
@@ -1476,6 +1488,16 @@ public class Types {
             @Override
             public Boolean visitErrorType(ErrorType t, Type s) {
                 return true;
+            }
+        }
+
+        TypeEqualityVisitor isSameTypeVisitor = new TypeEqualityVisitor() {
+            boolean sameTypeComparator(Type t, Type s) {
+                return isSameType(t, s);
+            }
+
+            boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
+                return containsTypeEquivalent(ts, ss);
             }
         };
 
@@ -2843,13 +2865,17 @@ public class Types {
             hasSameArgs(t, erasure(s)) || hasSameArgs(erasure(t), s);
     }
 
-    public boolean overridesObjectMethod(TypeSymbol origin, Symbol msym) {
+    public Symbol overriddenObjectMethod(TypeSymbol origin, Symbol msym) {
         for (Symbol sym : syms.objectType.tsym.members().getSymbolsByName(msym.name)) {
             if (msym.overrides(sym, origin, Types.this, true)) {
-                return true;
+                return sym;
             }
         }
-        return false;
+        return null;
+    }
+
+    public boolean overridesObjectMethod(TypeSymbol origin, Symbol msym) {
+        return overriddenObjectMethod(origin, msym) != null;
     }
 
     /**
@@ -3838,31 +3864,34 @@ public class Types {
      * Intersect two closures
      */
     public List<Type> intersect(List<Type> cl1, List<Type> cl2) {
-        if (cl1 == cl2)
-            return cl1;
-        if (cl1.isEmpty() || cl2.isEmpty())
-            return List.nil();
-        if (cl1.head.tsym.precedes(cl2.head.tsym, this))
-            return intersect(cl1.tail, cl2);
-        if (cl2.head.tsym.precedes(cl1.head.tsym, this))
-            return intersect(cl1, cl2.tail);
-        if (isSameType(cl1.head, cl2.head))
-            return intersect(cl1.tail, cl2.tail).prepend(cl1.head);
-        if (cl1.head.tsym == cl2.head.tsym &&
-            cl1.head.hasTag(CLASS) && cl2.head.hasTag(CLASS)) {
-            if (cl1.head.isParameterized() && cl2.head.isParameterized()) {
-                Type merge = merge(cl1.head,cl2.head);
-                return intersect(cl1.tail, cl2.tail).prepend(merge);
-            }
-            if (cl1.head.isRaw() || cl2.head.isRaw())
-                return intersect(cl1.tail, cl2.tail).prepend(erasure(cl1.head));
-        }
-        return intersect(cl1.tail, cl2.tail);
+        return intersectHelper(cl1, cl2, new HashMap<>());
     }
     // where
+        private List<Type> intersectHelper(List<Type> cl1, List<Type> cl2, Map<TypePair, Type> mergeCache) {
+            if (cl1 == cl2)
+                return cl1;
+            if (cl1.isEmpty() || cl2.isEmpty())
+                return List.nil();
+            if (cl1.head.tsym.precedes(cl2.head.tsym, this))
+                return intersectHelper(cl1.tail, cl2, mergeCache);
+            if (cl2.head.tsym.precedes(cl1.head.tsym, this))
+                return intersectHelper(cl1, cl2.tail, mergeCache);
+            if (isSameType(cl1.head, cl2.head))
+                return intersectHelper(cl1.tail, cl2.tail, mergeCache).prepend(cl1.head);
+            if (cl1.head.tsym == cl2.head.tsym &&
+                    cl1.head.hasTag(CLASS) && cl2.head.hasTag(CLASS)) {
+                if (cl1.head.isParameterized() && cl2.head.isParameterized()) {
+                    Type merge = merge(cl1.head,cl2.head, mergeCache);
+                    return intersectHelper(cl1.tail, cl2.tail, mergeCache).prepend(merge);
+                }
+                if (cl1.head.isRaw() || cl2.head.isRaw())
+                    return intersectHelper(cl1.tail, cl2.tail, mergeCache).prepend(erasure(cl1.head));
+            }
+            return intersectHelper(cl1.tail, cl2.tail, mergeCache);
+        }
         class TypePair {
             final Type t1;
-            final Type t2;;
+            final Type t2;
 
             TypePair(Type t1, Type t2) {
                 this.t1 = t1;
@@ -3875,12 +3904,33 @@ public class Types {
             @Override
             public boolean equals(Object obj) {
                 return (obj instanceof TypePair typePair)
-                        && isSameType(t1, typePair.t1)
-                        && isSameType(t2, typePair.t2);
+                        && exactTypeVisitor.visit(t1, typePair.t1)
+                        && exactTypeVisitor.visit(t2, typePair.t2);
             }
         }
-        Set<TypePair> mergeCache = new HashSet<>();
-        private Type merge(Type c1, Type c2) {
+
+        TypeEqualityVisitor exactTypeVisitor = new TypeEqualityVisitor() {
+            @Override
+            boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
+                while (ts.nonEmpty() && ss.nonEmpty()
+                        && sameTypeComparator(ts.head, ss.head)) {
+                    ts = ts.tail;
+                    ss = ss.tail;
+                }
+                return ts.isEmpty() && ss.isEmpty();
+            }
+
+            @Override
+            boolean sameTypeComparator(Type t, Type s) {
+                return exactTypeVisitor.visit(t, s);
+            }
+        };
+
+        private Type merge(Type c1, Type c2, Map<TypePair, Type> mergeCache) {
+            TypePair pair = new TypePair(c1, c2);
+            Type cached = mergeCache.get(pair);
+            if (cached != null && cached != noType) return cached;
+
             ClassType class1 = (ClassType) c1;
             List<Type> act1 = class1.getTypeArguments();
             ClassType class2 = (ClassType) c2;
@@ -3894,14 +3944,15 @@ public class Types {
                 } else if (containsType(act2.head, act1.head)) {
                     merged.append(act2.head);
                 } else {
-                    TypePair pair = new TypePair(c1, c2);
                     Type m;
-                    if (mergeCache.add(pair)) {
-                        m = new WildcardType(lub(wildUpperBound(act1.head),
-                                                 wildUpperBound(act2.head)),
+                    if (mergeCache.get(pair) == null) {
+                        mergeCache.put(pair, noType);
+                        m = new WildcardType(lubHelper(mergeCache,
+                                                       wildUpperBound(act1.head),
+                                                       wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
                                              syms.boundClass);
-                        mergeCache.remove(pair);
+                        mergeCache.remove(pair, noType);
                     } else {
                         m = new WildcardType(syms.objectType,
                                              BoundKind.UNBOUND,
@@ -3916,8 +3967,14 @@ public class Types {
             Assert.check(act1.isEmpty() && act2.isEmpty() && typarams.isEmpty());
             // There is no spec detailing how type annotations are to
             // be inherited.  So set it to noAnnotations for now
-            return new ClassType(class1.getEnclosingType(), merged.toList(),
-                                 class1.tsym);
+            Type result = new ClassType(class1.getEnclosingType(), merged.toList(),
+                                        class1.tsym);
+            /* We need to store this result, to potentially avoid OOM errors that can be produced when many types
+             * that are equal but with different identity are created while determining the lub, in particular
+             * when F-bounded generic classes are present
+             */
+            mergeCache.put(pair, result);
+            return result;
         }
 
     /**
@@ -3939,7 +3996,7 @@ public class Types {
      * Return the minimum types of a closure, suitable for computing
      * compoundMin or glb.
      */
-    private List<Type> closureMin(List<Type> cl) {
+    public List<Type> closureMin(List<Type> cl) {
         ListBuffer<Type> classes = new ListBuffer<>();
         ListBuffer<Type> interfaces = new ListBuffer<>();
         Set<Type> toSkip = new HashSet<>();
@@ -3976,7 +4033,7 @@ public class Types {
      * not exist return null.
      */
     public Type lub(List<Type> ts) {
-        return lub(ts.toArray(new Type[ts.length()]));
+        return lubHelper(new HashMap<>(), ts.toArray(new Type[ts.length()]));
     }
 
     /**
@@ -3984,6 +4041,14 @@ public class Types {
      * does not exist return the type of null (bottom).
      */
     public Type lub(Type... ts) {
+        return lubHelper(new HashMap<>(), ts);
+    }
+
+    private Type lubHelper(Map<TypePair, Type> mergeCache, List<Type> ts) {
+        return lubHelper(mergeCache, ts.toArray(new Type[ts.length()]));
+    }
+
+    private Type lubHelper(Map<TypePair, Type> mergeCache, Type... ts) {
         final int UNKNOWN_BOUND = 0;
         final int ARRAY_BOUND = 1;
         final int CLASS_BOUND = 2;
@@ -4042,7 +4107,7 @@ public class Types {
                 }
             }
             // lub(A[], B[]) is lub(A, B)[]
-            return new ArrayType(lub(elements), syms.arrayClass);
+            return new ArrayType(lubHelper(mergeCache, elements), syms.arrayClass);
 
         case CLASS_BOUND:
             // calculate lub(A, B)
@@ -4061,17 +4126,18 @@ public class Types {
             for (int i = startIdx + 1 ; i < ts.length ; i++) {
                 Type t = ts[i];
                 if (t.hasTag(CLASS) || t.hasTag(TYPEVAR))
-                    cl = intersect(cl, erasedSupertypes(t));
+                    cl = intersectHelper(cl, erasedSupertypes(t), mergeCache);
             }
             //step 2 - compute minimal erased candidate set (MEC)
             List<Type> mec = closureMin(cl);
             //step 3 - for each element G in MEC, compute lci(Inv(G))
             List<Type> candidates = List.nil();
             for (Type erasedSupertype : mec) {
-                List<Type> lci = List.of(asSuper(ts[startIdx], erasedSupertype.tsym));
+                Type firstSuperType = asSuper(ts[startIdx], erasedSupertype.tsym);
+                List<Type> lci = firstSuperType != null ? List.of(firstSuperType) : List.nil();
                 for (int i = startIdx + 1 ; i < ts.length ; i++) {
                     Type superType = asSuper(ts[i], erasedSupertype.tsym);
-                    lci = intersect(lci, superType != null ? List.of(superType) : List.nil());
+                    lci = intersectHelper(lci, superType != null ? List.of(superType) : List.nil(), mergeCache);
                 }
                 candidates = candidates.appendList(lci);
             }
@@ -4087,22 +4153,23 @@ public class Types {
                     classes = classes.prepend(ts[i]);
             }
             // lub(A, B[]) is lub(A, arraySuperType)
-            return lub(classes);
+            return lubHelper(mergeCache, classes);
         }
     }
-    // where
-        List<Type> erasedSupertypes(Type t) {
-            ListBuffer<Type> buf = new ListBuffer<>();
-            for (Type sup : closure(t)) {
-                if (sup.hasTag(TYPEVAR)) {
-                    buf.append(sup);
-                } else {
-                    buf.append(erasure(sup));
-                }
-            }
-            return buf.toList();
-        }
 
+    public List<Type> erasedSupertypes(Type t) {
+        ListBuffer<Type> buf = new ListBuffer<>();
+        for (Type sup : closure(t)) {
+            if (sup.hasTag(TYPEVAR)) {
+                buf.append(sup);
+            } else {
+                buf.append(erasure(sup));
+            }
+        }
+        return buf.toList();
+    }
+
+    // where
         private Type arraySuperType;
         private Type arraySuperType() {
             // initialized lazily to avoid problems during compiler startup
@@ -4321,7 +4388,7 @@ public class Types {
             isSameType(t, s) ||
             !t.isPrimitive() &&
             !s.isPrimitive() &&
-            isAssignable(t, s, warner);
+            isSubtypeUnchecked(t, s, warner);
     }
     // </editor-fold>
 
@@ -5053,46 +5120,128 @@ public class Types {
     }
     // </editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc="Unconditionality">
-    /** Check unconditionality between any combination of reference or primitive types.
+    // <editor-fold defaultstate="collapsed" desc="Unconditional Exactness">
+    /** Check type-based unconditional exactness between any combination of
+     *  reference or primitive types according to JLS 5.7.2.
      *
-     *  Rules:
-     *    an identity conversion
-     *    a widening reference conversion
-     *    a widening primitive conversion (delegates to `checkUnconditionallyExactPrimitives`)
-     *    a boxing conversion
-     *    a boxing conversion followed by a widening reference conversion
+     *  The following are unconditionally exact regardless of the input
+     *  expression:
+     *
+     *    - an identity conversion
+     *    - a widening reference conversion
+     *    - an exact widening primitive conversion
+     *    - a boxing conversion
+     *    - a boxing conversion followed by a widening reference conversion
      *
      *  @param source     Source primitive or reference type
      *  @param target     Target primitive or reference type
      */
-    public boolean isUnconditionallyExact(Type source, Type target) {
+    public boolean isUnconditionallyExactTypeBased(Type source, Type target) {
         if (isSameType(source, target)) {
             return true;
         }
 
-        return target.isPrimitive()
-                ? isUnconditionallyExactPrimitives(source, target)
-                : isSubtype(boxedTypeOrType(erasure(source)), target);
+        if (target.isPrimitive()) {
+            if (source.isPrimitive() &&
+                ((source.getTag().isStrictSubRangeOf(target.getTag())) &&
+                        !((source.hasTag(BYTE) && target.hasTag(CHAR)) ||
+                          (source.hasTag(INT) && target.hasTag(FLOAT)) ||
+                          (source.hasTag(LONG) && (target.hasTag(DOUBLE) || target.hasTag(FLOAT)))))) return true;
+            else {
+                return false;
+            }
+        } else {
+            return isSubtype(boxedTypeOrType(erasure(source)), target);
+        }
     }
 
-    /** Check unconditionality between primitive types.
+    /** Check value-based unconditional exactness between any combination of
+     *  reference or primitive types for the value of a constant expression
+     *   according to JLS 5.7.2.
      *
-     *  - widening from one integral type to another,
-     *  - widening from one floating point type to another,
-     *  - widening from byte, short, or char to a floating point type,
-     *  - widening from int to double.
+     *  The following can be unconditionally exact if the source primitive is a
+     *  constant expression and the conversions is exact for that constant
+     *  expression:
      *
-     *  @param selectorType     Type of selector
-     *  @param targetType       Target type
+     *    - a narrowing primitive conversion
+     *    - a widening and narrowing primitive conversion
+     *    - a widening primitive conversion that is not exact
+     *
+     *  @param source     Source primitive or reference type, should be a numeric value
+     *  @param target     Target primitive or reference type
      */
-    public boolean isUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
-        return isSameType(selectorType, targetType) ||
-                (selectorType.isPrimitive() && targetType.isPrimitive()) &&
-                ((selectorType.getTag().isStrictSubRangeOf(targetType.getTag())) &&
-                        !((selectorType.hasTag(BYTE) && targetType.hasTag(CHAR)) ||
-                          (selectorType.hasTag(INT)  && targetType.hasTag(FLOAT)) ||
-                          (selectorType.hasTag(LONG) && (targetType.hasTag(DOUBLE) || targetType.hasTag(FLOAT)))));
+    public boolean isUnconditionallyExactValueBased(Type source, Type target) {
+        if (!(source.constValue() instanceof Number value) || !target.getTag().isNumeric()) return false;
+
+        switch (source.getTag()) {
+            case BYTE:
+                switch (target.getTag()) {
+                    case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+                }
+                break;
+            case CHAR:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+                    case SHORT:     return ExactConversionsSupport.isIntToShortExact(value.intValue());
+                }
+                break;
+            case SHORT:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+                    case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+                }
+                break;
+            case INT:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+                    case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+                    case SHORT:     return ExactConversionsSupport.isIntToShortExact(value.intValue());
+                    case FLOAT:     return ExactConversionsSupport.isIntToFloatExact(value.intValue());
+                }
+                break;
+            case FLOAT:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isFloatToByteExact(value.floatValue());
+                    case CHAR:      return ExactConversionsSupport.isFloatToCharExact(value.floatValue());
+                    case SHORT:     return ExactConversionsSupport.isFloatToShortExact(value.floatValue());
+                    case INT:       return ExactConversionsSupport.isFloatToIntExact(value.floatValue());
+                    case LONG:      return ExactConversionsSupport.isFloatToLongExact(value.floatValue());
+                }
+                break;
+            case LONG:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isLongToByteExact(value.longValue());
+                    case CHAR:      return ExactConversionsSupport.isLongToCharExact(value.longValue());
+                    case SHORT:     return ExactConversionsSupport.isLongToShortExact(value.longValue());
+                    case INT:       return ExactConversionsSupport.isLongToIntExact(value.longValue());
+                    case FLOAT:     return ExactConversionsSupport.isLongToFloatExact(value.longValue());
+                    case DOUBLE:    return ExactConversionsSupport.isLongToDoubleExact(value.longValue());
+                }
+                break;
+            case DOUBLE:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isDoubleToByteExact(value.doubleValue());
+                    case CHAR:      return ExactConversionsSupport.isDoubleToCharExact(value.doubleValue());
+                    case SHORT:     return ExactConversionsSupport.isDoubleToShortExact(value.doubleValue());
+                    case INT:       return ExactConversionsSupport.isDoubleToIntExact(value.doubleValue());
+                    case FLOAT:     return ExactConversionsSupport.isDoubleToFloatExact(value.doubleValue());
+                    case LONG:      return ExactConversionsSupport.isDoubleToLongExact(value.doubleValue());
+                }
+                break;
+        }
+        return true;
+    }
+
+    /** Check both type or value-based unconditional exactness between any
+     *  combination of reference or primitive types for the value of a constant
+     *  expression according to JLS 5.7.2.
+     *
+     *  @param source     Source primitive or reference type, should be a numeric value
+     *  @param target     Target primitive or reference type
+     */
+    public boolean isUnconditionallyExactCombined(Type currentType, Type testType) {
+        return isUnconditionallyExactTypeBased(currentType, testType) ||
+                (currentType.constValue() instanceof Number && isUnconditionallyExactValueBased(currentType, testType));
     }
     // </editor-fold>
 

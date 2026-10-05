@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2024, Red Hat Inc.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ class CgroupV2CpuController: public CgroupCpuController {
   public:
     CgroupV2CpuController(const CgroupV2Controller& reader) : _reader(reader) {
     }
-    int cpu_quota() override;
-    int cpu_period() override;
-    int cpu_shares() override;
-    jlong cpu_usage_in_micros();
+    bool cpu_quota(int& value) override;
+    bool cpu_period(int& value) override;
+    bool cpu_shares(int& value) override;
+    bool cpu_usage_in_micros(uint64_t& value);
     bool is_read_only() override {
       return reader()->is_read_only();
     }
@@ -87,8 +87,8 @@ class CgroupV2CpuacctController: public CgroupCpuacctController {
     CgroupV2CpuacctController(CgroupV2CpuController* reader) : _reader(reader) {
     }
     // In cgroup v2, cpu usage is a part of the cpu controller.
-    jlong cpu_usage_in_micros() override {
-      return reader()->cpu_usage_in_micros();
+    bool cpu_usage_in_micros(uint64_t& result) override {
+      return reader()->cpu_usage_in_micros(result);
     }
     bool is_read_only() override {
       return reader()->is_read_only();
@@ -110,20 +110,27 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
   private:
     CgroupV2Controller _reader;
     CgroupV2Controller* reader() { return &_reader; }
+
   public:
     CgroupV2MemoryController(const CgroupV2Controller& reader) : _reader(reader) {
     }
 
-    jlong read_memory_limit_in_bytes(julong upper_bound) override;
-    jlong memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound) override;
-    jlong memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound) override;
-    jlong memory_soft_limit_in_bytes(julong upper_bound) override;
-    jlong memory_throttle_limit_in_bytes() override;
-    jlong memory_usage_in_bytes() override;
-    jlong memory_max_usage_in_bytes() override;
-    jlong rss_usage_in_bytes() override;
-    jlong cache_usage_in_bytes() override;
-    void print_version_specific_info(outputStream* st, julong upper_mem_bound) override;
+    bool read_memory_limit_in_bytes(physical_memory_size_type upper_bound,
+                                    physical_memory_size_type& result) override;
+    bool memory_and_swap_limit_in_bytes(physical_memory_size_type upper_mem_bound,
+                                        physical_memory_size_type upper_swap_bound,
+                                        physical_memory_size_type& result) override;
+    bool memory_and_swap_usage_in_bytes(physical_memory_size_type upper_mem_bound,
+                                        physical_memory_size_type upper_swap_bound,
+                                        physical_memory_size_type& result) override;
+    bool memory_soft_limit_in_bytes(physical_memory_size_type upper_bound,
+                                    physical_memory_size_type& result) override;
+    bool memory_throttle_limit_in_bytes(physical_memory_size_type& result) override;
+    bool memory_usage_in_bytes(physical_memory_size_type& result) override;
+    bool memory_max_usage_in_bytes(physical_memory_size_type& result) override;
+    bool rss_usage_in_bytes(physical_memory_size_type& result) override;
+    bool cache_usage_in_bytes(physical_memory_size_type& result) override;
+    void print_version_specific_info(outputStream* st, physical_memory_size_type upper_mem_bound) override;
     bool is_read_only() override {
       return reader()->is_read_only();
     }
@@ -145,8 +152,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     /* One unified controller */
     CgroupV2Controller _unified;
     /* Caching wrappers for cpu/memory metrics */
-    CachingCgroupController<CgroupMemoryController>* _memory = nullptr;
-    CachingCgroupController<CgroupCpuController>* _cpu = nullptr;
+    CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* _memory = nullptr;
+    CachingCgroupController<CgroupCpuController, double>* _cpu = nullptr;
 
     CgroupCpuacctController* _cpuacct = nullptr;
 
@@ -160,16 +167,16 @@ class CgroupV2Subsystem: public CgroupSubsystem {
 
     char * cpu_cpuset_cpus() override;
     char * cpu_cpuset_memory_nodes() override;
-    jlong pids_max() override;
-    jlong pids_current() override;
+    bool pids_max(uint64_t& result) override;
+    bool pids_current(uint64_t& result) override;
 
     bool is_containerized() override;
 
     const char * container_type() override {
       return "cgroupv2";
     }
-    CachingCgroupController<CgroupMemoryController>* memory_controller() override { return _memory; }
-    CachingCgroupController<CgroupCpuController>* cpu_controller() override { return _cpu; }
+    CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* memory_controller() override { return _memory; }
+    CachingCgroupController<CgroupCpuController, double>* cpu_controller() override { return _cpu; }
     CgroupCpuacctController* cpuacct_controller() override { return _cpuacct; };
 };
 

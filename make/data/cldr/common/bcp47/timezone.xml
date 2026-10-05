@@ -17,14 +17,14 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="aiaxa" description="Anguilla" alias="America/Anguilla"/>
             <type name="altia" description="Tirane, Albania" alias="Europe/Tirane"/>
             <type name="amevn" description="Yerevan, Armenia" alias="Asia/Yerevan"/>
-            <type name="ancur" description="Curaçao" alias="America/Curacao"/>
+            <type name="ancur" description="Curaçao" alias="America/Curacao" region="CW"/>
             <type name="aolad" description="Luanda, Angola" alias="Africa/Luanda"/>
-            <type name="aqams" description="Amundsen-Scott Station, South Pole" deprecated="true" preferred="nzakl"/>
+            <type name="aqams" description="Amundsen-Scott Station, South Pole" deprecated="true" preferred="aqmcm"/>
             <type name="aqcas" description="Casey Station, Bailey Peninsula" alias="Antarctica/Casey"/>
             <type name="aqdav" description="Davis Station, Vestfold Hills" alias="Antarctica/Davis"/>
             <type name="aqddu" description="Dumont d'Urville Station, Terre Adélie" alias="Antarctica/DumontDUrville"/>
             <type name="aqmaw" description="Mawson Station, Holme Bay" alias="Antarctica/Mawson"/>
-            <type name="aqmcm" description="McMurdo Station, Ross Island" alias="Antarctica/McMurdo"/>
+            <type name="aqmcm" description="McMurdo Station, Ross Island" alias="Antarctica/McMurdo Antarctica/South_Pole"/>
             <type name="aqplm" description="Palmer Station, Anvers Island" alias="Antarctica/Palmer"/>
             <type name="aqrot" description="Rothera Station, Adelaide Island" alias="Antarctica/Rothera"/>
             <type name="aqsyw" description="Syowa Station, East Ongul Island" alias="Antarctica/Syowa"/>
@@ -130,6 +130,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="chzrh" description="Zurich, Switzerland" alias="Europe/Zurich"/>
             <type name="ciabj" description="Abidjan, Côte d'Ivoire" alias="Africa/Abidjan"/>
             <type name="ckrar" description="Rarotonga, Cook Islands" alias="Pacific/Rarotonga"/>
+            <type name="clcxq" description="Aysén Region, Chile" alias="America/Coyhaique" since="48"/>
             <type name="clipc" description="Easter Island, Chile" alias="Pacific/Easter Chile/EasterIsland"/>
             <type name="clpuq" description="Punta Arenas, Chile" alias="America/Punta_Arenas" since="31"/>
             <type name="clscl" description="Santiago, Chile" alias="America/Santiago Chile/Continental"/>
@@ -167,7 +168,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="est5edt" description="POSIX style time zone for US Eastern Time" deprecated="true" preferred="usnyc"/>
             <type name="etadd" description="Addis Ababa, Ethiopia" alias="Africa/Addis_Ababa"/>
             <type name="fihel" description="Helsinki, Finland" alias="Europe/Helsinki"/>
-            <type name="fimhq" description="Mariehamn, Åland, Finland" alias="Europe/Mariehamn"/>
+            <type name="fimhq" description="Mariehamn, Åland, Finland" alias="Europe/Mariehamn" region="AX"/>
             <type name="fjsuv" description="Fiji" alias="Pacific/Fiji"/>
             <type name="fkpsy" description="Stanley, Falkland Islands" alias="Atlantic/Stanley"/>
             <type name="fmksa" description="Kosrae, Micronesia" alias="Pacific/Kosrae"/>
@@ -177,7 +178,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="frpar" description="Paris, France" alias="Europe/Paris"/>
             <type name="galbv" description="Libreville, Gabon" alias="Africa/Libreville"/>
             <type name="gaza" description="Gaza Strip, Palestinian Territories" deprecated="true" preferred="gazastrp"/>
-            <type name="gazastrp" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza" since="40"/>
+            <type name="gazastrp" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza" since="40" region="PS"/>
             <type name="gblon" description="London, United Kingdom" alias="Europe/London Europe/Belfast GB GB-Eire"/>
             <type name="gdgnd" description="Grenada" alias="America/Grenada"/>
             <type name="getbs" description="Tbilisi, Georgia" alias="Asia/Tbilisi"/>
@@ -193,8 +194,8 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="gmt" description="Greenwich Mean Time" alias="Etc/GMT Etc/GMT+0 Etc/GMT-0 Etc/GMT0 Etc/Greenwich GMT GMT+0 GMT-0 GMT0 Greenwich" since="31"/>
             <type name="gncky" description="Conakry, Guinea" alias="Africa/Conakry"/>
             <type name="gpbbr" description="Guadeloupe" alias="America/Guadeloupe"/>
-            <type name="gpmsb" description="Marigot, Saint Martin" alias="America/Marigot"/>
-            <type name="gpsbh" description="Saint Barthélemy" alias="America/St_Barthelemy"/>
+            <type name="gpmsb" description="Marigot, Saint Martin" alias="America/Marigot" region="MF"/>
+            <type name="gpsbh" description="Saint Barthélemy" alias="America/St_Barthelemy" region="BL"/>
             <type name="gqssg" description="Malabo, Equatorial Guinea" alias="Africa/Malabo"/>
             <type name="grath" description="Athens, Greece" alias="Europe/Athens EET"/>
             <type name="gsgrv" description="South Georgia and the South Sandwich Islands" alias="Atlantic/South_Georgia"/>
@@ -202,7 +203,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="gugum" description="Guam" alias="Pacific/Guam"/>
             <type name="gwoxb" description="Bissau, Guinea-Bissau" alias="Africa/Bissau"/>
             <type name="gygeo" description="Guyana" alias="America/Guyana"/>
-            <type name="hebron" description="West Bank, Palestinian Territories" alias="Asia/Hebron" since="21"/>
+            <type name="hebron" description="West Bank, Palestinian Territories" alias="Asia/Hebron" since="21" region="PS"/>
             <type name="hkhkg" description="Hong Kong SAR China" alias="Asia/Hong_Kong Hongkong"/>
             <type name="hntgu" description="Tegucigalpa, Honduras" alias="America/Tegucigalpa"/>
             <type name="hrzag" description="Zagreb, Croatia" alias="Europe/Zagreb"/>
@@ -220,7 +221,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="irthr" description="Tehran, Iran" alias="Asia/Tehran Iran"/>
             <type name="isrey" description="Reykjavik, Iceland" alias="Atlantic/Reykjavik Iceland"/>
             <type name="itrom" description="Rome, Italy" alias="Europe/Rome"/>
-            <type name="jeruslm" description="Jerusalem" alias="Asia/Jerusalem Asia/Tel_Aviv Israel"/>
+            <type name="jeruslm" description="Jerusalem" alias="Asia/Jerusalem Asia/Tel_Aviv Israel" region="IL"/>
             <type name="jesth" description="Jersey" alias="Europe/Jersey"/>
             <type name="jmkin" description="Jamaica" alias="America/Jamaica Jamaica"/>
             <type name="joamm" description="Amman, Jordan" alias="Asia/Amman"/>
@@ -305,7 +306,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="npktm" description="Kathmandu, Nepal" alias="Asia/Katmandu Asia/Kathmandu" iana="Asia/Kathmandu"/>
             <type name="nrinu" description="Nauru" alias="Pacific/Nauru"/>
             <type name="nuiue" description="Niue" alias="Pacific/Niue"/>
-            <type name="nzakl" description="Auckland, New Zealand" alias="Pacific/Auckland Antarctica/South_Pole NZ"/>
+            <type name="nzakl" description="Auckland, New Zealand" alias="Pacific/Auckland NZ"/>
             <type name="nzcht" description="Chatham Islands, New Zealand" alias="Pacific/Chatham NZ-CHAT"/>
             <type name="ommct" description="Muscat, Oman" alias="Asia/Muscat"/>
             <type name="papty" description="Panama" alias="America/Panama EST"/>

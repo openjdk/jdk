@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class JavaThread extends Thread {
   private static AddressField  stackBaseField;
   private static CIntegerField stackSizeField;
   private static CIntegerField terminatedField;
+  private static AddressField  contEntryField;
   private static AddressField activeHandlesField;
   private static CIntegerField monitorOwnerIDField;
   private static long oopPtrSize;
@@ -57,15 +58,10 @@ public class JavaThread extends Thread {
   // JavaThreadStates read from underlying process
   private static int           UNINITIALIZED;
   private static int           NEW;
-  private static int           NEW_TRANS;
   private static int           IN_NATIVE;
-  private static int           IN_NATIVE_TRANS;
   private static int           IN_VM;
-  private static int           IN_VM_TRANS;
   private static int           IN_JAVA;
-  private static int           IN_JAVA_TRANS;
   private static int           BLOCKED;
-  private static int           BLOCKED_TRANS;
 
   private static int           NOT_TERMINATED;
   private static int           EXITING;
@@ -95,6 +91,7 @@ public class JavaThread extends Thread {
     stackBaseField    = type.getAddressField("_stack_base");
     stackSizeField    = type.getCIntegerField("_stack_size");
     terminatedField   = type.getCIntegerField("_terminated");
+    contEntryField    = type.getAddressField("_cont_entry");
     activeHandlesField = type.getAddressField("_active_handles");
     monitorOwnerIDField = type.getCIntegerField("_monitor_owner_id");
 
@@ -104,15 +101,10 @@ public class JavaThread extends Thread {
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
     NEW               = db.lookupIntConstant("_thread_new").intValue();
-    NEW_TRANS         = db.lookupIntConstant("_thread_new_trans").intValue();
     IN_NATIVE         = db.lookupIntConstant("_thread_in_native").intValue();
-    IN_NATIVE_TRANS   = db.lookupIntConstant("_thread_in_native_trans").intValue();
     IN_VM             = db.lookupIntConstant("_thread_in_vm").intValue();
-    IN_VM_TRANS       = db.lookupIntConstant("_thread_in_vm_trans").intValue();
     IN_JAVA           = db.lookupIntConstant("_thread_in_Java").intValue();
-    IN_JAVA_TRANS     = db.lookupIntConstant("_thread_in_Java_trans").intValue();
     BLOCKED           = db.lookupIntConstant("_thread_blocked").intValue();
-    BLOCKED_TRANS     = db.lookupIntConstant("_thread_blocked_trans").intValue();
 
     NOT_TERMINATED    = db.lookupIntConstant("JavaThread::_not_terminated").intValue();
     EXITING           = db.lookupIntConstant("JavaThread::_thread_exiting").intValue();
@@ -291,24 +283,14 @@ public class JavaThread extends Thread {
       return JavaThreadState.UNINITIALIZED;
     } else if (val == NEW) {
       return JavaThreadState.NEW;
-    } else if (val == NEW_TRANS) {
-      return JavaThreadState.NEW_TRANS;
     } else if (val == IN_NATIVE) {
       return JavaThreadState.IN_NATIVE;
-    } else if (val == IN_NATIVE_TRANS) {
-      return JavaThreadState.IN_NATIVE_TRANS;
     } else if (val == IN_VM) {
       return JavaThreadState.IN_VM;
-    } else if (val == IN_VM_TRANS) {
-      return JavaThreadState.IN_VM_TRANS;
     } else if (val == IN_JAVA) {
       return JavaThreadState.IN_JAVA;
-    } else if (val == IN_JAVA_TRANS) {
-      return JavaThreadState.IN_JAVA_TRANS;
     } else if (val == BLOCKED) {
       return JavaThreadState.BLOCKED;
-    } else if (val == BLOCKED_TRANS) {
-      return JavaThreadState.BLOCKED_TRANS;
     } else {
       throw new RuntimeException("Illegal thread state " + val);
     }
@@ -338,6 +320,10 @@ public class JavaThread extends Thread {
 
   public int getTerminated() {
       return (int) terminatedField.getValue(addr);
+  }
+
+  public ContinuationEntry getContEntry() {
+      return ContinuationEntry.create(contEntryField.getValue(addr));
   }
 
   /** Gets the Java-side thread object for this JavaThread */

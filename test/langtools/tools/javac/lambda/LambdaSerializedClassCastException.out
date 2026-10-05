@@ -1,0 +1,2 @@
+LambdaSerializedClassCastException.java:44:59: compiler.note.lambda.deserialization.stat: java/util/function/Function, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Object, toString, ()Ljava/lang/String;, (Ljava/lang/String;)Ljava/lang/String;
+LambdaSerializedClassCastException.java:46:59: compiler.note.lambda.deserialization.stat: java/util/function/Function, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Object, toString, ()Ljava/lang/String;, (Ljava/lang/Object;)Ljava/lang/String;

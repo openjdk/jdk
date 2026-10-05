@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3155,8 +3155,10 @@ class Assembler : public AbstractAssembler {
 
   inline void z_basr(Register r1, Register r2);
   inline void z_brasl(Register r1, address a);
-  inline void z_brct(Register r1, address a);
-  inline void z_brct(Register r1, Label& L);
+  inline void z_brct( Register r1, address a);
+  inline void z_brct( Register r1, Label& L);
+  inline void z_brctg(Register r1, address a);
+  inline void z_brctg(Register r1, Label& L);
 
   inline void z_brxh(Register r1, Register r3, address a);
   inline void z_brxh(Register r1, Register r3, Label& L);
@@ -3278,6 +3280,9 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_z_nop(address x) {
     return is_z_nop(* (short *) x);
+  }
+  static bool is_z_illtrap(address x) {
+    return *(uint8_t*)x == 0u;
   }
   static bool is_z_br(long x) {
     return is_z_bcr(x) && ((x & 0x00f0) == 0x00f0);

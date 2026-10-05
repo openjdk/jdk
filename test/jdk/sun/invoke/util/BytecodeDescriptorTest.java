@@ -79,7 +79,13 @@ class BytecodeDescriptorTest {
         assertSame(int.class,      BytecodeDescriptor.parseClass("I", null),                  "primitive");
         assertSame(long[][].class, BytecodeDescriptor.parseClass("[[J", null),                "array");
         assertSame(Object.class,   BytecodeDescriptor.parseClass("Ljava/lang/Object;", null), "class or interface");
+        assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("java.lang.Object", null),    "binary name");
+        assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("L[a;", null),                "bad class or interface");
+        assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("Ljava.lang.Object;", null),  "bad class or interface");
         assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("java/lang/Object", null),    "internal name");
+        assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("L;", null),                  "empty name");
+        assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("Lmissing/;", null),          "empty name part");
+        assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("L/Missing;", null),          "empty name part");
         assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("[V", null),                  "bad array");
         assertSame(Class.forName("[".repeat(255) + "I"), BytecodeDescriptor.parseClass("[".repeat(255) + "I", null),   "good array");
         assertThrows(IllegalArgumentException.class, () -> BytecodeDescriptor.parseClass("[".repeat(256) + "I", null), "bad array");
@@ -109,6 +115,21 @@ class BytecodeDescriptorTest {
         assertTrue(voidInMsgIAE.getMessage().contains("[V"), () -> "missing [V type in: '%s'".formatted(voidInMsgIAE.getMessage()));
         assertThrows(IllegalArgumentException.class,
                      () -> BytecodeDescriptor.parseClass("([".repeat(256) + "I)J", null),
+                     "bad arg");
+        assertThrows(IllegalArgumentException.class,
+                     () -> BytecodeDescriptor.parseMethod("(Ljava.lang.Object;)V", null),
+                     "bad arg");
+        assertThrows(IllegalArgumentException.class,
+                     () -> BytecodeDescriptor.parseMethod("(Ljava/lang[Object;)V", null),
+                     "bad arg");
+        assertThrows(IllegalArgumentException.class,
+                     () -> BytecodeDescriptor.parseMethod("(L;)V", null),
+                     "bad arg");
+        assertThrows(IllegalArgumentException.class,
+                     () -> BytecodeDescriptor.parseMethod("(Ljava/lang/;)V", null),
+                     "bad arg");
+        assertThrows(IllegalArgumentException.class,
+                     () -> BytecodeDescriptor.parseMethod("(L/Object;)V", null),
                      "bad arg");
 
         assertEquals(List.of(foo1, bar1),

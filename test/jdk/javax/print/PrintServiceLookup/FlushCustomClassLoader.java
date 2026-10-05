@@ -56,17 +56,6 @@ public final class FlushCustomClassLoader {
     }
 
     private static Reference<ClassLoader> getLoader(String m) throws Exception {
-        /*
-         * The print services are stored per the AppContext, and each AppContext
-         * caches the "current" class loader during creation.
-         * see javax.print.PrintServiceLookup.
-         *
-         * To prevent AppContext from cache our test loader we force AppContext
-         * creation early by the invokeAndWait.
-         * The "EventQueue.invokeAndWait(() -> {});" can be removed when the
-         * AppContext usage will be deleted in the PrintServiceLookup
-         */
-        EventQueue.invokeAndWait(() -> {});
 
         URL url = FlushCustomClassLoader.class.getProtectionDomain()
                                               .getCodeSource().getLocation();

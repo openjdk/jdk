@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import javax.imageio.spi.ImageTranscoderSpi;
 import javax.imageio.spi.ServiceRegistry;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
-import sun.awt.AppContext;
 
 /**
  * A class containing static convenience methods for locating
@@ -108,9 +107,7 @@ public final class ImageIO {
     // ImageInputStreams
 
     /**
-     * A class to hold information about caching.  Each
-     * {@code ThreadGroup} will have its own copy
-     * via the {@code AppContext} mechanism.
+     * A class to hold information about caching.
      */
     static class CacheInfo {
         boolean useCache = true;
@@ -144,17 +141,12 @@ public final class ImageIO {
         }
     }
 
+    private static final CacheInfo info = new CacheInfo();
+
     /**
-     * Returns the {@code CacheInfo} object associated with this
-     * {@code ThreadGroup}.
+     * Returns the {@code CacheInfo} object.
      */
     private static synchronized CacheInfo getCacheInfo() {
-        AppContext context = AppContext.getAppContext();
-        CacheInfo info = (CacheInfo)context.get(CacheInfo.class);
-        if (info == null) {
-            info = new CacheInfo();
-            context.put(CacheInfo.class, info);
-        }
         return info;
     }
 
@@ -477,10 +469,12 @@ public final class ImageIO {
             this.iter = iter;
         }
 
+        @Override
         public boolean hasNext() {
             return iter.hasNext();
         }
 
+        @Override
         public ImageReader next() {
             ImageReaderSpi spi = null;
             try {
@@ -494,6 +488,7 @@ public final class ImageIO {
             return null;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -508,6 +503,7 @@ public final class ImageIO {
             this.input = input;
         }
 
+        @Override
         public boolean filter(Object elt) {
             try {
                 ImageReaderSpi spi = (ImageReaderSpi)elt;
@@ -550,6 +546,7 @@ public final class ImageIO {
             this.formatName = formatName;
         }
 
+        @Override
         public boolean filter(Object elt) {
             ImageWriterSpi spi = (ImageWriterSpi)elt;
             return Arrays.asList(spi.getFormatNames()).contains(formatName) &&
@@ -570,6 +567,7 @@ public final class ImageIO {
             this.name = name;
         }
 
+        @Override
         public boolean filter(Object elt) {
             try {
                 return contains((String[])method.invoke(elt), name);
@@ -794,10 +792,12 @@ public final class ImageIO {
             this.iter = iter;
         }
 
+        @Override
         public boolean hasNext() {
             return iter.hasNext();
         }
 
+        @Override
         public ImageWriter next() {
             ImageWriterSpi spi = null;
             try {
@@ -810,6 +810,7 @@ public final class ImageIO {
             return null;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -1146,16 +1147,19 @@ public final class ImageIO {
             this.iter = iter;
         }
 
+        @Override
         public boolean hasNext() {
             return iter.hasNext();
         }
 
+        @Override
         public ImageTranscoder next() {
             ImageTranscoderSpi spi = null;
             spi = iter.next();
             return spi.createTranscoderInstance();
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -1173,6 +1177,7 @@ public final class ImageIO {
             this.writerSpiName = writerSpi.getClass().getName();
         }
 
+        @Override
         public boolean filter(Object elt) {
             ImageTranscoderSpi spi = (ImageTranscoderSpi)elt;
             String readerName = spi.getReaderServiceProviderName();

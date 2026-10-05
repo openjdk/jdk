@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,18 @@
  * @bug 8216140
  * @summary Test reversed BOM (U+FFFE) in the middle of a byte buffer
  *      passes through during decoding with UnicodeDecoder.
- * @run testng TestUnicodeReversedBOM
+ * @run junit TestUnicodeReversedBOM
  */
+
 import java.nio.charset.*;
 import java.nio.*;
 import java.util.*;
+import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
 public class TestUnicodeReversedBOM {
     private static byte[] A_REVERSED_BE =
         {(byte)0x0, (byte)'A', (byte)0xff, (byte)0xfe};
@@ -46,26 +48,25 @@ public class TestUnicodeReversedBOM {
     private static byte[] BOM_REVERSED_LE =
         {(byte)0xff, (byte)0xfe, (byte)0xfe, (byte)0xff};
 
-    @DataProvider
-    // [(byte[])byte array, (Charset)cs]
-    public static Object[][] ReversedBOM() {
-        return new Object[][] {
-            {A_REVERSED_BE, StandardCharsets.UTF_16},
-            {A_REVERSED_LE, StandardCharsets.UTF_16},
-            {A_REVERSED_BE, StandardCharsets.UTF_16BE},
-            {A_REVERSED_LE, StandardCharsets.UTF_16BE},
-            {A_REVERSED_BE, StandardCharsets.UTF_16LE},
-            {A_REVERSED_LE, StandardCharsets.UTF_16LE},
-            {BOM_REVERSED_BE, StandardCharsets.UTF_16},
-            {BOM_REVERSED_LE, StandardCharsets.UTF_16},
-            {BOM_REVERSED_BE, StandardCharsets.UTF_16BE},
-            {BOM_REVERSED_LE, StandardCharsets.UTF_16BE},
-            {BOM_REVERSED_BE, StandardCharsets.UTF_16LE},
-            {BOM_REVERSED_LE, StandardCharsets.UTF_16LE},
-        };
+    public static Stream<Arguments> ReversedBOM() {
+        return Stream.of(
+            Arguments.of(A_REVERSED_BE, StandardCharsets.UTF_16),
+            Arguments.of(A_REVERSED_LE, StandardCharsets.UTF_16),
+            Arguments.of(A_REVERSED_BE, StandardCharsets.UTF_16BE),
+            Arguments.of(A_REVERSED_LE, StandardCharsets.UTF_16BE),
+            Arguments.of(A_REVERSED_BE, StandardCharsets.UTF_16LE),
+            Arguments.of(A_REVERSED_LE, StandardCharsets.UTF_16LE),
+            Arguments.of(BOM_REVERSED_BE, StandardCharsets.UTF_16),
+            Arguments.of(BOM_REVERSED_LE, StandardCharsets.UTF_16),
+            Arguments.of(BOM_REVERSED_BE, StandardCharsets.UTF_16BE),
+            Arguments.of(BOM_REVERSED_LE, StandardCharsets.UTF_16BE),
+            Arguments.of(BOM_REVERSED_BE, StandardCharsets.UTF_16LE),
+            Arguments.of(BOM_REVERSED_LE, StandardCharsets.UTF_16LE)
+        );
     }
 
-    @Test(dataProvider = "ReversedBOM")
+    @ParameterizedTest
+    @MethodSource("ReversedBOM")
     public void testReversedBOM(byte[] ba, Charset cs) throws CharacterCodingException {
         cs.newDecoder()
             .onMalformedInput(CodingErrorAction.REPORT)

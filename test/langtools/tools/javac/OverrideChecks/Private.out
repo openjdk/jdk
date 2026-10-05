@@ -1,2 +1,2 @@
-Private.java:14:5: compiler.err.method.does.not.override.superclass
+Private.java:14:5: compiler.err.method.does.not.override.superclass: m(), Bar
 1 error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ public final class FileUtils {
      * File systems are considered to be accessible if this process completes
      * successfully before a given fixed duration has elapsed.
      *
-     * @implNote On Unix this executes the {@code df} command in a separate
+     * @implNote On Unix this executes the {@code df -a} command in a separate
      * process and on Windows always returns {@code true}.
      *
      * @return whether file systems appear to be accessible and duplicate-free
@@ -274,7 +274,7 @@ public final class FileUtils {
         final AtomicBoolean areMountPointsOK = new AtomicBoolean(true);
         Thread thr = new Thread(() -> {
             try {
-                Process proc = new ProcessBuilder("df").start();
+                Process proc = new ProcessBuilder("df", "-a").start();
                 BufferedReader reader = new BufferedReader
                     (new InputStreamReader(proc.getInputStream()));
                 // Skip the first line as it is the "df" output header.
@@ -392,7 +392,11 @@ public final class FileUtils {
             stream.forEach(sourcePath -> {
                 try {
                     Path destPath = dst.resolve(src.relativize(sourcePath));
-                    Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    if (Files.isDirectory(sourcePath, LinkOption.NOFOLLOW_LINKS)) {
+                        Files.createDirectories(destPath);
+                    } else {
+                        Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
                     destPath.toFile().setWritable(true);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -475,4 +479,11 @@ public final class FileUtils {
             {"/sbin/lsof", "-p"},
             {"/usr/local/bin/lsof", "-p"},
     };
+
+    public static String powerShellPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        String suffix = "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+        String fullPath = systemRoot == null ? null : systemRoot + suffix;
+        return (fullPath != null && Files.exists(Path.of(fullPath))) ? fullPath : "powershell";
+    }
 }

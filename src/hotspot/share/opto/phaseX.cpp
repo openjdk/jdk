@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -359,6 +360,16 @@ NodeHash::~NodeHash() {
 }
 #endif
 
+// Add users of 'n' that match 'predicate' to worklist
+template <class Predicate>
+static void add_users_to_worklist_if(Unique_Node_List& worklist, const Node* n, Predicate predicate) {
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    if (predicate(u)) {
+      worklist.push(u);
+    }
+  }
+}
 
 //=============================================================================
 //------------------------------PhaseRemoveUseless-----------------------------
@@ -376,9 +387,6 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist
   // Remove all useless nodes from PhaseValues' recorded types
   // Must be done before disconnecting nodes to preserve hash-table-invariant
   gvn->remove_useless_nodes(_useful.member_set());
-
-  // Remove all useless nodes from future worklist
-  worklist.remove_useless_nodes(_useful.member_set());
 
   // Disconnect 'useless' nodes that are adjacent to useful nodes
   C->disconnect_useless_nodes(_useful, worklist);
@@ -432,22 +440,34 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
   assert(worklist.is_subset_of(_useful), "only useful nodes should still be in the worklist");
 
+  // While we don't need to rehash, some optimizations are sensitive to the
+  // relative ordering of node IDs, for example AddNode::commute wants to keep
+  // in1 < in2. Therefore, we keep the relative ordering stable.
+  uint next_idx = 0;
+  for (int old_idx = 0; old_idx <  _old2new_map.length(); old_idx++) {
+    if (_useful.member_set().test(old_idx)) {
+      _old2new_map.at_put(old_idx, next_idx++);
+    }
+  }
+  assert(next_idx == _useful.size(), "must map all useful nodes");
+
   // Iterate over the set of live nodes.
   for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {
     Node* n = _useful.at(current_idx);
 
-    const Type* type = gvn->type_or_null(n);
-    _new_type_array.map(current_idx, type);
+    uint old_idx = n->_idx;
+    int new_idx = _old2new_map.at(old_idx);
+    assert(new_idx >= 0, "every useful node must have new idx");
 
-    assert(_old2new_map.at(n->_idx) == -1, "already seen");
-    _old2new_map.at_put(n->_idx, current_idx);
+    const Type* type = gvn->type_or_null(n);
+    _new_type_array.map(new_idx, type);
 
     if (old_node_note_array != nullptr) {
-      Node_Notes* nn = C->locate_node_notes(old_node_note_array, n->_idx);
-      C->set_node_notes_at(current_idx, nn);
+      Node_Notes* nn = C->locate_node_notes(old_node_note_array, old_idx);
+      C->set_node_notes_at(new_idx, nn);
     }
 
-    n->set_idx(current_idx); // Update node ID.
+    n->set_idx(new_idx); // Update node ID.
 
     if (update_embedded_ids(n) < 0) {
       _delayed.push(n); // has embedded IDs; handle later
@@ -532,6 +552,10 @@ void PhaseValues::init_con_caches() {
   memset(_zcons,0,sizeof(_zcons));
 }
 
+PhaseIterGVN* PhaseValues::is_IterGVN() {
+  return (_phase == PhaseValuesType::iter_gvn || _phase == PhaseValuesType::ccp) ? static_cast<PhaseIterGVN*>(this) : nullptr;
+}
+
 //--------------------------------find_int_type--------------------------------
 const TypeInt* PhaseValues::find_int_type(Node* n) {
   if (n == nullptr)  return nullptr;
@@ -560,7 +584,7 @@ PhaseValues::~PhaseValues() {
   _table.dump();
   // Statistics for value progress and efficiency
   if( PrintCompilation && Verbose && WizardMode ) {
-    tty->print("\n%sValues: %d nodes ---> %d/%d (%d)",
+    tty->print("\n%sValues: %d nodes ---> " UINT64_FORMAT "/%d (%d)",
       is_IterGVN() ? "Iter" : "    ", C->unique(), made_progress(), made_transforms(), made_new_values());
     if( made_transforms() != 0 ) {
       tty->print_cr("  ratio %f", made_progress()/(float)made_transforms() );
@@ -660,13 +684,11 @@ ConNode* PhaseValues::zerocon(BasicType bt) {
 }
 
 
-
-//=============================================================================
-Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
-  Node* i = BarrierSet::barrier_set()->barrier_set_c2()->ideal_node(this, k, can_reshape);
-  if (i == nullptr) {
-    i = k->Ideal(this, can_reshape);
-  }
+Node* PhaseGVN::apply_identity(Node* n) {
+  DEBUG_ONLY(uint old_unique = is_verify_IGVN_method_return() ? C->unique() : 0;)
+  Node* const i = n->Identity(this);
+  assert(!is_verify_IGVN_method_return() || i->_idx < old_unique,
+         "Identity() must return an existing node");
   return i;
 }
 
@@ -678,7 +700,7 @@ Node* PhaseGVN::transform(Node* n) {
 
   // Apply the Ideal call in a loop until it no longer applies
   Node* k = n;
-  Node* i = apply_ideal(k, /*can_reshape=*/false);
+  Node* i = k->Ideal(this, /*can_reshape=*/false);
   NOT_PRODUCT(uint loop_count = 1;)
   while (i != nullptr) {
     assert(i->_idx >= k->_idx, "Idealize should return new nodes, use Identity to return old nodes" );
@@ -688,7 +710,7 @@ Node* PhaseGVN::transform(Node* n) {
       dump_infinite_loop_info(i, "PhaseGVN::transform");
     }
 #endif
-    i = apply_ideal(k, /*can_reshape=*/false);
+    i = k->Ideal(this, /*can_reshape=*/false);
     NOT_PRODUCT(loop_count++;)
   }
   NOT_PRODUCT(if (loop_count != 0) { set_progress(); })
@@ -716,14 +738,14 @@ Node* PhaseGVN::transform(Node* n) {
   }
 
   if (t->singleton() && !k->is_Con()) {
-    NOT_PRODUCT(set_progress();)
+    set_progress();
     return makecon(t);          // Turn into a constant
   }
 
   // Now check for Identities
-  i = k->Identity(this);        // Look for a nearby replacement
+  i = apply_identity(k);        // Look for a nearby replacement
   if (i != k) {                 // Found? Return replacement!
-    NOT_PRODUCT(set_progress();)
+    set_progress();
     return i;
   }
 
@@ -731,7 +753,7 @@ Node* PhaseGVN::transform(Node* n) {
   i = hash_find_insert(k);      // Insert if new
   if (i && (i != k)) {
     // Return the pre-existing node
-    NOT_PRODUCT(set_progress();)
+    set_progress();
     return i;
   }
 
@@ -762,26 +784,36 @@ bool PhaseGVN::is_dominator_helper(Node *d, Node *n, bool linear_only) {
 //------------------------------dead_loop_check--------------------------------
 // Check for a simple dead loop when a data node references itself directly
 // or through an other data node excluding cons and phis.
-void PhaseGVN::dead_loop_check( Node *n ) {
-  // Phi may reference itself in a loop
-  if (n != nullptr && !n->is_dead_loop_safe() && !n->is_CFG()) {
-    // Do 2 levels check and only data inputs.
-    bool no_dead_loop = true;
-    uint cnt = n->req();
-    for (uint i = 1; i < cnt && no_dead_loop; i++) {
-      Node *in = n->in(i);
-      if (in == n) {
-        no_dead_loop = false;
-      } else if (in != nullptr && !in->is_dead_loop_safe()) {
-        uint icnt = in->req();
-        for (uint j = 1; j < icnt && no_dead_loop; j++) {
-          if (in->in(j) == n || in->in(j) == in)
-            no_dead_loop = false;
-        }
+void PhaseGVN::dead_loop_check(Node* n) {
+  // Phi may reference itself in a loop.
+  if (n == nullptr || n->is_dead_loop_safe() || n->is_CFG()) {
+    return;
+  }
+
+  // Do 2 levels check and only data inputs.
+  for (uint i = 1; i < n->req(); i++) {
+    Node* in = n->in(i);
+    if (in == n) {
+      n->dump_bfs(100, nullptr, "");
+      fatal("Dead loop detected, node references itself: %s (%d)",
+            n->Name(), n->_idx);
+    }
+
+    if (in == nullptr || in->is_dead_loop_safe()) {
+      continue;
+    }
+    for (uint j = 1; j < in->req(); j++) {
+      if (in->in(j) == n) {
+        n->dump_bfs(100, nullptr, "");
+        fatal("Dead loop detected, node input references current node: %s (%d) -> %s (%d)",
+              in->Name(), in->_idx, n->Name(), n->_idx);
+      }
+      if (in->in(j) == in) {
+        n->dump_bfs(100, nullptr, "");
+        fatal("Dead loop detected, node input references itself: %s (%d)",
+              in->Name(), in->_idx);
       }
     }
-    if (!no_dead_loop) { n->dump_bfs(100, nullptr, ""); }
-    assert(no_dead_loop, "dead loop detected");
   }
 }
 
@@ -802,7 +834,7 @@ void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
 PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_transform),
                                                  _worklist(*C->igvn_worklist())
 {
-  _iterGVN = true;
+  _phase = PhaseValuesType::iter_gvn;
   assert(&_worklist == &igvn->_worklist, "sanity");
 }
 
@@ -811,7 +843,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
                                _worklist(*C->igvn_worklist())
 {
-  _iterGVN = true;
+  _phase = PhaseValuesType::iter_gvn;
   uint max;
 
   // Dead nodes in the hash table inherited from GVN were not treated as
@@ -845,7 +877,7 @@ PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
 void PhaseIterGVN::shuffle_worklist() {
   if (_worklist.size() < 2) return;
   for (uint i = _worklist.size() - 1; i >= 1; i--) {
-    uint j = C->random() % (i + 1);
+    uint j = C->stress().random() % (i + 1);
     swap(_worklist.adr()[i], _worklist.adr()[j]);
   }
 }
@@ -884,9 +916,9 @@ void PhaseIterGVN::verify_step(Node* n) {
   }
 }
 
-void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype) {
+void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype, bool progress) {
   const Type* newtype = type_or_null(n);
-  if (nn != n || oldtype != newtype) {
+  if (progress) {
     C->print_method(PHASE_AFTER_ITER_GVN_STEP, 5, n);
   }
   if (TraceIterativeGVN) {
@@ -952,7 +984,7 @@ void PhaseIterGVN::init_verifyPhaseIterGVN() {
 #endif
 }
 
-void PhaseIterGVN::verify_PhaseIterGVN() {
+void PhaseIterGVN::verify_PhaseIterGVN(bool deep_revisit_converged) {
 #ifdef ASSERT
   // Verify nodes with changed inputs.
   Unique_Node_List* modified_list = C->modified_nodes();
@@ -985,7 +1017,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
     }
   }
 
-  verify_optimize();
+  verify_optimize(deep_revisit_converged);
 #endif
 }
 #endif /* PRODUCT */
@@ -1015,8 +1047,173 @@ void PhaseIterGVN::trace_PhaseIterGVN_verbose(Node* n, int num_processed) {
 }
 #endif /* ASSERT */
 
-void PhaseIterGVN::optimize() {
-  DEBUG_ONLY(uint num_processed  = 0;)
+// Whether a node can be killed during IGVN. While transform may kill a node based on its inputs,
+// this can also decide to kill a node based on its outputs.
+bool PhaseIterGVN::can_kill(Node* n) const {
+  if (n->is_top()) {
+    return false;
+  }
+  if (n->outcnt() == 0) {
+    return true;
+  }
+  if (n->is_Phi() && n->as_Phi()->is_dead_phi()) {
+    return true;
+  }
+  return false;
+}
+
+bool PhaseIterGVN::needs_deep_revisit(const Node* n) const {
+  // LoadNode::Value() -> can_see_stored_value() walks up through many memory
+  // nodes. LoadNode::Ideal() -> find_previous_store() also walks up to 50
+  // nodes through stores and arraycopy nodes.
+  if (n->is_Load()) {
+    return true;
+  }
+  // CmpPNode::sub() -> detect_ptr_independence() -> all_controls_dominate()
+  // walks CFG dominator relationships extensively. This only triggers when
+  // both inputs are oop pointers (subnode.cpp:984).
+  if (n->Opcode() == Op_CmpP) {
+    const Type* t1 = type_or_null(n->in(1));
+    const Type* t2 = type_or_null(n->in(2));
+    return t1 != nullptr && t1->isa_oopptr() &&
+           t2 != nullptr && t2->isa_oopptr();
+  }
+  // IfNode::Ideal() -> search_identical() walks up the CFG dominator tree.
+  // RangeCheckNode::Ideal() scans up to ~999 nodes up the chain.
+  // CountedLoopEndNode/LongCountedLoopEndNode::Ideal() via simple_subsuming
+  // looks for dominating test that subsumes the current test.
+  switch (n->Opcode()) {
+  case Op_If:
+  case Op_RangeCheck:
+  case Op_CountedLoopEnd:
+  case Op_LongCountedLoopEnd:
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
+
+bool PhaseIterGVN::drain_worklist() {
+  uint loop_count = 1;
+  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 5;
+  while (_worklist.size() != 0) {
+    if (C->check_node_count(max_live_nodes_increase_per_iteration, "Out of nodes")) {
+      C->print_method(PHASE_AFTER_ITER_GVN, 3);
+      return true;
+    }
+    Node* n  = _worklist.pop();
+    if (loop_count >= K * C->live_nodes()) {
+      DEBUG_ONLY(dump_infinite_loop_info(n, "PhaseIterGVN::drain_worklist");)
+      C->record_method_not_compilable("infinite loop in PhaseIterGVN::drain_worklist");
+      C->print_method(PHASE_AFTER_ITER_GVN, 3);
+      return true;
+    }
+    DEBUG_ONLY(trace_PhaseIterGVN_verbose(n, _num_processed++);)
+    if (can_kill(n)) {
+      remove_globally_dead_node(n, NodeOrigin::Graph);
+    } else if (!n->is_top()) {
+      NOT_PRODUCT(const Type* oldtype = type_or_null(n));
+      // Do the transformation
+      DEBUG_ONLY(int live_nodes_before = C->live_nodes();)
+      NOT_PRODUCT(uint progress_before = made_progress();)
+      Node* nn = transform_old(n);
+      NOT_PRODUCT(bool progress = (made_progress() - progress_before) > 0;)
+      DEBUG_ONLY(int live_nodes_after = C->live_nodes();)
+      // Ensure we did not increase the live node count with more than
+      // max_live_nodes_increase_per_iteration during the call to transform_old.
+      DEBUG_ONLY(int increase = live_nodes_after - live_nodes_before;)
+      assert(increase < max_live_nodes_increase_per_iteration,
+             "excessive live node increase in single iteration of IGVN: %d "
+             "(should be at most %d)",
+             increase, max_live_nodes_increase_per_iteration);
+      NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype, progress);)
+    }
+    loop_count++;
+  }
+  return false;
+}
+
+void PhaseIterGVN::push_deep_revisit_candidates() {
+  ResourceMark rm;
+  Unique_Node_List all_nodes;
+  all_nodes.push(C->root());
+  for (uint j = 0; j < all_nodes.size(); j++) {
+    Node* n = all_nodes.at(j);
+    if (needs_deep_revisit(n)) {
+      _worklist.push(n);
+    }
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      all_nodes.push(n->fast_out(i));
+    }
+  }
+}
+
+bool PhaseIterGVN::deep_revisit() {
+  // Re-process nodes that inspect the graph deeply. After the main worklist drains, walk
+  // the graph to find all live deep-inspection nodes and push them to the worklist
+  // for re-evaluation. If any produce changes, drain the worklist again.
+  // Repeat until stable. This mirrors PhaseCCP::analyze()'s revisit loop.
+  const uint max_deep_revisit_rounds = 10; // typically converges in <2 rounds
+  uint round = 0;
+  for (; round < max_deep_revisit_rounds; round++) {
+    push_deep_revisit_candidates();
+    if (_worklist.size() == 0) {
+      break; // No deep-inspection nodes to revisit, done.
+    }
+
+#ifndef PRODUCT
+    uint candidates = _worklist.size();
+    uint n_if = 0; uint n_rc = 0; uint n_load = 0; uint n_cmpp = 0; uint n_cle = 0; uint n_lcle = 0;
+    if (TraceIterativeGVN) {
+      for (uint i = 0; i < _worklist.size(); i++) {
+        Node* n = _worklist.at(i);
+        switch (n->Opcode()) {
+        case Op_If:                 n_if++;   break;
+        case Op_RangeCheck:         n_rc++;   break;
+        case Op_CountedLoopEnd:     n_cle++;  break;
+        case Op_LongCountedLoopEnd: n_lcle++; break;
+        case Op_CmpP:               n_cmpp++; break;
+        default: if (n->is_Load())  n_load++; break;
+        }
+      }
+    }
+#endif
+
+    // Convergence: if the drain does not make progress (no Ideal, Value, Identity or GVN changes),
+    // we are at a fixed point. We use made_progress() rather than live_nodes because live_nodes
+    // misses non-structural changes like a LoadNode dropping its control input.
+    uint progress_before = made_progress();
+    if (drain_worklist()) {
+      return false;
+    }
+    uint progress = made_progress() - progress_before;
+
+#ifndef PRODUCT
+    if (TraceIterativeGVN) {
+      tty->print("deep_revisit round %u: %u candidates (If=%u RC=%u Load=%u CmpP=%u CLE=%u LCLE=%u), progress=%u (%s)",
+                 round, candidates, n_if, n_rc, n_load, n_cmpp, n_cle, n_lcle, progress, progress != 0 ? "changed" : "converged");
+      if (C->method() != nullptr) {
+        tty->print(", ");
+        C->method()->print_short_name(tty);
+      }
+      tty->cr();
+    }
+#endif
+
+    if (progress == 0) {
+      break;
+    }
+  }
+  return round < max_deep_revisit_rounds;
+}
+
+void PhaseIterGVN::optimize(bool deep) {
+  // A correctly handled failure returns at the failing() call that raised it, so
+  // the compilation must never get here failed, with the graph already flushed.
+  assert(!C->failing_internal(), "should not run IGVN on a failed compilation");
+  bool deep_revisit_converged = false;
+  DEBUG_ONLY(_num_processed = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
   NOT_PRODUCT(C->reset_igv_phase_iter(PHASE_AFTER_ITER_GVN_STEP);)
   C->print_method(PHASE_BEFORE_ITER_GVN, 3);
@@ -1024,70 +1221,54 @@ void PhaseIterGVN::optimize() {
     shuffle_worklist();
   }
 
-  // The node count check in the loop below (check_node_count) assumes that we
-  // increase the live node count with at most
-  // max_live_nodes_increase_per_iteration in between checks. If this
-  // assumption does not hold, there is a risk that we exceed the max node
-  // limit in between checks and trigger an assert during node creation.
-  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 3;
-
-  uint loop_count = 0;
-  // Pull from worklist and transform the node. If the node has changed,
-  // update edge info and put uses on worklist.
-  while (_worklist.size() > 0) {
-    if (C->check_node_count(max_live_nodes_increase_per_iteration, "Out of nodes")) {
-      C->print_method(PHASE_AFTER_ITER_GVN, 3);
-      return;
-    }
-    Node* n  = _worklist.pop();
-    if (loop_count >= K * C->live_nodes()) {
-      DEBUG_ONLY(dump_infinite_loop_info(n, "PhaseIterGVN::optimize");)
-      C->record_method_not_compilable("infinite loop in PhaseIterGVN::optimize");
-      C->print_method(PHASE_AFTER_ITER_GVN, 3);
-      return;
-    }
-    DEBUG_ONLY(trace_PhaseIterGVN_verbose(n, num_processed++);)
-    if (n->outcnt() != 0) {
-      NOT_PRODUCT(const Type* oldtype = type_or_null(n));
-      // Do the transformation
-      DEBUG_ONLY(int live_nodes_before = C->live_nodes();)
-      Node* nn = transform_old(n);
-      DEBUG_ONLY(int live_nodes_after = C->live_nodes();)
-      // Ensure we did not increase the live node count with more than
-      // max_live_nodes_increase_per_iteration during the call to transform_old
-      DEBUG_ONLY(int increase = live_nodes_after - live_nodes_before;)
-      assert(increase < max_live_nodes_increase_per_iteration,
-             "excessive live node increase in single iteration of IGVN: %d "
-             "(should be at most %d)",
-             increase, max_live_nodes_increase_per_iteration);
-      NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype);)
-    } else if (!n->is_top()) {
-      remove_dead_node(n);
-    }
-    loop_count++;
+  // Pull from worklist and transform the node.
+  if (drain_worklist()) {
+    return;
   }
-  NOT_PRODUCT(verify_PhaseIterGVN();)
+
+  if (deep && UseDeepIGVNRevisit) {
+    deep_revisit_converged = deep_revisit();
+    if (C->failing()) {
+      return;
+    }
+  }
+
+  NOT_PRODUCT(verify_PhaseIterGVN(deep_revisit_converged);)
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
 
 #ifdef ASSERT
-void PhaseIterGVN::verify_optimize() {
+void PhaseIterGVN::verify_optimize(bool deep_revisit_converged) {
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
 
   if (is_verify_Value() ||
       is_verify_Ideal() ||
-      is_verify_Identity()) {
+      is_verify_Identity() ||
+      is_verify_invariants()) {
     ResourceMark rm;
     Unique_Node_List worklist;
-    bool failure = false;
     // BFS all nodes, starting at root
     worklist.push(C->root());
     for (uint j = 0; j < worklist.size(); ++j) {
       Node* n = worklist.at(j);
-      if (is_verify_Value())    { failure |= verify_Value_for(n); }
-      if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, false); }
-      if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, true); }
-      if (is_verify_Identity()) { failure |= verify_Identity_for(n); }
+      // If we get an assert here, check why the reported node was not processed again in IGVN.
+      // We should either make sure that this node is properly added back to the IGVN worklist
+      // in PhaseIterGVN::add_users_to_worklist to update it again or add an exception
+      // in the verification methods below if that is not possible for some reason (like Load nodes).
+      if (is_verify_Value()) {
+        verify_Value_for(n, deep_revisit_converged /* strict */);
+      }
+      if (is_verify_Ideal()) {
+        verify_Ideal_for(n, false /* can_reshape */, deep_revisit_converged);
+        verify_Ideal_for(n, true  /* can_reshape */, deep_revisit_converged);
+      }
+      if (is_verify_Identity()) {
+        verify_Identity_for(n);
+      }
+      if (is_verify_invariants()) {
+        verify_node_invariants_for(n);
+      }
+
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
@@ -1098,11 +1279,6 @@ void PhaseIterGVN::verify_optimize() {
         worklist.push(n->fast_out(i));
       }
     }
-    // If we get this assert, check why the reported nodes were not processed again in IGVN.
-    // We should either make sure that these nodes are properly added back to the IGVN worklist
-    // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
-    // in the verification code above if that is not possible for some reason (like Load nodes).
-    assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
   }
 
   verify_empty_worklist(nullptr);
@@ -1127,18 +1303,18 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
   assert(false, "igvn worklist must still be empty after verify");
 }
 
-// Check that type(n) == n->Value(), return true if we have a failure.
+// Check that type(n) == n->Value(), asserts if we have a failure.
 // We have a list of exceptions, see detailed comments in code.
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-bool PhaseIterGVN::verify_Value_for(Node* n) {
+void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
   const Type* tnew = n->Value(this);
   if (told == tnew) {
-    return false;
+    return;
   }
   // Exception (1)
   // Integer "widen" changes, but range is the same.
@@ -1147,20 +1323,20 @@ bool PhaseIterGVN::verify_Value_for(Node* n) {
     const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
     if (t0->lo_as_long() == t1->lo_as_long() &&
         t0->hi_as_long() == t1->hi_as_long()) {
-      return false; // ignore integer widen
+      return; // ignore integer widen
     }
   }
   // Exception (2)
   // LoadNode performs deep traversals. Load is not notified for changes far away.
-  if (n->is_Load() && !told->singleton()) {
+  if (!strict && n->is_Load() && !told->singleton()) {
     // MemNode::can_see_stored_value looks up through many memory nodes,
     // which means we would need to notify modifications from far up in
     // the inputs all the way down to the LoadNode. We don't do that.
-    return false;
+    return;
   }
   // Exception (3)
   // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+  if (!strict && n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
     // SubNode::Value
     // CmpPNode::sub
     // MemNode::detect_ptr_independence
@@ -1172,16 +1348,16 @@ bool PhaseIterGVN::verify_Value_for(Node* n) {
     // control sub of the allocation. The problems is that sometimes dominates answers
     // false conservatively, and later it can determine that it is indeed true. Loops with
     // Region heads can lead to giving up, whereas LoopNodes can be skipped easier, and
-    // so the traversal becomes more powerful. This is difficult to remidy, we would have
+    // so the traversal becomes more powerful. This is difficult to remedy, we would have
     // to notify the CmpP of CFG updates. Luckily, we recompute CmpP::Value during CCP
     // after loop-opts, so that should take care of many of these cases.
-    return false;
+    return;
   }
 
   stringStream ss; // Print as a block without tty lock.
   ss.cr();
   ss.print_cr("Missed Value optimization:");
-  n->dump_bfs(1, nullptr, "", &ss);
+  n->dump_bfs(3, nullptr, "", &ss);
   ss.print_cr("Current type:");
   told->dump_on(&ss);
   ss.cr();
@@ -1189,57 +1365,76 @@ bool PhaseIterGVN::verify_Value_for(Node* n) {
   tnew->dump_on(&ss);
   ss.cr();
   tty->print_cr("%s", ss.as_string());
-  return true;
+
+  switch (_phase) {
+    case PhaseValuesType::iter_gvn:
+      assert(false, "Missed Value optimization opportunity in PhaseIterGVN for %s",n->Name());
+      break;
+    case PhaseValuesType::ccp:
+      assert(false, "PhaseCCP not at fixpoint: analysis result may be unsound for %s", n->Name());
+      break;
+    default:
+      assert(false, "Unexpected phase");
+      break;
+  }
 }
 
 // Check that all Ideal optimizations that could be done were done.
-// Returns true if it found missed optimization opportunities and
-//         false otherwise (no missed optimization, or skipped verification).
-bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
+// Asserts if it found missed optimization opportunities or encountered unexpected changes, and
+//         returns normally otherwise (no missed optimization, or skipped verification).
+void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit_converged) {
+  if (!deep_revisit_converged && needs_deep_revisit(n)) {
+    return;
+  }
+
   // First, we check a list of exceptions, where we skip verification,
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
   switch (n->Opcode()) {
-    // RangeCheckNode::Ideal looks up the chain for about 999 nodes
-    // (see "Range-Check scan limit"). So, it is possible that something
-    // is optimized in that input subgraph, and the RangeCheck was not
-    // added to the worklist because it would be too expensive to walk
-    // down the graph for 1000 nodes and put all on the worklist.
+    // BoolNode::Ideal canonicalizes integer comparisons, but only if "!is_counted_loop_exit_test".
+    // We only optimize if:
+    //   Cmp -> Bool -> If
+    // And not if:
+    //   Cmp -> Bool -> CountedLoopEnd
+    // In loop unswitching, we turn a CountedLoopEnd into an If.
+    // We would now have to notify the input of the modified node,
+    // which we don't do so far.
+    // One simple hack would be to just push the Bool node on
+    // the worklist in that optimization, in an ad-hoc fashon.
+    // But more principled would probably be to do this as part
+    // of replace_input_of, which calls set_req_X, which already
+    // has some notification logic, for example using
+    // Node::has_special_unique_user. There are also other places
+    // the graph could be updated and lose the CountedLoopEnd node,
+    // and in those places we also use Node::has_special_unique_user,
+    // and other related code.
+    // I would suggest we refactor and extend that notification
+    // code in a future RFE.
     //
     // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
-    case Op_RangeCheck:
-      return false;
-
-    // IfNode::Ideal does:
-    //   Node* prev_dom = search_identical(dist, igvn);
-    // which means we seach up the CFG, traversing at most up to a distance.
-    // If anything happens rather far away from the If, we may not put the If
-    // back on the worklist.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
-    case Op_If:
-      return false;
-
-    // IfNode::simple_subsuming
-    // Looks for dominating test that subsumes the current test.
-    // Notification could be difficult because of larger distance.
-    //
-    // Found with:
-    //   runtime/exceptionMsgs/ArrayIndexOutOfBoundsException/ArrayIndexOutOfBoundsExceptionTest.java#id1
     //   -XX:VerifyIterativeGVN=1110
-    case Op_CountedLoopEnd:
-      return false;
+    //   compiler/loopopts/TestBaseCountedEndLoopUnswitchCandidate.java
+    case Op_Bool:
+      return;
 
-    // LongCountedLoopEndNode::Ideal
-    // Probably same issue as above.
+    // I have encountered some issues with AddHF.
+    // It could be due to issues arising from JDK-8388873, we should
+    // check again after that is fixed.
     //
-    // Found with:
-    //   compiler/predicates/assertion/TestAssertionPredicates.java#NoLoopPredicationXbatch
-    //   -XX:StressLongCountedLoop=2000000 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_LongCountedLoopEnd:
-      return false;
+    // Found on aarch64 with:
+    //   -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
+    //   compiler/c2/irTests/TestFloat16ScalarOperations.java
+    case Op_AddHF:
+      return;
+
+    // In XorI/LNode::Ideal, we optimize Xor(x, -1), but
+    // only if is_used_in_only_arithmetic: so we would
+    // need notification if the Xor only has arithmetic
+    // nodes. I think this also calls for a generalization
+    // of Node::has_special_unique_user.
+    case Op_XorI:
+    case Op_XorL:
+      return;
 
     // RegionNode::Ideal does "Skip around the useless IF diamond".
     //   245  IfTrue  === 244
@@ -1258,183 +1453,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_Region:
-      return false;
-
-    // In AddNode::Ideal, we call "commute", which swaps the inputs so
-    // that smaller idx are first. Tracking it back, it led me to
-    // PhaseIdealLoop::remix_address_expressions which swapped the edges.
-    //
-    // Example:
-    //   Before PhaseIdealLoop::remix_address_expressions
-    //     154  AddI  === _ 12 144
-    //   After PhaseIdealLoop::remix_address_expressions
-    //     154  AddI  === _ 144 12
-    //   After AddNode::Ideal
-    //     154  AddI  === _ 12 144
-    //
-    // I suspect that the node should be added to the IGVN worklist after
-    // PhaseIdealLoop::remix_address_expressions
-    //
-    // This is the only case I looked at, there may be others. Found like this:
-    //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
-    //
-    // The following hit the same logic in PhaseIdealLoop::remix_address_expressions.
-    //
-    // Note: currently all of these fail also for other reasons, for example
-    // because of "commute" doing the reordering with the phi below. Once
-    // that is resolved, we can come back to this issue here.
-    //
-    // case Op_AddD:
-    // case Op_AddI:
-    // case Op_AddL:
-    // case Op_AddF:
-    // case Op_MulI:
-    // case Op_MulL:
-    // case Op_MulF:
-    // case Op_MulD:
-    //   if (n->in(1)->_idx > n->in(2)->_idx) {
-    //     // Expect "commute" to revert this case.
-    //     return false;
-    //   }
-    //   break; // keep verifying
-
-    // AddFNode::Ideal calls "commute", which can reorder the inputs for this:
-    //   Check for tight loop increments: Loop-phi of Add of loop-phi
-    // It wants to take the phi into in(1):
-    //    471  Phi  === 435 38 390
-    //    390  AddF  === _ 471 391
-    //
-    // Other Associative operators are also affected equally.
-    //
-    // Investigate why this does not happen earlier during IGVN.
-    //
-    // Found with:
-    //   test/hotspot/jtreg/compiler/loopopts/superword/ReductionPerf.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_AddD:
-    //case Op_AddI: // Also affected for other reasons, see case further down.
-    //case Op_AddL: // Also affected for other reasons, see case further down.
-    case Op_AddF:
-    case Op_MulI:
-    case Op_MulL:
-    case Op_MulF:
-    case Op_MulD:
-    case Op_MinF:
-    case Op_MinD:
-    case Op_MaxF:
-    case Op_MaxD:
-    // XorINode::Ideal
-    // Found with:
-    //   compiler/intrinsics/chacha/TestChaCha20.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_XorI:
-    case Op_XorL:
-    // It seems we may have similar issues with the HF cases.
-    // Found with aarch64:
-    //   compiler/vectorization/TestFloat16VectorOperations.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_AddHF:
-    case Op_MulHF:
-    case Op_MaxHF:
-    case Op_MinHF:
-      return false;
-
-    // In MulNode::Ideal the edges can be swapped to help value numbering:
-    //
-    //    // We are OK if right is a constant, or right is a load and
-    //    // left is a non-constant.
-    //    if( !(t2->singleton() ||
-    //          (in(2)->is_Load() && !(t1->singleton() || in(1)->is_Load())) ) ) {
-    //      if( t1->singleton() ||       // Left input is a constant?
-    //          // Otherwise, sort inputs (commutativity) to help value numbering.
-    //          (in(1)->_idx > in(2)->_idx) ) {
-    //        swap_edges(1, 2);
-    //
-    // Why was this not done earlier during IGVN?
-    //
-    // Found with:
-    //    test/hotspot/jtreg/gc/stress/gcbasher/TestGCBasherWithG1.java
-    //    -XX:VerifyIterativeGVN=1110
-    case Op_AndI:
-    // Same for AndL.
-    // Found with:
-    //   compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java
-    //    -XX:VerifyIterativeGVN=1110
-    case Op_AndL:
-      return false;
-
-    // SubLNode::Ideal does transform like:
-    //   Convert "c1 - (y+c0)" into "(c1-c0) - y"
-    //
-    // In IGVN before verification:
-    //   8423  ConvI2L  === _ 3519  [[ 8424 ]]  #long:-2
-    //   8422  ConvI2L  === _ 8399  [[ 8424 ]]  #long:3..256:www
-    //   8424  AddL  === _ 8422 8423  [[ 8383 ]]  !orig=[8382]
-    //   8016  ConL  === 0  [[ 8383 ]]  #long:0
-    //   8383  SubL  === _ 8016 8424  [[ 8156 ]]  !orig=[8154]
-    //
-    // And then in verification:
-    //   8338  ConL  === 0  [[ 8339 8424 ]]  #long:-2     <----- Was constant folded.
-    //   8422  ConvI2L  === _ 8399  [[ 8424 ]]  #long:3..256:www
-    //   8424  AddL  === _ 8422 8338  [[ 8383 ]]  !orig=[8382]
-    //   8016  ConL  === 0  [[ 8383 ]]  #long:0
-    //   8383  SubL  === _ 8016 8424  [[ 8156 ]]  !orig=[8154]
-    //
-    // So the form changed from:
-    //   c1 - (y + [8423  ConvI2L])
-    // to
-    //   c1 - (y + -2)
-    // but the SubL was not added to the IGVN worklist. Investigate why.
-    // There could be other issues too.
-    //
-    // There seems to be a related AddL IGVN optimization that triggers
-    // the same SubL optimization, so investigate that too.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
-    case Op_SubL:
-      return false;
-
-    // SubINode::Ideal does
-    // Convert "x - (y+c0)" into "(x-y) - c0" AND
-    // Convert "c1 - (y+c0)" into "(c1-c0) - y"
-    //
-    // Investigate why this does not yet happen during IGVN.
-    //
-    // Found with:
-    //   test/hotspot/jtreg/compiler/c2/IVTest.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_SubI:
-      return false;
-
-    // AddNode::IdealIL does transform like:
-    //   Convert x + (con - y) into "(x - y) + con"
-    //
-    // In IGVN before verification:
-    //   8382  ConvI2L
-    //   8381  ConvI2L  === _ 791  [[ 8383 ]]  #long:0
-    //   8383  SubL  === _ 8381 8382
-    //   8168  ConvI2L
-    //   8156  AddL  === _ 8168 8383  [[ 8158 ]]
-    //
-    // And then in verification:
-    //   8424  AddL
-    //   8016  ConL  === 0  [[ 8383 ]]  #long:0  <--- Was constant folded.
-    //   8383  SubL  === _ 8016 8424
-    //   8168  ConvI2L
-    //   8156  AddL  === _ 8168 8383  [[ 8158 ]]
-    //
-    // So the form changed from:
-    //   x + (ConvI2L(0) - [8382  ConvI2L])
-    // to
-    //   x + (0 - [8424  AddL])
-    // but the AddL was not added to the IGVN worklist. Investigate why.
-    // There could be other issues, too. For example with "commute", see above.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
-    case Op_AddL:
-      return false;
+      return;
 
     // SubTypeCheckNode::Ideal calls SubTypeCheckNode::verify_helper, which does
     //   Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
@@ -1459,7 +1478,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     case Op_SubTypeCheck:
-      return false;
+      return;
 
     // LoopLimitNode::Ideal when stride is constant power-of-2, we can do a lowering
     // to other nodes: Conv, Add, Sub, Mul, And ...
@@ -1479,7 +1498,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Fond with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_LoopLimit:
-      return false;
+      return;
 
     // PhiNode::Ideal calls split_flow_path, which tries to do this:
     // "This optimization tries to find two or more inputs of phi with the same constant
@@ -1502,7 +1521,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_Phi:
-      return false;
+      return;
 
     // MemBarNode::Ideal does "Eliminate volatile MemBars for scalar replaced objects".
     // For examle "The allocated object does not escape".
@@ -1515,7 +1534,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_MemBarStoreStore:
-      return false;
+      return;
 
     // ConvI2LNode::Ideal converts
     //   648  AddI  === _ 583 645  [[ 661 ]]
@@ -1531,21 +1550,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_ConvI2L:
-      return false;
-
-    // AddNode::IdealIL can do this transform (and similar other ones):
-    //   Convert "a*b+a*c into a*(b+c)
-    // The example had AddI(MulI(a, b), MulI(a, c)). Why did this not happen
-    // during IGVN? There was a mutation for one of the MulI, and only
-    // after that the pattern was as needed for the optimization. The MulI
-    // was added to the IGVN worklist, but not the AddI. This probably
-    // can be fixed by adding the correct pattern in add_users_of_use_to_worklist.
-    //
-    // Found with:
-    //   test/hotspot/jtreg/compiler/loopopts/superword/ReductionPerf.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_AddI:
-      return false;
+      return;
 
     // ArrayCopyNode::Ideal
     //    calls ArrayCopyNode::prepare_array_copy
@@ -1571,7 +1576,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //   compiler/arraycopy/TestArrayCopyAsLoadsStores.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_ArrayCopy:
-      return false;
+      return;
 
     // CastLLNode::Ideal
     //    calls ConstraintCastNode::optimize_integer_cast -> pushes CastLL through SubL
@@ -1583,7 +1588,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //   compiler/c2/TestMergeStoresMemorySegment.java#byte-array
     //   -XX:VerifyIterativeGVN=1110
     case Op_CastLL:
-      return false;
+      return;
 
     // Similar case happens to CastII
     //
@@ -1591,79 +1596,18 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //   compiler/c2/TestScalarReplacementMaxLiveNodes.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_CastII:
-      return false;
-
-    // MaxLNode::Ideal
-    //   calls AddNode::Ideal
-    //   calls commute -> decides to swap edges
-    //
-    // Another notification issue, because we check inputs of inputs?
-    // MaxL -> Phi -> Loop
-    // MaxL -> Phi -> MaxL
-    //
-    // Found with:
-    //   compiler/c2/irTests/TestIfMinMax.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_MaxL:
-    case Op_MinL:
-      return false;
-
-    // OrINode::Ideal
-    //   calls AddNode::Ideal
-    //   calls commute -> left is Load, right not -> commute.
-    //
-    // Not sure why notification does not work here, seems like
-    // the depth is only 1, so it should work. Needs investigation.
-    //
-    // Found with:
-    //   compiler/codegen/TestCharVect2.java#id0
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_OrI:
-    case Op_OrL:
-      return false;
-
-    // Bool -> constant folded to 1.
-    // Issue with notification?
-    //
-    // Found with:
-    //   compiler/c2/irTests/TestVectorizationMismatchedAccess.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_Bool:
-      return false;
-
-    // LShiftLNode::Ideal
-    // Looks at pattern: "(x + x) << c0", converts it to "x << (c0 + 1)"
-    // Probably a notification issue.
-    //
-    // Found with:
-    //   compiler/conversions/TestMoveConvI2LOrCastIIThruAddIs.java
-    //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_LShiftL:
-      return false;
-
-    // LShiftINode::Ideal
-    // pattern: ((x + con1) << con2) -> x << con2 + con1 << con2
-    // Could be issue with notification of inputs of inputs
-    //
-    // Side-note: should cases like these not be shared between
-    //            LShiftI and LShiftL?
-    //
-    // Found with:
-    //   compiler/escapeAnalysis/Test6689060.java
-    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110 -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_LShiftI:
-      return false;
+      return;
 
     // AddPNode::Ideal seems to do set_req without removing lock first.
     // Found with various vector tests tier1-tier3.
     case Op_AddP:
-      return false;
+      return;
 
     // StrIndexOfNode::Ideal
     // Found in tier1-3.
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
-      return false;
+      return;
 
     // StrEqualsNode::Identity
     //
@@ -1672,7 +1616,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //   -XX:+UnlockExperimentalVMOptions -XX:LockingMode=1 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     //   Note: The -XX:LockingMode option is not available anymore.
     case Op_StrEquals:
-      return false;
+      return;
 
     // AryEqNode::Ideal
     // Not investigated. Reshapes itself and adds lots of nodes to the worklist.
@@ -1681,22 +1625,17 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //   vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java
     //   -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+StressUnstableIfTraps -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     case Op_AryEq:
-      return false;
+      return;
 
     // MergeMemNode::Ideal
     // Found in tier1-3. Did not investigate further yet.
     case Op_MergeMem:
-      return false;
-
-    // URShiftINode::Ideal
-    // Found in tier1-3. Did not investigate further yet.
-    case Op_URShiftI:
-      return false;
+      return;
 
     // CMoveINode::Ideal
     // Found in tier1-3. Did not investigate further yet.
     case Op_CMoveI:
-      return false;
+      return;
 
     // CmpPNode::Ideal calls isa_const_java_mirror
     // and generates new constant nodes, even if no progress is made.
@@ -1707,30 +1646,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=1110 -Xcomp --version
     case Op_CmpP:
-      return false;
-
-    // MinINode::Ideal
-    // Did not investigate, but there are some patterns that might
-    // need more notification.
-    case Op_MinI:
-    case Op_MaxI: // preemptively removed it as well.
-      return false;
-  }
-
-  if (n->is_Load()) {
-    // LoadNode::Ideal uses tries to find an earlier memory state, and
-    // checks can_see_stored_value for it.
-    //
-    // Investigate why this was not already done during IGVN.
-    // A similar issue happens with Identity.
-    //
-    // There seem to be other cases where loads go up some steps, like
-    // LoadNode::Ideal going up 10x steps to find dominating load.
-    //
-    // Found with:
-    //   test/hotspot/jtreg/compiler/arraycopy/TestCloneAccess.java
-    //   -XX:VerifyIterativeGVN=1110
-    return false;
+      return;
   }
 
   if (n->is_Store()) {
@@ -1744,7 +1660,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
-    return false;
+    return;
   }
 
   if (n->is_Vector()) {
@@ -1763,7 +1679,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   compiler/vectorapi/TestMaskedMacroLogicVector.java
     //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110 -XX:+UseParallelGC -XX:+UseNUMA
-    return false;
+    return;
   }
 
   if (n->is_Region()) {
@@ -1782,7 +1698,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   compiler/eliminateAutobox/TestShortBoxing.java
     //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    return false;
+    return;
   }
 
   if (n->is_CallJava()) {
@@ -1797,41 +1713,39 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     //   test/jdk/jdk/incubator/vector/VectorRuns.java
     //   -XX:VerifyIterativeGVN=1110
 
-    // CallDynamicJavaNode::Ideal, and I think also for CallStaticJavaNode::Ideal
-    //  and possibly their subclasses.
-    // During late inlining it can call CallJavaNode::register_for_late_inline
-    // That means we do more rounds of late inlining, but might fail.
-    // Then we do IGVN again, and register the node again for late inlining.
-    // This creates an endless cycle. Everytime we try late inlining, we
-    // are also creating more nodes, especially SafePoint and MergeMem.
-    // These nodes are immediately rejected when the inlining fails in the
-    // do_late_inline_check, but they still grow the memory, until we hit
-    // the MemLimit and crash.
-    // The assumption here seems that CallDynamicJavaNode::Ideal does not get
-    // called repeatedly, and eventually we terminate. I fear this is not
-    // a great assumption to make. We should investigate more.
-    //
-    // Found with:
-    //   compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-U
-    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    return false;
+    return;
   }
 
-  // The number of nodes shoud not increase.
-  uint old_unique = C->unique();
+  // Ideal should not make progress if it returns nullptr.
+  // We use made_progress() rather than unique() or live_nodes() because some
+  // Ideal implementations speculatively create nodes and kill them before
+  // returning nullptr (e.g. split_if clones a Cmp to check is_canonical).
+  // unique() is a high-water mark that is not decremented by remove_dead_node,
+  // so it would cause false-positives. live_nodes() accounts for dead nodes but can
+  // decrease when Ideal removes existing nodes as side effects.
+  // made_progress() precisely tracks meaningful transforms, and speculative
+  // work killed via NodeOrigin::Speculative does not increment it.
+  uint old_progress = made_progress();
   // The hash of a node should not change, this would indicate different inputs
   uint old_hash = n->hash();
+  // Remove 'n' from hash table in case it gets modified. We want to avoid
+  // hitting the "Need to remove from hash before changing edges" assert if
+  // a change occurs. Instead, we would like to proceed with the optimization,
+  // return and finally hit the assert in PhaseIterGVN::verify_optimize to get
+  // a more meaningful message
+  _table.hash_delete(n);
   Node* i = n->Ideal(this, can_reshape);
   // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
-    if (old_unique < C->unique()) {
+    uint progress = made_progress() - old_progress;
+    if (progress != 0) {
       stringStream ss; // Print as a block without tty lock.
       ss.cr();
-      ss.print_cr("Ideal optimization did not make progress but created new unused nodes.");
-      ss.print_cr("  old_unique = %d, unique = %d", old_unique, C->unique());
+      ss.print_cr("Ideal optimization did not make progress but had side effects.");
+      ss.print_cr("  %u transforms made progress", progress);
       n->dump_bfs(1, nullptr, "", &ss);
       tty->print_cr("%s", ss.as_string());
-      return true;
+      assert(false, "Unexpected side effects from applying Ideal optimization on %s", n->Name());
     }
 
     if (old_hash != n->hash()) {
@@ -1841,13 +1755,24 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
       ss.print_cr("  old_hash = %d, hash = %d", old_hash, n->hash());
       n->dump_bfs(1, nullptr, "", &ss);
       tty->print_cr("%s", ss.as_string());
-      return true;
+      assert(false, "Unexpected hash change from applying Ideal optimization on %s", n->Name());
     }
 
+    // Some nodes try to push itself back to the worklist if can_reshape is
+    // false
+    if (!can_reshape && _worklist.size() > 0 && _worklist.pop() != n) {
+      stringStream ss;
+      ss.cr();
+      ss.print_cr("Previously optimized:");
+      n->dump_bfs(1, nullptr, "", &ss);
+      tty->print_cr("%s", ss.as_string());
+      assert(false, "should only push itself on worklist");
+    }
     verify_empty_worklist(n);
 
     // Everything is good.
-    return false;
+    hash_find_insert(n);
+    return;
   }
 
   // We just saw a new Idealization which was not done during IGVN.
@@ -1864,13 +1789,14 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   ss.print_cr("The result after Ideal:");
   i->dump_bfs(1, nullptr, "", &ss);
   tty->print_cr("%s", ss.as_string());
-  return true;
+
+  assert(false, "Missed Ideal optimization opportunity in PhaseIterGVN for %s", n->Name());
 }
 
 // Check that all Identity optimizations that could be done were done.
-// Returns true if it found missed optimization opportunities and
-//         false otherwise (no missed optimization, or skipped verification).
-bool PhaseIterGVN::verify_Identity_for(Node* n) {
+// Asserts if it found missed optimization opportunities, and
+//         returns normally otherwise (no missed optimization, or skipped verification).
+void PhaseIterGVN::verify_Identity_for(Node* n) {
   // First, we check a list of exceptions, where we skip verification,
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
@@ -1889,7 +1815,7 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
     case Op_SafePoint:
-      return false;
+      return;
 
     // MergeMemNode::Identity replaces the MergeMem with its base_memory if it
     // does not record any other memory splits.
@@ -1900,7 +1826,7 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
     case Op_MergeMem:
-      return false;
+      return;
 
     // ConstraintCastNode::Identity finds casts that are the same, except that
     // the control is "higher up", i.e. dominates. The call goes via
@@ -1914,7 +1840,7 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     case Op_CastPP:
     case Op_CastII:
     case Op_CastLL:
-      return false;
+      return;
 
     // Same issue for CheckCastPP, uses ConstraintCastNode::Identity and
     // checks dominator, which may be changed, but too far up for notification
@@ -1924,25 +1850,7 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     //   compiler/c2/irTests/TestSkeletonPredicates.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_CheckCastPP:
-      return false;
-
-    // In SubNode::Identity, we do:
-    //   Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
-    // In the example, the AddI had an input replaced, the AddI is
-    // added to the IGVN worklist, but the SubI is one link further
-    // down and is not added. I checked add_users_of_use_to_worklist
-    // where I would expect the SubI would be added, and I cannot
-    // find the pattern, only this one:
-    //   If changed AddI/SubI inputs, check CmpU for range check optimization.
-    //
-    // Fix this "notification" issue and check if there are any other
-    // issues.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
-    case Op_SubI:
-    case Op_SubL:
-      return false;
+      return;
 
     // PhiNode::Identity checks for patterns like:
     //   r = (x != con) ? x : con;
@@ -1956,57 +1864,7 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     //   test/hotspot/jtreg/gc/stress/gcbasher/TestGCBasherWithG1.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_Phi:
-      return false;
-
-    // ConvI2LNode::Identity does
-    // convert I2L(L2I(x)) => x
-    //
-    // Investigate why this did not already happen during IGVN.
-    //
-    // Found with:
-    //   compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-A
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_ConvI2L:
-      return false;
-
-    // MaxNode::find_identity_operation
-    //  Finds patterns like Max(A, Max(A, B)) -> Max(A, B)
-    //  This can be a 2-hop search, so maybe notification is not
-    //  good enough.
-    //
-    // Found with:
-    //   compiler/codegen/TestBooleanVect.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_MaxL:
-    case Op_MinL:
-    case Op_MaxI:
-    case Op_MinI:
-    case Op_MaxF:
-    case Op_MinF:
-    case Op_MaxHF:
-    case Op_MinHF:
-    case Op_MaxD:
-    case Op_MinD:
-      return false;
-
-
-    // AddINode::Identity
-    // Converts (x-y)+y to x
-    // Could be issue with notification
-    //
-    // Turns out AddL does the same.
-    //
-    // Found with:
-    //  compiler/c2/Test6792161.java
-    //  -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_AddI:
-    case Op_AddL:
-      return false;
-
-    // AbsINode::Identity
-    // Not investigated yet.
-    case Op_AbsI:
-      return false;
+      return;
   }
 
   if (n->is_Load()) {
@@ -2020,7 +1878,7 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     //
     // Found with:
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
-    return false;
+    return;
   }
 
   if (n->is_Store()) {
@@ -2031,20 +1889,14 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     // Found with:
     //   applications/ctw/modules/java_base_2.java
     //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -Djava.awt.headless=true -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    return false;
+    return;
   }
 
-  if (n->is_Vector()) {
-    // Found with tier1-3. Not investigated yet.
-    // The observed issue was with AndVNode::Identity
-    return false;
-  }
-
-  Node* i = n->Identity(this);
+  Node* i = apply_identity(n);
   // If we cannot find any other Identity, we are happy.
   if (i == n) {
     verify_empty_worklist(n);
-    return false;
+    return;
   }
 
   // The verification just found a new Identity that was not found during IGVN.
@@ -2056,7 +1908,23 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
   ss.print_cr("New node:");
   i->dump_bfs(1, nullptr, "", &ss);
   tty->print_cr("%s", ss.as_string());
-  return true;
+
+  assert(false, "Missed Identity optimization opportunity in PhaseIterGVN for %s", n->Name());
+}
+
+// Some other verifications that are not specific to a particular transformation.
+void PhaseIterGVN::verify_node_invariants_for(const Node* n) {
+  if (n->is_AddP()) {
+    if (!n->as_AddP()->address_input_has_same_base()) {
+      stringStream ss; // Print as a block without tty lock.
+      ss.cr();
+      ss.print_cr("Base pointers must match for AddP chain:");
+      n->dump_bfs(2, nullptr, "", &ss);
+      tty->print_cr("%s", ss.as_string());
+
+      assert(false, "Broken node invariant for %s", n->Name());
+    }
+  }
 }
 #endif
 
@@ -2074,16 +1942,16 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
-  if (_delay_transform) {
-    // Register the node but don't optimize for now
-    register_new_node_with_optimizer(n);
-    return n;
-  }
-
   // If brand new node, make space in type array, and give it a type.
   ensure_type_or_null(n);
   if (type_or_null(n) == nullptr) {
     set_type_bottom(n);
+  }
+
+  if (_delay_transform) {
+    // Add the node to the worklist but don't optimize for now
+    _worklist.push(n);
+    return n;
   }
 
   return transform_old(n);
@@ -2109,13 +1977,16 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   DEBUG_ONLY(dead_loop_check(k);)
   DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
   C->remove_modified_node(k);
-  Node* i = apply_ideal(k, /*can_reshape=*/true);
+  DEBUG_ONLY(uint hash_before = is_verify_IGVN_method_return() ? k->hash() : 0;)
+  Node* i = k->Ideal(this, /*can_reshape=*/true);
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
-#ifndef PRODUCT
-  verify_step(k);
-#endif
-
+  assert(!is_verify_IGVN_method_return() || k->outcnt() == 0 ||
+         i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
+  NOT_PRODUCT(verify_step(k);)
   DEBUG_ONLY(uint loop_count = 1;)
+  if (i != nullptr) {
+    set_progress();
+  }
   while (i != nullptr) {
 #ifdef ASSERT
     if (loop_count >= K + C->live_nodes()) {
@@ -2135,11 +2006,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     // Try idealizing again
     DEBUG_ONLY(is_new = (k->outcnt() == 0);)
     C->remove_modified_node(k);
-    i = apply_ideal(k, /*can_reshape=*/true);
+    DEBUG_ONLY(uint hash_before = is_verify_IGVN_method_return() ? k->hash() : 0;)
+    i = k->Ideal(this, /*can_reshape=*/true);
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
-#ifndef PRODUCT
-    verify_step(k);
-#endif
+    assert(!is_verify_IGVN_method_return() || k->outcnt() == 0 ||
+           i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
+    NOT_PRODUCT(verify_step(k);)
     DEBUG_ONLY(loop_count++;)
   }
 
@@ -2155,10 +2027,8 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   // cache Value.  Later requests for the local phase->type of this Node can
   // use the cached Value instead of suffering with 'bottom_type'.
   if (type_or_null(k) != t) {
-#ifndef PRODUCT
-    inc_new_values();
+    NOT_PRODUCT(inc_new_values();)
     set_progress();
-#endif
     set_type(k, t);
     // If k is a TypeNode, capture any more-precise type permanently into Node
     k->raise_bottom_type(t);
@@ -2167,7 +2037,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
-    NOT_PRODUCT(set_progress();)
+    set_progress();
     Node* con = makecon(t);     // Make a constant
     add_users_to_worklist(k);
     subsume_node(k, con);       // Everybody using k now uses con
@@ -2175,9 +2045,9 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);      // Look for a nearby replacement
+  i = apply_identity(k);      // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
-    NOT_PRODUCT(set_progress();)
+    set_progress();
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
     return i;
@@ -2187,7 +2057,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   i = hash_find_insert(k);      // Check for pre-existing node
   if (i && (i != k)) {
     // Return the pre-existing node if it isn't dead
-    NOT_PRODUCT(set_progress();)
+    set_progress();
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
     return i;
@@ -2206,7 +2076,7 @@ const Type* PhaseIterGVN::saturate(const Type* new_type, const Type* old_type,
 //------------------------------remove_globally_dead_node----------------------
 // Kill a globally dead Node.  All uses are also globally dead and are
 // aggressively trimmed.
-void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
+void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
   enum DeleteProgress {
     PROCESS_INPUTS,
     PROCESS_OUTPUTS
@@ -2223,57 +2093,56 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
     uint progress_state = stack.index();
     assert(dead != C->root(), "killing root, eh?");
     assert(!dead->is_top(), "add check for top when pushing");
-    NOT_PRODUCT( set_progress(); )
     if (progress_state == PROCESS_INPUTS) {
       // After following inputs, continue to outputs
       stack.set_index(PROCESS_OUTPUTS);
       if (!dead->is_Con()) { // Don't kill cons but uses
+        if (origin != NodeOrigin::Speculative) {
+          set_progress();
+        }
         bool recurse = false;
         // Remove from hash table
-        _table.hash_delete( dead );
+        _table.hash_delete(dead);
         // Smash all inputs to 'dead', isolating him completely
         for (uint i = 0; i < dead->req(); i++) {
-          Node *in = dead->in(i);
-          if (in != nullptr && in != C->top()) {  // Points to something?
-            int nrep = dead->replace_edge(in, nullptr, this);  // Kill edges
-            assert((nrep > 0), "sanity");
-            if (in->outcnt() == 0) { // Made input go dead?
-              stack.push(in, PROCESS_INPUTS); // Recursively remove
-              recurse = true;
-            } else if (in->outcnt() == 1 &&
-                       in->has_special_unique_user()) {
-              _worklist.push(in->unique_out());
-            } else if (in->outcnt() <= 2 && dead->is_Phi()) {
-              if (in->Opcode() == Op_Region) {
-                _worklist.push(in);
-              } else if (in->is_Store()) {
-                DUIterator_Fast imax, i = in->fast_outs(imax);
+          Node* in = dead->in(i);
+          if (in == nullptr) {
+            continue;
+          }
+          int nrep = dead->replace_edge(in, nullptr, this); // Kill edges
+          assert((nrep > 0), "sanity");
+          if (in == C->top()) {
+            continue;
+          }
+          if (in->outcnt() == 0) {
+            // Made input go dead?
+            stack.push(in, PROCESS_INPUTS); // Recursively remove
+            recurse = true;
+          } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
+            add_users_to_worklist(in);
+          } else if (in->outcnt() <= 2 && dead->is_Phi()) {
+            if (in->Opcode() == Op_Region) {
+              _worklist.push(in);
+            } else if (in->is_Store()) {
+              DUIterator_Fast imax, i = in->fast_outs(imax);
+              _worklist.push(in->fast_out(i));
+              i++;
+              if (in->outcnt() == 2) {
                 _worklist.push(in->fast_out(i));
                 i++;
-                if (in->outcnt() == 2) {
-                  _worklist.push(in->fast_out(i));
-                  i++;
-                }
-                assert(!(i < imax), "sanity");
               }
-            } else if (dead->is_data_proj_of_pure_function(in)) {
-              _worklist.push(in);
-            } else {
-              BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(this, in);
+              assert(!(i < imax), "sanity");
             }
-            if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
-                in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
-              // A Load that directly follows an InitializeNode is
-              // going away. The Stores that follow are candidates
-              // again to be captured by the InitializeNode.
-              for (DUIterator_Fast jmax, j = in->fast_outs(jmax); j < jmax; j++) {
-                Node *n = in->fast_out(j);
-                if (n->is_Store()) {
-                  _worklist.push(n);
-                }
-              }
-            }
-          } // if (in != nullptr && in != C->top())
+          } else if (in->should_process_when_disconnect_output(dead)) {
+            _worklist.push(in);
+          }
+          if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
+              in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
+            // A Load that directly follows an InitializeNode is
+            // going away. The Stores that follow are candidates
+            // again to be captured by the InitializeNode.
+            add_users_to_worklist_if(_worklist, in, [](Node* n) { return n->is_Store(); });
+          }
         } // for (uint i = 0; i < dead->req(); i++)
         if (recurse) {
           continue;
@@ -2342,7 +2211,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   // Smash all inputs to 'old', isolating him completely
   Node *temp = new Node(1);
   temp->init_req(0,nn);     // Add a use to nn to prevent him from dying
-  remove_dead_node( old );
+  remove_dead_node(old, NodeOrigin::Graph);
   temp->del_req(0);         // Yank bogus edge
   if (nn != nullptr && nn->outcnt() == 0) {
     _worklist.push(nn);
@@ -2356,6 +2225,19 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   }
 #endif
   temp->destruct(this);     // reuse the _idx of this little guy
+}
+
+// Replaces n with m in all uses, including self-loops.
+void PhaseIterGVN::replace_in_uses(Node* n, Node* m) {
+  assert(n != nullptr, "sanity");
+  add_users_to_worklist(n);
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    rehash_node_delayed(u);
+    int nb = u->replace_edge(n, m);
+    --i, imax -= nb;
+  }
+  assert(n->outcnt() == 0, "all uses must be deleted");
 }
 
 //------------------------------add_users_to_worklist--------------------------
@@ -2386,10 +2268,13 @@ static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   return nullptr;
 }
 
-void PhaseIterGVN::add_users_to_worklist(Node *n) {
-  add_users_to_worklist0(n, _worklist);
+void PhaseIterGVN::add_users_to_worklist(Node* n) const {
+  add_users_to_worklist(n, _worklist);
+}
 
-  Unique_Node_List& worklist = _worklist;
+void PhaseIterGVN::add_users_to_worklist(Node* n, Unique_Node_List& worklist) {
+  add_users_to_worklist0(n, worklist);
+
   // Move users of node to worklist
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i); // Get use
@@ -2413,23 +2298,42 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  uint use_op = use->Opcode();
-  if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
+  // AndLNode::Ideal folds GraphKit::mark_word_test patterns. Give it a chance to run.
+  if (n->is_Load() && use->is_Phi()) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* u = use->fast_out(i);
+      if (u->Opcode() == Op_AndL) {
+        worklist.push(u);
+      }
+    }
+  }
+
+  const int use_op = use->Opcode();
+  if (use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
-    if (use->outcnt() > 0) {
-      Node* bol = use->raw_out(0);
-      if (bol->outcnt() > 0) {
-        Node* iff = bol->raw_out(0);
-        if (iff->outcnt() == 2) {
+    for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+      Node* bol = use->fast_out(j);
+      if (!bol->is_Bool()) {
+        continue;
+      }
+      for (DUIterator_Fast kmax, k = bol->fast_outs(kmax); k < kmax; k++) {
+        Node* bol_use = bol->fast_out(k);
+        if (bol_use->is_CMove()) {
+          // CMoveNode::Identity folds "(x == y) ? y : x" by comparing the inputs
+          // of the Cmp with those of the CMove.
+          worklist.push(bol_use);
+        } else if (bol_use->is_If() && bol_use->outcnt() == 2) {
           // Look for the 'is_x2logic' pattern: "x ? : 0 : 1" and put the
           // phi merging either 0 or 1 onto the worklist
-          Node* ifproj0 = iff->raw_out(0);
-          Node* ifproj1 = iff->raw_out(1);
-          if (ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
+          Node* ifproj0 = bol_use->raw_out(0);
+          Node* ifproj1 = bol_use->raw_out(1);
+          if (ifproj0->is_IfProj() && ifproj1->is_IfProj() &&
+              ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
             Node* region0 = ifproj0->raw_out(0);
             Node* region1 = ifproj1->raw_out(0);
-            if( region0 == region1 )
+            if (region0 == region1 && region0->is_Region()) {
               add_users_to_worklist0(region0, worklist);
+            }
           }
         }
       }
@@ -2510,54 +2414,158 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
+  // Value type nodes can have other value types as users. If an input gets
+  // updated, make sure that value type users get a chance for optimization.
+  if (use->is_ValueType() || use->is_DecodeN()) {
+    auto push_the_uses_to_worklist = [&](Node* n){
+      if (n->is_ValueType()) {
+        worklist.push(n);
+      }
+    };
+    auto is_boundary = [](Node* n){ return !n->is_ValueType(); };
+    use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
+  }
+  // If changed Cast input, notify down for nodes that do "uncast".
   // Patterns:
   // ConstraintCast+ -> Sub
   // ConstraintCast+ -> Phi
   // ConstraintCast+ -> Xor
+  // ConstraintCast+ -> VectorUnbox
   if (use->is_ConstraintCast()) {
     auto push_the_uses_to_worklist = [&](Node* n){
-      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
+      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI ||
+          n->Opcode() == Op_XorL || n->Opcode() == Op_VectorUnbox) {
         worklist.push(n);
       }
     };
     auto is_boundary = [](Node* n){ return !n->is_ConstraintCast(); };
     use->visit_uses(push_the_uses_to_worklist, is_boundary);
   }
-  // If changed LShift inputs, check RShift users for useless sign-ext
+  // If changed LShift inputs, check RShift/URShift users for
+  // "(X << C) >> C" sign-ext and "(X << C) >>> C" zero-ext optimizations.
   if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL)
-        worklist.push(u);
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
+             u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+    });
   }
   // If changed LShift inputs, check And users for shift and mask (And) operation
   if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_AndI || u->Opcode() == Op_AndL) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
+    });
+  }
+  // OrI/LNode::Ideal converts shift/or patterns into rotates, which
+  // needs to trigger when x and y common.
+  // e.g. (x << 14) | (y >>> 18)
+  if (use_op == Op_LShiftI || use_op == Op_URShiftI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_OrI;
+    });
+  } else if (use_op == Op_LShiftL || use_op == Op_URShiftL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_OrL;
+    });
+  }
+  // If changed LShift inputs, check CompressBits and ExpandBits users for
+  // compress(x, 1 << n), compress(x, -1 << n),
+  // expand(x, 1 << n), expand(x, -1 << n) optimizations.
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return (u->Opcode() == Op_CompressBits || u->Opcode() == Op_ExpandBits) &&
+             u->in(2) == use;
+    });
+  }
+  // If changed ExpandBits inputs, check CompressBits users for
+  // compress(expand(x, m), m) optimization.
+  if (use_op == Op_ExpandBits) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == Op_CompressBits && u->in(1) == use;
+    });
+  }
+  // If changed CompressBits inputs, check ExpandBits users for
+  // expand(compress(x, m), m) optimization.
+  if (use_op == Op_CompressBits) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == Op_ExpandBits && u->in(1) == use;
+    });
   }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.
   if (use_op == Op_AddI || use_op == Op_SubI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_CmpU;
+    });
+  }
+  // LShiftNode::IdealIL:
+  // (x + c1) << c2  ->  (x << c2) + c3
+  // (c1 - x) << c2  ->  c3 - (x << c2)
+  if (use_op == Op_AddI || use_op == Op_AddL ||
+      use_op == Op_SubI || use_op == Op_SubL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL;
+    });
+  }
+  // AddNode::Ideal reassociates constants to the outside, e.g.:
+  //   (x + C) + y  ->  (x + y) + C
+  //   (x | C) | y  ->  (x | y) | C
+  if (use->is_Add()) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == use_op;
+    });
+  }
+  // If changed AddI/AddL inputs, check for add users:
+  // e.g. x - (y + n)      ->  x - (y + C)     ->  (x - y) + (-C)
+  //      before mutation      after mutation      optimized by
+  //                                               AddNode::Ideal
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    int sub_op = (use_op == Op_AddI) ? Op_SubI : Op_SubL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == sub_op;
+    });
+  }
+  // If changed AddI/AddL inputs, check URShift users for
+  // "((X << z) + Y) >>> z" optimization in URShift{I,L}Node::Ideal.
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+    });
+  }
+  // If changed AddI inputs, check for Phi users for
+  // "(P < Q) ? X+Y : X" optimization in is_cond_add.
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](const Node* u) -> bool {
+      return u->Opcode() == Op_Phi;
+    });
+  }
+  // If changed LShiftI/LShiftL inputs, check AddI/AddL users for their
+  // URShiftI/URShiftL users for "((x << z) + y) >>> z" optimization opportunity
+  // (see URShiftINode::Ideal). Handles the case where the LShift input changes.
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->is_Cmp() && (u->Opcode() == Op_CmpU)) {
-        worklist.push(u);
+      Node* add = use->fast_out(i2);
+      if (add->Opcode() == Op_AddI || add->Opcode() == Op_AddL) {
+        add_users_to_worklist_if(worklist, add, [](Node* u) {
+          return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+        });
       }
     }
   }
-  // If changed AndI/AndL inputs, check RShift users for "(x & mask) >> shift" optimization opportunity
+  // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
+  // LShiftNode::IdealIL optimizes patterns like: LShift(And(RShift(x, c), Y), c)
   if (use_op == Op_AndI || use_op == Op_AndL) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
+             u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL ||
+             u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL;
+    });
+  }
+  // MulNode::AndIL_sum_and_mask can optimize:
+  // AndX(AddX(x, y), mask) -> AndX(x, mask)
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    const int and_op = (use_op == Op_AddI) ? Op_AndI : Op_AndL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == and_op;
+    });
   }
   // Check for redundant conversion patterns:
   // ConvD2L->ConvL2D->ConvD2L
@@ -2566,16 +2574,31 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // ConvI2F->ConvF2I->ConvI2F
   // Note: there may be other 3-nodes conversion chains that would require to be added here, but these
   // are the only ones that are known to trigger missed optimizations otherwise
-  if ((n->Opcode() == Op_ConvD2L && use_op == Op_ConvL2D) ||
-      (n->Opcode() == Op_ConvF2I && use_op == Op_ConvI2F) ||
-      (n->Opcode() == Op_ConvF2L && use_op == Op_ConvL2F) ||
-      (n->Opcode() == Op_ConvI2F && use_op == Op_ConvF2I)) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == n->Opcode()) {
-        worklist.push(u);
-      }
-    }
+  //
+  // ConvI2LNode::Identity optimizes the following 2-hop optimization, once x is proven to be in int range:
+  //   ConvI2L(ConvL2I(x)) -> x
+  if (use_op == Op_ConvL2D ||
+      use_op == Op_ConvI2F ||
+      use_op == Op_ConvL2F ||
+      use_op == Op_ConvF2I ||
+      use_op == Op_ConvL2I) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return (use_op == Op_ConvL2D && u->Opcode() == Op_ConvD2L) ||
+             (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
+             (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
+             (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F) ||
+             (use_op == Op_ConvL2I && u->Opcode() == Op_ConvI2L);
+    });
+  }
+  // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
+  // Notify ConvD2F users of SqrtD when any input of the SqrtD changes.
+  if (use_op == Op_SqrtD) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_ConvD2F; });
+  }
+  // ConvF2HF::Ideal matches ConvF2HF(binopF(ConvHF2F(...))) => FP16BinOp(...).
+  // Notify ConvF2HF users of float binary ops when any input changes.
+  if (Float16NodeFactory::is_float32_binary_oper(use_op)) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_ConvF2HF; });
   }
   // If changed AddP inputs:
   // - check Stores for loop invariant, and
@@ -2583,21 +2606,38 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   //   address expression flattening.
   if (use_op == Op_AddP) {
     bool offset_changed = n == use->in(AddPNode::Offset);
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->is_Mem()) {
-        worklist.push(u);
-      } else if (offset_changed && u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->is_Mem() ||
+             (offset_changed && u->is_AddP() && u->in(AddPNode::Offset)->is_Con());
+    });
   }
+  // Check for "abs(0-x)" into "abs(x)" conversion
+  if (use->is_Sub()) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AbsD || u->Opcode() == Op_AbsF ||
+             u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI;
+    });
+  }
+  // Check for Max/Min(A, Max/Min(B, C)) where A == B or A == C
+  // MinMaxNode::IdealI also optimizes these cases (if no overflow):
+  //   MinI(AddI(x, -1), x) -> AddI(x, -1)
+  if (use->is_MinMax() || use->Opcode() == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_MinMax();
+    });
+  }
+  // Check for A | (B | C) and (B | C) | A where A == B or A == C.
+  if (use_op == Op_OrI || use_op == Op_OrL) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == use->Opcode(); });
+  }
+  auto enqueue_init_mem_projs = [&](ProjNode* proj) {
+    add_users_to_worklist0(proj, worklist);
+  };
   // If changed initialization activity, check dependent Stores
   if (use_op == Op_Allocate || use_op == Op_AllocateArray) {
     InitializeNode* init = use->as_Allocate()->initialization();
     if (init != nullptr) {
-      Node* imem = init->proj_out_or_null(TypeFunc::Memory);
-      if (imem != nullptr) add_users_to_worklist0(imem, worklist);
+      init->for_each_proj(enqueue_init_mem_projs, TypeFunc::Memory);
     }
   }
   // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
@@ -2611,31 +2651,47 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   if (use_op == Op_Initialize) {
-    Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
-    if (imem != nullptr) add_users_to_worklist0(imem, worklist);
+    InitializeNode* init = use->as_Initialize();
+    init->for_each_proj(enqueue_init_mem_projs, TypeFunc::Memory);
   }
   // Loading the java mirror from a Klass requires two loads and the type
   // of the mirror load depends on the type of 'n'. See LoadNode::Value().
   //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bool has_load_barrier_nodes = bs->has_load_barrier_nodes();
-
+  // Needed because of PhaseMacroExpand::expand_mh_intrinsic_return
+  if (use_op == Op_CastP2X) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AndX) {
+        worklist.push(u);
+      }
+      // Search for CmpL(OrL(CastP2X(..), CastP2X(..)), 0L)
+      if (u->Opcode() == Op_OrL) {
+        for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
+          Node* cmp = u->fast_out(i3);
+          if (cmp->Opcode() == Op_CmpL) {
+            worklist.push(cmp);
+          }
+        }
+      }
+    }
+  }
   if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       const Type* ut = u->bottom_type();
       if (u->Opcode() == Op_LoadP && ut->isa_instptr()) {
-        if (has_load_barrier_nodes) {
-          // Search for load barriers behind the load
-          for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
-            Node* b = u->fast_out(i3);
-            if (bs->is_gc_barrier_node(b)) {
-              worklist.push(b);
-            }
-          }
-        }
         worklist.push(u);
       }
+    }
+  }
+  // Give CallStaticJavaNode::remove_useless_allocation a chance to run
+  if (use->is_Region()) {
+    Node* c = use;
+    do {
+      c = c->unique_ctrl_out_or_null();
+    } while (c != nullptr && c->is_Region());
+    if (c != nullptr && c->is_CallStaticJava() && c->as_CallStaticJava()->uncommon_trap_request() != 0) {
+      worklist.push(c);
     }
   }
   if (use->Opcode() == Op_OpaqueZeroTripGuard) {
@@ -2645,17 +2701,63 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       worklist.push(cmp);
     }
   }
+  // VectorMaskToLongNode::Ideal_MaskAll looks through VectorStoreMask
+  // to fold constant masks.
+  if (use_op == Op_VectorStoreMask) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorMaskToLong; });
+  }
+
+  // Walk through a VectorMaskCast chain so a change of the inner mask still
+  // notifies:
+  // (VectorMaskCast+ x) => x
+  // (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => (x)
+  if (use_op == Op_VectorMaskCast) {
+    auto push_the_uses_to_worklist = [&](Node* n) {
+      if (n->Opcode() == Op_VectorStoreMask || n->Opcode() == Op_VectorMaskCast) {
+        worklist.push(n);
+      }
+    };
+    auto is_boundary = [](Node* n) { return n->Opcode() != Op_VectorMaskCast; };
+    use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
+  }
+
+  // Nested-operation optimizations in AndVNode::Identity and OrVNode::Identity,
+  // e.g. (a & b) & a => a & b.
+  if (use_op == Op_AndV || use_op == Op_OrV ||
+      use_op == Op_AndVMask || use_op == Op_OrVMask) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op;
+    });
+  }
+
+  // All-zeros / all-ones optimizations in AndVNode::Identity and
+  // OrVNode::Identity, e.g. src & all-ones => src.
+  if (use_op == Op_Replicate || use_op == Op_MaskAll) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndV || u->Opcode() == Op_OrV ||
+             u->Opcode() == Op_AndVMask || u->Opcode() == Op_OrVMask;
+    });
+  }
+
+  // f(f(x)) => x for f = Reverse / ReverseBytes
+  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op;
+    });
+  }
+
+  // Vector shift by zero, see ShiftVNode::Identity
+  if (use_op == Op_LShiftCntV || use_op == Op_RShiftCntV) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_ShiftV();
+    });
+  }
 
   // From CastX2PNode::Ideal
   // CastX2P(AddX(x, y))
   // CastX2P(SubX(x, y))
   if (use->Opcode() == Op_AddX || use->Opcode() == Op_SubX) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_CastX2P) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_CastX2P; });
   }
 
   /* AndNode has a special handling when one of the operands is a LShiftNode:
@@ -2685,6 +2787,105 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     };
     use->visit_uses(push_and_to_worklist, is_boundary);
   }
+
+  // If changed Sub inputs, check Add for identity.
+  // e.g., (x - y) + y -> x; x + (y - x) -> y.
+  // SubI/LNode::Ideal also optimize this:
+  // (x - y) - x -> -y
+  if (use_op == Op_SubI || use_op == Op_SubL) {
+    const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == add_op || u->Opcode() == use_op;
+    });
+  }
+
+  // If changed Mul inputs, check Add/Sub for common-factor reassociation.
+  // e.g., (a * b) + (a * c) -> a * (b + c).
+  if (use_op == Op_MulI || use_op == Op_MulL) {
+    const int add_op = (use_op == Op_MulI) ? Op_AddI : Op_AddL;
+    const int sub_op = (use_op == Op_MulI) ? Op_SubI : Op_SubL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == add_op || u->Opcode() == sub_op;
+    });
+  }
+
+  // MulNode::Ideal distributes constant multiplication:
+  // e.g., (x + c1) * c2 -> x * c2 + (c1 * c2)
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    const int mul_op = (use_op == Op_AddI) ? Op_MulI : Op_MulL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == mul_op; });
+  }
+
+  // We may have a loop-phi that is about to close the AddI recurrence,
+  // and we would have to ensure AddNode::commute is called for the AddI.
+  // e.g. use = Phi(x, n)      ->  use = Phi(x, u)     ->  use = Phi(x, u)
+  //      u   = AddI(y, use)       u   = AddI(y, use)  ->  u   = AddI(use, y)
+  //      current state,           After mutation,         After commute,
+  //      before mutation          before commute          canonical loop incr
+  //
+  // Alternatively, we may have a region-phi, that is about to turn
+  // into a loop-phi, and where the AddI recurrence is already closed,
+  // and the AddI has its inputs sorted by idx. In this case, we also
+  // need AddNode::commute to canonicalize the AddI, so that the phi
+  // input is on the left now.
+  // e.g. use = Phi(region, u) ->  use = Phi(loop, u)  ->  use = Phi(loop, u)
+  //      u   = AddI(y, use)       u   = AddI(y, use)  ->  u   = AddI(use, y)
+  //      current state,           loop-phi,               After commute,
+  //      region-phi               before commute          canonical loop incr
+  if (use->is_Phi() &&
+      use->req() == 3 &&
+      (n == use->in(0) ||                          // possibly: region-phi -> loop-phi
+       n == use->in(LoopNode::LoopBackControl))) { // possibly: closing AddI recurrence
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Add();
+    });
+  }
+
+  // AndLNode::Ideal optimizes GraphKit::mark_word_test patterns
+  // Pattern: AndL(LoadL(x=mark word), y)
+  // Pattern: AndL(Phi(LoadL(x=mark word), z), y)
+  if (use->is_Load()) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AndL) {
+        // n -> Load -> AndL
+        worklist.push(u);
+      } else if (u->is_Phi()) {
+        // n -> Load -> Phi -> AndL
+        add_users_to_worklist_if(worklist, u, [](Node* u2) {
+          return u2->Opcode() == Op_AndL;
+        });
+      }
+    }
+  }
+
+  // PhiNode::Ideal can optimize:
+  // Pattern: Phi(condition, x + y, x) -> x + Phi(condition, y, 0)
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Phi();
+    });
+  }
+
+  // AndVNode::Ideal and OrVNode::Ideal have 2-hop operations for
+  // repeated and/or with the same value:
+  // Pattern: AndV(AndV(a, b), a) -> AndV(a, b)
+  if (use_op == Op_AndV || use_op == Op_OrV) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == use_op;
+    });
+  }
+  // (Phi (ValueType ValueType)) is transformed into (ValueType (Phi ) (Phi )...)
+  // and is applied if there are EncodeP/DecodeN or casts between a Phi and InlineType nodes
+  if (use->is_Phi() || use->is_EncodeP() || use->is_DecodeN() || use->is_ConstraintCast()) {
+    auto is_boundary = [](Node* n){ return !n->is_EncodeP() && !n->is_DecodeN() && !n->is_ConstraintCast(); };
+    auto push_phi_to_worklist = [&worklist](Node* n){
+      if (n->is_Phi()) {
+        worklist.push(n);
+      }
+    };
+    use->visit_uses(push_phi_to_worklist, is_boundary);
+  }
 }
 
 /**
@@ -2701,37 +2902,6 @@ void PhaseIterGVN::remove_speculative_types()  {
   _table.check_no_speculative_types();
 }
 
-// Check if the type of a divisor of a Div or Mod node includes zero.
-bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
-  switch (n->Opcode()) {
-    case Op_DivI:
-    case Op_ModI:
-    case Op_UDivI:
-    case Op_UModI: {
-      // Type of divisor includes 0?
-      if (type(n->in(2)) == Type::TOP) {
-        // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
-        return false;
-      }
-      const TypeInt* type_divisor = type(n->in(2))->is_int();
-      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
-    }
-    case Op_DivL:
-    case Op_ModL:
-    case Op_UDivL:
-    case Op_UModL: {
-      // Type of divisor includes 0?
-      if (type(n->in(2)) == Type::TOP) {
-        // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
-        return false;
-      }
-      const TypeLong* type_divisor = type(n->in(2))->is_long();
-      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
-    }
-  }
-  return true;
-}
-
 //=============================================================================
 #ifndef PRODUCT
 uint PhaseCCP::_total_invokes   = 0;
@@ -2742,6 +2912,7 @@ uint PhaseCCP::_total_constants = 0;
 PhaseCCP::PhaseCCP( PhaseIterGVN *igvn ) : PhaseIterGVN(igvn) {
   NOT_PRODUCT( clear_constants(); )
   assert( _worklist.size() == 0, "" );
+  _phase = PhaseValuesType::ccp;
   analyze();
 }
 
@@ -2757,7 +2928,7 @@ PhaseCCP::~PhaseCCP() {
 #ifdef ASSERT
 void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
   if (tnew->meet(told) != tnew->remove_speculative()) {
-    n->dump(1);
+    n->dump(3);
     tty->print("told = "); told->dump(); tty->cr();
     tty->print("tnew = "); tnew->dump(); tty->cr();
     fatal("Not monotonic");
@@ -2783,6 +2954,7 @@ void PhaseCCP::analyze() {
   // Compile is over. The local arena gets de-allocated at the end of its scope.
   ResourceArea local_arena(mtCompiler);
   Unique_Node_List worklist(&local_arena);
+  Unique_Node_List worklist_revisit(&local_arena);
   DEBUG_ONLY(Unique_Node_List worklist_verify(&local_arena);)
 
   // Push root onto worklist
@@ -2791,53 +2963,95 @@ void PhaseCCP::analyze() {
   assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
   _root_and_safepoints.push(C->root());
 
-  // Pull from worklist; compute new value; push changes out.
-  // This loop is the meat of CCP.
+  // This is the meat of CCP: pull from worklist; compute new value; push changes out.
+
+  // Do the first round. Since all initial types are TOP, this will visit all alive nodes.
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
     DEBUG_ONLY(worklist_verify.push(n);)
+    if (needs_revisit(n)) {
+      worklist_revisit.push(n);
+    }
     if (n->is_SafePoint()) {
       // Make sure safepoints are processed by PhaseCCP::transform even if they are
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
       _root_and_safepoints.push(n);
     }
-    const Type* new_type = n->Value(this);
-    if (new_type != type(n)) {
-      DEBUG_ONLY(verify_type(n, new_type, type(n));)
-      dump_type_and_node(n, new_type);
-      set_type(n, new_type);
-      push_child_nodes_to_worklist(worklist, n);
-    }
-    if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
-      // Keep track of Type nodes to kill CFG paths that use Type
-      // nodes that become dead.
-      _maybe_top_type_nodes.push(n);
-    }
+    analyze_step(worklist, n);
   }
+
+  // More rounds to catch updates far in the graph.
+  // Revisit nodes that might be able to refine their types at the end of the round.
+  // If so, process these nodes. If there is remaining work, start another round.
+  do {
+    while (worklist.size() != 0) {
+      Node* n = fetch_next_node(worklist);
+      analyze_step(worklist, n);
+    }
+    for (uint t = 0; t < worklist_revisit.size(); t++) {
+      Node* n = worklist_revisit.at(t);
+      analyze_step(worklist, n);
+    }
+  } while (worklist.size() != 0);
+
   DEBUG_ONLY(verify_analyze(worklist_verify);)
+}
+
+void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
+  const Type* new_type = n->Value(this);
+  if (new_type != type(n)) {
+    DEBUG_ONLY(verify_type(n, new_type, type(n));)
+    dump_type_and_node(n, new_type);
+    set_type(n, new_type);
+    push_child_nodes_to_worklist(worklist, n);
+  }
+  if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
+    // Keep track of Type nodes to kill CFG paths that use Type
+    // nodes that become dead.
+    _maybe_top_type_nodes.push(n);
+  }
+}
+
+// Some nodes can refine their types due to type change somewhere deep
+// in the graph. We will need to revisit them before claiming convergence.
+// Add nodes here if particular *Node::Value is doing deep graph traversals
+// not handled by PhaseCCP::push_more_uses().
+bool PhaseCCP::needs_revisit(Node* n) const {
+  // LoadNode performs deep traversals. Load is not notified for changes far away.
+  if (n->is_Load()) {
+    return true;
+  }
+  // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
+  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+    return true;
+  }
+  return false;
 }
 
 #ifdef ASSERT
 // For every node n on verify list, check if type(n) == n->Value()
-// We have a list of exceptions, see comments in verify_Value_for.
+// Note for CCP the non-convergence can lead to unsound analysis and mis-compilation.
+// Therefore, we are verifying Value convergence strictly.
 void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
-  bool failure = false;
   while (worklist_verify.size()) {
     Node* n = worklist_verify.pop();
-    failure |= verify_Value_for(n);
+
+    // An assert in verify_Value_for means that PhaseCCP is not at fixpoint
+    // and that the analysis result may be unsound.
+    // If this happens, check why the reported nodes were not processed again in CCP.
+    // We should either make sure that these nodes are properly added back to the CCP worklist
+    // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
+    // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
+    // them at the end of the round.
+    verify_Value_for(n, true);
   }
-  // If we get this assert, check why the reported nodes were not processed again in CCP.
-  // We should either make sure that these nodes are properly added back to the CCP worklist
-  // in PhaseCCP::push_child_nodes_to_worklist() to update their type or add an exception
-  // in the verification code above if that is not possible for some reason (like Load nodes).
-  assert(!failure, "PhaseCCP not at fixpoint: analysis result may be unsound.");
 }
 #endif
 
 // Fetch next node from worklist to be examined in this iteration.
 Node* PhaseCCP::fetch_next_node(Unique_Node_List& worklist) {
   if (StressCCP) {
-    return worklist.remove(C->random() % worklist.size());
+    return worklist.remove(C->stress().random() % worklist.size());
   } else {
     return worklist.pop();
   }
@@ -2855,6 +3069,10 @@ void PhaseCCP::dump_type_and_node(const Node* n, const Type* t) {
 }
 #endif
 
+bool PhaseCCP::not_bottom_type(Node* n) const {
+  return n->bottom_type() != type(n);
+}
+
 // We need to propagate the type change of 'n' to all its uses. Depending on the kind of node, additional nodes
 // (grandchildren or even further down) need to be revisited as their types could also be improved as a result
 // of the new type of 'n'. Push these nodes to the worklist.
@@ -2867,7 +3085,7 @@ void PhaseCCP::push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n)
 }
 
 void PhaseCCP::push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const {
-  if (n->bottom_type() != type(n)) {
+  if (not_bottom_type(n)) {
     worklist.push(n);
   }
 }
@@ -2879,6 +3097,7 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_catch(worklist, use);
   push_cmpu(worklist, use);
   push_counted_loop_phi(worklist, parent, use);
+  push_cast(worklist, use);
   push_loadp(worklist, use);
   push_and(worklist, parent, use);
   push_cast_ii(worklist, parent, use);
@@ -2890,9 +3109,9 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
 // We must recheck Phis too if use is a Region.
 void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
   if (use->is_Region()) {
-    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      push_if_not_bottom_type(worklist, use->fast_out(i));
-    }
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return not_bottom_type(u);
+    });
   }
 }
 
@@ -2919,14 +3138,11 @@ void PhaseCCP::push_catch(Unique_Node_List& worklist, const Node* use) {
 void PhaseCCP::push_cmpu(Unique_Node_List& worklist, const Node* use) const {
   uint use_op = use->Opcode();
   if (use_op == Op_AddI || use_op == Op_SubI) {
-    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      Node* cmpu = use->fast_out(i);
-      const uint cmpu_opcode = cmpu->Opcode();
-      if (cmpu_opcode == Op_CmpU || cmpu_opcode == Op_CmpU3) {
-        // Got a CmpU or CmpU3 which might need the new type information from node n.
-        push_if_not_bottom_type(worklist, cmpu);
-      }
-    }
+    // Got a CmpU or CmpU3 which might need the new type information from node n.
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      uint op = u->Opcode();
+      return (op == Op_CmpU || op == Op_CmpU3) && not_bottom_type(u);
+    });
   }
 }
 
@@ -2993,32 +3209,29 @@ void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, c
   }
 }
 
-// Loading the java mirror from a Klass requires two loads and the type of the mirror load depends on the type of 'n'.
-// See LoadNode::Value().
-void PhaseCCP::push_loadp(Unique_Node_List& worklist, const Node* use) const {
-  BarrierSetC2* barrier_set = BarrierSet::barrier_set()->barrier_set_c2();
-  bool has_load_barrier_nodes = barrier_set->has_load_barrier_nodes();
-
-  if (use->Opcode() == Op_LoadP && use->bottom_type()->isa_rawptr()) {
-    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      Node* loadp = use->fast_out(i);
-      const Type* ut = loadp->bottom_type();
-      if (loadp->Opcode() == Op_LoadP && ut->isa_instptr() && ut != type(loadp)) {
-        if (has_load_barrier_nodes) {
-          // Search for load barriers behind the load
-          push_load_barrier(worklist, barrier_set, loadp);
-        }
-        worklist.push(loadp);
+// Needed because of PhaseMacroExpand::expand_mh_intrinsic_return
+void PhaseCCP::push_cast(Unique_Node_List& worklist, const Node* use) {
+  uint use_op = use->Opcode();
+  if (use_op == Op_CastP2X) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AndX) {
+        worklist.push(u);
       }
     }
   }
 }
 
-void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use) {
-  for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-    Node* barrier_node = use->fast_out(i);
-    if (barrier_set->is_gc_barrier_node(barrier_node)) {
-      worklist.push(barrier_node);
+// Loading the java mirror from a Klass requires two loads and the type of the mirror load depends on the type of 'n'.
+// See LoadNode::Value().
+void PhaseCCP::push_loadp(Unique_Node_List& worklist, const Node* use) const {
+  if (use->Opcode() == Op_LoadP && use->bottom_type()->isa_rawptr()) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* loadp = use->fast_out(i);
+      const Type* ut = loadp->bottom_type();
+      if (loadp->Opcode() == Op_LoadP && ut->isa_instptr() && ut != type(loadp)) {
+        worklist.push(loadp);
+      }
     }
   }
 }
@@ -3056,12 +3269,9 @@ void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const No
 void PhaseCCP::push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
   if (use->Opcode() == Op_CmpI && use->in(2) == parent) {
     Node* other_cmp_input = use->in(1);
-    for (DUIterator_Fast imax, i = other_cmp_input->fast_outs(imax); i < imax; i++) {
-      Node* cast_ii = other_cmp_input->fast_out(i);
-      if (cast_ii->is_CastII()) {
-        push_if_not_bottom_type(worklist, cast_ii);
-      }
-    }
+    add_users_to_worklist_if(worklist, other_cmp_input, [&](Node* u) {
+      return u->is_CastII() && not_bottom_type(u);
+    });
   }
 }
 
@@ -3223,7 +3433,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
   switch( n->Opcode() ) {
   case Op_CallStaticJava:  // Give post-parse call devirtualization a chance
   case Op_CallDynamicJava:
-  case Op_FastLock:        // Revisit FastLocks for lock coarsening
   case Op_If:
   case Op_CountedLoopEnd:
   case Op_Region:
@@ -3233,6 +3442,8 @@ Node *PhaseCCP::transform_once( Node *n ) {
   case Op_Opaque1:
     _worklist.push(n);
     break;
+  case Op_FastLock:
+    assert(false, "should not be materialized yet");
   default:
     break;
   }
@@ -3356,7 +3567,11 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
   set_req(i, n);
 
   // old goes dead?
-  if( old ) {
+  if (old != nullptr) {
+    if (old->should_process_when_disconnect_output(this)) {
+      igvn->_worklist.push(old);
+    }
+
     switch (old->outcnt()) {
     case 0:
       // Put into the worklist to kill later. We do not kill it now because the
@@ -3365,8 +3580,8 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
         igvn->_worklist.push( old );
       break;
     case 1:
-      if( old->is_Store() || old->has_special_unique_user() )
-        igvn->add_users_to_worklist( old );
+      if (old->is_Store() || old->has_special_unique_user())
+        igvn->add_users_to_worklist(old);
       break;
     case 2:
       if( old->is_Store() )
@@ -3383,8 +3598,6 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
     default:
       break;
     }
-
-    BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, old);
   }
 }
 

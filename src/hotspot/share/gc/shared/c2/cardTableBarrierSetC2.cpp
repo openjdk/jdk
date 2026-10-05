@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "ci/ciUtilities.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -35,13 +36,122 @@
 
 #define __ ideal.
 
-Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
+Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
+  DecoratorSet decorators = access.decorators();
+
+  Node* adr = access.addr().node();
+
+  bool is_array = (decorators & IS_ARRAY) != 0;
+  bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool use_precise = is_array || anonymous;
+  bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
+
+  const ValueTypeNode* vt = nullptr;
+  if (access.is_parse_access() && static_cast<C2ParseAccess&>(access).vt() != nullptr) {
+    vt = static_cast<C2ParseAccess&>(access).vt();
+  }
+
+  if (vt == nullptr && (!access.is_oop() || tightly_coupled_alloc || (!in_heap && !anonymous))) {
+    return BarrierSetC2::store_at_resolved(access, val);
+  }
+
+  assert(access.is_parse_access(), "entry not supported at optimization time");
+  C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
+
+  Node* store = BarrierSetC2::store_at_resolved(access, val);
+  // TODO 8350865
+  // - We actually only need the post barrier once for non-arrays (same for C1, right)?
+  // - Value is only needed to determine if we are storing null. Maybe we can go with a simple boolean?
+  GraphKit* kit = parse_access.kit();
+  if (vt != nullptr) {
+    for (uint i = 0; i < vt->field_count(); ++i) {
+      ciField* field = vt->field(i);
+      ciType* type = field->type();
+      if (!type->is_primitive_type()) {
+        ciValueKlass* vk = vt->bottom_type()->value_klass();
+        int field_offset = field->offset_in_bytes() - vk->payload_offset();
+        Node* value = vt->field_value(i);
+        Node* field_adr = kit->basic_plus_adr(access.base(), adr, field_offset);
+        post_barrier(kit, access.base(), field_adr, value, use_precise);
+      }
+    }
+  } else {
+    post_barrier(kit, access.base(), adr, val.node(), use_precise);
+  }
+
+  return store;
+}
+
+Node* CardTableBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
+                                                            Node* new_val, const Type* value_type) const {
+  if (!access.is_oop()) {
+    return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
+  }
+
+  Node* result = BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
+
+  post_barrier(access.kit(), access.base(), access.addr().node(), new_val, true);
+
+  return result;
+}
+
+Node* CardTableBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
+                                                             Node* new_val, const Type* value_type) const {
+  GraphKit* kit = access.kit();
+
+  if (!access.is_oop()) {
+    return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
+  }
+
+  Node* load_store = BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
+
+  // Emit the post barrier only when the actual store happened. This makes sense
+  // to check only for LS_cmp_* that can fail to set the value.
+  // LS_cmp_exchange does not produce any branches by default, so there is no
+  // boolean result to piggyback on. TODO: When we merge CompareAndSwap with
+  // CompareAndExchange and move branches here, it would make sense to conditionalize
+  // post_barriers for LS_cmp_exchange as well.
+  //
+  // CAS success path is marked more likely since we anticipate this is a performance
+  // critical path, while CAS failure path can use the penalty for going through unlikely
+  // path as backoff. Which is still better than doing a store barrier there.
+  IdealKit ideal(kit);
+  ideal.if_then(load_store, BoolTest::ne, ideal.ConI(0), PROB_STATIC_FREQUENT); {
+    kit->sync_kit(ideal);
+    post_barrier(kit, access.base(), access.addr().node(), new_val, true);
+    ideal.sync_kit(kit);
+  } ideal.end_if();
+  kit->final_sync(ideal);
+
+  return load_store;
+}
+
+Node* CardTableBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
+  Node* result = BarrierSetC2::atomic_xchg_at_resolved(access, new_val, value_type);
+  if (!access.is_oop()) {
+    return result;
+  }
+
+  post_barrier(access.kit(), access.base(), access.addr().node(), new_val, true);
+
+  return result;
+}
+
+Node* CardTableBarrierSetC2::byte_map_base_node(IdealKit* kit) const {
   // Get base of card map
-  CardTable::CardValue* card_table_base = ci_card_table_address();
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    // load the card table address from the AOT Runtime Constants area
+    Node* byte_map_base_adr = kit->makecon(TypeRawPtr::make(AOTRuntimeConstants::card_table_base_address()));
+    return kit->load_aot_const(byte_map_base_adr, TypeRawPtr::NOTNULL);
+  }
+#endif
+  CardTable::CardValue* card_table_base = ci_card_table_address_const();
    if (card_table_base != nullptr) {
-     return kit->makecon(TypeRawPtr::make((address)card_table_base));
+     return kit->makecon(TypeRawPtr::make((address)card_table_base, relocInfo::none));
    } else {
-     return kit->null();
+     return kit->makecon(Type::get_zero_type(T_ADDRESS));
    }
 }
 
@@ -89,7 +199,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   Node* card_offset = __ URShiftX(cast, __ ConI(CardTable::card_shift()));
 
   // Combine card table base and card offset
-  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset);
+  Node* card_adr = __ AddP(__ top(), byte_map_base_node(&ideal), card_offset);
 
   // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;
@@ -124,25 +234,29 @@ bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() {
   return ReduceInitialCardMarks;
 }
 
-void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   assert(node->Opcode() == Op_CastP2X, "ConvP2XNode required");
-  Node *shift = node->unique_out();
-  Node *addp = shift->unique_out();
-  for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
-    Node *mem = addp->last_out(j);
-    if (UseCondCardMark && mem->is_Load()) {
-      assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
-      // The load is checking if the card has been written so
-      // replace it with zero to fold the test.
-      macro->replace_node(mem, macro->intcon(0));
-      continue;
+  for (DUIterator_Last imin, i = node->last_outs(imin); i >= imin; --i) {
+    Node* shift = node->last_out(i);
+    for (DUIterator_Last jmin, j = shift->last_outs(jmin); j >= jmin; --j) {
+      Node* addp = shift->last_out(j);
+      for (DUIterator_Last kmin, k = addp->last_outs(kmin); k >= kmin; --k) {
+        Node* mem = addp->last_out(k);
+        if (UseCondCardMark && mem->is_Load()) {
+          assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
+          // The load is checking if the card has been written so
+          // replace it with zero to fold the test.
+          igvn->replace_node(mem, igvn->intcon(0));
+          continue;
+        }
+        assert(mem->is_Store(), "store required");
+        igvn->replace_node(mem, mem->in(MemNode::Memory));
+      }
     }
-    assert(mem->is_Store(), "store required");
-    macro->replace_node(mem, mem->in(MemNode::Memory));
   }
 }
 
 bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const {
-  bool is_oop = is_reference_type(type);
+  bool is_oop = type == T_OBJECT || type == T_ARRAY;
   return is_oop && (!tightly_coupled_alloc || !use_ReduceInitialCardMarks());
 }

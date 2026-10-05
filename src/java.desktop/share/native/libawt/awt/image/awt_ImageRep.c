@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ Java_sun_awt_image_ImageRepresentation_setICMpixels(JNIEnv *env, jclass cls,
     /* Release the locked arrays */
     (*env)->ReleasePrimitiveArrayCritical(env, jlut, srcLUT,  JNI_ABORT);
     (*env)->ReleasePrimitiveArrayCritical(env, jpix, srcData, JNI_ABORT);
-    (*env)->ReleasePrimitiveArrayCritical(env, jdata, dstData, JNI_ABORT);
+    (*env)->ReleasePrimitiveArrayCritical(env, jdata, dstData, 0);
 
     return JNI_TRUE;
 }
@@ -385,7 +385,7 @@ Java_sun_awt_image_ImageRepresentation_setDiffICM(JNIEnv *env, jclass cls,
     }
 
     (*env)->ReleasePrimitiveArrayCritical(env, jpix, srcData, JNI_ABORT);
-    (*env)->ReleasePrimitiveArrayCritical(env, jdata, dstData, JNI_ABORT);
+    (*env)->ReleasePrimitiveArrayCritical(env, jdata, dstData, 0);
 
     return JNI_TRUE;
 }

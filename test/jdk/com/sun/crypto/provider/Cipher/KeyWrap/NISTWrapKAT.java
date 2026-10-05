@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,21 @@
 /*
  * @test
  * @bug 5008156 8248268
- * @run testng NISTWrapKAT
+ * @run junit NISTWrapKAT
  * @summary Verify that the AES-Key-Wrap and AES-Key-Wrap-Pad ciphers
  * work as expected using NIST test vectors.
  * @author Valerie Peng
  */
 import java.security.Key;
 import java.security.AlgorithmParameters;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 import java.math.BigInteger;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.testng.Assert;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class NISTWrapKAT {
 
@@ -101,8 +102,7 @@ public class NISTWrapKAT {
         }
     }
 
-    @DataProvider
-    public Object[][] testData() {
+    static Object[][] testData() {
         return new Object[][] {
             { "AESWrap", KEK, 16, DATA, 16, KW_AES128_128 },
             { "AESWrap", KEK, 24, DATA, 16, KW_AES192_128 },
@@ -249,7 +249,8 @@ public class NISTWrapKAT {
         };
     }
 
-    @Test(dataProvider = "testData")
+    @ParameterizedTest
+    @MethodSource("testData")
     public void testKeyWrap(String algo, String key, int keyLen,
             String data, int dataLen, String expected) throws Exception {
         System.out.println("Testing " +  algo + " Cipher with wrapping " +
@@ -311,7 +312,8 @@ public class NISTWrapKAT {
         }
     }
 
-    @Test(dataProvider = "testData")
+    @ParameterizedTest
+    @MethodSource("testData")
     public void testEnc(String algo, String key, int keyLen, String data, int dataLen, String expected)
             throws Exception {
         System.out.println("Testing " +  algo + " Cipher with enc " +

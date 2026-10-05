@@ -158,7 +158,7 @@ TEST_VM_F(LogMessageTest, long_message) {
   const char* expected[] = { start_marker, "0123456789", end_marker, nullptr };
   EXPECT_TRUE(file_contains_substrings_in_order(_level_filename[LogLevel::Trace], expected))
     << "unable to print long line";
-  FREE_C_HEAP_ARRAY(char, data);
+  FREE_C_HEAP_ARRAY(data);
 }
 
 TEST_VM_F(LogMessageTest, message_with_many_lines) {

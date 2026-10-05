@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ class outputStream;
 
 class ConstMethodFlags {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 #define CM_FLAGS_DO(flag)  \
    flag(has_linenumber_table      , 1 << 0) \
@@ -60,7 +59,10 @@ class ConstMethodFlags {
    flag(jvmti_mount_transition    , 1 << 18) \
    flag(deprecated                , 1 << 19) \
    flag(deprecated_for_removal    , 1 << 20) \
-   flag(jvmti_hide_events         , 1 << 21) \
+   flag(has_scalarized_args       , 1 << 21) \
+   flag(needs_stack_repair        , 1 << 22) \
+   flag(mismatch                  , 1 << 23) \
+   flag(jvmti_hide_events         , 1 << 24) \
    /* end of list */
 
 #define CM_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,

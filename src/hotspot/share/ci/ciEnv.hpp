@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,16 @@ private:
   }
   ciObjArrayKlass* get_obj_array_klass(Klass* o) {
     if (o == nullptr) return nullptr;
+    assert(o->is_unrefined_objArray_klass(), "must be exact");
     return get_metadata(o)->as_obj_array_klass();
+  }
+  ciFlatArrayKlass* get_flat_array_klass(Klass* o) {
+    if (o == nullptr) return nullptr;
+    return get_metadata(o)->as_flat_array_klass();
+  }
+  ciRefArrayKlass* get_ref_array_klass(Klass* o) {
+    if (o == nullptr) return nullptr;
+    return get_metadata(o)->as_ref_array_klass();
   }
   ciTypeArrayKlass* get_type_array_klass(Klass* o) {
     if (o == nullptr) return nullptr;
@@ -235,6 +244,9 @@ private:
                                 ciInstanceKlass* accessor) {
     ciInstanceKlass* declared_holder = get_instance_klass_for_declared_method_holder(holder);
     return _factory->get_unloaded_method(declared_holder, name, signature, accessor);
+  }
+  InstanceKlass::ClassState get_cached_init_state(uint id) {
+    return (InstanceKlass::ClassState)_factory->cached_init_state(id);
   }
 
   // Get a ciKlass representing an unloaded klass.
@@ -499,6 +511,14 @@ public:
   void dump_replay_data_helper(outputStream* out);
   void dump_compile_data(outputStream* out);
   void dump_replay_data_version(outputStream* out);
+
+  ciWrapper* make_early_larval_wrapper(ciType* type) const {
+    return _factory->make_early_larval_wrapper(type);
+  }
+
+  ciWrapper* make_null_free_wrapper(ciType* type) const {
+    return _factory->make_null_free_wrapper(type);
+  }
 
   const char *dyno_name(const InstanceKlass* ik) const;
   const char *replay_name(const InstanceKlass* ik) const;

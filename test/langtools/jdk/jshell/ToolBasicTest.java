@@ -585,6 +585,7 @@ public class ToolBasicTest extends ReplToolTesting {
         Compiler compiler = new Compiler();
         Path path = compiler.getPath("testSave.repl");
         {
+            Path pathWithDirectories = compiler.getPath("what/ever/testSave.repl");
             List<String> list = Arrays.asList(
                     "int a;",
                     "class A { public String toString() { return \"A\"; } }"
@@ -593,9 +594,11 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertVariable(a, "int", "a"),
                     (a) -> assertCommand(a, "()", null, null, null, "", ""),
                     (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
-                    (a) -> assertCommand(a, "/save " + path.toString(), "")
+                    (a) -> assertCommand(a, "/save " + path.toString(), ""),
+                    (a) -> assertCommand(a, "/save " + pathWithDirectories.toString(), "")
             );
             assertEquals(list, Files.readAllLines(path));
+            assertEquals(list, Files.readAllLines(pathWithDirectories));
         }
         {
             List<String> output = new ArrayList<>();

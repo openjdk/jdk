@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,11 @@
 
 package java.util;
 
+import jdk.internal.foreign.Utils;
+import jdk.internal.javac.PreviewFeature;
+
+import java.io.Serializable;
+import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 
 /**
@@ -87,9 +92,9 @@ import java.util.function.UnaryOperator;
  * interface.
  *
  * <h2><a id="unmodifiable">Unmodifiable Lists</a></h2>
- * <p>The {@link List#of(Object...) List.of} and
- * {@link List#copyOf List.copyOf} static factory methods
- * provide a convenient way to create unmodifiable lists. The {@code List}
+ * <p>The {@link List#of(Object...) List.of},
+ * {@link List#copyOf List.copyOf}, and {@link List#ofLazy(int, IntFunction)} static
+ * factory methods provide a convenient way to create unmodifiable lists. The {@code List}
  * instances created by these methods have the following characteristics:
  *
  * <ul>
@@ -100,7 +105,7 @@ import java.util.function.UnaryOperator;
  * this may cause the List's contents to appear to change.
  * <li>They disallow {@code null} elements. Attempts to create them with
  * {@code null} elements result in {@code NullPointerException}.
- * <li>They are serializable if all elements are serializable.
+ * <li>Unless otherwise specified, they are serializable if all elements are serializable.
  * <li>The order of elements in the list is the same as the order of the
  * provided arguments, or of the elements in the provided array.
  * <li>The lists and their {@link #subList(int, int) subList} views implement the
@@ -1190,4 +1195,135 @@ public interface List<E> extends SequencedCollection<E> {
     static <E> List<E> copyOf(Collection<? extends E> coll) {
         return ImmutableCollections.listCopy(coll);
     }
+
+    /**
+     * {@return a new lazily computed list of the provided {@code size}}
+     * <p>
+     * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
+     * for which the elements are lazily computed via the provided
+     * {@code computingFunction} when they are first accessed
+     * (e.g., via {@linkplain List#get(int) List::get}).
+     * <p>
+     * The provided computing function is guaranteed to be
+     * invoked at most once per list index, even in a multi-threaded environment.
+     * Competing threads accessing an element already under computation will block until
+     * an element is computed or the computing function completes abnormally.
+     * <p>
+     * If evaluation of the provided computing function throws an unchecked exception (for
+     * an index), the lazy element is not initialized but instead transitions to an error
+     * state whereafter a {@linkplain NoSuchElementException} is thrown with the unchecked
+     * exception as a cause. Subsequent {@linkplain List#get(int) List::get} calls for the
+     * same index throw {@linkplain NoSuchElementException} (without ever invoking the
+     * computing function again) with no cause and with a message that includes the name
+     * of the original unchecked exception's class.
+     * <p>
+     * All failures are handled in this way. There are two special cases that cause
+     * unchecked exceptions to be thrown:
+     * <p>
+     * If the computing function returns {@code null},
+     * a {@linkplain NoSuchElementException} (with a {@linkplain NullPointerException} as
+     * a cause) will be thrown. Hence, just like other unmodifiable lists created via the
+     * {@code List::of} factories, a lazy list can never contain {@code null}
+     * elements. Clients that want to use nullable elements can wrap elements into an
+     * {@linkplain Optional} holder.
+     * <p>
+     * If the computing function recursively invokes itself (for the same index) via the
+     * returned lazy list, a {@linkplain NoSuchElementException}
+     * (with an {@linkplain IllegalStateException} as a cause) will be thrown.
+     * <p>
+     * The elements of any {@link List#subList(int, int) subList()} or
+     * {@link List#reversed()} views of the returned list are also lazily computed.
+     * <p>
+     * The returned list and its {@link List#subList(int, int) subList()} or
+     * {@link List#reversed()} views implement the {@link RandomAccess} interface.
+     * <p>
+     * The returned list's {@linkplain Object Object methods};
+     * {@linkplain Object#equals(Object) equals()},
+     * {@linkplain Object#hashCode() hashCode()}, and
+     * {@linkplain Object#toString() toString()} methods may trigger initialization of
+     * one or more lazy elements. If initialization fails for at least one element,
+     * the {@linkplain Object#hashCode() hashCode()} and
+     * {@linkplain Object#toString() toString()} methods throw
+     * {@linkplain NoSuchElementException}, and the {@linkplain Object#equals(Object)}
+     * throw {@linkplain NoSuchElementException} if attempting to compare an element that
+     * could not be computed.
+     * <p>
+     * The returned lazy list strongly references its computing
+     * function used to compute elements at least as long as there are uninitialized
+     * elements.
+     * <p>
+     * The returned List is <em>not</em> {@linkplain Serializable}.
+     * <p>
+     * Here is an example involving an application that maintains three separate
+     * {@code OrderController} components. Depending on a thread's id, one of the
+     * three {@code OrderController} components will be selected. By using a lazy list,
+     * we ensure that at most three {@code OrderController} instances are created. Once
+     * created, the component retrieval is eligible for constant folding by the JVM:
+     * {@snippet lang = java:
+     * class Application {
+     *
+     *     private static final int POOL_SIZE = 3;
+     *
+     *     static final List<OrderController> ORDERS
+     *         = List.ofLazy(POOL_SIZE, _ -> new OrderController());
+     *
+     *     public static OrderController orders() {
+     *         long index = Thread.currentThread().threadId() % POOL_SIZE;
+     *         return ORDERS.get((int)index);
+     *     }
+     *
+     *      // Eligible for constant folding
+     *      OrderController orders = orders();
+     * }
+     * }
+     * <p>
+     * The returned {@code List<E>} can be thought of as a list backed by a
+     * {@code List<LazyConstant<E>>} field and where the {@linkplain List#get(int)}
+     * operation is equivalent to:
+     * {@snippet lang = java:
+     * class LazyList<E> extends AbstractList<E> {
+     *
+     *     private final List<LazyConstant<E>> backingList;
+     *
+     *     public LazyList(int size, IntFunction<E> computingFunction) {
+     *         this.backingList = IntStream.range(0, size)
+     *                 .mapToObj(i -> LazyConstant.of(() -> computingFunction.apply(i)))
+     *                 .toList();
+     *     }
+     *
+     *     @Override
+     *     public E get(int index) {
+     *         return backingList.get(index).get();
+     *     }
+     * }
+     *}
+     * Except, performance and storage efficiency might be better.
+     * <p>
+     * Elements in the returned list are eligible for certain performance optimizations
+     * such as <em>constant folding</em> as described in
+     * {@linkplain LazyConstant##performance LazyConstant}.
+     *
+     * @implNote  after all elements have been initialized successfully or transitioned to
+     *            an error state, the computing function is no longer strongly referenced
+     *            and becomes eligible for garbage collection.
+     *
+     * @param size              the size of the returned lazy list
+     * @param computingFunction to invoke whenever an element is first accessed
+     *                          (may not return {@code null})
+     * @param <E>               the type of elements in the returned list
+     * @throws IllegalArgumentException if the provided {@code size} is negative.
+     * @throws NullPointerException     if the provided {@code computingFunction} is {@code null}
+     *
+     * @see LazyConstant
+     * @since 26
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_CONSTANTS)
+    static <E> List<E> ofLazy(int size,
+                              IntFunction<? extends E> computingFunction) {
+        Utils.checkNonNegativeArgument(size, "size");
+        Objects.requireNonNull(computingFunction);
+        // A computed list is not Serializable, so we cannot return `List.of()` if `size == 0`
+        return LazyCollections.ofLazyList(size, computingFunction);
+    }
+
 }

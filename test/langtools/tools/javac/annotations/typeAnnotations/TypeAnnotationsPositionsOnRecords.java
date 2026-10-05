@@ -78,6 +78,17 @@ public class TypeAnnotationsPositionsOnRecords {
             record Record6(String t1, @Nullable String t2) {
                 public Record6 {}
             }
+
+            class Test2 {
+                @Target(ElementType.TYPE_USE)
+                @Retention(RetentionPolicy.RUNTIME)
+                public @interface Anno {}
+
+                class Foo {}
+                record Record7(Test2.@Anno Foo foo) {
+                    public Record7 {} // compact constructor
+                }
+            }
             """;
 
     public static void main(String... args) throws Exception {
@@ -100,6 +111,8 @@ public class TypeAnnotationsPositionsOnRecords {
                 "Record5.class").toUri()), 1);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Record6.class").toUri()), 1);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Test2$Record7.class").toUri()), 0);
     }
 
     void compileTestClass() throws Exception {
@@ -110,6 +123,7 @@ public class TypeAnnotationsPositionsOnRecords {
 
     void checkClassFile(final File cfile, int... taPositions) throws Exception {
         ClassModel classFile = ClassFile.of().parse(cfile.toPath());
+        System.err.println("-----------loading " + cfile.getPath());
         int accessorPos = 0;
         int checkedAccessors = 0;
         for (MethodModel method : classFile.methods()) {

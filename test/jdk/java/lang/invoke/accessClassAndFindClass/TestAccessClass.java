@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8150782 8207027 8266269
  * @compile TestAccessClass.java TestCls.java p/Foo.java q/Bar.java
- * @run testng/othervm -ea -esa test.java.lang.invoke.TestAccessClass
+ * @run junit/othervm -ea -esa test.java.lang.invoke.TestAccessClass
  */
 package test.java.lang.invoke;
 
@@ -36,9 +36,11 @@ import q.Bar;
 
 import static java.lang.invoke.MethodHandles.*;
 
-import static org.testng.AssertJUnit.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestAccessClass {
 
@@ -68,17 +70,19 @@ public class TestAccessClass {
         assertEquals(Class1[].class, aClass);
     }
 
-    @DataProvider
-    Object[][] illegalAccessAccess() {
+    static Object[][] illegalAccessAccess() {
         return new Object[][] {
                 {publicLookup(), Class1.class},
                 {publicLookup(), TestCls.getPrivateSIC()}
         };
     }
 
-    @Test(dataProvider = "illegalAccessAccess", expectedExceptions = {IllegalAccessException.class})
+    @ParameterizedTest
+    @MethodSource("illegalAccessAccess")
     public void illegalAccessExceptionTest(Lookup lookup, Class<?> klass) throws IllegalAccessException {
-        lookup.accessClass(klass);
+        assertThrows(IllegalAccessException.class, () -> {
+            lookup.accessClass(klass);
+        });
     }
 
     @Test
@@ -98,8 +102,8 @@ public class TestAccessClass {
         mh.invoke(null);
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
+    @Test
     public void illegalArgument() throws IllegalAccessException {
-        lookup().accessClass(null);
+        assertThrows(NullPointerException.class, () -> lookup().accessClass(null));
     }
 }

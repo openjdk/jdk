@@ -26,6 +26,7 @@ package org.openjdk.bench.jdk.incubator.vector;
 
 
 import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.ShortVector;
 import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.LongVector;
@@ -59,6 +60,9 @@ public class ArrayMismatchBenchmark {
     byte[] byteData1;
     byte[] byteData2;
 
+    short[] shortData1;
+    short[] shortData2;
+
     int[] intData1;
     int[] intData2;
 
@@ -69,6 +73,7 @@ public class ArrayMismatchBenchmark {
     double[] doubleData2;
 
     static final VectorSpecies<Byte> BYTE_SPECIES_PREFERRED = ByteVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Short> SHORT_SPECIES_PREFERRED = ShortVector.SPECIES_PREFERRED;
     static final VectorSpecies<Integer> INT_SPECIES_PREFERRED = IntVector.SPECIES_PREFERRED;
     static final VectorSpecies<Double> FLOAT_SPECIES_PREFERRED = DoubleVector.SPECIES_PREFERRED;
     static final VectorSpecies<Long> LONG_SPECIES_PREFERRED = LongVector.SPECIES_PREFERRED;
@@ -89,6 +94,16 @@ public class ArrayMismatchBenchmark {
 
             System.arraycopy(commonBytes, 0, byteData1, 0, common);
             System.arraycopy(commonBytes, 0, byteData2, 0, common);
+        } else if (params.getBenchmark().endsWith("Short")) {
+            shortData1 = new short[size];
+            shortData2 = new short[size];
+            Arrays.fill(shortData1, (short)random.nextInt());
+            Arrays.fill(shortData2, (short)random.nextInt());
+
+            short[] commonShorts = new short[common];
+            Arrays.fill(commonShorts, (short)random.nextInt());
+            System.arraycopy(commonShorts, 0, shortData1, 0, common);
+            System.arraycopy(commonShorts, 0, shortData2, 0, common);
         } else if (params.getBenchmark().endsWith("Int")) {
             intData1 = random.ints(size).toArray();
             intData2 = random.ints(size).toArray();
@@ -134,6 +149,34 @@ public class ArrayMismatchBenchmark {
         int mismatch = -1;
         for (int i = index; i < length; ++i) {
             if (byteData1[i] != byteData2[i]) {
+                mismatch = i;
+                break;
+            }
+        }
+        return mismatch;
+    }
+
+    @Benchmark
+    public int mismatchIntrinsicShort() {
+        return Arrays.mismatch(shortData1, shortData2);
+    }
+
+    @Benchmark
+    public int mismatchVectorShort() {
+        int length = Math.min(shortData1.length, shortData2.length);
+        int index = 0;
+        for (; index < SHORT_SPECIES_PREFERRED.loopBound(length); index += SHORT_SPECIES_PREFERRED.length()) {
+            ShortVector vector1 = ShortVector.fromArray(SHORT_SPECIES_PREFERRED, shortData1, index);
+            ShortVector vector2 = ShortVector.fromArray(SHORT_SPECIES_PREFERRED, shortData2, index);
+            VectorMask<Short> mask = vector1.compare(VectorOperators.NE, vector2);
+            if (mask.anyTrue()) {
+                return index + mask.firstTrue();
+            }
+        }
+        // process the tail
+        int mismatch = -1;
+        for (int i = index; i < length; ++i) {
+            if (shortData1[i] != shortData2[i]) {
                 mismatch = i;
                 break;
             }

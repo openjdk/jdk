@@ -1,6 +1,6 @@
-# Blocks-16.0.0.txt
-# Date: 2024-02-02
-# Copyright (c) 2024 Unicode, Inc.
+# Blocks-17.0.0.txt
+# Date: 2025-08-01
+# © 2025 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
 #
@@ -228,6 +228,7 @@ FFF0..FFFF; Specials
 108E0..108FF; Hatran
 10900..1091F; Phoenician
 10920..1093F; Lydian
+10940..1095F; Sidetic
 10980..1099F; Meroitic Hieroglyphs
 109A0..109FF; Meroitic Cursive
 10A00..10A5F; Kharoshthi
@@ -279,11 +280,13 @@ FFF0..FFFF; Specials
 11AB0..11ABF; Unified Canadian Aboriginal Syllabics Extended-A
 11AC0..11AFF; Pau Cin Hau
 11B00..11B5F; Devanagari Extended-A
+11B60..11B7F; Sharada Supplement
 11BC0..11BFF; Sunuwar
 11C00..11C6F; Bhaiksuki
 11C70..11CBF; Marchen
 11D00..11D5F; Masaram Gondi
 11D60..11DAF; Gunjala Gondi
+11DB0..11DEF; Tolong Siki
 11EE0..11EFF; Makasar
 11F00..11F5F; Kawi
 11FB0..11FBF; Lisu Supplement
@@ -304,12 +307,14 @@ FFF0..FFFF; Specials
 16B00..16B8F; Pahawh Hmong
 16D40..16D7F; Kirat Rai
 16E40..16E9F; Medefaidrin
+16EA0..16EDF; Beria Erfe
 16F00..16F9F; Miao
 16FE0..16FFF; Ideographic Symbols and Punctuation
 17000..187FF; Tangut
 18800..18AFF; Tangut Components
 18B00..18CFF; Khitan Small Script
 18D00..18D7F; Tangut Supplement
+18D80..18DFF; Tangut Components Supplement
 1AFF0..1AFFF; Kana Extended-B
 1B000..1B0FF; Kana Supplement
 1B100..1B12F; Kana Extended-A
@@ -318,6 +323,7 @@ FFF0..FFFF; Specials
 1BC00..1BC9F; Duployan
 1BCA0..1BCAF; Shorthand Format Controls
 1CC00..1CEBF; Symbols for Legacy Computing Supplement
+1CEC0..1CEFF; Miscellaneous Symbols Supplement
 1CF00..1CFCF; Znamenny Musical Notation
 1D000..1D0FF; Byzantine Musical Symbols
 1D100..1D1FF; Musical Symbols
@@ -336,6 +342,7 @@ FFF0..FFFF; Specials
 1E2C0..1E2FF; Wancho
 1E4D0..1E4FF; Nag Mundari
 1E5D0..1E5FF; Ol Onal
+1E6C0..1E6FF; Tai Yo
 1E7E0..1E7FF; Ethiopic Extended-B
 1E800..1E8DF; Mende Kikakui
 1E900..1E95F; Adlam
@@ -367,6 +374,7 @@ FFF0..FFFF; Specials
 2F800..2FA1F; CJK Compatibility Ideographs Supplement
 30000..3134F; CJK Unified Ideographs Extension G
 31350..323AF; CJK Unified Ideographs Extension H
+323B0..3347F; CJK Unified Ideographs Extension J
 E0000..E007F; Tags
 E0100..E01EF; Variation Selectors Supplement
 F0000..FFFFF; Supplementary Private Use Area-A

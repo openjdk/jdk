@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -25,6 +25,7 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -32,6 +33,7 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -51,6 +53,7 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiTagMap.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -91,8 +94,8 @@ public:
 };
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
+  ShenandoahGC(generation),
   _mark(generation),
-  _generation(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
   _abbreviated(false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap) {
@@ -104,18 +107,40 @@ ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
 
 void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap* const heap) {
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = conc_init_update_refs_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs_prepare);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent init update refs", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs_prepare);
   EventMark em("%s", msg);
 
+  heap->try_inject_pin();
   // Evacuation is complete, retire gc labs and change gc state
   heap->concurrent_prepare_for_update_refs();
+}
+
+void ShenandoahConcurrentGC::entry_update_card_table() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent update cards", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_update_card_table);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
+                              "concurrent update cards");
+
+  heap->try_inject_pin();
+  // Heap needs to be parsable here.
+  // Also, parallel heap region iterate must have a phase set.
+  assert(ShenandoahTimingsTracker::is_current_phase_valid(), "Current phase must be set");
+  ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
 }
 
 bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   _generation->ref_processor()->set_soft_reference_policy(
       GCCause::should_clear_all_soft_refs(cause));
+
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent GC", "");
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
 
   ShenandoahBreakpointGCScope breakpoint_gc_scope(cause);
 
@@ -164,7 +189,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
   assert(heap->is_concurrent_weak_root_in_progress(), "Must be doing weak roots now");
 
-  // Concurrent stack processing
+  // Finish all thread/stack roots if needed. This completes stack watermark processing.
   if (heap->is_evacuation_in_progress()) {
     entry_thread_roots();
   }
@@ -185,14 +210,15 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // we will not age young-gen objects in the case that we skip evacuation.
   entry_cleanup_early();
 
-  heap->free_set()->log_status_under_lock();
-
   // Processing strong roots
   // This may be skipped if there is nothing to update/evacuate.
   // If so, strong_root_in_progress would be unset.
   if (heap->is_concurrent_strong_root_in_progress()) {
     entry_strong_roots();
   }
+
+  // Roots processing is complete, put the weak roots flag down.
+  vmop_entry_final_roots();
 
   // Continue the cycle with evacuation and optional update-refs.
   // This may be skipped if there is nothing to evacuate.
@@ -204,9 +230,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       return false;
     }
 
+    // Perform update-refs phase.
     entry_concurrent_update_refs_prepare(heap);
 
-    // Perform update-refs phase.
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      entry_update_card_table();
+    }
+
     if (ShenandoahVerify) {
       vmop_entry_init_update_refs();
     }
@@ -227,15 +257,26 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
   } else {
-    if (!entry_final_roots()) {
-      assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
-      return false;
+    _abbreviated = true;
+
+    if (heap->mode()->is_generational()) {
+      entry_complete_abbreviated_cycle();
+
+      // If the promote-in-place operation was cancelled, we can have the degenerated
+      // cycle complete the operation. It will see that no evacuations are in progress,
+      // and that there are regions wanting promotion. The risk with not handling the
+      // cancellation would be failing to restore top for these regions and leaving
+      // them unable to serve allocations for the old generation.
+      if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+        return false;
+      }
     }
 
-    if (VerifyAfterGC) {
-      vmop_entry_verify_final_roots();
+    // In normal cycle, final-update-refs would verify at the end of the cycle.
+    // In abbreviated cycle, we need to verify separately.
+    if (ShenandoahVerify) {
+      vmop_entry_final_verify();
     }
-    _abbreviated = true;
   }
 
   // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
@@ -252,51 +293,36 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   return true;
 }
 
-bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
+void ShenandoahConcurrentGC::entry_complete_abbreviated_cycle() {
   shenandoah_assert_generational();
 
   ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
 
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent complete abbreviated cycle", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::complete_abbreviated);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
+                              msg);
+
+  heap->try_inject_pin();
   // We chose not to evacuate because we found sufficient immediate garbage.
   // However, there may still be regions to promote in place, so do that now.
   if (heap->old_generation()->has_in_place_promotions()) {
-    entry_promote_in_place();
-
-    // If the promote-in-place operation was cancelled, we can have the degenerated
-    // cycle complete the operation. It will see that no evacuations are in progress,
-    // and that there are regions wanting promotion. The risk with not handling the
-    // cancellation would be failing to restore top for these regions and leaving
-    // them unable to serve allocations for the old generation.This will leave the weak
-    // roots flag set (the degenerated cycle will unset it).
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
-      return false;
-    }
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::complete_abbreviated_promote_in_place);
+    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::complete_abbreviated_promote_in_place);
+    heap->promote_regions_in_place(_generation, true);
   }
 
   // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
   // the control thread will detect it on its next iteration and run a degenerated young cycle.
-  if (!_generation->is_old()) {
+  if (!heap->cancelled_gc() && !_generation->is_old()) {
+    ShenandoahTimingsTracker tracker(ShenandoahPhaseTimings::complete_abbreviated_update_region_ages);
     heap->update_region_ages(_generation->complete_marking_context());
   }
-
-  if (!heap->is_concurrent_old_mark_in_progress()) {
-    heap->concurrent_final_roots();
-  } else {
-    // Since the cycle was shortened for having enough immediate garbage, this will be
-    // the last phase before concurrent marking of old resumes. We must be sure
-    // that old mark threads don't see any pointers to garbage in the SATB queues. Even
-    // though nothing was evacuated, overwriting unreachable weak roots with null may still
-    // put pointers to regions that become trash in the SATB queues. The following will
-    // piggyback flushing the thread local SATB queues on the same handshake that propagates
-    // the gc state change.
-    ShenandoahSATBMarkQueueSet& satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
-    ShenandoahFlushSATBHandshakeClosure complete_thread_local_satb_buffers(satb_queues);
-    heap->concurrent_final_roots(&complete_thread_local_satb_buffers);
-    heap->old_generation()->concurrent_transfer_pointers_from_satb();
-  }
-  return true;
 }
-
 
 void ShenandoahConcurrentGC::vmop_entry_init_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
@@ -316,6 +342,7 @@ void ShenandoahConcurrentGC::vmop_entry_final_mark() {
   heap->try_inject_alloc_failure();
   VM_ShenandoahFinalMarkStartEvac op(this);
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
+  heap->try_inject_pin();
 }
 
 void ShenandoahConcurrentGC::vmop_entry_init_update_refs() {
@@ -324,6 +351,7 @@ void ShenandoahConcurrentGC::vmop_entry_init_update_refs() {
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_update_refs_gross);
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   VM_ShenandoahInitUpdateRefs op(this);
   VMThread::execute(&op);
 }
@@ -334,24 +362,40 @@ void ShenandoahConcurrentGC::vmop_entry_final_update_refs() {
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_gross);
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   VM_ShenandoahFinalUpdateRefs op(this);
   VMThread::execute(&op);
 }
 
-void ShenandoahConcurrentGC::vmop_entry_verify_final_roots() {
+void ShenandoahConcurrentGC::vmop_entry_final_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_roots_gross);
 
   // This phase does not use workers, no need for setup
-  heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   VM_ShenandoahFinalRoots op(this);
   VMThread::execute(&op);
 }
 
+void ShenandoahConcurrentGC::vmop_entry_final_verify() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
+  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_verify_gross);
+
+  // This phase does not use workers, no need for setup
+  heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
+  VM_ShenandoahFinalVerify op(this);
+  VMThread::execute(&op);
+}
+
 void ShenandoahConcurrentGC::entry_init_mark() {
-  const char* msg = init_mark_event_message();
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::init_mark);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  assert(!heap->has_forwarded_objects(), "Should not have forwarded objects here");
+
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Pause Init Mark", "");
+  ShenandoahPauseSubphase gc_phase(msg, ShenandoahPhaseTimings::init_mark);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
@@ -362,8 +406,12 @@ void ShenandoahConcurrentGC::entry_init_mark() {
 }
 
 void ShenandoahConcurrentGC::entry_final_mark() {
-  const char* msg = final_mark_event_message();
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_mark);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  assert(!heap->has_forwarded_objects() || heap->is_concurrent_old_mark_in_progress(),
+         "Should not have forwarded objects during final mark, unless old gen concurrent mark is running");
+
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Pause Final Mark", "");
+  ShenandoahPauseSubphase gc_phase(msg, ShenandoahPhaseTimings::final_mark);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
@@ -374,8 +422,8 @@ void ShenandoahConcurrentGC::entry_final_mark() {
 }
 
 void ShenandoahConcurrentGC::entry_init_update_refs() {
-  static const char* msg = "Pause Init Update Refs";
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::init_update_refs);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Pause Init Update Refs", "");
+  ShenandoahPauseSubphase gc_phase(msg, ShenandoahPhaseTimings::init_update_refs);
   EventMark em("%s", msg);
 
   // No workers used in this phase, no setup required
@@ -383,8 +431,8 @@ void ShenandoahConcurrentGC::entry_init_update_refs() {
 }
 
 void ShenandoahConcurrentGC::entry_final_update_refs() {
-  static const char* msg = "Pause Final Update Refs";
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_update_refs);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Pause Final Update Refs", "");
+  ShenandoahPauseSubphase gc_phase(msg, ShenandoahPhaseTimings::final_update_refs);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
@@ -394,22 +442,23 @@ void ShenandoahConcurrentGC::entry_final_update_refs() {
   op_final_update_refs();
 }
 
-void ShenandoahConcurrentGC::entry_verify_final_roots() {
-  const char* msg = verify_final_roots_event_message();
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
+void ShenandoahConcurrentGC::entry_final_verify() {
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Pause Verify Final", "");
+  ShenandoahPauseSubphase gc_phase(msg, ShenandoahPhaseTimings::final_verify);
   EventMark em("%s", msg);
 
-  op_verify_final_roots();
+  op_verify_final();
 }
 
 void ShenandoahConcurrentGC::entry_reset() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
   heap->try_inject_alloc_failure();
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
   {
-    const char* msg = conc_reset_event_message();
-    ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset);
+    SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent reset", "");
+    ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_reset);
     EventMark em("%s", msg);
 
     ShenandoahWorkerScope scope(heap->workers(),
@@ -423,8 +472,9 @@ void ShenandoahConcurrentGC::entry_scan_remembered_set() {
   if (_generation->is_young()) {
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
     TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-    const char* msg = "Concurrent remembered set scanning";
-    ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::init_scan_rset);
+
+    SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent remembered set scanning", "");
+    ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::init_scan_rset);
     EventMark em("%s", msg);
 
     ShenandoahWorkerScope scope(heap->workers(),
@@ -439,8 +489,8 @@ void ShenandoahConcurrentGC::entry_scan_remembered_set() {
 void ShenandoahConcurrentGC::entry_mark_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = "Concurrent marking roots";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_mark_roots);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent marking roots", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_mark_roots);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
@@ -453,9 +503,12 @@ void ShenandoahConcurrentGC::entry_mark_roots() {
 
 void ShenandoahConcurrentGC::entry_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  assert(!heap->has_forwarded_objects() || heap->is_concurrent_old_mark_in_progress(),
+         "Should not have forwarded objects concurrent mark, unless old gen concurrent mark is running");
+
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = conc_mark_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_mark);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent marking", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_mark);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
@@ -464,12 +517,13 @@ void ShenandoahConcurrentGC::entry_mark() {
 
   heap->try_inject_alloc_failure();
   op_mark();
+  heap->try_inject_pin();
 }
 
 void ShenandoahConcurrentGC::entry_thread_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  static const char* msg = "Concurrent thread roots";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_thread_roots);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent thread roots", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_thread_roots);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
@@ -477,13 +531,14 @@ void ShenandoahConcurrentGC::entry_thread_roots() {
                               msg);
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_thread_roots();
 }
 
 void ShenandoahConcurrentGC::entry_weak_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  const char* msg = conc_weak_refs_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_refs);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent weak references", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_refs);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
@@ -491,14 +546,15 @@ void ShenandoahConcurrentGC::entry_weak_refs() {
                               "concurrent weak references");
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_weak_refs();
 }
 
 void ShenandoahConcurrentGC::entry_weak_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = conc_weak_roots_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_roots);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent weak roots", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_roots);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
@@ -506,14 +562,15 @@ void ShenandoahConcurrentGC::entry_weak_roots() {
                               "concurrent weak root");
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_weak_roots();
 }
 
 void ShenandoahConcurrentGC::entry_class_unloading() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  static const char* msg = "Concurrent class unloading";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_class_unload);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent class unloading", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_class_unload);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
@@ -521,14 +578,15 @@ void ShenandoahConcurrentGC::entry_class_unloading() {
                               "concurrent class unloading");
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_class_unloading();
 }
 
 void ShenandoahConcurrentGC::entry_strong_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  static const char* msg = "Concurrent strong roots";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_strong_roots);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent strong roots", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_strong_roots);
   EventMark em("%s", msg);
 
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_strong_roots);
@@ -538,27 +596,34 @@ void ShenandoahConcurrentGC::entry_strong_roots() {
                               "concurrent strong root");
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_strong_roots();
 }
 
 void ShenandoahConcurrentGC::entry_cleanup_early() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = conc_cleanup_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_early, true /* log_heap_usage */);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent cleanup", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_early, false /* log_heap_usage */);
   EventMark em("%s", msg);
 
   // This phase does not use workers, no need for setup
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_cleanup_early();
+  if (!heap->is_evacuation_in_progress()) {
+    // This is an abbreviated cycle.  Rebuild the freeset in order to establish reserves for the next GC cycle.  Doing
+    // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that we will degenerate
+    // during promote-in-place processing.
+    heap->rebuild_free_set(true /*concurrent*/);
+  }
 }
 
 void ShenandoahConcurrentGC::entry_evacuate() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-  static const char* msg = "Concurrent evacuation";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_evac);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent evacuation", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_evac);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
@@ -566,37 +631,28 @@ void ShenandoahConcurrentGC::entry_evacuate() {
                               "concurrent evacuation");
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_evacuate();
-}
-
-void ShenandoahConcurrentGC::entry_promote_in_place() const {
-  shenandoah_assert_generational();
-
-  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::promote_in_place);
-  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::promote_in_place);
-  EventMark em("%s", "Promote in place");
-
-  ShenandoahGenerationalHeap::heap()->promote_regions_in_place(true);
 }
 
 void ShenandoahConcurrentGC::entry_update_thread_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-  static const char* msg = "Concurrent update thread roots";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_thread_roots);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent update thread roots", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_update_thread_roots);
   EventMark em("%s", msg);
 
   // No workers used in this phase, no setup required
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_update_thread_roots();
 }
 
 void ShenandoahConcurrentGC::entry_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  static const char* msg = "Concurrent update references";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent update references", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
@@ -604,14 +660,15 @@ void ShenandoahConcurrentGC::entry_update_refs() {
                               "concurrent reference update");
 
   heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   op_update_refs();
 }
 
 void ShenandoahConcurrentGC::entry_cleanup_complete() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = conc_cleanup_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_complete, true /* log_heap_usage */);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent cleanup", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_complete, false /* log_heap_usage */);
   EventMark em("%s", msg);
 
   // This phase does not use workers, no need for setup
@@ -622,8 +679,8 @@ void ShenandoahConcurrentGC::entry_cleanup_complete() {
 void ShenandoahConcurrentGC::entry_reset_after_collect() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = conc_reset_after_collect_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_after_collect);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent reset after collect", "");
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_after_collect);
   EventMark em("%s", msg);
 
   op_reset_after_collect();
@@ -684,16 +741,10 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (heap->mode()->is_generational()) {
-
     if (_generation->is_global()) {
       heap->old_generation()->cancel_gc();
-    } else if (heap->is_concurrent_old_mark_in_progress()) {
-      // Purge the SATB buffers, transferring any valid, old pointers to the
-      // old generation mark queue. Any pointers in a young region will be
-      // abandoned.
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
-      heap->old_generation()->transfer_pointers_from_satb();
     }
+
     {
       // After we swap card table below, the write-table is all clean, and the read table holds
       // cards dirty prior to the start of GC. Young and bootstrap collection will update
@@ -706,7 +757,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   if (ShenandoahVerify) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_mark_verify);
-    heap->verifier()->verify_before_concmark();
+    heap->verifier()->verify_before_concmark(_generation);
   }
 
   if (VerifyBeforeGC) {
@@ -738,10 +789,8 @@ void ShenandoahConcurrentGC::op_init_mark() {
   // Make above changes visible to worker threads
   OrderAccess::fence();
 
-  // Arm nmethods for concurrent mark
-  ShenandoahCodeRoots::arm_nmethods_for_mark();
-
-  ShenandoahStackWatermark::change_epoch_id();
+  // Arm nmethods/stack for concurrent processing
+  CodeCache::arm_all_nmethods();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_propagate_gc_state);
@@ -763,7 +812,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   if (!heap->cancelled_gc()) {
@@ -791,28 +840,26 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
       if (ShenandoahVerify) {
         ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
-        heap->verifier()->verify_before_evacuation();
+        heap->verifier()->verify_before_evacuation(_generation);
       }
 
       heap->set_evacuation_in_progress(true);
       // From here on, we need to update references.
       heap->set_has_forwarded_objects(true);
-
-      // Arm nmethods/stack for concurrent processing
-      ShenandoahCodeRoots::arm_nmethods_for_evac();
-      ShenandoahStackWatermark::change_epoch_id();
-
     } else {
       if (ShenandoahVerify) {
         ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
         if (has_in_place_promotions(heap)) {
-          heap->verifier()->verify_after_concmark_with_promotions();
+          heap->verifier()->verify_after_concmark_with_promotions(_generation);
         } else {
-          heap->verifier()->verify_after_concmark();
+          heap->verifier()->verify_after_concmark(_generation);
         }
       }
     }
   }
+
+  // Arm nmethods/stack for concurrent processing
+  CodeCache::arm_all_nmethods();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
@@ -847,8 +894,6 @@ public:
   }
 
   void work(uint worker_id) override {
-    // ShenandoahEvacOOMScope has to be setup by ShenandoahContextEvacuateUpdateRootsClosure.
-    // Otherwise, may deadlock with watermark lock
     ShenandoahContextEvacuateUpdateRootsClosure oops_cl;
     ShenandoahConcurrentEvacThreadClosure thr_cl(&oops_cl);
     _java_threads.threads_do(&thr_cl, worker_id);
@@ -877,18 +922,20 @@ void ShenandoahConcurrentGC::op_weak_refs() {
 class ShenandoahEvacUpdateCleanupOopStorageRootsClosure : public BasicOopIterateClosure {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahGeneration* const _generation;
   ShenandoahMarkingContext* const _mark_context;
   bool  _evac_in_progress;
   Thread* const _thread;
 
 public:
-  ShenandoahEvacUpdateCleanupOopStorageRootsClosure();
+  explicit ShenandoahEvacUpdateCleanupOopStorageRootsClosure(ShenandoahGeneration* generation);
   void do_oop(oop* p);
   void do_oop(narrowOop* p);
 };
 
-ShenandoahEvacUpdateCleanupOopStorageRootsClosure::ShenandoahEvacUpdateCleanupOopStorageRootsClosure() :
+ShenandoahEvacUpdateCleanupOopStorageRootsClosure::ShenandoahEvacUpdateCleanupOopStorageRootsClosure(ShenandoahGeneration* generation) :
   _heap(ShenandoahHeap::heap()),
+  _generation(generation),
   _mark_context(ShenandoahHeap::heap()->marking_context()),
   _evac_in_progress(ShenandoahHeap::heap()->is_evacuation_in_progress()),
   _thread(Thread::current()) {
@@ -898,13 +945,12 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
   const oop obj = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(obj)) {
     if (!_mark_context->is_marked(obj)) {
-      shenandoah_assert_generations_reconciled();
-      if (_heap->is_in_active_generation(obj)) {
+      if (_generation->contains(obj)) {
         // Note: The obj is dead here. Do not touch it, just clear.
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
-      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop resolved = ShenandoahForwarding::get_forwardee(obj);
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
@@ -942,14 +988,16 @@ private:
   ShenandoahClassLoaderDataRoots<true /* concurrent */>
                                              _cld_roots;
   ShenandoahConcurrentNMethodIterator        _nmethod_itr;
+  ShenandoahGeneration*                      _generation;
   ShenandoahPhaseTimings::Phase              _phase;
 
 public:
-  ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
+  ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahGeneration* generation, ShenandoahPhaseTimings::Phase phase) :
     WorkerTask("Shenandoah Evacuate/Update Concurrent Weak Roots"),
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
     _nmethod_itr(ShenandoahCodeRoots::table()),
+    _generation(generation),
     _phase(phase) {}
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
@@ -957,14 +1005,13 @@ public:
     _vm_roots.report_num_dead();
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    ShenandoahSuspendibleThreadSetJoiner sts_join;
+    SuspendibleThreadSetJoiner sts_join;
     {
-      ShenandoahEvacOOMScope oom;
       // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
       // may race against OopStorage::release() calls.
-      ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl;
+      ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl(_generation);
       _vm_roots.oops_do(&cl, worker_id);
     }
 
@@ -984,7 +1031,7 @@ public:
       // state is cached, therefore, during concurrent class unloading phase,
       // we will not touch the metadata of unloading nmethods
       {
-        ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+        ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCache, worker_id);
         ShenandoahIsNMethodAliveClosure is_nmethod_alive;
         _nmethod_itr.nmethods_do(&is_nmethod_alive);
       }
@@ -997,9 +1044,8 @@ void ShenandoahConcurrentGC::op_weak_roots() {
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
   {
     // Concurrent weak root processing
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
+    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots);
+    ShenandoahConcurrentWeakRootsEvacUpdateTask task(_generation, ShenandoahPhaseTimings::conc_weak_roots);
     heap->workers()->run_task(&task);
   }
 
@@ -1026,23 +1072,16 @@ void ShenandoahConcurrentGC::op_class_unloading() {
 
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
 private:
-  BarrierSetNMethod* const                  _bs;
   ShenandoahEvacuateUpdateMetadataClosure   _cl;
 
 public:
-  ShenandoahEvacUpdateCodeCacheClosure() :
-    _bs(BarrierSet::barrier_set()->barrier_set_nmethod()),
-    _cl() {
-  }
+  ShenandoahEvacUpdateCodeCacheClosure() : _cl() {}
 
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
-    ShenandoahReentrantLocker locker(data->lock());
-    // Setup EvacOOM scope below reentrant lock to avoid deadlock with
-    // nmethod_entry_barrier
-    ShenandoahEvacOOMScope oom;
-    data->oops_do(&_cl, true/*fix relocation*/);
-    _bs->disarm(n);
+    ShenandoahNMethodLocker locker(data->lock());
+    ICacheInvalidationContext icic;
+    data->oops_do(&_cl, /* fix_relocations = */ true, &icic);
   }
 };
 
@@ -1065,7 +1104,6 @@ public:
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     {
-      ShenandoahEvacOOMScope oom;
       {
         // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
         // may race against OopStorage::release() calls.
@@ -1080,9 +1118,8 @@ public:
       }
     }
 
-    // Cannot setup ShenandoahEvacOOMScope here, due to potential deadlock with nmethod_entry_barrier.
     if (!ShenandoahHeap::heap()->unload_classes()) {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCache, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
       _nmethod_itr.nmethods_do(&cl);
     }
@@ -1105,19 +1142,19 @@ void ShenandoahConcurrentGC::op_cleanup_early() {
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {
-  ShenandoahHeap::heap()->evacuate_collection_set(true /*concurrent*/);
+  ShenandoahHeap::heap()->evacuate_collection_set(_generation, true /*concurrent*/);
 }
 
 void ShenandoahConcurrentGC::op_init_update_refs() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_update_refs_verify);
-    heap->verifier()->verify_before_update_refs();
+    heap->verifier()->verify_before_update_refs(_generation);
   }
 }
 
 void ShenandoahConcurrentGC::op_update_refs() {
-  ShenandoahHeap::heap()->update_heap_references(true /*concurrent*/);
+  ShenandoahHeap::heap()->update_heap_references(_generation, true /*concurrent*/);
 }
 
 class ShenandoahUpdateThreadHandshakeClosure : public HandshakeClosure {
@@ -1128,7 +1165,7 @@ private:
   ShenandoahNonConcUpdateRefsClosure _cl;
 public:
   ShenandoahUpdateThreadHandshakeClosure();
-  void do_thread(Thread* thread);
+  void do_thread(Thread* thread) override;
 };
 
 ShenandoahUpdateThreadHandshakeClosure::ShenandoahUpdateThreadHandshakeClosure() :
@@ -1143,9 +1180,49 @@ void ShenandoahUpdateThreadHandshakeClosure::do_thread(Thread* thread) {
   }
 }
 
+class ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers final : public HandshakeClosure {
+  // When Shenandoah is marking the old generation, it is possible for the SATB barrier
+  // to pick up overwritten pointers that point into a cset region. If these pointers
+  // are accessed by mark threads, they will crash. Once update refs has completed, it is
+  // no longer possible for a mutator thread to overwrite a pointer into a cset region.
+  //
+  // Therefore, at the end of update refs, we use this closure to update the thread roots
+  // and 'complete' all the thread local SATB buffers. Completing these will filter out
+  // anything that has already been marked or anything that points to a region which is
+  // not old. We do not need to worry about ABA situations where a region may become old
+  // after the pointer is enqueued but before it is filtered. There are only two ways a
+  // region may become old:
+  //  1. The region is promoted in place. This is safe because such regions will never
+  //     be in the collection set. If this happens, the pointer will be preserved, essentially
+  //     becoming part of the old snapshot.
+  //  2. The region is allocated during evacuation of old. This is also not a concern because
+  //     we haven't yet finished marking old so no mixed evacuations will happen.
+  ShenandoahUpdateThreadHandshakeClosure _update_roots;
+  ShenandoahFlushSATB _flush_all_satb;
+
+public:
+  ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers() :
+    HandshakeClosure("Shenandoah Update Thread Roots and Flush SATB"),
+    _flush_all_satb(ShenandoahBarrierSet::satb_mark_queue_set()) {
+    assert(ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young(),
+           "Should be filtering pointers outside of old during old marking");
+  }
+
+  void do_thread(Thread* thread) override {
+    _update_roots.do_thread(thread);
+    _flush_all_satb.do_thread(thread);
+  }
+};
+
 void ShenandoahConcurrentGC::op_update_thread_roots() {
-  ShenandoahUpdateThreadHandshakeClosure cl;
-  Handshake::execute(&cl);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  if (heap->is_concurrent_old_mark_in_progress()) {
+    ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers cl;
+    Handshake::execute(&cl);
+  } else {
+    ShenandoahUpdateThreadHandshakeClosure cl;
+    Handshake::execute(&cl);
+  }
 }
 
 void ShenandoahConcurrentGC::op_final_update_refs() {
@@ -1158,47 +1235,24 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   // Clear cancelled GC, if set. On cancellation path, the block before would handle
   // everything.
   if (heap->cancelled_gc()) {
-    heap->clear_cancelled_gc(true /* clear oom handler */);
+    heap->clear_cancelled_gc();
   }
 
   // Has to be done before cset is clear
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_in_to_space();
+    heap->verifier()->verify_roots_in_to_space(_generation);
   }
 
-  // If we are running in generational mode and this is an aging cycle, this will also age active
-  // regions that haven't been used for allocation.
+  // If we are running in generational mode, this will also age active regions that
+  // haven't been used for allocation.
   heap->update_heap_region_states(true /*concurrent*/);
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);
 
-  if (heap->mode()->is_generational() && heap->is_concurrent_old_mark_in_progress()) {
-    // When the SATB barrier is left on to support concurrent old gen mark, it may pick up writes to
-    // objects in the collection set. After those objects are evacuated, the pointers in the
-    // SATB are no longer safe. Once we have finished update references, we are guaranteed that
-    // no more writes to the collection set are possible.
-    //
-    // This will transfer any old pointers in _active_ regions from the SATB to the old gen
-    // mark queues. All other pointers will be discarded. This would also discard any pointers
-    // in old regions that were included in a mixed evacuation. We aren't using the SATB filter
-    // methods here because we cannot control when they execute. If the SATB filter runs _after_
-    // a region has been recycled, we will not be able to detect the bad pointer.
-    //
-    // We are not concerned about skipping this step in abbreviated cycles because regions
-    // with no live objects cannot have been written to and so cannot have entries in the SATB
-    // buffers.
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
-    heap->old_generation()->transfer_pointers_from_satb();
-
-    // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
-    // entire regions.  Both of these relevant operations occur before final update refs.
-    ShenandoahGenerationalHeap::heap()->set_aging_cycle(false);
-  }
-
   if (ShenandoahVerify) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_update_refs_verify);
-    heap->verifier()->verify_after_update_refs();
+    heap->verifier()->verify_after_update_refs(_generation);
   }
 
   if (VerifyAfterGC) {
@@ -1206,6 +1260,10 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
+  _generation->heuristics()->start_idle_span();
+
+  // Final pause: update GC barriers to idle state.
+  CodeCache::arm_all_nmethods();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_propagate_gc_state);
@@ -1213,32 +1271,19 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 }
 
-bool ShenandoahConcurrentGC::entry_final_roots() {
+void ShenandoahConcurrentGC::entry_final_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-
-  const char* msg = conc_final_roots_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_final_roots);
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Pause Final Roots", "");
+  ShenandoahPauseSubphase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
   EventMark em("%s", msg);
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
-                              msg);
 
-  if (!heap->mode()->is_generational()) {
-    heap->concurrent_final_roots();
-  } else {
-    if (!complete_abbreviated_cycle()) {
-      return false;
-    }
-  }
-  return true;
+  heap->op_final_roots();
 }
 
-void ShenandoahConcurrentGC::op_verify_final_roots() {
-  if (VerifyAfterGC) {
-    Universe::verify();
-  }
+void ShenandoahConcurrentGC::op_verify_final() {
+  assert(ShenandoahVerify, "Should have been checked before");
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->verifier()->verify_after_gc(_generation);
 }
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
@@ -1272,101 +1317,4 @@ bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint p
     return true;
   }
   return false;
-}
-
-const char* ShenandoahConcurrentGC::init_mark_event_message() const {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  assert(!heap->has_forwarded_objects(), "Should not have forwarded objects here");
-  if (heap->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Init Mark", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Init Mark", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::final_mark_event_message() const {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  assert(!heap->has_forwarded_objects() || heap->is_concurrent_old_mark_in_progress(),
-         "Should not have forwarded objects during final mark, unless old gen concurrent mark is running");
-
-  if (heap->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Mark", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Mark", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_mark_event_message() const {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  assert(!heap->has_forwarded_objects() || heap->is_concurrent_old_mark_in_progress(),
-         "Should not have forwarded objects concurrent mark, unless old gen concurrent mark is running");
-  if (heap->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent marking", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent marking", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_reset_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_reset_after_collect_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset after collect", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset after collect", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::verify_final_roots_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final Roots", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final Roots", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_final_roots_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_weak_refs_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak references", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak references", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_weak_roots_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak roots", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak roots", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_cleanup_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent cleanup", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent cleanup", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_init_update_refs_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Init Update Refs", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Init Update Refs", "");
-  }
 }

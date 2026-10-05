@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_StoreF:
     case Op_StoreI:
     case Op_StoreL:
+    case Op_StoreLSpecial:
     case Op_StoreP:
     case Op_StoreN:
     case Op_StoreNKlass:
@@ -306,8 +307,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         // cannot reason about it; is probably not implicit null exception
       } else {
         const TypePtr* tptr;
-        if ((UseCompressedOops && CompressedOops::shift() == 0) ||
-            (UseCompressedClassPointers && CompressedKlassPointers::shift() == 0)) {
+        if ((UseCompressedOops && CompressedOops::shift() == 0) || CompressedKlassPointers::shift() == 0) {
           // 32-bits narrow oop can be the base of address expressions
           tptr = base->get_ptr_type();
         } else {
@@ -315,9 +315,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           tptr = base->bottom_type()->is_ptr();
         }
         // Give up if offset is not a compile-time constant.
-        if (offset == Type::OffsetBot || tptr->_offset == Type::OffsetBot)
+        if (offset == Type::OffsetBot || tptr->offset() == Type::OffsetBot)
           continue;
-        offset += tptr->_offset; // correct if base is offsetted
+        offset += tptr->offset(); // correct if base is offsetted
         // Give up if reference is beyond page size.
         if (MacroAssembler::needs_explicit_null_check(offset))
           continue;
@@ -362,7 +362,11 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         continue;
       }
       // Block of memory-op input
-      Block *inb = get_block_for_node(mach->in(j));
+      Block* inb = get_block_for_node(mach->in(j));
+      if (mach->in(j)->is_Con() && mach->in(j)->req() == 1 && inb == get_block_for_node(mach)) {
+        // Ignore constant loads scheduled in the same block (we can simply hoist them as well)
+        continue;
+      }
       Block *b = block;          // Start from nul check
       while( b != inb && b->_dom_depth > inb->_dom_depth )
         b = b->_idom;           // search upwards for input
@@ -434,6 +438,27 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       move_node_and_its_projections_to_block(val, block);
     }
   }
+
+  // Hoist constant load inputs as well.
+  for (uint i = 1; i < best->req(); ++i) {
+    Node* n = best->in(i);
+    if (n->is_Con() && get_block_for_node(n) == get_block_for_node(best)) {
+      get_block_for_node(n)->find_remove(n);
+      block->add_inst(n);
+      map_node_to_block(n, block);
+      // Constant loads may kill flags (for example, when XORing a register).
+      // Check for flag-killing projections that also need to be hoisted.
+      for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+        Node* proj = n->fast_out(j);
+        if (proj->is_MachProj()) {
+          get_block_for_node(proj)->find_remove(proj);
+          block->add_inst(proj);
+          map_node_to_block(proj, block);
+        }
+      }
+    }
+  }
+
 
   // Move any MachTemp inputs to the end of the test block.
   for (uint i = 0; i < best->req(); i++) {
@@ -693,7 +718,7 @@ Node* PhaseCFG::select(
     cand_cnt++;
     if (choice < n_choice ||
         (choice == n_choice &&
-         ((StressLCM && C->randomized_select(cand_cnt)) ||
+         ((StressLCM && C->stress().randomized_select(cand_cnt)) ||
           (!StressLCM &&
            (latency < n_latency ||
             (latency == n_latency &&
@@ -743,6 +768,7 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreF:
         case Op_StoreI:
         case Op_StoreL:
+        case Op_StoreLSpecial:
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:
@@ -855,12 +881,12 @@ void PhaseCFG::needed_for_next_call(Block* block, Node* this_call, VectorSet& ne
 static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe) {
   // Fill in the kill mask for the call
   for( OptoReg::Name r = OptoReg::Name(0); r < _last_Mach_Reg; r=OptoReg::add(r,1) ) {
-    if( !regs.Member(r) ) {     // Not already defined by the call
+    if (!regs.member(r)) { // Not already defined by the call
       // Save-on-call register?
       if ((save_policy[r] == 'C') ||
           (save_policy[r] == 'A') ||
           ((save_policy[r] == 'E') && exclude_soe)) {
-        proj->_rout.Insert(r);
+        proj->_rout.insert(r);
       }
     }
   }
@@ -884,7 +910,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
     // Schedule next to call
     block->map_node(n, node_cnt++);
     // Collect defined registers
-    regs.OR(n->out_RegMask());
+    regs.or_with(n->out_RegMask());
     // Check for scheduling the next control-definer
     if( n->bottom_type() == Type::CONTROL )
       // Warm up next pile of heuristic bits
@@ -907,12 +933,12 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
 
   // Act as if the call defines the Frame Pointer.
   // Certainly the FP is alive and well after the call.
-  regs.Insert(_matcher.c_frame_pointer());
+  regs.insert(_matcher.c_frame_pointer());
 
   // Set all registers killed and not already defined by the call.
-  uint r_cnt = mcall->tf()->range()->cnt();
+  uint r_cnt = mcall->tf()->range_cc()->cnt();
   int op = mcall->ideal_Opcode();
-  MachProjNode *proj = new MachProjNode( mcall, r_cnt+1, RegMask::Empty, MachProjNode::fat_proj );
+  MachProjNode* proj = new MachProjNode(mcall, r_cnt + 1, RegMask::EMPTY, MachProjNode::fat_proj);
   map_node_to_block(proj, block);
   block->insert_node(proj, node_cnt++);
 
@@ -1164,10 +1190,10 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
 
     if (n->is_Mach() && n->as_Mach()->has_call()) {
       RegMask regs;
-      regs.Insert(_matcher.c_frame_pointer());
-      regs.OR(n->out_RegMask());
+      regs.insert(_matcher.c_frame_pointer());
+      regs.or_with(n->out_RegMask());
 
-      MachProjNode *proj = new MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
+      MachProjNode* proj = new MachProjNode(n, 1, RegMask::EMPTY, MachProjNode::fat_proj);
       map_node_to_block(proj, block);
       block->insert_node(proj, phi_cnt++);
 

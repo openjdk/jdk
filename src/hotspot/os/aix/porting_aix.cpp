@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +78,7 @@ class fixed_strings {
 
   public:
 
-  fixed_strings() : first(0) {}
+  fixed_strings() : first(nullptr) {}
   ~fixed_strings() {
     node* n = first;
     while (n) {
@@ -95,7 +96,7 @@ class fixed_strings {
       }
     }
     node* p = new node;
-    p->v = os::strdup_check_oom(s);
+    p->v = os::strdup_check_oom(s, mtInternal);
     p->next = first;
     first = p;
     return p->v;
@@ -112,7 +113,7 @@ bool AixSymbols::get_function_name (
                                      //                 information (null if not available)
     bool demangle                    // [in] whether to demangle the name
   ) {
-  struct tbtable* tb = 0;
+  struct tbtable* tb = nullptr;
   unsigned int searchcount = 0;
 
   // initialize output parameters
@@ -425,6 +426,10 @@ int dladdr(void* addr, Dl_info* info) {
 
 }
 
+int JVM_dladdr(void* addr, Dl_info* info) {
+  return dladdr(addr, info);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Native callstack dumping
 
@@ -652,10 +657,10 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
   // To print the first frame, use the current value of iar:
   // current entry indicated by iar (the current pc)
-  codeptr_t cur_iar = 0;
-  stackptr_t cur_sp = 0;
-  codeptr_t cur_rtoc = 0;
-  codeptr_t cur_lr = 0;
+  codeptr_t cur_iar = nullptr;
+  stackptr_t cur_sp = nullptr;
+  codeptr_t cur_rtoc = nullptr;
+  codeptr_t cur_lr = nullptr;
 
   const ucontext_t* uc = (const ucontext_t*) context;
 
@@ -925,7 +930,7 @@ static struct handletableentry* p_handletable = nullptr;
 static const char* rtv_linkedin_libpath() {
   constexpr int bufsize = 4096;
   static char buffer[bufsize];
-  static const char* libpath = 0;
+  static const char* libpath = nullptr;
 
   // we only try to retrieve the libpath once. After that try we
   // let libpath point to buffer, which then contains a valid libpath
@@ -942,9 +947,9 @@ static const char* rtv_linkedin_libpath() {
   struct scnhdr the_scn;
   struct ldhdr the_ldr;
   constexpr size_t xcoffsz = FILHSZ + _AOUTHSZ_EXEC;
-  STATIC_ASSERT(sizeof(the_xcoff) == xcoffsz);
-  STATIC_ASSERT(sizeof(the_scn) == SCNHSZ);
-  STATIC_ASSERT(sizeof(the_ldr) == LDHDRSZ);
+  static_assert(sizeof(the_xcoff) == xcoffsz);
+  static_assert(sizeof(the_scn) == SCNHSZ);
+  static_assert(sizeof(the_ldr) == LDHDRSZ);
   // read the generic XCOFF header and analyze the substructures
   // to find the burned in libpath. In any case of error perform the assert
   if (nullptr == (f = fopen(buffer, "r")) ||
@@ -974,7 +979,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
   if (path == nullptr)
     return false;
 
-  char* path2 = os::strdup(path);
+  char* path2 = os::strdup(path, mtInternal);
   // if exist, strip off trailing (shr_64.o) or similar
   char* substr;
   if (path2[strlen(path2) - 1] == ')' && (substr = strrchr(path2, '('))) {
@@ -1018,7 +1023,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
     Libpath.print("%s:%s", env, rtv_linkedin_libpath());
   }
 
-  char* libpath = os::strdup(Libpath.base());
+  char* libpath = os::strdup(Libpath.base(), mtInternal);
 
   char *saveptr, *token;
   for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
@@ -1057,7 +1062,7 @@ void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_r
     char* member = nullptr;
     const char* substr;
     if (filename[strlen(filename) - 1] == ')' && (substr = strrchr(filename, '('))) {
-      member = os::strdup(substr);
+      member = os::strdup(substr, mtInternal);
     }
 
     unsigned i = 0;
@@ -1154,7 +1159,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
         error_report = "dlerror returned no error description";
       }
       if (ebuf != nullptr && ebuflen > 0) {
-        os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
+        os::snprintf_checked(ebuf, ebuflen, "%s", error_report);
       }
       assert(false, "os::pd_dll_unload() ::dlclose() failed");
     }

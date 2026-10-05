@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class RedirectOnPost {
 
     public static void main(String[] args) throws Exception {
         ExecutorService e= Executors.newFixedThreadPool(5);
-        SSLContext ctx = new SimpleSSLContext().get();
+        SSLContext ctx = SimpleSSLContext.findSSLContext();
         HttpServer httpServer = getHttpServer(e);
         HttpsServer httpsServer = getHttpsServer(e, ctx);
 

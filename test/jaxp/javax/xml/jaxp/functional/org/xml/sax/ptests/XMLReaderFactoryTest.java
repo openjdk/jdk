@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
 package org.xml.sax.ptests;
 
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-
-import static org.testng.Assert.assertNotNull;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLReaderFactory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for XMLReaderFactory.createXMLReader API.
@@ -36,7 +36,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.xml.sax.ptests.XMLReaderFactoryTest
+ * @run junit/othervm org.xml.sax.ptests.XMLReaderFactoryTest
  */
 public class XMLReaderFactoryTest {
     /**
@@ -56,20 +56,25 @@ public class XMLReaderFactoryTest {
      */
     @Test
     public void createReader02() throws SAXException {
-        setSystemProperty("org.xml.sax.driver",
-            "com.sun.org.apache.xerces.internal.parsers.SAXParser");
-        assertNotNull(XMLReaderFactory.
-            createXMLReader("com.sun.org.apache.xerces.internal.parsers.SAXParser"));
+        System.setProperty("org.xml.sax.driver",
+                "com.sun.org.apache.xerces.internal.parsers.SAXParser");
+        try {
+            assertNotNull(XMLReaderFactory.createXMLReader(
+                    "com.sun.org.apache.xerces.internal.parsers.SAXParser"));
+        } finally {
+            System.clearProperty("org.xml.sax.driver");
+        }
     }
 
     /**
      * SAXException expected when create XMLReader with an invalid driver name.
      * @throws org.xml.sax.SAXException expected Exception
      */
-    @Test(expectedExceptions = SAXException.class,
-            expectedExceptionsMessageRegExp =
-                    "SAX2 driver class org.apache.crimson.parser.ABCD not found")
-    public void createReader03() throws SAXException{
-        XMLReaderFactory.createXMLReader("org.apache.crimson.parser.ABCD");
+    @Test
+    public void createReader03() throws SAXException {
+        SAXException e = assertThrows(
+                SAXException.class,
+                () -> XMLReaderFactory.createXMLReader("org.apache.crimson.parser.ABCD"));
+        assertEquals("SAX2 driver class org.apache.crimson.parser.ABCD not found", e.getMessage());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cppstdlib/cstdlib.hpp"
 #include "jni.h"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
@@ -31,7 +32,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #ifdef __APPLE__
 #include <dlfcn.h>
 #endif

@@ -21,35 +21,28 @@
  * questions.
  */
 
-import org.objectweb.asm.*;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeTransform;
 
 class Asmator {
-    static byte[] fixup(byte[] buf) throws java.io.IOException {
-        ClassReader cr = new ClassReader(buf);
-        ClassWriter cw = new ClassWriter(0);
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM4, cw) {
-            public MethodVisitor visitMethod(
-                final int access,
-                final String name,
-                final String desc,
-                final String signature,
-                final String[] exceptions)
-            {
-                MethodVisitor mv = super.visitMethod(access,
-                        name,
-                        desc,
-                        signature,
-                        exceptions);
-                if (mv == null)  return null;
-                if (name.equals("callme")) {
-                    // make receiver go dead!
-                    mv.visitInsn(Opcodes.ACONST_NULL);
-                    mv.visitVarInsn(Opcodes.ASTORE, 0);
+    static byte[] fixup(byte[] buf) {
+        return ClassFile.of().transformClass(ClassFile.of().parse(buf), ClassTransform.transformingMethodBodies(
+                m -> m.methodName().equalsString("callme"),
+                new CodeTransform() {
+                    @Override
+                    public void atStart(CodeBuilder builder) {
+                        // make receiver go dead!
+                        builder.aconst_null().astore(0);
+                    }
+
+                    @Override
+                    public void accept(CodeBuilder builder, CodeElement element) {
+                        builder.with(element); // pass through
+                    }
                 }
-                return mv;
-            }
-        };
-        cr.accept(cv, 0);
-        return cw.toByteArray();
+        ));
     }
 }

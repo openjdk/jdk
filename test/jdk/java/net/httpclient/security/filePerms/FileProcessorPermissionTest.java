@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Basic checks for File Processors
- * @run testng/othervm FileProcessorPermissionTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.nio.file.Path;
@@ -32,9 +32,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
-import org.testng.annotations.Test;
 import static java.nio.file.StandardOpenOption.*;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.Test;
 
 public class FileProcessorPermissionTest {
 

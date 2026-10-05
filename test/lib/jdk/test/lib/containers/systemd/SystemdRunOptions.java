@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +38,8 @@ public class SystemdRunOptions {
     public ArrayList<String> classParams = new ArrayList<>();
     public String memoryLimit; // used in slice for MemoryLimit property
     public String cpuLimit;    // used in slice for CPUQuota property
+    public String memoryLow;   // used in the systemd-run scope for MemoryLow property
+    public String memoryHigh;  // used in the systemd-run scope for MemoryHigh property
     public String sliceName;   // name of the slice (nests CPU in memory)
     public String sliceDMemoryLimit; // used in jdk_internal.slice.d
     public String sliceDCpuLimit;    // used in jdk_internal.slice.d
@@ -115,6 +118,28 @@ public class SystemdRunOptions {
      */
     public SystemdRunOptions cpuLimit(String cpuLimit) {
         this.cpuLimit = cpuLimit;
+        return this;
+    }
+
+    /**
+     * The memory soft protection set on the systemd-run scope that launches the JVM.
+     *
+     * @param memoryLow The memory soft protection to set (e.g. 500M).
+     * @return The run options.
+     */
+    public SystemdRunOptions memoryLow(String memoryLow) {
+        this.memoryLow = memoryLow;
+        return this;
+    }
+
+    /**
+     * The memory throttle limit set on the systemd-run scope that launches the JVM.
+     *
+     * @param memoryHigh The memory throttle limit to set (e.g. 500M).
+     * @return The run options.
+     */
+    public SystemdRunOptions memoryHigh(String memoryHigh) {
+        this.memoryHigh = memoryHigh;
         return this;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,19 @@
 
 /*
  * @test
- * @bug 4959570
+ * @bug 4959570 8364121
  * @summary DESKeySpec constructors and static methods should throw exception
  *   if the key parameter is null.
  * @author Sean Mullan
  */
 import java.security.InvalidKeyException;
+import javax.crypto.spec.DESedeKeySpec;
 import javax.crypto.spec.DESKeySpec;
 
 public class NullKey {
 
     public static void main(String[] args) throws Exception {
-
+        // Test single-DES
         try {
             DESKeySpec desSpec = new DESKeySpec(null);
             throw new Exception("expected NullPointerException");
@@ -55,5 +56,21 @@ public class NullKey {
             throw new Exception("expected InvalidKeyException");
         } catch (InvalidKeyException ike) {}
 
+        // Test triple-DES
+        try {
+            DESedeKeySpec desSpec = new DESedeKeySpec(null);
+            throw new Exception("expected NullPointerException");
+        } catch (NullPointerException npe) {}
+
+        try {
+            DESedeKeySpec desSpec = new DESedeKeySpec(null, 0);
+            throw new Exception("expected NullPointerException");
+        } catch (NullPointerException npe) {}
+
+        try {
+            boolean parityAdjusted = DESedeKeySpec.isParityAdjusted(null, 0);
+            throw new Exception("expected InvalidKeyException");
+        } catch (InvalidKeyException ike) {}
     }
+
 }

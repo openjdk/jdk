@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,18 @@
 
 package sax;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ext.Attributes2Impl;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm sax.Attributes2ImplTest
+ * @run junit/othervm sax.Attributes2ImplTest
  * @summary Test Attributes2Impl.
  */
 public class Attributes2ImplTest {
@@ -43,42 +47,25 @@ public class Attributes2ImplTest {
         impl.addAttribute("http://www.cars.com/xml", "attr2", "Qname2", "type", "value");
         impl.addAttribute("http://www.cars.com/xml", "attr3", "Qname3", "type", "value");
 
-        Assert.assertTrue(impl.isDeclared(0));
+        assertTrue(impl.isDeclared(0));
         impl.setDeclared(0, false);
-        Assert.assertFalse(impl.isDeclared(0));
+        assertFalse(impl.isDeclared(0));
 
-        Assert.assertTrue(impl.isDeclared("Qname2"));
+        assertTrue(impl.isDeclared("Qname2"));
         impl.setDeclared(1, false);
-        Assert.assertFalse(impl.isDeclared("Qname2"));
+        assertFalse(impl.isDeclared("Qname2"));
 
-        Assert.assertTrue(impl.isDeclared("http://www.cars.com/xml", "attr3"));
+        assertTrue(impl.isDeclared("http://www.cars.com/xml", "attr3"));
         impl.setDeclared(2, false);
-        Assert.assertFalse(impl.isDeclared(2));
+        assertFalse(impl.isDeclared(2));
 
-        try {
-            impl.isDeclared(3);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Expected ArrayIndexOutOfBoundsException");
-        }
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> impl.isDeclared(3));
 
-        try {
-            impl.isDeclared("wrongQname");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Expected IllegalArgumentException");
-        }
-
-        try {
-            impl.isDeclared("http://www.cars.com/xml", "attr4");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Expected IllegalArgumentException");
-        }
+        assertThrows(IllegalArgumentException.class, () -> impl.isDeclared("wrongQname"));
+        assertThrows(IllegalArgumentException.class, () -> impl.isDeclared("http://www.cars.com/xml", "attr4"));
 
         impl.removeAttribute(2);
-        try {
-            impl.isDeclared(2);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Expected ArrayIndexOutOfBoundsException on index=2 after removing");
-        }
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> impl.isDeclared(2));
     }
 
     @Test
@@ -89,42 +76,25 @@ public class Attributes2ImplTest {
         impl.addAttribute("http://www.cars.com/xml", "attr2", "Qname2", "type", "value");
         impl.addAttribute("http://www.cars.com/xml", "attr3", "Qname3", "type", "value");
 
-        Assert.assertTrue(impl.isSpecified(0));
+        assertTrue(impl.isSpecified(0));
         impl.setSpecified(0, false);
-        Assert.assertFalse(impl.isSpecified(0));
+        assertFalse(impl.isSpecified(0));
 
-        Assert.assertTrue(impl.isSpecified("Qname2"));
+        assertTrue(impl.isSpecified("Qname2"));
         impl.setSpecified(1, false);
-        Assert.assertFalse(impl.isSpecified("Qname2"));
+        assertFalse(impl.isSpecified("Qname2"));
 
-        Assert.assertTrue(impl.isSpecified("http://www.cars.com/xml", "attr3"));
+        assertTrue(impl.isSpecified("http://www.cars.com/xml", "attr3"));
         impl.setSpecified(2, false);
-        Assert.assertFalse(impl.isSpecified(2));
+        assertFalse(impl.isSpecified(2));
 
-        try {
-            impl.isSpecified(3);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Expected ArrayIndexOutOfBoundsException");
-        }
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> impl.isSpecified(3));
 
-        try {
-            impl.isSpecified("wrongQname");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Expected IllegalArgumentException");
-        }
-
-        try {
-            impl.isSpecified("http://www.cars.com/xml", "attr4");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Expected IllegalArgumentException");
-        }
+        assertThrows(IllegalArgumentException.class, () -> impl.isSpecified("wrongQname"));
+        assertThrows(IllegalArgumentException.class, () -> impl.isSpecified("http://www.cars.com/xml", "attr4"));
 
         impl.removeAttribute(2);
-        try {
-            impl.isSpecified(2);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Expected ArrayIndexOutOfBoundsException on index=2 after removing");
-        }
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> impl.isSpecified(2));
     }
 
     @Test
@@ -140,13 +110,13 @@ public class Attributes2ImplTest {
         Attributes2Impl impl3 = new Attributes2Impl();
         impl3.setAttributes(impl1);
 
-        Assert.assertTrue(impl1.getQName(0).equals(impl2.getQName(0)));
-        Assert.assertTrue(impl1.getQName(0).equals(impl3.getQName(0)));
+        assertEquals(impl1.getQName(0), impl2.getQName(0));
+        assertEquals(impl1.getQName(0), impl3.getQName(0));
 
-        Assert.assertTrue(impl1.getQName(1).equals(impl2.getQName(1)));
-        Assert.assertTrue(impl1.getQName(1).equals(impl3.getQName(1)));
+        assertEquals(impl1.getQName(1), impl2.getQName(1));
+        assertEquals(impl1.getQName(1), impl3.getQName(1));
 
-        Assert.assertTrue(impl1.getQName(2).equals(impl2.getQName(2)));
-        Assert.assertTrue(impl1.getQName(2).equals(impl3.getQName(2)));
+        assertEquals(impl1.getQName(2), impl2.getQName(2));
+        assertEquals(impl1.getQName(2), impl3.getQName(2));
     }
 }

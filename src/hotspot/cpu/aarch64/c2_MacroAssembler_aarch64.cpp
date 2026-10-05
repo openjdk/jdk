@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,9 @@
 #include "opto/matcher.hpp"
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -46,13 +49,35 @@
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
+void C2_MacroAssembler::entry_barrier() {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  // Dummy labels for just measuring the code size
+  Label dummy_slow_path;
+  Label dummy_continuation;
+  Label dummy_guard;
+  Label* slow_path = &dummy_slow_path;
+  Label* continuation = &dummy_continuation;
+  Label* guard = &dummy_guard;
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+    C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+    Compile::current()->output()->add_stub(stub);
+    slow_path = &stub->entry();
+    continuation = &stub->continuation();
+    guard = &stub->guard();
+  }
+  // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
+  bs->nmethod_entry_barrier(this, slow_path, continuation, guard);
+}
+
 // jdk.internal.util.ArraysSupport.vectorizedHashCode
 address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
-                                           FloatRegister vdata0, FloatRegister vdata1,
-                                           FloatRegister vdata2, FloatRegister vdata3,
-                                           FloatRegister vmul0, FloatRegister vmul1,
-                                           FloatRegister vmul2, FloatRegister vmul3,
-                                           FloatRegister vpow, FloatRegister vpowm,
+                                           Register blocks, Register tail, Register sum,
+                                           FloatRegister v_block0, FloatRegister v_block1,
+                                           FloatRegister v_block2, FloatRegister v_block3,
+                                           FloatRegister v_p0, FloatRegister v_p1,
+                                           FloatRegister v_p2, FloatRegister v_p3,
+                                           FloatRegister v_input1, FloatRegister v_input2,
                                            BasicType eltype) {
   ARRAYS_HASHCODE_REGISTERS;
 
@@ -92,9 +117,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
     ShouldNotReachHere();
   }
 
-  // large_arrays_hashcode(T_INT) performs worse than the scalar loop below when the Neon loop
-  // implemented by the stub executes just once. Call the stub only if at least two iterations will
-  // be executed.
+  // large_arrays_hashcode(T_INT) uses SIMD for >= 8 elements.
+  // For lower lengths we use an unrolled loop.
   const size_t large_threshold = eltype == T_INT ? vf * 2 : vf;
   cmpw(cnt, large_threshold);
   br(Assembler::HS, LARGE);
@@ -147,8 +171,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   return pc();
 }
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register t1,
-                                              Register t2, Register t3) {
+void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
+                                  Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3, rscratch2);
 
   // Handle inflated monitor.
@@ -158,13 +182,11 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   // Finish fast lock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(t1, obj);
+    load_klass(t1, obj, rscratch2);
     ldrb(t1, Address(t1, Klass::misc_flags_offset()));
     tst(t1, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow_path);
@@ -173,7 +195,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   const Register t1_mark = t1;
   const Register t3_t = t3;
 
-  { // Lightweight locking
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST branch to with flag == EQ
     Label push;
@@ -199,10 +221,9 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
 
     // Try to lock. Transition lock-bits 0b01 => 0b00
-    orr(t1_mark, t1_mark, markWord::unlocked_value);
-    eor(t3_t, t1_mark, markWord::unlocked_value);
-    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword,
-            /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
+    orr(t1_mark, t1_mark, markWord::lock_neutral_value);
+    eor(t3_t, t1_mark, markWord::lock_neutral_value);
+    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword, memory_order_acquire);
     br(Assembler::NE, slow_path);
 
     bind(push);
@@ -217,48 +238,60 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     bind(inflated);
 
     const Register t1_monitor = t1;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
-    if (!UseObjectMonitorTable) {
-      assert(t1_monitor == t1_mark, "should be the same here");
-    } else {
-      Label monitor_found;
+    const Register t1_hash = t1;
+    Label monitor_found;
 
-      // Load cache address
-      lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
+    // Save the mark, we might need it to extract the hash.
+    mov(t3, t1_mark);
 
-      const int num_unrolled = 2;
-      for (int i = 0; i < num_unrolled; i++) {
-        ldr(t1, Address(t3_t));
-        cmp(obj, t1);
-        br(Assembler::EQ, monitor_found);
-        increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      }
+    // Look for the monitor in the current thread's object monitor cache (omc).
 
-      Label loop;
+    ldr(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
+    ldr(t2, Address(rthread, thr_omc_offset + omc_obj_offset));
+    cmp(obj, t2);
+    br(Assembler::EQ, monitor_found);
 
-      // Search for obj in cache.
-      bind(loop);
+    // Look for the monitor in the table.
 
-      // Check for match.
-      ldr(t1, Address(t3_t));
-      cmp(obj, t1);
-      br(Assembler::EQ, monitor_found);
+    // Get the hash code.
+    ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      cbnz(t1, loop);
-      // Cache Miss, NE set from cmp above, cbnz does not set flags
-      b(slow_path);
+    // Get the table and calculate the bucket's address
+    lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
+    ldr(t3, Address(t3));
+    ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
+    ands(t1_hash, t1_hash, t2);
+    ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
 
-      bind(monitor_found);
-      ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
-    }
+    // Read the monitor from the bucket.
+    ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
+
+    // Check if the monitor in the bucket is special (empty, tombstone or removed).
+    cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
+    br(Assembler::LO, slow_path);
+
+    // Check if object matches.
+    ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
+    cmp(t3, obj);
+    br(Assembler::NE, slow_path);
+
+    // Store the monitor in the current thread's object monitor cache (omc).
+    str(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
+    str(obj, Address(rthread, thr_omc_offset + omc_obj_offset));
+
+    bind(monitor_found);
 
     const Register t2_owner_addr = t2;
     const Register t3_owner = t3;
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address owner_address(t1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
-    const Address recursions_address(t1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+    const Address owner_address(t1_monitor, ObjectMonitor::owner_offset());
+    const Address recursions_address(t1_monitor, ObjectMonitor::recursions_offset());
 
     Label monitor_locked;
 
@@ -267,8 +300,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
-    cmpxchg(t2_owner_addr, zr, rscratch2, Assembler::xword, /*acquire*/ true,
-            /*release*/ false, /*weak*/ false, t3_owner);
+    cmpxchg(t2_owner_addr, zr, rscratch2, Assembler::xword, memory_order_acquire, t3_owner);
     br(Assembler::EQ, monitor_locked);
 
     // Check if recursive.
@@ -279,9 +311,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     increment(recursions_address, 1);
 
     bind(monitor_locked);
-    if (UseObjectMonitorTable) {
-      str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-    }
+    // Cache the monitor for unlock.
+    str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
   }
 
   bind(locked);
@@ -303,8 +334,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register t1,
-                                                Register t2, Register t3) {
+void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
+                                    Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3);
 
   // Handle inflated monitor.
@@ -318,7 +349,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
   const Register t2_top = t2;
   const Register t3_t = t3;
 
-  { // Lightweight unlock
+  { // Fast unlock
 
     Label push_and_slow_path;
 
@@ -348,13 +379,12 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     // Because we got here by popping (meaning we pushed in locked)
     // there will be no monitor in the box. So we need to push back the obj
     // so that the runtime can fix any potential anonymous owner.
-    tbnz(t1_mark, exact_log2(markWord::monitor_value), UseObjectMonitorTable ? push_and_slow_path : inflated);
+    tbnz(t1_mark, exact_log2(markWord::monitor_value), push_and_slow_path);
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-    orr(t3_t, t1_mark, markWord::unlocked_value);
-    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword,
-            /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
+    orr(t3_t, t1_mark, markWord::lock_neutral_value);
+    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword, memory_order_release);
     br(Assembler::EQ, unlocked);
 
     bind(push_and_slow_path);
@@ -391,17 +421,10 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
 
     const Register t1_monitor = t1;
 
-    if (!UseObjectMonitorTable) {
-      assert(t1_monitor == t1_mark, "should be the same here");
-
-      // Untag the monitor.
-      add(t1_monitor, t1_mark, -(int)markWord::monitor_value);
-    } else {
-      ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-      // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
-      cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
-      br(Assembler::LO, slow_path);
-    }
+    ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
+    cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
+    br(Assembler::LO, slow_path);
 
     const Register t2_recursions = t2;
     Label not_recursive;
@@ -1106,6 +1129,43 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
   BIND(DONE);
 }
 
+void C2_MacroAssembler::string_equals_sve(Register a1, Register a2,
+                                      Register result, Register cnt1,
+                                      FloatRegister ztmp1, FloatRegister ztmp2,
+                                      PRegister pg, PRegister pdata) {
+  Label LOOP, TAIL, END;
+  Register vec_len = rscratch1;
+  Register tmp_cnt1     = rscratch2;
+  sve_cntb(vec_len);
+  // Keep original cnt1 for the len <= VL tail decision.
+  // If length(cnt1) <= VL go to the tail
+  subs(tmp_cnt1, cnt1, vec_len);
+  br(Assembler::LE, TAIL);
+  sve_ptrue(pg, B);
+  bind(LOOP);
+    sve_ld1b(ztmp1, B, pg, Address(a1));
+    sve_ld1b(ztmp2, B, pg, Address(a2));
+    add(a1, a1, vec_len);
+    add(a2, a2, vec_len);
+    sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+    br(Assembler::NE, END);
+    subs(tmp_cnt1, tmp_cnt1, vec_len);
+    br(Assembler::HI, LOOP);
+  // Final overlapped full-VL compare.
+  sve_ld1b(ztmp1, B, pg, Address(a1, tmp_cnt1));
+  sve_ld1b(ztmp2, B, pg, Address(a2, tmp_cnt1));
+  sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+  b(END);
+
+  bind(TAIL);
+    sve_whilelt(pg, B, zr, cnt1);
+    sve_ld1b(ztmp1, B, pg, Address(a1));
+    sve_ld1b(ztmp2, B, pg, Address(a2));
+    sve_cmp(Assembler::NE, pdata, B, pg, ztmp1, ztmp2);
+  bind(END);
+    cset(result, Assembler::EQ);
+}
+
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
     Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
@@ -1399,137 +1459,125 @@ void C2_MacroAssembler::bytemask_compress(Register dst) {
   andr(dst, dst, 0xff);                   // dst = 0x8D
 }
 
-// Pack the lowest-numbered bit of each mask element in src into a long value
-// in dst, at most the first 64 lane elements.
-// Clobbers: rscratch1, if UseSVE=1 or the hardware doesn't support FEAT_BITPERM.
-void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                                         FloatRegister vtmp1, FloatRegister vtmp2) {
+// Pack the value of each mask element in "src" into a long value in "dst", at most
+// the first 64 lane elements. The input "src" is a vector of boolean represented as
+// bytes with 0x00/0x01 as element values. Each lane value from "src" is packed into
+// one bit in "dst".
+//
+// Example:   src = 0x0001010000010001 0100000001010001, lane_cnt = 16
+// Expected:  dst = 0x658D
+//
+// Clobbers: rscratch1
+void C2_MacroAssembler::sve_vmask_tolong(Register dst, FloatRegister src,
+                                         FloatRegister vtmp, int lane_cnt) {
   assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
   assert_different_registers(dst, rscratch1);
-  assert_different_registers(vtmp1, vtmp2);
+  assert_different_registers(src, vtmp);
+  assert(UseSVE > 0, "must be");
 
-  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
-  // Example:   src = 0b01100101 10001101, bt = T_BYTE, lane_cnt = 16
-  // Expected:  dst = 0x658D
+  // Compress the lowest 8 bytes.
+  fmovd(dst, src);
+  bytemask_compress(dst);
+  if (lane_cnt <= 8) return;
 
-  // Convert the mask into vector with sequential bytes.
-  // vtmp1 = 0x00010100 0x00010001 0x01000000 0x01010001
-  sve_cpy(vtmp1, size, src, 1, false);
-  if (bt != T_BYTE) {
-    sve_vector_narrow(vtmp1, B, vtmp1, size, vtmp2);
-  }
-
-  if (UseSVE > 1 && VM_Version::supports_svebitperm()) {
-    // Given a vector with the value 0x00 or 0x01 in each byte, the basic idea
-    // is to compress each significant bit of the byte in a cross-lane way. Due
-    // to the lack of a cross-lane bit-compress instruction, we use BEXT
-    // (bit-compress in each lane) with the biggest lane size (T = D) then
-    // concatenate the results.
-
-    // The second source input of BEXT, initialized with 0x01 in each byte.
-    // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
-    sve_dup(vtmp2, B, 1);
-
-    // BEXT vtmp1.D, vtmp1.D, vtmp2.D
-    // vtmp1 = 0x0001010000010001 | 0x0100000001010001
-    // vtmp2 = 0x0101010101010101 | 0x0101010101010101
-    //         ---------------------------------------
-    // vtmp1 = 0x0000000000000065 | 0x000000000000008D
-    sve_bext(vtmp1, D, vtmp1, vtmp2);
-
-    // Concatenate the lowest significant 8 bits in each 8 bytes, and extract the
-    // result to dst.
-    // vtmp1 = 0x0000000000000000 | 0x000000000000658D
-    // dst   = 0x658D
-    if (lane_cnt <= 8) {
-      // No need to concatenate.
-      umov(dst, vtmp1, B, 0);
-    } else if (lane_cnt <= 16) {
-      ins(vtmp1, B, vtmp1, 1, 8);
-      umov(dst, vtmp1, H, 0);
-    } else {
-      // As the lane count is 64 at most, the final expected value must be in
-      // the lowest 64 bits after narrowing vtmp1 from D to B.
-      sve_vector_narrow(vtmp1, B, vtmp1, D, vtmp2);
-      umov(dst, vtmp1, D, 0);
-    }
-  } else if (UseSVE > 0) {
-    // Compress the lowest 8 bytes.
-    fmovd(dst, vtmp1);
-    bytemask_compress(dst);
-    if (lane_cnt <= 8) return;
-
-    // Repeat on higher bytes and join the results.
-    // Compress 8 bytes in each iteration.
-    for (int idx = 1; idx < (lane_cnt / 8); idx++) {
-      sve_extract_integral(rscratch1, T_LONG, vtmp1, idx, vtmp2);
-      bytemask_compress(rscratch1);
-      orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
-    }
-  } else {
-    assert(false, "unsupported");
-    ShouldNotReachHere();
+  // Repeat on higher bytes and join the results.
+  // Compress 8 bytes in each iteration.
+  for (int idx = 1; idx < (lane_cnt / 8); idx++) {
+    sve_extract_integral(rscratch1, T_LONG, src, idx, vtmp);
+    bytemask_compress(rscratch1);
+    orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
   }
 }
 
-// Unpack the mask, a long value in src, into predicate register dst based on the
-// corresponding data type. Note that dst can support at most 64 lanes.
-// Below example gives the expected dst predicate register in different types, with
-// a valid src(0x658D) on a 1024-bit vector size machine.
-// BYTE:  dst = 0x00 00 00 00 00 00 00 00 00 00 00 00 00 00 65 8D
-// SHORT: dst = 0x00 00 00 00 00 00 00 00 00 00 00 00 14 11 40 51
-// INT:   dst = 0x00 00 00 00 00 00 00 00 01 10 01 01 10 00 11 01
-// LONG:  dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
-//
-// The number of significant bits of src must be equal to lane_cnt. E.g., 0xFF658D which
-// has 24 significant bits would be an invalid input if dst predicate register refers to
-// a LONG type 1024-bit vector, which has at most 16 lanes.
-void C2_MacroAssembler::sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
-                                           FloatRegister vtmp1, FloatRegister vtmp2) {
-  assert(UseSVE == 2 && VM_Version::supports_svebitperm() &&
-         lane_cnt <= 64 && is_power_of_2(lane_cnt), "unsupported");
-  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
-  // Example:   src = 0x658D, bt = T_BYTE, size = B, lane_cnt = 16
-  // Expected:  dst = 0b01101001 10001101
+// The function is same as above "sve_vmask_tolong", but it uses SVE2's BEXT
+// instruction which requires the FEAT_BITPERM feature.
+void C2_MacroAssembler::sve2_vmask_tolong(Register dst, FloatRegister src,
+                                          FloatRegister vtmp1, FloatRegister vtmp2,
+                                          int lane_cnt) {
+  assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
+  assert_different_registers(src, vtmp1, vtmp2);
+  assert(UseSVE > 1 && VM_Version::supports_svebitperm(), "must be");
 
-  // Put long value from general purpose register into the first lane of vector.
-  // vtmp1 = 0x0000000000000000 | 0x000000000000658D
-  sve_dup(vtmp1, B, 0);
-  mov(vtmp1, D, 0, src);
+  // Given a vector with the value 0x00 or 0x01 in each byte, the basic idea
+  // is to compress each significant bit of the byte in a cross-lane way. Due
+  // to the lack of a cross-lane bit-compress instruction, we use BEXT
+  // (bit-compress in each lane) with the biggest lane size (T = D) then
+  // concatenate the results.
 
-  // As sve_cmp generates mask value with the minimum unit in byte, we should
-  // transform the value in the first lane which is mask in bit now to the
-  // mask in byte, which can be done by SVE2's BDEP instruction.
-
-  // The first source input of BDEP instruction. Deposite each byte in every 8 bytes.
-  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
-  if (lane_cnt <= 8) {
-    // Nothing. As only one byte exsits.
-  } else if (lane_cnt <= 16) {
-    ins(vtmp1, B, vtmp1, 8, 1);
-    mov(vtmp1, B, 1, zr);
-  } else {
-    sve_vector_extend(vtmp1, D, vtmp1, B);
-  }
-
-  // The second source input of BDEP instruction, initialized with 0x01 for each byte.
+  // The second source input of BEXT, initialized with 0x01 in each byte.
   // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
   sve_dup(vtmp2, B, 1);
 
-  // BDEP vtmp1.D, vtmp1.D, vtmp2.D
-  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+  // BEXT vtmp1.D, src.D, vtmp2.D
+  // src   = 0x0001010000010001 | 0x0100000001010001
   // vtmp2 = 0x0101010101010101 | 0x0101010101010101
   //         ---------------------------------------
-  // vtmp1 = 0x0001010000010001 | 0x0100000001010001
-  sve_bdep(vtmp1, D, vtmp1, vtmp2);
+  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+  sve_bext(vtmp1, D, src, vtmp2);
 
-  if (bt != T_BYTE) {
-    sve_vector_extend(vtmp1, size, vtmp1, B);
+  // Concatenate the lowest significant 8 bits in each 8 bytes, and extract the
+  // result to dst.
+  // vtmp1 = 0x0000000000000000 | 0x000000000000658D
+  // dst   = 0x658D
+  if (lane_cnt <= 8) {
+    // No need to concatenate.
+    umov(dst, vtmp1, B, 0);
+  } else if (lane_cnt <= 16) {
+    ins(vtmp1, B, vtmp1, 1, 8);
+    umov(dst, vtmp1, H, 0);
+  } else {
+    // As the lane count is 64 at most, the final expected value must be in
+    // the lowest 64 bits after narrowing vtmp1 from D to B.
+    sve_vector_narrow(vtmp1, B, vtmp1, D, vtmp2);
+    umov(dst, vtmp1, D, 0);
   }
-  // Generate mask according to the given vector, in which the elements have been
-  // extended to expected type.
-  // dst = 0b01101001 10001101
-  sve_cmp(Assembler::NE, dst, size, ptrue, vtmp1, 0);
+}
+
+// Unpack the mask, a long value in "src", into a vector register of boolean
+// represented as bytes with 0x00/0x01 as element values in "dst".  Each bit in
+// "src" is unpacked into one byte lane in "dst". Note that "dst" can support at
+// most 64 lanes.
+//
+// Below example gives the expected dst vector register, with a valid src(0x658D)
+// on a 128-bit vector size machine.
+// dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
+void C2_MacroAssembler::sve_vmask_fromlong(FloatRegister dst, Register src,
+                                           FloatRegister vtmp, int lane_cnt) {
+  assert_different_registers(dst, vtmp);
+  assert(UseSVE == 2 && VM_Version::supports_svebitperm() &&
+         lane_cnt <= 64 && is_power_of_2(lane_cnt), "unsupported");
+
+  // Example:   src = 0x658D, lane_cnt = 16
+  // Expected:  dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
+
+  // Put long value from general purpose register into the first lane of vector.
+  // The higher lanes are set to zero.
+  // vtmp = 0x0000000000000000 | 0x000000000000658D
+  fmovd(vtmp, src);
+
+  // Transform the value in the first lane which is mask in bit now to the mask in
+  // byte, which can be done by SVE2's BDEP instruction.
+
+  // The first source input of BDEP instruction. Deposite each byte in every 8 bytes.
+  // vtmp = 0x0000000000000065 | 0x000000000000008D
+  if (lane_cnt <= 8) {
+    // Nothing. As only one byte exsits.
+  } else if (lane_cnt <= 16) {
+    ins(vtmp, B, vtmp, 8, 1);
+  } else {
+    sve_vector_extend(vtmp, D, vtmp, B);
+  }
+
+  // The second source input of BDEP instruction, initialized with 0x01 for each byte.
+  // dst = 0x01010101 0x01010101 0x01010101 0x01010101
+  sve_dup(dst, B, 1);
+
+  // BDEP dst.D, vtmp.D, dst.D
+  // vtmp = 0x0000000000000065 | 0x000000000000008D
+  // dst  = 0x0101010101010101 | 0x0101010101010101
+  //        ---------------------------------------
+  // dst  = 0x0001010000010001 | 0x0100000001010001
+  sve_bdep(dst, D, vtmp, dst);
 }
 
 // Clobbers: rflags
@@ -1556,13 +1604,18 @@ void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
 }
 
 // Get index of the last mask lane that is set
-void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp) {
+// Clobbers: rflags
+void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt,
+                                           PRegister src, FloatRegister vtmp) {
   SIMD_RegVariant size = elemType_to_regVariant(bt);
-  sve_rev(ptmp, size, src);
-  sve_brkb(ptmp, ptrue, ptmp, false);
-  sve_cntp(dst, size, ptrue, ptmp);
-  movw(rscratch1, MaxVectorSize / type2aelembytes(bt) - 1);
-  subw(dst, rscratch1, dst);
+  // vtmp = 0, 1, 2, ...
+  sve_index(vtmp, size, 0, 1);
+  // dst = last true or the highest-numbered element if src is all false
+  sve_lastb(dst, size, src, vtmp);
+  // Zero flag = 1 iff no active lane
+  sve_ptest(ptrue, src);
+  // active: keep; else -1
+  csinvw(dst, dst, zr, Assembler::NE);
 }
 
 // Extend integer vector src to dst with the same lane count
@@ -1803,19 +1856,19 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         if (isQ) {
           // Multiply the lower half and higher half of vector iteratively.
           // vtmp1 = vsrc[8:15]
-          ins(vtmp1, D, vsrc, 0, 1);
+          ext(vtmp1, T16B, vsrc, vsrc, 8);
           // vtmp1[n] = vsrc[n] * vsrc[n + 8], where n=[0, 7]
           mulv(vtmp1, T8B, vtmp1, vsrc);
           // vtmp2 = vtmp1[4:7]
-          ins(vtmp2, S, vtmp1, 0, 1);
+          ext(vtmp2, T8B, vtmp1, vtmp1, 4);
           // vtmp1[n] = vtmp1[n] * vtmp1[n + 4], where n=[0, 3]
           mulv(vtmp1, T8B, vtmp2, vtmp1);
         } else {
-          ins(vtmp1, S, vsrc, 0, 1);
+          ext(vtmp1, T8B, vsrc, vsrc, 4);
           mulv(vtmp1, T8B, vtmp1, vsrc);
         }
         // vtmp2 = vtmp1[2:3]
-        ins(vtmp2, H, vtmp1, 0, 1);
+        ext(vtmp2, T8B, vtmp1, vtmp1, 2);
         // vtmp2[n] = vtmp1[n] * vtmp1[n + 2], where n=[0, 1]
         mulv(vtmp2, T8B, vtmp2, vtmp1);
         // dst = vtmp2[0] * isrc * vtmp2[1]
@@ -1828,12 +1881,12 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         break;
       case T_SHORT:
         if (isQ) {
-          ins(vtmp2, D, vsrc, 0, 1);
+          ext(vtmp2, T16B, vsrc, vsrc, 8);
           mulv(vtmp2, T4H, vtmp2, vsrc);
-          ins(vtmp1, S, vtmp2, 0, 1);
+          ext(vtmp1, T8B, vtmp2, vtmp2, 4);
           mulv(vtmp1, T4H, vtmp1, vtmp2);
         } else {
-          ins(vtmp1, S, vsrc, 0, 1);
+          ext(vtmp1, T8B, vsrc, vsrc, 4);
           mulv(vtmp1, T4H, vtmp1, vsrc);
         }
         umov(rscratch1, vtmp1, H, 0);
@@ -1845,7 +1898,7 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         break;
       case T_INT:
         if (isQ) {
-          ins(vtmp1, D, vsrc, 0, 1);
+          ext(vtmp1, T16B, vsrc, vsrc, 8);
           mulv(vtmp1, T2S, vtmp1, vsrc);
         } else {
           vtmp1 = vsrc;
@@ -1878,21 +1931,42 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
 
   BLOCK_COMMENT("neon_reduce_mul_fp {");
     switch(bt) {
+      // The T_SHORT type below is for Float16 type which also uses floating-point
+      // instructions.
+      case T_SHORT:
+        fmulh(dst, fsrc, vsrc);
+        ext(vtmp, T8B, vsrc, vsrc, 2);
+        fmulh(dst, dst, vtmp);
+        ext(vtmp, T8B, vsrc, vsrc, 4);
+        fmulh(dst, dst, vtmp);
+        ext(vtmp, T8B, vsrc, vsrc, 6);
+        fmulh(dst, dst, vtmp);
+        if (isQ) {
+          ext(vtmp, T16B, vsrc, vsrc, 8);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 10);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 12);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 14);
+          fmulh(dst, dst, vtmp);
+        }
+        break;
       case T_FLOAT:
         fmuls(dst, fsrc, vsrc);
-        ins(vtmp, S, vsrc, 0, 1);
+        ext(vtmp, T8B, vsrc, vsrc, 4);
         fmuls(dst, dst, vtmp);
         if (isQ) {
-          ins(vtmp, S, vsrc, 0, 2);
+          ext(vtmp, T16B, vsrc, vsrc, 8);
           fmuls(dst, dst, vtmp);
-          ins(vtmp, S, vsrc, 0, 3);
+          ext(vtmp, T16B, vsrc, vsrc, 12);
           fmuls(dst, dst, vtmp);
          }
         break;
       case T_DOUBLE:
         assert(isQ, "unsupported");
         fmuld(dst, fsrc, vsrc);
-        ins(vtmp, D, vsrc, 0, 1);
+        ext(vtmp, T16B, vsrc, vsrc, 8);
         fmuld(dst, dst, vtmp);
         break;
       default:
@@ -1900,6 +1974,33 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
         ShouldNotReachHere();
     }
   BLOCK_COMMENT("} neon_reduce_mul_fp");
+}
+
+// Vector reduction add for half float type with ASIMD instructions.
+void C2_MacroAssembler::neon_reduce_add_fp16(FloatRegister dst, FloatRegister fsrc, FloatRegister vsrc,
+                                             unsigned vector_length_in_bytes, FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_add_fp16 {");
+    faddh(dst, fsrc, vsrc);
+    ext(vtmp, T8B, vsrc, vsrc, 2);
+    faddh(dst, dst, vtmp);
+    ext(vtmp, T8B, vsrc, vsrc, 4);
+    faddh(dst, dst, vtmp);
+    ext(vtmp, T8B, vsrc, vsrc, 6);
+    faddh(dst, dst, vtmp);
+    if (isQ) {
+      ext(vtmp, T16B, vsrc, vsrc, 8);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 10);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 12);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 14);
+      faddh(dst, dst, vtmp);
+    }
+  BLOCK_COMMENT("} neon_reduce_add_fp16");
 }
 
 // Helper to select logical instruction
@@ -1972,50 +2073,76 @@ void C2_MacroAssembler::neon_reduce_logical(int opc, Register dst, BasicType bt,
   BLOCK_COMMENT("} neon_reduce_logical");
 }
 
-// Vector reduction min/max for integral type with ASIMD instructions.
+// Helper function to decode min/max reduction operation properties
+void C2_MacroAssembler::decode_minmax_reduction_opc(int opc, bool* is_min,
+                                                    bool* is_unsigned,
+                                                    Condition* cond) {
+  switch(opc) {
+    case Op_MinReductionV:
+      *is_min = true;  *is_unsigned = false; *cond = LT; break;
+    case Op_MaxReductionV:
+      *is_min = false; *is_unsigned = false; *cond = GT; break;
+    case Op_UMinReductionV:
+      *is_min = true;  *is_unsigned = true;  *cond = LO; break;
+    case Op_UMaxReductionV:
+      *is_min = false; *is_unsigned = true;  *cond = HI; break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+// Vector reduction min/max/umin/umax for integral type with ASIMD instructions.
 // Note: vtmp is not used and expected to be fnoreg for T_LONG case.
 // Clobbers: rscratch1, rflags
 void C2_MacroAssembler::neon_reduce_minmax_integral(int opc, Register dst, BasicType bt,
                                                     Register isrc, FloatRegister vsrc,
                                                     unsigned vector_length_in_bytes,
                                                     FloatRegister vtmp) {
-  assert(opc == Op_MinReductionV || opc == Op_MaxReductionV, "unsupported");
+  assert(opc == Op_MinReductionV || opc == Op_MaxReductionV ||
+         opc == Op_UMinReductionV || opc == Op_UMaxReductionV, "unsupported");
   assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported");
   assert_different_registers(dst, isrc);
   bool isQ = vector_length_in_bytes == 16;
-  bool is_min = opc == Op_MinReductionV;
-
+  bool is_min;
+  bool is_unsigned;
+  Condition cond;
+  decode_minmax_reduction_opc(opc, &is_min, &is_unsigned, &cond);
   BLOCK_COMMENT("neon_reduce_minmax_integral {");
     if (bt == T_LONG) {
       assert(vtmp == fnoreg, "should be");
       assert(isQ, "should be");
       umov(rscratch1, vsrc, D, 0);
       cmp(isrc, rscratch1);
-      csel(dst, isrc, rscratch1, is_min ? LT : GT);
+      csel(dst, isrc, rscratch1, cond);
       umov(rscratch1, vsrc, D, 1);
       cmp(dst, rscratch1);
-      csel(dst, dst, rscratch1, is_min ? LT : GT);
+      csel(dst, dst, rscratch1, cond);
     } else {
       SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
       if (size == T2S) {
-        is_min ? sminp(vtmp, size, vsrc, vsrc) : smaxp(vtmp, size, vsrc, vsrc);
+        // For T2S (2x32-bit elements), use pairwise instructions because
+        // uminv/umaxv/sminv/smaxv don't support arrangement 2S.
+        neon_minmaxp(is_unsigned, is_min, vtmp, size, vsrc, vsrc);
       } else {
-        is_min ? sminv(vtmp, size, vsrc) : smaxv(vtmp, size, vsrc);
+        // For other sizes, use reduction to scalar instructions.
+        neon_minmaxv(is_unsigned, is_min, vtmp, size, vsrc);
       }
       if (bt == T_INT) {
         umov(dst, vtmp, S, 0);
+      } else if (is_unsigned) {
+        umov(dst, vtmp, elemType_to_regVariant(bt), 0);
       } else {
         smov(dst, vtmp, elemType_to_regVariant(bt), 0);
       }
       cmpw(dst, isrc);
-      cselw(dst, dst, isrc, is_min ? LT : GT);
+      cselw(dst, dst, isrc, cond);
     }
   BLOCK_COMMENT("} neon_reduce_minmax_integral");
 }
 
 // Vector reduction for integral type with SVE instruction.
-// Supported operations are Add, And, Or, Xor, Max, Min.
+// Supported operations are Add, And, Or, Xor, Max, Min, UMax, UMin.
 // rflags would be clobbered if opc is Op_MaxReductionV or Op_MinReductionV.
 void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                                             FloatRegister src2, PRegister pg, FloatRegister tmp) {
@@ -2087,35 +2214,27 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
       }
       break;
     }
-    case Op_MaxReductionV: {
-      sve_smaxv(tmp, size, pg, src2);
-      if (bt == T_INT || bt == T_LONG) {
+    case Op_MaxReductionV:
+    case Op_MinReductionV:
+    case Op_UMaxReductionV:
+    case Op_UMinReductionV: {
+      bool is_min;
+      bool is_unsigned;
+      Condition cond;
+      decode_minmax_reduction_opc(opc, &is_min, &is_unsigned, &cond);
+      sve_minmaxv(is_unsigned, is_min, tmp, size, pg, src2);
+      // Move result from vector to general register
+      if (is_unsigned || bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
       } else {
         smov(dst, tmp, size, 0);
       }
       if (bt == T_LONG) {
         cmp(dst, src1);
-        csel(dst, dst, src1, Assembler::GT);
+        csel(dst, dst, src1, cond);
       } else {
         cmpw(dst, src1);
-        cselw(dst, dst, src1, Assembler::GT);
-      }
-      break;
-    }
-    case Op_MinReductionV: {
-      sve_sminv(tmp, size, pg, src2);
-      if (bt == T_INT || bt == T_LONG) {
-        umov(dst, tmp, size, 0);
-      } else {
-        smov(dst, tmp, size, 0);
-      }
-      if (bt == T_LONG) {
-        cmp(dst, src1);
-        csel(dst, dst, src1, Assembler::LT);
-      } else {
-        cmpw(dst, src1);
-        cselw(dst, dst, src1, Assembler::LT);
+        cselw(dst, dst, src1, cond);
       }
       break;
     }
@@ -2203,114 +2322,117 @@ void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t l
 // Pack active elements of src, under the control of mask, into the lowest-numbered elements of dst.
 // Any remaining elements of dst will be filled with zero.
 // Clobbers: rscratch1
-// Preserves: src, mask
+// Preserves: mask, vzr
 void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                                           FloatRegister vtmp1, FloatRegister vtmp2,
-                                           PRegister pgtmp) {
+                                           FloatRegister vzr, FloatRegister vtmp,
+                                           PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
-  assert_different_registers(dst, src, vtmp1, vtmp2);
+  // When called by sve_compress_byte, src and vtmp may be the same register.
+  assert_different_registers(dst, src, vzr);
+  assert_different_registers(dst, vtmp, vzr);
   assert_different_registers(mask, pgtmp);
-
-  // Example input:   src   = 8888 7777 6666 5555 4444 3333 2222 1111
-  //                  mask  = 0001 0000 0000 0001 0001 0000 0001 0001
-  // Expected result: dst   = 0000 0000 0000 8888 5555 4444 2222 1111
-  sve_dup(vtmp2, H, 0);
+  // high <-- low
+  // Example input:   src   = hh gg ff ee dd cc bb aa, one character is 8 bits.
+  //                  mask  = 01 00 00 01 01 00 01 01, one character is 1 bit.
+  // Expected result: dst   = 00 00 00 hh ee dd bb aa
 
   // Extend lowest half to type INT.
-  // dst = 00004444 00003333 00002222 00001111
+  // dst   =  00dd  00cc  00bb  00aa
   sve_uunpklo(dst, S, src);
-  // pgtmp = 00000001 00000000 00000001 00000001
+  // pgtmp =  0001  0000  0001  0001
   sve_punpklo(pgtmp, mask);
   // Pack the active elements in size of type INT to the right,
   // and fill the remainings with zero.
-  // dst = 00000000 00004444 00002222 00001111
+  // dst   =  0000  00dd  00bb  00aa
   sve_compact(dst, S, dst, pgtmp);
   // Narrow the result back to type SHORT.
-  // dst = 0000 0000 0000 0000 0000 4444 2222 1111
-  sve_uzp1(dst, H, dst, vtmp2);
+  // dst   = 00 00 00 00 00 dd bb aa
+  sve_uzp1(dst, H, dst, vzr);
+
+  // Return if the vector length is no more than MaxVectorSize/2, since the
+  // highest half is invalid.
+  if (vector_length_in_bytes <= (MaxVectorSize >> 1)) {
+    return;
+  }
+
   // Count the active elements of lowest half.
   // rscratch1 = 3
   sve_cntp(rscratch1, S, ptrue, pgtmp);
 
   // Repeat to the highest half.
-  // pgtmp = 00000001 00000000 00000000 00000001
+  // pgtmp =  0001  0000  0000  0001
   sve_punpkhi(pgtmp, mask);
-  // vtmp1 = 00008888 00007777 00006666 00005555
-  sve_uunpkhi(vtmp1, S, src);
-  // vtmp1 = 00000000 00000000 00008888 00005555
-  sve_compact(vtmp1, S, vtmp1, pgtmp);
-  // vtmp1 = 0000 0000 0000 0000 0000 0000 8888 5555
-  sve_uzp1(vtmp1, H, vtmp1, vtmp2);
+  // vtmp  =  00hh  00gg  00ff  00ee
+  sve_uunpkhi(vtmp, S, src);
+  // vtmp  =  0000  0000  00hh  00ee
+  sve_compact(vtmp, S, vtmp, pgtmp);
+  // vtmp  = 00 00 00 00 00 00 hh ee
+  sve_uzp1(vtmp, H, vtmp, vzr);
 
-  // Compressed low:   dst   = 0000 0000 0000 0000 0000 4444 2222 1111
-  // Compressed high:  vtmp1 = 0000 0000 0000 0000 0000 0000 8888  5555
-  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
-  // TRUE_CNT is the number of active elements in the compressed low.
-  neg(rscratch1, rscratch1);
-  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
-  sve_index(vtmp2, H, rscratch1, 1);
-  // vtmp1 = 0000 0000 0000 8888 5555 0000 0000 0000
-  sve_tbl(vtmp1, H, vtmp1, vtmp2);
-
-  // Combine the compressed high(after shifted) with the compressed low.
-  // dst = 0000 0000 0000 8888 5555 4444 2222 1111
-  sve_orr(dst, dst, vtmp1);
+  // pgtmp = 00 00 00 00 00 01 01 01
+  sve_whilelt(pgtmp, H, zr, rscratch1);
+  // Compressed low:  dst  = 00 00 00 00 00 dd bb aa
+  // Compressed high: vtmp = 00 00 00 00 00 00 hh ee
+  // Combine the compressed low with the compressed high:
+  //                  dst  = 00 00 00 hh ee dd bb aa
+  sve_splice(dst, H, pgtmp, vtmp);
 }
 
 // Clobbers: rscratch1, rscratch2
 // Preserves: src, mask
 void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
-                                          FloatRegister vtmp1, FloatRegister vtmp2,
-                                          FloatRegister vtmp3, FloatRegister vtmp4,
-                                          PRegister ptmp, PRegister pgtmp) {
+                                          FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                                          PRegister ptmp, PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
-  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3, vtmp4);
+  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3);
   assert_different_registers(mask, ptmp, pgtmp);
-  // Example input:   src   = 88 77 66 55 44 33 22 11
-  //                  mask  = 01 00 00 01 01 00 01 01
-  // Expected result: dst   = 00 00 00 88 55 44 22 11
+  // high <-- low
+  // Example input:   src   = q p n m l k j i h g f e d c b a, one character is 8 bits.
+  //                  mask  = 0 1 0 0 0 0 0 1 0 1 0 0 0 1 0 1, one character is 1 bit.
+  // Expected result: dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  FloatRegister vzr = vtmp3;
+  sve_dup(vzr, B, 0);
 
-  sve_dup(vtmp4, B, 0);
   // Extend lowest half to type SHORT.
-  // vtmp1 = 0044 0033 0022 0011
+  // vtmp1 =  0h  0g  0f  0e  0d  0c  0b  0a
   sve_uunpklo(vtmp1, H, src);
-  // ptmp = 0001 0000 0001 0001
+  // ptmp  =  00  01  00  00  00  01  00  01
   sve_punpklo(ptmp, mask);
+  // Pack the active elements in size of type SHORT to the right,
+  // and fill the remainings with zero.
+  // dst   =  00  00  00  00  00  0g  0c  0a
+  unsigned extended_size = vector_length_in_bytes << 1;
+  sve_compress_short(dst, vtmp1, ptmp, vzr, vtmp2, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize : extended_size);
+  // Narrow the result back to type BYTE.
+  // dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  sve_uzp1(dst, B, dst, vzr);
+
+  // Return if the vector length is no more than MaxVectorSize/2, since the
+  // highest half is invalid.
+  if (vector_length_in_bytes <= (MaxVectorSize >> 1)) {
+    return;
+  }
   // Count the active elements of lowest half.
   // rscratch2 = 3
   sve_cntp(rscratch2, H, ptrue, ptmp);
-  // Pack the active elements in size of type SHORT to the right,
-  // and fill the remainings with zero.
-  // dst = 0000 0044 0022 0011
-  sve_compress_short(dst, vtmp1, ptmp, vtmp2, vtmp3, pgtmp);
-  // Narrow the result back to type BYTE.
-  // dst = 00 00 00 00 00 44 22 11
-  sve_uzp1(dst, B, dst, vtmp4);
 
   // Repeat to the highest half.
-  // ptmp = 0001 0000 0000 0001
+  // ptmp  =  00  01  00  00  00  00  00  01
   sve_punpkhi(ptmp, mask);
-  // vtmp1 = 0088 0077 0066 0055
+  // vtmp2 =  0q  0p  0n  0m  0l  0k  0j  0i
   sve_uunpkhi(vtmp2, H, src);
-  // vtmp1 = 0000 0000 0088 0055
-  sve_compress_short(vtmp1, vtmp2, ptmp, vtmp3, vtmp4, pgtmp);
+  // vtmp1 =  00  00  00  00  00  00  0p  0i
+  sve_compress_short(vtmp1, vtmp2, ptmp, vzr, vtmp2, pgtmp, extended_size - MaxVectorSize);
+  // vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  sve_uzp1(vtmp1, B, vtmp1, vzr);
 
-  sve_dup(vtmp4, B, 0);
-  // vtmp1 = 00 00 00 00 00 00 88 55
-  sve_uzp1(vtmp1, B, vtmp1, vtmp4);
-
-  // Compressed low:   dst   = 00 00 00 00 00 44 22 11
-  // Compressed high:  vtmp1 = 00 00 00 00 00 00 88 55
-  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
-  // TRUE_CNT is the number of active elements in the compressed low.
-  neg(rscratch2, rscratch2);
-  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
-  sve_index(vtmp2, B, rscratch2, 1);
-  // vtmp1 = 00 00 00 88 55 00 00 00
-  sve_tbl(vtmp1, B, vtmp1, vtmp2);
-  // Combine the compressed high(after shifted) with the compressed low.
-  // dst = 00 00 00 88 55 44 22 11
-  sve_orr(dst, dst, vtmp1);
+  // ptmp  = 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1
+  sve_whilelt(ptmp, B, zr, rscratch2);
+  // Compressed low:  dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  // Compressed high: vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  // Combine the compressed low with the compressed high:
+  //                  dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  sve_splice(dst, B, ptmp, vtmp1);
 }
 
 void C2_MacroAssembler::neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ) {
@@ -2356,7 +2478,8 @@ void C2_MacroAssembler::neon_reverse_bytes(FloatRegister dst, FloatRegister src,
 void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
                                            FloatRegister shuffle, FloatRegister tmp,
                                            BasicType bt, bool isQ) {
-  assert_different_registers(dst, src, shuffle, tmp);
+  assert_different_registers(dst, src, tmp);
+  assert_different_registers(shuffle, tmp);
   SIMD_Arrangement size1 = isQ ? T16B : T8B;
   SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
 
@@ -2388,17 +2511,17 @@ void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
       break;
     case T_LONG:
     case T_DOUBLE:
-      // Load the iota indices for Long type. The indices are ordered by
-      // type B/S/I/L/F/D, and the offset between two types is 16; Hence
-      // the offset for L is 48.
-      lea(rscratch1,
-          ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + 48));
-      ldrq(tmp, rscratch1);
-      // Check whether the input "shuffle" is the same with iota indices.
-      // Return "src" if true, otherwise swap the two elements of "src".
-      cm(EQ, dst, size2, shuffle, tmp);
-      ext(tmp, size1, src, src, 8);
-      bsl(dst, size1, src, tmp);
+      {
+        int idx = vector_iota_entry_index(T_LONG);
+        lea(rscratch1,
+            ExternalAddress(StubRoutines::aarch64::vector_iota_indices(idx)));
+        ldrq(tmp, rscratch1);
+        // Check whether the input "shuffle" is the same with iota indices.
+        // Return "src" if true, otherwise swap the two elements of "src".
+        cm(EQ, dst, size2, shuffle, tmp);
+        ext(tmp, size1, src, src, 8);
+        bsl(dst, size1, src, tmp);
+      }
       break;
     default:
       assert(false, "unsupported element type");
@@ -2419,8 +2542,12 @@ void C2_MacroAssembler::sve_extract_integral(Register dst, BasicType bt, FloatRe
       smov(dst, src, size, idx);
     }
   } else {
-    sve_orr(vtmp, src, src);
-    sve_ext(vtmp, vtmp, idx << size);
+    sve_movprfx(vtmp, src);
+    // Although vtmp and src hold the same value after movprfx, we must use src
+    // (not vtmp) as the second source of ext. The movprfx destination register
+    // must not appear in any source operand of the following instruction except
+    // as the destructive operand.
+    sve_ext(vtmp, src, idx << size);
     if (bt == T_INT || bt == T_LONG) {
       umov(dst, vtmp, size, 0);
     } else {
@@ -2556,26 +2683,22 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   if (t == TypeInt::INT) {
     return;
   }
+
   BLOCK_COMMENT("verify_int_in_range {");
   Label L_success, L_failure;
 
   jint lo = t->_lo;
   jint hi = t->_hi;
 
-  if (lo != min_jint && hi != max_jint) {
+  if (lo != min_jint) {
     subsw(rtmp, rval, lo);
     br(Assembler::LT, L_failure);
-    subsw(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else if (lo != min_jint) {
-    subsw(rtmp, rval, lo);
-    br(Assembler::GE, L_success);
-  } else if (hi != max_jint) {
-    subsw(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else {
-    ShouldNotReachHere();
   }
+  if (hi != max_jint) {
+    subsw(rtmp, rval, hi);
+    br(Assembler::GT, L_failure);
+  }
+  b(L_success);
 
   bind(L_failure);
   movw(c_rarg0, idx);
@@ -2599,26 +2722,22 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
   if (t == TypeLong::LONG) {
     return;
   }
+
   BLOCK_COMMENT("verify_long_in_range {");
   Label L_success, L_failure;
 
   jlong lo = t->_lo;
   jlong hi = t->_hi;
 
-  if (lo != min_jlong && hi != max_jlong) {
+  if (lo != min_jlong) {
     subs(rtmp, rval, lo);
     br(Assembler::LT, L_failure);
-    subs(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else if (lo != min_jlong) {
-    subs(rtmp, rval, lo);
-    br(Assembler::GE, L_success);
-  } else if (hi != max_jlong) {
-    subs(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else {
-    ShouldNotReachHere();
   }
+  if (hi != max_jlong) {
+    subs(rtmp, rval, hi);
+    br(Assembler::GT, L_failure);
+  }
+  b(L_success);
 
   bind(L_failure);
   movw(c_rarg0, idx);
@@ -2660,7 +2779,8 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
 void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                                      FloatRegister src2, FloatRegister index,
                                                      FloatRegister tmp, unsigned vector_length_in_bytes) {
-  assert_different_registers(dst, src1, src2, tmp);
+  assert_different_registers(src2, tmp);
+  assert_different_registers(index, tmp);
   SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
 
   if (vector_length_in_bytes == 16) {
@@ -2689,7 +2809,8 @@ void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegi
                                                     FloatRegister src2, FloatRegister index,
                                                     FloatRegister tmp, SIMD_RegVariant T,
                                                     unsigned vector_length_in_bytes) {
-  assert_different_registers(dst, src1, src2, index, tmp);
+  assert_different_registers(src2, tmp);
+  assert_different_registers(index, tmp);
 
   if (vector_length_in_bytes == 8) {
     // We need to fit both the source vectors (src1, src2) in a single vector register because the
@@ -2716,12 +2837,12 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
                                                 FloatRegister tmp, BasicType bt,
                                                 unsigned vector_length_in_bytes) {
 
-  assert_different_registers(dst, src1, src2, index, tmp);
+  assert_different_registers(dst, src1, src2, tmp);
+  assert_different_registers(index, tmp);
 
   // The cases that can reach this method are -
-  // - UseSVE = 0, vector_length_in_bytes = 8 or 16
-  // - UseSVE = 1, vector_length_in_bytes = 8 or 16
-  // - UseSVE = 2, vector_length_in_bytes >= 8
+  // - UseSVE = 0/1, vector_length_in_bytes = 8 or 16, excluding double and long types
+  // - UseSVE = 2, vector_length_in_bytes >= 8, for all types
   //
   // SVE/SVE2 tbl instructions are generated when UseSVE = 1 with vector_length_in_bytes = 8
   // and UseSVE = 2 with vector_length_in_bytes >= 8
@@ -2857,4 +2978,85 @@ void C2_MacroAssembler::vector_expand_sve(FloatRegister dst, FloatRegister src, 
   sve_sub(dst, size, 1);
   // dst  = 00 87 00 65 00 43 00 21
   sve_tbl(dst, size, src, dst);
+}
+
+// Optimized SVE cpy (imm, zeroing) instruction.
+//
+// `movi; cpy(imm, merging)` and `cpy(imm, zeroing)` have the same
+// functionality, but test results show that `movi; cpy(imm, merging)` has
+// higher throughput on some microarchitectures. This would depend on
+// microarchitecture and so may vary between implementations.
+void C2_MacroAssembler::sve_cpy(FloatRegister dst, SIMD_RegVariant T,
+                                PRegister pg, int imm8, bool isMerge) {
+  if (VM_Version::prefer_sve_merging_mode_cpy() && !isMerge) {
+    // Generates a NEON instruction `movi V<dst>.2d, #0`.
+    // On AArch64, Z and V registers alias in the low 128 bits, so V<dst> is
+    // the low 128 bits of Z<dst>. A write to V<dst> also clears all bits of
+    // Z<dst> above 128, so this `movi` instruction effectively zeroes the
+    // entire Z<dst> register. According to the Arm Software Optimization
+    // Guide, `movi` is zero latency.
+    movi(dst, T2D, 0);
+    isMerge = true;
+  }
+  Assembler::sve_cpy(dst, T, pg, imm8, isMerge);
+}
+
+int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
+  // The vector iota entries array is ordered by type B/S/I/L/F/D, and
+  // the offset between two types is 16.
+  switch(bt) {
+  case T_BYTE:
+    return 0;
+  case T_SHORT:
+    return 1;
+  case T_INT:
+    return 2;
+  case T_LONG:
+    return 3;
+  case T_FLOAT:
+    return 4;
+  case T_DOUBLE:
+    return 5;
+  default:
+    ShouldNotReachHere();
+  }
+}
+
+// Vector integer division for BYTE elements. Each BYTE is widened to SHORT for
+// the low and high halves of the register, divided using the SHORT helper
+// (which widens further to INT), and the two SHORT result halves are narrowed
+// back to BYTE.
+void C2_MacroAssembler::sve_sdiv_byte(FloatRegister dst_src1, FloatRegister src2,
+                                      FloatRegister vtmp1, FloatRegister vtmp2,
+                                      FloatRegister vtmp3, FloatRegister vtmp4) {
+  assert_different_registers(dst_src1, src2, vtmp1, vtmp2, vtmp3, vtmp4);
+  FloatRegister src1 = dst_src1;
+  // Low half of the bytes -> SHORT, then divide (result SHORT in vtmp1).
+  sve_sunpklo(vtmp1, H, src1);
+  sve_sunpklo(vtmp2, H, src2);
+  sve_sdiv_short(vtmp1, vtmp2, vtmp3, vtmp4);
+  // High half of the bytes -> SHORT, then divide (result SHORT in src1).
+  sve_sunpkhi(src1, H, src1);
+  sve_sunpkhi(vtmp2, H, src2);
+  sve_sdiv_short(src1, vtmp2, vtmp3, vtmp4);
+  // Narrow the two SHORT result halves back to BYTE.
+  sve_uzp1(dst_src1, B, vtmp1, src1);
+}
+
+// Vector integer division for SHORT elements, implemented by widening each
+// element to 32 bits, performing SDIV, and narrowing back.
+void C2_MacroAssembler::sve_sdiv_short(FloatRegister dst_src1, FloatRegister src2,
+                                       FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert_different_registers(dst_src1, src2, vtmp1, vtmp2);
+  FloatRegister src1 = dst_src1;
+  // Low half: SHORT -> INT, then divide.
+  sve_sunpklo(vtmp1, S, src1);
+  sve_sunpklo(vtmp2, S, src2);
+  sve_sdiv(vtmp1, S, ptrue, vtmp2);
+  // High half: SHORT -> INT, then divide.
+  sve_sunpkhi(src1, S, src1);
+  sve_sunpkhi(vtmp2, S, src2);
+  sve_sdiv(src1, S, ptrue, vtmp2);
+  // Narrow the two INT result halves back to SHORT.
+  sve_uzp1(dst_src1, H, vtmp1, src1);
 }

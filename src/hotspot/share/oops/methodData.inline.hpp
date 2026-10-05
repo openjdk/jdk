@@ -59,7 +59,7 @@ inline uint MethodData::arg_modified(int a) {
   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
   ArgInfoData* aid = arg_info();
   assert(aid != nullptr, "arg_info must be not null");
-  assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
+  assert(a >= 0 && a < aid->size_of_args(), "valid argument number");
   return aid->arg_modified(a);
 }
 
@@ -68,7 +68,7 @@ inline void MethodData::set_arg_modified(int a, uint v) {
   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
   ArgInfoData* aid = arg_info();
   assert(aid != nullptr, "arg_info must be not null");
-  assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
+  assert(a >= 0 && a < aid->size_of_args(), "valid argument number");
   aid->set_arg_modified(a, v);
 }
 

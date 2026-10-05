@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,8 @@ public:
                                       ZStoreBarrierStubC2* stub) const;
 #endif // COMPILER2
 
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slow_path);
+
   void store_barrier_fast(MacroAssembler* masm,
                           Address ref_addr,
                           Register rnew_persistent,
@@ -187,9 +189,13 @@ public:
                             Label& slow_path,
                             Label& slow_path_continuation) const;
 
-  void patch_barrier_relocation(address addr, int format);
+  void patch_barrier_relocation(address addr, int format, bool log = false);
 
   void patch_barriers();
+
+  void register_reloc_addresses(GrowableArray<address> &entries, int begin, int count);
+
+  void retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries);
 
   void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };

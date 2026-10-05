@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,25 @@
 
 package jdk.internal.net.http.common;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.testng.Assert.assertThrows;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MinimalFutureTest {
 
-    @Test(dataProvider = "futures")
+    @ParameterizedTest
+    @MethodSource("futures")
     public void test(CompletableFuture<Object> mf) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
@@ -101,6 +107,32 @@ public class MinimalFutureTest {
         }
     }
 
+    @Test
+    public void testCancel() {
+        AtomicInteger cancelCount = new AtomicInteger();
+        AtomicBoolean cancelled   = new AtomicBoolean();
+        Cancelable cancelable = mayInterruptIfRunning -> {
+            cancelCount.incrementAndGet();
+            if (mayInterruptIfRunning) {
+                cancelled.set(true);
+            }
+            return cancelled.get();
+        };
+        MinimalFuture<Object> future = new MinimalFuture<>(cancelable);
+        CompletableFuture<?> dependent = future.copy().whenComplete((x,t) ->
+                System.out.println("expected: " + t));
+        assertTrue(dependent.cancel(false));
+        assertTrue(dependent.isCancelled());
+        assertFalse(future.isCancelled());
+        assertFalse(cancelled.get());
+        assertEquals(1, cancelCount.get());
+        assertTrue(dependent.cancel(true));
+        assertTrue(dependent.isCancelled());
+        assertFalse(future.isCancelled());
+        assertTrue(cancelled.get());
+        assertEquals(2, cancelCount.get());
+    }
+
     private static CompletableFuture<Object> otherFuture() {
         return MinimalFuture.completedFuture(new Object());
     }
@@ -134,8 +166,7 @@ public class MinimalFutureTest {
     }
 
 
-    @DataProvider(name = "futures")
-    public Object[][] futures() {
+    public static Object[][] futures() {
 
         MinimalFuture<Object> mf = new MinimalFuture<>();
         mf.completeExceptionally(new Throwable());

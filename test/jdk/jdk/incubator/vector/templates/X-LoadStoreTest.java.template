@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,10 @@
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
+#if[FP16]
+import jdk.incubator.vector.Float16;
+import jdk.incubator.vector.Float16Vector;
+#end[FP16]
 import jdk.incubator.vector.$Type$Vector;
 import jdk.incubator.vector.VectorMask;
 #if[MaxBit]
@@ -69,7 +73,11 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
+#if[FP16]
+    static final ValueLayout.OfShort ELEMENT_LAYOUT = ValueLayout.JAVA_SHORT.withByteAlignment(1);
+#else[FP16]
     static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withByteAlignment(1);
+#end[FP16]
 
 #if[MaxBit]
     static VectorShape getMaxBit() {
@@ -81,14 +89,53 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
 
+#if[FP16]
+    static void assertEquals(short actual, short expected) {
+        Assert.assertEquals(Float.float16ToFloat(actual), Float.float16ToFloat(expected));
+    }
+
+    static void assertEquals(short actual, short expected, String msg) {
+        Assert.assertEquals(Float.float16ToFloat(actual), Float.float16ToFloat(expected), msg);
+    }
+
+    static void assertEquals(short [] actual, short [] expected) {
+        assert actual.length == expected.length;
+        for (int i = 0; i < actual.length; i++) {
+            Assert.assertEquals(Float.float16ToFloat(actual[i]), Float.float16ToFloat(expected[i]));
+        }
+    }
+
+    static void assertEquals(short [] actual, short [] expected, String msg) {
+        assert actual.length == expected.length;
+        for (int i = 0; i < actual.length; i++) {
+            Assert.assertEquals(Float.float16ToFloat(actual[i]), Float.float16ToFloat(expected[i]), msg);
+        }
+    }
+#else[FP16]
+    static void assertEquals($type$ actual, $type$ expected) {
+        Assert.assertEquals(actual, expected);
+    }
+
+    static void assertEquals($type$ actual, $type$ expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+
+    static void assertEquals($type$ [] actual, $type$ [] expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void assertEquals($type$ [] actual, $type$ [] expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+#end[FP16]
+
     static void assertArraysEquals($type$[] r, $type$[] a, boolean[] mask) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : ($type$) 0);
+                assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : ($type$) 0);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : ($type$) 0, "at index #" + i);
+            assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : ($type$) 0, "at index #" + i);
         }
     }
 
@@ -342,7 +389,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
                 av.intoArray(r, i);
             }
         }
-        Assert.assertEquals(r, a);
+        assertEquals(r, a);
     }
 
     @Test(dataProvider = "$type$ProviderForIOOBE")
@@ -1225,11 +1272,11 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
             for (; i < a.length; i += SPECIES.length()) {
                 j = i;
                 for (; j < i + SPECIES.length(); j++) {
-                    Assert.assertEquals(r[j], a[i + indexMap[j]]);
+                    assertEquals(r[j], a[i + indexMap[j]]);
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
+            assertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
         }
     }
 
@@ -1240,11 +1287,11 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
             for (; i < a.length; i += SPECIES.length()) {
                 j = i;
                 for (; j < i + SPECIES.length(); j++) {
-                    Assert.assertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: ($type$) 0);
+                    assertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: ($type$) 0);
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: ($type$) 0, "at index #" + j);
+            assertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: ($type$) 0, "at index #" + j);
         }
     }
 
@@ -1260,7 +1307,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
             }
         }
 
-        Assert.assertEquals(r, expected);
+        assertEquals(r, expected);
     }
 
     static void assertScatterArraysEquals($type$[] r, $type$[] a, int[] indexMap) {
@@ -1273,7 +1320,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
             }
         }
 
-        Assert.assertEquals(r, expected);
+        assertEquals(r, expected);
     }
 
     @DataProvider

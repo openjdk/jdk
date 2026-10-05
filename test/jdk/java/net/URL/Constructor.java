@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class Constructor {
         entries.addAll(Arrays.asList(jarURLs));
         entries.addAll(Arrays.asList(normalHttpURLs));
         entries.addAll(Arrays.asList(abnormalHttpURLs));
+        entries.addAll(Arrays.asList(blankComponents));
         if (hasFtp())
             entries.addAll(Arrays.asList(ftpURLs));
         URL url;
@@ -251,5 +252,21 @@ public class Constructor {
         new Entry("ftp://br:pwd@ftp.foo.com/dir1/jar.jar",
                   "/dir1/entry.txt",
                   "ftp://br:pwd@ftp.foo.com/dir1/entry.txt")
+    };
+
+    static Entry[] blankComponents = new Entry[] {
+        new Entry(null, "http://host/path#", "http://host/path#"),
+        new Entry(null, "http://host/path?", "http://host/path?"),
+        new Entry(null, "http://host/path?#", "http://host/path?#"),
+        new Entry(null, "http://host/path#?", "http://host/path#?"),
+        new Entry(null, "file:/path#", "file:/path#"),
+        new Entry(null, "file:/path?", "file:/path?"),
+        new Entry(null, "file:/path?#", "file:/path?#"),
+        new Entry(null, "file:///path#", "file:/path#"),
+        new Entry(null, "file:///path?", "file:/path?"),
+        new Entry(null, "file:/path#?", "file:/path#?"),
+        new Entry("file:/path", "path?#", "file:/path?#"),
+        new Entry(null, "file:", "file:"),
+        new Entry(null, "file:#", "file:#")
     };
 }

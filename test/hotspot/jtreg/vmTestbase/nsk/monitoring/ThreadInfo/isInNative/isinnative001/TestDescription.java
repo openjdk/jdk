@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
  *     Updated according to:
  *     5024531 Fix MBeans design flaw that restricts to use JMX CompositeData
  *
+ * @requires test.thread.factory != "Virtual"
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm nsk.monitoring.ThreadInfo.isInNative.isinnative001

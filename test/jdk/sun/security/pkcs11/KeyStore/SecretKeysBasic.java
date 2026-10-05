@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,11 +116,14 @@ public class SecretKeysBasic extends PKCS11Test {
         // A bug in NSS 3.12 (Mozilla bug 471665) causes AES key lengths
         // to be read incorrectly.  Checking for improper 16 byte length
         // in key string.
-        if (isNSS(provider) && expected.getAlgorithm().equals("AES") &&
-                (getNSSVersion() >= 3.12 && getNSSVersion() <= 3.122)) {
-            System.out.println("NSS 3.12 bug returns incorrect AES key "+
-                    "length breaking key storage. Aborting...");
-            return true;
+        if (isNSS(provider) && expected.getAlgorithm().equals("AES")) {
+            Version version = getNSSVersion();
+            if (version.major() == 3 && version.minor() == 12
+                    && version.patch() <= 2) {
+                System.out.println("NSS 3.12 bug returns incorrect AES key " +
+                        "length breaking key storage. Aborting...");
+                return true;
+            }
         }
 
         if (saveBeforeCheck) {
@@ -168,7 +171,7 @@ public class SecretKeysBasic extends PKCS11Test {
     private static void doTest() throws Exception {
         // Make sure both NSS libraries are the same version.
         if (isNSS(provider) &&
-                (getLibsoftokn3Version() != getLibnss3Version())) {
+                (!getLibsoftokn3Version().equals(getLibnss3Version()))) {
             System.out.println("libsoftokn3 and libnss3 versions do not match.  Aborting test...");
             return;
         }

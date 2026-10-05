@@ -100,9 +100,10 @@ size_t ZVirtualMemoryReserver::force_reserve_discontiguous(size_t size) {
 
     if (reserve_contiguous(to_zoffset(reserve_start), reserve_size)) {
       reserved += reserve_size;
+      end -= reserve_size;
     }
 
-    end -= reserve_size * 2;
+    end -= MIN2(end, reserve_size);
   }
 
   // If (reserved < size) attempt to reserve the rest via normal divide and conquer

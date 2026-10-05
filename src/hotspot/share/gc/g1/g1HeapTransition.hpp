@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,16 @@ class G1HeapTransition {
   class DetailedUsageClosure;
 
   struct Data {
-    size_t _eden_length;
-    size_t _survivor_length;
-    size_t _old_length;
-    size_t _humongous_length;
+    size_t _num_eden_regions;
+    size_t _num_survivor_regions;
+    size_t _num_old_regions;
+    size_t _num_humongous_regions;
     const MetaspaceCombinedStats _meta_sizes;
 
     // Only includes current eden regions.
-    uint* _eden_length_per_node;
+    uint* _num_eden_regions_per_node;
     // Only includes current survivor regions.
-    uint* _survivor_length_per_node;
+    uint* _num_survivor_regions_per_node;
 
     Data(G1CollectedHeap* g1_heap);
     ~Data();

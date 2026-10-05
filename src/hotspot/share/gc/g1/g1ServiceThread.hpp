@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ class G1ServiceTaskQueue;
 class G1ServiceThread;
 
 class G1ServiceTask : public CHeapObj<mtGC> {
-  friend class G1ServiceTaskQueue;
   friend class G1ServiceThread;
+  friend class G1ServiceTaskQueue;
 
   // The next absolute time this task should be executed.
   jlong _time;

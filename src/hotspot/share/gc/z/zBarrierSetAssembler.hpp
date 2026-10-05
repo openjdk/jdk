@@ -34,6 +34,9 @@ public:
 
   static Address load_bad_mask_from_jni_env(Register env);
   static Address mark_bad_mask_from_jni_env(Register env);
+
+  virtual void register_reloc_addresses(GrowableArray<address> &entries, int begin, int count) { }
+  virtual void retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries) { }
 };
 
 // Needs to be included after definition of ZBarrierSetAssemblerBase

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,13 @@ import java.util.function.Function;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * Used by ModuleBootstrap for archiving the configuration for the boot layer,
  * and the system module finder.
  */
+@AOTSafeClassInitializer
 class ArchivedModuleGraph {
     private static ArchivedModuleGraph archivedModuleGraph;
 
@@ -126,6 +128,7 @@ class ArchivedModuleGraph {
     }
 
     static {
+        // Legacy CDS archive support (to be deprecated)
         CDS.initializeFromArchive(ArchivedModuleGraph.class);
     }
 }

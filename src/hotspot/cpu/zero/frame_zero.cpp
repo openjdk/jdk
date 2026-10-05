@@ -245,8 +245,6 @@ void frame::zero_print_on_error(int           frame_index,
     os::snprintf_checked(fieldbuf, buflen, "word[%d]", offset);
     os::snprintf_checked(valuebuf, buflen, PTR_FORMAT, *addr);
     zeroframe()->identify_word(frame_index, offset, fieldbuf, valuebuf, buflen);
-    fieldbuf[buflen - 1] = '\0';
-    valuebuf[buflen - 1] = '\0';
 
     // Print the result
     st->print_cr(" " PTR_FORMAT ": %-21s = %s", p2i(addr), fieldbuf, valuebuf);
@@ -432,3 +430,20 @@ frame::frame(void* sp, void* fp, void* pc) {
 }
 
 #endif
+
+intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
+  // Only called for nmethods, which Zero does not have.
+  ShouldNotReachHere();
+  return nullptr;
+}
+
+intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
+  // Only called for nmethods, which Zero does not have.
+  ShouldNotReachHere();
+  return nullptr;
+}
+
+bool frame::was_augmented_on_entry(int& real_size) const {
+  ShouldNotReachHere();
+  return false;
+}

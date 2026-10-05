@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib/
  * @modules jdk.compiler
  * @build CustomLoaderTest jdk.test.lib.compiler.CompilerUtils
- * @run testng/othervm CustomLoaderTest
+ * @run junit/othervm CustomLoaderTest
  *
  * @summary Test method whose parameter types and return type are not visible to the caller.
  */
@@ -42,27 +42,23 @@ import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class CustomLoaderTest {
     private static final Path CLASSES = Paths.get("classes");
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         String src = System.getProperty("test.src", ".");
         String classpath = System.getProperty("test.classes", ".");
         boolean rc = CompilerUtils.compile(Paths.get(src, "ReflectTest.java"), CLASSES, "-cp", classpath);
         if (!rc) {
-            throw new RuntimeException("fail compilation");
+            fail("fail compilation");
         }
-        try {
-            Class<?> p = Class.forName("ReflectTest$P");
-            fail("should not be visible to this loader");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        assertThrows(ClassNotFoundException.class, () -> Class.forName("ReflectTest$P"),
+                "should not be visible to this loader");
     }
 
     @Test
@@ -72,17 +68,17 @@ public class CustomLoaderTest {
         Method m1 = loader1.findMethod();
         Method m2 = loader2.findMethod();
 
-        assertTrue(m1.getDeclaringClass() != m2.getDeclaringClass());
+        assertNotSame(m1.getDeclaringClass(), m2.getDeclaringClass());
 
-        assertTrue(m1.getDeclaringClass() == loader1.c);
-        assertTrue(m2.getDeclaringClass() == loader2.c);
+        assertSame(loader1.c, m1.getDeclaringClass());
+        assertSame(loader2.c, m2.getDeclaringClass());
 
         Object o1 = m1.invoke(loader1.c.newInstance(), loader1.p.newInstance(), loader1.q.newInstance());
         Object o2 = m2.invoke(loader2.c.newInstance(), loader2.p.newInstance(), loader2.q.newInstance());
 
-        assertTrue(o1.getClass() != o2.getClass());
-        assertTrue(o1.getClass() == loader1.r);
-        assertTrue(o2.getClass() == loader2.r);
+        assertNotSame(o1.getClass(), o2.getClass());
+        assertSame(loader1.r, o1.getClass());
+        assertSame(loader2.r, o2.getClass());
     }
 
     static class TestLoader extends URLClassLoader {

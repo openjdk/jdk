@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package compiler.lib.generators;
  * set of values. For example, bounds such as [1, 0] cause an EmptyGeneratorException. Another example would be
  * restricting a uniform integer generator over the range [0, 1] to [10, 11].
  */
+@SuppressWarnings("serial")
 public class EmptyGeneratorException extends RuntimeException {
     public EmptyGeneratorException() {}
 }

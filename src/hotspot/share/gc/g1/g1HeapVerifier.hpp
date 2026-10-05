@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public:
   // Verify that marking state is set up correctly after a concurrent start pause.
   void verify_marking_state();
 
-  void verify_bitmap_clear(bool above_tams_only);
+  void verify_bitmap_clear(bool above_tams_only,
+                           bool concurrent_cycle_aborted = false);
 
   // Do sanity check on the contents of the in-cset fast test table.
   bool check_region_attr_table() PRODUCT_RETURN_( return true; );
@@ -88,6 +89,9 @@ public:
 
   // Verify that the global card table and the thread's card tables are in sync.
   void verify_card_tables_in_sync() PRODUCT_RETURN;
+
+  // Verify that free regions's card table is all-clean.
+  void verify_free_regions_card_tables_clean() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_G1_G1HEAPVERIFIER_HPP

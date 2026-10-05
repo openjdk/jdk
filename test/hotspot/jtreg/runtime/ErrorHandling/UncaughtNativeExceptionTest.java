@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test id
+ * @test
  * @enablePreview
  * @requires os.family == "windows"
  * @library /test/lib
@@ -57,6 +57,7 @@ public class UncaughtNativeExceptionTest {
         OutputAnalyzer output = ProcessTools.executeTestJava(
                 // executeTestJava doesn't seem to forward 'java.library.path'
                 "-Djava.library.path=" + System.getProperty("java.library.path"),
+                "--enable-preview",
                 Crasher.class.getName());
 
         File hsErrFile = HsErrFileUtils.openHsErrFileFromOutput(output);
@@ -64,7 +65,7 @@ public class UncaughtNativeExceptionTest {
         assertTrue(Files.exists(hsErrPath));
 
         Pattern[] positivePatterns = {
-            Pattern.compile(".*Internal Error \\(0x2a\\).*")
+            Pattern.compile(".*Internal Error \\(0xdeadbeef\\).*")
         };
         HsErrFileUtils.checkHsErrFileContent(hsErrFile, positivePatterns, null, true /* check end marker */, false /* verbose */);
     }

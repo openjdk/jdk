@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 package nsk.jvmti.AttachOnDemand.attach022;
 
-import nsk.share.ClassUnloader;
 import nsk.share.aod.TargetApplicationWaitingAgents;
+import jdk.test.whitebox.WhiteBox;
 
 class ClassForAllocationEventsTest {
 
@@ -47,7 +47,7 @@ public class attach022Target extends TargetApplicationWaitingAgents {
             }
 
             log.display("Provoking GC");
-            ClassUnloader.eatMemory();
+            WhiteBox.getWhiteBox().fullGC();
         } finally {
             if (!shutdownAgent(TEST_ALLOCATION_NUMBER)) {
                 setStatusFailed("Error happened during agent work, see error messages for details");

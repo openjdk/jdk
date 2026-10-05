@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -450,6 +450,13 @@ public class BytecodeHelpers {
         return ret;
     }
 
+    public static void validateIncrement(Opcode opcode, int slot, int constant) {
+        if (validateAndIsWideIinc(slot, constant) && opcode != Opcode.IINC_W) {
+            throw new IllegalArgumentException(
+                    "IINC: operands require wide encoding for %s".formatted(opcode));
+        }
+    }
+
     public static void validateRet(Opcode opcode, int slot) {
         if (opcode == Opcode.RET && (slot & ~0xFF) == 0 ||
                 opcode == Opcode.RET_W && (slot & ~0xFFFF) == 0)
@@ -475,6 +482,16 @@ public class BytecodeHelpers {
             throw new IllegalArgumentException(
                     "BIPUSH: value must be within: Byte.MIN_VALUE <= value <= Byte.MAX_VALUE, found: "
                             .concat(Long.toString(value)));
+    }
+
+    public static void validateTableSwitchValues(int low, int high) {
+        validateTableSwitchValues(low, high, 0xFFFF);
+    }
+
+    public static void validateTableSwitchValues(int low, int high, int codeLength) {
+        if (high < low || 1L + high - low > codeLength >> 2) {
+            throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
+        }
     }
 
     public static MethodHandleEntry handleDescToHandleInfo(ConstantPoolBuilder constantPool, DirectMethodHandleDesc bootstrapMethod) {

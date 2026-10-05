@@ -30,9 +30,11 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.File;
+import java.lang.foreign.Arena;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
@@ -1037,7 +1039,7 @@ public abstract class ClassLoader {
      *
      * @since  1.5
      */
-    protected final Class<?> defineClass(String name, java.nio.ByteBuffer b,
+    protected final Class<?> defineClass(String name, ByteBuffer b,
                                          ProtectionDomain protectionDomain)
         throws ClassFormatError
     {
@@ -1057,13 +1059,26 @@ public abstract class ClassLoader {
             }
         }
 
-        protectionDomain = preDefineClass(name, protectionDomain);
-        String source = defineClassSourceLocation(protectionDomain);
+        boolean trusted = this instanceof BuiltinClassLoader;
+        if (trusted) {
+            return defineClass(name, b, len, protectionDomain);
+        } else {
+            // make copy from input byte buffer
+            try (var arena = Arena.ofConfined()) {
+                ByteBuffer bb = arena.allocate(len).asByteBuffer();
+                bb.put(0, b, b.position(), len);
+                return defineClass(name, bb, len, protectionDomain);
+            }
+        }
+    }
 
+    private Class<?> defineClass(String name, ByteBuffer b, int len, ProtectionDomain pd) {
+        pd = preDefineClass(name, pd);
+        String source = defineClassSourceLocation(pd);
         SharedSecrets.getJavaNioAccess().acquireSession(b);
         try {
-            Class<?> c = defineClass2(this, name, b, b.position(), len, protectionDomain, source);
-            postDefineClass(c, protectionDomain);
+            Class<?> c = defineClass2(this, name, b, b.position(), len, pd, source);
+            postDefineClass(c, pd);
             return c;
         } finally {
             SharedSecrets.getJavaNioAccess().releaseSession(b);

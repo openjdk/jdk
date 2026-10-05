@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,21 @@
  */
 package org.w3c.dom.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.NamedNodeMapTest
+ * @run junit/othervm org.w3c.dom.ptests.NamedNodeMapTest
  * @summary Test for the methods of NamedNodeMap Interface
  */
 public class NamedNodeMapTest {
@@ -61,9 +61,9 @@ public class NamedNodeMapTest {
         // setting to a new Value
         attr.setValue("newValue");
         Node replacedAttr = namedNodeMap.setNamedItemNS(attr); // return the replaced attr
-        assertEquals(replacedAttr.getNodeValue(), "font-family");
+        assertEquals("font-family", replacedAttr.getNodeValue());
         Node updatedAttr = namedNodeMap.getNamedItemNS(nsURI, "style");
-        assertEquals(updatedAttr.getNodeValue(), "newValue");
+        assertEquals("newValue", updatedAttr.getNodeValue());
 
 
         // creating a non existing attribute node
@@ -75,7 +75,7 @@ public class NamedNodeMapTest {
         // checking if the node could be accessed
         // using the getNamedItemNS method
         Node newAttr = namedNodeMap.getNamedItemNS(nsURI, "newNode");
-        assertEquals(newAttr.getNodeValue(), "newValue");
+        assertEquals("newValue", newAttr.getNodeValue());
     }
 
     /*
@@ -89,7 +89,7 @@ public class NamedNodeMapTest {
         Node n = nodeList.item(7);
         NamedNodeMap namedNodeMap = n.getAttributes();
         Node node = namedNodeMap.getNamedItemNS("urn:BooksAreUs.org:BookInfo", "aaa");
-        assertEquals(node.getNodeValue(), "value");
+        assertEquals("value", node.getNodeValue());
 
     }
 
@@ -107,14 +107,14 @@ public class NamedNodeMapTest {
         NamedNodeMap namedNodeMap = n.getAttributes();
         Attr attr = document.createAttribute("name");
         Node replacedAttr = namedNodeMap.setNamedItem(attr);
-        assertEquals(replacedAttr.getNodeValue(), "attributeValue");
+        assertEquals("attributeValue", replacedAttr.getNodeValue());
         Node updatedAttrNode = namedNodeMap.getNamedItem("name");
-        assertEquals(updatedAttrNode.getNodeValue(), "");
+        assertEquals("", updatedAttrNode.getNodeValue());
 
         Attr newAttr = document.createAttribute("nonExistingName");
         assertNull(namedNodeMap.setNamedItem(newAttr));
         Node newAttrNode = namedNodeMap.getNamedItem("nonExistingName");
-        assertEquals(newAttrNode.getNodeValue(), "");
+        assertEquals("", newAttrNode.getNodeValue());
     }
 
 }

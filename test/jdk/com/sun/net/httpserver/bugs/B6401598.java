@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class B6401598 {
 
@@ -66,7 +67,7 @@ public class B6401598 {
 
                                 DataOutputStream dos = new DataOutputStream(os);
 
-                                arg0.sendResponseHeaders(200, 0);
+                                arg0.sendResponseHeaders(200, RSPBODY_CHUNKED);
 
                                 dos.writeShort(input);
 

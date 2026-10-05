@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ typedef struct {
     /* State */
     jboolean pending;
     jboolean frameExited;    /* for depth == STEP_OVER or STEP_OUT */
-    jboolean fromNative;
+    jboolean notifyFramePopFailed;
     jint fromStackDepth;     /* for all but STEP_INTO STEP_INSTRUCTION */
     jint fromLine;           /* for granularity == STEP_LINE */
     jmethodID method;   /* Where line table came from. */

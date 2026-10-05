@@ -25,13 +25,12 @@
 #ifndef SHARE_UTILITIES_ALIGN_HPP
 #define SHARE_UTILITIES_ALIGN_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
-
-#include <type_traits>
 
 // Compute mask to use for aligning to or testing alignment.
 // The alignment must be a power of 2. Returns alignment - 1, which is
@@ -95,7 +94,7 @@ constexpr T align_down_bounded(T size, A alignment) {
 
 template <typename A>
 inline bool can_align_up(void* ptr, A alignment) {
-  static_assert(sizeof(ptr) == sizeof(uintptr_t), "assumption");
+  static_assert(sizeof(ptr) == sizeof(uintptr_t));
   return can_align_up((uintptr_t)ptr, alignment);
 }
 

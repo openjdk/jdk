@@ -81,6 +81,8 @@ import jdk.internal.net.http.qpack.writers.HeaderFrameWriter;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 import jdk.internal.net.http.quic.streams.QuicStreamWriter;
+
+import static jdk.internal.net.http.common.Utils.readContentLength;
 import static jdk.internal.net.http.http3.ConnectionSettings.UNLIMITED_MAX_FIELD_SECTION_SIZE;
 
 /**
@@ -554,8 +556,12 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     }
 
     final class Http3StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
-        Http3StreamResponseSubscriber(BodySubscriber<U> subscriber) {
+
+        private final boolean cancelTimerOnTermination;
+
+        Http3StreamResponseSubscriber(BodySubscriber<U> subscriber, boolean cancelTimerOnTermination) {
             super(subscriber);
+            this.cancelTimerOnTermination = cancelTimerOnTermination;
         }
 
         @Override
@@ -566,6 +572,13 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         @Override
         protected void register() {
             registerResponseSubscriber(this);
+        }
+
+        @Override
+        protected void onTermination() {
+            if (cancelTimerOnTermination) {
+                exchange.multi.cancelTimer();
+            }
         }
 
         @Override
@@ -590,9 +603,10 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     Http3StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler,
                                                               ResponseInfo response) {
         if (debug.on()) debug.log("Creating body subscriber");
-        Http3StreamResponseSubscriber<T> subscriber =
-                new Http3StreamResponseSubscriber<>(handler.apply(response));
-        return subscriber;
+        var cancelTimerOnTermination =
+                cancelTimerOnResponseBodySubscriberTermination(
+                        exchange.request().isWebSocket(), response.statusCode());
+        return new Http3StreamResponseSubscriber<>(handler.apply(response), cancelTimerOnTermination);
     }
 
     @Override
@@ -939,11 +953,15 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
 
     /**
      * An unprocessed exchange is one that hasn't been processed by a peer. The local end of the
-     * connection would be notified about such exchanges when it receives a GOAWAY frame with
-     * a stream id that tells which exchanges have been unprocessed.
+     * connection would be notified about such exchanges in either of the following 2 ways:
+     * <ul>
+     *  <li> when it receives a GOAWAY frame with a stream id that tells which
+     *    exchanges have been unprocessed.
+     *  <li> or when a particular request's stream is reset with the H3_REQUEST_REJECTED error code.
+     * </ul>
+     * <p>
      * This method is called on such unprocessed exchanges and the implementation of this method
-     * will arrange for the request, corresponding to this exchange, to be retried afresh on a
-     * new connection.
+     * will arrange for the request, corresponding to this exchange, to be retried afresh.
      */
     void closeAsUnprocessed() {
         // null exchange implies a PUSH stream and those aren't
@@ -1277,12 +1295,16 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         if (Set.of("PUT", "DELETE", "OPTIONS", "TRACE").contains(method)) {
             throw new ProtocolException("push method not allowed pushId=" + pushId);
         }
-        long clen = promiseHeaders.firstValueAsLong("Content-Length").orElse(-1);
+
+        // Read & validate `Content-Length`
+        long clen = readContentLength(
+                promiseHeaders, "illegal push headers for pushId=%s: ".formatted(pushId), -1);
         if (clen > 0) {
-            throw new ProtocolException("push headers contain non-zero Content-Length for pushId=" + pushId);
+            throw new ProtocolException("push headers contain non-zero \"Content-Length\" for pushId=" + pushId);
         }
+
         if (promiseHeaders.firstValue("Transfer-Encoding").isPresent()) {
-            throw new ProtocolException("push headers contain Transfer-Encoding for pushId=" + pushId);
+            throw new ProtocolException("push headers contain \"Transfer-Encoding\" for pushId=" + pushId);
         }
 
 
@@ -1335,14 +1357,21 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         String resetReason = Http3Error.stringForCode(errorCode);
         Http3Error resetError = Http3Error.fromCode(errorCode)
                 .orElse(Http3Error.H3_REQUEST_CANCELLED);
-        if (!requestSent || !responseReceived) {
+        if (debug.on()) {
+            debug.log("Stream %s reset by peer [%s]: ", streamId(), resetReason);
+        }
+        // if the error is H3_REQUEST_REJECTED then it implies
+        // the request wasn't processed and the client is allowed to reissue
+        // that request afresh
+        if (resetError == Http3Error.H3_REQUEST_REJECTED) {
+            closeAsUnprocessed();
+        } else if (!requestSent || !responseReceived) {
             cancelImpl(new IOException("Stream %s reset by peer: %s"
                             .formatted(streamId(), resetReason)),
                     resetError);
         }
         if (debug.on()) {
-            debug.log("Stream %s reset by peer [%s]: Stopping scheduler",
-                    streamId(), resetReason);
+            debug.log("stopping scheduler for stream %s", streamId());
         }
         readScheduler.stop();
     }

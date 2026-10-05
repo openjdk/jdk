@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 package nsk.jvmti.AttachOnDemand.attach021;
 
-import nsk.share.ClassUnloader;
 import nsk.share.aod.TargetApplicationWaitingAgents;
+import jdk.test.whitebox.WhiteBox;
 
 public class attach021Target extends TargetApplicationWaitingAgents {
 
@@ -51,7 +51,7 @@ public class attach021Target extends TargetApplicationWaitingAgents {
         try {
             if (createTaggedObject()) {
                 log.display("Provoking GC");
-                ClassUnloader.eatMemory();
+                WhiteBox.getWhiteBox().fullGC();
             }
         } finally {
             shutdownAgent();

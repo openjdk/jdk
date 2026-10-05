@@ -29,6 +29,7 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/jniHandles.hpp"
 
 #define __ masm->
 
@@ -40,10 +41,69 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+void CardTableBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                      Register src, Register dst, Register count, Register preserve1, Register preserve2) {
+  if (type == T_OBJECT) {
+    gen_write_ref_array_pre_barrier(masm, decorators,
+                                    src, dst, count,
+                                    preserve1, preserve2);
+
+    bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
+    if (!checkcast) {
+      assert_different_registers(dst, count, R9_ARG7, R10_ARG8);
+      // Save some arguments for epilogue, e.g. disjoint_long_copy_core destroys them.
+      __ mr(R9_ARG7, dst);
+      __ mr(R10_ARG8, count);
+    }
+  }
+}
+
+void CardTableBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                      Register dst, Register count, Register preserve) {
+  if (type == T_OBJECT) {
+    bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
+    if (!checkcast) {
+      gen_write_ref_array_post_barrier(masm, decorators, R9_ARG7, R10_ARG8, preserve);
+    } else {
+      gen_write_ref_array_post_barrier(masm, decorators, dst, count, preserve);
+    }
+  }
+}
+
+void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                            Register base, RegisterOrConstant ind_or_offs, Register val,
+                                            Register tmp1, Register tmp2, Register tmp3,
+                                            MacroAssembler::PreservationLevel preservation_level) {
+  if (is_reference_type(type)) {
+    oop_store_at(masm, decorators, type,
+                 base, ind_or_offs, val,
+                 tmp1, tmp2, tmp3,
+                 preservation_level);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type,
+                                  base, ind_or_offs, val,
+                                  tmp1, tmp2, tmp3,
+                                  preservation_level);
+  }
+}
+
+void CardTableBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
+                                                   Register tmp1, Register tmp2,
+                                                   MacroAssembler::PreservationLevel preservation_level) {
+  Label done;
+  __ cmpdi(CR0, value, 0);
+  __ beq(CR0, done);         // Use null as-is.
+
+  __ clrrdi(tmp1, value, JNIHandles::tag_size);
+  __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
+
+  __ verify_oop(value, FILE_AND_LINE);
+  __ bind(done);
+}
+
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr,
                                                                     Register count, Register preserve) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
   assert_different_registers(addr, count, R0);
 
   Label Lskip_loop, Lstore_loop;
@@ -56,7 +116,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ srdi(addr, addr, CardTable::card_shift());
   __ srdi(count, count, CardTable::card_shift());
   __ subf(count, addr, count);
-  __ add_const_optimized(addr, addr, (address)ct->byte_map_base(), R0);
+  __ add_const_optimized(addr, addr, (address)ctbs->card_table_base_const(), R0);
   __ addi(count, count, 1);
   __ li(R0, 0);
   __ mtctr(count);
@@ -79,8 +139,8 @@ void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
 }
 
 void CardTableBarrierSetAssembler::card_write_barrier_post(MacroAssembler* masm, Register store_addr, Register tmp) {
-  CardTableBarrierSet* bs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  card_table_write(masm, bs->card_table()->byte_map_base(), tmp, store_addr);
+  CardTableBarrierSet* bs = CardTableBarrierSet::barrier_set();
+  card_table_write(masm, bs->card_table_base_const(), tmp, store_addr);
 }
 
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,

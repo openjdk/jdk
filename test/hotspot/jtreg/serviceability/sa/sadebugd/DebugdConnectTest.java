@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8209790
  * @summary Checks ability for connecting to debug server (jstack, jmap, jinfo, jsnap)
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
@@ -64,14 +65,15 @@ public class DebugdConnectTest {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        return out;
+        return new OutputAnalyzer(out.getStdout(),
+                out.getStderrNoDeprecatedWarnings(), out.getExitValue());
     }
 
     private static void runJSTACK(String serverID) throws IOException, InterruptedException {
         OutputAnalyzer out = runJHSDB("jstack", serverID);
 
         out.shouldContain("LingeredApp");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -79,7 +81,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jmap", serverID);
 
         out.shouldContain("JVM version is");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -87,7 +89,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jinfo", serverID);
 
         out.shouldContain("Java System Properties:");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -95,7 +97,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jsnap", serverID);
 
         out.shouldContain("java.vm.name=");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 

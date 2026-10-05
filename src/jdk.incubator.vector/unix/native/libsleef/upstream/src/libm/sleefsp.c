@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -53,11 +53,11 @@ static INLINE CONST float fabsfk(float x) {
 }
 
 static INLINE CONST float mulsignf(float x, float y) {
-  return intBitsToFloat(floatToRawIntBits(x) ^ (floatToRawIntBits(y) & (1 << 31)));
+  return intBitsToFloat(floatToRawIntBits(x) ^ (floatToRawIntBits(y) & 0x80000000U));
 }
 
 static INLINE CONST float copysignfk(float x, float y) {
-  return intBitsToFloat((floatToRawIntBits(x) & ~(1 << 31)) ^ (floatToRawIntBits(y) & (1 << 31)));
+  return intBitsToFloat((floatToRawIntBits(x) & ~0x80000000U) ^ (floatToRawIntBits(y) & 0x80000000U));
 }
 
 static INLINE CONST float signf(float d) { return mulsignf(1, d); }
@@ -1733,6 +1733,8 @@ EXPORT CONST float xlog1pf(float d) {
   float m, t, x2;
   int e;
 
+  if (d > LOG1PF_BOUND) return xlogf(d); // ~log(d)
+
   float dp1 = d + 1;
 
   int o = dp1 < FLT_MIN;
@@ -1758,7 +1760,6 @@ EXPORT CONST float xlog1pf(float d) {
 
   float r = s.x + s.y;
 
-  if (d > 1e+38) r = SLEEF_INFINITYf;
   if (d < -1) r = SLEEF_NANf;
   if (d == -1) r = -SLEEF_INFINITYf;
   if (xisnegzerof(d)) r = -0.0f;
@@ -1920,11 +1921,11 @@ EXPORT CONST float xnextafterf(float x, float y) {
   cxf = x == 0 ? mulsignf(0, y) : x;
   memcpy(&cxi, &cxf, sizeof(cxi));
   int c = (cxi < 0) == (y < x);
-  if (c) cxi = -(cxi ^ (1 << 31));
+  if (c) cxi = -(cxi ^ 0x80000000U);
 
   if (x != y) cxi--;
 
-  if (c) cxi = -(cxi ^ (1 << 31));
+  if (c) cxi = -(cxi ^ 0x80000000U);
 
   memcpy(&cxf, &cxi, sizeof(cxf));
   if (cxf == 0 && x != 0) cxf = mulsignf(0, x);

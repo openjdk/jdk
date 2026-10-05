@@ -23,13 +23,12 @@
  */
 
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
+#include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "jfr/jfrEvents.hpp"
 
 void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cset,
-    size_t free_regions, size_t regions_promoted_humongous, size_t regions_promoted_regular,
-    size_t regular_promoted_garbage, size_t regular_promoted_free, size_t regions_immediate,
-    size_t immediate_size) {
+    size_t free_regions, size_t regions_immediate, size_t immediate_size) {
 
   EventShenandoahEvacuationInformation e;
   if (e.should_commit()) {
@@ -37,16 +36,27 @@ void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cse
     e.set_cSetRegions(cset->count());
     e.set_cSetUsedBefore(cset->used());
     e.set_cSetUsedAfter(cset->live());
-    e.set_collectedOld(cset->get_old_bytes_reserved_for_evacuation());
-    e.set_collectedPromoted(cset->get_young_bytes_to_be_promoted());
-    e.set_collectedYoung(cset->get_young_bytes_reserved_for_evacuation());
-    e.set_regionsPromotedHumongous(regions_promoted_humongous);
-    e.set_regionsPromotedRegular(regions_promoted_regular);
-    e.set_regularPromotedGarbage(regular_promoted_garbage);
-    e.set_regularPromotedFree(regular_promoted_free);
     e.set_freeRegions(free_regions);
     e.set_regionsImmediate(regions_immediate);
     e.set_immediateBytes(immediate_size);
+
+    e.commit();
+  }
+}
+
+void ShenandoahTracer::report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner& planner) {
+  EventShenandoahPromotionInformation e;
+  if (e.should_commit()) {
+    e.set_gcId(GCId::current());
+    e.set_collectedOld(cset->get_live_bytes_in_old_regions());
+    e.set_collectedPromoted(cset->get_live_bytes_in_tenurable_regions());
+    e.set_collectedYoung(cset->get_live_bytes_in_untenurable_regions());
+    e.set_regionsPromotedHumongous(planner.humongous_region_stats().count);
+    e.set_humongousPromotedGarbage(planner.humongous_region_stats().garbage);
+    e.set_humongousPromotedFree(planner.humongous_region_stats().free);
+    e.set_regionsPromotedRegular(planner.regular_region_stats().count);
+    e.set_regularPromotedGarbage(planner.regular_region_stats().garbage);
+    e.set_regularPromotedFree(planner.regular_region_stats().free);
 
     e.commit();
   }

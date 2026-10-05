@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "memory/allStatic.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "oops/weakHandle.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -86,9 +87,9 @@ private:
   static CleanupState* _cleanup_state;
   static bool _need_bucket_shrinking;
   // These are always written while holding StringDedup_lock, but may be
-  // read by the dedup thread without holding the lock lock.
-  static volatile size_t _dead_count;
-  static volatile DeadState _dead_state;
+  // read by the dedup thread without holding the lock.
+  static Atomic<size_t> _dead_count;
+  static Atomic<DeadState> _dead_state;
 
   static uint compute_hash(typeArrayOop obj);
   static size_t hash_to_index(uint hash_code);

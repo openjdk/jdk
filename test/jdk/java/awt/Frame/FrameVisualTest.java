@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,62 +46,71 @@ import javax.imageio.ImageIO;
 public class FrameVisualTest {
     private static GraphicsConfiguration[] gcs;
     private static volatile Frame[] frames;
-    private static volatile int index;
 
-    private static Frame f;
     private static Robot robot;
+    private static volatile int frameNum;
     private static volatile Point p;
     private static volatile Dimension d;
     private static final int TOLERANCE = 5;
+    private static final int MAX_FRAME_COUNT = 30;
 
     public static void main(String[] args) throws Exception {
-        gcs = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getConfigurations();
+        gcs = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getConfigurations();
         robot = new Robot();
         robot.setAutoDelay(100);
-        try {
-            EventQueue.invokeAndWait(() -> {
-                createAndShowUI();
-            });
-            robot.delay(1000);
-            System.out.println("frames.length: "+frames.length);
-            for (index = 0; index < frames.length; index++) {
+
+        // Limit the number of frames tested if needed
+        if (gcs.length > MAX_FRAME_COUNT) {
+            frames = new Frame[MAX_FRAME_COUNT];
+        } else {
+            frames = new Frame[gcs.length];
+        }
+        System.out.println(gcs.length + " gcs found. Testing "
+                + frames.length + " frame(s).");
+
+        for (frameNum = 0; frameNum < frames.length; frameNum++) {
+            try {
                 EventQueue.invokeAndWait(() -> {
-                    p = frames[index].getLocation();
-                    d = frames[index].getSize();
+                    frames[frameNum] = new Frame("Frame w/ gc "
+                            + frameNum, gcs[frameNum]);
+                    frames[frameNum].setSize(100, 100);
+                    frames[frameNum].setUndecorated(true);
+                    frames[frameNum].setBackground(Color.WHITE);
+                    frames[frameNum].setVisible(true);
+                    System.out.println("Frame " + frameNum + " created");
                 });
+
+                robot.delay(1000);
+
+                EventQueue.invokeAndWait(() -> {
+                    p = frames[frameNum].getLocation();
+                    d = frames[frameNum].getSize();
+                });
+
                 Rectangle rect = new Rectangle(p, d);
                 BufferedImage img = robot.createScreenCapture(rect);
                 if (chkImgBackgroundColor(img)) {
                     try {
-                        ImageIO.write(img, "png", new File("Frame_" + index + ".png"));
+                        ImageIO.write(img, "png",
+                                new File("Frame_"
+                                        + frameNum + ".png"));
                     } catch (IOException ignored) {}
-                    throw new RuntimeException("Frame visual test failed with non-white background color");
+                    throw new RuntimeException("Frame visual test " +
+                            "failed with non-white background color");
                 }
-            }
-        } finally {
-            for (index = 0; index < frames.length; index++) {
+            } finally {
                 EventQueue.invokeAndWait(() -> {
-                    if (frames[index] != null) {
-                        frames[index].dispose();
+                    if (frames[frameNum] != null) {
+                        frames[frameNum].dispose();
+                        System.out.println("Frame " + frameNum + " disposed");
                     }
                 });
             }
         }
     }
 
-    private static void createAndShowUI() {
-        frames = new Frame[gcs.length];
-        for (int i = 0; i < frames.length; i++) {
-            frames[i] = new Frame("Frame w/ gc " + i, gcs[i]);
-            frames[i].setSize(100, 100);
-            frames[i].setUndecorated(true);
-            frames[i].setBackground(Color.WHITE);
-            frames[i].setVisible(true);
-        }
-    }
-
     private static boolean chkImgBackgroundColor(BufferedImage img) {
-
         // scan for mid-line and if it is non-white color then return true.
         for (int x = 1; x < img.getWidth() - 1; ++x) {
             Color c = new Color(img.getRGB(x, img.getHeight() / 2));

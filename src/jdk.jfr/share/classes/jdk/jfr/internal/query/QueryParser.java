@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ final class QueryParser implements AutoCloseable {
         }
         List<String> texts = new ArrayList<>();
         texts.add(text());
-        while (tokenizer.accept(",")) {
+        while (tokenizer.accept(',')) {
             texts.add(text());
         }
         return texts;
@@ -66,7 +66,7 @@ final class QueryParser implements AutoCloseable {
         if (tokenizer.accept("FORMAT")) {
             List<Formatter> formatters = new ArrayList<>();
             formatters.add(formatter());
-            while (tokenizer.accept(",")) {
+            while (tokenizer.accept(',')) {
                 formatters.add(formatter());
             }
             return formatters;
@@ -77,7 +77,7 @@ final class QueryParser implements AutoCloseable {
     private Formatter formatter() throws ParseException {
         List<Property> properties = new ArrayList<>();
         properties.add(property());
-        while (tokenizer.accept(";")) {
+        while (tokenizer.accept(';')) {
             properties.add(property());
         }
         return new Formatter(properties);
@@ -85,7 +85,7 @@ final class QueryParser implements AutoCloseable {
 
     public List<Expression> select() throws ParseException {
         tokenizer.expect("SELECT");
-        if (tokenizer.accept("*")) {
+        if (tokenizer.accept('*')) {
             return List.of();
         }
         List<Expression> expressions = new ArrayList<>();
@@ -93,7 +93,7 @@ final class QueryParser implements AutoCloseable {
             throw new ParseException("Missing fields in SELECT statement", position());
         }
         expressions.add(expression());
-        while (tokenizer.accept(",")) {
+        while (tokenizer.accept(',')) {
             Expression exp = expression();
             if (exp.name().equalsIgnoreCase("FROM")) {
                 throw new ParseException("Missing field name in SELECT statement, or qualify field with event type if name is called '" + exp.name() + "'", position());
@@ -113,12 +113,14 @@ final class QueryParser implements AutoCloseable {
     }
 
     private Expression aggregator() throws ParseException {
+        int position = tokenizer.getPosition();
         for (Aggregator function : Aggregator.values()) {
-            if (tokenizer.accept(function.name, "(")) {
+            if (tokenizer.accept(function.name) && tokenizer.accept('(')) {
                 String eventField = eventField();
-                tokenizer.expect(")");
+                tokenizer.expect(')');
                 return new Expression(eventField, alias(), function);
             }
+            tokenizer.setPosition(position);
         }
         return null;
     }
@@ -135,7 +137,7 @@ final class QueryParser implements AutoCloseable {
         tokenizer.expect("FROM");
         List<Source> sources = new ArrayList<>();
         sources.add(source());
-        while (tokenizer.accept(",")) {
+        while (tokenizer.accept(',')) {
             sources.add(source());
         }
         return sources;
@@ -170,10 +172,10 @@ final class QueryParser implements AutoCloseable {
 
     private Condition condition() throws ParseException {
         String field = eventField();
-        if (tokenizer.acceptAny("<", ">", "<>", ">=", "<=", "==", "BETWEEN", "LIKE", "IN")) {
+        if (tokenizer.accept('<') || tokenizer.accept('>') || tokenizer.acceptAny("BETWEEN", "LIKE", "IN")) {
             throw new ParseException("The only operator allowed in WHERE clause is '='", position());
         }
-        tokenizer.expect("=");
+        tokenizer.expect('=');
         String value = text();
         return new Condition(field, value);
     }
@@ -186,7 +188,7 @@ final class QueryParser implements AutoCloseable {
             tokenizer.expect("BY");
             List<Grouper> groupers = new ArrayList<>();
             groupers.add(grouper());
-            while (tokenizer.accept(",")) {
+            while (tokenizer.accept(',')) {
                 groupers.add(grouper());
             }
             return groupers;
@@ -203,7 +205,7 @@ final class QueryParser implements AutoCloseable {
             tokenizer.expect("BY");
             List<OrderElement> fields = new ArrayList<>();
             fields.add(orderer());
-            while (tokenizer.accept(",")) {
+            while (tokenizer.accept(',')) {
                 fields.add(orderer());
             }
             return fields;

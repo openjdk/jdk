@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,16 @@
 
 package jdk.internal.net.http.websocket;
 
-import org.testng.annotations.Test;
-
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
-import static org.testng.Assert.assertEquals;
 import static jdk.internal.net.http.websocket.Frame.Masker.applyMask;
 import static jdk.internal.net.http.websocket.TestSupport.forEachBufferPartition;
 import static jdk.internal.net.http.websocket.TestSupport.fullCopy;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MaskerTest {
 
@@ -98,14 +98,14 @@ public class MaskerTest {
         int dstRemaining = dstCopy.remaining();
         int masked = Math.min(srcRemaining, dstRemaining);
         // 1. position check
-        assertEquals(src.position(), srcCopy.position() + masked);
-        assertEquals(dst.position(), dstCopy.position() + masked);
+        assertEquals(srcCopy.position() + masked, src.position());
+        assertEquals(dstCopy.position() + masked, dst.position());
         // 2. masking check
         src.position(srcCopy.position());
         dst.position(dstCopy.position());
         for (; src.hasRemaining() && dst.hasRemaining();
              offset = (offset + 1) & 3) {
-            assertEquals(dst.get(), src.get() ^ maskBytes[offset]);
+            assertEquals(src.get() ^ maskBytes[offset], dst.get());
         }
         // 3. corruption check
         // 3.1 src contents haven't changed
@@ -113,7 +113,7 @@ public class MaskerTest {
         int srcLimit = src.limit();
         src.clear();
         srcCopy.clear();
-        assertEquals(src, srcCopy);
+        assertEquals(srcCopy, src);
         src.limit(srcLimit).position(srcPosition); // restore src
         // 3.2 dst leading and trailing regions' contents haven't changed
         int dstPosition = dst.position();
@@ -122,11 +122,11 @@ public class MaskerTest {
         // leading
         dst.position(0).limit(dstInitialPosition);
         dstCopy.position(0).limit(dstInitialPosition);
-        assertEquals(dst, dstCopy);
+        assertEquals(dstCopy, dst);
         // trailing
         dst.limit(dst.capacity()).position(dstLimit);
         dstCopy.limit(dst.capacity()).position(dstLimit);
-        assertEquals(dst, dstCopy);
+        assertEquals(dstCopy, dst);
         // restore dst
         dst.position(dstPosition).limit(dstLimit);
         return offset;

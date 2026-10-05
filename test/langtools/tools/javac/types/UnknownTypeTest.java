@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,9 @@ public class UnknownTypeTest extends TypeHarness {
             types::isSameType,
             types::isSubtype,
             types::isSuperType,
-            types::isUnconditionallyExact,
+            types::isUnconditionallyExactValueBased,
+            types::isUnconditionallyExactTypeBased,
+            types::isUnconditionallyExactCombined,
             (t1, _) -> types.isArray(t1),
             (t1, _) -> types.isDerivedRaw(t1),
             (t1, _) -> types.isReifiable(t1),

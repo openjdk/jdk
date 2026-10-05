@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  *
  */
 
+#include "cds/aotThread.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -60,6 +62,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
@@ -69,6 +72,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef JVMTI_TRACE
@@ -97,7 +101,12 @@ public:
   JvmtiJavaThreadEventTransition(JavaThread *thread) :
     _rm(),
     _transition(thread),
-    _hm(thread)  {};
+    _hm(thread) {
+    JvmtiEventController::inc_in_callback_count();
+  };
+  ~JvmtiJavaThreadEventTransition() {
+    JvmtiEventController::dec_in_callback_count();
+  }
 };
 
 // For JavaThreads which are not in _thread_in_vm state
@@ -111,6 +120,7 @@ private:
 
 public:
   JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread) {
+    JvmtiEventController::inc_in_callback_count();
     if (thread->is_Java_thread()) {
        _jthread = JavaThread::cast(thread);
        _saved_state = _jthread->thread_state();
@@ -125,11 +135,26 @@ public:
   }
 
   ~JvmtiThreadEventTransition() {
-    if (_jthread != nullptr)
+    if (_jthread != nullptr) {
       ThreadStateTransition::transition_from_native(_jthread, _saved_state);
+    }
+    JvmtiEventController::dec_in_callback_count();
   }
 };
 
+// The JVMTI_...__BLOCK are used to ensure that vm_death is the last posted event.
+// The callbacks are not executed after _execution_finished is set to true
+// and the _in_callback_count contains the number of callbacks still in progress.
+#define JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread) \
+  JvmtiJavaThreadEventTransition jet(thread); \
+  if (JvmtiEventController::is_execution_finished()) {\
+    return; \
+  }
+#define JVMTI_THREAD_EVENT_CALLBACK_BLOCK(thread) \
+  JvmtiThreadEventTransition jet(thread); \
+  if (JvmtiEventController::is_execution_finished()) { \
+    return; \
+  }
 
 ///////////////////////////////////////////////////////////////
 //
@@ -390,7 +415,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     if (Continuations::enabled()) {
       // Virtual threads support for agents loaded into running VM.
       // There is a performance impact when VTMS transitions are enabled.
-      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+      if (!MountUnmountDisabler::notify_jvmti_events()) {
         JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
       }
     }
@@ -404,7 +429,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     if (Continuations::enabled()) {
       // Virtual threads support for agents loaded at startup.
       // There is a performance impact when VTMS transitions are enabled.
-      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
+      MountUnmountDisabler::set_notify_jvmti_events(true, true /*is_onload*/);
     }
     return JNI_OK;
 
@@ -625,22 +650,27 @@ JvmtiExport::decode_version_values(jint version, int * major, int * minor,
 }
 
 void JvmtiExport::enter_primordial_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter primordial phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_PRIMORDIAL);
 }
 
 void JvmtiExport::enter_early_start_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter early start phase");
   set_early_vmstart_recorded(true);
 }
 
 void JvmtiExport::enter_start_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter start phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_START);
 }
 
 void JvmtiExport::enter_onload_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter onload phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_ONLOAD);
 }
 
 void JvmtiExport::enter_live_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter live phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_LIVE);
 }
 
@@ -662,7 +692,7 @@ void JvmtiExport::post_early_vm_start() {
       EVT_TRACE(JVMTI_EVENT_VM_START, ("Evt Early VM start event sent" ));
       JavaThread *thread  = JavaThread::current();
       JvmtiThreadEventMark jem(thread);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventVMStart callback = env->callbacks()->VMStart;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env());
@@ -691,7 +721,7 @@ void JvmtiExport::post_vm_start() {
       EVT_TRACE(JVMTI_EVENT_VM_START, ("Evt VM start event sent" ));
 
       JvmtiThreadEventMark jem(thread);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventVMStart callback = env->callbacks()->VMStart;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env());
@@ -741,7 +771,7 @@ void JvmtiExport::post_vm_initialized() {
 
       JavaThread *thread  = JavaThread::current();
       JvmtiThreadEventMark jem(thread);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventVMInit callback = env->callbacks()->VMInit;
       if (callback != nullptr) {
         // We map the JvmtiEnv to its Agent to measure when and for how long
@@ -769,6 +799,11 @@ void JvmtiExport::post_vm_death() {
 
   JvmtiTagMap::flush_all_object_free_events();
 
+  // It is needed to disable event generation before setting DEAD phase and wait
+  // until already executing events are finished.
+  // The VM_DEATH should be the last posted event.
+  JvmtiEventController::vm_death();
+
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     if (env->is_enabled(JVMTI_EVENT_VM_DEATH)) {
@@ -776,6 +811,7 @@ void JvmtiExport::post_vm_death() {
 
       JavaThread *thread  = JavaThread::current();
       JvmtiEventMark jem(thread);
+      // JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK must not be used here
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMDeath callback = env->callbacks()->VMDeath;
       if (callback != nullptr) {
@@ -784,8 +820,8 @@ void JvmtiExport::post_vm_death() {
     }
   }
 
+  Events::log(Thread::current_or_null(), "JVMTI - enter dead phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
-  JvmtiEventController::vm_death();
 }
 
 char**
@@ -879,7 +915,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   JvmtiThreadState *   _state;
   Klass*               _class_being_redefined;
   JvmtiClassLoadKind   _load_kind;
-  bool                 _has_been_modified;
 
  public:
   inline JvmtiClassFileLoadHookPoster(Symbol* h_name, Handle class_loader,
@@ -896,7 +931,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _curr_data = *data_ptr;
     _curr_env = nullptr;
     _cached_class_file_ptr = cache_ptr;
-    _has_been_modified = false;
 
     _state = JvmtiExport::get_jvmti_thread_state(_thread);
     if (_state != nullptr) {
@@ -935,8 +969,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     copy_modified_data();
   }
 
-  bool has_been_modified() { return _has_been_modified; }
-
  private:
   void post_all_envs() {
     if (_load_kind != jvmti_class_load_kind_retransform) {
@@ -971,7 +1003,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     JvmtiClassFileLoadEventMark jem(_thread, _h_name, _class_loader,
                                     _h_protection_domain,
                                     _class_being_redefined);
-    JvmtiJavaThreadEventTransition jet(_thread);
+    JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(_thread)
     jvmtiEventClassFileLoadHook callback = env->callbacks()->ClassFileLoadHook;
     if (callback != nullptr) {
       (*callback)(env->jvmti_external(), jem.jni_env(),
@@ -983,13 +1015,12 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     }
     if (new_data != nullptr) {
       // this agent has modified class data.
-      _has_been_modified = true;
       if (caching_needed && *_cached_class_file_ptr == nullptr) {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
         JvmtiCachedClassFileData *p;
         p = (JvmtiCachedClassFileData *)os::malloc(
-          offset_of(JvmtiCachedClassFileData, data) + _curr_len, mtInternal);
+          offset_of(JvmtiCachedClassFileData, data) + _curr_len, mtServiceability);
         if (p == nullptr) {
           vm_exit_out_of_memory(offset_of(JvmtiCachedClassFileData, data) + _curr_len,
             OOM_MALLOC_ERROR,
@@ -1058,18 +1089,18 @@ bool JvmtiExport::_should_post_class_file_load_hook = false;
 int JvmtiExport::_should_notify_object_alloc = 0;
 
 // this entry is for class file load hook on class load, redefine and retransform
-bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
+void JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                             Handle class_loader,
                                             Handle h_protection_domain,
                                             unsigned char **data_ptr,
                                             unsigned char **end_ptr,
                                             JvmtiCachedClassFileData **cache_ptr) {
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
-    return false;
+    return;
   }
 
   if (JavaThread::current()->should_hide_jvmti_events()) {
-    return false;
+    return;
   }
 
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,
@@ -1077,7 +1108,6 @@ bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                       data_ptr, end_ptr,
                                       cache_ptr);
   poster.post();
-  return poster.has_been_modified();
 }
 
 void JvmtiExport::report_unsupported(bool on) {
@@ -1108,7 +1138,7 @@ class JvmtiObjectAllocEventMark : public JvmtiClassEventMark  {
    jlong    _size;
  public:
    JvmtiObjectAllocEventMark(JavaThread *thread, oop obj) : JvmtiClassEventMark(thread, oop_to_klass(obj)) {
-     _jobj = (jobject)to_jobject(obj);
+     _jobj = obj->is_value() ? nullptr : (jobject)to_jobject(obj); // nullptr for non-identity objects
      _size = obj->size() * wordSize;
    };
    jobject jni_jobject() { return _jobj; }
@@ -1131,7 +1161,7 @@ class JvmtiCompiledMethodLoadEventMark : public JvmtiMethodEventMark {
     JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nm, &_map, &_map_length);
   }
   ~JvmtiCompiledMethodLoadEventMark() {
-     FREE_C_HEAP_ARRAY(jvmtiAddrLocationMap, _map);
+     FREE_C_HEAP_ARRAY(_map);
   }
 
   jint code_size() { return _code_size; }
@@ -1183,7 +1213,7 @@ void JvmtiExport::post_compiled_method_unload(
       ResourceMark rm(thread);
 
       JvmtiEventMark jem(thread);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventCompiledMethodUnload callback = env->callbacks()->CompiledMethodUnload;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), method, code_begin);
@@ -1225,7 +1255,7 @@ void JvmtiExport::post_raw_breakpoint(JavaThread *thread, Method* method, addres
 
       JvmtiEnv *env = ets->get_env();
       JvmtiLocationEventMark jem(thread, mh, location);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventBreakpoint callback = env->callbacks()->Breakpoint;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -1253,6 +1283,7 @@ bool              JvmtiExport::_can_post_frame_pop                        = fals
 bool              JvmtiExport::_can_pop_frame                             = false;
 bool              JvmtiExport::_can_force_early_return                    = false;
 bool              JvmtiExport::_can_support_virtual_threads               = false;
+bool              JvmtiExport::_can_support_value_objects                 = false;
 bool              JvmtiExport::_can_get_owned_monitor_info                = false;
 
 bool              JvmtiExport::_early_vmstart_recorded                    = false;
@@ -1317,22 +1348,40 @@ void JvmtiExport::at_single_stepping_point(JavaThread *thread, Method* method, a
 }
 
 
-void JvmtiExport::expose_single_stepping(JavaThread *thread) {
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
-  if (state != nullptr) {
-    state->clear_hide_single_stepping();
-  }
+void JvmtiExport::expose_single_stepping(JvmtiThreadState* state) {
+  assert(state != nullptr, "must be non-null");
+  state->clear_hide_single_stepping();
 }
 
 
-bool JvmtiExport::hide_single_stepping(JavaThread *thread) {
+JvmtiThreadState* JvmtiExport::hide_single_stepping(JavaThread *thread) {
   JvmtiThreadState *state = get_jvmti_thread_state(thread);
   if (state != nullptr && state->is_enabled(JVMTI_EVENT_SINGLE_STEP)) {
     state->set_hide_single_stepping();
-    return true;
+    return state;
   } else {
+    return nullptr;
+  }
+}
+
+bool JvmtiExport::has_frame_pop_for_top_frame(JavaThread *current) {
+  assert(current == JavaThread::current(), "must be");
+  JvmtiThreadState *state = current->jvmti_thread_state();
+  if (state == nullptr || !state->is_enabled(JVMTI_EVENT_FRAME_POP)) {
     return false;
   }
+  if (state->frame_pop_cnt() == 0) {
+    return false;
+  }
+  JvmtiEnvThreadStateIterator it(state);
+  int top_frame_num = state->count_frames();
+  for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
+    if (ets->has_frame_pops() && ets->is_frame_pop(top_frame_num)) {
+      assert(ets->is_enabled(JVMTI_EVENT_FRAME_POP), "sanity check");
+      return true;
+    }
+  }
+  return false;
 }
 
 void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
@@ -1366,7 +1415,7 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
                                          JvmtiTrace::safe_get_thread_name(thread),
                                          klass==nullptr? "null" : klass->external_name() ));
       JvmtiClassEventMark jem(thread, klass);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventClassLoad callback = env->callbacks()->ClassLoad;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(), jem.jni_class());
@@ -1407,7 +1456,7 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
                                             JvmtiTrace::safe_get_thread_name(thread),
                                             klass==nullptr? "null" : klass->external_name() ));
       JvmtiClassEventMark jem(thread, klass);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventClassPrepare callback = env->callbacks()->ClassPrepare;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(), jem.jni_class());
@@ -1450,7 +1499,7 @@ void JvmtiExport::post_class_unload_internal(const char* name) {
         EVT_TRACE(EXT_EVENT_CLASS_UNLOAD, ("[?] Evt Class Unload sent %s", name));
 
         JvmtiEventMark jem(thread);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiExtensionEvent callback = env->ext_callbacks()->ClassUnload;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), name);
@@ -1466,6 +1515,13 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
     return;
   }
   assert(thread->thread_state() == _thread_in_vm, "must be in vm state");
+
+  if (thread->is_aot_thread()) {
+    // The AOT thread is hidden from view but has no thread oop when it starts due
+    // to bootstrapping complexity, so we check for it before checking for bound
+    // virtual threads. When exiting it is filtered out due to being hidden.
+    return;
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_THREAD_START, ("[%s] Trg Thread Start event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
@@ -1496,7 +1552,7 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
                      JvmtiTrace::safe_get_thread_name(thread) ));
 
         JvmtiVirtualThreadEventMark jem(thread);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventThreadStart callback = env->callbacks()->ThreadStart;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
@@ -1544,7 +1600,7 @@ void JvmtiExport::post_thread_end(JavaThread *thread) {
                      JvmtiTrace::safe_get_thread_name(thread) ));
 
         JvmtiVirtualThreadEventMark jem(thread);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventThreadEnd callback = env->callbacks()->ThreadEnd;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
@@ -1574,7 +1630,7 @@ void JvmtiExport::post_vthread_start(jobject vthread) {
         EVT_TRACE(JVMTI_EVENT_VIRTUAL_THREAD_START, ("[%p] Evt Virtual Thread Start event sent", vthread));
 
         JvmtiVirtualThreadEventMark jem(thread);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventVirtualThreadStart callback = env->callbacks()->VirtualThreadStart;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
@@ -1610,10 +1666,10 @@ void JvmtiExport::post_vthread_end(jobject vthread) {
         EVT_TRACE(JVMTI_EVENT_VIRTUAL_THREAD_END, ("[%p] Evt Virtual Thread End event sent", vthread));
 
         JvmtiVirtualThreadEventMark jem(thread);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventVirtualThreadEnd callback = env->callbacks()->VirtualThreadEnd;
         if (callback != nullptr) {
-          (*callback)(env->jvmti_external(), jem.jni_env(), vthread);
+          (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
         }
       }
     }
@@ -1645,7 +1701,7 @@ void JvmtiExport::post_vthread_mount(jobject vthread) {
         EVT_TRACE(EXT_EVENT_VIRTUAL_THREAD_MOUNT, ("[%p] Evt Virtual Thread Mount event sent", vthread));
 
         JvmtiVirtualThreadEventMark jem(thread);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiExtensionEvent callback = env->ext_callbacks()->VirtualThreadMount;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
@@ -1680,7 +1736,7 @@ void JvmtiExport::post_vthread_unmount(jobject vthread) {
         EVT_TRACE(EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, ("[%p] Evt Virtual Thread Unmount event sent", vthread));
 
         JvmtiVirtualThreadEventMark jem(thread);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiExtensionEvent callback = env->ext_callbacks()->VirtualThreadUnmount;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
@@ -1694,7 +1750,7 @@ bool JvmtiExport::has_frame_pops(JavaThread* thread) {
   if (!can_post_frame_pop()) {
     return false;
   }
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == nullptr) {
     return false;
   }
@@ -1713,7 +1769,7 @@ void JvmtiExport::continuation_yield_cleanup(JavaThread* thread, jint continuati
   }
 
   assert(thread == JavaThread::current(), "must be");
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == nullptr) {
     return;
   }
@@ -1756,7 +1812,7 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects)
   EVT_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Evt Object Free sent"));
 
   JvmtiThreadEventMark jem(javaThread);
-  JvmtiJavaThreadEventTransition jet(javaThread);
+  JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(javaThread)
   jvmtiEventObjectFree callback = env->callbacks()->ObjectFree;
   if (callback != nullptr) {
     for (int index = 0; index < objects->length(); index++) {
@@ -1793,7 +1849,7 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
       EVT_TRACE(JVMTI_EVENT_RESOURCE_EXHAUSTED, ("Evt resource exhausted event sent" ));
 
       JvmtiThreadEventMark jem(thread);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventResourceExhausted callback = env->callbacks()->ResourceExhausted;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(),
@@ -1833,7 +1889,7 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
 
         JvmtiEnv *env = ets->get_env();
         JvmtiMethodEventMark jem(thread, mh);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventMethodEntry callback = env->callbacks()->MethodEntry;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(), jem.jni_methodID());
@@ -1864,12 +1920,13 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   }
   JvmtiThreadState* state; // should be initialized in vm state only
   JavaThread* current = thread; // for JRT_BLOCK
-  bool interp_only; // might be changed in JRT_BLOCK_END
+
   JRT_BLOCK
-    state = get_jvmti_thread_state(thread);
-    interp_only = state != nullptr && state->is_interp_only_mode();
-    if (interp_only) {
-      if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+    bool interp_only = thread->is_interp_only_mode();
+    // Avoid calls to get_jvmti_thread_state if is_interp_only_mode was not enabled.
+    state = interp_only ? get_jvmti_thread_state(thread) : thread->jvmti_thread_state();
+    if (state != nullptr) {
+      if (interp_only && state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
         // Deferred saving Object result into value.
         if (is_reference_type(type)) {
           value.l = JNIHandles::make_local(thread, result());
@@ -1883,7 +1940,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
       post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
     }
   JRT_BLOCK_END
-  if (interp_only) {
+  if (state != nullptr) {
     // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava destructor. Now it is safe to allow
     // adding FramePop event requests as no safepoint can happen before removing activation.
     state->clr_top_frame_is_exiting();
@@ -1909,7 +1966,8 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                            (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                                            (mh() == nullptr) ? "null" : mh()->name()->as_C_string() ));
 
-  if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+  // Need to check is_interp_only_mode to consistently post method exit event for all frames.
+  if (thread->is_interp_only_mode() && state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
       if (ets->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
@@ -1920,7 +1978,7 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
 
         JvmtiEnv *env = ets->get_env();
         JvmtiMethodEventMark jem(thread, mh);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventMethodExit callback = env->callbacks()->MethodExit;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -1947,7 +2005,7 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
           // we also need to issue a frame pop event for this frame
           JvmtiEnv *env = ets->get_env();
           JvmtiMethodEventMark jem(thread, mh);
-          JvmtiJavaThreadEventTransition jet(thread);
+          JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
           jvmtiEventFramePop callback = env->callbacks()->FramePop;
           if (callback != nullptr) {
             (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -1995,7 +2053,7 @@ void JvmtiExport::post_single_step(JavaThread *thread, Method* method, address l
 
       JvmtiEnv *env = ets->get_env();
       JvmtiLocationEventMark jem(thread, mh, location);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventSingleStep callback = env->callbacks()->SingleStep;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -2083,7 +2141,7 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
           catch_jmethodID = jem.to_jmethodID(current_mh);
         }
 
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventException callback = env->callbacks()->Exception;
         if (callback != nullptr) {
           (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -2120,21 +2178,14 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
 
   if (state->is_exception_detected()) {
 
+    // The cached cur_stack_depth might have changed from the operations of frame pop or method exit.
+    // We are not 100% sure the cached cur_stack_depth is still valid depth so invalidate it.
     state->invalidate_cur_stack_depth();
     if (!in_handler_frame) {
       // Not in exception handler.
-      if(state->is_interp_only_mode()) {
-        // method exit and frame pop events are posted only in interp mode.
-        // When these events are enabled code should be in running in interp mode.
-        jvalue no_value;
-        no_value.j = 0L;
-        JvmtiExport::post_method_exit_inner(thread, mh, state, true, thread->last_frame(), no_value);
-        // The cached cur_stack_depth might have changed from the
-        // operations of frame pop or method exit. We are not 100% sure
-        // the cached cur_stack_depth is still valid depth so invalidate
-        // it.
-        state->invalidate_cur_stack_depth();
-      }
+      jvalue no_value;
+      no_value.j = 0L;
+      JvmtiExport::post_method_exit_inner(thread, mh, state, true, thread->last_frame(), no_value);
     } else {
       // In exception handler frame. Report exception catch.
       assert(location != nullptr, "must be a known location");
@@ -2158,7 +2209,7 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
 
           JvmtiEnv *env = ets->get_env();
           JvmtiExceptionEventMark jem(thread, mh, location, exception_handle);
-          JvmtiJavaThreadEventTransition jet(thread);
+          JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
           jvmtiEventExceptionCatch callback = env->callbacks()->ExceptionCatch;
           if (callback != nullptr) {
             (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -2187,6 +2238,11 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   // We must be called with a Java context in order to provide reasonable
   // values for the klazz, method, and location fields. The callers of this
   // function don't make the call unless there is a Java context.
+  // The last java frame might be compiled in 2 cases:
+  // 1) Field events and interp_only mode are not enabled for this thread.
+  // This method is called from any thread. The thread filtering is done later.
+  // 2) The same JNI call is stll executing after event was enabled.
+  // In this case the last frame is only marked for deoptimization but still remains compiled.
   assert(thread->has_last_Java_frame(), "must be called with a Java context");
 
   if (thread->should_hide_jvmti_events()) {
@@ -2209,10 +2265,18 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
     assert(obj != nullptr, "non-static needs an object");
     h_obj = Handle(thread, obj);
   }
-  post_field_access(thread,
-                    thread->last_frame().interpreter_frame_method(),
-                    thread->last_frame().interpreter_frame_bcp(),
-                    klass, h_obj, fieldID);
+
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::skip);
+  javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+  assert(jvf != nullptr, "last frame shouldn't be null");
+
+  Method* method = jvf->method();
+  address address = jvf->method()->code_base();
+
+  post_field_access(thread, method, address, klass, h_obj, fieldID);
 }
 
 void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
@@ -2244,7 +2308,7 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
       JvmtiLocationEventMark jem(thread, mh, location);
       jclass field_jclass = jem.to_jclass(field_klass);
       jobject field_jobject = jem.to_jobject(object());
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventFieldAccess callback = env->callbacks()->FieldAccess;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -2273,6 +2337,11 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
   // We must be called with a Java context in order to provide reasonable
   // values for the klazz, method, and location fields. The callers of this
   // function don't make the call unless there is a Java context.
+  // The last java frame might be compiled in 2 cases:
+  // 1) Field events and interp_only mode are not enabled for this thread.
+  // This method is called from any thread. The thread filtering is done later.
+  // 2) The same JNI call is stll executing after event was enabled.
+  // In this case the last frame is only marked for deoptimization but still remains compiled.
   assert(thread->has_last_Java_frame(), "must be called with Java context");
 
   if (thread->should_hide_jvmti_events()) {
@@ -2296,9 +2365,18 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
     assert(obj != nullptr, "non-static needs an object");
     h_obj = Handle(thread, obj);
   }
-  post_field_modification(thread,
-                          thread->last_frame().interpreter_frame_method(),
-                          thread->last_frame().interpreter_frame_bcp(),
+
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::skip);
+  javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+  assert(jvf != nullptr, "last frame shouldn't be null");
+
+  Method* method = jvf->method();
+  address address = jvf->method()->code_base();
+
+  post_field_modification(thread, method, address,
                           klass, h_obj, fieldID, sig_type, value);
 }
 
@@ -2402,7 +2480,7 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
       JvmtiLocationEventMark jem(thread, mh, location);
       jclass field_jclass = jem.to_jclass(field_klass);
       jobject field_jobject = jem.to_jobject(object());
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventFieldModification callback = env->callbacks()->FieldModification;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -2434,7 +2512,7 @@ void JvmtiExport::post_native_method_bind(Method* method, address* function_ptr)
                      JvmtiTrace::safe_get_thread_name(thread) ));
 
         JvmtiMethodEventMark jem(thread, mh);
-        JvmtiJavaThreadEventTransition jet(thread);
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         JNIEnv* jni_env = (env->phase() == JVMTI_PHASE_PRIMORDIAL) ? nullptr : jem.jni_env();
         jvmtiEventNativeMethodBind callback = env->callbacks()->NativeMethodBind;
         if (callback != nullptr) {
@@ -2531,7 +2609,7 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
   // Pass inlining information through the void pointer
   JvmtiCompiledMethodLoadEventMark jem(thread, nm, inlinerecord);
-  JvmtiJavaThreadEventTransition jet(thread);
+  JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
   (*callback)(env->jvmti_external(), jem.jni_methodID(),
               jem.code_size(), jem.code_data(), jem.map_length(),
               jem.map(), jem.compile_info());
@@ -2558,7 +2636,7 @@ void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const v
                 ("[%s] dynamic code generated event sent for %s",
                 JvmtiTrace::safe_get_thread_name(thread), name));
       JvmtiEventMark jem(thread);
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jint length = (jint)pointer_delta(code_end, code_begin, sizeof(char));
       jvmtiEventDynamicCodeGenerated callback = env->callbacks()->DynamicCodeGenerated;
       if (callback != nullptr) {
@@ -2600,7 +2678,7 @@ void JvmtiExport::post_dynamic_code_generated(JvmtiEnv* env, const char *name,
               ("[%s] dynamic code generated event sent for %s",
                JvmtiTrace::safe_get_thread_name(thread), name));
     JvmtiEventMark jem(thread);
-    JvmtiJavaThreadEventTransition jet(thread);
+    JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
     jint length = (jint)pointer_delta(code_end, code_begin, sizeof(char));
     jvmtiEventDynamicCodeGenerated callback = env->callbacks()->DynamicCodeGenerated;
     if (callback != nullptr) {
@@ -2684,7 +2762,7 @@ void JvmtiExport::post_garbage_collection_finish() {
       EVT_TRACE(JVMTI_EVENT_GARBAGE_COLLECTION_FINISH,
                 ("[%s] garbage collection finish event sent",
                  JvmtiTrace::safe_get_thread_name(thread)));
-      JvmtiThreadEventTransition jet(thread);
+      JVMTI_THREAD_EVENT_CALLBACK_BLOCK(thread)
       // JNIEnv is null here because this event is posted from VM Thread
       jvmtiEventGarbageCollectionFinish callback = env->callbacks()->GarbageCollectionFinish;
       if (callback != nullptr) {
@@ -2705,7 +2783,7 @@ void JvmtiExport::post_garbage_collection_start() {
       EVT_TRACE(JVMTI_EVENT_GARBAGE_COLLECTION_START,
                 ("[%s] garbage collection start event sent",
                  JvmtiTrace::safe_get_thread_name(thread)));
-      JvmtiThreadEventTransition jet(thread);
+      JVMTI_THREAD_EVENT_CALLBACK_BLOCK(thread)
       // JNIEnv is null here because this event is posted from VM Thread
       jvmtiEventGarbageCollectionStart callback = env->callbacks()->GarbageCollectionStart;
       if (callback != nullptr) {
@@ -2726,7 +2804,7 @@ void JvmtiExport::post_data_dump() {
       EVT_TRACE(JVMTI_EVENT_DATA_DUMP_REQUEST,
                 ("[%s] data dump request event sent",
                  JvmtiTrace::safe_get_thread_name(thread)));
-     JvmtiThreadEventTransition jet(thread);
+     JVMTI_THREAD_EVENT_CALLBACK_BLOCK(thread)
      // JNIEnv is null here because this event is posted from VM Thread
      jvmtiEventDataDumpRequest callback = env->callbacks()->DataDumpRequest;
      if (callback != nullptr) {
@@ -2760,7 +2838,7 @@ void JvmtiExport::post_monitor_contended_enter(JavaThread *thread, ObjectMonitor
                     JvmtiTrace::safe_get_thread_name(thread)));
       JvmtiMonitorEventMark  jem(thread, h());
       JvmtiEnv *env = ets->get_env();
-      JvmtiThreadEventTransition jet(thread);
+      JVMTI_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventMonitorContendedEnter callback = env->callbacks()->MonitorContendedEnter;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(), jem.jni_object());
@@ -2794,7 +2872,7 @@ void JvmtiExport::post_monitor_contended_entered(JavaThread *thread, ObjectMonit
                     JvmtiTrace::safe_get_thread_name(thread)));
       JvmtiMonitorEventMark  jem(thread, h());
       JvmtiEnv *env = ets->get_env();
-      JvmtiThreadEventTransition jet(thread);
+      JVMTI_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventMonitorContendedEntered callback = env->callbacks()->MonitorContendedEntered;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(), jem.jni_object());
@@ -2827,7 +2905,7 @@ void JvmtiExport::post_monitor_wait(JavaThread *thread, oop object,
                     JvmtiTrace::safe_get_thread_name(thread)));
       JvmtiMonitorEventMark  jem(thread, h());
       JvmtiEnv *env = ets->get_env();
-      JvmtiThreadEventTransition jet(thread);
+      JVMTI_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventMonitorWait callback = env->callbacks()->MonitorWait;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -2861,7 +2939,7 @@ void JvmtiExport::post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mnt
                     JvmtiTrace::safe_get_thread_name(thread)));
       JvmtiMonitorEventMark  jem(thread, h());
       JvmtiEnv *env = ets->get_env();
-      JvmtiThreadEventTransition jet(thread);
+      JVMTI_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventMonitorWaited callback = env->callbacks()->MonitorWaited;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -2875,13 +2953,13 @@ void JvmtiExport::vthread_post_monitor_waited(JavaThread *current, ObjectMonitor
   Handle vthread(current, current->vthread());
 
   // Finish the VTMS transition temporarily to post the event.
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vthread.raw_value(), false);
+  MountUnmountDisabler::end_transition(current, vthread(), true /*is_mount*/, false /*is_thread_start*/);
 
   // Post event.
   JvmtiExport::post_monitor_waited(current, obj_mntr, timed_out);
 
   // Go back to VTMS transition state.
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)vthread.raw_value(), true);
+  MountUnmountDisabler::start_transition(current, vthread(), false /*is_mount*/, false /*is_thread_start*/);
 }
 
 void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
@@ -2891,6 +2969,10 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
+  const bool is_value = object->is_value();
+  if (is_value && !JvmtiExport::can_support_value_objects()) {
+    return;
+  }
   HandleMark hm(thread);
   Handle h(thread, object);
 
@@ -2898,13 +2980,14 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
                       JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
-    if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC)) {
+    if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC) &&
+        (!is_value || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_VM_OBJECT_ALLOC, ("[%s] Evt vmobject alloc sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         object==nullptr? "null" : object->klass()->external_name()));
+                                         object->klass()->external_name()));
 
       JvmtiObjectAllocEventMark jem(thread, h());
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventVMObjectAlloc callback = env->callbacks()->VMObjectAlloc;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -2928,21 +3011,26 @@ void JvmtiExport::post_sampled_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
+  const bool is_value = object->is_value();
+  if (is_value && !JvmtiExport::can_support_value_objects()) {
+    return;
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                  ("[%s] Trg sampled object alloc triggered",
                   JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
-    if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC)) {
+    JvmtiEnv *env = ets->get_env();
+    if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC) &&
+        (!is_value || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                 ("[%s] Evt sampled object alloc sent %s",
                  JvmtiTrace::safe_get_thread_name(thread),
-                 object == nullptr ? "null" : object->klass()->external_name()));
+                 object->klass()->external_name()));
 
-      JvmtiEnv *env = ets->get_env();
       JvmtiObjectAllocEventMark jem(thread, h());
-      JvmtiJavaThreadEventTransition jet(thread);
+      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventSampledObjectAlloc callback = env->callbacks()->SampledObjectAlloc;
       if (callback != nullptr) {
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread(),
@@ -3110,31 +3198,19 @@ void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   _allocated->push(OopHandle(JvmtiExport::jvmti_oop_storage(), obj));
 }
 
-// Disable collection of VMObjectAlloc events
-NoJvmtiVMObjectAllocMark::NoJvmtiVMObjectAllocMark() : _collector(nullptr) {
-  // a no-op if VMObjectAlloc event is not enabled
-  if (!JvmtiExport::should_post_vm_object_alloc()) {
-    return;
-  }
+NoJvmtiEventsMark::NoJvmtiEventsMark() {
   Thread* thread = Thread::current_or_null();
   if (thread != nullptr && thread->is_Java_thread())  {
     JavaThread* current_thread = JavaThread::cast(thread);
-    JvmtiThreadState *state = current_thread->jvmti_thread_state();
-    if (state != nullptr) {
-      JvmtiVMObjectAllocEventCollector *collector;
-      collector = state->get_vm_object_alloc_event_collector();
-      if (collector != nullptr && collector->is_enabled()) {
-        _collector = collector;
-        _collector->set_enabled(false);
-      }
-    }
+    current_thread->disable_jvmti_events();
   }
 }
 
-// Re-Enable collection of VMObjectAlloc events (if previously enabled)
-NoJvmtiVMObjectAllocMark::~NoJvmtiVMObjectAllocMark() {
-  if (was_enabled()) {
-    _collector->set_enabled(true);
+NoJvmtiEventsMark::~NoJvmtiEventsMark() {
+  Thread* thread = Thread::current_or_null();
+  if (thread != nullptr && thread->is_Java_thread())  {
+    JavaThread* current_thread = JavaThread::cast(thread);
+    current_thread->enable_jvmti_events();
   }
 };
 

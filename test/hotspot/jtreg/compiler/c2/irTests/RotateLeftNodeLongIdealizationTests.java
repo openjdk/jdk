@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of RotateLeftNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.RotateLeftNodeLongIdealizationTests
- * @requires os.arch == "x86_64" | os.arch == "aarch64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*zbb.*")
+ * @requires os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*zbb.*")
  */
 public class RotateLeftNodeLongIdealizationTests {
 

@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.ProtocolException;
-import java.net.URI;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.ResponseInfo;
 import java.nio.ByteBuffer;
@@ -62,6 +61,7 @@ import jdk.internal.net.http.hpack.DecodingCallback;
 import static jdk.internal.net.http.AltSvcProcessor.processAltSvcFrame;
 
 import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
+import static jdk.internal.net.http.common.Utils.readStatusCode;
 
 /**
  * Http/2 Stream handling.
@@ -391,9 +391,10 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
-        Http2StreamResponseSubscriber<T> subscriber =
-                new Http2StreamResponseSubscriber<>(handler.apply(response));
-        return subscriber;
+        var cancelTimerOnTermination =
+                cancelTimerOnResponseBodySubscriberTermination(
+                        exchange.request().isWebSocket(), response.statusCode());
+        return new Http2StreamResponseSubscriber<>(handler.apply(response), cancelTimerOnTermination);
     }
 
     // The Http2StreamResponseSubscriber is registered with the HttpClient
@@ -615,18 +616,14 @@ class Stream<T> extends ExchangeImpl<T> {
         return null;
     }
 
-    protected void handleResponse(HeaderFrame hf) throws IOException {
+    protected void handleResponse(HeaderFrame hf) {
         HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
         if (!finalResponseCodeReceived) {
             try {
-                responseCode = (int) responseHeaders
-                        .firstValueAsLong(":status")
-                        .orElseThrow(() -> new ProtocolException(String.format(
-                                "Stream %s PROTOCOL_ERROR: no status code in response",
-                                streamid)));
-            } catch (ProtocolException cause) {
-                cancelImpl(cause, ResetFrame.PROTOCOL_ERROR);
+                responseCode = readStatusCode(responseHeaders, "Stream %s PROTOCOL_ERROR: ".formatted(streamid));
+            } catch (ProtocolException pe) {
+                cancelImpl(pe, ResetFrame.PROTOCOL_ERROR);
                 rspHeadersConsumer.reset();
                 return;
             }
@@ -971,36 +968,6 @@ class Stream<T> extends ExchangeImpl<T> {
             return HttpHeaders.of(headers.map(), filter);
         }
         return headers;
-    }
-
-    private static HttpHeaders createPseudoHeaders(HttpRequest request) {
-        HttpHeadersBuilder hdrs = new HttpHeadersBuilder();
-        String method = request.method();
-        hdrs.setHeader(":method", method);
-        URI uri = request.uri();
-        hdrs.setHeader(":scheme", uri.getScheme());
-        String host = uri.getHost();
-        int port = uri.getPort();
-        assert host != null;
-        if (port != -1) {
-            hdrs.setHeader(":authority", host + ":" + port);
-        } else {
-            hdrs.setHeader(":authority", host);
-        }
-        String query = uri.getRawQuery();
-        String path = uri.getRawPath();
-        if (path == null || path.isEmpty()) {
-            if (method.equalsIgnoreCase("OPTIONS")) {
-                path = "*";
-            } else {
-                path = "/";
-            }
-        }
-        if (query != null) {
-            path += "?" + query;
-        }
-        hdrs.setHeader(":path", Utils.encode(path));
-        return hdrs.build();
     }
 
     HttpHeaders getRequestPseudoHeaders() {
@@ -1726,6 +1693,11 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         @Override
+        Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
+            return new Http2StreamResponseSubscriber<T>(handler.apply(response), false);
+        }
+
+        @Override
         void completeResponse(Response r) {
             Log.logResponse(r::toString);
             pushCF.complete(r); // not strictly required for push API
@@ -1755,21 +1727,18 @@ class Stream<T> extends ExchangeImpl<T> {
             HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
             if (!finalPushResponseCodeReceived) {
-                responseCode = (int)responseHeaders
-                    .firstValueAsLong(":status")
-                    .orElse(-1);
-
-                if (responseCode == -1) {
-                    cancelImpl(new ProtocolException("No status code"), ResetFrame.PROTOCOL_ERROR);
+                try {
+                    responseCode = readStatusCode(responseHeaders, "");
+                    if (responseCode >= 100 && responseCode < 200) {
+                        String protocolErrorMsg = checkInterimResponseCountExceeded();
+                        if (protocolErrorMsg != null) {
+                            throw new ProtocolException(protocolErrorMsg);
+                        }
+                    }
+                } catch (ProtocolException pe) {
+                    cancelImpl(pe, ResetFrame.PROTOCOL_ERROR);
                     rspHeadersConsumer.reset();
                     return;
-                } else if (responseCode >= 100 && responseCode < 200) {
-                    String protocolErrorMsg = checkInterimResponseCountExceeded();
-                    if (protocolErrorMsg != null) {
-                        cancelImpl(new ProtocolException(protocolErrorMsg), ResetFrame.PROTOCOL_ERROR);
-                        rspHeadersConsumer.reset();
-                        return;
-                    }
                 }
 
                 this.finalPushResponseCodeReceived = true;
@@ -1955,8 +1924,12 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     final class Http2StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
-        Http2StreamResponseSubscriber(BodySubscriber<U> subscriber) {
+
+        private final boolean cancelTimerOnTermination;
+
+        Http2StreamResponseSubscriber(BodySubscriber<U> subscriber, boolean cancelTimerOnTermination) {
             super(subscriber);
+            this.cancelTimerOnTermination = cancelTimerOnTermination;
         }
 
         @Override
@@ -1967,6 +1940,13 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         protected void unregister() {
             unregisterResponseSubscriber(this);
+        }
+
+        @Override
+        protected void onTermination() {
+            if (cancelTimerOnTermination) {
+                exchange.multi.cancelTimer();
+            }
         }
 
     }

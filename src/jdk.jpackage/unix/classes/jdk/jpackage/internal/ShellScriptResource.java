@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,11 @@ final class ShellScriptResource {
         Path dstFile = folder.resolve(publicFileName);
         resource.saveToFile(dstFile);
 
+        if (!Files.exists(dstFile)) {
+            // No script file created.
+            return;
+        }
+
         Files.setPosixFilePermissions(dstFile, Stream.of(execPerms, Set.of(
             PosixFilePermission.OWNER_READ,
             PosixFilePermission.OWNER_WRITE,
@@ -67,7 +72,7 @@ final class ShellScriptResource {
         return resource;
     }
 
-    final Path publicFileName;
+    private final Path publicFileName;
     private Set<PosixFilePermission> execPerms = ALL_CAN_EXECUTE;
     private OverridableResource resource;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,7 @@ void ZNMT::unreserve(zaddress_unsafe start, size_t size) {
 
   if (MemTracker::enabled()) {
     // We are the owner of the reserved memory, and any failure to unreserve
-    // are fatal, so so we don't need to hold a lock while unreserving memory.
-
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    // are fatal, so we don't need to hold a lock while unreserving memory.
 
     // The current NMT implementation does not support unreserving a memory
     // region that was built up from smaller memory reservations. Workaround

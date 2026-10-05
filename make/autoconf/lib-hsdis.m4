@@ -304,6 +304,8 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
       # If we have libsframe add it.
       if test -e $BINUTILS_INSTALL_DIR/lib/libsframe.a; then
         HSDIS_LIBS="$HSDIS_LIBS $BINUTILS_INSTALL_DIR/lib/libsframe.a"
+      elif test -e $BINUTILS_INSTALL_DIR/lib64/libsframe.a; then
+        HSDIS_LIBS="$HSDIS_LIBS $BINUTILS_INSTALL_DIR/lib64/libsframe.a"
       fi
       AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], AC_MSG_ERROR([libz not found]))
     else
@@ -415,4 +417,9 @@ AC_DEFUN_ONCE([LIB_SETUP_HSDIS],
     AC_MSG_RESULT([no])
   fi
   AC_SUBST(ENABLE_HSDIS_BUNDLING)
+
+  UTIL_ARG_WITH(NAME: print-assembly-options, TYPE: string,
+      DEFAULT: [], RESULT: DEFAULT_PRINT_ASSEMBLY_OPTIONS,
+      DESC: [default value for the PrintAssemblyOptions diagnostic flag, passed verbatim to the disassembler])
+  AC_SUBST(DEFAULT_PRINT_ASSEMBLY_OPTIONS)
 ])

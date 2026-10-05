@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,6 @@ namespace {
 
 AwtChoice::AwtChoice() {
     m_hList = NULL;
-    m_listDefWindowProc = NULL;
 }
 
 LPCTSTR AwtChoice::GetClassName() {
@@ -97,8 +96,8 @@ LPCTSTR AwtChoice::GetClassName() {
 }
 
 void AwtChoice::Dispose() {
-    if (m_hList != NULL && m_listDefWindowProc != NULL) {
-        ComCtl32Util::GetInstance().UnsubclassHWND(m_hList, ListWindowProc, m_listDefWindowProc);
+    if (m_hList != NULL) {
+        ComCtl32Util::GetInstance().UnsubclassHWND(m_hList, ListWindowProc);
     }
     AwtComponent::Dispose();
 }
@@ -179,11 +178,7 @@ AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
             ::GetClientRect(c->GetHWnd(), &rc);
             env->SetIntField(target, AwtComponent::widthID, c->ScaleDownX(rc.right));
             env->SetIntField(target, AwtComponent::heightID, c->ScaleDownY(rc.bottom));
-
-            if (IS_WINXP) {
-                ::SendMessage(c->GetHWnd(), CB_SETMINVISIBLE, (WPARAM) MINIMUM_NUMBER_OF_VISIBLE_ITEMS, 0);
-            }
-
+            ::SendMessage(c->GetHWnd(), CB_SETMINVISIBLE, (WPARAM) MINIMUM_NUMBER_OF_VISIBLE_ITEMS, 0);
             env->DeleteLocalRef(dimension);
         }
     } catch (...) {
@@ -428,7 +423,7 @@ LRESULT CALLBACK AwtChoice::ListWindowProc(HWND hwnd, UINT message,
             }
         }
     }
-    return ComCtl32Util::GetInstance().DefWindowProc(NULL, hwnd, message, wParam, lParam);
+    return ComCtl32Util::GetInstance().DefWindowProc(hwnd, message, wParam, lParam);
 
     CATCH_BAD_ALLOC_RET(0);
 }
@@ -453,7 +448,7 @@ MsgRouting AwtChoice::WmNotify(UINT notifyCode)
             cbi.cbSize = sizeof(COMBOBOXINFO);
             ::GetComboBoxInfo(GetHWnd(), &cbi);
             m_hList = cbi.hwndList;
-            m_listDefWindowProc = ComCtl32Util::GetInstance().SubclassHWND(m_hList, ListWindowProc);
+            ComCtl32Util::GetInstance().SubclassHWND(m_hList, ListWindowProc);
             DASSERT(::GetWindowLongPtr(m_hList, GWLP_USERDATA) == NULL);
             ::SetWindowLongPtr(m_hList, GWLP_USERDATA, (LONG_PTR)this);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package javax.swing.plaf.basic;
 
-import sun.awt.AppContext;
-
 import java.awt.*;
 import java.awt.event.*;
 
@@ -44,7 +42,7 @@ import javax.swing.text.View;
  */
 public class BasicToggleButtonUI extends BasicButtonUI {
 
-    private static final Object BASIC_TOGGLE_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new BasicToggleButtonUI();
 
     private static final String propertyPrefix = "ToggleButton" + ".";
 
@@ -64,14 +62,7 @@ public class BasicToggleButtonUI extends BasicButtonUI {
      * @return an instance of {@code BasicToggleButtonUI}
      */
     public static ComponentUI createUI(JComponent b) {
-        AppContext appContext = AppContext.getAppContext();
-        BasicToggleButtonUI toggleButtonUI =
-                (BasicToggleButtonUI) appContext.get(BASIC_TOGGLE_BUTTON_UI_KEY);
-        if (toggleButtonUI == null) {
-            toggleButtonUI = new BasicToggleButtonUI();
-            appContext.put(BASIC_TOGGLE_BUTTON_UI_KEY, toggleButtonUI);
-        }
-        return toggleButtonUI;
+        return UI;
     }
 
     protected String getPropertyPrefix() {

@@ -39,7 +39,7 @@ import compiler.lib.compile_framework.*;
 import compiler.lib.generators.*;
 import compiler.lib.verify.*;
 import compiler.lib.template_framework.Template;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 
 public class TestFormat {
@@ -84,7 +84,7 @@ public class TestFormat {
 
     private static String generate(List<FormatInfo> list) {
         // Generate 2 "get" methods, one that formats via "let" (hashtag), the other via direct token.
-        var template1 = Template.make("info", (FormatInfo info) -> body(
+        var template1 = Template.make("info", (FormatInfo info) -> scope(
             let("id", info.id()),
             let("type", info.type()),
             let("value", info.value()),
@@ -95,7 +95,7 @@ public class TestFormat {
         ));
 
         // For each FormatInfo in list, generate the "get" methods inside InnerTest class.
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make(() -> scope(
             """
             package p.xyz;
             public class InnerTest {

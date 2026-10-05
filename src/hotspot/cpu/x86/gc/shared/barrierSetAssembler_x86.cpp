@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,13 @@
  *
  */
 
+#include "asm/macroAssembler.inline.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/barrierSetRuntime.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -158,6 +161,19 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     __ movptr(dst, val);
     break;
   default: Unimplemented();
+  }
+}
+
+void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                                          Register src, Register dst, Register value_field_layout_info) {
+  // flat_field_copy implementation is fairly complex, and there are not any
+  // "short-cuts" to be made from asm. What there is, appears to have the same
+  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
+  // of hand-rolled instructions...
+  if (decorators & IS_DEST_UNINITIALIZED) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, value_field_layout_info);
+  } else {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, value_field_layout_info);
   }
 }
 
@@ -348,18 +364,35 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 }
 
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(tmp1, tmp2);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ movptr(tmp2, Address(tmp2));
+    __ andptr(tmp1, tmp2);
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ movptr(tmp2, Address(tmp2));
+  } else
+#endif
+  {
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andptr(tmp1, tmp2);
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmpptr(tmp1, tmp2);
   __ jcc(Assembler::notZero, error);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj, tmp1);  // get klass
-  __ testptr(obj, obj);
+  __ load_narrow_klass(tmp1, obj); // get narrow Klass
+  __ testl(tmp1, tmp1);
   __ jcc(Assembler::zero, error); // if klass is null it is broken
+}
+
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath) {
+  // Load the oop from the weak handle without barriers.
+  __ movptr(obj, Address(weak_handle));
 }
 
 #ifdef COMPILER2
@@ -471,33 +504,33 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
   // Create mask of caller saved registers that need to
   // be saved/restored if live
   RegMask caller_saved;
-  caller_saved.Insert(OptoReg::as_OptoReg(rax->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(rcx->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(rdx->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(rsi->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(rdi->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(r8->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(r9->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(r10->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(r11->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rax->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rcx->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rdx->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rsi->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rdi->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(r8->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(r9->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(r10->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(r11->as_VMReg()));
 
   if (UseAPX) {
-    caller_saved.Insert(OptoReg::as_OptoReg(r16->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r17->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r18->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r19->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r20->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r21->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r22->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r23->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r24->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r25->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r26->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r27->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r28->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r29->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r30->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r31->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r16->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r17->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r18->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r19->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r20->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r21->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r22->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r23->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r24->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r25->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r26->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r27->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r28->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r29->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r30->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r31->as_VMReg()));
   }
 
   int gp_spill_size = 0;
@@ -511,7 +544,7 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
 
     if (vm_reg->is_Register()) {
-      if (caller_saved.Member(opto_reg)) {
+      if (caller_saved.member(opto_reg)) {
         _gp_registers.append(vm_reg->as_Register());
         gp_spill_size += 8;
       }

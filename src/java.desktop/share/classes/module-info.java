@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,6 @@ module java.desktop {
     // qualified exports may be inserted at build time
     // see make/GensrcModuleInfo.gmk
     exports sun.awt to
-        jdk.accessibility,
         jdk.unsupported.desktop;
 
     exports java.awt.dnd.peer to jdk.unsupported.desktop;

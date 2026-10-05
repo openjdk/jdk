@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,8 @@ import javax.tools.StandardLocation;
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
  * <tr><th scope="row">{@code identity}             <td>use of a value-based class where an identity class is expected
- * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
+ * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignments or bit shifts
+ *                                                      (more than \u00B131 bits for integers or \u00B163 bits for longs)
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
  *                                                      in exported packages
  * <tr><th scope="row">{@code module}               <td>module system related issues
@@ -203,7 +204,7 @@ import javax.tools.StandardLocation;
  * </tbody>
  * </table>
  *
- * All of the non-{@code docllint:} strings listed above may also be used with the {@code -Xlint} command line flag.
+ * All of the non-{@code doclint:} strings listed above may also be used with the {@code -Xlint} command line flag.
  * The {@code -Xlint} flag also supports these strings not supported by {@code @SuppressWarnings}:
  *
  * <table class="striped">
@@ -258,6 +259,7 @@ module jdk.compiler {
     exports com.sun.tools.javac.resources to
         jdk.jshell;
     exports com.sun.tools.javac.code to
+        jdk.jdeps,
         jdk.javadoc,
         jdk.jshell;
     exports com.sun.tools.javac.comp to

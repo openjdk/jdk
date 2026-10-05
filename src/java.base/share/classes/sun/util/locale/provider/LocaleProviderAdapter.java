@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.util.locale.provider;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.format.DateTimeFormatterPatternProvider;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
 import java.text.spi.DateFormatProvider;
@@ -48,7 +49,6 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
-import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.spi.CalendarProvider;
 
 import static java.lang.System.*;
@@ -423,12 +423,12 @@ public abstract class LocaleProviderAdapter {
     public abstract CalendarProvider getCalendarProvider();
 
     /**
-     * Returns a JavaTimeDateTimePatternProvider for this LocaleProviderAdapter,
-     * or null if no JavaTimeDateTimePatternProvider is available.
+     * Returns a DateTimeFormatterPatternProvider for this LocaleProviderAdapter,
+     * or null if no DateTimeFormatterPatternProvider is available.
      *
-     * @return a JavaTimeDateTimePatternProvider
+     * @return a DateTimeFormatterPatternProvider
      */
-    public abstract JavaTimeDateTimePatternProvider getJavaTimeDateTimePatternProvider();
+    public abstract DateTimeFormatterPatternProvider getDateTimeFormatterPatternProvider();
 
     public abstract LocaleResources getLocaleResources(Locale locale);
 

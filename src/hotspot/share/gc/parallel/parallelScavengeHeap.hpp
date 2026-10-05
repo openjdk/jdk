@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,20 +44,38 @@ class MemoryPool;
 class PSAdaptiveSizePolicy;
 class PSCardTable;
 class PSHeapSummary;
+class PSHeapVirtualSpace;
 class ReservedSpace;
+
+struct PSPendingAllocation {
+  size_t _word_size;
+  bool _is_tlab;
+
+  static PSPendingAllocation none() {
+    return {0, false};
+  }
+
+  bool is_present() const {
+    return _word_size != 0;
+  }
+
+  bool is_non_tlab() const {
+    return is_present() && !_is_tlab;
+  }
+};
 
 // ParallelScavengeHeap is the implementation of CollectedHeap for Parallel GC.
 //
 // The heap is reserved up-front in a single contiguous block, split into two
 // parts, the old and young generation. The old generation resides at lower
 // addresses, the young generation at higher addresses. The boundary address
-// between the generations is fixed. Within a generation, committed memory
-// grows towards higher addresses.
+// between the generations is dynamic and can be adjusted during young/full gc.
+// Within a generation, committed memory grows towards higher addresses.
 //
 //
 // low                                                                high
 //
-//                          +-- generation boundary (fixed after startup)
+//                          +-- generation boundary (adjusted during young/full gc)
 //                          |
 // |<- old gen (reserved) ->|<-       young gen (reserved)             ->|
 // +---------------+--------+--------+--------+------------------+-------+
@@ -69,12 +87,22 @@ class ReservedSpace;
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
  private:
-  static PSYoungGen* _young_gen;
-  static PSOldGen*   _old_gen;
+  PSYoungGen* _young_gen;
+  PSOldGen*   _old_gen;
+
+  PSHeapVirtualSpace* _heap_vs;
+
+  // Keeps track of where objects start for a heap memory range corresponding to a card.
+  // Used by young-gc to quickly find obj-start to parse the heap.
+  ObjectStartArray*   _start_array;
 
   // Sizing policy for entire heap
   static PSAdaptiveSizePolicy*       _size_policy;
   static GCPolicyCounters*           _gc_policy_counters;
+
+  // At startup, calculate the desired OS page-size based on heap size and large-page flags.
+  static size_t _desired_page_size;
+  static size_t _num_young_spaces;
 
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
@@ -85,9 +113,13 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   WorkerThreads _workers;
 
-  uint _gc_overhead_counter;
+  uintx _gc_overhead_counter;
 
   bool _is_heap_almost_full;
+
+  // A full GC with less headroom than this is unlikely to make another
+  // normal allocation/collection attempt useful.
+  static constexpr double HeapAlmostFullThresholdPercent = 10.0;
 
   void initialize_serviceability() override;
 
@@ -113,8 +145,14 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void resize_old_gen_after_full_gc();
 
+  void shrink_old_gen_after_young_gc(bool is_survivor_overflowing);
+  void resize_young_gen_after_young_gc(bool is_survivor_overflowing);
+
   void print_tracing_info() const override;
   void stop() override {};
+
+  // Returns true if a young GC should be attempted, false if a full GC is preferred.
+  bool should_attempt_young_gc() const;
 
 public:
   ParallelScavengeHeap() :
@@ -128,6 +166,21 @@ public:
     _gc_overhead_counter(0),
     _is_heap_almost_full(false) {}
 
+  // The alignment used for spaces in young gen and old gen
+  constexpr static size_t default_space_alignment() {
+    constexpr size_t alignment = 64 * K * HeapWordSize;
+    static_assert(is_power_of_2(alignment));
+    return alignment;
+  }
+
+  static size_t num_young_spaces();
+  static size_t young_gen_size_lower_bound();
+
+  static void set_desired_page_size(size_t page_size) {
+    assert(is_power_of_2(page_size), "precondition");
+    _desired_page_size = page_size;
+  }
+
   Name kind() const override {
     return CollectedHeap::Parallel;
   }
@@ -136,14 +189,18 @@ public:
     return "Parallel";
   }
 
+  ObjectStartArray* start_array() const { return _start_array; }
+
   // Invoked at gc-pause-end
   void gc_epilogue(bool full);
 
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
-  static PSYoungGen* young_gen() { return _young_gen; }
-  static PSOldGen* old_gen()     { return _old_gen; }
+  PSYoungGen* young_gen() const { return _young_gen; }
+  PSOldGen*   old_gen()   const { return _old_gen; }
+
+  PSHeapVirtualSpace* heap_vs() const { return _heap_vs; }
 
   PSAdaptiveSizePolicy* size_policy() { return _size_policy; }
 
@@ -158,9 +215,6 @@ public:
 
   // Returns JNI_OK on success
   jint initialize() override;
-
-  void safepoint_synchronize_begin() override;
-  void safepoint_synchronize_end() override;
 
   void post_initialize() override;
   void update_counters();
@@ -187,24 +241,23 @@ public:
   bool requires_barriers(stackChunkOop obj) const override;
 
   MemRegion reserved_region() const { return _reserved; }
-  HeapWord* base() const { return _reserved.start(); }
 
   // Memory allocation.
   HeapWord* mem_allocate(size_t size) override;
 
   HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
 
-  // Support for System.gc()
   void collect(GCCause::Cause cause) override;
 
-  void collect_at_safepoint(bool full);
+  void collect_at_safepoint(bool full,
+                            PSPendingAllocation pending_allocation = PSPendingAllocation::none());
 
   void ensure_parsability(bool retire_tlabs) override;
   void resize_all_tlabs() override;
 
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
+  size_t unsafe_max_tlab_alloc() const override;
 
   void object_iterate(ObjectClosure* cl) override;
   void object_iterate_parallel(ObjectClosure* cl, HeapBlockClaimer* claimer);
@@ -231,6 +284,10 @@ public:
 
   void resize_after_young_gc(bool is_survivor_overflowing);
   void resize_after_full_gc();
+
+  // Dynamic generation boundary support for Full GC
+  bool adjust_gen_boundary_after_full_gc(size_t live_bytes,
+                                         PSPendingAllocation pending_allocation);
 
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }

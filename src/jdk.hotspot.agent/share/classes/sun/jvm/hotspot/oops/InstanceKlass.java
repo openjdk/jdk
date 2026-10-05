@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,9 @@ public class InstanceKlass extends Klass {
   static int FIELD_FLAG_IS_GENERIC;
   static int FIELD_FLAG_IS_STABLE;
   static int FIELD_FLAG_IS_CONTENDED;
+  static int FIELD_FLAG_IS_NULL_FREE_VALUE;
+  static int FIELD_FLAG_IS_FLAT;
+  static int FIELD_FLAG_IS_NULL_MARKER;
 
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
@@ -62,6 +65,20 @@ public class InstanceKlass extends Klass {
   private static int CLASS_STATE_FULLY_INITIALIZED;
   private static int CLASS_STATE_INITIALIZATION_ERROR;
 
+  public long     getAccessFlags()          { return            accessFlags.getValue(this); }
+  // Convenience routine
+  public AccessFlags getAccessFlagsObj()    { return new AccessFlags(getAccessFlags()); }
+
+  public boolean isPublic()                 { return getAccessFlagsObj().isPublic(); }
+  public boolean isFinal()                  { return getAccessFlagsObj().isFinal(); }
+  public boolean isInterface()              { return getAccessFlagsObj().isInterface(); }
+  public boolean isAbstract()               { return getAccessFlagsObj().isAbstract(); }
+  public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
+  public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
+
+  public boolean supportsValueTypes() {
+      return majorVersion() >= VALUE_TYPES_MAJOR_VERSION && minorVersion() == JAVA_PREVIEW_MINOR_VERSION;
+  }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("InstanceKlass");
@@ -88,6 +105,9 @@ public class InstanceKlass extends Klass {
       breakpoints        = type.getAddressField("_breakpoints");
     }
     headerSize           = type.getSize();
+    accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
+    valueFieldLayoutInfoArray = type.getAddressField("_value_field_layout_info_array");
+    adrValueKlassMembers = type.getAddressField("_adr_value_klass_members");
 
     // read internal field flags constants
     FIELD_FLAG_IS_INITIALIZED      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_initialized");
@@ -95,6 +115,9 @@ public class InstanceKlass extends Klass {
     FIELD_FLAG_IS_GENERIC          = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_generic");
     FIELD_FLAG_IS_STABLE           = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_stable");
     FIELD_FLAG_IS_CONTENDED        = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_contended");
+    FIELD_FLAG_IS_NULL_FREE_VALUE  = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_free_value_type");
+    FIELD_FLAG_IS_FLAT             = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_flat");
+    FIELD_FLAG_IS_NULL_MARKER      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_marker");
 
 
     // read ClassState constants
@@ -150,7 +173,10 @@ public class InstanceKlass extends Klass {
   private static CIntField initState;
   private static CIntField itableLen;
   private static CIntField nestHostIndex;
+  private static CIntField accessFlags;
   private static AddressField breakpoints;
+  private static AddressField valueFieldLayoutInfoArray;
+  private static AddressField adrValueKlassMembers;
 
   // type safe enum for ClassState from instanceKlass.hpp
   public static class ClassState {
@@ -251,6 +277,9 @@ public class InstanceKlass extends Klass {
                  getNonstaticOopMapSize()) * wordLength;
     if (isInterface()) {
       size += wordLength;
+    }
+    if (this instanceof ValueKlass) {
+      size += ValueKlass.Members.getSize();
     }
     return alignSize(size);
   }
@@ -499,7 +528,7 @@ public class InstanceKlass extends Klass {
     }
   }
 
-  public boolean implementsInterface(Klass k) {
+  public boolean implementsInterface(InstanceKlass k) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(k.isInterface(), "should not reach here");
     }
@@ -511,7 +540,7 @@ public class InstanceKlass extends Klass {
     return false;
   }
 
-  boolean computeSubtypeOf(Klass k) {
+  boolean computeSubtypeOf(InstanceKlass k) {
     if (k.isInterface()) {
       return implementsInterface(k);
     } else {
@@ -535,6 +564,7 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(nonstaticOopMapSize, true);
       visitor.doCInt(initState, true);
       visitor.doCInt(itableLen, true);
+      visitor.doCInt(accessFlags, true);
     }
 
   /*
@@ -863,6 +893,15 @@ public class InstanceKlass extends Klass {
   public U2Array getNestMembers() {
     Address addr = getAddress().getAddressAt(nestMembers.getOffset());
     return VMObjectFactory.newObject(U2Array.class, addr);
+  }
+
+  public Address getAdrValueKlassMembers() {
+    return getAddress().getAddressAt(adrValueKlassMembers.getOffset());
+  }
+
+  public ValueFieldLayoutInfoArray getValueFieldLayoutInfoArray() {
+    Address addr = valueFieldLayoutInfoArray.getValue(getAddress());
+    return VMObjectFactory.newObject(ValueFieldLayoutInfoArray.class, addr);
   }
 
   //----------------------------------------------------------------------

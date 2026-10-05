@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,11 @@ public final class Http3ServerExchange implements Http2TestExchange {
         rspheadersBuilder = new HttpHeadersBuilder();
     }
 
+    Http3ServerConnection http3Connection() {
+        return serverConn;
+    }
+
+
     String connectionTag() {
         return serverConn.quicConnection().logTag();
     }
@@ -170,7 +175,7 @@ public final class Http3ServerExchange implements Http2TestExchange {
             }
             serverStream.writer.reset(Http3Error.H3_INTERNAL_ERROR.code());
         }
-        is.close(io);
+        is.resetStream(io);
         os.closeInternal();
         close();
     }

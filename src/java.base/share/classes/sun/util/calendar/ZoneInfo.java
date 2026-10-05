@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -594,6 +594,17 @@ public class ZoneInfo extends TimeZone {
      */
     public static TimeZone getTimeZone(String ID) {
         return ZoneInfoFile.getZoneInfo(ID);
+    }
+
+    /**
+     * {@return {@code true} if the specified ZoneInfo object has the same
+     * rule as the canonical ZoneInfo for the ID, {@code false} otherwise}
+     *
+     * @param zi ZoneInfo object to check
+     */
+    public static boolean hasCanonicalRule(ZoneInfo zi) {
+        var canonical = ZoneInfoFile.getZoneInfo0(zi.getID());
+        return canonical != null && canonical.hasSameRules(zi);
     }
 
     private transient SimpleTimeZone lastRule;

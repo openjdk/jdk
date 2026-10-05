@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import java.lang.reflect.Field;
  * @bug 8157308
  * @modules java.base/sun.security.provider:+open
  * @summary Make AbstractDrbg non-Serializable
- * @run main DRBGS11n mech
- * @run main DRBGS11n capability
+ * @run main/othervm --enable-final-field-mutation=ALL-UNNAMED DRBGS11n mech
+ * @run main/othervm --enable-final-field-mutation=ALL-UNNAMED DRBGS11n capability
  */
 public class DRBGS11n {
 

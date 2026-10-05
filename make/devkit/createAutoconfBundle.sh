@@ -93,7 +93,7 @@ elif test "x$TARGET_PLATFORM" = xlinux_x64; then
   rpm2cpio $OUTPUT_ROOT/m4-$M4_VERSION.el6.x86_64.rpm | cpio -d -i
 elif test "x$TARGET_PLATFORM" = xlinux_x86; then
   M4_VERSION=1.4.13-5
-  wget http://yum.oracle.com/repo/OracleLinux/OL6/latest/i386/getPackage/m4-$M4_VERSION.el6.i686.rpm
+  wget https://yum.oracle.com/repo/OracleLinux/OL6/latest/i386/getPackage/m4-$M4_VERSION.el6.i686.rpm
   cd $IMAGE_DIR
   rpm2cpio $OUTPUT_ROOT/m4-$M4_VERSION.el6.i686.rpm | cpio -d -i
 else

@@ -1,4 +1,4 @@
-#  Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,10 @@ tier1 = \
     tools \
     -:langtools_jshell_unstable \
     -:langtools_slow
+
+tier1_no_valhalla = \
+    :tier1 \
+    -tools/javac/valhalla
 
 # (Almost) no langtools tests are tier 2.
 tier2 = \

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +26,9 @@
  * @test
  * @bug 8259609 8276116
  * @summary C2: optimize long range checks in long counted loops
- * @requires vm.compiler2.enabled
- * @requires vm.compMode != "Xcomp"
+ * @comment This test tests specific compile and deoptimization behaviors that are disrupted by -Xcomp or
+            -XX:+DeoptimizeALot. Let's exclude those.
+ * @requires vm.compiler2.enabled & vm.compMode != "Xcomp" & vm.opt.DeoptimizeALot != true
  * @library /test/lib /
  * @modules java.base/jdk.internal.util
  * @build jdk.test.whitebox.WhiteBox

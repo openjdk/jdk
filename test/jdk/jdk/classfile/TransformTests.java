@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,15 @@
 
 /*
  * @test
- * @bug 8335935 8336588
+ * @bug 8335935 8336588 8372047
  * @summary Testing ClassFile transformations.
  * @run junit TransformTests
  */
 
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.FieldTransform;
-import java.lang.classfile.Label;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.MethodTransform;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.AnnotationDefaultAttribute;
+import java.lang.classfile.attribute.ConstantValueAttribute;
+import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
 import java.lang.classfile.instruction.BranchInstruction;
 import java.lang.classfile.instruction.ConstantInstruction;
 import java.lang.classfile.instruction.LabelTarget;
@@ -54,8 +44,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import helpers.ByteArrayClassLoader;
+import jdk.internal.classfile.impl.TransformImpl;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.classfile.ClassFile.*;
@@ -333,5 +325,55 @@ class TransformTests {
         static public String foo() {
             return "foo";
         }
+    }
+
+    @Test
+    void testFilteringTransformChaining() {
+        var cf = ClassFile.of();
+        var clazz = cf.parse(cf.build(ClassDesc.of("Test"), clb -> clb
+                .withField("one", CD_int, fb -> fb.with(ConstantValueAttribute.of(1)))
+                .withField("two", CD_int, fb -> fb.with(ConstantValueAttribute.of(2)))
+                .withMethod("one", MTD_void, 0, mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))).withCode(CodeBuilder::return_))
+                .withMethod("two", MTD_void, 0, mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(2))).withCode(CodeBuilder::return_))));
+
+        AtomicBoolean oneFieldCalled = new AtomicBoolean(false);
+        var oneFieldTransform = new TransformImpl.ClassFieldTransform((fb, fe) -> {
+            if (fe instanceof ConstantValueAttribute cv) {
+                assertEquals(1, ((Integer) cv.constant().constantValue()), "Should only transform one");
+            }
+            oneFieldCalled.set(true);
+            fb.with(fe);
+        }, fm -> fm.fieldName().equalsString("one"));
+        AtomicBoolean twoFieldCalled = new AtomicBoolean(false);
+        var twoFieldTransform = new TransformImpl.ClassFieldTransform((fb, fe) -> {
+            if (fe instanceof ConstantValueAttribute cv) {
+                assertEquals(2, ((Integer) cv.constant().constantValue()), "Should only transform two");
+            }
+            twoFieldCalled.set(true);
+            fb.with(fe);
+        }, fm -> fm.fieldName().equalsString("two"));
+        cf.transformClass(clazz, oneFieldTransform.andThen(twoFieldTransform));
+        assertTrue(oneFieldCalled.get(), "Field one not transformed");
+        assertTrue(twoFieldCalled.get(), "Field two not transformed");
+
+        AtomicBoolean oneMethodCalled = new AtomicBoolean(false);
+        var oneMethodTransform = ClassTransform.transformingMethods(mm -> mm.methodName().equalsString("one"), (mb, me) -> {
+            if (me instanceof AnnotationDefaultAttribute ada) {
+                assertEquals(1, ((AnnotationValue.OfInt) ada.defaultValue()).intValue(), "Should only transform one");
+            }
+            oneMethodCalled.set(true);
+            mb.with(me);
+        });
+        AtomicBoolean twoMethodCalled = new AtomicBoolean(false);
+        var twoMethodTransform = ClassTransform.transformingMethods(mm -> mm.methodName().equalsString("two"), (mb, me) -> {
+            if (me instanceof AnnotationDefaultAttribute ada) {
+                assertEquals(2, ((AnnotationValue.OfInt) ada.defaultValue()).intValue(), "Should only transform two");
+            }
+            twoMethodCalled.set(true);
+            mb.with(me);
+        });
+        cf.transformClass(clazz, oneMethodTransform.andThen(twoMethodTransform));
+        assertTrue(oneMethodCalled.get(), "Method one not transformed");
+        assertTrue(twoMethodCalled.get(), "Method two not transformed");
     }
 }

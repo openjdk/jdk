@@ -25,22 +25,20 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP
 
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 
 class ShenandoahMetricsSnapshot : public StackObj {
 private:
-  ShenandoahHeap* _heap;
-  size_t _used_before, _used_after;
-  double _if_before, _if_after;
-  double _ef_before, _ef_after;
+  ShenandoahFreeSet* _free_set;
+  size_t _used_before;
+  double _if_before;
+  double _ef_before;
 
 public:
-  ShenandoahMetricsSnapshot();
+  explicit ShenandoahMetricsSnapshot(ShenandoahFreeSet* free_set);
 
-  void snap_before();
-  void snap_after();
-
-  bool is_good_progress(ShenandoahGeneration *generation);
+  // Decide if the GC made "good" progress (i.e., reduced fragmentation, freed up sufficient memory).
+  bool is_good_progress() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP

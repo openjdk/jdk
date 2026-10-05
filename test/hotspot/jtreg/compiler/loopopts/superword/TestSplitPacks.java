@@ -35,6 +35,7 @@ import java.nio.ByteOrder;
 /*
  * @test
  * @bug 8326139 8348659
+ * @key randomness
  * @summary Test splitting packs in SuperWord
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestSplitPacks nCOH_nAV_ySAC

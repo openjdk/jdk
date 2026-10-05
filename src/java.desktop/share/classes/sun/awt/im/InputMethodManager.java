@@ -35,7 +35,6 @@ import java.awt.PopupMenu;
 import java.awt.Menu;
 import java.awt.MenuItem;
 import java.awt.Toolkit;
-import sun.awt.AppContext;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InvocationEvent;

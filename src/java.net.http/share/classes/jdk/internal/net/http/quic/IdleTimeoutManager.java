@@ -24,12 +24,15 @@
  */
 package jdk.internal.net.http.quic;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.Log;
@@ -58,17 +61,21 @@ final class IdleTimeoutManager {
     private IdleTimeoutEvent idleTimeoutEvent;
     // must be accessed only when holding stateLock
     private StreamDataBlockedEvent streamDataBlockedEvent;
-    // the time at which the last outgoing packet was sent or an
+    // the time (in nanos) at which the last outgoing packet was sent or an
     // incoming packet processed on the connection
-    private volatile long lastPacketActivityAt;
+    private volatile long lastPacketActivityNanos;
 
     private final ReentrantLock idleTerminationLock = new ReentrantLock();
     // true if it has been decided to terminate the connection due to being idle,
     // false otherwise. should be accessed only when holding the idleTerminationLock
     private boolean chosenForIdleTermination;
-    // the time at which the connection was last reserved for use.
+    // the time (in nanos) at which the connection was last reserved for use.
     // should be accessed only when holding the idleTerminationLock
-    private long lastUsageReservationAt;
+    private long lastUsageReservationNanos;
+
+    private final AtomicReference<Supplier<Boolean>> trafficGenerationCheck = new AtomicReference<>();
+    // must be accessed only when holding stateLock
+    private PingEvent pingEvent;
 
     IdleTimeoutManager(final QuicConnectionImpl connection) {
         this.connection = Objects.requireNonNull(connection, "connection");
@@ -79,28 +86,12 @@ final class IdleTimeoutManager {
      * Starts the idle timeout management for the connection. This should be called
      * after the handshake is complete for the connection.
      *
-     * @throw IllegalStateException if handshake hasn't yet completed or if the handshake
-     * has failed for the connection
+     * @throws IllegalStateException if handshake hasn't yet completed or if the handshake
+     *                               has failed for the connection
      */
     void start() {
-        final CompletableFuture<QuicTLSEngine.HandshakeState> handshakeCF =
-                this.connection.handshakeFlow().handshakeCF();
         // start idle management only for successfully completed handshake
-        if (!handshakeCF.isDone()) {
-            throw new IllegalStateException("handshake isn't yet complete,"
-                    + " cannot start idle connection management");
-        }
-        if (handshakeCF.isCompletedExceptionally()) {
-            throw new IllegalStateException("cannot start idle connection management for a failed"
-                    + " connection");
-        }
-        startTimers();
-    }
-
-    /**
-     * Starts the idle timeout timer of the QUIC connection, if not already started.
-     */
-    private void startTimers() {
+        requireSuccessfulHandshake();
         if (shutdown.get()) {
             return;
         }
@@ -113,6 +104,19 @@ final class IdleTimeoutManager {
             startStreamDataBlockedTimer();
         } finally {
             this.stateLock.unlock();
+        }
+    }
+
+    private void requireSuccessfulHandshake() {
+        final CompletableFuture<QuicTLSEngine.HandshakeState> handshakeCF =
+                this.connection.handshakeFlow().handshakeCF();
+        if (!handshakeCF.isDone()) {
+            throw new IllegalStateException("handshake isn't yet complete," +
+                    " cannot use idle connection management");
+        }
+        if (handshakeCF.isCompletedExceptionally()) {
+            throw new IllegalStateException("cannot use idle connection management for a failed"
+                    + " connection");
         }
     }
 
@@ -154,18 +158,14 @@ final class IdleTimeoutManager {
         }
         final QuicEndpoint endpoint = this.connection.endpoint();
         assert endpoint != null : "QUIC endpoint is null";
-        // disable the event (refreshDeadline() of IdleTimeoutEvent will return Deadline.MAX)
-        final Deadline nextDeadline = this.idleTimeoutEvent.nextDeadline;
-        if (!nextDeadline.equals(Deadline.MAX)) {
-            this.idleTimeoutEvent.nextDeadline = Deadline.MAX;
-            endpoint.timer().reschedule(this.idleTimeoutEvent, Deadline.MIN);
-        }
+        // disable the idle timeout timer event
+        disableTimedEvent(endpoint.timer(), this.idleTimeoutEvent);
         this.idleTimeoutEvent = null;
     }
 
     private void startStreamDataBlockedTimer() {
         assert stateLock.isHeldByCurrentThread() : "not holding state lock";
-        // 75% of idle timeout or if idle timeout is not configured, then 30 seconds
+        // 75% of QUIC idle timeout or if QUIC idle timeout is not configured, then 30 seconds
         final long timeoutMillis = getIdleTimeout()
                 .map((v) -> (long) (0.75 * v))
                 .orElse(30000L);
@@ -194,14 +194,87 @@ final class IdleTimeoutManager {
         }
         final QuicEndpoint endpoint = this.connection.endpoint();
         assert endpoint != null : "QUIC endpoint is null";
-        // disable the event (refreshDeadline() of StreamDataBlockedEvent will return Deadline.MAX)
-        final Deadline nextDeadline = this.streamDataBlockedEvent.nextDeadline;
-        if (!nextDeadline.equals(Deadline.MAX)) {
-            this.streamDataBlockedEvent.nextDeadline = Deadline.MAX;
-            endpoint.timer().reschedule(this.streamDataBlockedEvent, Deadline.MIN);
-        }
+        // disable the stream data blocked timer event
+        disableTimedEvent(endpoint.timer(), this.streamDataBlockedEvent);
         this.streamDataBlockedEvent = null;
     }
+
+    // set up a PING timer if the application layer's max idle duration for the connection
+    // is larger than that of the negotiated QUIC idle timeout for that connection
+    void appLayerMaxIdle(final Duration maxIdle, final Supplier<Boolean> trafficGenerationCheck) {
+        Objects.requireNonNull(maxIdle, "maxIdle");
+        Objects.requireNonNull(trafficGenerationCheck, "trafficGenerationCheck");
+        if (maxIdle.isZero() || maxIdle.isNegative()) {
+            throw new IllegalArgumentException("invalid maxIdle duration: " + maxIdle);
+        }
+        // the application layer must not configure its max idle duration
+        // until the QUIC connection's handshake has successfully completed
+        requireSuccessfulHandshake();
+
+        if (!this.trafficGenerationCheck.compareAndSet(null, trafficGenerationCheck)) {
+            throw new IllegalStateException("app layer max inactivity already set");
+        }
+        final Optional<Long> quicIdleTimeout = getIdleTimeout();
+        if (quicIdleTimeout.isEmpty()) {
+            // the QUIC connection will never idle timeout, nothing more to do
+            return;
+        }
+        // we start the PING sending timer event only if the QUIC layer idle timeout
+        // is lesser than the app layer's desired idle time
+        if (Duration.ofMillis(quicIdleTimeout.get()).compareTo(maxIdle) < 0) {
+            this.stateLock.lock();
+            try {
+                if (shutdown.get()) {
+                    return;
+                }
+                // QUIC connection has a lower idle timeout than the app layer. start a timer
+                // which checks with the app layer at regular intervals to decide whether to
+                // send a PING to keep the QUIC connection active.
+                startPingTimer();
+            } finally {
+                this.stateLock.unlock();
+            }
+        }
+    }
+
+    private void startPingTimer() {
+        assert stateLock.isHeldByCurrentThread() : "not holding state lock";
+        // we don't expect the timer to be started more than once
+        assert this.pingEvent == null : "PING timer already started";
+        final Optional<Long> quicIdleTimeout = getIdleTimeout();
+        assert quicIdleTimeout.isPresent() : "QUIC idle timeout is disabled, no need to start PING timer";
+        // potential PING generation every 75% of QUIC idle timeout
+        final long pingFrequencyMillis = (long) (0.75 * quicIdleTimeout.get());
+        assert pingFrequencyMillis > 0 : "unexpected ping frequency: " + pingFrequencyMillis;
+        final QuicTimerQueue timerQueue = connection.endpoint().timer();
+        final Deadline deadline = timeLine().instant().plusMillis(pingFrequencyMillis);
+        // create the timeout event and register with the QuicTimerQueue.
+        this.pingEvent = new PingEvent(deadline, pingFrequencyMillis);
+        timerQueue.offer(this.pingEvent);
+        if (debug.on()) {
+            debug.log("started periodic PING for connection,"
+                    + " ping event: " + this.pingEvent
+                    + " deadline: " + deadline);
+        } else {
+            Log.logQuic("{0} started periodic PING for connection,"
+                            + " ping event: {1} deadline: {2}",
+                    connection.logTag(), this.pingEvent, deadline);
+        }
+    }
+
+    private void stopPingTimer() {
+        assert stateLock.isHeldByCurrentThread() : "not holding state lock";
+        if (this.pingEvent == null) {
+            return;
+        }
+        final QuicEndpoint endpoint = this.connection.endpoint();
+        assert endpoint != null : "QUIC endpoint is null";
+        // disable the ping timer event
+        disableTimedEvent(endpoint.timer(), this.pingEvent);
+        this.pingEvent = null;
+        this.trafficGenerationCheck.set(null);
+    }
+
 
     /**
      * Attempts to notify the idle connection management that this connection should
@@ -209,7 +282,7 @@ final class IdleTimeoutManager {
      * this connection during the time the connection is handed out from the pool and any
      * new stream created on that connection.
      *
-     * @return true if the connection has been successfully reserved and is {@link #isOpen()}. false
+     * @return true if the connection has been successfully reserved. false
      * otherwise; in which case the connection must not be handed out from the pool.
      */
     boolean tryReserveForUse() {
@@ -221,7 +294,7 @@ final class IdleTimeoutManager {
             }
             // if the connection is nearing idle timeout due to lack of traffic then
             // don't use it
-            final long lastPktActivity = lastPacketActivityAt;
+            final long lastPktActivity = lastPacketActivityNanos;
             final long currentNanos = System.nanoTime();
             final long inactivityMs = MILLISECONDS.convert((currentNanos - lastPktActivity),
                     NANOSECONDS);
@@ -232,7 +305,7 @@ final class IdleTimeoutManager {
                 return false;
             }
             // express interest in using the connection
-            this.lastUsageReservationAt = System.nanoTime();
+            this.lastUsageReservationNanos = System.nanoTime();
             return true;
         } finally {
             this.idleTerminationLock.unlock();
@@ -256,8 +329,9 @@ final class IdleTimeoutManager {
         return val == NO_IDLE_TIMEOUT ? Optional.empty() : Optional.of(val);
     }
 
-    void keepAlive() {
-        lastPacketActivityAt = System.nanoTime(); // TODO: timeline().instant()?
+    // consider the connection as active as of this moment
+    void markActive() {
+        lastPacketActivityNanos = System.nanoTime(); // TODO: timeline().instant()?
     }
 
     void shutdown() {
@@ -270,6 +344,7 @@ final class IdleTimeoutManager {
             // unregister the timeout events from the QuicTimerQueue
             stopIdleTerminationTimer();
             stopStreamDataBlockedTimer();
+            stopPingTimer();
         } finally {
             this.stateLock.unlock();
         }
@@ -318,6 +393,15 @@ final class IdleTimeoutManager {
         return this.connection.endpoint().timeSource();
     }
 
+    private static void disableTimedEvent(final QuicTimerQueue timer, final TimedEvent te) {
+        // disable the event (refreshDeadline() of TimedEvent will return Deadline.MAX)
+        final Deadline nextDeadline = te.nextDeadline;
+        if (!nextDeadline.equals(Deadline.MAX)) {
+            te.nextDeadline = Deadline.MAX;
+            timer.reschedule(te, Deadline.MIN);
+        }
+    }
+
     // called when the connection has been idle past its idle timeout duration
     private void idleTimedOut() {
         if (shutdown.get()) {
@@ -346,39 +430,57 @@ final class IdleTimeoutManager {
             }
         }
         // silently close the connection and discard all its state
-        final TerminationCause cause = forSilentTermination("connection idle timed out ("
-                + timeoutMillis + " milli seconds)");
+        var type = connection.isClientConnection() ? "client" : "server";
+        var label = "quic:" + connection.uniqueId();
+        final TerminationCause cause = forSilentTermination(type + " connection idle timed out ("
+                + timeoutMillis + " milli seconds) on " + label);
         connection.terminator.terminate(cause);
     }
 
     private long computeInactivityMillis() {
+        assert idleTerminationLock.isHeldByCurrentThread() : "not holding idle termination lock";
         final long currentNanos = System.nanoTime();
-        final long lastActiveNanos = Math.max(lastPacketActivityAt, lastUsageReservationAt);
+        final long lastActiveNanos = Math.max(lastPacketActivityNanos, lastUsageReservationNanos);
         return MILLISECONDS.convert((currentNanos - lastActiveNanos), NANOSECONDS);
     }
 
-    final class IdleTimeoutEvent implements QuicTimedEvent {
-        private final long eventId;
-        private volatile Deadline deadline;
-        private volatile Deadline nextDeadline;
+    sealed abstract class TimedEvent implements QuicTimedEvent {
+        protected final long eventId;
+        protected volatile Deadline deadline;
+        protected volatile Deadline nextDeadline;
 
-        private IdleTimeoutEvent(final Deadline deadline) {
+        private TimedEvent(final Deadline deadline) {
             assert deadline != null : "timeout deadline is null";
             this.deadline = this.nextDeadline = deadline;
             this.eventId = QuicTimerQueue.newEventId();
         }
 
         @Override
-        public Deadline deadline() {
+        public final Deadline deadline() {
             return this.deadline;
         }
 
         @Override
-        public Deadline refreshDeadline() {
+        public final Deadline refreshDeadline() {
             if (shutdown.get()) {
                 return this.deadline = this.nextDeadline = Deadline.MAX;
             }
             return this.deadline = this.nextDeadline;
+        }
+
+        @Override
+        public final long eventId() {
+            return this.eventId;
+        }
+
+        @Override
+        public abstract Deadline handle();
+    }
+
+    final class IdleTimeoutEvent extends TimedEvent {
+
+        private IdleTimeoutEvent(final Deadline deadline) {
+            super(deadline);
         }
 
         @Override
@@ -441,40 +543,17 @@ final class IdleTimeoutManager {
         }
 
         @Override
-        public long eventId() {
-            return this.eventId;
-        }
-
-        @Override
         public String toString() {
             return "QuicIdleTimeoutEvent-" + this.eventId;
         }
     }
 
-    final class StreamDataBlockedEvent implements QuicTimedEvent {
-        private final long eventId;
+    final class StreamDataBlockedEvent extends TimedEvent {
         private final long timeoutMillis;
-        private volatile Deadline deadline;
-        private volatile Deadline nextDeadline;
 
         private StreamDataBlockedEvent(final Deadline deadline, final long timeoutMillis) {
-            assert deadline != null : "timeout deadline is null";
-            this.deadline = this.nextDeadline = deadline;
+            super(deadline);
             this.timeoutMillis = timeoutMillis;
-            this.eventId = QuicTimerQueue.newEventId();
-        }
-
-        @Override
-        public Deadline deadline() {
-            return this.deadline;
-        }
-
-        @Override
-        public Deadline refreshDeadline() {
-            if (shutdown.get()) {
-                return this.deadline = this.nextDeadline = Deadline.MAX;
-            }
-            return this.deadline = this.nextDeadline;
         }
 
         @Override
@@ -516,13 +595,94 @@ final class IdleTimeoutManager {
         }
 
         @Override
-        public long eventId() {
-            return this.eventId;
+        public String toString() {
+            return "StreamDataBlockedEvent-" + this.eventId;
+        }
+    }
+
+
+    final class PingEvent extends TimedEvent {
+        private final long pingFrequencyNanos;
+        private final long idleTimeoutNanos;
+
+        private PingEvent(final Deadline deadline, final long pingFrequencyMillis) {
+            super(deadline);
+            this.pingFrequencyNanos = MILLISECONDS.toNanos(pingFrequencyMillis);
+            if (this.pingFrequencyNanos <= 0) {
+                throw new IllegalArgumentException("ping frequency is too small: "
+                        + pingFrequencyMillis + " milliseconds");
+            }
+            this.idleTimeoutNanos = MILLISECONDS.toNanos(getIdleTimeout().get());
+        }
+
+        @Override
+        public Deadline handle() {
+            if (shutdown.get()) {
+                // timeout manager is shutdown, nothing more to do
+                return this.nextDeadline = Deadline.MAX;
+            }
+            if (!shouldInitiateAppLayerCheck()) {
+                // reschedule for next round
+                this.nextDeadline = timeLine().instant().plusNanos(this.pingFrequencyNanos);
+                return this.nextDeadline;
+            }
+            // check with the app layer if traffic generation is required
+            final Supplier<Boolean> check = trafficGenerationCheck.get();
+            if (check == null) {
+                // generateTrafficCheck can be null if the timeout manager was shutdown
+                // when this event handling was in progress. don't send a PING frame
+                // in that case.
+                assert shutdown.get() : "trafficGenerationCheck is absent";
+                return this.nextDeadline = Deadline.MAX;
+            }
+            if (check.get()) {
+                // app layer OKed sending a PING
+                connection.requestSendPing();
+                if (debug.on()) {
+                    debug.log("enqueued a PING frame");
+                } else {
+                    Log.logQuic("{0} enqueued a PING frame", connection.logTag());
+                }
+            } else {
+                // app layer told us not to send a PING.
+                // we skip the PING generation only for the current round, no need
+                // to disable future PING checks
+                if (debug.on()) {
+                    debug.log("skipping PING generation");
+                } else {
+                    Log.logQuic("{0} skipping PING generation", connection.logTag());
+                }
+            }
+            this.nextDeadline = timeLine().instant().plusNanos(this.pingFrequencyNanos);
+            return this.nextDeadline;
         }
 
         @Override
         public String toString() {
-            return "StreamDataBlockedEvent-" + this.eventId;
+            return "PingEvent-" + this.eventId;
+        }
+
+        // returns true if the app layer traffic generation check needs to be invoked,
+        // false otherwise.
+        private boolean shouldInitiateAppLayerCheck() {
+            final long lastPktAt = lastPacketActivityNanos;
+            final long now = System.nanoTime();
+            if ((now - lastPktAt) >= this.pingFrequencyNanos) {
+                // no traffic during the ping interval, initiate a app layer check
+                // to see if explicit traffic needs to be generated
+                return true;
+            }
+            // check if the connection will potentially idle terminate before the next
+            // ping check is scheduled, if yes, then initiate a app layer traffic
+            // generation check now
+            final long idleTerminationAt = lastPktAt + this.idleTimeoutNanos;
+            final long nextPingCheck = now + this.pingFrequencyNanos;
+            if (idleTerminationAt - nextPingCheck <= 0) {
+                return true;
+            }
+            // connection appears to be receiving traffic, no need to initiate app layer
+            // traffic generation check
+            return false;
         }
     }
 }

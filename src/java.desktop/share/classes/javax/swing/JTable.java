@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -453,6 +453,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * needed.
      */
     private boolean columnSelectionAdjusting;
+
+    /*
+     * True after column widths have been initialized/synchronized by layout.
+     * Used to distinguish the first preferred-width layout from later normal
+     * AUTO_RESIZE_LAST_COLUMN layouts.
+     */
+    private boolean columnWidthsInitialized;
+
     /**
      * The last value of getValueIsAdjusting from the row selection models
      * valueChanged notification. Used to test if a repaint is needed.
@@ -1264,12 +1272,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             autoResizeMode = mode;
             resizeAndRepaint();
             if (tableHeader != null) {
-                if (mode == JTable.AUTO_RESIZE_LAST_COLUMN) {
-                    int colCnt = columnModel.getColumnCount();
-                    if (colCnt > 0) {
-                        tableHeader.setResizingColumn(columnModel.getColumn(colCnt - 1));
-                    }
-                }
                 tableHeader.resizeAndRepaint();
             }
             firePropertyChange("autoResizeMode", old, autoResizeMode);
@@ -3191,6 +3193,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * (maximum or minimum).
      *
      */
+
     public void doLayout() {
         TableColumn resizingColumn = getResizingColumn();
         if (resizingColumn == null) {
@@ -3280,7 +3283,42 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
     }
 
+    private void accommodateLastColumnOnly() {
+        int columnCount = getColumnCount();
+        if (columnCount == 0) {
+            return;
+        }
+
+        int delta = getWidth() - getColumnModel().getTotalColumnWidth();
+        if (delta != 0) {
+            accommodateDelta(columnCount - 1, delta);
+        }
+    }
+
+    private void setWidthsFromPreferredWidthsLastColumnOnly() {
+        int columnCount = getColumnCount();
+        if (columnCount == 0) {
+            return;
+        }
+
+        for (int i = 0; i < columnCount - 1; i++) {
+            TableColumn column = columnModel.getColumn(i);
+            column.setWidth(column.getPreferredWidth());
+        }
+
+        accommodateLastColumnOnly();
+    }
+
     private void setWidthsFromPreferredWidths(final boolean inverse) {
+        if (!inverse && autoResizeMode == AUTO_RESIZE_LAST_COLUMN) {
+            if (!columnWidthsInitialized) {
+                setWidthsFromPreferredWidthsLastColumnOnly();
+            } else {
+                accommodateLastColumnOnly();
+            }
+            columnWidthsInitialized = true;
+            return;
+        }
         int totalWidth     = getWidth();
         int totalPreferred = getPreferredSize().width;
         int target = !inverse ? totalWidth : totalPreferred;
@@ -3309,6 +3347,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         };
 
         adjustSizes(target, r, inverse);
+        columnWidthsInitialized = true;
     }
 
 
@@ -3807,6 +3846,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         if (columnModel == null) {
             throw new IllegalArgumentException("Cannot set a null ColumnModel");
         }
+        columnWidthsInitialized = false;
         TableColumnModel old = this.columnModel;
         if (columnModel != old) {
             if (old != null) {
@@ -4454,8 +4494,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             // The whole thing changed
             clearSelectionAndLeadAnchor();
 
-            rowModel = null;
-
             if (sortManager != null) {
                 try {
                     ignoreSortChange = true;
@@ -4622,6 +4660,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see TableColumnModelListener
      */
     public void columnAdded(TableColumnModelEvent e) {
+        if (columnWidthsInitialized) {
+            TableColumn column = columnModel.getColumn(e.getToIndex());
+            column.setWidth(column.getPreferredWidth());
+        }
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
@@ -6009,6 +6051,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
         surrendersFocusOnKeystroke = f.get("surrendersFocusOnKeystroke", false);
         editorRemover = (PropertyChangeListener) f.get("editorRemover", null);
+        editingColumn = -1;
+        editingRow = -1;
         columnSelectionAdjusting = f.get("columnSelectionAdjusting", false);
         rowSelectionAdjusting = f.get("rowSelectionAdjusting", false);
         printError = (Throwable) f.get("printError", null);
@@ -6041,6 +6085,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * do any Swing-specific pre-serialization configuration.
      */
     void compWriteObjectNotify() {
+        if (isEditing() && !getCellEditor().stopCellEditing()) {
+            getCellEditor().cancelCellEditing();
+        }
         super.compWriteObjectNotify();
         // If ToolTipText != null, then the tooltip has already been
         // unregistered by JComponent.compWriteObjectNotify()

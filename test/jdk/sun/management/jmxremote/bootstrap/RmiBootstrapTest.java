@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,7 @@ public class RmiBootstrapTest extends RmiTestBase {
         final List<Path> credentialFiles = prepareTestFiles(args[0]);
 
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        System.setProperty("jdk.rmi.ssl.client.enableEndpointIdentification", "false");
 
         try {
             MAX_GET_FREE_PORT_TRIES = Integer.parseInt(System.getProperty("test.getfreeport.max.tries", "10"));

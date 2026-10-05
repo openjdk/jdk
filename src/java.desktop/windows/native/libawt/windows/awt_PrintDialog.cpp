@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,7 @@ LRESULT CALLBACK PrintDialogWndProc(HWND hWnd, UINT message,
             break;
         }
     }
-
-    WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(hWnd, NativeDialogWndProcProp));
-    return ComCtl32Util::GetInstance().DefWindowProc(lpfnWndProc, hWnd, message, wParam, lParam);
+    return ComCtl32Util::GetInstance().DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 static UINT_PTR CALLBACK
@@ -100,19 +98,12 @@ PrintDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
             }
 
             // subclass dialog's parent to receive additional messages
-            WNDPROC lpfnWndProc = ComCtl32Util::GetInstance().SubclassHWND(hdlg,
-                                                                           PrintDialogWndProc);
-            ::SetProp(hdlg, NativeDialogWndProcProp, reinterpret_cast<HANDLE>(lpfnWndProc));
-
+            ComCtl32Util::GetInstance().SubclassHWND(hdlg, PrintDialogWndProc);
             break;
         }
         case WM_DESTROY: {
-            WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(hdlg, NativeDialogWndProcProp));
-            ComCtl32Util::GetInstance().UnsubclassHWND(hdlg,
-                                                       PrintDialogWndProc,
-                                                       lpfnWndProc);
+            ComCtl32Util::GetInstance().UnsubclassHWND(hdlg, PrintDialogWndProc);
             ::RemoveProp(hdlg, ModalDialogPeerProp);
-            ::RemoveProp(hdlg, NativeDialogWndProcProp);
             break;
         }
     }

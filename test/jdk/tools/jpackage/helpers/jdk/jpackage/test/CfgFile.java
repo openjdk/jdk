@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -34,6 +33,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
 
 
 public final class CfgFile {
@@ -116,7 +116,7 @@ public final class CfgFile {
         return null;
     }
 
-    public static CfgFile load(Path path) throws IOException {
+    public static CfgFile load(Path path) {
         TKit.trace(String.format("Read [%s] jpackage cfg file", path));
 
         final Pattern sectionBeginRegex = Pattern.compile( "\\s*\\[([^]]*)\\]\\s*");
@@ -126,7 +126,7 @@ public final class CfgFile {
 
         String currentSectionName = null;
         List<Map.Entry<String, String>> currentSection = new ArrayList<>();
-        for (String line : Files.readAllLines(path)) {
+        for (String line : ThrowingFunction.<Path, List<String>>toFunction(Files::readAllLines).apply(path)) {
             Matcher matcher = sectionBeginRegex.matcher(line);
             if (matcher.find()) {
                 if (currentSectionName != null) {

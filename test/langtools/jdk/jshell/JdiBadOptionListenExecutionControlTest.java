@@ -47,7 +47,7 @@ public class JdiBadOptionListenExecutionControlTest {
             // turn on logging of launch failures
             Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
             JShell.builder()
-                    .executionEngine("jdi")
+                    .executionEngine(Presets.TEST_JDI_EXECUTION)
                     .remoteVMOptions("-BadBadOption")
                     .build();
         } catch (IllegalStateException ex) {

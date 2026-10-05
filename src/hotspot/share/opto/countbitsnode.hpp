@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ class PopCountINode : public CountBitsNode {
   public:
   PopCountINode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //---------- PopCountLNode -----------------------------------------------------
@@ -88,6 +89,7 @@ class PopCountLNode : public CountBitsNode {
   public:
   PopCountLNode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 

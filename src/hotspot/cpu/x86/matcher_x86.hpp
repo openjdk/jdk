@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@
   }
 
   static bool narrow_klass_use_complex_address() {
-    assert(UseCompressedClassPointers, "only for compressed klass code");
     return (CompressedKlassPointers::shift() <= 3);
   }
 
@@ -234,6 +233,20 @@
     else {
       return false;
     }
+  }
+
+  // Return true if VectorSlice is better served by a two source permute than by
+  // the native slice lowering.
+  static bool vector_slice_prefers_select_from_two_vector(BasicType elem_bt, int byte_origin) {
+    // A subword slice whose byte origin lies in the middle of the vector and is
+    // not four byte aligned needs three shuffles (VALIGND + VALIGND + VPALIGNR),
+    // all contending for the same shuffle port, whereas a two source permute fed
+    // by a loop invariant index vector needs just one.
+    // Wider lane types scale the element origin by 4 or 8 and hence always match
+    // the single VALIGND rule, and origins below 16 or above 48 bytes already
+    // lower to two shuffles. Both beat the permute.
+    return is_subword_type(elem_bt) && byte_origin > 16 && byte_origin < 48 &&
+           (byte_origin & 3) != 0;
   }
 
 #endif // CPU_X86_MATCHER_X86_HPP

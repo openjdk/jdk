@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -96,7 +97,7 @@ class KeepAliveObjectsTable : public HashTable<oop, bool,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared,
-    HeapShared::oop_hash> {};
+    HeapShared::oop_address_hash> {};
 
 static KeepAliveObjectsTable* _keep_alive_objs_table;
 static OopHandle _keep_alive_objs_array;
@@ -142,6 +143,16 @@ void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
                            vmSymbols::void_method_signature(),
                            CHECK);
     }
+    {
+      TempNewSymbol method_name = SymbolTable::new_symbol("assemblySetup");
+      JavaValue result(T_VOID);
+      Symbol* baseLocale_name = vmSymbols::sun_util_locale_BaseLocale();
+      Klass* baseLocale_klass = SystemDictionary::resolve_or_fail(baseLocale_name, true, CHECK);
+      JavaCalls::call_static(&result, baseLocale_klass,
+                             method_name,
+                             vmSymbols::void_method_signature(),
+                             CHECK);
+    }
 
     {
       Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
@@ -153,6 +164,9 @@ void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
 
       _keep_alive_objs_array = OopHandle(Universe::vm_global(), result.get_oop());
     }
+
+    // Trigger a GC to prune eligible referents that were not kept alive
+    Universe::heap()->collect(GCCause::_java_lang_system_gc);
   }
 }
 
@@ -160,9 +174,9 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
   oop a = _keep_alive_objs_array.resolve();
   if (a != nullptr) {
-    precond(a->is_objArray());
+    precond(a->is_refArray());
     precond(AOTReferenceObjSupport::is_enabled());
-    objArrayOop array = objArrayOop(a);
+    refArrayOop array = oop_cast<refArrayOop>(a);
 
     _keep_alive_objs_table = new (mtClass)KeepAliveObjectsTable();
     for (int i = 0; i < array->length(); i++) {
@@ -174,12 +188,17 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
 
 // Returns true IFF obj is an instance of java.lang.ref.Reference. If so, perform extra eligibility checks.
 bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
-  // We have a single Java thread. This means java.lang.ref.Reference$ReferenceHandler thread
-  // is not running. Otherwise the checks for next/discovered may not work.
-  precond(CDSConfig::allow_only_single_java_thread());
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
 
   if (obj->klass()->is_subclass_of(vmClasses::Reference_klass())) {
+    // The following check works only if the java.lang.ref.Reference$ReferenceHandler thread
+    // is not running.
+    //
+    // This code is called on every object found by AOTArtifactFinder. When dumping the
+    // preimage archive, AOTArtifactFinder should not find any Reference objects.
+    precond(!CDSConfig::is_dumping_preimage_static_archive());
+    precond(CDSConfig::allow_only_single_java_thread());
+
     precond(AOTReferenceObjSupport::is_enabled());
     precond(JavaClasses::is_supported_for_archiving(obj));
     precond(_keep_alive_objs_table != nullptr);

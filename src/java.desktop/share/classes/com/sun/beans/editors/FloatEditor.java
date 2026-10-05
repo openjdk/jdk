@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.beans.*;
 
 public class FloatEditor extends NumberEditor {
 
+    @Override
     public String getJavaInitializationString() {
         Object value = getValue();
         return (value != null)
@@ -41,6 +42,7 @@ public class FloatEditor extends NumberEditor {
                 : "null";
     }
 
+    @Override
     public void setAsText(String text) throws IllegalArgumentException {
         setValue((text == null) ? null : Float.valueOf(text));
     }

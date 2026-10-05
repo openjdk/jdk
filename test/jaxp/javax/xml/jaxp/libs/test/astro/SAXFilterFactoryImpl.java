@@ -22,22 +22,22 @@
  */
 package test.astro;
 
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-import static test.astro.AstroConstants.DECENTXSL;
-import static test.astro.AstroConstants.DECXSL;
-import static test.astro.AstroConstants.RAENTXSL;
-import static test.astro.AstroConstants.STYPEXSL;
-import static test.astro.AstroConstants.TOPTEMPLXSL;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
+import java.nio.file.Path;
 
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
+import static test.astro.AstroConstants.DECENTXSL;
+import static test.astro.AstroConstants.DECXSL;
+import static test.astro.AstroConstants.RAENTXSL;
+import static test.astro.AstroConstants.STYPEXSL;
+import static test.astro.AstroConstants.TOPTEMPLXSL;
 
 /*
  * Implementation of the filter factory interface that utilizes SAX
@@ -51,7 +51,7 @@ import org.xml.sax.XMLReader;
  *
  */
 public class SAXFilterFactoryImpl extends SourceFilterFactory {
-    private EntityResolver entityResolver;
+    private final EntityResolver entityResolver;
 
     public SAXFilterFactoryImpl() {
         super();
@@ -60,7 +60,8 @@ public class SAXFilterFactoryImpl extends SourceFilterFactory {
 
     @Override
     protected Source getSource(String xslFileName) throws SAXException, ParserConfigurationException {
-        SAXSource saxsource = new SAXSource(new InputSource(filenameToURL(xslFileName)));
+        String xslUri = Path.of(xslFileName).toUri().toASCIIString();
+        SAXSource saxsource = new SAXSource(new InputSource(xslUri));
         saxsource.setXMLReader(getXMLReader());
         return saxsource;
     }
@@ -97,7 +98,8 @@ public class SAXFilterFactoryImpl extends SourceFilterFactory {
         public InputSource resolveEntity(String publicid, String sysId) {
             if (sysId.equals("http://astro.com/stylesheets/toptemplate")) {
                 InputSource retval = new InputSource(TOPTEMPLXSL);
-                retval.setSystemId(filenameToURL(TOPTEMPLXSL));
+                String xslUri = Path.of(TOPTEMPLXSL).toUri().toASCIIString();
+                retval.setSystemId(xslUri);
                 return retval;
             } else {
                 return null; // use default behavior

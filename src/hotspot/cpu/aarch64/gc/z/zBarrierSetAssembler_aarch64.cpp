@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "gc/z/zAddress.hpp"
@@ -283,10 +284,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // If we get this far, we know there is a young raw null value in the field.
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
     __ movzw(rtmp1, barrier_Relocation::unpatched);
-    __ cmpxchg(rtmp2, zr, rtmp1,
-               Assembler::xword,
-               false /* acquire */, false /* release */, true /* weak */,
-               rtmp3);
+    __ cmpxchg_weak(rtmp2, zr, rtmp1, Assembler::xword, memory_order_relaxed, rtmp3);
     __ br(Assembler::NE, slow_path);
 
     __ bind(slow_path_continuation);
@@ -879,8 +877,9 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     ShouldNotReachHere();
   }
 
-  OrderAccess::fence();
-  ICache::invalidate_word((address)patch_addr);
+  if (!UseSingleICacheInvalidation) {
+    ICache::invalidate_word((address)patch_addr);
+  }
 }
 
 #ifdef COMPILER1
@@ -1334,7 +1333,26 @@ void ZStoreBarrierStubC2Aarch64::emit_code(MacroAssembler& masm) {
 #undef __
 #define __ masm->
 
+void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                           Register tmp, Label& slow_path) {
+  assert_different_registers(weak_handle, tmp, noreg);
+  assert_different_registers(obj, tmp, noreg);
+
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, tmp, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeMov);
+  __ movzw(tmp, barrier_Relocation::unpatched);
+  __ tst(obj, tmp);
+  __ br(Assembler::NE, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ lsr(obj, obj, ZPointerLoadShift);
+}
+
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored
   // and after being colored. Therefore, we must deal with colored oops as well.
   Label done;
@@ -1369,15 +1387,25 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ bind(check_oop);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(tmp1, obj);  // get klass
-  __ tst(tmp1, tmp1);
-  __ br(Assembler::EQ, error); // if klass is null it is broken
+  __ load_narrow_klass(tmp1, obj); // get narrow klass
+  __ cbz(tmp1, error);      // if klass is null it is broken
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory
-  __ mov(tmp1, (intptr_t) Universe::verify_oop_mask());
-  __ andr(tmp1, tmp1, obj);
-  __ mov(obj, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp1, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ ldr(tmp1, Address(tmp1));
+    __ andr(tmp1, tmp1, obj);
+    __ lea(obj, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ ldr(obj, Address(obj));
+  } else
+#endif
+  {
+    __ mov(tmp1, (intptr_t) Universe::verify_oop_mask());
+    __ andr(tmp1, tmp1, obj);
+    __ mov(obj, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmp(tmp1, obj);
   __ br(Assembler::NE, error);
 

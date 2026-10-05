@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
@@ -99,6 +101,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
+import jdk.internal.util.DecimalDigits;
+
 /**
  * A year-month in the ISO-8601 calendar system, such as {@code 2007-12}.
  * <p>
@@ -117,11 +121,18 @@ import java.util.Objects;
  * to be accurate will find the ISO-8601 approach unsuitable.
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code YearMonth} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -129,7 +140,8 @@ import java.util.Objects;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class YearMonth
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class YearMonth
         implements Temporal, TemporalAdjuster, Comparable<YearMonth>, Serializable {
 
     /**
@@ -137,6 +149,20 @@ public final class YearMonth
      */
     @java.io.Serial
     private static final long serialVersionUID = 4183400860270640070L;
+
+    /**
+     * For backward compatibility of the serialized {@code YearMonth.class} object,
+     * explicitly declare the types of the serialized fields as defined in Java SE 8.
+     * Instances of {@code YearMonth} are serialized using the dedicated
+     * serialized form by {@code writeReplace}.
+     * @serialField year int The year.
+     * @serialField month int The month-of-year.
+     */
+    @java.io.Serial
+    private static final ObjectStreamField[] serialPersistentFields = {
+            new ObjectStreamField("year", int.class),
+            new ObjectStreamField("month", int.class),
+    };
     /**
      * Parser.
      */
@@ -149,11 +175,11 @@ public final class YearMonth
     /**
      * @serial The year.
      */
-    private final int year;
+    private final transient int year;
     /**
-     * @serial The month-of-year, not null.
+     * @serial The month-of-year..
      */
-    private final int month;
+    private final transient byte month;
 
     //-----------------------------------------------------------------------
     /**
@@ -306,7 +332,7 @@ public final class YearMonth
      */
     private YearMonth(int year, int month) {
         this.year = year;
-        this.month = month;
+        this.month = (byte) month;
     }
 
     /**
@@ -1197,18 +1223,17 @@ public final class YearMonth
     public String toString() {
         int absYear = Math.abs(year);
         StringBuilder buf = new StringBuilder(9);
-        if (absYear < 1000) {
+        if (absYear < 10000) {
             if (year < 0) {
-                buf.append(year - 10000).deleteCharAt(1);
-            } else {
-                buf.append(year + 10000).deleteCharAt(0);
+                buf.append('-');
             }
+            DecimalDigits.appendQuad(buf, absYear);
         } else {
             buf.append(year);
         }
-        return buf.append(month < 10 ? "-0" : "-")
-            .append(month)
-            .toString();
+        buf.append('-');
+        DecimalDigits.appendPair(buf, month);
+        return buf.toString();
     }
 
     //-----------------------------------------------------------------------
@@ -1236,6 +1261,7 @@ public final class YearMonth
      * @throws InvalidObjectException always
      */
     @java.io.Serial
+    @SuppressWarnings("serial") // this method is not invoked for value classes
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

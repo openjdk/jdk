@@ -425,7 +425,7 @@ public interface ThreadReference extends ObjectReference {
      * statement.
      * <p>
      * The method which will return early is referred to as the
-     * called method. The called method is the current method (as
+     * <em>called method</em>. The called method is the current method (as
      * defined by the Frames section in the Java Virtual Machine
      * Specification) for the specified thread at the time this
      * method is called.
@@ -436,27 +436,35 @@ public interface ThreadReference extends ObjectReference {
      * this method and resumption of thread execution, the
      * state of the stack is undefined.
      * <p>
-     * This method may be used to force a return from the current frame
-     * of a virtual thread when it is suspended at an event.
-     * An implementation may support forcing a return from the current frame
-     * of a suspended virtual thread in other cases.
+     * When the thread is a {@link Thread##virtual-threads virtual thread}, this
+     * method may be used to force a return when the virtual thread is suspended
+     * at an event. The target VM may support forcing a return when the virtual
+     * thread is suspended in other cases.
      * <p>
-     * No further instructions are executed in the called
-     * method. Specifically, finally blocks are not executed. Note:
+     * This method may not be used to force a return when the called method is:
+     * <ul>
+     * <li> A native method. </li>
+     * <li> A constructor of a class with {@linkplain
+     * java.lang.reflect.Field#isStrictInit() strictly-initialized} instance fields
+     * declared in the class or any of its superclasses. </li>
+     * <li> The class initializer of a class with strictly-initialized static fields. </li>
+     * </ul>
+     * <p>
+     * If this method succeeds then the thread does not execute any further instructions
+     * in the called method. Specifically, {@code finally} blocks are not executed. Note:
      * this can cause inconsistent states in the application.
      * <p>
      * A lock acquired by calling the called method (if it is a
-     * synchronized method) and locks acquired by entering
-     * synchronized blocks within the called method are
+     * {@code synchronized} method) and locks acquired by entering
+     * {@code synchronized} blocks within the called method are
      * released. Note: this does not apply to native locks or
-     * java.util.concurrent.locks locks.
+     * {@link java.util.concurrent.locks} locks.
      * <p>
-     * Events, such as MethodExit, are generated as they would be in
-     * a normal return.
+     * Events, such as {@link com.sun.jdi.event.MethodExitEvent}, are generated as they
+     * would be in a normal return.
      * <p>
-     * The called method must be a non-native Java programming
-     * language method. Forcing return on a thread with only one
-     * frame on the stack causes the thread to exit when resumed.
+     * Forcing early return on a thread with only one frame on the stack causes the
+     * thread to exit when resumed.
      * <p>
      * The <code>value</code> argument is the value that the
      * method is to return.

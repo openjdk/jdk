@@ -1,0 +1,8 @@
+| Dialog | Control | Event | Argument | Condition | Ordering |
+| --- | --- | --- | --- | --- | --- |
+| InstallDirNotEmptyDlg | No | NewDialog | InstallDirDlg | 1 | 1 |
+| InstallDirNotEmptyDlg | Yes | NewDialog | ShortcutPromptDlg | 1 | 1 |
+| ShortcutPromptDlg | Back | NewDialog | InstallDirDlg | 1 | 1 |
+| ShortcutPromptDlg | Cancel | SpawnDialog | CancelDlg | 1 | 1 |
+| ShortcutPromptDlg | Next | NewDialog | VerifyReadyDlg | 1 | 1 |
+| VerifyReadyDlg | Back | NewDialog | ShortcutPromptDlg | NOT Installed | 6 |

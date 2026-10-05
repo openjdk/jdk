@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,12 +54,12 @@ namespace {
     const size_t _size;
    public:
     static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
-      return os::reserve_memory_special(bytes, alignment, page_size, req_addr, exec);
+      return os::reserve_memory_special(bytes, alignment, page_size, req_addr, mtTest, exec);
     }
     HugeTlbfsMemory(char* const ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~HugeTlbfsMemory() {
       if (_ptr != nullptr) {
-        os::release_memory_special(_ptr, _size);
+        os::release_memory(_ptr, _size);
       }
     }
   };
@@ -224,10 +224,10 @@ class TestReserveMemorySpecial : AllStatic {
     if (!using_explicit_hugepages()) {
       return;
     }
-    char* addr = os::reserve_memory_special(size, alignment, page_size, nullptr, false);
+    char* addr = os::reserve_memory_special(size, alignment, page_size, nullptr, mtTest, false);
     if (addr != nullptr) {
       small_page_write(addr, size);
-      os::release_memory_special(addr, size);
+      os::release_memory(addr, size);
     }
   }
 
@@ -281,11 +281,11 @@ class TestReserveMemorySpecial : AllStatic {
     for (int i = 0; i < num_sizes; i++) {
       const size_t size = sizes[i];
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
-        char* p = os::reserve_memory_special(size, alignment, lp, nullptr, false);
+        char* p = os::reserve_memory_special(size, alignment, lp, nullptr, mtTest, false);
         if (p != nullptr) {
           EXPECT_TRUE(is_aligned(p, alignment));
           small_page_write(p, size);
-          os::release_memory_special(p, size);
+          os::release_memory(p, size);
         }
       }
     }
@@ -296,11 +296,11 @@ class TestReserveMemorySpecial : AllStatic {
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         // req_addr must be at least large page aligned.
         char* const req_addr = align_up(mapping1, MAX2(alignment, lp));
-        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, false);
+        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, mtTest, false);
         if (p != nullptr) {
           EXPECT_EQ(p, req_addr);
           small_page_write(p, size);
-          os::release_memory_special(p, size);
+          os::release_memory(p, size);
         }
       }
     }
@@ -311,7 +311,7 @@ class TestReserveMemorySpecial : AllStatic {
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         // req_addr must be at least large page aligned.
         char* const req_addr = align_up(mapping2, MAX2(alignment, lp));
-        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, false);
+        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, mtTest, false);
         // as the area around req_addr contains already existing mappings, the API should always
         // return nullptr (as per contract, it cannot return another address)
         EXPECT_TRUE(p == nullptr);
@@ -379,8 +379,8 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   for (int i = 0; i < 1000; i++)
     EXPECT_EQ(*iptr++, i);
 
-  EXPECT_TRUE(os::uncommit_memory(heap, size, false));
-  EXPECT_TRUE(os::release_memory(heap, size));
+  os::uncommit_memory(heap, size, false);
+  os::release_memory(heap, size);
   UseTransparentHugePages = useThp;
 }
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,11 +87,6 @@ import java.util.Objects;
  * <p>
  * This class provides a single wrapper to items used in the format.
  *
- * @implSpec
- * This class is a mutable context intended for use from a single thread.
- * Usage of the class is thread-safe within standard printing as the framework creates
- * a new instance of the class for each format and printing is single-threaded.
- *
  * @since 1.8
  */
 final class DateTimePrintContext {
@@ -103,10 +99,6 @@ final class DateTimePrintContext {
      * The formatter, not null.
      */
     private final DateTimeFormatter formatter;
-    /**
-     * Whether the current formatter is optional.
-     */
-    private int optional;
 
     /**
      * Creates a new instance of the context.
@@ -115,7 +107,6 @@ final class DateTimePrintContext {
      * @param formatter  the formatter controlling the format, not null
      */
     DateTimePrintContext(TemporalAccessor temporal, DateTimeFormatter formatter) {
-        super();
         this.temporal = adjust(temporal, formatter);
         this.formatter = formatter;
     }
@@ -349,29 +340,16 @@ final class DateTimePrintContext {
 
     //-----------------------------------------------------------------------
     /**
-     * Starts the printing of an optional segment of the input.
-     */
-    void startOptional() {
-        this.optional++;
-    }
-
-    /**
-     * Ends the printing of an optional segment of the input.
-     */
-    void endOptional() {
-        this.optional--;
-    }
-
-    /**
      * Gets a value using a query.
      *
      * @param query  the query to use, not null
+     * @param optional  whether the query is optional, true if the query may be missing
      * @return the result, null if not found and optional is true
      * @throws DateTimeException if the type is not available and the section is not optional
      */
-    <R> R getValue(TemporalQuery<R> query) {
+    <R> R getValue(TemporalQuery<R> query, boolean optional) {
         R result = temporal.query(query);
-        if (result == null && optional == 0) {
+        if (result == null && !optional) {
             throw new DateTimeException("Unable to extract " +
                     query + " from temporal " + temporal);
         }
@@ -384,11 +362,12 @@ final class DateTimePrintContext {
      * This will return the value for the specified field.
      *
      * @param field  the field to find, not null
+     * @param optional  whether the field is optional, true if the field may be missing
      * @return the value, null if not found and optional is true
      * @throws DateTimeException if the field is not available and the section is not optional
      */
-    Long getValue(TemporalField field) {
-        if (optional > 0 && !temporal.isSupported(field)) {
+    Long getValue(TemporalField field, boolean optional) {
+        if (optional && !temporal.isSupported(field)) {
             return null;
         }
         return temporal.getLong(field);

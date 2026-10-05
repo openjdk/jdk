@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,20 +31,12 @@ include LibCommon.gmk
 ## Build libattach
 ################################################################################
 
-ifeq ($(call isTargetOs, windows), true)
-  # In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
-  # a binary that is compatible with windows versions older than 7/2008R2.
-  # See MSDN documentation for GetProcessMemoryInfo for more information.
-  LIBATTACH_CFLAGS := -DPSAPI_VERSION=1
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBATTACH, \
     NAME := attach, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(LIBATTACH_CFLAGS), \
     CFLAGS_windows := -Gy, \
     JDK_LIBS := java.base:libjava, \
-    LIBS_windows := advapi32.lib psapi.lib, \
+    LIBS_windows := advapi32.lib, \
 ))
 
 TARGETS += $(BUILD_LIBATTACH)

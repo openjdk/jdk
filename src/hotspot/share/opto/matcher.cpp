@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,8 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
       continue;
     }
     assert(C->node_arena()->contains(n), "dead node");
+    assert(!n->is_Initialize() || n->as_Initialize()->number_of_projs(TypeFunc::Memory) == 1,
+           "after matching, Initialize should have a single memory projection");
     for (uint j = 0; j < n->req(); j++) {
       Node* in = n->in(j);
       if (in != nullptr) {
@@ -164,6 +166,51 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 }
 #endif
 
+// Array of RegMask, one per returned values (value type instances can
+// be returned as multiple return values, one per field)
+RegMask* Matcher::return_values_mask(const TypeFunc* tf) const {
+  const TypeTuple* range = tf->range_cc();
+  uint cnt = range->cnt() - TypeFunc::Parms;
+  if (cnt == 0) {
+    return nullptr;
+  }
+  RegMask* mask = NEW_RESOURCE_ARRAY(RegMask, cnt);
+  BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, cnt);
+  VMRegPair* vm_parm_regs = NEW_RESOURCE_ARRAY(VMRegPair, cnt);
+  for (uint i = 0; i < cnt; i++) {
+    sig_bt[i] = range->field_at(i+TypeFunc::Parms)->basic_type();
+    new (mask + i) RegMask();
+  }
+
+  int regs = SharedRuntime::java_return_convention(sig_bt, vm_parm_regs, cnt);
+  if (regs <= 0) {
+    // We ran out of registers to store the null marker for a scalarized return.
+    // Put it into a fixed slot on the stack that we reserved for it in
+    // Compile::Compile. Code in 'call_epilog' will then initialize it.
+    assert(C->needs_nm_slot(), "Should have been set during parsing");
+    int current_slot = C->fixed_slots();
+    if (C->needs_stack_repair()) {
+      current_slot -= VMRegImpl::slots_per_word;
+    }
+    int nm_slot = current_slot - VMRegImpl::slots_per_word;
+    mask[--cnt].clear();
+    mask[cnt].insert(OptoReg::stack2reg(nm_slot));
+  }
+  for (uint i = 0; i < cnt; i++) {
+    mask[i].clear();
+
+    OptoReg::Name reg1 = OptoReg::as_OptoReg(vm_parm_regs[i].first());
+    if (OptoReg::is_valid(reg1)) {
+      mask[i].insert(reg1);
+    }
+    OptoReg::Name reg2 = OptoReg::as_OptoReg(vm_parm_regs[i].second());
+    if (OptoReg::is_valid(reg2)) {
+      mask[i].insert(reg2);
+    }
+  }
+
+  return mask;
+}
 
 //---------------------------match---------------------------------------------
 void Matcher::match( ) {
@@ -176,29 +223,23 @@ void Matcher::match( ) {
   if (C->failing()) {
     return;
   }
-  assert(_return_addr_mask.is_Empty(),
+
+  // Compute the old incoming SP (may be called FP) as
+  //   OptoReg::stack0() + locks + in_preserve_stack_slots + pad2.
+  _old_SP = C->compute_old_SP();
+  assert( is_even(_old_SP), "must be even" );
+
+  assert(_return_addr_mask.is_empty(),
          "return address mask must be empty initially");
-  _return_addr_mask.Insert(return_addr());
+  _return_addr_mask.insert(return_addr());
 #ifdef _LP64
   // Pointers take 2 slots in 64-bit land
-  _return_addr_mask.Insert(OptoReg::add(return_addr(),1));
+  _return_addr_mask.insert(OptoReg::add(return_addr(), 1));
 #endif
 
-  // Map a Java-signature return type into return register-value
-  // machine registers for 0, 1 and 2 returned values.
-  const TypeTuple *range = C->tf()->range();
-  if( range->cnt() > TypeFunc::Parms ) { // If not a void function
-    // Get ideal-register return type
-    uint ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
-    // Get machine return register
-    uint sop = C->start()->Opcode();
-    OptoRegPair regs = return_value(ireg);
-
-    // And mask for same
-    _return_value_mask = RegMask(regs.first());
-    if( OptoReg::is_valid(regs.second()) )
-      _return_value_mask.Insert(regs.second());
-  }
+  // Map Java-signature return types into return register-value
+  // machine registers.
+  _return_values_mask = return_values_mask(C->tf());
 
   // ---------------
   // Frame Layout
@@ -206,7 +247,7 @@ void Matcher::match( ) {
   // Need the method signature to determine the incoming argument types,
   // because the types determine which registers the incoming arguments are
   // in, and this affects the matched code.
-  const TypeTuple *domain = C->tf()->domain();
+  const TypeTuple *domain = C->tf()->domain_cc();
   uint             argcnt = domain->cnt() - TypeFunc::Parms;
   BasicType *sig_bt        = NEW_RESOURCE_ARRAY( BasicType, argcnt );
   VMRegPair *vm_parm_regs  = NEW_RESOURCE_ARRAY( VMRegPair, argcnt );
@@ -250,18 +291,13 @@ void Matcher::match( ) {
 
   // Do some initial frame layout.
 
-  // Compute the old incoming SP (may be called FP) as
-  //   OptoReg::stack0() + locks + in_preserve_stack_slots + pad2.
-  _old_SP = C->compute_old_SP();
-  assert( is_even(_old_SP), "must be even" );
-
   // Compute highest incoming stack argument as
   //   _old_SP + out_preserve_stack_slots + incoming argument size.
   _in_arg_limit = OptoReg::add(_old_SP, C->out_preserve_stack_slots());
   assert( is_even(_in_arg_limit), "out_preserve must be even" );
   for( i = 0; i < argcnt; i++ ) {
     // Permit args to have no register
-    _calling_convention_mask[i].Clear();
+    _calling_convention_mask[i].clear();
     if( !vm_parm_regs[i].first()->is_valid() && !vm_parm_regs[i].second()->is_valid() ) {
       _parm_regs[i].set_bad();
       continue;
@@ -273,23 +309,22 @@ void Matcher::match( ) {
 
     OptoReg::Name reg1 = warp_incoming_stk_arg(vm_parm_regs[i].first());
     if( OptoReg::is_valid(reg1))
-      _calling_convention_mask[i].Insert(reg1);
+      _calling_convention_mask[i].insert(reg1);
 
     OptoReg::Name reg2 = warp_incoming_stk_arg(vm_parm_regs[i].second());
     if( OptoReg::is_valid(reg2))
-      _calling_convention_mask[i].Insert(reg2);
+      _calling_convention_mask[i].insert(reg2);
 
     // Saved biased stack-slot register number
     _parm_regs[i].set_pair(reg2, reg1);
   }
 
-  // Finally, make sure the incoming arguments take up an even number of
-  // words, in case the arguments or locals need to contain doubleword stack
-  // slots.  The rest of the system assumes that stack slot pairs (in
-  // particular, in the spill area) which look aligned will in fact be
-  // aligned relative to the stack pointer in the target machine.  Double
-  // stack slots will always be allocated aligned.
-  _new_SP = OptoReg::Name(align_up(_in_arg_limit, (int)RegMask::SlotsPerLong));
+  // Allocated register sets are aligned to their size. Offsets to the stack
+  // pointer have to be aligned to the size of the access. For this _new_SP is
+  // aligned to the size of the largest register set with the stack alignment as
+  // limit and a minimum of SlotsPerLong (2).
+  int vector_aligment = MIN2(C->max_vector_size(), stack_alignment_in_bytes()) / VMRegImpl::stack_slot_size;
+  _new_SP = OptoReg::Name(align_up(_in_arg_limit, MAX2((int)RegMask::SlotsPerLong, vector_aligment)));
 
   // Compute highest outgoing stack argument as
   //   _new_SP + out_preserve_stack_slots + max(outgoing argument size).
@@ -422,11 +457,11 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
     new (rms + i) RegMask(Compile::current()->comp_arena());
   }
   // Do all the pre-defined register masks
-  rms[TypeFunc::Control  ] = RegMask::Empty;
-  rms[TypeFunc::I_O      ] = RegMask::Empty;
-  rms[TypeFunc::Memory   ] = RegMask::Empty;
-  rms[TypeFunc::ReturnAdr] = ret_adr;
-  rms[TypeFunc::FramePtr ] = fp;
+  rms[TypeFunc::Control  ].assignFrom(RegMask::EMPTY);
+  rms[TypeFunc::I_O      ].assignFrom(RegMask::EMPTY);
+  rms[TypeFunc::Memory   ].assignFrom(RegMask::EMPTY);
+  rms[TypeFunc::ReturnAdr].assignFrom(ret_adr);
+  rms[TypeFunc::FramePtr ].assignFrom(fp);
   return rms;
 }
 
@@ -471,15 +506,16 @@ void Matcher::init_first_stack_mask() {
   assert(index == NOF_STACK_MASKS, "wrong size");
 
   // At first, start with the empty mask
-  C->FIRST_STACK_mask().Clear();
+  C->FIRST_STACK_mask().clear();
 
   // Add in the incoming argument area
   OptoReg::Name init_in = OptoReg::add(_old_SP, C->out_preserve_stack_slots());
   for (OptoReg::Name i = init_in; i < _in_arg_limit; i = OptoReg::add(i, 1)) {
-    C->FIRST_STACK_mask().Insert(i);
+    C->FIRST_STACK_mask().insert(i);
   }
+
   // Add in all bits past the outgoing argument area
-  C->FIRST_STACK_mask().Set_All_From(_out_arg_limit);
+  C->FIRST_STACK_mask().set_all_from(_out_arg_limit);
 
   // Make spill masks.  Registers for their class, plus FIRST_STACK_mask.
   RegMask aligned_stack_mask(C->FIRST_STACK_mask(), C->comp_arena());
@@ -488,44 +524,44 @@ void Matcher::init_first_stack_mask() {
   assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
   RegMask scalable_stack_mask(aligned_stack_mask, C->comp_arena());
 
-  *idealreg2spillmask[Op_RegP] = *idealreg2regmask[Op_RegP];
+  idealreg2spillmask[Op_RegP]->assignFrom(*idealreg2regmask[Op_RegP]);
 #ifdef _LP64
-  *idealreg2spillmask[Op_RegN] = *idealreg2regmask[Op_RegN];
-   idealreg2spillmask[Op_RegN]->OR(C->FIRST_STACK_mask());
-   idealreg2spillmask[Op_RegP]->OR(aligned_stack_mask);
+  idealreg2spillmask[Op_RegN]->assignFrom(*idealreg2regmask[Op_RegN]);
+  idealreg2spillmask[Op_RegN]->or_with(C->FIRST_STACK_mask());
+  idealreg2spillmask[Op_RegP]->or_with(aligned_stack_mask);
 #else
-   idealreg2spillmask[Op_RegP]->OR(C->FIRST_STACK_mask());
+   idealreg2spillmask[Op_RegP]->or_with(C->FIRST_STACK_mask());
 #endif
-  *idealreg2spillmask[Op_RegI] = *idealreg2regmask[Op_RegI];
-   idealreg2spillmask[Op_RegI]->OR(C->FIRST_STACK_mask());
-  *idealreg2spillmask[Op_RegL] = *idealreg2regmask[Op_RegL];
-   idealreg2spillmask[Op_RegL]->OR(aligned_stack_mask);
-  *idealreg2spillmask[Op_RegF] = *idealreg2regmask[Op_RegF];
-   idealreg2spillmask[Op_RegF]->OR(C->FIRST_STACK_mask());
-  *idealreg2spillmask[Op_RegD] = *idealreg2regmask[Op_RegD];
-   idealreg2spillmask[Op_RegD]->OR(aligned_stack_mask);
+  idealreg2spillmask[Op_RegI]->assignFrom(*idealreg2regmask[Op_RegI]);
+  idealreg2spillmask[Op_RegI]->or_with(C->FIRST_STACK_mask());
+  idealreg2spillmask[Op_RegL]->assignFrom(*idealreg2regmask[Op_RegL]);
+  idealreg2spillmask[Op_RegL]->or_with(aligned_stack_mask);
+  idealreg2spillmask[Op_RegF]->assignFrom(*idealreg2regmask[Op_RegF]);
+  idealreg2spillmask[Op_RegF]->or_with(C->FIRST_STACK_mask());
+  idealreg2spillmask[Op_RegD]->assignFrom(*idealreg2regmask[Op_RegD]);
+  idealreg2spillmask[Op_RegD]->or_with(aligned_stack_mask);
 
   if (Matcher::has_predicated_vectors()) {
-    *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
-     idealreg2spillmask[Op_RegVectMask]->OR(aligned_stack_mask);
+    idealreg2spillmask[Op_RegVectMask]->assignFrom(*idealreg2regmask[Op_RegVectMask]);
+    idealreg2spillmask[Op_RegVectMask]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_RegVectMask] = RegMask::Empty;
+    idealreg2spillmask[Op_RegVectMask]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
-    *idealreg2spillmask[Op_VecS] = *idealreg2regmask[Op_VecS];
-     idealreg2spillmask[Op_VecS]->OR(C->FIRST_STACK_mask());
+    idealreg2spillmask[Op_VecS]->assignFrom(*idealreg2regmask[Op_VecS]);
+    idealreg2spillmask[Op_VecS]->or_with(C->FIRST_STACK_mask());
   } else {
-    *idealreg2spillmask[Op_VecS] = RegMask::Empty;
+    idealreg2spillmask[Op_VecS]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_FLOAT,2)) {
     // For VecD we need dual alignment and 8 bytes (2 slots) for spills.
     // RA guarantees such alignment since it is needed for Double and Long values.
-    *idealreg2spillmask[Op_VecD] = *idealreg2regmask[Op_VecD];
-     idealreg2spillmask[Op_VecD]->OR(aligned_stack_mask);
+    idealreg2spillmask[Op_VecD]->assignFrom(*idealreg2regmask[Op_VecD]);
+    idealreg2spillmask[Op_VecD]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecD] = RegMask::Empty;
+    idealreg2spillmask[Op_VecD]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_FLOAT,4)) {
@@ -538,45 +574,45 @@ void Matcher::init_first_stack_mask() {
     // otherwise vector spills could stomp over stack slots in caller frame.
     OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
     for (int k = 1; (in >= init_in) && (k < RegMask::SlotsPerVecX); k++) {
-      aligned_stack_mask.Remove(in);
+      aligned_stack_mask.remove(in);
       in = OptoReg::add(in, -1);
     }
-     aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecX);
-     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
-    *idealreg2spillmask[Op_VecX] = *idealreg2regmask[Op_VecX];
-     idealreg2spillmask[Op_VecX]->OR(aligned_stack_mask);
+    aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecX);
+    assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
+    idealreg2spillmask[Op_VecX]->assignFrom(*idealreg2regmask[Op_VecX]);
+    idealreg2spillmask[Op_VecX]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecX] = RegMask::Empty;
+    idealreg2spillmask[Op_VecX]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_FLOAT,8)) {
     // For VecY we need octo alignment and 32 bytes (8 slots) for spills.
     OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
     for (int k = 1; (in >= init_in) && (k < RegMask::SlotsPerVecY); k++) {
-      aligned_stack_mask.Remove(in);
+      aligned_stack_mask.remove(in);
       in = OptoReg::add(in, -1);
     }
-     aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecY);
-     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
-    *idealreg2spillmask[Op_VecY] = *idealreg2regmask[Op_VecY];
-     idealreg2spillmask[Op_VecY]->OR(aligned_stack_mask);
+    aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecY);
+    assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
+    idealreg2spillmask[Op_VecY]->assignFrom(*idealreg2regmask[Op_VecY]);
+    idealreg2spillmask[Op_VecY]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecY] = RegMask::Empty;
+    idealreg2spillmask[Op_VecY]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_FLOAT,16)) {
     // For VecZ we need enough alignment and 64 bytes (16 slots) for spills.
     OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
     for (int k = 1; (in >= init_in) && (k < RegMask::SlotsPerVecZ); k++) {
-      aligned_stack_mask.Remove(in);
+      aligned_stack_mask.remove(in);
       in = OptoReg::add(in, -1);
     }
-     aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecZ);
-     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
-    *idealreg2spillmask[Op_VecZ] = *idealreg2regmask[Op_VecZ];
-     idealreg2spillmask[Op_VecZ]->OR(aligned_stack_mask);
+    aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecZ);
+    assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
+    idealreg2spillmask[Op_VecZ]->assignFrom(*idealreg2regmask[Op_VecZ]);
+    idealreg2spillmask[Op_VecZ]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecZ] = RegMask::Empty;
+    idealreg2spillmask[Op_VecZ]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::supports_scalable_vector()) {
@@ -586,31 +622,31 @@ void Matcher::init_first_stack_mask() {
       // Exclude last input arg stack slots to avoid spilling vector register there,
       // otherwise RegVectMask spills could stomp over stack slots in caller frame.
       for (; (in >= init_in) && (k < scalable_predicate_reg_slots()); k++) {
-        scalable_stack_mask.Remove(in);
+        scalable_stack_mask.remove(in);
         in = OptoReg::add(in, -1);
       }
 
       // For RegVectMask
       scalable_stack_mask.clear_to_sets(scalable_predicate_reg_slots());
       assert(scalable_stack_mask.is_infinite_stack(), "should be infinite stack");
-      *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
-      idealreg2spillmask[Op_RegVectMask]->OR(scalable_stack_mask);
+      idealreg2spillmask[Op_RegVectMask]->assignFrom(*idealreg2regmask[Op_RegVectMask]);
+      idealreg2spillmask[Op_RegVectMask]->or_with(scalable_stack_mask);
     }
 
     // Exclude last input arg stack slots to avoid spilling vector register there,
     // otherwise vector spills could stomp over stack slots in caller frame.
     for (; (in >= init_in) && (k < scalable_vector_reg_size(T_FLOAT)); k++) {
-      scalable_stack_mask.Remove(in);
+      scalable_stack_mask.remove(in);
       in = OptoReg::add(in, -1);
     }
 
     // For VecA
-     scalable_stack_mask.clear_to_sets(RegMask::SlotsPerVecA);
-     assert(scalable_stack_mask.is_infinite_stack(), "should be infinite stack");
-    *idealreg2spillmask[Op_VecA] = *idealreg2regmask[Op_VecA];
-     idealreg2spillmask[Op_VecA]->OR(scalable_stack_mask);
+    scalable_stack_mask.clear_to_sets(RegMask::SlotsPerVecA);
+    assert(scalable_stack_mask.is_infinite_stack(), "should be infinite stack");
+    idealreg2spillmask[Op_VecA]->assignFrom(*idealreg2regmask[Op_VecA]);
+    idealreg2spillmask[Op_VecA]->or_with(scalable_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecA] = RegMask::Empty;
+    idealreg2spillmask[Op_VecA]->assignFrom(RegMask::EMPTY);
   }
 
   if (UseFPUForSpilling) {
@@ -618,20 +654,20 @@ void Matcher::init_first_stack_mask() {
     // symmetric and that the registers involved are the same size.
     // On sparc for instance we may have to use 64 bit moves will
     // kill 2 registers when used with F0-F31.
-    idealreg2spillmask[Op_RegI]->OR(*idealreg2regmask[Op_RegF]);
-    idealreg2spillmask[Op_RegF]->OR(*idealreg2regmask[Op_RegI]);
+    idealreg2spillmask[Op_RegI]->or_with(*idealreg2regmask[Op_RegF]);
+    idealreg2spillmask[Op_RegF]->or_with(*idealreg2regmask[Op_RegI]);
 #ifdef _LP64
-    idealreg2spillmask[Op_RegN]->OR(*idealreg2regmask[Op_RegF]);
-    idealreg2spillmask[Op_RegL]->OR(*idealreg2regmask[Op_RegD]);
-    idealreg2spillmask[Op_RegD]->OR(*idealreg2regmask[Op_RegL]);
-    idealreg2spillmask[Op_RegP]->OR(*idealreg2regmask[Op_RegD]);
+    idealreg2spillmask[Op_RegN]->or_with(*idealreg2regmask[Op_RegF]);
+    idealreg2spillmask[Op_RegL]->or_with(*idealreg2regmask[Op_RegD]);
+    idealreg2spillmask[Op_RegD]->or_with(*idealreg2regmask[Op_RegL]);
+    idealreg2spillmask[Op_RegP]->or_with(*idealreg2regmask[Op_RegD]);
 #else
-    idealreg2spillmask[Op_RegP]->OR(*idealreg2regmask[Op_RegF]);
+    idealreg2spillmask[Op_RegP]->or_with(*idealreg2regmask[Op_RegF]);
 #ifdef ARM
     // ARM has support for moving 64bit values between a pair of
     // integer registers and a double register
-    idealreg2spillmask[Op_RegL]->OR(*idealreg2regmask[Op_RegD]);
-    idealreg2spillmask[Op_RegD]->OR(*idealreg2regmask[Op_RegL]);
+    idealreg2spillmask[Op_RegL]->or_with(*idealreg2regmask[Op_RegD]);
+    idealreg2spillmask[Op_RegD]->or_with(*idealreg2regmask[Op_RegL]);
 #endif
 #endif
   }
@@ -639,40 +675,40 @@ void Matcher::init_first_stack_mask() {
   // Make up debug masks.  Any spill slot plus callee-save (SOE) registers.
   // Caller-save (SOC, AS) registers are assumed to be trashable by the various
   // inline-cache fixup routines.
-  *idealreg2debugmask  [Op_RegN] = *idealreg2spillmask[Op_RegN];
-  *idealreg2debugmask  [Op_RegI] = *idealreg2spillmask[Op_RegI];
-  *idealreg2debugmask  [Op_RegL] = *idealreg2spillmask[Op_RegL];
-  *idealreg2debugmask  [Op_RegF] = *idealreg2spillmask[Op_RegF];
-  *idealreg2debugmask  [Op_RegD] = *idealreg2spillmask[Op_RegD];
-  *idealreg2debugmask  [Op_RegP] = *idealreg2spillmask[Op_RegP];
-  *idealreg2debugmask  [Op_RegVectMask] = *idealreg2spillmask[Op_RegVectMask];
+  idealreg2debugmask[Op_RegN]->assignFrom(*idealreg2spillmask[Op_RegN]);
+  idealreg2debugmask[Op_RegI]->assignFrom(*idealreg2spillmask[Op_RegI]);
+  idealreg2debugmask[Op_RegL]->assignFrom(*idealreg2spillmask[Op_RegL]);
+  idealreg2debugmask[Op_RegF]->assignFrom(*idealreg2spillmask[Op_RegF]);
+  idealreg2debugmask[Op_RegD]->assignFrom(*idealreg2spillmask[Op_RegD]);
+  idealreg2debugmask[Op_RegP]->assignFrom(*idealreg2spillmask[Op_RegP]);
+  idealreg2debugmask[Op_RegVectMask]->assignFrom(*idealreg2spillmask[Op_RegVectMask]);
 
-  *idealreg2debugmask  [Op_VecA] = *idealreg2spillmask[Op_VecA];
-  *idealreg2debugmask  [Op_VecS] = *idealreg2spillmask[Op_VecS];
-  *idealreg2debugmask  [Op_VecD] = *idealreg2spillmask[Op_VecD];
-  *idealreg2debugmask  [Op_VecX] = *idealreg2spillmask[Op_VecX];
-  *idealreg2debugmask  [Op_VecY] = *idealreg2spillmask[Op_VecY];
-  *idealreg2debugmask  [Op_VecZ] = *idealreg2spillmask[Op_VecZ];
+  idealreg2debugmask[Op_VecA]->assignFrom(*idealreg2spillmask[Op_VecA]);
+  idealreg2debugmask[Op_VecS]->assignFrom(*idealreg2spillmask[Op_VecS]);
+  idealreg2debugmask[Op_VecD]->assignFrom(*idealreg2spillmask[Op_VecD]);
+  idealreg2debugmask[Op_VecX]->assignFrom(*idealreg2spillmask[Op_VecX]);
+  idealreg2debugmask[Op_VecY]->assignFrom(*idealreg2spillmask[Op_VecY]);
+  idealreg2debugmask[Op_VecZ]->assignFrom(*idealreg2spillmask[Op_VecZ]);
 
   // Prevent stub compilations from attempting to reference
   // callee-saved (SOE) registers from debug info
   bool exclude_soe = !Compile::current()->is_method_compilation();
   RegMask* caller_save_mask = exclude_soe ? &caller_save_regmask_exclude_soe : &caller_save_regmask;
 
-  idealreg2debugmask[Op_RegN]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_RegI]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_RegL]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_RegF]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_RegD]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_RegP]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_RegVectMask]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_RegN]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_RegI]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_RegL]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_RegF]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_RegD]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_RegP]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_RegVectMask]->subtract(*caller_save_mask);
 
-  idealreg2debugmask[Op_VecA]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_VecS]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_VecD]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_VecX]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_VecY]->SUBTRACT(*caller_save_mask);
-  idealreg2debugmask[Op_VecZ]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_VecA]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_VecS]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_VecD]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_VecX]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_VecY]->subtract(*caller_save_mask);
+  idealreg2debugmask[Op_VecZ]->subtract(*caller_save_mask);
 }
 
 //---------------------------is_save_on_entry----------------------------------
@@ -698,12 +734,11 @@ void Matcher::Fixup_Save_On_Entry( ) {
   // Input RegMask array shared by all Returns.
   // The type for doubles and longs has a count of 2, but
   // there is only 1 returned value
-  uint ret_edge_cnt = TypeFunc::Parms + ((C->tf()->range()->cnt() == TypeFunc::Parms) ? 0 : 1);
+  uint ret_edge_cnt = C->tf()->range_cc()->cnt();
   RegMask *ret_rms  = init_input_masks( ret_edge_cnt + soe_cnt, _return_addr_mask, c_frame_ptr_mask );
-  // Returns have 0 or 1 returned values depending on call signature.
-  // Return register is specified by return_value in the AD file.
-  if (ret_edge_cnt > TypeFunc::Parms)
-    ret_rms[TypeFunc::Parms+0] = _return_value_mask;
+  for (i = TypeFunc::Parms; i < ret_edge_cnt; i++) {
+    ret_rms[i].assignFrom(_return_values_mask[i-TypeFunc::Parms]);
+  }
 
   // Input RegMask array shared by all ForwardExceptions
   uint forw_exc_edge_cnt = TypeFunc::Parms;
@@ -715,10 +750,10 @@ void Matcher::Fixup_Save_On_Entry( ) {
   // Rethrow takes exception oop only, but in the argument 0 slot.
   OptoReg::Name reg = find_receiver();
   if (reg >= 0) {
-    reth_rms[TypeFunc::Parms] = mreg2regmask[reg];
+    reth_rms[TypeFunc::Parms].assignFrom(mreg2regmask[reg]);
 #ifdef _LP64
     // Need two slots for ptrs in 64-bit land
-    reth_rms[TypeFunc::Parms].Insert(OptoReg::add(OptoReg::Name(reg), 1));
+    reth_rms[TypeFunc::Parms].insert(OptoReg::add(OptoReg::Name(reg), 1));
 #endif
   }
 
@@ -737,8 +772,8 @@ void Matcher::Fixup_Save_On_Entry( ) {
   for( i=1; i < root->req(); i++ ) {
     MachReturnNode *m = root->in(i)->as_MachReturn();
     if( m->ideal_Opcode() == Op_TailCall ) {
-      tail_call_rms[TypeFunc::Parms+0] = m->MachNode::in_RegMask(TypeFunc::Parms+0);
-      tail_call_rms[TypeFunc::Parms+1] = m->MachNode::in_RegMask(TypeFunc::Parms+1);
+      tail_call_rms[TypeFunc::Parms + 0].assignFrom(m->MachNode::in_RegMask(TypeFunc::Parms + 0));
+      tail_call_rms[TypeFunc::Parms + 1].assignFrom(m->MachNode::in_RegMask(TypeFunc::Parms + 1));
       break;
     }
   }
@@ -750,8 +785,8 @@ void Matcher::Fixup_Save_On_Entry( ) {
   for( i=1; i < root->req(); i++ ) {
     MachReturnNode *m = root->in(i)->as_MachReturn();
     if( m->ideal_Opcode() == Op_TailJump ) {
-      tail_jump_rms[TypeFunc::Parms+0] = m->MachNode::in_RegMask(TypeFunc::Parms+0);
-      tail_jump_rms[TypeFunc::Parms+1] = m->MachNode::in_RegMask(TypeFunc::Parms+1);
+      tail_jump_rms[TypeFunc::Parms + 0].assignFrom(m->MachNode::in_RegMask(TypeFunc::Parms + 0));
+      tail_jump_rms[TypeFunc::Parms + 1].assignFrom(m->MachNode::in_RegMask(TypeFunc::Parms + 1));
       break;
     }
   }
@@ -775,7 +810,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
   }
 
   // Next unused projection number from Start.
-  int proj_cnt = C->tf()->domain()->cnt();
+  int proj_cnt = C->tf()->domain_cc()->cnt();
 
   // Do all the save-on-entry registers.  Make projections from Start for
   // them, and give them a use at the exit points.  To the allocator, they
@@ -784,14 +819,14 @@ void Matcher::Fixup_Save_On_Entry( ) {
     if( is_save_on_entry(i) ) {
 
       // Add the save-on-entry to the mask array
-      ret_rms      [      ret_edge_cnt] = mreg2regmask[i];
-      reth_rms     [     reth_edge_cnt] = mreg2regmask[i];
-      tail_call_rms[tail_call_edge_cnt] = mreg2regmask[i];
-      tail_jump_rms[tail_jump_edge_cnt] = mreg2regmask[i];
-      forw_exc_rms [ forw_exc_edge_cnt] = mreg2regmask[i];
+      ret_rms      [      ret_edge_cnt].assignFrom(mreg2regmask[i]);
+      reth_rms     [     reth_edge_cnt].assignFrom(mreg2regmask[i]);
+      tail_call_rms[tail_call_edge_cnt].assignFrom(mreg2regmask[i]);
+      tail_jump_rms[tail_jump_edge_cnt].assignFrom(mreg2regmask[i]);
+      forw_exc_rms [ forw_exc_edge_cnt].assignFrom(mreg2regmask[i]);
       // Halts need the SOE registers, but only in the stack as debug info.
       // A just-prior uncommon-trap or deoptimization will use the SOE regs.
-      halt_rms     [     halt_edge_cnt] = *idealreg2spillmask[_register_save_type[i]];
+      halt_rms     [     halt_edge_cnt].assignFrom(*idealreg2spillmask[_register_save_type[i]]);
 
       Node *mproj;
 
@@ -802,12 +837,12 @@ void Matcher::Fixup_Save_On_Entry( ) {
           _register_save_type[i+1] == Op_RegF &&
           is_save_on_entry(i+1) ) {
         // Add other bit for double
-        ret_rms      [      ret_edge_cnt].Insert(OptoReg::Name(i+1));
-        reth_rms     [     reth_edge_cnt].Insert(OptoReg::Name(i+1));
-        tail_call_rms[tail_call_edge_cnt].Insert(OptoReg::Name(i+1));
-        tail_jump_rms[tail_jump_edge_cnt].Insert(OptoReg::Name(i+1));
-        forw_exc_rms [ forw_exc_edge_cnt].Insert(OptoReg::Name(i+1));
-        halt_rms     [     halt_edge_cnt].Insert(OptoReg::Name(i+1));
+        ret_rms      [      ret_edge_cnt].insert(OptoReg::Name(i+1));
+        reth_rms     [     reth_edge_cnt].insert(OptoReg::Name(i+1));
+        tail_call_rms[tail_call_edge_cnt].insert(OptoReg::Name(i+1));
+        tail_jump_rms[tail_jump_edge_cnt].insert(OptoReg::Name(i+1));
+        forw_exc_rms [ forw_exc_edge_cnt].insert(OptoReg::Name(i+1));
+        halt_rms     [     halt_edge_cnt].insert(OptoReg::Name(i+1));
         mproj = new MachProjNode( start, proj_cnt, ret_rms[ret_edge_cnt], Op_RegD );
         proj_cnt += 2;          // Skip 2 for doubles
       }
@@ -815,12 +850,12 @@ void Matcher::Fixup_Save_On_Entry( ) {
                _register_save_type[i-1] == Op_RegF &&
                _register_save_type[i  ] == Op_RegF &&
                is_save_on_entry(i-1) ) {
-        ret_rms      [      ret_edge_cnt] = RegMask::Empty;
-        reth_rms     [     reth_edge_cnt] = RegMask::Empty;
-        tail_call_rms[tail_call_edge_cnt] = RegMask::Empty;
-        tail_jump_rms[tail_jump_edge_cnt] = RegMask::Empty;
-        forw_exc_rms [ forw_exc_edge_cnt] = RegMask::Empty;
-        halt_rms     [     halt_edge_cnt] = RegMask::Empty;
+        ret_rms      [      ret_edge_cnt].assignFrom(RegMask::EMPTY);
+        reth_rms     [     reth_edge_cnt].assignFrom(RegMask::EMPTY);
+        tail_call_rms[tail_call_edge_cnt].assignFrom(RegMask::EMPTY);
+        tail_jump_rms[tail_jump_edge_cnt].assignFrom(RegMask::EMPTY);
+        forw_exc_rms [ forw_exc_edge_cnt].assignFrom(RegMask::EMPTY);
+        halt_rms     [     halt_edge_cnt].assignFrom(RegMask::EMPTY);
         mproj = C->top();
       }
       // Is this a RegI low half of a RegL?  Double up 2 adjacent RegI's
@@ -830,12 +865,12 @@ void Matcher::Fixup_Save_On_Entry( ) {
           _register_save_type[i+1] == Op_RegI &&
         is_save_on_entry(i+1) ) {
         // Add other bit for long
-        ret_rms      [      ret_edge_cnt].Insert(OptoReg::Name(i+1));
-        reth_rms     [     reth_edge_cnt].Insert(OptoReg::Name(i+1));
-        tail_call_rms[tail_call_edge_cnt].Insert(OptoReg::Name(i+1));
-        tail_jump_rms[tail_jump_edge_cnt].Insert(OptoReg::Name(i+1));
-        forw_exc_rms [ forw_exc_edge_cnt].Insert(OptoReg::Name(i+1));
-        halt_rms     [     halt_edge_cnt].Insert(OptoReg::Name(i+1));
+        ret_rms      [      ret_edge_cnt].insert(OptoReg::Name(i+1));
+        reth_rms     [     reth_edge_cnt].insert(OptoReg::Name(i+1));
+        tail_call_rms[tail_call_edge_cnt].insert(OptoReg::Name(i+1));
+        tail_jump_rms[tail_jump_edge_cnt].insert(OptoReg::Name(i+1));
+        forw_exc_rms [ forw_exc_edge_cnt].insert(OptoReg::Name(i+1));
+        halt_rms     [     halt_edge_cnt].insert(OptoReg::Name(i+1));
         mproj = new MachProjNode( start, proj_cnt, ret_rms[ret_edge_cnt], Op_RegL );
         proj_cnt += 2;          // Skip 2 for longs
       }
@@ -843,12 +878,12 @@ void Matcher::Fixup_Save_On_Entry( ) {
                _register_save_type[i-1] == Op_RegI &&
                _register_save_type[i  ] == Op_RegI &&
                is_save_on_entry(i-1) ) {
-        ret_rms      [      ret_edge_cnt] = RegMask::Empty;
-        reth_rms     [     reth_edge_cnt] = RegMask::Empty;
-        tail_call_rms[tail_call_edge_cnt] = RegMask::Empty;
-        tail_jump_rms[tail_jump_edge_cnt] = RegMask::Empty;
-        forw_exc_rms [ forw_exc_edge_cnt] = RegMask::Empty;
-        halt_rms     [     halt_edge_cnt] = RegMask::Empty;
+        ret_rms      [      ret_edge_cnt].assignFrom(RegMask::EMPTY);
+        reth_rms     [     reth_edge_cnt].assignFrom(RegMask::EMPTY);
+        tail_call_rms[tail_call_edge_cnt].assignFrom(RegMask::EMPTY);
+        tail_jump_rms[tail_jump_edge_cnt].assignFrom(RegMask::EMPTY);
+        forw_exc_rms [ forw_exc_edge_cnt].assignFrom(RegMask::EMPTY);
+        halt_rms     [     halt_edge_cnt].assignFrom(RegMask::EMPTY);
         mproj = C->top();
       } else {
         // Make a projection for it off the Start
@@ -875,34 +910,34 @@ void Matcher::init_spill_mask( Node *ret ) {
   if( idealreg2regmask[Op_RegI] ) return; // One time only init
 
   OptoReg::c_frame_pointer = c_frame_pointer();
-  c_frame_ptr_mask = RegMask(c_frame_pointer());
+  c_frame_ptr_mask.assignFrom(RegMask(c_frame_pointer()));
 #ifdef _LP64
   // pointers are twice as big
-  c_frame_ptr_mask.Insert(OptoReg::add(c_frame_pointer(),1));
+  c_frame_ptr_mask.insert(OptoReg::add(c_frame_pointer(), 1));
 #endif
 
   // Start at OptoReg::stack0()
-  STACK_ONLY_mask.Clear();
+  STACK_ONLY_mask.clear();
   // STACK_ONLY_mask is all stack bits
-  STACK_ONLY_mask.Set_All_From(OptoReg::stack2reg(0));
+  STACK_ONLY_mask.set_all_from(OptoReg::stack2reg(0));
 
   for (OptoReg::Name i = OptoReg::Name(0); i < OptoReg::Name(_last_Mach_Reg);
        i = OptoReg::add(i, 1)) {
     // Copy the register names over into the shared world.
     // SharedInfo::regName[i] = regName[i];
     // Handy RegMasks per machine register
-    mreg2regmask[i].Insert(i);
+    mreg2regmask[i].insert(i);
 
     // Set up regmasks used to exclude save-on-call (and always-save) registers from debug masks.
     if (_register_save_policy[i] == 'C' ||
         _register_save_policy[i] == 'A') {
-      caller_save_regmask.Insert(i);
+      caller_save_regmask.insert(i);
     }
     // Exclude save-on-entry registers from debug masks for stub compilations.
     if (_register_save_policy[i] == 'C' ||
         _register_save_policy[i] == 'A' ||
         _register_save_policy[i] == 'E') {
-      caller_save_regmask_exclude_soe.Insert(i);
+      caller_save_regmask_exclude_soe.insert(i);
     }
   }
 
@@ -1028,7 +1063,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
       // Old-space or new-space check
       if (!C->node_arena()->contains(n)) {
         // Old space!
-        Node* m;
+        Node* m = nullptr;
         if (has_new_node(n)) {  // Not yet Label/Reduced
           m = new_node(n);
         } else {
@@ -1043,9 +1078,21 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             }
           } else {                  // Nothing the matcher cares about
             if (n->is_Proj() && n->in(0) != nullptr && n->in(0)->is_Multi()) {       // Projections?
-              // Convert to machine-dependent projection
-              m = n->in(0)->as_Multi()->match( n->as_Proj(), this );
-              NOT_PRODUCT(record_new2old(m, n);)
+              if (n->in(0)->is_Initialize() && n->as_Proj()->_con == TypeFunc::Memory) {
+                // Initialize may have multiple NarrowMem projections. They would all match to identical raw mem MachProjs.
+                // We don't need multiple MachProjs. Create one if none already exist, otherwise use existing one.
+                m = n->in(0)->as_Initialize()->mem_mach_proj();
+                if (m == nullptr && has_new_node(n->in(0))) {
+                  InitializeNode* new_init = new_node(n->in(0))->as_Initialize();
+                  m = new_init->mem_mach_proj();
+                }
+                assert(m == nullptr || m->is_MachProj(), "no mem projection yet or a MachProj created during matching");
+              }
+              if (m == nullptr) {
+                // Convert to machine-dependent projection
+                m = n->in(0)->as_Multi()->match(n->as_Proj(), this);
+                NOT_PRODUCT(record_new2old(m, n);)
+              }
               if (m->in(0) != nullptr) // m might be top
                 collect_null_checks(m, n);
             } else {                // Else just a regular 'ol guy
@@ -1179,7 +1226,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   ciMethod*        method = nullptr;
   if( sfpt->is_Call() ) {
     call = sfpt->as_Call();
-    domain = call->tf()->domain();
+    domain = call->tf()->domain_cc();
     cnt = domain->cnt();
 
     // Match just the call, nothing else
@@ -1240,8 +1287,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   }
 
   // Do all the pre-defined non-Empty register masks
-  msfpt->_in_rms[TypeFunc::ReturnAdr] = _return_addr_mask;
-  msfpt->_in_rms[TypeFunc::FramePtr ] = c_frame_ptr_mask;
+  msfpt->_in_rms[TypeFunc::ReturnAdr].assignFrom(_return_addr_mask);
+  msfpt->_in_rms[TypeFunc::FramePtr ].assignFrom(c_frame_ptr_mask);
 
   // Place first outgoing argument can possibly be put.
   OptoReg::Name begin_out_arg_area = OptoReg::add(_new_SP, C->out_preserve_stack_slots());
@@ -1255,13 +1302,16 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
 
 
   // Do the normal argument list (parameters) register masks
-  int argcnt = cnt - TypeFunc::Parms;
+  // Null entry point is a special cast where the target of the call
+  // is in a register.
+  int adj = (call != nullptr && call->entry_point() == nullptr) ? 1 : 0;
+  int argcnt = cnt - TypeFunc::Parms - adj;
   if( argcnt > 0 ) {          // Skip it all if we have no args
     BasicType *sig_bt  = NEW_RESOURCE_ARRAY( BasicType, argcnt );
     VMRegPair *parm_regs = NEW_RESOURCE_ARRAY( VMRegPair, argcnt );
     int i;
     for( i = 0; i < argcnt; i++ ) {
-      sig_bt[i] = domain->field_at(i+TypeFunc::Parms)->basic_type();
+      sig_bt[i] = domain->field_at(i+TypeFunc::Parms+adj)->basic_type();
     }
     // V-call to pick proper calling convention
     call->calling_convention( sig_bt, parm_regs, argcnt );
@@ -1302,7 +1352,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // and over the entire method.
     for( i = 0; i < argcnt; i++ ) {
       // Address of incoming argument mask to fill in
-      RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms];
+      RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms+adj];
       VMReg first = parm_regs[i].first();
       VMReg second = parm_regs[i].second();
       if(!first->is_valid() &&
@@ -1315,17 +1365,19 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
         OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
         assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
         for (OptoReg::Name r = reg_fst; r <= reg_snd; r++) {
-          rm->Insert(r);
+          rm->insert(r);
         }
       }
       // Grab first register, adjust stack slots and insert in mask.
       OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
-      if (OptoReg::is_valid(reg1))
-        rm->Insert( reg1 );
+      if (OptoReg::is_valid(reg1)) {
+        rm->insert( reg1 );
+      }
       // Grab second register (if any), adjust stack slots and insert in mask.
       OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
-      if (OptoReg::is_valid(reg2))
-        rm->Insert( reg2 );
+      if (OptoReg::is_valid(reg2)) {
+        rm->insert( reg2 );
+      }
     } // End of for all arguments
   }
 
@@ -1341,12 +1393,12 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // Since the max-per-method covers the max-per-call-site and debug info
     // is excluded on the max-per-method basis, debug info cannot land in
     // this killed area.
-    uint r_cnt = mcall->tf()->range()->cnt();
-    MachProjNode *proj = new MachProjNode( mcall, r_cnt+10000, RegMask::Empty, MachProjNode::fat_proj );
+    uint r_cnt = mcall->tf()->range_sig()->cnt();
+    MachProjNode *proj = new MachProjNode( mcall, r_cnt+10000, RegMask::EMPTY, MachProjNode::fat_proj );
     for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++) {
-      proj->_rout.Insert(OptoReg::Name(i));
+      proj->_rout.insert(OptoReg::Name(i));
     }
-    if (!proj->_rout.is_Empty()) {
+    if (!proj->_rout.is_empty()) {
       push_projection(proj);
     }
   }
@@ -1359,7 +1411,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
 
   // Debug inputs begin just after the last incoming parameter
   assert((mcall == nullptr) || (mcall->jvms() == nullptr) ||
-         (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain()->cnt()), "");
+         (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain_cc()->cnt()), "");
 
   // Add additional edges.
   if (msfpt->mach_constant_base_node_input() != (uint)-1 && !msfpt->is_MachCallLeaf()) {
@@ -2048,7 +2100,7 @@ void Matcher::find_shared(Node* n) {
       if (find_shared_visit(mstack, n, nop, mem_op, mem_addr_idx)) {
         continue;
       }
-      for (int i = n->req() - 1; i >= 0; --i) { // For my children
+      for (int i = n->len() - 1; i >= 0; --i) { // For my children
         Node* m = n->in(i); // Get ith input
         if (m == nullptr) {
           continue;  // Ignore nulls
@@ -2092,10 +2144,7 @@ void Matcher::find_shared(Node* n) {
 
       // Now hack a few special opcodes
       uint opcode = n->Opcode();
-      bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->matcher_find_shared_post_visit(this, n, opcode);
-      if (!gc_handled) {
-        find_shared_post_visit(n, opcode);
-      }
+      find_shared_post_visit(n, opcode);
     }
     else {
       ShouldNotReachHere();
@@ -2359,6 +2408,13 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_ClearArray: {
+      Node* pair = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair);
+      n->set_req(3, n->in(4));
+      n->del_req(4);
+      break;
+    }
     case Op_VectorCmpMasked:
     case Op_CopySignD:
     case Op_SignumVF:
@@ -2370,8 +2426,10 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_VectorSlice:
     case Op_VectorBlend:
-    case Op_VectorInsert: {
+    case Op_VectorInsert:
+    case Op_VectorBitwiseBlend: {
       Node* pair = new BinaryNode(n->in(1), n->in(2));
       n->set_req(1, pair);
       n->set_req(2, n->in(3));
@@ -2405,6 +2463,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
         // PartialSubtypeCheck uses both constant and register operands for superclass input.
         n->set_req(2, new BinaryNode(n->in(2), n->in(2)));
         break;
+      }
+      break;
+    }
+    case Op_StoreLSpecial: {
+      if (n->req() > (MemNode::ValueIn + 1) && n->in(MemNode::ValueIn + 1) != nullptr) {
+        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn + 1));
+        n->set_req(MemNode::ValueIn, pair);
+        n->del_req(MemNode::ValueIn + 1);
       }
       break;
     }
@@ -2536,7 +2602,7 @@ bool Matcher::gen_narrow_oop_implicit_null_checks() {
   // Advice matcher to perform null checks on the narrow oop side.
   // Implicit checks are not possible on the uncompressed oop side anyway
   // (at least not for read accesses).
-  // Performs significantly better (especially on Power 6).
+  // Performs significantly better.
   if (!os::zero_page_read_protected()) {
     return true;
   }
@@ -2800,8 +2866,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
         xop == Op_CompareAndSwapL ||
         xop == Op_CompareAndSwapP ||
         xop == Op_CompareAndSwapN ||
-        xop == Op_CompareAndSwapI ||
-        BarrierSet::barrier_set()->barrier_set_c2()->matcher_is_store_load_barrier(x, xop)) {
+        xop == Op_CompareAndSwapI) {
       return true;
     }
 

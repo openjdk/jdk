@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -771,6 +771,27 @@ JShell.
     command options, use the Tab key to automatically complete the item. If the
     item can't be determined from what was entered, then possible options are
     provided.
+
+    Use the Tab key after entering the name of a class, interface, method, or
+    field to see the description of the class, interface, method, or field.
+    The description is based on the javadoc comment for the declaration of the
+    class, interface, method, or field, when sources for the declaration are
+    available.
+
+    The sources for the JDK classes are looked up in the JDK's sources, if they
+    can be found in the JDK installation. The sources may need to be added to
+    the JDK installation separately.
+
+    The sources of classes, interfaces, methods, and fields declared on the class path
+    or module path are looked up in the entry on the class path or module path which
+    contains the declaration. If the entry is a JAR file and it does not contain the source,
+    then the source is looked up in a JAR file with the same path and name but with `.jar`
+    replaced by `-sources.jar`, if such a file exists. For example, if `<directory>/lib.jar`
+    does not contain the source, then `<directory>/lib-sources.jar` is searched if it exists.
+
+    When searching for sources, JShell expects source files to be co-located with class files.
+    That is, the source for a given class or interface must be in a file with the same path and name
+    as the class file for the corresponding top-level class or interface, with `.class` replaced by `.java`.
 
     When entering a method call, use the Tab key after the method call's
     opening parenthesis to see the parameters for the method. If the method has

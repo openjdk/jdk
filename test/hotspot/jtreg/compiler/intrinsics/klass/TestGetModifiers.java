@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,8 @@
 /*
  * @test
  * @library /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -Xint
  *                   -XX:CompileCommand=dontinline,*TestGetModifiers.test
  *                   compiler.intrinsics.klass.TestGetModifiers
@@ -34,6 +37,8 @@
  * @test
  * @requires vm.compiler1.enabled
  * @library /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:TieredStopAtLevel=1 -XX:+TieredCompilation
  *                   -XX:CompileCommand=dontinline,*TestGetModifiers.test
  *                   compiler.intrinsics.klass.TestGetModifiers
@@ -43,6 +48,8 @@
  * @test
  * @requires vm.compiler2.enabled
  * @library /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:-TieredCompilation
  *                   -XX:CompileCommand=dontinline,*TestGetModifiers.test
  *                   compiler.intrinsics.klass.TestGetModifiers
@@ -50,10 +57,11 @@
 
 package compiler.intrinsics.klass;
 
-import java.lang.reflect.Modifier;
+import static java.lang.classfile.ClassFile.ACC_IDENTITY;
 import static java.lang.reflect.Modifier.*;
 
 import jdk.test.lib.Asserts;
+import jdk.internal.misc.PreviewFeatures;
 
 public class TestGetModifiers {
     public static class T1 {
@@ -78,17 +86,17 @@ public class TestGetModifiers {
         for (int i = 0; i < 100_000; i++) {
             int actualMods = cl.getModifiers();
             if (actualMods != expectedMods) {
-                throw new IllegalStateException("Error with: " + cl);
+                throw new IllegalStateException("Error with: " + cl + " : " + actualMods  + " vs " + expectedMods);
             }
         }
     }
 
     public static void main(String... args) {
-        test(T1.class,                                      PUBLIC | STATIC);
-        test(T2.class,                                      PUBLIC | FINAL | STATIC);
-        test(T3.class,                                      PRIVATE | STATIC);
-        test(T4.class,                                      PROTECTED | STATIC);
-        test(new TestGetModifiers().new T5().getClass(),    0);
+        test(T1.class,                                      PUBLIC | STATIC | ACC_IDENTITY);
+        test(T2.class,                                      PUBLIC | FINAL | STATIC | ACC_IDENTITY);
+        test(T3.class,                                      PRIVATE | STATIC | ACC_IDENTITY);
+        test(T4.class,                                      PROTECTED | STATIC | ACC_IDENTITY);
+        test(new TestGetModifiers().new T5().getClass(),       ACC_IDENTITY);
         test(T6.class,                                      ABSTRACT | STATIC | INTERFACE);
 
         test(int.class,                                     PUBLIC | ABSTRACT | FINAL);
@@ -99,20 +107,20 @@ public class TestGetModifiers {
         test(byte.class,                                    PUBLIC | ABSTRACT | FINAL);
         test(short.class,                                   PUBLIC | ABSTRACT | FINAL);
         test(void.class,                                    PUBLIC | ABSTRACT | FINAL);
-        test(int[].class,                                   PUBLIC | ABSTRACT | FINAL);
-        test(long[].class,                                  PUBLIC | ABSTRACT | FINAL);
-        test(double[].class,                                PUBLIC | ABSTRACT | FINAL);
-        test(float[].class,                                 PUBLIC | ABSTRACT | FINAL);
-        test(char[].class,                                  PUBLIC | ABSTRACT | FINAL);
-        test(byte[].class,                                  PUBLIC | ABSTRACT | FINAL);
-        test(short[].class,                                 PUBLIC | ABSTRACT | FINAL);
-        test(Object[].class,                                PUBLIC | ABSTRACT | FINAL);
-        test(TestGetModifiers[].class,                      PUBLIC | ABSTRACT | FINAL);
+        test(int[].class,                                   PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
+        test(long[].class,                                  PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
+        test(double[].class,                                PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
+        test(float[].class,                                 PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
+        test(char[].class,                                  PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
+        test(byte[].class,                                  PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
+        test(short[].class,                                 PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
+        test(Object[].class,                                PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
+        test(TestGetModifiers[].class,                      PUBLIC | ABSTRACT | FINAL | (PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0));
 
-        test(new TestGetModifiers().getClass(),             PUBLIC);
-        test(new T1().getClass(),                           PUBLIC | STATIC);
-        test(new T2().getClass(),                           PUBLIC | FINAL | STATIC);
-        test(new T3().getClass(),                           PRIVATE | STATIC);
-        test(new T4().getClass(),                           PROTECTED | STATIC);
+        test(new TestGetModifiers().getClass(),             PUBLIC | ACC_IDENTITY);
+        test(new T1().getClass(),                           PUBLIC | STATIC | ACC_IDENTITY);
+        test(new T2().getClass(),                           PUBLIC | FINAL | STATIC | ACC_IDENTITY);
+        test(new T3().getClass(),                           PRIVATE | STATIC | ACC_IDENTITY);
+        test(new T4().getClass(),                           PROTECTED | STATIC | ACC_IDENTITY);
     }
 }

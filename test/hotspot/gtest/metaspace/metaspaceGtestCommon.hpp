@@ -42,7 +42,7 @@ public:
     _arr = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     memset(_arr, 0, _len);
   }
-  ~TestMap() { FREE_C_HEAP_ARRAY(char, _arr); }
+  ~TestMap() { FREE_C_HEAP_ARRAY(_arr); }
 
   int get_num_set(size_t from, size_t to) const {
     int result = 0;
@@ -193,7 +193,7 @@ public:
   }
 
   ~FeederBuffer() {
-    FREE_C_HEAP_ARRAY(MetaWord, _buf);
+    FREE_C_HEAP_ARRAY(_buf);
   }
 
   MetaWord* get(size_t word_size) {

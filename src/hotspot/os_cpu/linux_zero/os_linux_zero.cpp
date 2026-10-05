@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -86,9 +86,7 @@ char* os::non_memory_address_word() {
 
 address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
   if (DecodeErrorContext) {
-#if defined(IA32)
-    return (address)uc->uc_mcontext.gregs[REG_EIP];
-#elif defined(AMD64)
+#if defined(AMD64)
     return (address)uc->uc_mcontext.gregs[REG_RIP];
 #elif defined(ARM)
     return (address)uc->uc_mcontext.arm_pc;
@@ -117,9 +115,7 @@ void os::Posix::ucontext_set_pc(ucontext_t* uc, address pc) {
 
 intptr_t* os::Linux::ucontext_get_sp(const ucontext_t* uc) {
   if (DecodeErrorContext) {
-#if defined(IA32)
-    return (intptr_t*)uc->uc_mcontext.gregs[REG_UESP];
-#elif defined(AMD64)
+#if defined(AMD64)
     return (intptr_t*)uc->uc_mcontext.gregs[REG_RSP];
 #elif defined(ARM)
     return (intptr_t*)uc->uc_mcontext.arm_sp;
@@ -144,9 +140,7 @@ intptr_t* os::Linux::ucontext_get_sp(const ucontext_t* uc) {
 
 intptr_t* os::Linux::ucontext_get_fp(const ucontext_t* uc) {
   if (DecodeErrorContext) {
-#if defined(IA32)
-    return (intptr_t*)uc->uc_mcontext.gregs[REG_EBP];
-#elif defined(AMD64)
+#if defined(AMD64)
     return (intptr_t*)uc->uc_mcontext.gregs[REG_RBP];
 #elif defined(ARM)
     return (intptr_t*)uc->uc_mcontext.arm_fp;
@@ -266,14 +260,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       ShouldNotCallThis();
     }
 
-    // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC
-    // kicks in and the heap gets shrunk before the field access.
-    /*if (sig == SIGSEGV || sig == SIGBUS) {
-      address addr = JNI_FastGetField::find_slowcase_pc(pc);
-      if (addr != (address)-1) {
-        stub = addr;
-      }
-    }*/
   }
 
   return false; // Fatal error

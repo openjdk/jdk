@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "gc/g1/g1HeapRegionBounds.inline.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "unittest.hpp"
@@ -38,9 +39,9 @@ public:
     return G1CardSetInlinePtr::max_cards_in_inline_ptr(bits_per_card);
   }
 
-  static void cardset_inlineptr_test(uint bits_per_card);
-  static void cardset_array_test(uint cards_per_array);
-  static void cardset_bitmap_test(uint threshold, uint size_in_bits);
+  static void card_set_inlineptr_test(uint bits_per_card);
+  static void card_set_array_test(uint cards_per_array);
+  static void card_set_bitmap_test(uint threshold, uint size_in_bits);
 };
 
 class G1FindCardsInRange : public StackObj {
@@ -68,7 +69,7 @@ public:
   }
 
   ~G1FindCardsInRange() {
-    FREE_C_HEAP_ARRAY(mtGC, _cards_found);
+    FREE_C_HEAP_ARRAY(_cards_found);
   }
   void operator()(uint card) {
     ASSERT_TRUE((card - _range_min) < _num_cards);
@@ -77,53 +78,53 @@ public:
   }
 };
 
-void G1CardSetContainersTest::cardset_inlineptr_test(uint bits_per_card) {
+void G1CardSetContainersTest::card_set_inlineptr_test(uint bits_per_card) {
   const uint CardsPerSet = cards_per_inlineptr_set(bits_per_card);
 
   G1AddCardResult res;
 
-  G1CardSet::ContainerPtr value = G1CardSetInlinePtr();
+  Atomic<G1CardSet::ContainerPtr> value{};
 
   for (uint i = 0; i < CardsPerSet; i++) {
     {
-      G1CardSetInlinePtr cards(&value, value);
+      G1CardSetInlinePtr cards(&value, value.load_relaxed());
       res = cards.add(i + 1, bits_per_card, CardsPerSet);
       ASSERT_TRUE(res == Added);
     }
     {
-      G1CardSetInlinePtr cards(&value, value);
+      G1CardSetInlinePtr cards(&value, value.load_relaxed());
       ASSERT_TRUE(cards.contains(i + 1, bits_per_card));
     }
   }
 
   for (uint i = 0; i < CardsPerSet; i++) {
-    G1CardSetInlinePtr cards(value);
+    G1CardSetInlinePtr cards(value.load_relaxed());
     ASSERT_TRUE(cards.contains(i + 1, bits_per_card));
   }
 
   // Try to add again, should all return that the card had been added.
   for (uint i = 0; i < CardsPerSet; i++) {
-    G1CardSetInlinePtr cards(&value, value);
+    G1CardSetInlinePtr cards(&value, value.load_relaxed());
     res = cards.add(i + 1, bits_per_card, CardsPerSet);
     ASSERT_TRUE(res == Found);
   }
 
   // Should be no more space in set.
   {
-    G1CardSetInlinePtr cards(&value, value);
+    G1CardSetInlinePtr cards(&value, value.load_relaxed());
     res = cards.add(CardsPerSet + 1, bits_per_card, CardsPerSet);
     ASSERT_TRUE(res == Overflow);
   }
 
   // Cards should still be in the set.
   for (uint i = 0; i < CardsPerSet; i++) {
-    G1CardSetInlinePtr cards(value);
+    G1CardSetInlinePtr cards(value.load_relaxed());
     ASSERT_TRUE(cards.contains(i + 1, bits_per_card));
   }
 
   // Boundary cards should not be in the set.
   {
-    G1CardSetInlinePtr cards(value);
+    G1CardSetInlinePtr cards(value.load_relaxed());
     ASSERT_TRUE(!cards.contains(0, bits_per_card));
     ASSERT_TRUE(!cards.contains(CardsPerSet + 1, bits_per_card));
   }
@@ -131,15 +132,15 @@ void G1CardSetContainersTest::cardset_inlineptr_test(uint bits_per_card) {
   // Verify iteration finds all cards too and only those.
   {
     G1FindCardsInRange found(1, CardsPerSet);
-    G1CardSetInlinePtr cards(value);
+    G1CardSetInlinePtr cards(value.load_relaxed());
     cards.iterate(found, bits_per_card);
     found.verify_all_found();
   }
 }
 
-void G1CardSetContainersTest::cardset_array_test(uint cards_per_array) {
-  uint8_t* cardset_data = NEW_C_HEAP_ARRAY(uint8_t, G1CardSetArray::size_in_bytes(cards_per_array), mtGC);
-  G1CardSetArray* cards = new (cardset_data) G1CardSetArray(1, cards_per_array);
+void G1CardSetContainersTest::card_set_array_test(uint cards_per_array) {
+  uint8_t* card_set_data = NEW_C_HEAP_ARRAY(uint8_t, G1CardSetArray::size_in_bytes(cards_per_array), mtGC);
+  G1CardSetArray* cards = new (card_set_data) G1CardSetArray(1, cards_per_array);
 
   ASSERT_TRUE(cards->contains(1)); // Added during initialization
   ASSERT_TRUE(cards->num_entries() == 1); // Check it's the only one.
@@ -184,12 +185,12 @@ void G1CardSetContainersTest::cardset_array_test(uint cards_per_array) {
     found.verify_all_found();
   }
 
-  FREE_C_HEAP_ARRAY(mtGC, cardset_data);
+  FREE_C_HEAP_ARRAY(card_set_data);
 }
 
-void G1CardSetContainersTest::cardset_bitmap_test(uint threshold, uint size_in_bits) {
-  uint8_t* cardset_data = NEW_C_HEAP_ARRAY(uint8_t, G1CardSetBitMap::size_in_bytes(size_in_bits), mtGC);
-  G1CardSetBitMap* cards = new (cardset_data) G1CardSetBitMap(1, size_in_bits);
+void G1CardSetContainersTest::card_set_bitmap_test(uint threshold, uint size_in_bits) {
+  uint8_t* card_set_data = NEW_C_HEAP_ARRAY(uint8_t, G1CardSetBitMap::size_in_bytes(size_in_bits), mtGC);
+  G1CardSetBitMap* cards = new (card_set_data) G1CardSetBitMap(1, size_in_bits);
 
   ASSERT_TRUE(cards->contains(1, size_in_bits)); // Added during initialization
   ASSERT_TRUE(cards->num_bits_set() == 1); // Should be the only one.
@@ -231,32 +232,32 @@ void G1CardSetContainersTest::cardset_bitmap_test(uint threshold, uint size_in_b
     found.verify_part_found(threshold);
   }
 
-  FREE_C_HEAP_ARRAY(mtGC, cardset_data);
+  FREE_C_HEAP_ARRAY(card_set_data);
 }
 
-TEST_VM_F(G1CardSetContainersTest, basic_cardset_inptr_test) {
+TEST_VM_F(G1CardSetContainersTest, basic_card_set_inptr_test) {
   uint const min = (uint)log2i(G1HeapRegionBounds::min_size());
   uint const max = (uint)log2i(G1HeapRegionBounds::max_size());
 
   for (uint i = min; i <= max; i++) {
-    G1CardSetContainersTest::cardset_inlineptr_test(i - CardTable::card_shift());
+    G1CardSetContainersTest::card_set_inlineptr_test(i - CardTable::card_shift());
   }
 }
 
-TEST_VM_F(G1CardSetContainersTest, basic_cardset_array_test) {
+TEST_VM_F(G1CardSetContainersTest, basic_card_set_array_test) {
   uint array_sizes[] = { 5, 9, 63, 77, 127 };
 
   for (uint i = 0; i < ARRAY_SIZE(array_sizes); i++) {
     size_t const max_cards_in_set = ARRAY_SIZE(array_sizes);
-    G1CardSetContainersTest::cardset_array_test(max_cards_in_set);
+    G1CardSetContainersTest::card_set_array_test(max_cards_in_set);
   }
 }
 
-TEST_VM_F(G1CardSetContainersTest, basic_cardset_bitmap_test) {
+TEST_VM_F(G1CardSetContainersTest, basic_card_set_bitmap_test) {
   uint bit_sizes[] = { 64, 2048 };
   uint threshold_sizes[] = { 17, 330 };
 
   for (uint i = 0; i < ARRAY_SIZE(bit_sizes); i++) {
-    G1CardSetContainersTest::cardset_bitmap_test(threshold_sizes[i], bit_sizes[i]);
+    G1CardSetContainersTest::card_set_bitmap_test(threshold_sizes[i], bit_sizes[i]);
   }
 }

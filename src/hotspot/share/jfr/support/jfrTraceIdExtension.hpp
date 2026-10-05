@@ -42,7 +42,6 @@
 #define ASSIGN_PRIMITIVE_CLASS_ID(data) JfrTraceId::assign_primitive_klass_id()
 #define REMOVE_ID(k) JfrTraceId::remove(k);
 #define REMOVE_METHOD_ID(method) JfrTraceId::remove(method);
-#define RESTORE_ID(k) JfrTraceId::restore(k);
 
 static constexpr const uint16_t cleared_epoch_bits = 512 | 256;
 

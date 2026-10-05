@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8080069 8152925
+ * @test 8080069 8152925 8340840 8368999
  * @summary Test of Snippet redefinition and replacement.
  * @build KullaTesting TestingInputStream
  * @run junit ReplaceTest
@@ -281,5 +281,40 @@ public class ReplaceTest extends KullaTesting {
         varKey(assertEval(xsd,
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(xi2, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
+    }
+
+    @Test //JDK-8368999
+    public void testLinkageErrorWhileRedefine() {
+        Snippet iKey = classKey(assertEval("sealed interface I permits C {}",
+                                           ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_NOT_DEFINED, false, null)));
+        Snippet cKey = classKey(assertEval("sealed class C implements I permits SubC {}",
+                                           ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_NOT_DEFINED, false, null)));
+        Snippet subCKey = classKey(assertEval("final class SubC extends C {}",
+                                              ste(MAIN_SNIPPET, NONEXISTENT, VALID, true, null),
+                                              ste(iKey, RECOVERABLE_NOT_DEFINED, VALID, true, null),
+                                              ste(cKey, RECOVERABLE_NOT_DEFINED, VALID, true, null)));
+        assertEval("sealed abstract class C implements I permits SubC {}",
+                   ste(MAIN_SNIPPET, VALID, VALID, true, null),
+                   ste(iKey, VALID, VALID, true, null),
+                   ste(subCKey, VALID, VALID, true, null),
+                   ste(cKey, VALID, OVERWRITTEN, false, null));
+    }
+
+    @Test //JDK-8340840
+    public void testStaticNonStatic() {
+        Snippet oKey = classKey(assertEval("class O { class I {} }"));
+        Snippet vKey = varKey(assertEval("var i = new O().new I();"));
+        assertEval("class O { static class I {} }",
+                   DiagCheck.DIAG_OK,
+                   DiagCheck.DIAG_ERROR,
+                   ste(MAIN_SNIPPET, VALID, VALID, true, null),
+                   ste(vKey, VALID, RECOVERABLE_NOT_DEFINED, true, null),
+                   ste(oKey, VALID, OVERWRITTEN, false, null));
+        assertEval("var i2 = new O.I();");
+        assertEval("var i = new O.I();",
+                   DiagCheck.DIAG_OK,
+                   DiagCheck.DIAG_IGNORE, //there are errors in the original (replaced) Snippet
+                   ste(MAIN_SNIPPET, RECOVERABLE_NOT_DEFINED, VALID, true, null),
+                   ste(vKey, RECOVERABLE_NOT_DEFINED, OVERWRITTEN, false, null));
     }
 }

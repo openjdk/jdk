@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8304954
  * @summary Code cache reservation should gracefully downgrade to using smaller pages if the code cache size is too small to host the requested page size.
  * @requires os.family == "linux"
- * @requires vm.gc != "Z"
+ * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -72,12 +72,12 @@ public class CheckLargePages {
         return 0;
     }
 
-    private static void testSegmented2GbCodeCacheWith1GbPage() throws Exception {
+    private static void testSegmentedCodeCacheTooSmallFor1GbPages(String codeCacheSize) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UseLargePages",
                 "-XX:+SegmentedCodeCache",
-                "-XX:InitialCodeCacheSize=2g",
-                "-XX:ReservedCodeCacheSize=2g",
+                "-XX:InitialCodeCacheSize=" + codeCacheSize,
+                "-XX:ReservedCodeCacheSize=" + codeCacheSize,
                 "-XX:LargePageSizeInBytes=1g",
                 "-Xlog:pagesize=info",
                 "-version");
@@ -130,7 +130,13 @@ public class CheckLargePages {
 
     public static void main(String[] args) throws Exception {
         if (isLargePageSizeEqual(LP_1G)) {
-            testSegmented2GbCodeCacheWith1GbPage();
+            boolean is_riscv64 = System.getProperty("os.arch").equals("riscv64");
+            if (is_riscv64) {
+                // Code cache limit in riscv64 is below 2g, so use a close value 1900mb instead
+                testSegmentedCodeCacheTooSmallFor1GbPages("1900m");
+            } else {
+                testSegmentedCodeCacheTooSmallFor1GbPages("2g");
+            }
             if (numberOfLargePages(LP_1G) >= 1) {
                 testDefaultCodeCacheWith1GbLargePages();
                 testNonSegmented1GbCodeCacheWith1GbLargePages();

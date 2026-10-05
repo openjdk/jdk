@@ -25,13 +25,10 @@
 
 package com.sun.tools.javac.tree;
 
-
-
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
-import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
@@ -182,6 +179,36 @@ public class TreeInfo {
         }
     }
 
+    /** Is this tree `super`, or `Ident.super`?
+     */
+    public static boolean isSuperOrSelectorDotSuper(JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isSuperOrSelectorDotSuper(skipParens(tree));
+            case IDENT:
+                return ((JCIdent)tree).name == ((JCIdent)tree).name.table.names._super;
+            case SELECT:
+                return ((JCFieldAccess)tree).name == ((JCFieldAccess)tree).name.table.names._super;
+            default:
+                return false;
+        }
+    }
+
+    /** Is this tree `this`, or `Ident.this`?
+     */
+    public static boolean isThisOrSelectorDotThis(JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isThisOrSelectorDotThis(skipParens(tree));
+            case IDENT:
+                return ((JCIdent)tree).name == ((JCIdent)tree).name.table.names._this;
+            case SELECT:
+                return ((JCFieldAccess)tree).name == ((JCFieldAccess)tree).name.table.names._this;
+            default:
+                return false;
+        }
+    }
+
     /** Check if the given tree is an explicit reference to the 'this' instance of the
      *  class currently being compiled. This is true if tree is:
      *  - An unqualified 'this' identifier
@@ -190,21 +217,24 @@ public class TreeInfo {
      *    but also NOT an enclosing outer class of 'currentClass'.
      */
     public static boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
+        Symbol.ClassSymbol currentClassSym = (Symbol.ClassSymbol) types.erasure(currentClass).tsym;
         switch (tree.getTag()) {
             case PARENS:
                 return isExplicitThisReference(types, currentClass, skipParens(tree));
             case IDENT: {
                 JCIdent ident = (JCIdent)tree;
                 Names names = ident.name.table.names;
-                return ident.name == names._this || ident.name == names._super;
+                return ident.name == names._this && tree.type.tsym == currentClass.tsym ||
+                       ident.name == names._super &&
+                               (tree.type.tsym == currentClass.tsym ||
+                                currentClassSym.isSubClass(tree.type.tsym, types));
             }
             case SELECT: {
                 JCFieldAccess select = (JCFieldAccess)tree;
                 Type selectedType = types.erasure(select.selected.type);
                 if (!selectedType.hasTag(TypeTag.CLASS))
                     return false;
-                Symbol.ClassSymbol currentClassSym = (Symbol.ClassSymbol)((Type.ClassType)types.erasure(currentClass)).tsym;
-                Symbol.ClassSymbol selectedClassSym = (Symbol.ClassSymbol)((Type.ClassType)selectedType).tsym;
+                Symbol.ClassSymbol selectedClassSym = (Symbol.ClassSymbol)(selectedType).tsym;
                 Names names = select.name.table.names;
                 return currentClassSym.isSubClass(selectedClassSym, types) &&
                         (select.name == names._super ||
@@ -437,6 +467,19 @@ public class TreeInfo {
      * Return true if the AST corresponds to a static select of the kind A.B
      */
     public static boolean isStaticSelector(JCTree base, Names names) {
+        return isTypeSelector(base, names, TreeInfo::isStaticSym);
+    }
+    //where
+        private static boolean isStaticSym(JCTree tree) {
+            Symbol sym = symbol(tree);
+            return (sym.kind == TYP || sym.kind == PCK);
+        }
+
+    public static boolean isType(JCTree base, Names names) {
+        return isTypeSelector(base, names, _ -> true);
+    }
+
+    private static boolean isTypeSelector(JCTree base, Names names, Predicate<JCTree> checkStaticSym) {
         if (base == null)
             return false;
         switch (base.getTag()) {
@@ -444,9 +487,9 @@ public class TreeInfo {
                 JCIdent id = (JCIdent)base;
                 return id.name != names._this &&
                         id.name != names._super &&
-                        isStaticSym(base);
+                        checkStaticSym.test(base);
             case SELECT:
-                return isStaticSym(base) &&
+                return checkStaticSym.test(base) &&
                     isStaticSelector(((JCFieldAccess)base).selected, names);
             case TYPEAPPLY:
             case TYPEARRAY:
@@ -457,11 +500,6 @@ public class TreeInfo {
                 return false;
         }
     }
-    //where
-        private static boolean isStaticSym(JCTree tree) {
-            Symbol sym = symbol(tree);
-            return (sym.kind == TYP || sym.kind == PCK);
-        }
 
     /** Return true if a tree represents the null literal. */
     public static boolean isNull(JCTree tree) {
@@ -614,8 +652,6 @@ public class TreeInfo {
                     return node.mods.pos;
                 } else if (node.vartype != null) {
                     return getStartPos(node.vartype);
-                } else if (node.typePos != Position.NOPOS) {
-                    return node.typePos;
                 }
                 break;
             }
@@ -639,13 +675,13 @@ public class TreeInfo {
 
     /** The end position of given tree, given  a table of end positions generated by the parser
      */
-    public static int getEndPos(JCTree tree, EndPosTable endPosTable) {
+    public static int getEndPos(JCTree tree) {
         if (tree == null)
             return Position.NOPOS;
 
-        int mapPos = endPosTable.getEndPos(tree);
-        if (mapPos != Position.NOPOS)
-            return mapPos;
+        int endpos = tree.endpos;
+        if (endpos != Position.NOPOS)
+            return endpos;
 
         switch(tree.getTag()) {
             case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
@@ -665,57 +701,57 @@ public class TreeInfo {
             case COMPL:
             case PREINC:
             case PREDEC:
-                return getEndPos(((JCOperatorExpression) tree).getOperand(RIGHT), endPosTable);
+                return getEndPos(((JCOperatorExpression) tree).getOperand(RIGHT));
             case CASE:
-                return getEndPos(((JCCase) tree).stats.last(), endPosTable);
+                return getEndPos(((JCCase) tree).stats.last());
             case CATCH:
-                return getEndPos(((JCCatch) tree).body, endPosTable);
+                return getEndPos(((JCCatch) tree).body);
             case CONDEXPR:
-                return getEndPos(((JCConditional) tree).falsepart, endPosTable);
+                return getEndPos(((JCConditional) tree).falsepart);
             case FORLOOP:
-                return getEndPos(((JCForLoop) tree).body, endPosTable);
+                return getEndPos(((JCForLoop) tree).body);
             case FOREACHLOOP:
-                return getEndPos(((JCEnhancedForLoop) tree).body, endPosTable);
+                return getEndPos(((JCEnhancedForLoop) tree).body);
             case IF: {
                 JCIf node = (JCIf)tree;
                 if (node.elsepart == null) {
-                    return getEndPos(node.thenpart, endPosTable);
+                    return getEndPos(node.thenpart);
                 } else {
-                    return getEndPos(node.elsepart, endPosTable);
+                    return getEndPos(node.elsepart);
                 }
             }
             case LABELLED:
-                return getEndPos(((JCLabeledStatement) tree).body, endPosTable);
+                return getEndPos(((JCLabeledStatement) tree).body);
             case MODIFIERS:
-                return getEndPos(((JCModifiers) tree).annotations.last(), endPosTable);
+                return getEndPos(((JCModifiers) tree).annotations.last());
             case SYNCHRONIZED:
-                return getEndPos(((JCSynchronized) tree).body, endPosTable);
+                return getEndPos(((JCSynchronized) tree).body);
             case TOPLEVEL:
-                return getEndPos(((JCCompilationUnit) tree).defs.last(), endPosTable);
+                return getEndPos(((JCCompilationUnit) tree).defs.last());
             case TRY: {
                 JCTry node = (JCTry)tree;
                 if (node.finalizer != null) {
-                    return getEndPos(node.finalizer, endPosTable);
+                    return getEndPos(node.finalizer);
                 } else if (!node.catchers.isEmpty()) {
-                    return getEndPos(node.catchers.last(), endPosTable);
+                    return getEndPos(node.catchers.last());
                 } else {
-                    return getEndPos(node.body, endPosTable);
+                    return getEndPos(node.body);
                 }
             }
             case WILDCARD:
-                return getEndPos(((JCWildcard) tree).inner, endPosTable);
+                return getEndPos(((JCWildcard) tree).inner);
             case TYPECAST:
-                return getEndPos(((JCTypeCast) tree).expr, endPosTable);
+                return getEndPos(((JCTypeCast) tree).expr);
             case TYPETEST:
-                return getEndPos(((JCInstanceOf) tree).pattern, endPosTable);
+                return getEndPos(((JCInstanceOf) tree).pattern);
             case WHILELOOP:
-                return getEndPos(((JCWhileLoop) tree).body, endPosTable);
+                return getEndPos(((JCWhileLoop) tree).body);
             case ANNOTATED_TYPE:
-                return getEndPos(((JCAnnotatedType) tree).underlyingType, endPosTable);
+                return getEndPos(((JCAnnotatedType) tree).underlyingType);
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty())
-                    return getEndPos(node.errs.last(), endPosTable);
+                    return getEndPos(node.errs.last());
             }
         }
         return Position.NOPOS;
@@ -732,8 +768,8 @@ public class TreeInfo {
             public JCTree getTree() { return tree; }
             public int getStartPosition() { return TreeInfo.getStartPos(tree); }
             public int getPreferredPosition() { return endPos; }
-            public int getEndPosition(EndPosTable endPosTable) {
-                return TreeInfo.getEndPos(tree, endPosTable);
+            public int getEndPosition() {
+                return TreeInfo.getEndPos(tree);
             }
         };
     }

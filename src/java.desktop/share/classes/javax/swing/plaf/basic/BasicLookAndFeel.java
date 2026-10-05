@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@ import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.InsetsUIResource;
 import javax.swing.text.DefaultEditorKit;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
@@ -126,11 +125,6 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
 
     AWTEventHelper invocator = null;
 
-    /*
-     * Listen for our AppContext being disposed
-     */
-    private PropertyChangeListener disposer = null;
-
     /**
      * Constructor for subclasses to call.
      */
@@ -174,18 +168,6 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
         if (invocator == null) {
             invocator = new AWTEventHelper();
             needsEventHelper = true;
-
-            // Add a PropertyChangeListener to our AppContext so we're alerted
-            // when the AppContext is disposed(), at which time this laf should
-            // be uninitialize()d.
-            disposer = new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent prpChg) {
-                    uninitialize();
-                }
-            };
-            AppContext.getAppContext().addPropertyChangeListener(
-                                                        AppContext.GUI_DISPOSED,
-                                                        disposer);
         }
     }
 
@@ -193,34 +175,20 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
      * {@inheritDoc}
      */
     public void uninitialize() {
-        AppContext context = AppContext.getAppContext();
-        synchronized (BasicPopupMenuUI.MOUSE_GRABBER_KEY) {
-            Object grabber = context.get(BasicPopupMenuUI.MOUSE_GRABBER_KEY);
-            if (grabber != null) {
-                ((BasicPopupMenuUI.MouseGrabber)grabber).uninstall();
-            }
-        }
-        synchronized (BasicPopupMenuUI.MENU_KEYBOARD_HELPER_KEY) {
-            Object helper =
-                    context.get(BasicPopupMenuUI.MENU_KEYBOARD_HELPER_KEY);
-            if (helper != null) {
-                ((BasicPopupMenuUI.MenuKeyboardHelper)helper).uninstall();
-            }
-        }
+        synchronized (BasicPopupMenuUI.class) {
+            if (BasicPopupMenuUI.mouseGrabber != null) {
+                BasicPopupMenuUI.mouseGrabber.uninstall();
+                BasicPopupMenuUI.mouseGrabber = null;
+             }
+            if (BasicPopupMenuUI.menuKeyboardHelper != null) {
+               BasicPopupMenuUI.menuKeyboardHelper.uninstall();
+               BasicPopupMenuUI.menuKeyboardHelper = null;
+             }
+         }
 
-        if(invocator != null) {
+        if (invocator != null) {
             invocator.run();
             invocator = null;
-        }
-
-        if (disposer != null) {
-            // Note that we're likely calling removePropertyChangeListener()
-            // during the course of AppContext.firePropertyChange().
-            // However, EventListenerAggregate has code to safely modify
-            // the list under such circumstances.
-            context.removePropertyChangeListener(AppContext.GUI_DISPOSED,
-                                                 disposer);
-            disposer = null;
         }
     }
 

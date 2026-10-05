@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.net.www.protocol.http.ntlm;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.PasswordAuthentication;
-import java.net.UnknownHostException;
 import java.net.URL;
 import java.util.Locale;
 import sun.net.NetProperties;
@@ -204,10 +202,10 @@ public final class NTLMAuthentication extends AuthenticationInfo {
      * @param p A source of header values for this connection, not used because
      *          HeaderParser converts the fields to lower case, use raw instead
      * @param raw The raw header field.
-     * @return true if all goes well, false if no headers were set.
+     * @throws IOException if no headers were set
      */
     @Override
-    public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+    public void setHeaders(HttpURLConnection conn, HeaderParser p, String raw) throws IOException {
 
         // no need to synchronize here:
         //   already locked by s.n.w.p.h.HttpURLConnection
@@ -224,10 +222,9 @@ public final class NTLMAuthentication extends AuthenticationInfo {
             if (seq.isComplete()) {
                 conn.authObj(null);
             }
-            return true;
         } catch (IOException e) {
             conn.authObj(null);
-            return false;
+            throw e;
         }
     }
 }

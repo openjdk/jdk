@@ -208,6 +208,13 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
   }
 
+  if (VerifyArchivedFields > 0) {
+    // ZGC doesn't support verifying at arbitrary points as our normal state is that everything in the
+    // heap looks completely insane. Only at some particular points does the heap look sort of sane.
+    // So instead of verifying we trigger a GC that does its own verification when it's suitable.
+    FLAG_SET_DEFAULT(VerifyArchivedFields, 2);
+  }
+
   // Verification before startup and after exit not (yet) supported
   FLAG_SET_DEFAULT(VerifyDuringStartup, false);
   FLAG_SET_DEFAULT(VerifyBeforeExit, false);

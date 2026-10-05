@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import javax.lang.model.type.DeclaredType;
  * method.  There is no guarantee that any particular annotation will
  * always be represented by the same object.
  *
+ * @jls 9.6 Annotation Interfaces
+ * @jls 9.7 Annotations
  * @since 1.6
  */
 public interface AnnotationMirror {

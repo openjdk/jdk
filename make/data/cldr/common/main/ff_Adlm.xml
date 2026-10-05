@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1416,11 +1416,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0">𞤢𞤣𞤮 𞤁𞤢𞤴𞤢𞤳𞤭𞤤𞤼𞤭𞤴𞤢𞥄𞤲</era>
 						<era type="1">𞤩𞤢𞥄𞤱𞤮 𞤁𞤢𞤴𞤢𞤳𞤭𞤤𞤼𞤭𞤴𞤢𞥄𞤲</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">𞤀𞤁</era>
 						<era type="1">𞤇𞤁</era>
 					</eraAbbr>
 				</eras>
@@ -1562,13 +1560,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<eraAbbr>
 						<era type="0">𞤀𞤁</era>
 						<era type="1">𞤇𞤁</era>
-					</eraAbbr>
-				</eras>
-			</calendar>
-			<calendar type="ethiopic-amete-alem">
-				<eras>
-					<eraAbbr>
-						<era type="0">𞤘𞤋𞤈𞥐</era>
 					</eraAbbr>
 				</eras>
 			</calendar>
@@ -3267,13 +3258,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>{0} 𞤑𞤭𞤶𞤮𞥅𞤪𞤫</regionFormat>
 			<regionFormat type="daylight">{0} 𞤐𞤶𞤢𞤥𞤲𞤣𞤭 𞤕𞤫𞥅𞤯𞤵</regionFormat>
 			<regionFormat type="standard">{0} 𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫</regionFormat>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>𞤑𞤖𞤖</generic>
-					<standard>𞤑𞤖𞤖</standard>
-					<daylight>𞤑𞤕𞤖</daylight>
-				</short>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤭𞤤𞥆𞤢𞤲𞤳𞤮𞥅𞤪𞤫 𞤊𞤮𞤲𞤣𞤢𞥄𞤲𞤣𞤫</standard>
@@ -3892,9 +3876,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>𞤆𞤢𞤲𞤮𞤥-𞤆𞤫𞤲</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>𞤉𞤲𞤣𞤫𞤪𞤦𞤵𞥅𞤪𞤭</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>𞤑𞤢𞤲𞤼𞤮𞤲</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4568,9 +4549,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤭𞥅𞤪𞤲𞤢𞥄𞤲𞤺𞤫 𞤀𞤬𞤪𞤭𞤳𞤢𞥄</generic>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤖𞤭𞥅𞤪𞤲𞤢𞥄𞤲𞤺𞤫 𞤀𞤬𞤪𞤭𞤳𞤢𞥄</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤖𞤭𞥅𞤪𞤲𞤢𞥄𞤲𞤺𞤫 𞤀𞤬𞤪𞤭𞤳𞤢𞥄</daylight>
+					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤭𞥅𞤪𞤲𞤢𞥄𞤲𞤺𞤫 𞤀𞤬𞤪𞤭𞤳𞤢𞥄</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4956,6 +4935,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤘𞤢𞤴𞤢𞤲𞤢𞥄</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤖𞤢𞤱𞤢𞥄𞤴𞤭𞥅-𞤀𞤤𞤮𞤧𞤭𞤴𞤢𞤲</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -5619,30 +5603,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">0𞤓¤</pattern>
-					<pattern type="1000" count="other">0𞤓¤</pattern>
-					<pattern type="10000" count="one">00𞤓¤</pattern>
-					<pattern type="10000" count="other">00𞤓¤</pattern>
-					<pattern type="100000" count="one">000𞤓¤</pattern>
-					<pattern type="100000" count="other">000𞤓¤</pattern>
-					<pattern type="1000000" count="one">0𞤁¤</pattern>
-					<pattern type="1000000" count="other">0𞤁¤</pattern>
-					<pattern type="10000000" count="one">00𞤁¤</pattern>
-					<pattern type="10000000" count="other">00𞤁¤</pattern>
-					<pattern type="100000000" count="one">000𞤁¤</pattern>
-					<pattern type="100000000" count="other">000𞤁¤</pattern>
-					<pattern type="1000000000" count="one">0𞤁𞤶¤</pattern>
-					<pattern type="1000000000" count="other">0𞤁𞤶¤</pattern>
-					<pattern type="10000000000" count="one">00𞤁𞤶¤</pattern>
-					<pattern type="10000000000" count="other">00𞤁𞤶¤</pattern>
-					<pattern type="100000000000" count="one">000𞤁𞤶¤</pattern>
-					<pattern type="100000000000" count="other">000𞤁𞤶¤</pattern>
-					<pattern type="1000000000000" count="one">0𞤚¤</pattern>
-					<pattern type="1000000000000" count="other">0𞤚¤</pattern>
-					<pattern type="10000000000000" count="one">00𞤚¤</pattern>
-					<pattern type="10000000000000" count="other">00𞤚¤</pattern>
-					<pattern type="100000000000000" count="one">000𞤚¤</pattern>
-					<pattern type="100000000000000" count="other">000𞤚¤</pattern>
+					<pattern type="1000" count="one">¤ 0𞤓</pattern>
+					<pattern type="1000" count="other">¤ 0𞤓</pattern>
+					<pattern type="10000" count="one">¤ 00𞤓</pattern>
+					<pattern type="10000" count="other">¤ 00𞤓</pattern>
+					<pattern type="100000" count="one">¤ 000𞤓</pattern>
+					<pattern type="100000" count="other">¤ 000𞤓</pattern>
+					<pattern type="1000000" count="one">¤ 0𞤁</pattern>
+					<pattern type="1000000" count="other">¤ 0𞤁</pattern>
+					<pattern type="10000000" count="one">¤ 00𞤁</pattern>
+					<pattern type="10000000" count="other">¤ 00𞤁</pattern>
+					<pattern type="100000000" count="one">¤ 000𞤁</pattern>
+					<pattern type="100000000" count="other">¤ 000𞤁</pattern>
+					<pattern type="1000000000" count="one">¤ 0𞤁𞤶</pattern>
+					<pattern type="1000000000" count="other">¤ 0𞤁𞤶</pattern>
+					<pattern type="10000000000" count="one">¤ 00𞤁𞤶</pattern>
+					<pattern type="10000000000" count="other">¤ 00𞤁𞤶</pattern>
+					<pattern type="100000000000" count="one">¤ 000𞤁𞤶</pattern>
+					<pattern type="100000000000" count="other">¤ 000𞤁𞤶</pattern>
+					<pattern type="1000000000000" count="one">¤ 0𞤚</pattern>
+					<pattern type="1000000000000" count="other">¤ 0𞤚</pattern>
+					<pattern type="10000000000000" count="one">¤ 00𞤚</pattern>
+					<pattern type="10000000000000" count="other">¤ 00𞤚</pattern>
+					<pattern type="100000000000000" count="one">¤ 000𞤚</pattern>
+					<pattern type="100000000000000" count="other">¤ 000𞤚</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -6912,7 +6896,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𞤨𞤭𞤪𞤰𞤵</unitPattern>
 				<unitPattern count="other">{0} 𞤨𞤭𞤪𞤰𞤭</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>𞤺𞤫𞤩𞤫 𞤳𞤢𞤤𞤢 𞤣𞤵𞤦𞤵𞥅𞤪𞤫</displayName>
 				<unitPattern count="one">{0} 𞤺𞤫𞤩𞤢𞤤 𞤳𞤢𞤤𞤢 𞤣𞤵𞤦𞤵𞥅𞤪𞤫</unitPattern>
 				<unitPattern count="other">{0} 𞤺𞤫𞤩𞤫 𞤳𞤢𞤤𞤢 𞤣𞤵𞤦𞤵𞥅𞤪𞤫</unitPattern>
@@ -7920,7 +7904,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𞤨𞤭𞤪</unitPattern>
 				<unitPattern count="other">{0} 𞤨𞤭𞤪</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>𞤺𞤫𞤩𞤫/𞤣𞤵𞤦𞤵𞥅𞤪𞤫</displayName>
 				<unitPattern count="one">{0} 𞤺𞤳𞤣</unitPattern>
 				<unitPattern count="other">{0} 𞤺𞤳𞤣</unitPattern>
@@ -8846,7 +8830,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}𞤨𞤭𞤪</unitPattern>
 				<unitPattern count="other">{0}𞤨𞤭𞤪</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>𞤺𞤳𞤣</displayName>
 				<unitPattern count="one">{0}𞤺𞤳𞤣</unitPattern>
 				<unitPattern count="other">{0}𞤺𞤳𞤣</unitPattern>

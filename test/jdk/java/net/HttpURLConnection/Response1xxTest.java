@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,28 +33,31 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 import jdk.test.lib.net.URIBuilder;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
-/**
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+/*
  * @test
  * @bug 8170305
  * @summary Tests behaviour of HttpURLConnection when server responds with 1xx interim response status codes
  * @library /test/lib
- * @run testng Response1xxTest
+ * @run junit ${test.main.class}
  */
 public class Response1xxTest {
     private static final String EXPECTED_RSP_BODY = "Hello World";
 
-    private ServerSocket serverSocket;
-    private Http11Server server;
-    private String requestURIBase;
+    private static ServerSocket serverSocket;
+    private static Http11Server server;
+    private static String requestURIBase;
 
 
-    @BeforeClass
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         server = new Http11Server(serverSocket);
         new Thread(server).start();
@@ -62,8 +65,8 @@ public class Response1xxTest {
                 .port(serverSocket.getLocalPort()).build().toString();
     }
 
-    @AfterClass
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         if (server != null) {
             server.stop = true;
             System.out.println("(HTTP 1.1) Server stop requested");
@@ -166,7 +169,7 @@ public class Response1xxTest {
 
         static String readRequestLine(final Socket sock) throws IOException {
             final InputStream is = sock.getInputStream();
-            final StringBuilder sb = new StringBuilder("");
+            final StringBuilder sb = new StringBuilder();
             byte[] buf = new byte[1024];
             while (!sb.toString().endsWith("\r\n\r\n")) {
                 final int numRead = is.read(buf);
@@ -203,13 +206,13 @@ public class Response1xxTest {
             System.out.println("Issuing request to " + requestURI);
             final HttpURLConnection urlConnection = (HttpURLConnection) requestURI.toURL().openConnection();
             final int responseCode = urlConnection.getResponseCode();
-            Assert.assertEquals(responseCode, 200, "Unexpected response code");
+            assertEquals(200, responseCode, "Unexpected response code");
             final String body;
             try (final InputStream is = urlConnection.getInputStream()) {
                 final byte[] bytes = is.readAllBytes();
                 body = new String(bytes, StandardCharsets.UTF_8);
             }
-            Assert.assertEquals(body, EXPECTED_RSP_BODY, "Unexpected response body");
+            assertEquals(EXPECTED_RSP_BODY, body, "Unexpected response body");
         }
     }
 
@@ -223,6 +226,6 @@ public class Response1xxTest {
         System.out.println("Issuing request to " + requestURI);
         final HttpURLConnection urlConnection = (HttpURLConnection) requestURI.toURL().openConnection();
         // we expect the request to fail because the server unexpectedly sends a 101 response
-        Assert.assertThrows(ProtocolException.class, () -> urlConnection.getResponseCode());
+        assertThrows(ProtocolException.class, urlConnection::getResponseCode);
     }
 }

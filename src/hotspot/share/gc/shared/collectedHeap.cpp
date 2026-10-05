@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,12 +62,14 @@
 
 class ClassLoaderData;
 
+bool CollectedHeap::_is_shutting_down = false;
+
 size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
 
-class GCLogMessage : public FormatBuffer<512> {};
+class GCLogMessage : public FormatBuffer<1024> {};
 
 template <>
 void EventLogBase<GCLogMessage>::print(outputStream* st, GCLogMessage& m) {
@@ -280,6 +282,8 @@ CollectedHeap::CollectedHeap() :
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
   _total_full_collections(0),
+  NOT_PRODUCT(_promotion_failure_alot_count(0) COMMA)
+  NOT_PRODUCT(_promotion_failure_alot_gc_number(0) COMMA)
   _vmthread_cpu_time(0),
   _gc_cause(GCCause::_no_gc),
   _gc_lastcause(GCCause::_no_gc)
@@ -296,9 +300,6 @@ CollectedHeap::CollectedHeap() :
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   _filler_array_max_size = align_object_size(filler_array_hdr_size() +
                                              max_len / elements_per_word);
-
-  NOT_PRODUCT(_promotion_failure_alot_count = 0;)
-  NOT_PRODUCT(_promotion_failure_alot_gc_number = 0;)
 
   if (UsePerfData) {
     EXCEPTION_MARK;
@@ -377,18 +378,12 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
                                        word_size,
                                        mdtype,
                                        gc_count,
-                                       full_gc_count,
-                                       GCCause::_metadata_GC_threshold);
+                                       full_gc_count);
 
     VMThread::execute(&op);
 
     if (op.gc_succeeded()) {
       return op.result();
-    }
-
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
     }
 
     loop_count++;
@@ -449,12 +444,6 @@ void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint v
 }
 
 #ifdef ASSERT
-void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
-{
-  assert(words >= min_fill_size(), "too small to fill");
-  assert(is_object_aligned(words), "unaligned size");
-}
-
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
 {
   if (ZapFillerObjects && zap) {
@@ -500,14 +489,16 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
 
 void CollectedHeap::fill_with_object(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
   fill_with_object_impl(start, words, zap);
 }
 
 void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
 
   // Multiple objects may be required depending on the filler array maximum size. Fill
@@ -606,64 +597,55 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 
 void CollectedHeap::post_initialize() {
   StringDedup::initialize();
-  initialize_serviceability();
 }
 
-bool CollectedHeap::is_shutting_down() const {
-  return Universe::is_shutting_down();
+bool CollectedHeap::is_shutting_down() {
+  assert(Heap_lock->owned_by_self(), "Protected by this lock");
+  return _is_shutting_down;
 }
 
-void CollectedHeap::stall_for_vm_shutdown() {
-  assert(is_shutting_down(), "Precondition");
-  // Stall the thread (2 seconds) instead of an indefinite wait to avoid deadlock
-  // if the VM shutdown triggers a GC.
-  // The 2-seconds sleep is:
-  //   - long enough to keep daemon threads stalled, while the shutdown
-  //     sequence completes in the common case.
-  //   - short enough to avoid excessive stall time if the shutdown itself
-  //     triggers a GC.
-  JavaThread::current()->sleep(2 * MILLIUNITS);
-  log_warning(gc, alloc)("%s: Stall for VM-Shutdown timed out; allocation may fail with OOME", Thread::current()->name());
-}
+void CollectedHeap::initiate_shutdown() {
+  {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
+    MutexLocker hl(Heap_lock);
+    _is_shutting_down = true;
+  }
 
-void CollectedHeap::before_exit() {
   print_tracing_info();
+}
 
-  // Stop any on-going concurrent work and prepare for exit.
-  stop();
+size_t CollectedHeap::bootstrap_max_memory() const {
+  return MaxNewSize;
 }
 
 #ifndef PRODUCT
 
-bool CollectedHeap::promotion_should_fail(volatile size_t* count) {
-  // Access to count is not atomic; the value does not have to be exact.
+bool CollectedHeap::promotion_should_fail() {
+  // Access to count is not atomic in any way - we can loose updates, overwrite never counts, etc;
+  // the value does not have to be exact.
   if (PromotionFailureALot) {
     const size_t gc_num = total_collections();
-    const size_t elapsed_gcs = gc_num - _promotion_failure_alot_gc_number;
+    const size_t elapsed_gcs = gc_num - _promotion_failure_alot_gc_number.load_relaxed();
     if (elapsed_gcs >= PromotionFailureALotInterval) {
-      // Test for unsigned arithmetic wrap-around.
-      if (++*count >= PromotionFailureALotCount) {
-        *count = 0;
+      // To avoid the base (x86-)costs for atomic RMW operations, use explicit load/store_relaxed() operations.
+      uintx new_count = _promotion_failure_alot_count.load_relaxed() + 1;
+      if (new_count >= PromotionFailureALotCount) {
+        _promotion_failure_alot_count.store_relaxed(0);
         return true;
+      } else {
+        _promotion_failure_alot_count.store_relaxed(new_count);
       }
     }
   }
   return false;
 }
 
-bool CollectedHeap::promotion_should_fail() {
-  return promotion_should_fail(&_promotion_failure_alot_count);
-}
-
-void CollectedHeap::reset_promotion_should_fail(volatile size_t* count) {
-  if (PromotionFailureALot) {
-    _promotion_failure_alot_gc_number = total_collections();
-    *count = 0;
-  }
-}
-
 void CollectedHeap::reset_promotion_should_fail() {
-  reset_promotion_should_fail(&_promotion_failure_alot_count);
+  if (PromotionFailureALot) {
+    _promotion_failure_alot_gc_number.store_relaxed(total_collections());
+    _promotion_failure_alot_count.store_relaxed(0);
+  }
 }
 
 #endif  // #ifndef PRODUCT

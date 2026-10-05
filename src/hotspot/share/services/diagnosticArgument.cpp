@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,14 @@ StringArrayArgument::StringArrayArgument() {
 
 StringArrayArgument::~StringArrayArgument() {
   for (int i=0; i<_array->length(); i++) {
-    FREE_C_HEAP_ARRAY(char, _array->at(i));
+    FREE_C_HEAP_ARRAY(_array->at(i));
   }
   delete _array;
 }
 
 void StringArrayArgument::add(const char* str, size_t len) {
   if (str != nullptr) {
-    char* ptr = NEW_C_HEAP_ARRAY(char, len+1, mtInternal);
+    char* ptr = NEW_C_HEAP_ARRAY(char, len+1, mtServiceability);
     strncpy(ptr, str, len);
     ptr[len] = 0;
     _array->append(ptr);
@@ -183,7 +183,7 @@ template <> void DCmdArgument<bool>::init_value(TRAPS) {
 template <> void DCmdArgument<bool>::destroy_value() { }
 
 template <> void DCmdArgument<char*>::destroy_value() {
-  FREE_C_HEAP_ARRAY(char, _value);
+  FREE_C_HEAP_ARRAY(_value);
   set_value(nullptr);
 }
 
@@ -194,14 +194,14 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
   } else {
     // Use realloc as we may have a default set.
     if (strcmp(type(), "FILE") == 0) {
-      _value = REALLOC_C_HEAP_ARRAY(char, _value, JVM_MAXPATHLEN, mtInternal);
+      _value = REALLOC_C_HEAP_ARRAY(_value, JVM_MAXPATHLEN, mtServiceability);
       if (!Arguments::copy_expand_pid(str, len, _value, JVM_MAXPATHLEN)) {
         stringStream error_msg;
         error_msg.print("File path invalid or too long: %s", str);
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());
       }
     } else {
-      _value = REALLOC_C_HEAP_ARRAY(char, _value, len + 1, mtInternal);
+      _value = REALLOC_C_HEAP_ARRAY(_value, len + 1, mtServiceability);
       int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
       assert((size_t)n <= len, "Unexpected number of characters in string");
     }

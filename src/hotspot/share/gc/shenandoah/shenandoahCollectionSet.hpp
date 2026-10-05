@@ -32,16 +32,10 @@
 #include "memory/allocation.hpp"
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;
-  friend class ShenandoahCollectionSetPreselector;
-
-  void establish_preselected(bool *preselected) {
-   assert(_preselected_regions == nullptr, "Over-writing");
-   _preselected_regions = preselected;
-  }
-  void abandon_preselected() { _preselected_regions = nullptr; }
 
 private:
   size_t const          _map_size;
@@ -66,17 +60,16 @@ private:
   // How many bytes of old garbage are present in a mixed collection set?
   size_t                _old_garbage;
 
-  // Points to array identifying which tenure-age regions have been preselected
-  // for inclusion in collection set. This field is only valid during brief
-  // spans of time while collection set is being constructed.
-  bool*                 _preselected_regions;
-
   // When a region having memory available to be allocated is added to the collection set, the region's available memory
   // should be subtracted from what's available.
   size_t                _young_available_bytes_collected;
 
+  // When a region having memory available to be allocated is added to the collection set, the region's available memory
+  // should be subtracted from what's available.
+  size_t                _old_available_bytes_collected;
+
   shenandoah_padding(0);
-  volatile size_t       _current_index;
+  Atomic<size_t>        _current_index;
   shenandoah_padding(1);
 
 public:
@@ -95,7 +88,7 @@ public:
   bool is_empty() const { return _region_count == 0; }
 
   void clear_current_index() {
-    _current_index = 0;
+    _current_index.store_relaxed(0);
   }
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
@@ -109,30 +102,23 @@ public:
   // Prints a summary of the collection set when gc+ergo=info
   void summarize(size_t total_garbage, size_t immediate_garbage, size_t immediate_regions) const;
 
-  // Returns the amount of live bytes in young regions in the collection set. It is not known how many of these bytes will be promoted.
-  inline size_t get_young_bytes_reserved_for_evacuation() const;
+  // Returns the amount of live bytes in young regions with an age below the tenuring threshold.
+  inline size_t get_live_bytes_in_untenurable_regions() const;
 
   // Returns the amount of live bytes in old regions in the collection set.
-  inline size_t get_old_bytes_reserved_for_evacuation() const;
+  inline size_t get_live_bytes_in_old_regions() const;
 
-  // Returns the amount of live bytes in young regions with an age above the tenuring threshold.
-  inline size_t get_young_bytes_to_be_promoted() const;
+  // Returns the amount of live bytes in young regions with an age at or above the tenuring threshold.
+  inline size_t get_live_bytes_in_tenurable_regions() const;
 
   // Returns the amount of free bytes in young regions in the collection set.
   size_t get_young_available_bytes_collected() const { return _young_available_bytes_collected; }
 
+  // Returns the amount of free bytes in old regions in the collection set.
+  size_t get_old_available_bytes_collected() const { return _old_available_bytes_collected; }
+
   // Returns the amount of garbage in old regions in the collection set.
   inline size_t get_old_garbage() const;
-
-  bool is_preselected(size_t region_idx) {
-    assert(_preselected_regions != nullptr, "Missing etsablish after abandon");
-    return _preselected_regions[region_idx];
-  }
-
-  bool* preselected_regions() {
-    assert(_preselected_regions != nullptr, "Null ptr");
-    return _preselected_regions;
-  }
 
   bool has_old_regions() const { return _has_old_regions; }
   size_t used()          const { return _used; }
