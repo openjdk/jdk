@@ -68,7 +68,7 @@ void JNICALL MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
      */
     retry = 0;
     do {
-        result = FlushViewOfFile(a, (DWORD)len);
+        result = FlushViewOfFile(a, (SIZE_T)len);
         if ((result != 0) || (GetLastError() != ERROR_LOCK_VIOLATION))
             break;
         retry++;
