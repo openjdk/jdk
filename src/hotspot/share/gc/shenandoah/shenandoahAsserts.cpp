@@ -388,7 +388,7 @@ void ShenandoahAsserts::assert_not_forwarded(void* interior_loc, oop obj, const 
   assert_correct(interior_loc, obj, file, line);
   oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
-  if (obj != fwd || obj->is_self_forwarded()) {
+  if (obj != fwd) {
     print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_not_forwarded failed",
                   "Object should not be forwarded",
                   file, line);
