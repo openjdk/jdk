@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ public final class Options {
     private static final long DEFAULT_MEMORY_SIZE = DEFAULT_GLOBAL_BUFFER_COUNT * DEFAULT_GLOBAL_BUFFER_SIZE;
     private static long DEFAULT_THREAD_BUFFER_SIZE;
     private static final int DEFAULT_STACK_DEPTH = 64;
+    private static final int DEFAULT_NATIVE_STACK_DEPTH = 0;
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
     private static final Path DEFAULT_DUMP_PATH = null;
     private static final boolean DEFAULT_PRESERVE_REPOSITORY = false;
@@ -59,6 +60,7 @@ public final class Options {
     private static long globalBufferCount;
     private static long threadBufferSize;
     private static int stackDepth;
+    private static int nativeStackDepth;
     private static long maxChunkSize;
     private static boolean preserveRepository;
 
@@ -140,6 +142,15 @@ public final class Options {
         return stackDepth;
     }
 
+    public static synchronized void setNativeStackDepth(Integer depth) {
+        JVM.setNativeStackDepth(depth);
+        nativeStackDepth = depth;
+    }
+
+    public static synchronized int getNativeStackDepth() {
+        return nativeStackDepth;
+    }
+
     public static synchronized void setPreserveRepository(boolean preserve) {
         preserveRepository = preserve;
     }
@@ -159,6 +170,7 @@ public final class Options {
             // Ignore (depends on default value in JVM: it would be NULL)
         }
         setStackDepth(DEFAULT_STACK_DEPTH);
+        setNativeStackDepth(DEFAULT_NATIVE_STACK_DEPTH);
         setThreadBufferSize(DEFAULT_THREAD_BUFFER_SIZE);
         setPreserveRepository(DEFAULT_PRESERVE_REPOSITORY);
     }

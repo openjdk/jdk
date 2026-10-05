@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ final class DCmdConfigure extends AbstractDCmd {
      * @param repositoryPath the path
      * @param dumpPath path to dump to on fatal error (oom)
      * @param stackDepth depth of stack traces
+     * @param nativeStackDepth maximum number of native frames in stack traces
      * @param globalBufferCount number of global buffers
      * @param globalBufferSize size of global buffers
      * @param threadBufferSize size of thread buffer for events
@@ -65,6 +66,7 @@ final class DCmdConfigure extends AbstractDCmd {
             String repositoryPath,
             String dumpPath,
             Integer stackDepth,
+            Integer nativeStackDepth,
             Long globalBufferCount,
             Long globalBufferSize,
             Long threadBufferSize,
@@ -77,6 +79,7 @@ final class DCmdConfigure extends AbstractDCmd {
             Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdConfigure: repositorypath=" + repositoryPath +
                     ", dumppath=" + dumpPath +
                     ", stackdepth=" + stackDepth +
+                    ", nativestackdepth=" + nativeStackDepth +
                     ", globalbuffercount=" + globalBufferCount +
                     ", globalbuffersize=" + globalBufferSize +
                     ", thread_buffer_size=" + threadBufferSize +
@@ -131,6 +134,15 @@ final class DCmdConfigure extends AbstractDCmd {
             Logger.log(LogTag.JFR, LogLevel.INFO, "Stack depth set to " + stackDepth);
             if (verbose) {
                 printStackDepth();
+            }
+            updated = true;
+        }
+
+        if (nativeStackDepth != null)  {
+            Options.setNativeStackDepth(nativeStackDepth);
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Native stack depth set to " + nativeStackDepth);
+            if (verbose) {
+                printNativeStackDepth();
             }
             updated = true;
         }
@@ -190,6 +202,7 @@ final class DCmdConfigure extends AbstractDCmd {
             printRepositoryPath();
             printDumpPath();
             printStackDepth();
+            printNativeStackDepth();
             printGlobalBufferCount();
             printGlobalBufferSize();
             printThreadBufferSize();
@@ -217,6 +230,10 @@ final class DCmdConfigure extends AbstractDCmd {
 
     private void printStackDepth() {
         println("Stack depth: " +  Options.getStackDepth());
+    }
+
+    private void printNativeStackDepth() {
+        println("Native stack depth: " +  Options.getNativeStackDepth());
     }
 
     private void printGlobalBufferCount() {

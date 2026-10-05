@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,6 +61,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"setMethodSamplingPeriod", (char*)"(JJ)V", (void*)jfr_set_method_sampling_period,
       (char*)"setOutput", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_output,
       (char*)"setStackDepth", (char*)"(I)V", (void*)jfr_set_stack_depth,
+      (char*)"setNativeStackDepth", (char*)"(I)V", (void*)jfr_set_native_stack_depth,
       (char*)"setStackTraceEnabled", (char*)"(JZ)V", (void*)jfr_set_stacktrace_enabled,
       (char*)"setThreadBufferSize", (char*)"(J)V", (void*)jfr_set_thread_buffer_size,
       (char*)"setMemorySize", (char*)"(J)V", (void*)jfr_set_memory_size,

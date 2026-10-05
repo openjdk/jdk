@@ -1576,6 +1576,19 @@
     <Field type="int" name="lineNumber" label="Line Number" />
     <Field type="int" name="bytecodeIndex" label="Bytecode Index" />
     <Field type="FrameType" name="type" label="Frame Type" />
+    <Field type="NativeFunction" name="nativeFunction" label="Native Function" experimental="true" />
+  </Type>
+
+  <Type name="Library" label="Native Library" experimental="true">
+    <Field type="string" name="name" label="Name" description="Path of the library" />
+    <Field type="ulong" contentType="address" name="baseAddress" label="Base Address" description="Runtime address the library is mapped at" />
+    <Field type="string" name="buildId" label="Build ID" description="Unique identifier of the binary" />
+  </Type>
+
+  <Type name="NativeFunction" label="Native Function" experimental="true">
+    <Field type="Library" name="library" label="Native Library" />
+    <Field type="ulong" name="offset" label="Offset" description="Offset from the library's base address" />
+    <Field type="string" name="name" label="Name" description="Symbol name" />
   </Type>
 
   <Type name="ChunkHeader" label="Chunk Header">
