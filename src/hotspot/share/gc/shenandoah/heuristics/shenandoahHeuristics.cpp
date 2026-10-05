@@ -205,8 +205,11 @@ bool ShenandoahHeuristics::should_start_gc() {
 }
 
 void ShenandoahHeuristics::adjust_penalty(intx step) {
-  _gc_time_penalties = clamp(_gc_time_penalties + step, Min_Penalty, Max_Penalty);
-  log_info(gc, ergo)("Adjusted heuristic penalty: %zd", _gc_time_penalties);
+  const intx adjusted = clamp(_gc_time_penalties + step, Min_Penalty, Max_Penalty);
+  if (adjusted != _gc_time_penalties) {
+    _gc_time_penalties = adjusted;
+    log_info(gc, ergo)("Adjusted heuristic penalty: %zd", _gc_time_penalties);
+  }
 }
 
 void ShenandoahHeuristics::log_trigger(const char* fmt, ...) const {
