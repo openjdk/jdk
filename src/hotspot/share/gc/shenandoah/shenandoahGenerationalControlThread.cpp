@@ -191,18 +191,19 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
-  ShenandoahHeuristics* heuristics = request.generation->heuristics();
-  heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
-  heuristics->record_requested_gc();
+  ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
+  request.generation = _heap->global_generation();
+  global_heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
+  global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
     return stw_full;
+  } else {
+    // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
+    // the same `should_unload_classes` call as the regulator's concurrent gc request.
+    _heap->set_unload_classes(global_heuristics->can_unload_classes());
+    return concurrent_normal;
   }
-
-  // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
-  // the same `should_unload_classes` call as the regulator's concurrent gc request.
-  _heap->set_unload_classes(heuristics->can_unload_classes());
-  return concurrent_normal;
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const {
