@@ -958,7 +958,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // Shenandoah will grind along for quite a while allocating one
     // object at a time using shared (non-tlab) allocations. This check
     // is testing that the GC overhead limit has not been exceeded.
-    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
+    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() >= ShenandoahNoProgressThreshold) {
       req.set_actual_size(0);
       return nullptr;
     }
@@ -981,7 +981,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
         result = allocate_memory_work(req, in_new_region);
         if (result == nullptr) {
           const size_t current_count = shenandoah_policy()->reclaiming_gc_count();
-          if (current_count - original_count > ShenandoahFullGCThreshold) {
+          if (current_count - original_count >= ShenandoahFullGCThreshold) {
             // We are not getting what we need from concurrent allocations, so request a full gc.
             // Whether this satisfies the allocation or not, we are done trying.
             control_thread()->handle_alloc_failure_full();
