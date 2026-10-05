@@ -406,23 +406,10 @@ public final class SharedUtils {
         @ForceInline
         static Arena of(long size) {
             final Arena arena = Arena.ofConfined();
-            try {
-                final SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
-                return new BoundedArena(arena, allocator);
-            } catch (OutOfMemoryError oome) {
-                throw handleOome(oome, arena);
-            }
+            final SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
+            return new BoundedArena(arena, allocator);
         }
 
-        // Let C2 decide on inlining
-        private static OutOfMemoryError handleOome(OutOfMemoryError oome, Arena arena) {
-            try {
-                arena.close();
-            } catch (Throwable e) {
-                oome.addSuppressed(e);
-            }
-            return oome;
-        }
     }
 
     static Arena newEmptyArena() {
