@@ -1,13 +1,13 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8388986
- * @summary infinite loop when removing type containment pair in Types.containsTypeRecursive
- * @compile/fail/ref=InfiniteLoopGLBTest.out -XDrawDiagnostics InfiniteLoopGLBTest.java
+ * @summary infinite loop in Types.glbFlattened
+ * @compile/fail/ref=InfiniteLoopGLBTest1.out -XDrawDiagnostics InfiniteLoopGLBTest1.java
  */
 
 import java.util.List;
 
-class InfiniteLoopGLBTest {
+class InfiniteLoopGLBTest1 {
     class Min {
         void m(Object o) {
             ((C<? super List<Double>, ?>) o).f().hashCode();
