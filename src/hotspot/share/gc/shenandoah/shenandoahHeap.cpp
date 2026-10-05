@@ -967,14 +967,11 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     if (result == nullptr) {
       // Block until control thread reacted, then retry allocation.
       //
-      // It might happen that one of the threads requesting allocation would unblock
-      // way later after GC happened, only to fail the second allocation, because
-      // other threads have already depleted the free storage. In this case, a better
-      // strategy is to try again, until at least one full GC has completed.
-      //
-      // Stop retrying and return nullptr to cause OOMError exception if our allocation failed even after:
-      //   a) We experienced a GC that had good progress, or
-      //   b) We experienced at least one Full GC (whether or not it had good progress)
+      // When a thread cannot allocate, it will signal the control thread to run a concurrent cycle. It
+      // will then wait for the control thread to signal in turn that the cycle has completed. The thread
+      // then retries the allocation. It will do this ShenandoahFullGCThreshold times. If no full gc has
+      // yet run, it will request one and retry the allocation one more time. If another thread has caused
+      // a full GC to run, other threads will not request another full GC.
 
       ResourceMark rm; // for Thread::name()
       const size_t req_byte = req.size() * HeapWordSize;
@@ -982,6 +979,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       log_debug(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"", PROPERFMTARGS(req_byte), Thread::current()->name());
       AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(control_thread()->get_gc_id()));
 
+      const size_t original_full_count = shenandoah_policy()->full_gc_count();
       const size_t original_count = shenandoah_policy()->reclaiming_gc_count();
       while (result == nullptr && !control_thread()->should_terminate()) {
         control_thread()->handle_alloc_failure(req);
@@ -989,10 +987,13 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
         if (result == nullptr) {
           const size_t current_count = shenandoah_policy()->reclaiming_gc_count();
           if (current_count - original_count >= ShenandoahFullGCThreshold) {
-            // We are not getting what we need from concurrent allocations, so request a full gc.
-            // Whether this satisfies the allocation or not, we are done trying.
-            control_thread()->handle_alloc_failure_full();
-            result = allocate_memory_work(req, in_new_region);
+            if (original_full_count == shenandoah_policy()->full_gc_count()) {
+              // We are not getting what we need from concurrent collections, and no full gcs ran
+              // while we waited, so request a full gc. Whether this satisfies the allocation or not,
+              // we are done trying.
+              control_thread()->handle_alloc_failure_full();
+              result = allocate_memory_work(req, in_new_region);
+            }
             break;
           }
         }
