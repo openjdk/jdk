@@ -539,6 +539,11 @@ public abstract class SSLServerSocket extends ServerSocket {
      * Named Groups</a> section of the Java Security Standard Algorithm Names
      * Specification, and may also include other named groups that the provider
      * supports.
+     * <P>
+     * To get the names of the named groups which are currently enabled for use
+     * by newly accepted connections,
+     * call {@link SSLParameters#getNamedGroups()}, accessible through
+     * {@link #getSSLParameters()}.
      *
      * @implSpec The implementation in this class throws
      *           {@code UnsupportedOperationException} and performs no other
