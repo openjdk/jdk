@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8245194
+ * @bug 8245194 8393057
  * @library /test/lib
  * @run main/othervm Bind
  */
@@ -210,6 +210,24 @@ public class Bind {
                 server.accept();
             }
         );
+
+        // server bind to empty path: should bind to a local address
+        checkNormal(() -> {
+            UnixDomainSocketAddress usa = null;
+            UnixDomainSocketAddress ba = UnixDomainSocketAddress.of("");
+            try {
+                server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+                server.bind(ba);
+                usa = (UnixDomainSocketAddress) server.getLocalAddress();
+                if (usa.getPath().toString().isEmpty())
+                    throw new RuntimeException("expected non zero address length");
+                System.out.println("Null server address: " + server.getLocalAddress());
+            } finally {
+                if (usa != null) {
+                    Files.deleteIfExists(usa.getPath());
+                }
+            }
+        });
 
         // client implicit bind and connect
         checkNormal(() -> {
