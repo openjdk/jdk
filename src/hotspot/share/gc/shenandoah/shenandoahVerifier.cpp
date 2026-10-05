@@ -1220,14 +1220,14 @@ void ShenandoahVerifier::verify_before_fullgc(ShenandoahGeneration* generation) 
   verify_at_safepoint(
           generation,
           "Before Full GC",
-          _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_allow,     // can have forwarded objects
-          _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
-          _verify_cset_disable,        // cset might be foobared
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_disable,     // no reliable region data here
-          _verify_size_disable,        // if we degenerate during evacuation, usage not valid: padding and deferred accounting
-          _verify_gcstate_disable      // no reliable gcstate data
+          _verify_remembered_disable,      // do not verify remembered set
+          _verify_forwarded_none,          // cannot have forwarded objects
+          _verify_marked_disable,          // do not verify marked: lots ot time wasted checking dead allocations
+          _verify_cset_none,               // cset should be empty
+          _verify_liveness_disable,        // no reliable liveness data anymore
+          _verify_regions_notrash_nocset,  // no reliable region data here
+          _verify_size_exact,              // expect generation and heap sizes to match exactly
+          _verify_gcstate_stable           // no forwarded objects
   );
 }
 
