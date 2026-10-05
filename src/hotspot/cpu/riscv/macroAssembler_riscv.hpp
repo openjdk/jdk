@@ -1708,7 +1708,7 @@ INSN(sd_release, sd, sd_rl);
   void zext(Register dst, Register src, int bits);
   void sext(Register dst, Register src, int bits);
 
-  void narrow_subword_type(Register dst, Register src, BasicType bt);
+  void narrow_subword_type(Register reg, BasicType bt);
 
 private:
   void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);

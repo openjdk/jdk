@@ -7046,6 +7046,8 @@ void MacroAssembler::narrow_subword_type(Register reg, BasicType bt) {
     case T_BOOLEAN:
       andi(reg, reg, 1);
       break;
+    default:
+      ShouldNotReachHere();
   }
 }
 
