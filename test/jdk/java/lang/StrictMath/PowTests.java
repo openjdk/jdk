@@ -301,6 +301,18 @@ public class PowTests {
              5.0,
              55.901699437494756
             },
+
+            {
+                0x1.000002c5e2e99p+0,   // |x| > 1
+                0x1.c9eee35374af6p+31,  // |y| huge
+                0x1.ffffe0bc9e399p+915
+            },
+
+            {
+                0x1.fffff4e900013p-1,   // |x| < 1
+                0x1.0000100000001p+31,  // |y| huge
+                0x0.421378008b246p-1022
+            },
         };
 
         for (double[] testCase: testCases)

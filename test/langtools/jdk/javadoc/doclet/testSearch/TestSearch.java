@@ -420,7 +420,7 @@ public class TestSearch extends JavadocTester {
                 """
                     const pathtoroot = "./";
                     loadScripts();
-                    initTheme();""",
+                    """,
                 "<div class=\"nav-list-search\">",
                 """
                     <li><a href="search.html">Search</a></li>""",

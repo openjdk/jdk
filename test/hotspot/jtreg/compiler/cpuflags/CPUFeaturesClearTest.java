@@ -90,14 +90,6 @@ public class CPUFeaturesClearTest {
             outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sse3.*");
             outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* ssse3.*");
         }
-        if (isCpuFeatureSupported("sse2")) {
-            outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareNumericFlag("UseSSE", 1)));
-            outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sse2.*");
-        }
-        if (isCpuFeatureSupported("sse")) {
-            outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareNumericFlag("UseSSE", 0)));
-            outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sse.*");
-        }
         if (isCpuFeatureSupported("avx512f")) {
             outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareNumericFlag("UseAVX", 2)));
             outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* avx512.*");

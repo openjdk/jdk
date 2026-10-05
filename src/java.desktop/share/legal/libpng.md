@@ -1,4 +1,4 @@
-## libpng v1.6.57
+## libpng v1.6.58
 
 ### libpng License
 <pre>

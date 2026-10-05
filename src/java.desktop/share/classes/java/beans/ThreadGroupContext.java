@@ -35,7 +35,6 @@ import java.util.WeakHashMap;
 /**
  * The {@code ThreadGroupContext} is an application-dependent
  * context referenced by the specific {@link ThreadGroup}.
- * This is a replacement for the {@link sun.awt.AppContext}.
  *
  * @author  Sergey Malenkov
  */

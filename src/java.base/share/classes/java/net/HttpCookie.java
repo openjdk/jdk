@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1005,12 +1005,13 @@ public final class HttpCookie implements Cloneable {
             }
         } catch (NumberFormatException ignored) {}
 
-        try {
-            if (expiresValue != null) {
-                long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
+        if (expiresValue != null) {
+            Calendar cal = parseExpires(expiresValue);
+            if (cal != null) {
+                long delta = (cal.getTimeInMillis() - cookie.whenCreated) / 1000;
                 cookie.maxAge = (delta > 0 ? delta : 0);
             }
-        } catch (NumberFormatException ignored) {}
+        }
     }
 
     private static void assignAttribute(HttpCookie cookie,
@@ -1082,10 +1083,10 @@ public final class HttpCookie implements Cloneable {
      * @param  dateString
      *         a date string in one of the formats defined in Netscape cookie spec
      *
-     * @return  delta seconds between this cookie's creation time and the time
-     *          specified by dateString
+     * @return  the parsed date as a Calendar, or null if none of the
+     *          formats could parse the given date string
      */
-    private long expiryDate2DeltaSeconds(String dateString) {
+    private static Calendar parseExpires(String dateString) {
         Calendar cal = new GregorianCalendar(GMT);
         for (int i = 0; i < COOKIE_DATE_FORMATS.length; i++) {
             SimpleDateFormat df = new SimpleDateFormat(COOKIE_DATE_FORMATS[i],
@@ -1108,12 +1109,12 @@ public final class HttpCookie implements Cloneable {
                     }
                     cal.set(Calendar.YEAR, year);
                 }
-                return (cal.getTimeInMillis() - whenCreated) / 1000;
+                return cal;
             } catch (Exception e) {
                 // Ignore, try the next date format
             }
         }
-        return 0;
+        return null;
     }
 
     /*

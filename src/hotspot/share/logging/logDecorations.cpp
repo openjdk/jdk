@@ -37,7 +37,7 @@ const char* LogDecorations::host_name() {
   if (host_name == nullptr) {
     char buffer[1024];
     if (os::get_host_name(buffer, sizeof(buffer))) {
-      host_name = os::strdup_check_oom(buffer);
+      host_name = os::strdup_check_oom(buffer, mtLogging);
       const char* old_value = AtomicAccess::cmpxchg(&_host_name, (const char*)nullptr, host_name);
       if (old_value != nullptr) {
         os::free((void *) host_name);

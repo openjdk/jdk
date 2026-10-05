@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessShort
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessShort
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessShort
@@ -50,17 +52,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestAccessShort extends VarHandleBaseTest {
     static final short static_final_v = (short)0x0123;
 
-    static short static_v;
+    static short static_v = (short)0x0123;
 
-    final short final_v = (short)0x0123;
+    final short final_v;
 
     short v;
 
     static final short static_final_v2 = (short)0x0123;
 
-    static short static_v2;
+    static short static_v2 = (short)0x0123;
 
-    final short final_v2 = (short)0x0123;
+    final short final_v2;
 
     short v2;
 
@@ -74,6 +76,13 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
+    public VarHandleTestAccessShort() {
+        final_v = (short)0x0123;
+        v = (short)0x0123;
+        final_v2 = (short)0x0123;
+        v2 = (short)0x0123;
+        super();
+    }
 
     VarHandle[] allocate(boolean same) {
         List<VarHandle> vhs = new ArrayList<>();
@@ -308,7 +317,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         // Lazy
         {
             short x = (short) vh.getAcquire(recv);
-            assertEquals((short)0x0123, x, "getRelease short value");
+            assertEquals((short)0x0123, x, "getAcquire short value");
         }
 
         // Opaque
@@ -357,7 +366,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         // Lazy
         {
             short x = (short) vh.getAcquire();
-            assertEquals((short)0x0123, x, "getRelease short value");
+            assertEquals((short)0x0123, x, "getAcquire short value");
         }
 
         // Opaque
@@ -601,7 +610,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             vh.set(recv, (short)0x0123);
 
             short o = (short) vh.getAndAddRelease(recv, (short)0x4567);
-            assertEquals((short)0x0123, o, "getAndAddReleaseshort");
+            assertEquals((short)0x0123, o, "getAndAddRelease short");
             short x = (short) vh.get(recv);
             assertEquals((short)((short)0x0123 + (short)0x4567), x, "getAndAddRelease short value");
         }
@@ -909,7 +918,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             vh.set((short)0x0123);
 
             short o = (short) vh.getAndAddRelease((short)0x4567);
-            assertEquals((short)0x0123, o, "getAndAddReleaseshort");
+            assertEquals((short)0x0123, o, "getAndAddRelease short");
             short x = (short) vh.get();
             assertEquals((short)((short)0x0123 + (short)0x4567), x, "getAndAddRelease short value");
         }
@@ -1220,7 +1229,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 vh.set(array, i, (short)0x0123);
 
                 short o = (short) vh.getAndAddRelease(array, i, (short)0x4567);
-                assertEquals((short)0x0123, o, "getAndAddReleaseshort");
+                assertEquals((short)0x0123, o, "getAndAddRelease short");
                 short x = (short) vh.get(array, i);
                 assertEquals((short)((short)0x0123 + (short)0x4567), x, "getAndAddRelease short value");
             }
@@ -1450,6 +1459,5 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             });
         }
     }
-
 }
 

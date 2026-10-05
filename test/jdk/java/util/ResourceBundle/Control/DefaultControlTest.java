@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 5102289 6278334 8261179
+ * @bug 5102289 6278334 8261179 8387455
  * @summary Test the default Control implementation. The expiration
  * functionality of newBundle, getTimeToLive, and needsReload is
  * tested by ExpirationTest.sh. The factory methods are tested
@@ -171,6 +171,15 @@ public class DefaultControlTest {
         candidateData.put(Locale.ROOT, new Locale[] {
                               Locale.ROOT });
 
+        // Norwegian Nynorsk
+        candidateData.put(Locale.of("no", "NO", "NY"), new Locale[] {
+                Locale.of("nn", "NO"),
+                Locale.of("nn"),
+                Locale.of("no", "NO", "NY"),
+                Locale.of("no", "NO"),
+                Locale.of("no"),
+                Locale.ROOT});
+
         // Norwegian Bokmal
         candidateData.put(Locale.forLanguageTag("nb-NO-POSIX"), new Locale[] {
                 Locale.forLanguageTag("nb-NO-POSIX"),
@@ -188,7 +197,21 @@ public class DefaultControlTest {
                 Locale.forLanguageTag("no"),
                 Locale.forLanguageTag("nb"),
                 Locale.ROOT});
-
+        // Appears as no-NO-NY legacy locale (but contains script) so treat as Norwegian Bokmal
+        candidateData.put(Locale.forLanguageTag("no-Latn-NO-x-lvariant-NY"), new Locale[] {
+                Locale.forLanguageTag("no-Latn-NO-x-lvariant-NY"),
+                Locale.forLanguageTag("nb-Latn-NO-x-lvariant-NY"),
+                Locale.forLanguageTag("no-Latn-NO"),
+                Locale.forLanguageTag("nb-Latn-NO"),
+                Locale.forLanguageTag("no-Latn"),
+                Locale.forLanguageTag("nb-Latn"),
+                Locale.forLanguageTag("no-NO-x-lvariant-NY"),
+                Locale.forLanguageTag("nb-NO-x-lvariant-NY"),
+                Locale.forLanguageTag("no-NO"),
+                Locale.forLanguageTag("nb-NO"),
+                Locale.forLanguageTag("no"),
+                Locale.forLanguageTag("nb"),
+                Locale.ROOT});
 
         for (Locale locale : candidateData.keySet()) {
             List<Locale> candidates = CONTROL.getCandidateLocales("any", locale);

@@ -427,16 +427,27 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                          const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+
+  bool needs_pre_barrier = as_normal && !dest_uninitialized;
+  bool needs_post_barrier = (val != noreg && in_heap);
+
+  assert_different_registers(val, tmp1, tmp2, tmp3);
+
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
   // Load and record the previous value.
-  g1_write_barrier_pre(masm, decorators, &dst, tmp3, val, tmp1, tmp2, false);
+  if (needs_pre_barrier) {
+    g1_write_barrier_pre(masm, decorators, &dst, tmp3, val, tmp1, tmp2, false);
+  }
 
   BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
 
   // No need for post barrier if storing null
-  if (val != noreg) {
+  if (needs_post_barrier) {
     const Register base = dst.base(),
                    idx  = dst.index();
     const intptr_t disp = dst.disp();
@@ -470,7 +481,7 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
 #undef __
 #define __ ce->masm()->
 
-void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub) {
   G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
   // At this point we know that marking is in progress.
   // If do_load() is true then we have to emit the
@@ -536,7 +547,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
   int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
 
-  // Save tmp registers (see assertion in G1PreBarrierStub::emit_code()).
+  // Save tmp registers (see assertion in G1BarrierSetAssembler::gen_pre_barrier_stub).
   __ z_stg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
   __ z_stg(tmp2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
 
@@ -564,7 +575,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ z_stg(tmp, satb_q_index_byte_offset, Z_thread);
 
   __ bind(marking_not_active);
-  // Restore tmp registers (see assertion in G1PreBarrierStub::emit_code()).
+  // Restore tmp registers (see assertion in G1PreBarrierStubC1::emit_code()).
   __ z_lg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
   __ z_lg(tmp2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
   __ z_br(Z_R14);

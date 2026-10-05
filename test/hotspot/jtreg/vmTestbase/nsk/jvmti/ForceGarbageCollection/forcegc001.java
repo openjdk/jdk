@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class forcegc001 extends DebugeeClass {
             log.display("Checking soft references " + kind + ": " + count + " references");
             int found1 = checkObjects(count, refs, kind);
             if (found1 < found) {
-                log.println("# WARNING: " + found1 + " of " + found
+                log.display("# WARNING: " + found1 + " of " + found
                             + " softly reachable objects were GCed\n"
                             + "#   by System.gc() but not by ForceGarbageCollection()");
             }
@@ -117,7 +117,7 @@ public class forcegc001 extends DebugeeClass {
         }
 
         if (found > 0) {
-            log.println("# WARNING: " + found + " of " + count
+            log.display("# WARNING: " + found + " of " + count
                             + " softly reachable objects not GCed " + kind);
         } else {
             log.display("All " + found + " of " + count

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public class PlatformSupportImpl extends PlatformSupport {
      * It is important that this directory is well-known and the
      * same for all VM instances. It cannot be affected by configuration
      * variables such as java.io.tmpdir.
+     * It can be affected by VM option -XX:AltTempDir, however.
      *
      * Implementation Details:
      *
@@ -170,14 +171,16 @@ public class PlatformSupportImpl extends PlatformSupport {
 
 
     /*
-     * Extract either the host PID or the NameSpace PID
-     * from a file path.
+     * Extract the VM ID (pid) from a file path,
+     * specifically the host pid for a container process.
      *
      * File path should be in 1 of these 2 forms:
      *
      * /proc/{pid}/root/tmp/hsperfdata_{user}/{nspid}
      *              or
      * /tmp/hsperfdata_{user}/{pid}
+     *
+     * (where /tmp may be substituted due to -XX:AltTempDir)
      *
      * In either case we want to return {pid} and NOT {nspid}
      *
@@ -189,24 +192,38 @@ public class PlatformSupportImpl extends PlatformSupport {
      */
     public int getLocalVmId(File file) throws NumberFormatException {
         String p = file.getAbsolutePath();
-        String s[] = p.split("\\/");
+        String procParts[] = p.split("\\/"); // "/proc/hostpid/root/<tempDir>/hsperfdata_user/nsid"
 
-        // Determine if this file is from a container
-        if (s.length == 7 && s[1].equals("proc")) {
-            int hostpid = Integer.parseInt(s[2]);
-            int nspid = Integer.parseInt(s[6]);
-            if (nspid == hostpid || nspid == getNamespaceVmId(hostpid)) {
-                return hostpid;
-            }
-            else {
-                return -1;
-            }
+        int hostpid = -1;
+        int nspid = -1;
+
+        // ["", "proc", "hostpid", "root", "tmpdir" .. "tmpdir", "hsperfdata_user", "nsid"]
+        if (procParts.length > 4 && procParts[1].equals("proc") && procParts[3].equals("root")) {
+            hostpid = Integer.parseInt(procParts[2]);
         }
-        else {
-            return Integer.parseInt(file.getName());
+
+        // Some invalid path.
+        if (procParts.length < 2) {
+            return -1;
+        }
+
+        // Path at the end after tmp dir is: "hsperfdata_username/PID"
+        int end = procParts.length - 1;
+        if (!procParts[end-1].startsWith("hsperfdata_")) {
+            return -1;
+        }
+        if (hostpid == -1) {
+            hostpid = Integer.parseInt(procParts[end]);
+        } else {
+            nspid = Integer.parseInt(procParts[end]);
+        }
+        if (nspid == -1) {
+            return hostpid;
+        } else {
+            // We have both pids.
+            return nspid == getNamespaceVmId(hostpid) ? hostpid : -1;
         }
     }
-
 
     /*
      * Return the inner most namespaced PID if there is one,

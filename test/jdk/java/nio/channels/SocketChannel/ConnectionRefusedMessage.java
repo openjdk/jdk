@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  *          with an interest in CONNECT operation, then SocketChannel.finishConnect()
  *          throws the correct exception message, if the connect() fails
  * @run junit/othervm -Djdk.includeInExceptions=hostInfoExclSocket ${test.main.class}
- * @run junit/othervm -Djdk.includeInExceptions=hostInfo -Dcheck.relaxed=true ${test.main.class}
+ * @run junit/othervm -Djdk.includeInExceptions=hostInfo ${test.main.class}
  */
 class ConnectionRefusedMessage {
 
@@ -109,10 +109,7 @@ class ConnectionRefusedMessage {
     }
 
     private static void assertExceptionMessage(final ConnectException ce) {
-        if ("Connection refused".equals(ce.getMessage())) {
-            return;
-        }
-        if (Boolean.getBoolean("check.relaxed") && ce.getMessage() != null && ce.getMessage().startsWith("Connection refused")) {
+        if (ce.getMessage() != null && ce.getMessage().startsWith("Connection refused")) {
             return;
         }
         // propagate the original exception

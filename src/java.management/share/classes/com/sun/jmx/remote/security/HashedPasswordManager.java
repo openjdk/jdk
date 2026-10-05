@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public final class HashedPasswordManager {
                 byte[] passwordBytes = new byte[byteBuffer.limit()];
                 byteBuffer.get(passwordBytes);
                 byte[] hash = digest.digest(passwordBytes);
-                return Arrays.equals(hash, targetHash);
+                return MessageDigest.isEqual(hash, targetHash);
             } catch (NoSuchAlgorithmException ex) {
                 if (logger.debugOn()) {
                     logger.debug("authenticate", "Unrecognized hash algorithm : "

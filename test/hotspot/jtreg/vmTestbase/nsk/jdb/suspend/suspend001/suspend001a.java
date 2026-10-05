@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package nsk.jdb.suspend.suspend001;
 
+import jdk.test.lib.thread.ThreadWrapper;
+
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -42,6 +44,8 @@ public class suspend001a {
 
     static void breakHere () {}
 
+    static void threadStarted () {}
+
     static Object lock                   = new Object();
     static Object waitnotify             = new Object();
     public static volatile int notSuspended = 0;
@@ -50,8 +54,8 @@ public class suspend001a {
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
 
-        Thread suspended = new Suspended("Suspended");
-        Thread myThread = new MyThread("MyThread");
+        Thread suspended = new Suspended("Suspended").getThread();
+        Thread myThread = new MyThread("MyThread").getThread();
 
         // lock monitor to prevent threads from finishing after they started
         synchronized (lock) {
@@ -103,14 +107,16 @@ public class suspend001a {
     }
 }
 
-class Suspended extends Thread {
+class Suspended extends ThreadWrapper {
     String name;
 
     public Suspended (String n) {
+        super(n);
         name = n;
     }
 
     public void run() {
+        suspend001a.threadStarted();
         // Concatenate strings in advance to avoid lambda calculations later
         final String ThreadFinished = "Thread finished: " + this.name;
         suspend001a.log.display("Thread started: " + this.name);
@@ -127,14 +133,16 @@ class Suspended extends Thread {
     }
 }
 
-class MyThread extends Thread {
+class MyThread extends ThreadWrapper {
     String name;
 
     public MyThread (String n) {
+        super(n);
         name = n;
     }
 
     public void run() {
+        suspend001a.threadStarted();
         // Concatenate strings in advance to avoid lambda calculations later
         final String ThreadFinished = "Thread finished: " + this.name;
         suspend001a.log.display("Thread started: " + this.name);

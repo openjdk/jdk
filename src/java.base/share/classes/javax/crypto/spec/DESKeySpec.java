@@ -156,11 +156,11 @@ public class DESKeySpec implements java.security.spec.KeySpec {
         if (key == null) {
             throw new NullPointerException("null key");
         }
-        if (key.length - offset < DES_KEY_LEN) {
-            throw new InvalidKeyException("Wrong key size");
-        }
         if (offset < 0) {
             throw new ArrayIndexOutOfBoundsException("offset is negative");
+        }
+        if (key.length - offset < DES_KEY_LEN) {
+            throw new InvalidKeyException("Wrong key size");
         }
         this.key = new byte[DES_KEY_LEN];
         System.arraycopy(key, offset, this.key, 0, DES_KEY_LEN);
@@ -198,11 +198,11 @@ public class DESKeySpec implements java.security.spec.KeySpec {
             if (key == null) {
                 throw new InvalidKeyException("null key");
             }
-            if (key.length - offset < DES_KEY_LEN) {
-                throw new InvalidKeyException("Wrong key size");
-            }
             if (offset < 0) {
                 throw new ArrayIndexOutOfBoundsException("offset is negative");
+            }
+            if (key.length - offset < DES_KEY_LEN) {
+                throw new InvalidKeyException("Wrong key size");
             }
             for (int i = 0; i < DES_KEY_LEN; i++) {
                 int k = Integer.bitCount(key[offset++] & 0xff);
@@ -235,11 +235,11 @@ public class DESKeySpec implements java.security.spec.KeySpec {
         if (key == null) {
             throw new InvalidKeyException("null key");
         }
-        if (key.length - offset < DES_KEY_LEN) {
-            throw new InvalidKeyException("Wrong key size");
-        }
         if (offset < 0) {
             throw new ArrayIndexOutOfBoundsException("offset is negative");
+        }
+        if (key.length - offset < DES_KEY_LEN) {
+            throw new InvalidKeyException("Wrong key size");
         }
         for (int i = 0; i < WEAK_KEYS.length; i++) {
             boolean found = true;

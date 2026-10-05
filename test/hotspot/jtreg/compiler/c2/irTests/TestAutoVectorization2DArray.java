@@ -29,8 +29,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8279258
  * @summary Auto-vectorization enhancement for two-dimensional array operations
- * @requires (os.arch != "x86" & os.arch != "i386" & os.arch != "ppc64" & os.arch != "ppc64le" & os.arch != "riscv64")
- *           | ((os.arch == "x86" | os.arch == "i386") & (vm.opt.UseSSE == "null" | vm.opt.UseSSE >= 2))
+ * @requires (os.arch != "ppc64" & os.arch != "ppc64le" & os.arch != "riscv64")
  *           | ((os.arch == "ppc64" | os.arch == "ppc64le") & vm.cpu.features ~= ".*darn.*")
  *           | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /

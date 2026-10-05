@@ -22,6 +22,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/compileTask.hpp"
@@ -1501,8 +1502,11 @@ void ZBarrierSetAssembler::retrieve_reloc_addresses(address start, address end, 
   entries.append(nullptr);
 }
 
+// Add indirection for AOT code patching
+address ZPointerLoadShiftTableAddr = (address)&ZPointerLoadShiftTable;
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored
   // and after being colored. Therefore, we must deal with colored oops as well.
   Label done;
@@ -1533,8 +1537,10 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ andq(tmp1, tmp2);
   __ shrq(tmp1, ZPointerRemappedShift);
   __ andq(tmp1, (1 << ZPointerRemappedBits) - 1);
-  __ lea(tmp2, ExternalAddress((address)&ZPointerLoadShiftTable));
-
+  // This code is not critical - it is used only for VerifyOops in debug VM.
+  // Use inderection by defult without AOT specific code.
+  __ lea(tmp2, ExternalAddress((address)&ZPointerLoadShiftTableAddr));
+  __ movptr(tmp2, Address(tmp2));
   // Uncolor presumed zpointer
   assert(obj != rcx, "bad choice of register");
   if (rcx != tmp1 && rcx != tmp2) {
@@ -1551,16 +1557,27 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ bind(check_oop);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(tmp1, obj, tmp2);  // get klass
-  __ testptr(tmp1, tmp1);
+  __ load_narrow_klass(tmp1, obj); // get narrow klass
+  __ testl(tmp1, tmp1);
   __ jcc(Assembler::zero, error); // if klass is null it is broken
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(tmp1, tmp2);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ movptr(tmp2, Address(tmp2));
+    __ andptr(tmp1, tmp2);
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ movptr(tmp2, Address(tmp2));
+  } else
+#endif
+  {
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andptr(tmp1, tmp2);
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmpptr(tmp1, tmp2);
   __ jcc(Assembler::notZero, error);
 

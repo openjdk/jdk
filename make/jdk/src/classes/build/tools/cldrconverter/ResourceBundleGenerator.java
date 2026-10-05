@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Formatter;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
+import static java.util.ResourceBundle.Control;
 
 class ResourceBundleGenerator implements BundleGenerator {
     // preferred timezones - keeping compatibility with JDK1.1 3 letter abbreviations
@@ -69,6 +71,9 @@ class ResourceBundleGenerator implements BundleGenerator {
     // For duplicated values
     private static final String META_VALUE_PREFIX = "metaValue_";
 
+    // locales in the base module
+    private final Set<Locale> baseModuleLocales = new HashSet<>();
+
     @Override
     public void generateBundle(String packageName, String baseName, String localeID,
                                Map<String, ?> map, BundleType type) throws IOException {
@@ -80,8 +85,15 @@ class ResourceBundleGenerator implements BundleGenerator {
             return;
         }
 
-        // Assume that non-base resources go into jdk.localedata
-        if (!CLDRConverter.isBaseModule) {
+        if (CLDRConverter.isBaseModule) {
+            if (!localeID.equals("root")) {
+                baseModuleLocales.addAll(
+                    Control.getControl(Control.FORMAT_DEFAULT)
+                        .getCandidateLocales("",
+                            Locale.forLanguageTag(CLDRConverter.toLanguageTag(localeID))));
+            }
+        } else {
+            // Assume that non-base resources go into jdk.localedata
             dirName = dirName + File.separator + "ext";
             packageName = packageName + ".ext";
         }
@@ -103,14 +115,14 @@ class ResourceBundleGenerator implements BundleGenerator {
             for (String key : map.keySet()) {
                 if (key.startsWith(CLDRConverter.METAZONE_ID_PREFIX)) {
                     String meta = key.substring(CLDRConverter.METAZONE_ID_PREFIX.length());
-                    String[] value;
-                    value = (String[]) map.get(key);
-                    fmt.format("        final String[] %s = new String[] {\n", meta);
-                    for (String s : value) {
-                        fmt.format("               \"%s\",\n", CLDRConverter.escape(s));
+                    if (map.get(key) instanceof String[] value) {
+                        fmt.format("        final String[] %s = new String[] {\n", CLDRConverter.escape(meta));
+                        for (String s : value) {
+                            fmt.format("               \"%s\",\n", CLDRConverter.escape(s));
+                        }
+                        fmt.format("            };\n");
+                        metaKeys.add(key);
                     }
-                    fmt.format("            };\n");
-                    metaKeys.add(key);
                 }
             }
             for (String key : metaKeys) {
@@ -143,15 +155,15 @@ class ResourceBundleGenerator implements BundleGenerator {
                         if (fmt == null) {
                             fmt = new Formatter();
                         }
-                        String metaVal = oldEntry.metaKey();
+                        String metaVal = CLDRConverter.escape(oldEntry.metaKey());
                         if (val instanceof String[] values) {
                             fmt.format("        final String[] %s = new String[] {\n", metaVal);
                             for (String s : values) {
                                 fmt.format("            \"%s\",\n", CLDRConverter.escape(s));
                             }
                             fmt.format("        };\n");
-                        } else {
-                            fmt.format("        final String %s = \"%s\";\n", metaVal, CLDRConverter.escape((String)val));
+                        } else if (val instanceof String str) {
+                            fmt.format("        final String %s = \"%s\";\n", metaVal, CLDRConverter.escape(str));
                         }
                         newMap.put(oldEntry.key, oldEntry.metaKey());
                     }
@@ -178,21 +190,21 @@ class ResourceBundleGenerator implements BundleGenerator {
             out.println("        final Object[][] data = new Object[][] {");
             for (String key : map.keySet()) {
                 Object value = map.get(key);
+                var keyStr = CLDRConverter.escape(key);
                 if (value == null) {
                     CLDRConverter.warning("null value for " + key);
-                } else if (value instanceof String) {
-                    String valStr = (String)value;
+                } else if (value instanceof String valStr) {
+                    var escapedVal = CLDRConverter.escape(valStr);
                     if (type == BundleType.TIMEZONE &&
                         !(key.startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX) ||
                           key.startsWith(CLDRConverter.METAZONE_DSTOFFSET_PREFIX)) ||
                         valStr.startsWith(META_VALUE_PREFIX)) {
-                        out.printf("            { \"%s\", %s },\n", key, CLDRConverter.escape(valStr));
+                        out.printf("            { \"%s\", %s },\n", keyStr, escapedVal);
                     } else {
-                        out.printf("            { \"%s\", \"%s\" },\n", key, CLDRConverter.escape(valStr));
+                        out.printf("            { \"%s\", \"%s\" },\n", keyStr, escapedVal);
                     }
-                } else if (value instanceof String[]) {
-                    String[] values = (String[]) value;
-                    out.println("            { \"" + key + "\",\n                new String[] {");
+                } else if (value instanceof String[] values) {
+                    out.println("            { \"" + keyStr + "\",\n                new String[] {");
                     for (String s : values) {
                         out.println("                    \"" + CLDRConverter.escape(s) + "\",");
                     }
@@ -284,6 +296,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 import java.util.HashMap;
                 import java.util.Locale;
                 import java.util.Map;
+                import java.util.Set;
                 import sun.util.locale.provider.LocaleDataMetaInfo;
                 import sun.util.locale.provider.LocaleProviderAdapter;
 
@@ -296,6 +309,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 out.printf("""
                         private static final Map<Locale, String[]> parentLocalesMap = HashMap.newHashMap(%d);
                         private static final Map<String, String> languageAliasMap = HashMap.newHashMap(%d);
+                        private static final Set<Locale> baseModuleLocales;
                         static final boolean nonlikelyScript = %s; // package access from CLDRLocaleProviderAdapter
 
                         static {
@@ -311,7 +325,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                             out.printf("        parentLocalesMap.put(Locale.ROOT,\n");
                         } else {
                             out.printf("        parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
-                                    parentTag);
+                                    CLDRConverter.escape(parentTag));
                         }
                         generateStringArray(metaInfo.get(key), out);
                     }
@@ -320,9 +334,25 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                 // for languageAliasMap
                 CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
-                    out.printf("        languageAliasMap.put(\"%s\", \"%s\");\n", key, value);
+                    out.printf("        languageAliasMap.put(\"%s\", \"%s\");\n", CLDRConverter.escape(key), CLDRConverter.escape(value));
                 });
-                out.printf("    }\n\n");
+                out.println();
+
+                // for baseModuleLocales
+                out.printf("        baseModuleLocales = Set.of(\n");
+                out.printf("            %s",
+                    baseModuleLocales.stream()
+                        .map(Locale::toLanguageTag)
+                        .sorted(Comparator.comparing(l -> l.equals("und") ? "" : l))
+                        .map(l -> switch(l) {
+                                case "und"   -> "Locale.ROOT";
+                                case "en"    -> "Locale.ENGLISH";
+                                case "en-US" -> "Locale.US";
+                                default      -> "Locale.forLanguageTag(\"" + l + "\")";
+                            })
+                        .collect(Collectors.joining(",\n            ")));
+                out.printf("\n        );");
+                out.println("\n    }\n");
 
                 // end of static initializer block.
 
@@ -338,11 +368,11 @@ class ResourceBundleGenerator implements BundleGenerator {
                 CLDRConverter.handlerTimeZone.getData().entrySet().stream()
                     .forEach(e -> {
                         String[] ids = ((String)e.getValue()).split("\\s");
-                        out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", e.getKey(),
-                            ids[0]);
+                        out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", CLDRConverter.escape(e.getKey()),
+                            CLDRConverter.escape(ids[0]));
                         for (int i = 1; i < ids.length; i++) {
-                            out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", ids[i],
-                                ids[0]);
+                            out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", CLDRConverter.escape(ids[i]),
+                                CLDRConverter.escape(ids[0]));
                         }
                     });
                 out.println();
@@ -352,8 +382,9 @@ class ResourceBundleGenerator implements BundleGenerator {
                     if (key.startsWith(CLDRConverter.LIKELY_SCRIPT_PREFIX)) {
                         // ensure spaces at the begin/end for delimiting purposes
                         out.printf("            likelyScriptMap.put(\"%s\", \"%s\");\n",
-                                key.substring(CLDRConverter.LIKELY_SCRIPT_PREFIX.length()),
-                                " " + metaInfo.get(key).stream().collect(Collectors.joining(" ")) + " ");
+                                CLDRConverter.escape(key.substring(CLDRConverter.LIKELY_SCRIPT_PREFIX.length())),
+                                " " + metaInfo.get(key).stream()
+                                    .map(l -> CLDRConverter.escape(l)).collect(Collectors.joining(" ")) + " ");
                     }
                 }
                 out.printf("        }\n    }\n");
@@ -371,7 +402,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                         return " %s";
                     }
                 """,
-                toLocaleList(applyLanguageAliases(metaInfo.get("AvailableLocales")), false));
+                CLDRConverter.escape(toLocaleList(applyLanguageAliases(metaInfo.get("AvailableLocales")), false)));
 
             if(CLDRConverter.isBaseModule) {
                 out.printf("""
@@ -388,6 +419,10 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                     public Map<Locale, String[]> parentLocales() {
                         return parentLocalesMap;
+                    }
+
+                    public Set<Locale> baseModuleLocales() {
+                        return baseModuleLocales;
                     }
 
                     // package access from CLDRLocaleProviderAdapter
@@ -408,7 +443,7 @@ class ResourceBundleGenerator implements BundleGenerator {
         int count = 0;
         for (int i = 0; i < children.length; i++) {
             String child = children[i];
-            out.printf("\"%s\", ", child);
+            out.printf("\"%s\", ", CLDRConverter.escape(child));
             count += child.length() + 4;
             if (i != children.length - 1 && count > 64) {
                 out.printf("\n                ");

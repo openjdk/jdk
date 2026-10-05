@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,18 @@ public:
 
 class ShenandoahStackWatermark : public StackWatermark {
 private:
+  // Start epochs from 1 to catch uninitialized paths.
+  // Wrap the epoch around smaller range to avoid truncation
+  // in StackWatermark encoding and verify the wraparound in tests.
+  static constexpr uint32_t MIN_EPOCH_ID = 1;
+  static constexpr uint32_t MAX_EPOCH_ID = (1 << 10);
+
   static uint32_t                      _epoch_id;
   ShenandoahHeap* const                _heap;
   ThreadLocalAllocStats                _stats;
 
   // Closures
+  ShenandoahNoOpClosure                _no_op_cl;
   ShenandoahKeepAliveClosure           _keep_alive_cl;
   ShenandoahEvacuateUpdateRootsClosure _evac_update_oop_cl;
   ShenandoahOnStackNMethodClosure      _nm_cl;

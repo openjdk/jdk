@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 8321010
  * @summary Test vector intrinsic for Math.round(float) in full 32 bits range
  *
@@ -37,10 +38,11 @@
 package compiler.vectorization;
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 import static compiler.lib.golden.GoldenRound.golden_round;
 
 public class TestRoundVectorFloatAll {
-  private static final Random rand = new Random();
+  private static final Random rand = Utils.getRandomInstance();
 
   private static final int ITERS  = 11000;
   private static final int ARRLEN = rand.nextInt(4096-997) + 997;

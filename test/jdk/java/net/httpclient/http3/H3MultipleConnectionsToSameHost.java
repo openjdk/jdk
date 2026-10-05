@@ -77,7 +77,7 @@
  */
 /*
  * @test id=useNioSelector
- * @bug 8087112 8372409
+ * @bug 8087112 8372409 8386989
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer

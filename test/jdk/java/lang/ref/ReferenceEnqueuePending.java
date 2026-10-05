@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,21 @@
  */
 
 /* @test
- * @bug 4243978
+ * @bug 4243978 8336671
  * @summary Test if Reference.enqueue() works properly with pending references
  */
 import java.lang.ref.*;
+import java.util.Arrays;
 
 public class ReferenceEnqueuePending {
-    static class NumberedWeakReference extends WeakReference<Integer> {
+
+    record Numbered(int number) {}
+
+    static class NumberedWeakReference extends WeakReference<Numbered> {
         //  Add an integer to identify the weak reference object.
         int number;
 
-        NumberedWeakReference(Integer referent, ReferenceQueue<Integer> q, int i) {
+        NumberedWeakReference(Numbered referent, ReferenceQueue<Numbered> q, int i) {
             super(referent, q);
             number = i;
         }
@@ -53,30 +57,30 @@ public class ReferenceEnqueuePending {
         // priority, so that they can race also on a uniprocessor.
         raisePriority();
 
-        ReferenceQueue<Integer> refQueue = new ReferenceQueue<>();
+        ReferenceQueue<Numbered> refQueue = new ReferenceQueue<>();
 
         // Our objective is to let the mutator enqueue
         // a Reference object that may already be in the
         // pending state because of having been identified
         // as weakly reachable at a previous garbage collection.
-        // To this end, we create many Reference objects, each with a
-        // a unique integer object as its referant.
+        // To this end, we create many Reference objects, each with
+        // a unique Numbered object as its referant.
         // We let the referents become eligible for collection,
         // while racing with the garbage collector which may
         // have pended some of these Reference objects.
-        // Finally we check that all of the Reference objects
-        // end up on the their queue. The test was originally
+        // Finally, we check that all of the Reference objects
+        // end up on their queue. The test was originally
         // submitted to show that such races could break the
         // pending list and/or the reference queue, because of sharing
         // the same link ("next") for maintaining both lists, thus
         // losing some of the Reference objects on either queue.
 
-        Integer obj = new Integer(0);
+        Numbered obj = new Numbered(0);
         NumberedWeakReference weaky = new NumberedWeakReference(obj, refQueue, 0);
         for (int i = 1; i < iterations; i++) {
-            // Create a new object, dropping the onlY strong reference to
-            // the previous Integer object.
-            obj = new Integer(i);
+            // Create a new object, dropping the only strong reference to
+            // the previous Numbered object.
+            obj = new Numbered(i);
             // Trigger gc each gc_trigger iterations.
             if ((i % gc_trigger) == 0) {
                 forceGc(0);
@@ -87,7 +91,7 @@ public class ReferenceEnqueuePending {
             }
             // Remember the Reference objects, for testing later.
             b[i - 1] = weaky;
-            // Get a new weaky for the Integer object just
+            // Get a new weaky for the Numbered object just
             // created, which may be explicitly enqueued in
             // our next trip around the loop.
             weaky = new NumberedWeakReference(obj, refQueue, i);
@@ -112,7 +116,7 @@ public class ReferenceEnqueuePending {
         System.out.println("Test passed.");
     }
 
-    private static NumberedWeakReference waitForReference(ReferenceQueue<Integer> queue) {
+    private static NumberedWeakReference waitForReference(ReferenceQueue<Numbered> queue) {
         try {
             return (NumberedWeakReference) queue.remove(30000); // 30sec
         } catch (InterruptedException ie) {
@@ -120,7 +124,7 @@ public class ReferenceEnqueuePending {
         }
     }
 
-    private static void checkResult(ReferenceQueue<Integer> queue,
+    private static void checkResult(ReferenceQueue<Numbered> queue,
                                     int expected) {
         if (debug) {
             System.out.println("Reading the queue");
@@ -149,7 +153,7 @@ public class ReferenceEnqueuePending {
         }
 
         // Sort the first "length" elements in array "a[]".
-        sort(length);
+        Arrays.sort(a, 0, length);
 
         boolean fail = (length != expected);
         for (int i = 0; i < length; i++) {
@@ -189,23 +193,6 @@ public class ReferenceEnqueuePending {
     private static void forceGc(long millis) throws InterruptedException {
         Runtime.getRuntime().gc();
         Thread.sleep(millis);
-    }
-
-    // Bubble sort the first "length" elements in array "a".
-    private static void sort(int length) {
-        int hold;
-        if (debug) {
-            System.out.println("Sorting. Length=" + length);
-        }
-        for (int pass = 1; pass < length; pass++) {    // passes over the array
-            for (int i = 0; i < length - pass; i++) {  //  a single pass
-                if (a[i] > a[i + 1]) {  // then swap
-                    hold = a[i];
-                    a[i] = a[i + 1];
-                    a[i + 1] = hold;
-                }
-            }  // End of i loop
-        } // End of pass loop
     }
 
     // Raise thread priority so as to increase the

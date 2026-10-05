@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,14 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* spac
 bool ShenandoahStaticHeuristics::should_start_gc() {
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->soft_mutator_available();
-  size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
-                "allocated_since_gc_start: "  PROPERFMT,
-                PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(allocated));
+  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
+                PROPERFMTARGS(available), PROPERFMTARGS(capacity));
 
   size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
-
   if (available < threshold_available) {
-    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
-                 PROPERFMTARGS(available), PROPERFMTARGS(threshold_available));
+    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
+            PROPERFMTARGS(available), PROPERFMTARGS(threshold_available));
     accept_trigger();
     return true;
   }

@@ -88,7 +88,6 @@ import javax.swing.JComponent;
 import javax.swing.JRootPane;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.ComponentFactory;
 import sun.awt.ConstrainableGraphics;
 import sun.awt.EmbeddedFrame;
@@ -234,11 +233,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getParent
      */
     transient Container parent;
-
-    /**
-     * The {@code AppContext} of the component.
-     */
-    transient AppContext appContext;
 
     /**
      * The x position of the component in the parent's coordinate system.
@@ -877,12 +871,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
             {
                  Component.setRequestFocusController(requestController);
             }
-            public AppContext getAppContext(Component comp) {
-                 return comp.appContext;
-            }
-            public void setAppContext(Component comp, AppContext appContext) {
-                 comp.appContext = appContext;
-            }
             public Container getParent(Component comp) {
                 return comp.getParent_NoClientCode();
             }
@@ -975,7 +963,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * tree (for example, by a {@code Frame} object).
      */
     protected Component() {
-        appContext = AppContext.getAppContext();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -3452,7 +3439,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 (width > 0) && (height > 0)) {
                 PaintEvent e = new PaintEvent(this, PaintEvent.UPDATE,
                                               new Rectangle(x, y, width, height));
-                SunToolkit.postEvent(SunToolkit.targetToAppContext(this), e);
+                SunToolkit.postEvent(e);
             }
         }
     }
@@ -4786,14 +4773,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     @SuppressWarnings("deprecation")
     void dispatchEventImpl(AWTEvent e) {
         int id = e.getID();
-
-        // Check that this component belongs to this app-context
-        AppContext compContext = appContext;
-        if (compContext != null && !compContext.equals(AppContext.getAppContext())) {
-            if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
-                eventLog.fine("Event " + e + " is being dispatched on the wrong AppContext");
-            }
-        }
 
         if (eventLog.isLoggable(PlatformLogger.Level.FINEST)) {
             eventLog.finest("{0}", e);
@@ -8936,7 +8915,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         s.defaultReadObject();
 
-        appContext = AppContext.getAppContext();
         coalescingEnabled = checkCoalescing();
         if (componentSerializedDataVersion < 4) {
             // These fields are non-transient and rely on default

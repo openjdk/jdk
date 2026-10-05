@@ -90,7 +90,7 @@ ZMappedCacheEntry* ZMappedCacheEntry::cast_to_entry(ZMappedCache::SizeClassListN
 }
 
 static void* entry_address_for_zoffset_end(zoffset_end offset) {
-  STATIC_ASSERT(is_aligned(ZCacheLineSize, alignof(ZMappedCacheEntry)));;
+  static_assert(is_aligned(ZCacheLineSize, alignof(ZMappedCacheEntry)));
 
   // This spreads out the location of the entries in an effort to combat hyper alignment.
   // Verify if this is an efficient and worthwhile optimization.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -190,7 +190,6 @@ static jboolean check_sample_content(JNIEnv* env,
                                      ObjectTrace* trace,
                                      ExpectedContentFrame *expected,
                                      size_t expected_count,
-                                     jboolean check_lines,
                                      int print_out_comparisons) {
   jvmtiFrameInfo* frames;
   size_t i;
@@ -243,10 +242,10 @@ static jboolean check_sample_content(JNIEnv* env,
     differ = (strcmp(name, expected[i].name) ||
               strcmp(signature, expected[i].signature) ||
               strcmp(file_name, expected[i].file_name) ||
-              (check_lines && line_number != expected[i].line_number));
+              line_number != expected[i].line_number);
 
     if (print_out_comparisons) {
-      fprintf(stderr, "\tComparing: (check_lines: %d)\n", check_lines);
+      fprintf(stderr, "\tComparing:\n");
       fprintf(stderr, "\t\tNames: %s and %s\n", name, expected[i].name);
       fprintf(stderr, "\t\tSignatures: %s and %s\n", signature, expected[i].signature);
       fprintf(stderr, "\t\tFile name: %s and %s\n", file_name, expected[i].file_name);
@@ -446,15 +445,14 @@ static double event_storage_get_average_size(EventStorage* storage) {
 static jboolean event_storage_contains(JNIEnv* env,
                                        EventStorage* storage,
                                        ExpectedContentFrame* frames,
-                                       size_t size,
-                                       jboolean check_lines) {
+                                       size_t size) {
   int i;
   event_storage_lock(storage);
   fprintf(stderr, "Checking storage count %d\n", storage->live_object_count);
   for (i = 0; i < storage->live_object_count; i++) {
     ObjectTrace* trace = storage->live_objects[i];
 
-    if (check_sample_content(env, trace, frames, size, check_lines, PRINT_OUT)) {
+    if (check_sample_content(env, trace, frames, size, PRINT_OUT)) {
       event_storage_unlock(storage);
       return TRUE;
     }
@@ -466,15 +464,14 @@ static jboolean event_storage_contains(JNIEnv* env,
 static jlong event_storage_get_size(JNIEnv* env,
                                     EventStorage* storage,
                                     ExpectedContentFrame* frames,
-                                    size_t size,
-                                    jboolean check_lines) {
+                                    size_t size) {
   int i;
   event_storage_lock(storage);
   fprintf(stderr, "Getting element from storage count, size %d\n", storage->live_object_count);
   for (i = 0; i < storage->live_object_count; i++) {
     ObjectTrace* trace = storage->live_objects[i];
 
-    if (check_sample_content(env, trace, frames, size, check_lines, PRINT_OUT)) {
+    if (check_sample_content(env, trace, frames, size, PRINT_OUT)) {
       jlong result = trace->size;
       event_storage_unlock(storage);
       return result;
@@ -487,8 +484,7 @@ static jlong event_storage_get_size(JNIEnv* env,
 static jboolean event_storage_garbage_contains(JNIEnv* env,
                                                EventStorage* storage,
                                                ExpectedContentFrame* frames,
-                                               size_t size,
-                                               jboolean check_lines) {
+                                               size_t size) {
   int i;
   event_storage_lock(storage);
   fprintf(stderr, "Checking garbage storage count %d\n",
@@ -500,7 +496,7 @@ static jboolean event_storage_garbage_contains(JNIEnv* env,
       continue;
     }
 
-    if (check_sample_content(env, trace, frames, size, check_lines, PRINT_OUT)) {
+    if (check_sample_content(env, trace, frames, size, PRINT_OUT)) {
       event_storage_unlock(storage);
       return TRUE;
     }
@@ -927,14 +923,13 @@ static ExpectedContentFrame *get_native_frames(JNIEnv* env, jclass cls,
 
 JNIEXPORT jboolean JNICALL
 Java_MyPackage_HeapMonitor_obtainedEvents(JNIEnv* env, jclass cls,
-                                          jobjectArray frames,
-                                          jboolean check_lines) {
+                                          jobjectArray frames) {
   jboolean result;
   jsize size = env->GetArrayLength(frames);
   ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
 
   result = event_storage_contains(env, &global_event_storage, native_frames,
-                                  size, check_lines);
+                                  size);
 
   free(native_frames), native_frames = nullptr;
   return result;
@@ -942,14 +937,13 @@ Java_MyPackage_HeapMonitor_obtainedEvents(JNIEnv* env, jclass cls,
 
 JNIEXPORT jboolean JNICALL
 Java_MyPackage_HeapMonitor_garbageContains(JNIEnv* env, jclass cls,
-                                           jobjectArray frames,
-                                           jboolean check_lines) {
+                                           jobjectArray frames) {
   jboolean result;
   jsize size = env->GetArrayLength(frames);
   ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
 
   result = event_storage_garbage_contains(env, &global_event_storage,
-                                          native_frames, size, check_lines);
+                                          native_frames, size);
 
   free(native_frames), native_frames = nullptr;
   return result;
@@ -957,14 +951,13 @@ Java_MyPackage_HeapMonitor_garbageContains(JNIEnv* env, jclass cls,
 
 JNIEXPORT jlong JNICALL
 Java_MyPackage_HeapMonitor_getSize(JNIEnv* env, jclass cls,
-                                   jobjectArray frames,
-                                   jboolean check_lines) {
+                                   jobjectArray frames) {
   jlong result = 0;
   jsize size = env->GetArrayLength(frames);
   ExpectedContentFrame *native_frames = get_native_frames(env, cls, frames);
 
   result = event_storage_get_size(env, &global_event_storage,
-                                  native_frames, size, check_lines);
+                                  native_frames, size);
 
   free(native_frames), native_frames = nullptr;
   return result;

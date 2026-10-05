@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,12 @@
  */
 
 package jdk.xml.internal;
+import jdk.xml.internal.JdkProperty.State;
 
 /**
  * This is the base class for features and properties
  */
 public abstract class FeaturePropertyBase {
-
-    /**
-     * States of the settings of a property, in the order: default value, value
-     * set by FEATURE_SECURE_PROCESSING, jaxp.properties file, jaxp system
-     * properties, and jaxp api properties
-     */
-    public static enum State {
-        //this order reflects the overriding order
-        DEFAULT, FSP, JAXPDOTPROPERTIES, SYSTEMPROPERTY, APIPROPERTY
-    }
-
-
     /**
      * Values of the properties as defined in enum Properties
      */

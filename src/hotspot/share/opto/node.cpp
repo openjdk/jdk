@@ -42,6 +42,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -524,9 +525,6 @@ Node *Node::clone() const {
     C->add_template_assertion_predicate_opaque(n->as_OpaqueTemplateAssertionPredicate());
   }
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->register_potential_barrier_node(n);
-
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
   DEBUG_ONLY( n->verify_construction() );
@@ -574,6 +572,12 @@ Node *Node::clone() const {
     // Clone it to make sure it's not shared between SafePointNodes.
     n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
+  }
+  if (n->is_ValueType()) {
+    C->add_value_type(n);
+  }
+  if (n->is_LoadFlat() || n->is_StoreFlat()) {
+    C->add_flat_access(n);
   }
   Compile::current()->record_modified_node(n);
   return n;                     // Return the clone
@@ -638,6 +642,9 @@ void Node::destruct(PhaseValues* phase) {
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
+  if (is_ValueType()) {
+    compile->remove_value_type(this);
+  }
   if (for_merge_stores_igvn()) {
     compile->remove_from_merge_stores_igvn(this);
   }
@@ -649,8 +656,6 @@ void Node::destruct(PhaseValues* phase) {
       compile->remove_unstable_if_trap(as_CallStaticJava(), false);
     }
   }
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->unregister_potential_barrier_node(this);
 
   // See if the input array was allocated just prior to the object
   int edge_size = _max*sizeof(void*);
@@ -881,7 +886,7 @@ void Node::ins_req( uint idx, Node *n ) {
 }
 
 //-----------------------------find_edge---------------------------------------
-int Node::find_edge(Node* n) {
+int Node::find_edge(const Node* n) const {
   for (uint i = 0; i < len(); i++) {
     if (_in[i] == n)  return i;
   }
@@ -1230,6 +1235,9 @@ bool Node::has_special_unique_user() const {
   } else if (this->is_Load() && n->is_Move()) {
     // Condition for MoveX2Y (LoadX mem) => LoadY mem
     return true;
+  } else if (op == Op_LoadUS && n->Opcode() == Op_LShiftI) {
+    // Condition for RShiftI(LShiftI(LoadUS(...), 16), 16) => LoadS(...), see RShiftINode::Ideal
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -1248,7 +1256,12 @@ bool Node::has_special_unique_user() const {
   } else {
     return false;
   }
-};
+}
+
+bool Node::should_process_when_disconnect_output(Node* output) const {
+  return (is_Phi() && as_Phi()->is_dead_phi()) ||
+         output->is_data_proj_of_pure_function(this);
+}
 
 //--------------------------find_exact_control---------------------------------
 // Skip Proj and CatchProj nodes chains. Check for Null and Top.
@@ -1473,19 +1486,16 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           if (n->outcnt() == 0) {   // Input also goes dead?
             if (!n->is_Con())
               nstack.push(n);       // Clear it out as well
-          } else if (n->outcnt() == 1 &&
-                     n->has_special_unique_user()) {
-            igvn->add_users_to_worklist( n );
+          } else if (n->outcnt() == 1 && n->has_special_unique_user()) {
+            igvn->add_users_to_worklist(n);
           } else if (n->outcnt() <= 2 && n->is_Store()) {
             // Push store's uses on worklist to enable folding optimization for
             // store/store and store/load to the same address.
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
-          } else if (dead->is_data_proj_of_pure_function(n)) {
+          } else if (n->should_process_when_disconnect_output(dead)) {
             igvn->_worklist.push(n);
-          } else {
-            BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
         }
       }
@@ -2882,7 +2892,7 @@ bool Node::is_iteratively_computed() {
 //--------------------------find_similar------------------------------
 // Return a node with opcode "opc" and same inputs as "this" if one can
 // be found; Otherwise return null;
-Node* Node::find_similar(int opc) {
+Node* Node::find_similar(int opc, bool is_commutative) {
   if (req() >= 2) {
     Node* def = in(1);
     if (def && def->outcnt() >= 2) {
@@ -2890,9 +2900,26 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req() &&
-            has_same_inputs_as(use)) {
-          return use;
+            use->req() == req()) {
+          bool same = false;
+          if (!is_commutative || req() < 3) {
+            same = use->has_same_inputs_as(this);
+          } else {
+            if (use->in(0) == in(0) &&
+                ((use->in(1) == in(1) && use->in(2) == in(2)) ||
+                 (use->in(1) == in(2) && use->in(2) == in(1)))) {
+              same = true;
+              for (uint j = 3; j < req(); j++) {
+                if (use->in(j) != in(j)) {
+                  same = false;
+                  break;
+                }
+              }
+            }
+          }
+          if (same) {
+            return use;
+          }
         }
       }
     }
@@ -2980,8 +3007,9 @@ bool Node::is_dead_loop_safe() const {
     if (in(0)->is_Allocate()) {
       return false;
     }
-    // MemNode::can_see_stored_value() peeks through the boxing call
-    if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_boxing_method()) {
+    // MemNode::can_see_stored_value() peeks through boxing calls and
+    // ProjNode::Identity() peeks through boxing and unboxing calls.
+    if (in(0)->is_boxing_or_unboxing_call()) {
       return false;
     }
     return true;
@@ -2992,6 +3020,11 @@ bool Node::is_dead_loop_safe() const {
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
 
+bool Node::is_boxing_or_unboxing_call() const {
+  return is_CallStaticJava() && (as_CallStaticJava()->is_boxing_method() ||
+                                 as_CallStaticJava()->is_unboxing_method());
+}
+
 // `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
 // but we already have and need maybe_pure_function in all the call sites, so
 // it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
@@ -3001,6 +3034,27 @@ bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const 
   return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_CallLeafPure();
 }
 
+// Whether this is an intrinsic node that accesses memory and has a memory input, such as array
+// equal intrinsic. Some nodes do access memory but do not have a memory input, such as
+// PartialSubTypeCheck, they are not included here.
+bool Node::is_memory_access_intrinsic() const {
+  switch (Opcode()) {
+    case Op_StrComp:
+    case Op_StrEquals:
+    case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
+    case Op_StrCompressedCopy:
+    case Op_StrInflatedCopy:
+    case Op_AryEq:
+    case Op_CountPositives:
+    case Op_VectorizedHashCode:
+    case Op_EncodeISOArray:
+      return true;
+    default:
+      return false;
+  }
+}
+
 //--------------------------has_non_debug_uses------------------------------
 // Checks whether the node has any non-debug uses or not.
 bool Node::has_non_debug_uses() const {
@@ -3008,6 +3062,12 @@ bool Node::has_non_debug_uses() const {
     Node* u = fast_out(i);
     if (u->is_SafePoint()) {
       if (u->is_Call() && u->as_Call()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_StoreFlat() && u->as_StoreFlat()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_LoadFlat() && u->as_LoadFlat()->has_non_debug_use(this)) {
         return true;
       }
       // Non-call safepoints have only debug uses.
@@ -3077,7 +3137,7 @@ void Unique_Node_List::remove(Node* n) {
 
 //-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from worklist
-void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
+void Unique_Node_List::remove_useless_nodes(const VectorSet& useful) {
   for (uint i = 0; i < size(); ++i) {
     Node *n = at(i);
     assert( n != nullptr, "Did not expect null entries in worklist");

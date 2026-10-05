@@ -22,15 +22,12 @@
  *
  */
 
-#include "gc/shared/cardTable.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "logging/log.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/javaThread.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahPLAB::ShenandoahPLAB() :
@@ -40,16 +37,14 @@ ShenandoahPLAB::ShenandoahPLAB() :
   _promoted(0),
   _promotion_failure_count(0),
   _promotion_failure_words(0),
-  _allows_promotion(false),
+  _allows_promotion(true),
   _retries_enabled(false),
   _heap(ShenandoahGenerationalHeap::heap()) {
-  _plab = new PLAB(align_up(PLAB::min_size(), CardTable::card_size_in_words()));
+  _plab = new PLAB(PLAB::min_size());
 }
 
 ShenandoahPLAB::~ShenandoahPLAB() {
-  if (_plab != nullptr) {
-    delete _plab;
-  }
+  delete _plab;
 }
 
 void ShenandoahPLAB::subtract_from_promoted(size_t increment) {
@@ -93,10 +88,8 @@ HeapWord* ShenandoahPLAB::allocate(size_t size, bool is_promotion) {
 HeapWord* ShenandoahPLAB::allocate_slow(size_t size, bool is_promotion) {
   assert(_heap->mode()->is_generational(), "PLABs only relevant to generational GC");
 
-  // PLABs are aligned to card boundaries to avoid synchronization with concurrent
-  // allocations in other PLABs.
   const size_t plab_min_size = _heap->plab_min_size();
-  const size_t min_size = (size > plab_min_size)? align_up(size, CardTable::card_size_in_words()): plab_min_size;
+  const size_t min_size = (size > plab_min_size) ? size : plab_min_size;
 
   // Figure out size of new PLAB, using value determined at last refill.
   size_t cur_size = _desired_size;
@@ -105,12 +98,7 @@ HeapWord* ShenandoahPLAB::allocate_slow(size_t size, bool is_promotion) {
   }
 
   // Expand aggressively, doubling at each refill in this epoch, ceiling at plab_max_size()
-  // Doubling, starting at a card-multiple, should give us a card-multiple. (Ceiling and floor
-  // are card multiples.)
   const size_t future_size = MIN2(cur_size * 2, _heap->plab_max_size());
-  assert(is_aligned(future_size, CardTable::card_size_in_words()), "Card multiple by construction, future_size: %zu"
-          ", card_size: %u, cur_size: %zu, max: %zu",
-         future_size, CardTable::card_size_in_words(), cur_size, _heap->plab_max_size());
 
   // Record new heuristic value even if we take any shortcut. This captures
   // the case when moderately-sized objects always take a shortcut. At some point,
@@ -127,9 +115,7 @@ HeapWord* ShenandoahPLAB::allocate_slow(size_t size, bool is_promotion) {
   }
 
   if (_plab->words_remaining() < plab_min_size) {
-    // Retire current PLAB. This takes care of any PLAB book-keeping.
-    // retire_plab() registers the remnant filler object with the remembered set scanner without a lock.
-    // Since PLABs are card-aligned, concurrent registrations in other PLABs don't interfere.
+    // Retire current PLAB. This takes care of any PLAB bookkeeping.
     retire();
 
     size_t actual_size = 0;
@@ -157,7 +143,6 @@ HeapWord* ShenandoahPLAB::allocate_slow(size_t size, bool is_promotion) {
       Copy::fill_to_words(plab_buf + hdr_size, actual_size - hdr_size, badHeapWordVal);
 #endif
     }
-    assert(is_aligned(actual_size, CardTable::card_size_in_words()), "Align by design");
     _plab->set_buf(plab_buf, actual_size);
     if (is_promotion && !_allows_promotion) {
       return nullptr;
@@ -173,7 +158,6 @@ HeapWord* ShenandoahPLAB::allocate_slow(size_t size, bool is_promotion) {
 }
 
 HeapWord* ShenandoahPLAB::allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size) {
-  assert(is_aligned(min_size, CardTable::card_size_in_words()), "Align by design");
   assert(word_size >= min_size, "Requested PLAB is too small");
 
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(min_size, word_size);
@@ -183,7 +167,6 @@ HeapWord* ShenandoahPLAB::allocate_new_plab(size_t min_size, size_t word_size, s
   } else {
     *actual_size = 0;
   }
-  assert(is_aligned(res, CardTable::card_size_in_words()), "Align by design");
   return res;
 }
 
@@ -204,10 +187,12 @@ void ShenandoahPLAB::retire() {
     log_debug(gc, plab)("Retire PLAB, unexpend unpromoted: %zu", not_promoted * HeapWordSize);
     _heap->old_generation()->unexpend_promoted(not_promoted);
   }
-  const size_t original_waste = _plab->waste();
-  HeapWord* const top = _plab->top();
 
   // plab->retire() overwrites unused memory between plab->top() and plab->hard_end() with a dummy object to make memory parsable.
-  // It adds the size of this unused memory, in words, to plab->waste().
+  // We do _not_ need to register this remnant object with the card table because all paths where a PLAB object would
+  // be created are covered by a subsequent phase in the cycle. For the concurrent and degenerated cycles, all PLABs
+  // are retired in preparation for update-references. All objects in these PLABs will be registered by update-card-tables.
+  // For a full GC, the entire remembered set will be rebuilt in the final phase. Note also that an empty TLAB will _not_
+  // create a filler object when it is retired.
   _plab->retire();
 }

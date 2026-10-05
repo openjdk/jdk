@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ class JavaThread;
 // The state variables also record whether guard pages are enabled or disabled.
 
 class StackOverflow {
-  friend class JVMCIVMStructs;
   friend class JavaThread;
  public:
   // State of the stack guard pages for the containing thread.

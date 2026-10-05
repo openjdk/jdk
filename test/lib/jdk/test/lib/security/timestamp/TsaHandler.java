@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,6 @@ public class TsaHandler implements HttpHandler {
      */
     protected TsaParam getParam(URI uri) {
         String query = uri.getQuery();
-
         TsaParam param = TsaParam.newInstance();
         if (query != null) {
             for (String bufParam : query.split("&")) {
@@ -186,6 +185,12 @@ public class TsaHandler implements HttpHandler {
                 } else if ("certReq".equalsIgnoreCase(pair[0])) {
                     param.certReq(Boolean.valueOf(pair[1]));
                     System.out.println("certReq: " + param.certReq());
+                } else if ("noSignedAttrs".equalsIgnoreCase(pair[0])) {
+                    param.noSignedAttrs(Boolean.valueOf(pair[1]));
+                    System.out.println("noSignedAttrs: " + param.noSignedAttrs());
+                } else if ("notTimestampOID".equalsIgnoreCase(pair[0])) {
+                    param.notTimestampOID(Boolean.valueOf(pair[1]));
+                    System.out.println("notTimestampOID: " + param.notTimestampOID());
                 }
             }
         }

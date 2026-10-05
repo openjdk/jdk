@@ -43,19 +43,11 @@ import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.StructuralName;
-import static compiler.lib.template_framework.Template.scope;
-import static compiler.lib.template_framework.Template.transparentScope;
-import static compiler.lib.template_framework.Template.hashtagScope;
-import static compiler.lib.template_framework.Template.let;
-import static compiler.lib.template_framework.Template.$;
-import static compiler.lib.template_framework.Template.fuel;
-import static compiler.lib.template_framework.Template.addDataName;
-import static compiler.lib.template_framework.Template.dataNames;
-import static compiler.lib.template_framework.Template.addStructuralName;
-import static compiler.lib.template_framework.Template.structuralNames;
+
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.IMMUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE_OR_IMMUTABLE;
+import static compiler.lib.template_framework.Template.*;
 
 import compiler.lib.template_framework.library.Hooks;
 
@@ -71,6 +63,7 @@ public class TestTutorial {
         comp.addJavaSourceCode("p.xyz.InnerTest3",  generateWithHashtagAndDollarReplacements());
         comp.addJavaSourceCode("p.xyz.InnerTest3b", generateWithHashtagAndDollarReplacements2());
         comp.addJavaSourceCode("p.xyz.InnerTest3c", generateWithHashtagAndDollarReplacements3());
+        comp.addJavaSourceCode("p.xyz.InnerTest12", generateScopeBuildingUtilityMethods());
         comp.addJavaSourceCode("p.xyz.InnerTest4",  generateWithCustomHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest5",  generateWithLibraryHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
@@ -95,6 +88,7 @@ public class TestTutorial {
         comp.invoke("p.xyz.InnerTest3",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3b", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3c", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest12", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest4",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest5",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
@@ -481,6 +475,127 @@ public class TestTutorial {
         // Render templateClass to String.
         return templateClass.render();
     }
+
+
+    // The following examples show how to use the additional utility methods to build scopes in a top down readable way.
+    // Note that the code was specially indented with spaces such that the generated code is nicely formatted while the
+    // generating source code remains easy to read.
+    static String generateScopeBuildingUtilityMethods() {
+        return Template.make(() -> scope(
+                """
+                package p.xyz;
+
+                public class InnerTest12 {
+                    int iFld;
+                    static int iFld0;
+                    static int iFld1;
+                    static int iFld2;
+                    boolean flagA;
+                    boolean flagB;
+                    boolean flagC;
+
+                    public static void main() {
+                        var t = new InnerTest12();
+                        t.testRepeat1();
+                        t.testRepeat2();
+                        t.testRepeatAndJoin();
+                        t.testJoin(1, 2, 3);
+                    }
+
+                    void testRepeat1() {
+                """,
+
+                // Assume you want to repeat incrementing iFld. You could either duplicate the lines:
+                "        iFld += 3;\n",
+                "        iFld += 3;\n",
+                "        iFld += 3;\n",
+                // Or you can use the repeat() utility method to achieve the same task:
+            repeat(3, scope(
+               "        iFld += 5;\n")),
+                """
+                    }
+
+                """,
+
+                // Sometimes repeats should be slightly different, for example, to generate code. Let's assume you want
+                // to create a couple of equally looking classes. You can use the indexed repeat() utility method.
+                // Let's create vie classes:
+            repeat(5, i -> scope(
+               "    class MyClass", i,  "{}\n")),
+                """
+
+                    void testRepeat2() {
+                """,
+                // And then create an instance for each of them:
+            repeat(5, i -> scope(
+               "        new MyClass", i, "();\n")),
+                // Or you directly define 'i' with let to use #-replacements (you can, of course, also define more
+                // variables with let()):
+            repeat(5, i -> scope(
+                let("i", i),
+               "        new MyClass#i();\n")),
+                """
+                    }
+
+                """,
+
+                // Let's assume that you want to put some varying strings into the same scope multiple times. We can use
+                // the map() utility method to map a string to a scope. For exapmle, you could define your class names
+                // upfront and use them directly:
+            map(List.of("One", "Two", "Three"), klass -> scope(
+                let("klass", klass),
+               "    class #klass{}\n")),
+                "\n",
+                // If you still need an incrementing index, for example, to also generate different field accesses,
+                // you can use the indexed map() version:
+            map(List.of("Four", "Five", "Six"), (klass, fieldIndex) -> scope(
+                let("klass", klass),
+                let("fieldIndex", fieldIndex),
+                """
+                    class #klass{
+                        void test() {
+                            InnerTest12.iFld#fieldIndex = 34; // Assign to a specific static field
+                        }
+                    }
+
+                """)),
+
+                // Suppose you have a method with 5 int args:
+                "    void fiveInts(int a, int b, int c, int d, int e) {}\n",
+                // and want to call it with all zeros. You could be tempted to use repeat() with "0 ,", but what about
+                // the last comma? You need to omit it, otherwise it will fail to compile. What we need here is a join
+                // and not a bare concat of repeated scopes. We can use the repeatAndJoin() utility method for that:
+                """
+
+                    void testRepeatAndJoin() {
+                """,
+               "        fiveInts(", repeatAndJoin(5, ", ", scope("0")), ");\n",
+
+                // If we want to have some ascending numbers, we can use the indexed repeatAndJoin() version:
+               "        fiveInts(", repeatAndJoin(5, ", ", index -> scope("" + index)), ");\n",
+
+                // Let's assume you want to AND several conditions together. You can use the utility method mapAndJoin()
+                // that maps and then joins the resulting scopes together:
+               "        if (", mapAndJoin(List.of("flagA", "flagB", "flagC"), " && ", flag -> scope(flag)), ") {\n",
+                """
+                        }
+                    }
+
+                """,
+
+                // You can also use the indexed version of mapAndJoin() which is useful, for example, to define a method
+                // with different parameter names:
+               "    void testJoin(",
+            mapAndJoin(List.of("int", "float", "long"), ", ", (type, index) -> scope(
+                let("type", type),
+                let("index", index),
+                "#type x#index")), ") {}\n",
+                """
+                }
+                """
+        )).render();
+    }
+
 
     // In this example, we look at the use of Hooks. They allow us to reach back, to outer
     // scopes. For example, we can reach out from inside a method body to a hook anchored at

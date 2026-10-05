@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,14 @@ public class ML_DSA {
     private final int T0_COEFF_SIZE = 13;
 
     private static final int MONT_R_BITS = 32;
-    private static final long MONT_R = 4294967296L; // 1 << MONT_R_BITS
     private static final int MONT_Q = 8380417;
-    private static final int MONT_R_SQUARE_MOD_Q = 2365951;
     private static final int MONT_Q_INV_MOD_R = 58728449;
     private static final int MONT_R_MOD_Q = 4193792;
     // toMont((ML_DSA_N)^-1 (mod ML_DSA_Q))
     private static final int MONT_DIM_INVERSE = 16382;
+
+    // ceil(2^63 / ML_DSA_Q), used with Math.multiplyHigh for Barrett reduction
+    private static final long BARRETT_MULTIPLIER = 1100586287873L;
 
     // Zeta values for NTT with montgomery factor precomputed
     private static final int[] MONT_ZETAS_FOR_NTT = new int[]{
@@ -743,7 +744,7 @@ public class ML_DSA {
         int[][] aHatZ = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         matrixVectorPointwiseMultiply(aHatZ, aHat, sig.response());
 
-        int[][] t1Hat = vectorConstMul(1 << ML_DSA_D, pk.t1());
+        int[][] t1Hat = vectorConstMul(pk.t1());
         mlDsaVectorNtt(t1Hat);
 
         int[][] ct1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
@@ -1146,7 +1147,7 @@ public class ML_DSA {
             a[i] = new int[mlDsa_l][];
         }
 
-        int nrPar = 2;
+        int nrPar = 4;
         int rhoLen = seed.length;
         byte[] seedBuf = new byte[SHAKE128_BLOCK_SIZE];
         System.arraycopy(seed, 0, seedBuf, 0, seed.length);
@@ -1184,7 +1185,7 @@ public class ML_DSA {
                         allDone = false;
                         while (!allDone) {
                             allDone = true;
-                            parXof.squeezeBlock();
+                            parXof.squeezeBlock(parInd);
                             for (int k = 0; k < parInd; k++) {
                                 int parsedOfs = 0;
                                 int tmp;
@@ -1439,7 +1440,9 @@ public class ML_DSA {
         implDilithiumNttMult(product, coeffs1, coeffs2);
     }
 
-
+    // Computes the pointwise product of two ordinary NTT-domain polynomials.
+    // The Java fallback uses Barrett reduction. Intrinsic implementations may use
+    // Montgomery multiplication internally, but produce the same result modulo q.
     @IntrinsicCandidate
     static int implDilithiumNttMult(int[] product, int[] coeffs1, int[] coeffs2) {
         implDilithiumNttMultJava(product, coeffs1, coeffs2);
@@ -1448,7 +1451,9 @@ public class ML_DSA {
 
     static void implDilithiumNttMultJava(int[] product, int[] coeffs1, int[] coeffs2) {
         for (int i = 0; i < ML_DSA_N; i++) {
-            product[i] = montMul(coeffs1[i], toMont(coeffs2[i]));
+            // Both input coefficients are in the ordinary NTT domain, therefore
+            // the product is in the same domain.
+            product[i] = barrettReduce((long) coeffs1[i] * coeffs2[i]);
         }
     }
 
@@ -1533,14 +1538,16 @@ public class ML_DSA {
         }
     }
 
-    private int[][] vectorConstMul(int c, int[][] vec) {
+    // Multiplies t1 by 2^D. Since t1 < 2^10, the product is at most
+    // q - 1 and needs no reduction.
+    private int[][] vectorConstMul(int[][] vec) {
         int[][] res = integerMatrixAlloc(vec.length, vec[0].length);
         for (int i = 0; i < vec.length; i++) {
             for (int j = 0; j < vec[0].length; j++) {
-                res[i][j] = montMul(c, toMont(vec[i][j]));
+                res[i][j] = (1 << ML_DSA_D) * vec[i][j];
             }
         }
-        return res; // -q < res[i][j] < q
+        return res; // 0 <= res[i][j] < q
     }
 
     // Adds two vectors of polynomials
@@ -1617,8 +1624,14 @@ public class ML_DSA {
         return (aHigh - (int) (((long)m * MONT_Q) >> MONT_R_BITS));
     }
 
-    static int toMont(int a) {
-        return montMul(a, MONT_R_SQUARE_MOD_Q);
+    // Reduces a product of two NTT coefficients modulo ML_DSA_Q to its
+    // canonical representative. The product is bounded by ML_DSA_Q squared.
+    private static int barrettReduce(long product) {
+        long quotient = Math.multiplyHigh(product, BARRETT_MULTIPLIER) << 1;
+        long r = product - quotient * ML_DSA_Q;
+        r -= ML_DSA_Q & ~((r - ML_DSA_Q) >> 63);
+        r += (r >> 63) & ML_DSA_Q;
+        return (int) r;
     }
 
     // For multidimensional array initialization, manually allocating each entry is

@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
 import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
 import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -371,7 +372,15 @@ public final class Executor extends CommandArguments<Executor> {
             int mainExpectedExitCode, int... otherExpectedExitCodes) {
         return new RetryExecutor<Result, UnexpectedExitCodeException>(UnexpectedExitCodeException.class).setExecutable(() -> {
             var result = executeWithoutExitCodeCheck();
-            result.base().expectExitCode(mainExpectedExitCode, otherExpectedExitCodes);
+            try {
+                result.base().expectExitCode(mainExpectedExitCode, otherExpectedExitCodes);
+            } catch (UnexpectedResultException ex) {
+                if (ex instanceof UnexpectedExitCodeException uecex) {
+                    throw uecex; // Pass to exception mapper
+                }
+                // Unreachable, because the result must always have the exit code, as the executor never runs commands with a timeout.
+                throw ExceptionBox.reachedUnreachable();
+            }
             return result;
         }).setExceptionMapper((UnexpectedExitCodeException ex) -> {
             createResult(ex.getResult()).assertExitCodeIs(mainExpectedExitCode, otherExpectedExitCodes);

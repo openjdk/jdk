@@ -1631,7 +1631,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       if (instr->is_ideal_call() != Form::invalid_type &&
           instr->is_ideal_call() != Form::JAVA_LEAF) {
         // MachConstantBase goes behind arguments, but before jvms.
-        fprintf(fp,"assert(tf() && tf()->domain(), \"\"); return tf()->domain()->cnt();");
+        fprintf(fp,"assert(tf() && tf()->domain_cc(), \"\"); return tf()->domain_cc()->cnt();");
       } else {
         fprintf(fp,"return req()-1;");
       }
@@ -1839,6 +1839,39 @@ void ArchDesc::declareClasses(FILE *fp) {
     if (instr->_ins_pipe) {
       fprintf(fp,"  static  const Pipeline *pipeline_class();\n");
       fprintf(fp,"  virtual const Pipeline *pipeline() const;\n");
+    }
+
+    // Use a more precise type for constants, this is useful for nodes that are expanded after
+    // matching
+    if (data_type != Form::none) {
+      // A constant's bottom_type returns a Type containing its constant value
+      fprintf(fp, "  virtual const class Type *bottom_type() const {\n");
+      switch (data_type) {
+        case Form::idealI:
+          fprintf(fp, "    return  TypeInt::make(opnd_array(1)->constant());\n");
+          break;
+        case Form::idealP:
+        case Form::idealN:
+        case Form::idealNKlass:
+          fprintf(fp, "    return  opnd_array(1)->type();\n");
+          break;
+        case Form::idealD:
+          fprintf(fp, "    return  TypeD::make(opnd_array(1)->constantD());\n");
+          break;
+        case Form::idealH:
+          fprintf(fp, "    return  TypeH::make(opnd_array(1)->constantH());\n");
+          break;
+        case Form::idealF:
+          fprintf(fp, "    return  TypeF::make(opnd_array(1)->constantF());\n");
+          break;
+        case Form::idealL:
+          fprintf(fp, "    return  TypeLong::make(opnd_array(1)->constantL());\n");
+          break;
+        default:
+          assert(false, "Unimplemented()");
+          break;
+      }
+      fprintf(fp, "  };\n");
     }
 
     // Check where 'ideal_type' must be customized

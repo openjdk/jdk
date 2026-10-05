@@ -334,28 +334,38 @@ class DumpThreads {
             await(thread, Thread.State.WAITING);
             long tid = thread.threadId();
 
-            // thread dump in plain text should include thread
-            List<String> lines = dumpThreadsToPlainText();
-            ThreadFields fields = findThread(tid, lines);
-            assertNotNull(fields, "thread not found");
-            assertEquals("WAITING", fields.state());
+            // Must take the lock ourselves to ensure the wait() has actually
+            // released it.
+            List<String> lines;
+            ThreadDump.ThreadInfo ti;
+            synchronized(lock) {
+                // thread dump in plain text should include thread
+                lines = dumpThreadsToPlainText();
+                ThreadFields fields = findThread(tid, lines);
+                assertNotNull(fields, "thread not found");
+                assertEquals("WAITING", fields.state());
 
-            // thread dump in JSON format should include thread in root container
-            ThreadDump threadDump = dumpThreadsToJson();
-            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
-                    .findThread(thread.threadId())
-                    .orElse(null);
-            assertNotNull(ti, "thread not found");
-            assertEquals(ti.isVirtual(), thread.isVirtual());
-            assertEquals("WAITING", ti.state());
-            if (pinned) {
-                long carrierTid = ti.carrier().orElse(-1L);
-                assertNotEquals(-1L, carrierTid, "carrier not found");
-                assertForkJoinWorkerThread(carrierTid);
+                // thread dump in JSON format should include thread in root container
+                ThreadDump threadDump = dumpThreadsToJson();
+                ti = threadDump.rootThreadContainer()
+                               .findThread(thread.threadId())
+                               .orElse(null);
+                assertNotNull(ti, "thread not found");
+                assertEquals(ti.isVirtual(), thread.isVirtual());
+                assertEquals("WAITING", ti.state());
+                assertFalse(ti.ownedMonitors().values().stream()
+                              .flatMap(List::stream)
+                              .anyMatch(lockAsString::equals),
+                            "Waiting thread should not own the monitor");
+                if (pinned) {
+                    long carrierTid = ti.carrier().orElse(-1L);
+                    assertNotEquals(-1L, carrierTid, "carrier not found");
+                    assertForkJoinWorkerThread(carrierTid);
+                }
             }
 
             // Compiled native frames have no locals. If Object.wait0 has been compiled
-            // then we don't have the object that the thread is waiting on
+            // then we may not have the object that the thread is waiting on.
             Method wait0 = Object.class.getDeclaredMethod("wait0", long.class);
             boolean expectWaitingOn = !WhiteBox.getWhiteBox().isMethodCompiled(wait0);
             if (expectWaitingOn) {

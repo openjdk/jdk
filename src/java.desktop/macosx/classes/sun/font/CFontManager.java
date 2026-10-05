@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,8 +288,8 @@ public final class CFontManager extends SunFontManager {
     public String getFontPath(boolean noType1Fonts) {
         // In the case of the Cocoa toolkit, since we go through NSFont, we don't need to register /Library/Fonts
         Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof HeadlessToolkit) {
-            tk = ((HeadlessToolkit)tk).getUnderlyingToolkit();
+        if (tk instanceof HeadlessToolkit htk) {
+            tk = htk.getUnderlyingToolkit();
         }
         if (tk instanceof LWCToolkit) {
             return "";

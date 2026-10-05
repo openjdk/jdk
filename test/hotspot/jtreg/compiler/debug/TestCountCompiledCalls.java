@@ -26,7 +26,7 @@
  * @bug 8382057
  * @requires vm.debug == true
  *
- * @run main/othervm -Xbatch -XX:+CountCompiledCalls ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-DisplayVMOutput -XX:+CountCompiledCalls ${test.main.class}
  */
 
 package compiler.debug;

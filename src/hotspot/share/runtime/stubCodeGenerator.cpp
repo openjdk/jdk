@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,7 +291,7 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubId stub_id) : StubCodeMa
 }
 
 StubCodeMark::~StubCodeMark() {
-  _cgen->assembler()->flush();
+  _cgen->assembler()->invalidate_icache();
   _cdesc->set_end(_cgen->assembler()->pc());
   assert(StubCodeDesc::_list == _cdesc, "expected order on list");
 #ifndef PRODUCT

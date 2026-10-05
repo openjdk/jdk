@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import java.util.function.Function;
 
 import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.javac.PreviewFeature;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.CD_module_info;
@@ -805,6 +806,14 @@ public sealed interface ClassFile
     /** The bit mask of {@link AccessFlag#SUPER} access and property modifier. */
     int ACC_SUPER = 0x0020;
 
+    /**
+     * The bit mask of {@link AccessFlag#IDENTITY} access and property modifier.
+     *
+     * @since 28
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective = true)
+    int ACC_IDENTITY = 0x0020;
+
     /** The bit mask of {@link AccessFlag#ABSTRACT} access and property modifier. */
     int ACC_ABSTRACT = 0x0400;
 
@@ -837,6 +846,14 @@ public sealed interface ClassFile
 
     /** The bit mask of {@link AccessFlag#STRICT} access and property modifier. */
     int ACC_STRICT = 0x0800;
+
+    /**
+     * The bit mask of {@link AccessFlag#STRICT_INIT} access and property modifier.
+     *
+     * @since 28
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
+    int ACC_STRICT_INIT = 0x0800;
 
     /** The bit mask of {@link AccessFlag#MODULE} access and property modifier. */
     int ACC_MODULE = 0x8000;
@@ -1047,6 +1064,14 @@ public sealed interface ClassFile
     int JAVA_27_VERSION = 71;
 
     /**
+     * The class major version introduced by Java SE 28, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_28
+     * @since 28
+     */
+    int JAVA_28_VERSION = 72;
+
+    /**
      * A minor version number {@value} indicating a class uses preview features
      * of a Java SE release since 12, for major versions {@value
      * #JAVA_12_VERSION} and above.
@@ -1057,7 +1082,7 @@ public sealed interface ClassFile
      * {@return the latest class major version supported by the current runtime}
      */
     static int latestMajorVersion() {
-        return JAVA_27_VERSION;
+        return JAVA_28_VERSION;
     }
 
     /**

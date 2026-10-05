@@ -23,8 +23,9 @@
  */
 
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/codeCache.hpp"
 #include "cppstdlib/new.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
@@ -48,21 +49,21 @@
 #include "utilities/debug.hpp"
 
 static void clear_and_activate_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 }
 
 static void deactivate_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::set_active(false);
-#endif
+#endif // COMPILER2
 }
 
 static void update_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
 }
 
 G1CMBitMap* G1FullCollector::mark_bitmap() {
@@ -192,7 +193,7 @@ void G1FullCollector::prepare_collection() {
 
   // Verification needs the bitmap, so we should clear the bitmap only later.
   bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
-  _heap->verify_before_full_collection();
+  _heap->verify_before_full_collection(in_concurrent_cycle);
   if (in_concurrent_cycle) {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());
@@ -329,6 +330,8 @@ void G1FullCollector::phase1_mark_live_objects() {
     pt.print_all_references();
     assert(marker(0)->task_queue()->is_empty(), "Should be no oops on the stack");
   }
+
+  CodeCache::on_gc_marking_cycle_finish();
 
   {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());
@@ -542,9 +545,9 @@ void G1FullCollector::verify_after_marking() {
     return;
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTableDeactivate dpt_deact;
-#endif
+#endif // COMPILER2
   _heap->prepare_for_verify();
   // Note: we can verify only the heap here. When an object is
   // marked, the previous value of the mark word (including

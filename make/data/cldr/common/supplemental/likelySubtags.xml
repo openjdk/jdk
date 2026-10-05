@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2025 Unicode, Inc.
+Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -681,7 +681,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="sas" to="sas_Latn_ID"/>		<!--Sasak‧?‧?	➡ Sasak‧Latin‧Indonesia-->
 		<likelySubtag from="sat" to="sat_Olck_IN"/>		<!--Santali‧?‧?	➡ Santali‧Ol Chiki‧India-->
 		<likelySubtag from="sav" to="sav_Latn_SN"/>		<!--Saafi-Saafi‧?‧?	➡ Saafi-Saafi‧Latin‧Senegal-->
-		<likelySubtag from="saz" to="saz_Saur_IN"/>		<!--Saurashtra‧?‧?	➡ Saurashtra‧Saurashtra‧India-->
+		<likelySubtag from="saz" to="saz_Saur_IN"/>		<!--Sourashtra‧?‧?	➡ Sourashtra‧Sourashtra‧India-->
 		<likelySubtag from="sbp" to="sbp_Latn_TZ"/>		<!--Sangu‧?‧?	➡ Sangu‧Latin‧Tanzania-->
 		<likelySubtag from="sc" to="sc_Latn_IT"/>		<!--Sardinian‧?‧?	➡ Sardinian‧Latin‧Italy-->
 		<likelySubtag from="sck" to="sck_Deva_IN"/>		<!--Sadri‧?‧?	➡ Sadri‧Devanagari‧India-->
@@ -1343,7 +1343,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Runr" to="non_Runr_SE"/>		<!--?‧Runic‧?	➡ Old Norse‧Runic‧Sweden-->
 		<likelySubtag from="und_Samr" to="smp_Samr_IL"/>		<!--?‧Samaritan‧?	➡ Samaritan‧Samaritan‧Israel-->
 		<likelySubtag from="und_Sarb" to="xsa_Sarb_YE"/>		<!--?‧Old South Arabian‧?	➡ Sabaean‧Old South Arabian‧Yemen-->
-		<likelySubtag from="und_Saur" to="saz_Saur_IN"/>		<!--?‧Saurashtra‧?	➡ Saurashtra‧Saurashtra‧India-->
+		<likelySubtag from="und_Saur" to="saz_Saur_IN"/>		<!--?‧Sourashtra‧?	➡ Sourashtra‧Sourashtra‧India-->
 		<likelySubtag from="und_Sgnw" to="ase_Sgnw_US"/>		<!--?‧SignWriting‧?	➡ American Sign Language‧SignWriting‧United States-->
 		<likelySubtag from="und_Shaw" to="en_Shaw_GB"/>		<!--?‧Shavian‧?	➡ English‧Shavian‧United Kingdom-->
 		<likelySubtag from="und_Shrd" to="sa_Shrd_IN"/>		<!--?‧Sharada‧?	➡ Sanskrit‧Sharada‧India-->

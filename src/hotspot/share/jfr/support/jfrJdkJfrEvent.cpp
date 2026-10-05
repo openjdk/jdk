@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,6 @@ static oop new_java_util_arraylist(TRAPS) {
 
 static const int initial_array_size = 64;
 
-template <typename T>
-static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (mtTracing) GrowableArray<T>(size, mtTracing);
-}
-
 static bool initialize(TRAPS) {
   static bool initialized = false;
   if (!initialized) {
@@ -67,7 +62,7 @@ static bool initialize(TRAPS) {
 
 /*
  * Abstract klasses are filtered out unconditionally.
- * If a klass is not yet initialized, i.e yet to run its <clinit>
+ * If a klass is not initialized and <clinit> is not running,
  * it is also filtered out so we don't accidentally
  * trigger initialization.
  */
@@ -77,7 +72,11 @@ static bool is_allowed(const Klass* k) {
     // Was excluded during initial class load.
     return false;
   }
-  return !(k->is_abstract() || k->should_be_initialized());
+  if (k->is_abstract()) {
+    return false;
+  }
+  const InstanceKlass* ik = InstanceKlass::cast(k);
+  return ik->is_initialized() || ik->is_being_initialized();
 }
 
 static void fill_klasses(GrowableArray<jclass>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {

@@ -395,6 +395,11 @@ public class ComponentSampleModel extends SampleModel
      *              {@code ComponentSampleModel}
      * @return a {@code ComponentSampleModel} created with a subset
      *          of bands from this {@code ComponentSampleModel}.
+     * @throws NullPointerException if {@code bands} is {@code null}
+     * @throws IllegalArgumentException if the number of bands is not greater than 0
+     * @throws RasterFormatException if the number of bands is greater than
+     *                               the number of banks in this sample model.
+     * @throws ArrayIndexOutOfBoundsException if any of the band indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
        if (bands.length > bankIndices.length)
@@ -753,6 +758,11 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int[] pixels;
         if (iArray != null) {
            pixels = iArray;
@@ -845,6 +855,10 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int[] samples;
         if (iArray != null) {
            samples = iArray;
@@ -1009,6 +1023,13 @@ public class ComponentSampleModel extends SampleModel
                 ("Coordinate out of bounds!");
         }
 
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int lineOffset = y*scanlineStride + x*pixelStride;
         int srcOffset = 0;
 
@@ -1094,6 +1115,14 @@ public class ComponentSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int lineOffset = y*scanlineStride + x*pixelStride + bandOffsets[b];
         int srcOffset = 0;
 

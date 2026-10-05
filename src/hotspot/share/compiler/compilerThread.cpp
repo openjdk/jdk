@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _queue = queue;
   _counters = counters;
   _buffer_blob = nullptr;
-  _can_call_java = false;
   _compiler = nullptr;
   _arena_stat = nullptr;
   _timeout = nullptr;
@@ -56,20 +55,10 @@ CompilerThread::~CompilerThread() {
 }
 
 void CompilerThread::set_compiler(AbstractCompiler* c) {
-  /*
-   * Compiler threads need to make Java upcalls to the jargraal compiler.
-   * Java upcalls are also needed by the InterpreterRuntime when using jargraal.
-   */
-  _can_call_java = c != nullptr && c->is_jvmci() JVMCI_ONLY(&& !UseJVMCINativeLibrary);
   _compiler = c;
 }
 
 void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
   assert(thread->is_Compiler_thread(), "must be compiler thread");
   CompileBroker::compiler_thread_loop();
-}
-
-// Hide native compiler threads from external view.
-bool CompilerThread::is_hidden_from_external_view() const {
-  return _compiler == nullptr || _compiler->is_hidden_from_external_view();
 }

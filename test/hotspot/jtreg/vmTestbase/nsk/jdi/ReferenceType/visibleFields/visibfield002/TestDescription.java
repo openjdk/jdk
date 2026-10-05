@@ -56,7 +56,6 @@
  *
  * @run driver
  *      nsk.jdi.ReferenceType.visibleFields.visibfield002
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

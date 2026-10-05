@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.ssl;
 
 import sun.security.ssl.Authenticator.MAC;
+import sun.security.util.Debug;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -371,15 +372,15 @@ enum SSLCipher {
             ProtocolVersion[]>[] writeCipherGenerators;
 
     // Map of Ciphers listed in jdk.tls.keyLimits
-    private static final HashMap<String, Long> cipherLimits = new HashMap<>();
+    static final HashMap<String, Long> cipherLimits = new HashMap<>();
 
     // Keywords found on the jdk.tls.keyLimits security property.
     static final String[] tag = {"KEYUPDATE"};
+    static final long COUNTDOWNWARN = 20000; // Print debug warning under limit
 
     static  {
         final long max = 4611686018427387904L; // 2^62
         String prop = Security.getProperty("jdk.tls.keyLimits");
-
         if (prop != null) {
             String[] propvalue = prop.split(",");
 
@@ -617,10 +618,19 @@ enum SSLCipher {
 
         /**
          * Check if processed bytes have reached the key usage limit.
-         * If key usage limit is not be monitored, return false.
+         * If key usage limits are not be monitored, return false.
          */
         public boolean atKeyLimit() {
+            if (keyLimitCountdown < COUNTDOWNWARN && SSLLogger.isOn()) {
+                SSLLogger.fine("keyLimitCountdown: " + keyLimitCountdown);
+            }
             if (keyLimitCountdown >= 0) {
+                return false;
+            }
+            if (keyLimitEnabled == false) {
+                if (SSLLogger.isOn()) {
+                    SSLLogger.fine("KeyUpdate already sent, skipping");
+                }
                 return false;
             }
 

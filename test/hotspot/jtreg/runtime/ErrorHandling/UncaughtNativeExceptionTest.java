@@ -22,7 +22,7 @@
  */
 
 /*
- * @test id
+ * @test
  * @enablePreview
  * @requires os.family == "windows"
  * @library /test/lib
@@ -57,6 +57,7 @@ public class UncaughtNativeExceptionTest {
         OutputAnalyzer output = ProcessTools.executeTestJava(
                 // executeTestJava doesn't seem to forward 'java.library.path'
                 "-Djava.library.path=" + System.getProperty("java.library.path"),
+                "--enable-preview",
                 Crasher.class.getName());
 
         File hsErrFile = HsErrFileUtils.openHsErrFileFromOutput(output);

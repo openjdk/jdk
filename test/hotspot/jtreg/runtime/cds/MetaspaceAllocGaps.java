@@ -49,14 +49,8 @@ public class MetaspaceAllocGaps {
                 .classpath(appJar)
                 .appCommandLine("Hello")
                 .setTrainingChecker((OutputAnalyzer out) -> {
-                    // Typically all gaps should be filled. If not, we probably have a regression in C++ class ArchiveUtils.
-                    //
-                    // [0.422s][debug][aot ] Detailed metadata info (excluding heap region):
-                    // [...]
-                    // [0.422s][debug][aot ] Gap : 0 0 0.0 | 0 0 0.0 | 0 0 0.0 <<< look for this pattern
-                    out.shouldMatch("Allocated [1-9][0-9]+ objects of [1-9][0-9]+ bytes in gaps .remain = 0 bytes")
-                       .shouldMatch("debug.* Gap .*0[.]0.*0[.]0.*0[.]0")
-                       .shouldNotMatch("Unexpected .* gaps .* for Klass alignment");
+                    // We should have only very minimal amount of gaps left unfilled. See JDK-8383503
+                    out.shouldNotMatch("Unexpected .* gaps .* for Klass alignment");
                 })
                 .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("HelloWorld");

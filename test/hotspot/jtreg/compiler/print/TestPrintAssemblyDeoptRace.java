@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @bug 8258229
  * @summary If a method is made not entrant while printing the assembly, hotspot crashes due to mismatched relocation information.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:+DeoptimizeALot
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-DisplayVMOutput -XX:-TieredCompilation -XX:+DeoptimizeALot
  *                   -XX:CompileCommand=print,java/math/BitSieve.bit compiler.print.TestPrintAssemblyDeoptRace
  */
 

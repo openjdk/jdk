@@ -53,6 +53,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.util.calendar.CalendarUtils;
+import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.TimeZoneNameUtility;
@@ -920,10 +921,15 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /**
-     * Sets the 100-year period 2-digit years will be interpreted as being in
-     * to begin on the date the user specifies.
+     * Sets the start date of the 100-year period used to interpret 2-digit years.
+     * <p>
+     * For example, given a {@code SimpleDateFormat} with a {@code GregorianCalendar},
+     * if the start date is set to January 1, 1950, 2-digit years are
+     * interpreted as falling within the 100-year range from 1950 through 2049.
+     * In that case, 50 is interpreted as 1950, 99 as 1999, 00 as 2000, and 49
+     * as 2049.
      *
-     * @param startDate During parsing, two digit years will be placed in the range
+     * @param startDate During parsing, 2-digit years will be placed in the range
      * {@code startDate} to {@code startDate + 100 years}.
      * @see #get2DigitYearStart
      * @throws NullPointerException if {@code startDate} is {@code null}.
@@ -934,11 +940,8 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /**
-     * Returns the beginning date of the 100-year period 2-digit years are interpreted
-     * as being within.
+     * {@return the start date of the 100-year period used to interpret 2-digit years}
      *
-     * @return the start of the 100-year period into which two digit years are
-     * parsed
      * @see #set2DigitYearStart
      * @since 1.2
      */
@@ -1300,8 +1303,21 @@ public class SimpleDateFormat extends DateFormat {
                 int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
                 int dstOffset = calendar.get(Calendar.DST_OFFSET) + zoneOffset;
 
-                // Check if an explicit metazone DST offset exists
-                String explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
+                String explicitDstOffset = null;
+                // Check if an explicit metazone DST offset exists.
+                // Only check against instances of ZoneInfo, since the standard JDK timezones
+                // are guaranteed to extend this internal type.
+                if (tz instanceof ZoneInfo zi) {
+                    explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
+                    if (explicitDstOffset != null) {
+                        // The time zone ID has an explicit dst offset. Ensure that
+                        // our current TimeZone is canonical.
+                        var canonicalZone = ZoneInfo.getTimeZone(tzid);
+                        if (canonicalZone == null || !canonicalZone.equals(zi)) {
+                            explicitDstOffset = null;
+                        }
+                    }
+                }
                 boolean daylight = explicitDstOffset != null ?
                     dstOffset == ZoneOffset.of(explicitDstOffset).getTotalSeconds() * 1_000 :
                     dstOffset != zoneOffset;

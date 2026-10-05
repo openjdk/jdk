@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,16 +312,6 @@ final class WPathGraphics extends PathGraphics {
         }
     }
 
-    private static boolean isXP() {
-        String osVersion = System.getProperty("os.version");
-        if (osVersion != null) {
-            float version = Float.parseFloat(osVersion);
-            return version >= 5.1f;
-        } else {
-            return false;
-        }
-    }
-
     /* In case GDI doesn't handle shaping or BIDI consistently with
      * 2D's TextLayout, we can detect these cases and redelegate up to
      * be drawn via TextLayout, which in is rendered as runs of
@@ -335,8 +325,7 @@ final class WPathGraphics extends PathGraphics {
         } else if (!useGDITextLayout) {
             return true;
         } else {
-            if (preferGDITextLayout ||
-                (isXP() && FontUtilities.textLayoutIsCompatible(font))) {
+            if (preferGDITextLayout || FontUtilities.textLayoutIsCompatible(font)) {
                 return false;
             } else {
                 return true;

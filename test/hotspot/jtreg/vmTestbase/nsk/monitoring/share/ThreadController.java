@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,21 +653,9 @@ class SleepingThread extends BaseThread {
 
         this.threadsGroupLocks = threadsGroupLocks;
 
-        expectedLength += 4;
+        expectedLength++;
 
         expectedMethods.add(Thread.class.getName() + ".sleep");
-        expectedMethods.add(Thread.class.getName() + ".sleepNanos");
-        expectedMethods.add(Thread.class.getName() + ".sleepNanos0");
-        expectedMethods.add(Thread.class.getName() + ".beforeSleep");
-        expectedMethods.add(Thread.class.getName() + ".afterSleep");
-        expectedMethods.add(Thread.class.getName() + ".currentCarrierThread");
-        expectedMethods.add(Thread.class.getName() + ".currentThread");
-        // jdk.internal.event.ThreadSleepEvent not accessible
-        expectedMethods.add("java.lang.Object.<init>");
-        expectedMethods.add("jdk.internal.event.Event.<init>");
-        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<init>");
-        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<clinit>");
-        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isEnabled");
         expectedMethods.add(SleepingThread.class.getName() + ".run");
 
         switch (controller.invocationType) {
@@ -696,6 +684,27 @@ class SleepingThread extends BaseThread {
 
     public boolean checkState(Thread.State state) {
         return state == Thread.State.TIMED_WAITING;
+    }
+
+    public boolean checkStackTrace(StackTraceElement[] elements) {
+        if (elements.length == 0) {
+            // ThreadMXBean.getThreadInfo(long) and getThreadInfo(long[]) return
+            // ThreadInfo without a stack trace, so there is nothing to check.
+            return true;
+        }
+        // Only the java.lang.Thread.sleep entry frame is required here.
+        // Frames above it are implementation details of sleep that change
+        // between releases, so they are not checked.
+        for (int i = elements.length - 1; i >= 0; i--) {
+            if (elements[i].getClassName().equals("java.lang.Thread")
+                    && elements[i].getMethodName().equals("sleep")) {
+                // The frames below the sleep entry are the test's own stack and still get checked.
+                return super.checkStackTrace(
+                        Arrays.copyOfRange(elements, i, elements.length));
+            }
+        }
+        logger.complain("No java.lang.Thread.sleep frame in the stack trace");
+        return false;
     }
 
     public void run() {

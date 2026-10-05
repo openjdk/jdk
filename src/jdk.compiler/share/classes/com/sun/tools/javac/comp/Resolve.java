@@ -43,6 +43,7 @@ import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -115,6 +116,7 @@ public class Resolve {
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
     final boolean dumpMethodReferenceSearchResults;
     final boolean dumpStacktraceOnError;
+    private final LocalProxyVarsGen localProxyVarsGen;
 
     WriteableScope polymorphicSignatureScope;
 
@@ -154,6 +156,7 @@ public class Resolve {
         allowRecords = Feature.RECORDS.allowedInSource(source);
         dumpMethodReferenceSearchResults = options.isSet("debug.dumpMethodReferenceSearchResults");
         dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
+        localProxyVarsGen = LocalProxyVarsGen.instance(context);
     }
 
     /** error symbols, which are returned when resolution fails
@@ -1505,7 +1508,7 @@ public class Resolve {
      *  @param env     The current environment.
      *  @param name    The name of the variable or field.
      */
-    Symbol findVar(DiagnosticPosition pos, Env<AttrContext> env, Name name) {
+    Symbol findVar(DiagnosticPosition pos, Env<AttrContext> env, Name name, boolean writeOnlyTarget) {
         Symbol bestSoFar = varNotFound;
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
@@ -1530,8 +1533,10 @@ public class Resolve {
                         (sym.flags() & STATIC) == 0) {
                     if (staticOnly)
                         return new StaticError(sym);
-                    if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
-                        return new RefBeforeCtorCalledError(sym);
+                    if (env1.info.earlyContext != EarlyConstructionContext.NONE) {
+                        sym = checkEarlyFieldRef(pos, env1, null, (VarSymbol)sym,
+                                writeOnlyTarget);
+                    }
                 }
                 return sym;
             } else {
@@ -2039,8 +2044,13 @@ public class Resolve {
                             (sym.flags() & STATIC) == 0) {
                         if (staticOnly)
                             return new StaticError(sym);
-                        if (env1.info.ctorPrologue && env1 == env)
-                            return new RefBeforeCtorCalledError(sym);
+                        if (env1 == env) {
+                            EarlyConstructionContext context = env1.info.earlyContext;
+                            if (env1.enclClass.sym == context.owner()) {
+                                Assert.check(env.tree.hasTag(APPLY));
+                                return new RefBeforeCtorCalledError(sym, false);
+                            }
+                        }
                     }
                     return sym;
                 } else {
@@ -2358,8 +2368,9 @@ public class Resolve {
                 bestSoFar != sym) {
                 return new AmbiguityError(bestSoFar, sym);
             } else if (env.toplevel.namedImportScope == scope &&
-                    (sym == typeNotFound || (sym.kind == ERR && s.kind == ERR))) {
-                bestSoFar = bestOf(bestSoFar, new UnresolvableGobalSymbolError(s));
+                    ((sym == typeNotFound && s.kind.matches(KindSelector.TYP)) ||
+                    (sym.kind == ERR && s.kind == ERR))) {
+                bestSoFar = bestOf(bestSoFar, new UnresolvableGlobalSymbolError(s));
             } else
                 bestSoFar = bestOf(bestSoFar, sym);
         }
@@ -2479,7 +2490,7 @@ public class Resolve {
         Symbol sym;
 
         if (kind.contains(KindSelector.VAL)) {
-            sym = findVar(pos, env, name);
+            sym = findVar(pos, env, name, kind.isAssignment());
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
         }
@@ -2542,9 +2553,17 @@ public class Resolve {
      */
     Symbol findIdentInType(DiagnosticPosition pos,
                            Env<AttrContext> env, Type site,
-                           Name name, KindSelector kind) {
+                           Name name, KindSelector kind,
+                           JCTree earlyFieldQualifier) {
         try {
-            return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+            Symbol sym = findIdentInTypeInternal(env, site, name, kind);
+            if (sym.kind == VAR &&
+                    env.info.earlyContext != EarlyConstructionContext.NONE &&
+                    earlyFieldQualifier != null) {
+                Assert.check(sym.owner.kind == TYP);
+                sym = checkEarlyFieldRef(pos, env, earlyFieldQualifier, (VarSymbol)sym, kind.isAssignment());
+            }
+            return checkNonExistentType(checkRestrictedType(pos, sym, name));
         } catch (ClassFinder.BadClassFile err) {
             return new BadClassFileError(err);
         } catch (CompletionFailure cf) {
@@ -3819,9 +3838,9 @@ public class Resolve {
                     if (staticOnly) {
                         // current class is not an inner class, stop search
                         return new StaticError(sym);
-                    } else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym)) {
+                    } else if (env1.enclClass.sym == env1.info.earlyContext.owner()) {
                         // early construction context, stop search
-                        return new RefBeforeCtorCalledError(sym);
+                        return new RefBeforeCtorCalledError(sym, false);
                     } else {
                         // found it
                         return sym;
@@ -3884,12 +3903,14 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue &&
-                            !isReceiverParameter(env, tree) &&
-                            !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
-                        sym = new RefBeforeCtorCalledError(sym);
-                    return accessBase(sym, pos, env.enclClass.sym.type,
-                            name, true);
+                    else {
+                        EarlyConstructionContext context = env1.info.earlyContext;
+                        if (sym.owner == context.owner() &&
+                                !isReceiverParameter(env, tree)) {
+                            sym = new RefBeforeCtorCalledError(sym, false);
+                        }
+                    }
+                    return sym;
                 }
             }
             if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
@@ -3901,11 +3922,14 @@ public class Resolve {
             //this might be a default super call if one of the superinterfaces is 'c'
             for (Type t : pruneInterfaces(env.enclClass.type)) {
                 if (t.tsym == c) {
-                    if (env.info.ctorPrologue)
-                        log.error(pos, Errors.CantRefBeforeCtorCalled(name));
-                    env.info.defaultSuperCallSite = t;
-                    return new VarSymbol(0, names._super,
+                    Symbol sym = new VarSymbol(0, names._super,
                             types.asSuper(env.enclClass.type, c), env.enclClass.sym);
+                    EarlyConstructionContext context = env.info.earlyContext;
+                    if (context != EarlyConstructionContext.NONE) {
+                        sym = new RefBeforeCtorCalledError(sym, false);
+                    }
+                    env.info.defaultSuperCallSite = t;
+                    return sym;
                 }
             }
             //find a direct supertype that is a subtype of 'c'
@@ -3946,92 +3970,97 @@ public class Resolve {
     }
 
     /**
-     * Determine if an early instance field reference may appear in a constructor prologue.
+     * Determine if an early instance field reference may appear in an early construction context of A.
      *
      * <p>
      * This is only allowed when:
-     *  - The field is being assigned a value (i.e., written but not read)
      *  - The field is not inherited from a superclass
-     *  - The assignment is not within a lambda, because that would require
+     *  - The access is not within a lambda or an inner class, because that would require
      *    capturing 'this' which is not allowed prior to super().
-     *
-     * <p>
-     * Note, this method doesn't catch all such scenarios, because this method
-     * is invoked for symbol "x" only for "x = 42" but not for "this.x = 42".
-     * We also don't verify that the field has no initializer, which is required.
-     * To catch those cases, we rely on similar logic in Attr.checkAssignable().
+     *  - The field has no initializer or it is declared in a value class
      */
-    private boolean isAllowedEarlyReference(DiagnosticPosition pos, Env<AttrContext> env, VarSymbol v) {
-
-        // Check assumptions
-        Assert.check(env.info.ctorPrologue);
-        Assert.check((v.flags_field & STATIC) == 0);
-
-        // The symbol must appear in the LHS of an assignment statement
-        if (!(env.tree instanceof JCAssign assign))
-            return false;
-
-        // The assignment statement must not be within a lambda
-        if (env.info.isLambda)
-            return false;
-
-        // Get the symbol's qualifier, if any
-        JCExpression lhs = TreeInfo.skipParens(assign.lhs);
-        JCExpression base;
-        switch (lhs.getTag()) {
-        case IDENT:
-            base = null;
-            break;
-        case SELECT:
-            JCFieldAccess select = (JCFieldAccess)lhs;
-            base = select.selected;
-            if (!TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))
-                return false;
-            break;
-        default:
-            return false;
+    private Symbol checkEarlyFieldRef(DiagnosticPosition pos, Env<AttrContext> env, JCTree base, VarSymbol field, boolean writeOnlyTarget) {
+        EarlyConstructionContext context = env.info.earlyContext;
+        Assert.check(context != EarlyConstructionContext.NONE);
+        boolean earlyRefOk = base != null ?
+                isQualifiedEarlyRefAllowed(pos, env, context, base, field, writeOnlyTarget) :
+                isSimpleEarlyFieldRefAllowed(pos, env, context, field, writeOnlyTarget);
+        if (earlyRefOk) {
+            return field;
+        } else {
+            boolean isEarlyWrite = writeOnlyTarget &&
+                    field.owner == context.owner();
+            return new RefBeforeCtorCalledError(field, isEarlyWrite);
         }
-
-        // If an early reference, the field must not be declared in a superclass
-        if (isEarlyReference(env, base, v) && v.owner != env.enclClass.sym)
-            return false;
-
-        // The flexible constructors feature must be enabled
-        preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
-
-        // OK
-        return true;
     }
 
-    /**
-     * Determine if the variable appearance constitutes an early reference to the current class.
-     *
-     * <p>
-     * This means the variable is an instance field of the current class and it appears
-     * in an early initialization context of it (i.e., one of its constructor prologues).
-     *
-     * <p>
-     * Such a reference is only allowed for assignments to non-initialized fields that are
-     * not inherited from a superclass, though that is not enforced by this method.
-     *
-     * @param env    The current environment
-     * @param base   Variable qualifier, if any, otherwise null
-     * @param v      The variable
-     */
-    public boolean isEarlyReference(Env<AttrContext> env, JCTree base, VarSymbol v) {
-        if (env.info.ctorPrologue &&
-                (v.flags() & STATIC) == 0 &&
-                v.isMemberOf(env.enclClass.sym, types)) {
-
-            // Allow "Foo.this.x" when "Foo" is (also) an outer class, as this refers to the outer instance
-            if (base != null) {
-                return TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base);
-            }
-
-            // It's an early reference to an instance field member of the current instance
+    /** Implements early access checks for qualified field references (15.8.3, 15.8.4) */
+    private boolean isQualifiedEarlyRefAllowed(DiagnosticPosition pos,
+                                               Env<AttrContext> env,
+                                               EarlyConstructionContext context,
+                                               JCTree base,
+                                               VarSymbol field,
+                                               boolean writeOnlyTarget) {
+        if (!TreeInfo.isExplicitThisReference(types, (ClassType)context.owner().type, base)) {
+            // Foo.this.x, where Foo is unrelated, ignore
             return true;
         }
-        return false;
+        if (field.isStatic()) {
+            // early this can only qualify instance field accesses
+            return false;
+        }
+        // early qualified access only allowed for writes
+        return writeOnlyTarget &&
+                isSimpleEarlyFieldRefAllowed(pos, env, context, field, writeOnlyTarget);
+    }
+
+    /** Implements early access checks for unqualified field references (6.5.6.1) */
+    private boolean isSimpleEarlyFieldRefAllowed(DiagnosticPosition pos,
+                                                 Env<AttrContext> env,
+                                                 EarlyConstructionContext context,
+                                                 VarSymbol field,
+                                                 boolean writeOnlyTarget) {
+        if (field.name == names._this || field.name == names._super) {
+            // If unrelated this/super, ignore
+            return field.owner != context.owner();
+        }
+        if (field.isStatic() ||
+                !field.isMemberOf(context.owner(), types)) {
+            // If unqualified static field, or unrelated instance field, ignore
+            return true;
+        }
+        // We have now ruled out all cases where the check should not apply. Let's follow 6.5.6.1
+        if (field.owner != context.owner()) {
+            // The instance variable is declared by C, not a superclass of C
+            return false;
+        }
+        if (context.restricted()) {
+            // The expression name does not appear in a constructor of C whose body includes an
+            // alternate constructor invocation, or a nested class or interface declaration
+            // of C, or a lambda expression contained by C
+            return false;
+        }
+        if ((field.flags_field & HASINIT) != 0 &&
+                !field.isStrict()) {
+            // Either the declaration of the named variable has no initializer,
+            // or C is a value class (8.1.1.5). To preserve legacy behavior,
+            // bad final field writes are never reported as early access.
+            return writeOnlyTarget && field.isFinal();
+        }
+        // At this point we have seen a legal early ref
+        if (writeOnlyTarget) {
+            // Write early ref, this is allowed with flexible constructor bodies
+            preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
+        } else {
+            // Read early ref, this is only allowed under JEP 401, and requires special codegen support
+            preview.checkSourceLevel(pos, Feature.VALUE_CLASSES);
+            if (context.ctorPrologue()) {
+                // Track the early read for codegen
+                Symbol owner = env.enclMethod != null ? env.enclMethod.sym : env.enclClass.sym;
+                localProxyVarsGen.addFieldReadInPrologue(owner, field);
+            }
+        }
+        return true;
     }
 
 /* ***************************************************************************
@@ -4157,9 +4186,9 @@ public class Resolve {
                 List<Type> typeargtypes);
     }
 
-    class UnresolvableGobalSymbolError extends InvalidSymbolError {
+    class UnresolvableGlobalSymbolError extends InvalidSymbolError {
 
-        UnresolvableGobalSymbolError(Symbol sym) {
+        UnresolvableGlobalSymbolError(Symbol sym) {
             super(HIDDEN, sym, "unresolvable class error");
             this.name = sym.name;
         }
@@ -4367,7 +4396,6 @@ public class Resolve {
                               rewriter,
                               kindName(ws),
                               ws.name == names.init ? ws.owner.name : ws.name,
-                              kindName(ws.owner),
                               ws.owner.type,
                               c.snd);
                 default:
@@ -4805,13 +4833,16 @@ public class Resolve {
     }
 
     /**
-     * Specialization of {@link InvalidSymbolError} for illegal
+     * Specialization of {@link StaticError} for illegal
      * early accesses within a constructor prologue.
      */
     class RefBeforeCtorCalledError extends StaticError {
 
-        RefBeforeCtorCalledError(Symbol sym) {
+        final boolean isEarlyWrite;
+
+        RefBeforeCtorCalledError(Symbol sym, boolean isEarlyWrite) {
             super(sym, "prologue error");
+            this.isEarlyWrite = isEarlyWrite;
         }
 
         @Override
@@ -4825,6 +4856,11 @@ public class Resolve {
             Symbol errSym = ((sym.kind == TYP && sym.type.hasTag(CLASS))
                 ? types.erasure(sym.type).tsym
                 : sym);
+            if (isEarlyWrite && (sym.flags() & HASINIT) != 0) {
+                // Keep diagnostic compatibility with earlier versions
+                return diags.create(dkind, log.currentSource(), pos,
+                        "cant.assign.initialized.before.ctor.called", errSym);
+            }
             return diags.create(dkind, log.currentSource(), pos,
                     "cant.ref.before.ctor.called", errSym);
         }
@@ -5267,10 +5303,6 @@ public class Resolve {
 
         DeferredAttr.AttrMode attrMode() {
             return attrMode;
-        }
-
-        boolean internal() {
-            return internalResolution;
         }
     }
 

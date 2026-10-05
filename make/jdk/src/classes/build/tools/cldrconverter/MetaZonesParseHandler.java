@@ -102,9 +102,9 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
                 zones.put(attributes.getValue("other"), attributes.getValue("type"));
             } else {
                 mzoneMapEntryList.add(String.format("        \"%s\", \"%s\", \"%s\",",
-                    attributes.getValue("other"),
-                    territory,
-                    attributes.getValue("type")));
+                    CLDRConverter.escape(attributes.getValue("other")),
+                    CLDRConverter.escape(territory),
+                    CLDRConverter.escape(attributes.getValue("type"))));
             }
             pushIgnoredContainer(qName);
             break;

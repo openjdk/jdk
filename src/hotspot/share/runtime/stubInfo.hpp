@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -275,11 +275,10 @@ enum class StubId : int {
 //
 // - for shared stub entries we only need to allocate a single enum
 // tag for most blobs since they have only one entry. However, we need
-// to bump up the index by an extra 3 (or 5 with JVMCI included) when
-// we are generating the deoptimization blob because it has 4
-// (respectively, 6) entries. So, in that case we allocate a single
-// enum tag identifying the index of the first entry and a max tag
-// identifying the index of the last entry
+// to bump up the index by an extra 3 when we are generating the
+// deoptimization blob because it has 4 entries. So, in that case we
+// allocate a single enum tag identifying the index of the first entry
+// and a max tag identifying the index of the last entry
 //
 // - for stubgen stubs which employ an array of entries we allocate a
 // single enum tag identifying the index of the first entry and a max

@@ -229,7 +229,7 @@ import sun.reflect.misc.MethodUtil;
  *</pre>
  * </blockquote>
  * The target property may also be "qualified" with an arbitrary number
- * of property prefixs delimited with the "." character.  For example, the
+ * of property prefixes delimited with the "." character.  For example, the
  * following action listener:
  * <pre>
  *   EventHandler.create(ActionListener.class, target, "a.b", "c.d")

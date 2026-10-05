@@ -60,7 +60,7 @@ $JAR cf $PLUGINDIR/simp.jar -C $TESTCLASSES/tmpdir META-INF/services \
 
 OS=`uname -s`
 case "$OS" in
-  Windows_* | CYGWIN* )
+  Windows_* | CYGWIN* | MSYS* | MINGW* )
 CPSEP=";"
   ;;
   * )

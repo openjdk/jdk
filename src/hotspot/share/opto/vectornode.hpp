@@ -146,12 +146,20 @@ class VectorNode : public TypeNode {
   static bool is_minmax_opcode(int opc);
 
   bool should_swap_inputs_to_help_global_value_numbering();
+  Node* reassociate_vector_operation(PhaseGVN* phase);
+  static Node* create_reassociated_node(Node* parent, Node* child, Node* cinput1, Node* cinput2,
+                                        Node* pinput2, PhaseGVN* phase);
 
   static bool is_vshift_cnt_opcode(int opc);
 
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
+  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc, 0 if not handled
+  static Node* make_scalar(Compile* c, int vopc, BasicType bt, Node* control, Node* in1, Node* in2, Node* in3);
+
+  bool can_push_through_replicate(BasicType bt);
+  Node* push_through_replicate(PhaseGVN* phase);
 
   static int shift_count_opcode(int opc);
 
@@ -174,6 +182,7 @@ class VectorNode : public TypeNode {
   // Return true if every bit in this vector is 0.
   static bool is_all_zeros_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
+  static bool is_vectormask_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
 
@@ -687,6 +696,34 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
+// Vector divide byte
+class DivVBNode : public VectorNode {
+public:
+  DivVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide short
+class DivVSNode : public VectorNode {
+public:
+  DivVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide int
+class DivVINode : public VectorNode {
+public:
+  DivVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide long
+class DivVLNode : public VectorNode {
+public:
+  DivVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
 // Vector divide half float
 class DivVHFNode : public VectorNode {
 public:
@@ -1066,6 +1103,7 @@ class XorVNode : public VectorNode {
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_reshape);
 };
 
 // Vector xor byte, short, int, long as a reduction
@@ -1777,6 +1815,25 @@ class VectorTestNode : public CmpNode {
   }
 };
 
+// Vector slice operation with constant index. Slices a segment of adjacent lanes,
+// starting at a given origin lane in the current vector, and continuing (as needed)
+// into an immediately following vector.
+class VectorSliceNode : public VectorNode {
+ public:
+  VectorSliceNode(Node* vec1, Node* vec2, Node* origin, const TypeVect* vt)
+    : VectorNode(vec1, vec2, origin, vt) {
+    assert(origin->is_Con(), "origin must be a constant");
+  }
+
+  virtual int Opcode() const;
+  Node* vec1() const { return in(1); }
+  Node* vec2() const { return in(2); }
+  Node* origin() const { return in(3); }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+
 // Blend two vectors based on a vector mask. For each lane, select the value
 // from the first input vector (vec1) if the corresponding mask lane is set,
 // otherwise select from the second input vector (vec2).
@@ -1791,6 +1848,24 @@ class VectorBlendNode : public VectorNode {
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
   Node* vec_mask() const { return in(3); }
+};
+
+// Vector bitwise blend (bit-select): (sel & vec_true) | (~sel & vec_false).
+class VectorBitwiseBlendNode : public VectorNode {
+ public:
+  VectorBitwiseBlendNode(Node* vec_false, Node* vec_true, Node* sel, const TypeVect* vt)
+    : VectorNode(vec_false, vec_true, sel, vt) {
+    assert(vec_false->bottom_type()->isa_vect() != nullptr &&
+           vec_true->bottom_type()->isa_vect() != nullptr &&
+           sel->bottom_type()->isa_vect() != nullptr,
+           "inputs must all be vectors");
+    uint vlen = vt->length();
+    assert(vec_false->bottom_type()->is_vect()->length() == vlen &&
+           vec_true->bottom_type()->is_vect()->length() == vlen &&
+           sel->bottom_type()->is_vect()->length() == vlen,
+           "mismatched vector length");
+  }
+  virtual int Opcode() const;
 };
 
 // Rearrange lane elements from a source vector under the control of a shuffle
@@ -2126,11 +2201,10 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 // vector value. This is a macro node expanded during vector optimization
 // phase.
 class VectorUnboxNode : public VectorNode {
- protected:
-  uint size_of() const { return sizeof(*this); }
- public:
-  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem)
+public:
+  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* ctrl, Node* obj, Node* mem)
     : VectorNode(mem, obj, vec_type) {
+    init_req(0, ctrl);
     init_class_id(Class_VectorUnbox);
     C->add_macro_node(this);
   }
@@ -2140,6 +2214,10 @@ class VectorUnboxNode : public VectorNode {
   Node* mem() const { return in(1); }
   virtual Node* Identity(PhaseGVN* phase);
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+private:
+  uint size_of() const { return sizeof(*this); }
+  bool depends_only_on_test_impl() const { return false; }
 };
 
 // Lane-wise right rotation of the first input by the second input.

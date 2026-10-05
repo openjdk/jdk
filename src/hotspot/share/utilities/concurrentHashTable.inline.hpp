@@ -1267,22 +1267,6 @@ inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
 }
 
 template <typename CONFIG, MemTag MT>
-template <typename VALUE_SIZE_FUNC>
-inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
-  statistics_get(Thread* thread, VALUE_SIZE_FUNC& vs_f, TableStatistics old)
-{
-  if (!try_resize_lock(thread)) {
-    return old;
-  }
-  InternalTable* table = get_table();
-  NumberSeq summary;
-  size_t    literal_bytes = 0;
-
-  internal_statistics_range(thread, 0, table->_size, vs_f, summary, literal_bytes);
-  return internal_statistics_epilog(thread, summary, literal_bytes);
-}
-
-template <typename CONFIG, MemTag MT>
 inline void ConcurrentHashTable<CONFIG, MT>::
   rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, MT>* to_cht)
 {

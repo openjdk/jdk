@@ -62,7 +62,7 @@ public class TestCDSVMCrash {
             throw new Error("Expected VM to crash");
         } catch(RuntimeException e) {
             if (!e.getMessage().contains("A fatal error has been detected")) {
-                throw new Error("Expected message: A fatal error has been detected");
+                throw new Error("Expected message: A fatal error has been detected. Instead message is: " + e.getMessage());
             }
         }
         System.out.println("PASSED");

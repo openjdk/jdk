@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,14 +107,25 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
 }
 
 MemRegion CardTable::committed_for(const MemRegion mr) const {
+  assert(mr.start() == _covered[0].start()
+      || mr.start() == _covered[1].start(), "precondition");
+
+  if (mr.start() == _whole_heap.end()) {
+    assert(mr.is_empty(), "inv");
+    HeapWord* addr = (HeapWord*) byte_after(_whole_heap.end() - 1);
+    assert(is_aligned(addr, _page_size), "inv");
+    return MemRegion{addr, (size_t)0};
+  }
   HeapWord* addr_l = (HeapWord*)align_down(byte_for(mr.start()), _page_size);
   HeapWord* addr_r = mr.is_empty()
                    ? addr_l
                    : (HeapWord*)align_up(byte_after(mr.last()), _page_size);
 
-  if (mr.start() == _covered[0].start()) {
-    // In case the card for gen-boundary is not page-size aligned, the crossing page belongs to _covered[1].
-    addr_r = MIN2(addr_r, (HeapWord*)align_down(byte_for(_covered[1].start()), _page_size));
+  if (mr.start() == _whole_heap.start()) {
+    if (!_covered[1].is_empty()) {
+      // In case the card for gen-boundary is not page-size aligned, the crossing page belongs to _covered[1].
+      addr_r = MIN2(addr_r, (HeapWord*)align_down(byte_for(_covered[1].start()), _page_size));
+    }
   }
 
   return MemRegion(addr_l, addr_r);
@@ -194,6 +205,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
 // Note that these versions are precise!  The scanning code has to handle the
 // fact that the write barrier may be either precise or imprecise.
 void CardTable::dirty_MemRegion(MemRegion mr) {
+  assert(!mr.is_empty(), "precondition");
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   assert(_covered[0].contains(mr) || _covered[1].contains(mr), "precondition");
@@ -203,6 +215,7 @@ void CardTable::dirty_MemRegion(MemRegion mr) {
 }
 
 void CardTable::clear_MemRegion(MemRegion mr) {
+  assert(!mr.is_empty(), "precondition");
   // Be conservative: only clean cards entirely contained within the
   // region.
   CardValue* cur;

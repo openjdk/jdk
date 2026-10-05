@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,9 +191,9 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_available0(JNIEnv *env, jobject this, job
     if (fstat(fd, &fbuf) != -1) {
         int mode = fbuf.st_mode;
         if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-            int n = ioctl(fd, FIONREAD, &n);
-            if (n >= 0) {
-                return n;
+            int available;
+            if (ioctl(fd, FIONREAD, &available) >= 0) {
+                return available;
             }
         } else if (S_ISREG(mode)) {
             size = fbuf.st_size;
@@ -213,8 +213,12 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_available0(JNIEnv *env, jobject this, job
     }
 
     jlong available = size - position;
-    return available > java_lang_Integer_MAX_VALUE ?
-        java_lang_Integer_MAX_VALUE : (jint)available;
+    if (available > java_lang_Integer_MAX_VALUE) {
+        available = java_lang_Integer_MAX_VALUE;
+    } else if (available < 0) {
+        available = 0;
+    }
+    return (jint)available;
 }
 
 JNIEXPORT jboolean JNICALL
