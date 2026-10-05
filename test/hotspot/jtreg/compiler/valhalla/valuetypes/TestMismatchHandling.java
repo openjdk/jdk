@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8301007
- * @key randomness
+ * @key stress randomness
  * @summary Verify that mismatches of the preload attribute are properly handled in the calling convention.
  * @library /test/lib /compiler/whitebox /
  * @enablePreview
@@ -33,34 +33,34 @@
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch
  *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-Inline -XX:-InlineAccessors -XX:-UseBimorphicInlining -XX:-UseCHA -XX:-UseTypeProfile
- *                   -XX:CompileCommand=compileonly,compiler.valhalla.valuetypes.TestMismatchHandling::test*
- *                   compiler.valhalla.valuetypes.TestMismatchHandling
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
+ *                   ${test.main.class}
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch
  *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-Inline -XX:-InlineAccessors -XX:-UseBimorphicInlining -XX:-UseCHA -XX:-UseTypeProfile
  *                   -XX:CompileCommand=compileonly,*::method
- *                   compiler.valhalla.valuetypes.TestMismatchHandling
+ *                   ${test.main.class}
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch
  *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-Inline -XX:-InlineAccessors -XX:-UseBimorphicInlining -XX:-UseCHA -XX:-UseTypeProfile
- *                   compiler.valhalla.valuetypes.TestMismatchHandling
+ *                   ${test.main.class}
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch
  *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-Inline -XX:-InlineAccessors -XX:-UseBimorphicInlining -XX:-UseCHA -XX:-UseTypeProfile
  *                   -XX:-ValueTypePassFieldsAsArgs
- *                   compiler.valhalla.valuetypes.TestMismatchHandling
+ *                   ${test.main.class}
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch
  *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-Inline -XX:-InlineAccessors -XX:-UseBimorphicInlining -XX:-UseCHA -XX:-UseTypeProfile
  *                   -XX:-ValueTypeReturnedAsFields
- *                   compiler.valhalla.valuetypes.TestMismatchHandling
+ *                   ${test.main.class}
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch
  *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+DeoptimizeNMethodBarriersALot
- *                   compiler.valhalla.valuetypes.TestMismatchHandling
+ *                   ${test.main.class}
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch
  *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   compiler.valhalla.valuetypes.TestMismatchHandling
+ *                   ${test.main.class}
  */
 
 // ##################################### WARNING ######################################

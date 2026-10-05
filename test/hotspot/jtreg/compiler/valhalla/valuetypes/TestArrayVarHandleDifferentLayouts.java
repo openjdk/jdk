@@ -20,53 +20,38 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.valhalla.valuetypes;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import jdk.internal.value.ValueClass;
+import jdk.test.lib.Asserts;
 
 /*
- * @test id=vanilla
- * @bug 8391658
- * @summary Test cleanup of nested MergeMems after incremental inlining.
- * @requires vm.compiler2.enabled
+ * @test
+ * @bug 8390511
+ * @summary Test VarHandle access on an array that is a merge of different layouts.
+ * @library /test/lib /
  * @enablePreview
+ * @modules java.base/jdk.internal.value
  * @run main ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1
+ *                   -XX:CompileOnly=${test.main.class}::* ${test.main.class}
  */
-
-/*
- * @test id=stress
- * @bug 8391658
- * @summary Test cleanup of nested MergeMems after incremental inlining.
- * @key stress randomness
- * @requires vm.compiler2.enabled
- * @enablePreview
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+StressIGVN -XX:+StressIncrementalInlining -XX:StressSeed=3860063970
- *                   -XX:CompileCommand=compileonly,${test.main.class}::test
- *                   ${test.main.class}
- */
-
-package compiler.valhalla;
-
-public class TestMergeMemCleanup {
-    static int count;
-
-    static Integer m1(Object obj) {
-        count++;
-        return (obj == null) ? null : (Integer)obj;
-    }
-
-    static Integer m2(Integer val) {
-        return m1(val);
-    }
-
-    static void test(Integer val) {
-        m1(val);
-        m2(val);
-    }
+public class TestArrayVarHandleDifferentLayouts {
+    private static final int INDEX = 8;
+    private static final VarHandle HANDLE = MethodHandles.arrayElementVarHandle(Integer[].class);
+    private static final Integer[] FLAT = new Integer[64];
+    private static final Integer[] REFERENCE = (Integer[]) ValueClass.newReferenceArray(Integer.class, 64);
 
     public static void main(String[] args) {
-        for (int i = 0; i < 50_000; i++) {
-            test(null);
-            test(i);
+        for (int i = 0; i < 20_000; i++) {
+            testGet((i & 1) == 0);
         }
     }
-}
 
+    static Integer testGet(boolean useFlat) {
+        Integer[] array = useFlat ? FLAT : REFERENCE;
+        return (Integer)HANDLE.getVolatile(array, INDEX);
+    }
+}

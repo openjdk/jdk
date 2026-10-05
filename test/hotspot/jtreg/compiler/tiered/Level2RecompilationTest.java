@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test Level2RecompilationTest
+ * @key stress
  * @summary Test downgrading mechanism from level 3 to level 2 for those profiled methods.
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -37,7 +38,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=print,compiler.whitebox.SimpleTestCaseHelper::*
- *                   compiler.tiered.Level2RecompilationTest
+ *                   ${test.main.class}
  */
 
 package compiler.tiered;
