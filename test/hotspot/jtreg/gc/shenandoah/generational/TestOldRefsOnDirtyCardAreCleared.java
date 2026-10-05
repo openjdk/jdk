@@ -21,19 +21,13 @@
  * questions.
  *
  */
-package gc.shenandoah.generational;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
-import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test id=generational
  * @bug 8393426
  * @requires vm.gc.Shenandoah
  * @summary The remembered set scan must not inadvertently keep old referents on dirty cards alive.
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
@@ -43,9 +37,18 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:-DisableExplicitGC -XX:+ExplicitGCInvokesConcurrent
  *      gc.shenandoah.generational.TestOldRefsOnDirtyCardAreCleared
  */
-public class TestOldRefsOnDirtyCardAreCleared {
+
+package gc.shenandoah.generational;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+
+import jdk.test.whitebox.WhiteBox;
+
+public final class TestOldRefsOnDirtyCardAreCleared {
     // Use a subclass so that we can reliably dirty the card for this weak reference
-    static class WeakReferenceWithYoungPointer extends WeakReference<Object> {
+    static final class WeakReferenceWithYoungPointer extends WeakReference<Object> {
         public Object youngPointer;
         public WeakReferenceWithYoungPointer(Object object) {
             super(object);
@@ -57,6 +60,13 @@ public class TestOldRefsOnDirtyCardAreCleared {
     private static final List<WeakReferenceWithYoungPointer> WEAK_REFS = new ArrayList<>();
     private static final List<Object> STRONG = new ArrayList<>();
 
+    // Put a safety net on the number of System.gcs that will be used for tenuring.
+    private static final int MAX_FULL_GCS = 5;
+
+    // Multiple references helps the test avoid the false positive scenario where
+    // the `youngPointer` ends up on a different card.
+    private static final int REF_COUNT = 8;
+
     private static boolean allAreInOld(List<?> objects) {
         for (Object obj : objects) {
             if (!WB.isObjectInOldGen(obj)) {
@@ -67,11 +77,7 @@ public class TestOldRefsOnDirtyCardAreCleared {
     }
 
     public static void main(String[] args) throws Exception {
-        final int REF_COUNT = 8;
-
-        // Step 1. Make references with strongly reachable referents. Making multiples here
-        // helps the test avoid the false positive scenario where the `youngPointer` ends up
-        // on a different card.
+        // Step 1. Make references with strongly reachable referents.
         for (int i = 0; i < REF_COUNT; ++i) {
             Object obj = new Object();
             WeakReferenceWithYoungPointer wr = new WeakReferenceWithYoungPointer(obj);
@@ -79,8 +85,7 @@ public class TestOldRefsOnDirtyCardAreCleared {
             STRONG.add(obj);
         }
 
-        // Step 2. Run full GCs until all the references and their referents are promoted
-        final int MAX_FULL_GCS = 5;
+        // Step 2. Run global GCs until all the references and their referents are promoted
         int tries = 0;
         while (!allAreInOld(WEAK_REFS) || !allAreInOld(STRONG)) {
             if (tries >= MAX_FULL_GCS) {
@@ -101,10 +106,14 @@ public class TestOldRefsOnDirtyCardAreCleared {
         // Step 5. Run an old GC cycle. This should clear out the weak referents
         WB.shenandoahOldGC();
 
-        // Step 6. Check how many weak references still have referents (should be zero)
-        WEAK_REFS.removeIf(w -> w.get() == null);
-        if (!WEAK_REFS.isEmpty()) {
-            throw new RuntimeException("Uncleared Weak Refs=" + WEAK_REFS.size());
+        // Step 6. Fail if any references still have referents (should be zero)
+        for (int i = 0, n = WEAK_REFS.size(); i < n; ++i) {
+            WeakReferenceWithYoungPointer wr = WEAK_REFS.get(i);
+            Object referent = wr.get();
+            if (referent != null) {
+                throw new RuntimeException("Uncleared weak ref = " + wr +
+                                           ", referent = " + referent + ", at index = " + i);
+            }
         }
     }
 }
