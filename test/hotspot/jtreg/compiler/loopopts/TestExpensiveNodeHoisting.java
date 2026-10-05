@@ -26,12 +26,8 @@
  * @bug 8391724
  * @summary Expensive nodes are now hoisted by an explicit step instead of by
  *          get_early_ctrl(). Check that they still end up in the right place.
- *
- * @run main/othervm -Xbatch -XX:-TieredCompilation
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyLoopOptimizations
- *                   -XX:CompileCommand=compileonly,${test.main.class}::*
- *                   ${test.main.class}
- * @run main ${test.main.class}
+ * @library /test/lib /
+ * @run driver ${test.main.class}
  */
 
 /*
@@ -45,9 +41,16 @@
  * is the only one in its compilation, which leaves nothing to hoist. The
  * methods with two Sqrts on different inputs keep their control inputs, so
  * they go through hoist_expensive_node().
+ *
+ * A Sqrt directly on the loop head is already moved above the loop while
+ * parsing, and loop opts such as partial peeling or unswitching move others
+ * out, so most shapes look the same with or without hoist_expensive_node().
+ * loopThenAfter() is one where only the hoisting gives the expected IR.
  */
 
 package compiler.loopopts;
+
+import compiler.lib.ir_framework.*;
 
 public class TestExpensiveNodeHoisting {
 
@@ -59,7 +62,29 @@ public class TestExpensiveNodeHoisting {
         }
     }
 
+    // Computed by the interpreter, before any of the methods is compiled.
+    static final double INVARIANT = invariant(2.0);
+    static final double VARIANT = variant(VALUES);
+    static final double BOTH_BRANCHES = bothBranches(2.0);
+    static final double INVARIANT_TWO = invariantTwo(2.0, 3.0);
+    static final double VARIANT_TWO = variantTwo(VALUES, 3.0);
+    static final double MIXED = mixed(VALUES, 2.0);
+    static final double BOTH_BRANCHES_TWO = bothBranchesTwo(2.0, 3.0);
+    static final double LOOP_THEN_AFTER = loopThenAfter(VALUES, 2.0);
+
+    public static void main(String[] args) {
+        TestFramework.run();
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyLoopOptimizations");
+    }
+
+    static void check(double result, double expected) {
+        if (result != expected) {
+            throw new RuntimeException("expected " + expected + " but got " + result);
+        }
+    }
+
     // Loop invariant, the Sqrt is hoisted above the loop.
+    @Test
     static double invariant(double x) {
         double sum = 0;
         for (int i = 0; i < 100; i++) {
@@ -68,7 +93,13 @@ public class TestExpensiveNodeHoisting {
         return sum;
     }
 
+    @Run(test = "invariant")
+    static void runInvariant() {
+        check(invariant(2.0), INVARIANT);
+    }
+
     // Depends on the loop body, the Sqrt stays where it is.
+    @Test
     static double variant(double[] a) {
         double sum = 0;
         for (int i = 0; i < a.length; i++) {
@@ -77,7 +108,13 @@ public class TestExpensiveNodeHoisting {
         return sum;
     }
 
+    @Run(test = "variant")
+    static void runVariant() {
+        check(variant(VALUES), VARIANT);
+    }
+
     // Same Sqrt in both branches, moved above the If.
+    @Test
     static double bothBranches(double x) {
         double sum = 0;
         for (int i = 0; i < 100; i++) {
@@ -90,7 +127,13 @@ public class TestExpensiveNodeHoisting {
         return sum;
     }
 
+    @Run(test = "bothBranches")
+    static void runBothBranches() {
+        check(bothBranches(2.0), BOTH_BRANCHES);
+    }
+
     // Two loop invariant Sqrts, both hoisted above the loop.
+    @Test
     static double invariantTwo(double x, double y) {
         double sum = 0;
         for (int i = 0; i < 100; i++) {
@@ -99,7 +142,13 @@ public class TestExpensiveNodeHoisting {
         return sum;
     }
 
+    @Run(test = "invariantTwo")
+    static void runInvariantTwo() {
+        check(invariantTwo(2.0, 3.0), INVARIANT_TWO);
+    }
+
     // Two Sqrts depending on the loop body, both stay where they are.
+    @Test
     static double variantTwo(double[] a, double y) {
         double sum = 0;
         for (int i = 0; i < a.length; i++) {
@@ -108,7 +157,13 @@ public class TestExpensiveNodeHoisting {
         return sum;
     }
 
+    @Run(test = "variantTwo")
+    static void runVariantTwo() {
+        check(variantTwo(VALUES, 3.0), VARIANT_TWO);
+    }
+
     // One Sqrt is hoisted above the loop, the other one stays.
+    @Test
     static double mixed(double[] a, double x) {
         double sum = 0;
         for (int i = 0; i < a.length; i++) {
@@ -117,7 +172,13 @@ public class TestExpensiveNodeHoisting {
         return sum;
     }
 
+    @Run(test = "mixed")
+    static void runMixed() {
+        check(mixed(VALUES, 2.0), MIXED);
+    }
+
     // A different Sqrt in each branch, neither can move above the If.
+    @Test
     static double bothBranchesTwo(double x, double y) {
         double sum = 0;
         for (int i = 0; i < 100; i++) {
@@ -130,29 +191,28 @@ public class TestExpensiveNodeHoisting {
         return sum;
     }
 
-    static void check(double result, double expected) {
-        if (result != expected) {
-            throw new RuntimeException("expected " + expected + " but got " + result);
-        }
+    @Run(test = "bothBranchesTwo")
+    static void runBothBranchesTwo() {
+        check(bothBranchesTwo(2.0, 3.0), BOTH_BRANCHES_TWO);
     }
 
-    public static void main(String[] args) {
-        double invariantResult = invariant(2.0);
-        double variantResult = variant(VALUES);
-        double bothBranchesResult = bothBranches(2.0);
-        double invariantTwoResult = invariantTwo(2.0, 3.0);
-        double variantTwoResult = variantTwo(VALUES, 3.0);
-        double mixedResult = mixed(VALUES, 2.0);
-        double bothBranchesTwoResult = bothBranchesTwo(2.0, 3.0);
-
-        for (int i = 0; i < 20_000; i++) {
-            check(invariant(2.0), invariantResult);
-            check(variant(VALUES), variantResult);
-            check(bothBranches(2.0), bothBranchesResult);
-            check(invariantTwo(2.0, 3.0), invariantTwoResult);
-            check(variantTwo(VALUES, 3.0), variantTwoResult);
-            check(mixed(VALUES, 2.0), mixedResult);
-            check(bothBranchesTwo(2.0, 3.0), bothBranchesTwoResult);
+    // The Sqrt in the loop is hoisted above the loop. Its control then
+    // dominates the one of the Sqrt after the loop, and
+    // process_expensive_nodes() commons them. Without the hoisting, the
+    // zero trip guard of the loop keeps the two controls unrelated and both
+    // Sqrts stay.
+    @Test
+    @IR(counts = {IRNode.SQRT_D, "1"})
+    static double loopThenAfter(double[] a, double x) {
+        double sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            sum += a[i] * Math.sqrt(x);
         }
+        return sum + Math.sqrt(x);
+    }
+
+    @Run(test = "loopThenAfter")
+    static void runLoopThenAfter() {
+        check(loopThenAfter(VALUES, 2.0), LOOP_THEN_AFTER);
     }
 }
