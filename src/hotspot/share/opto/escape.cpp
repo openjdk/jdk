@@ -2884,6 +2884,21 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         // New edge was added
         add_field_uses_to_worklist(ptn->as_Field());
       }
+    } else if (ptn->is_JavaObject() && ptn->ideal_node()->is_AllocateArray()) {
+      // Manually propagate the fields escape state of array allocations to
+      // their initialization values, if present. This is needed because there
+      // may not exist an explicit connection in the connection graph between
+      // these two (as there is no explicit initialization store in the IR).
+      AllocateArrayNode* alloc = ptn->ideal_node()->as_AllocateArray();
+      Node* init = alloc->in(AllocateNode::InitValue);
+      if (init != nullptr) {
+        PointsToNode* init_val = ptnode_adr(init->_idx);
+        assert(init_val != nullptr, "init value should be registered");
+        if (init_val->escape_state() < field_es) {
+          set_escape_state(init_val, field_es NOT_PRODUCT(COMMA trace_propagate_message(ptn)));
+          escape_worklist.push(init_val);
+        }
+      }
     }
     for (EdgeIterator i(ptn); i.has_next(); i.next()) {
       PointsToNode* e = i.get();
