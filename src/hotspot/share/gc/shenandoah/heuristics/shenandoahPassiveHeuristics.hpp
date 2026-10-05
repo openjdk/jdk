@@ -29,7 +29,7 @@
 
 /*
  * The passive heuristic is for use only with the passive mode. In
- * the passive mode, Shenandoah only performs STW (i.e., degenerated)
+ * the passive mode, Shenandoah only performs STW (i.e., full)
  * collections. All the barriers are disabled and there are no concurrent
  * activities. Therefore, this heuristic _never_ triggers a cycle. It
  * will select regions for evacuation based on ShenandoahEvacReserve,

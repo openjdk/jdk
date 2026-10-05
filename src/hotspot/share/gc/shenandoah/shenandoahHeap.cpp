@@ -1684,7 +1684,7 @@ size_t ShenandoahHeap::max_tlab_size() const {
 
 void ShenandoahHeap::collect_as_vm_thread(GCCause::Cause cause) {
   // These requests are ignored because we can't easily have Shenandoah jump into
-  // a synchronous (degenerated or full) cycle while it is in the middle of a concurrent
+  // a synchronous (full) cycle while it is in the middle of a concurrent
   // cycle. We _could_ cancel the concurrent cycle and then try to run a cycle directly
   // on the VM thread, but this would confuse the control thread mightily and doesn't
   // seem worth the trouble. Instead, we will have the caller thread run (and wait for) a

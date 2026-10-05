@@ -176,10 +176,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Complete marking under STW, and start evacuation
   vmop_entry_final_mark();
 
-  // If the GC was cancelled before final mark, nothing happens on the safepoint. We are still
-  // in the marking phase and must resume the degenerated cycle from there. If the GC was cancelled
-  // after final mark, then we've entered the evacuation phase and must resume the degenerated cycle
-  // from that phase.
   if (_generation->is_concurrent_mark_in_progress()) {
     bool cancelled = check_cancellation_and_abort();
     assert(cancelled, "GC must have been cancelled between concurrent and final mark");
@@ -274,11 +270,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     if (heap->mode()->is_generational()) {
       entry_complete_abbreviated_cycle();
 
-      // If the promote-in-place operation was cancelled, we can have the degenerated
-      // cycle complete the operation. It will see that no evacuations are in progress,
-      // and that there are regions wanting promotion. The risk with not handling the
-      // cancellation would be failing to restore top for these regions and leaving
-      // them unable to serve allocations for the old generation.
       if (check_cancellation_and_abort()) {
         return false;
       }
@@ -299,7 +290,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
   // Instead of always resetting immediately before the start of a new GC, we can often reset at the end of the
   // previous GC. This allows us to start the next GC cycle more quickly after a trigger condition is detected,
-  // reducing the likelihood that GC will degenerate.
+  // reducing the likelihood that mutators will experience allocation stalls.
   entry_reset_after_collect();
 
   return true;
@@ -329,7 +320,7 @@ void ShenandoahConcurrentGC::entry_complete_abbreviated_cycle() {
   }
 
   // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
-  // the control thread will detect it on its next iteration and run a degenerated young cycle.
+  // the control thread will detect it on its next iteration.
   if (!heap->cancelled_gc() && !_generation->is_old()) {
     ShenandoahTimingsTracker tracker(ShenandoahPhaseTimings::complete_abbreviated_update_region_ages);
     heap->update_region_ages(_generation->complete_marking_context());
@@ -627,7 +618,7 @@ void ShenandoahConcurrentGC::entry_cleanup_early() {
   op_cleanup_early();
   if (!heap->is_evacuation_in_progress()) {
     // This is an abbreviated cycle.  Rebuild the freeset in order to establish reserves for the next GC cycle.  Doing
-    // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that we will degenerate
+    // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that mutators will stall
     // during promote-in-place processing.
     heap->rebuild_free_set();
   }

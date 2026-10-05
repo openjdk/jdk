@@ -161,7 +161,7 @@ public:
   // This will signal the heuristic to trigger an old generation collection
   void handle_failed_transfer();
 
-  // This will signal the control thread to run a full GC instead of a futile degenerated gc
+  // This will signal the control thread to run a full GC
   void handle_failed_evacuation();
 
   // Increment promotion failure counters, optionally log a more detailed message

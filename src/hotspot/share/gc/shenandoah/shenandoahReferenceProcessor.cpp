@@ -604,7 +604,7 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
     return;
   }
   if (!concurrent) {
-    // When called from mark-compact or degen-GC, the locking is done by the VMOperation,
+    // When called from STW mark, the locking is done by the VMOperation,
     enqueue_references_locked();
   } else {
     // Heap_lock protects external pending list

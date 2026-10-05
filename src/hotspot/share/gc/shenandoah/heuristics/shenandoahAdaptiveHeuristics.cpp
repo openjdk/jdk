@@ -294,7 +294,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const Shenand
 // The following trace represents an actual workload, with allocation rates sampled at 10 Hz, the default behavior before
 // introduction of accelerated allocation rate detection.  Though the allocation rate is seen to be increasing at times
 // 101.907 and 102.007 and 102.108, the newly sampled allocation rate is not enough to trigger GC because the headroom is
-// still quite large.  In fact, GC is not triggered until time 102.409s, and this GC degenerates.
+// still quite large.  In fact, GC is not triggered until time 102.409s, and this GC stalls.
 //
 //    Sample Time (s)      Allocation Rate (MB/s)       Headroom (GB)
 //       101.807                       0.0                  26.93
