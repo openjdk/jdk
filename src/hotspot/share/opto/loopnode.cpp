@@ -4593,10 +4593,13 @@ bool PhaseIdealLoop::replace_lagging_index(IdealLoopTree* loop, PhiNode* phi2) {
   if (phi2->region() != cl ||
       !is_constant_difference(phi2->in(LoopNode::LoopBackControl), cl->phi(), next_off) ||
       !is_constant_difference(phi2->in(LoopNode::EntryControl), cl->init_trip(), init_off) ||
-      init_off != java_subtract(next_off, checked_cast<jint>(cl->stride_con()))) {
+      init_off != java_subtract(next_off, cl->stride_con())) {
     return false;
   }
-  replace_with_affine_index(loop, phi2, 1, T_INT);
+  Node* add = new AddINode(cl->phi(), intcon(init_off));
+  _igvn.register_new_node_with_optimizer(add);
+  set_ctrl(add, cl);
+  _igvn.replace_node(phi2, add);
   return true;
 }
 

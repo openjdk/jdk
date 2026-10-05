@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 3, time = 300, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 300, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(value = 1, jvmArgsAppend = {"-XX:+UseSerialGC", "-XX:+UnlockDiagnosticVMOptions", "-Xmx1g"})
+@Fork(value = 1, jvmArgsAppend = {"-XX:+UseSerialGC", "-Xmx1g"})
 @State(Scope.Benchmark)
 public class ArrayListIterate {
 
