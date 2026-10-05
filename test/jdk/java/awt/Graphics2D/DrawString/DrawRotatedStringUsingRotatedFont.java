@@ -71,7 +71,7 @@ public final class DrawRotatedStringUsingRotatedFont {
 
     public static void main(final String[] args) throws Exception {
 
-        final Font font = new Font(Font.DIALOG, Font.PLAIN, 20);
+        final Font font = new Font(Font.DIALOG, Font.PLAIN, 12);
 
         for (final AffineTransform tx2 : txs) {
             for (final AffineTransform tx1 : txs) {
