@@ -1998,7 +1998,7 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
   wq.push(dead_node);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    if (n->is_Phi() || n->is_CFG()) {
+    if ((n != dead_node && n->is_Phi()) || n->is_CFG()) {
       continue;
     }
     for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
@@ -2066,7 +2066,7 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
 #ifdef ASSERT
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    assert(n->is_Region() || n->is_Phi() || n->is_CFG() || n->outcnt() == 0, "node should be dead now");
+    assert(n->is_Region() || n->is_Phi() || n->is_CFG() || (n->is_Proj() && n->in(0) == C->top()) || n->outcnt() == 0, "node should be dead now");
   }
 #endif
 }
