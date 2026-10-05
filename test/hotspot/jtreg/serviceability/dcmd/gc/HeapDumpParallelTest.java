@@ -25,14 +25,12 @@
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -42,7 +40,7 @@ import jdk.test.lib.hprof.HprofParser;
 
 /**
  * @test
- * @bug 8306441 8319053
+ * @bug 8306441 8319053 8384612
  * @summary Verify the integrity of generated heap dump and capability of parallel dump
  * @library /test/lib
  * @run main HeapDumpParallelTest
@@ -57,12 +55,13 @@ public class HeapDumpParallelTest {
         dcmdOut.shouldContain("Heap dump file created");
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
         appOut.shouldMatch("\\[heapdump *\\]");
-        String opts = Arrays.asList(Utils.getTestJavaOpts()).toString();
-        if (opts.contains("-XX:+UseSerialGC") || opts.contains("-XX:+UseEpsilonGC")) {
-            System.out.println("UseSerialGC detected.");
+        // Check the target VM's selected GC, including ergonomic selection.
+        appOut.shouldMatch("\\[gc *\\] Using ");
+        if (appOut.getStdout().contains("Using Serial") || appOut.getStdout().contains("Using Epsilon")) {
+            System.out.println("Serial or Epsilon GC detected.");
             expectSerial = true;
         }
-        if (!expectSerial && Runtime.getRuntime().availableProcessors() > 1) {
+        if (!expectSerial) {
             appOut.shouldContain("Dump heap objects in parallel");
             appOut.shouldContain("Merge heap files complete");
         } else {
@@ -86,7 +85,7 @@ public class HeapDumpParallelTest {
 
     private static LingeredApp launchApp() throws IOException {
         LingeredApp theApp = new LingeredApp();
-        LingeredApp.startApp(theApp, "-Xlog:heapdump", "-Xmx512m",
+        LingeredApp.startApp(theApp, "-Xlog:gc,heapdump", "-Xmx512m",
                              "-XX:-UseDynamicNumberOfGCThreads",
                              "-XX:ParallelGCThreads=2");
         return theApp;
@@ -118,7 +117,7 @@ public class HeapDumpParallelTest {
             test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, false);
 
             // Expect parallel dump
-            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + Runtime.getRuntime().availableProcessors(), false);
+            test(heapDumpFile, "-gz=9 -overwrite -parallel=2", false);
         } finally {
             theApp.stopApp();
         }
