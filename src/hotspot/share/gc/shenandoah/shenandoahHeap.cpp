@@ -2733,10 +2733,6 @@ void ShenandoahHeap::safepoint_synchronize_end() {
 void ShenandoahHeap::try_inject_alloc_failure() {
   if (ShenandoahAllocFailureALot && !cancelled_gc() && ((os::random() % 1000) > 950)) {
     _inject_alloc_failure.set();
-    os::naked_short_sleep(1);
-    if (cancelled_gc()) {
-      log_info(gc)("Allocation failure was successfully injected");
-    }
   }
 }
 
