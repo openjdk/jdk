@@ -112,12 +112,12 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
      * @param i [in] the limbs to reduce from.
      */
     protected void reduceIn(long[] limbs, long v, int i) {
-        limbs[i - 3] += (v << 32) & LIMB_MASK;
-        limbs[i - 2] += v >> 23;
-        limbs[i - 4] += (v << 54) & LIMB_MASK;
-        limbs[i - 3] += v >> 1;
-        limbs[i - 6] -= (v << 41) & LIMB_MASK;
-        limbs[i - 5] -= v >> 14;
+        limbs[i - 5] += (v << 19) & LIMB_MASK;
+        limbs[i - 4] += v >> 36;
+        limbs[i - 6] += (v << 42) & LIMB_MASK;
+        limbs[i - 5] += v >> 13;
+        limbs[i - 7] -= (v << 33) & LIMB_MASK;
+        limbs[i - 6] -= v >> 22;
         limbs[i - 7] += (v << 1) & LIMB_MASK;
         limbs[i - 6] += v >> 54;
     }
@@ -141,91 +141,102 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         limbs[0] += carry;
     }
 
-    private void carryReduce(long[] c) {
-        c[13] = 0;
+    private void carryReduceUpper(long[] c) {
+        // reduce from position 13
+        c[8]  += (c[13] << 19) & LIMB_MASK;
+        c[9] += c[13] >> 36;
+        c[7]  += (c[13] << 42) & LIMB_MASK;
+        c[8]  += c[13] >> 13;
+        c[6]  -= (c[13] << 33) & LIMB_MASK;
+        c[7]  -= c[13] >> 22;
+        c[6]  += (c[13] << 1) & LIMB_MASK;
+        c[7]  += c[13] >> 54;
         // reduce from position 12
-        c[9]  += (c[12] << 32) & LIMB_MASK;
-        c[10] += c[12] >> 23;
-        c[8]  += (c[12] << 54) & LIMB_MASK;
-        c[9]  += c[12] >> 1;
-        c[6]  -= (c[12] << 41) & LIMB_MASK;
-        c[7]  -= c[12] >> 14;
+        c[7]  += (c[12] << 19) & LIMB_MASK;
+        c[8] += c[12] >> 36;
+        c[6]  += (c[12] << 42) & LIMB_MASK;
+        c[7]  += c[12] >> 13;
+        c[5]  -= (c[12] << 33) & LIMB_MASK;
+        c[6]  -= c[12] >> 22;
         c[5]  += (c[12] << 1) & LIMB_MASK;
         c[6]  += c[12] >> 54;
         // reduce from position 11
-        c[8] += (c[11] << 32) & LIMB_MASK;
-        c[9] += c[11] >> 23;
-        c[7] += (c[11] << 54) & LIMB_MASK;
-        c[8] += c[11] >> 1;
-        c[5] -= (c[11] << 41) & LIMB_MASK;
-        c[6] -= c[11] >> 14;
+        c[6] += (c[11] << 19) & LIMB_MASK;
+        c[7] += c[11] >> 36;
+        c[5] += (c[11] << 42) & LIMB_MASK;
+        c[6] += c[11] >> 13;
+        c[4] -= (c[11] << 33) & LIMB_MASK;
+        c[5] -= c[11] >> 22;
         c[4] += (c[11] << 1) & LIMB_MASK;
         c[5] += c[11] >> 54;
         // reduce from position 10
-        c[7] += (c[10] << 32) & LIMB_MASK;
-        c[8] += c[10] >> 23;
-        c[6] += (c[10] << 54) & LIMB_MASK;
-        c[7] += c[10] >> 1;
-        c[4] -= (c[10] << 41) & LIMB_MASK;
-        c[5] -= c[10] >> 14;
+        c[5] += (c[10] << 19) & LIMB_MASK;
+        c[6] += c[10] >> 36;
+        c[4] += (c[10] << 42) & LIMB_MASK;
+        c[5] += c[10] >> 13;
+        c[3] -= (c[10] << 33) & LIMB_MASK;
+        c[4] -= c[10] >> 22;
         c[3] += (c[10] << 1) & LIMB_MASK;
         c[4] += c[10] >> 54;
         // reduce from position 9
-        c[6] += (c[9] << 32) & LIMB_MASK;
-        c[7] += c[9] >> 23;
-        c[5] += (c[9] << 54) & LIMB_MASK;
-        c[6] += c[9] >> 1;
-        c[3] -= (c[9] << 41) & LIMB_MASK;
-        c[4] -= c[9] >> 14;
+        c[4] += (c[9] << 19) & LIMB_MASK;
+        c[5] += c[9] >> 36;
+        c[3] += (c[9] << 42) & LIMB_MASK;
+        c[4] += c[9] >> 13;
+        c[2] -= (c[9] << 33) & LIMB_MASK;
+        c[3] -= c[9] >> 22;
         c[2] += (c[9] << 1) & LIMB_MASK;
         c[3] += c[9] >> 54;
         // reduce from position 8
-        c[5] += (c[8] << 32) & LIMB_MASK;
-        c[6] += c[8] >> 23;
-        c[4] += (c[8] << 54) & LIMB_MASK;
-        c[5] += c[8] >> 1;
-        c[2] -= (c[8] << 41) & LIMB_MASK;
-        c[3] -= c[8] >> 14;
+        c[3] += (c[8] << 19) & LIMB_MASK;
+        c[4] += c[8] >> 36;
+        c[2] += (c[8] << 42) & LIMB_MASK;
+        c[3] += c[8] >> 13;
+        c[1] -= (c[8] << 33) & LIMB_MASK;
+        c[2] -= c[8] >> 22;
         c[1] += (c[8] << 1) & LIMB_MASK;
         c[2] += c[8] >> 54;
         // reduce from position 7
-        c[4] += (c[7] << 32) & LIMB_MASK;
-        c[5] += c[7] >> 23;
-        c[3] += (c[7] << 54) & LIMB_MASK;
-        c[4] += c[7] >> 1;
-        c[1] -= (c[7] << 41) & LIMB_MASK;
-        c[2] -= c[7] >> 14;
+        c[2] += (c[7] << 19) & LIMB_MASK;
+        c[3] += c[7] >> 36;
+        c[1] += (c[7] << 42) & LIMB_MASK;
+        c[2] += c[7] >> 13;
+        c[0] -= (c[7] << 33) & LIMB_MASK;
+        c[1] -= c[7] >> 22;
         c[0] += (c[7] << 1) & LIMB_MASK;
         c[1] += c[7] >> 54;
-        c[7] = 0;
 
-        carryReduce0(c);
+        carryReduceLower(c);
     }
 
-    private void carryReduce0(long[] c) {
-        long c7 = 0;
-        long carry = (c[5] + CARRY_ADD) >> BITS_PER_LIMB;
+    private void carryReduceLower(long[] c) {
+        long carry, c7;
 
         // carry from position 5
+        carry = (c[5] + CARRY_ADD) >> BITS_PER_LIMB;
         c[5] -= carry << BITS_PER_LIMB;
         c[6] += carry;
         // carry from position 6
         carry = (c[6] + CARRY_ADD) >> BITS_PER_LIMB;
         c[6] -= carry << BITS_PER_LIMB;
-        c7 += carry;
+        c7 = carry;
         // reduce from position 7
-        c[4] += (c7 << 32) & LIMB_MASK;
-        c[5] += c7 >> 23;
-        c[3] += (c7 << 54) & LIMB_MASK;
-        c[4] += c7 >> 1;
-        c[1] -= (c7 << 41) & LIMB_MASK;
-        c[2] -= c7 >> 14;
+        c[2] += (c7 << 19) & LIMB_MASK;
+        c[3] += c7 >> 36;
+        c[1] += (c7 << 42) & LIMB_MASK;
+        c[2] += c7 >> 13;
+        c[0] -= (c7 << 33) & LIMB_MASK;
+        c[1] -= c7 >> 22;
         c[0] += (c7 << 1) & LIMB_MASK;
         c[1] += c7 >> 54;
         // carry from position 0
         carry = (c[0] + CARRY_ADD) >> BITS_PER_LIMB;
         c[0] -= carry << BITS_PER_LIMB;
         c[1] += carry;
+        // carry from position 1
+        carry = (c[1] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[1] -= carry << BITS_PER_LIMB;
+        c[2] += carry;
         // carry from position 2
         carry = (c[2] + CARRY_ADD) >> BITS_PER_LIMB;
         c[2] -= carry << BITS_PER_LIMB;
@@ -539,7 +550,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[12] += d6 + dd5;
         c[13]  = dd6;
 
-        carryReduce(c);
+        carryReduceUpper(c);
 
         r[0] = c[0];
         r[1] = c[1];
@@ -556,7 +567,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
      * @param limbs [in|out] the limbs to carry and reduce.
      */
     protected void reduce(long[] limbs) {
-        carryReduce0(limbs);
+        carryReduceLower(limbs);
 /*
         long carry = (limbs[3] + CARRY_ADD) >> BITS_PER_LIMB;
         limbs[3] -= carry << BITS_PER_LIMB;
