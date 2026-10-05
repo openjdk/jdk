@@ -6460,24 +6460,25 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   const Register cnt = tmp1;
   const Register idx = tmp2;
   const VectorRegister vrm = v0;
-  const VectorRegister vra = v2;
-  const VectorRegister vrb = v4;
+  const VectorRegister vra = v8;
+  const VectorRegister vrb = v16;
   Label MISMATCH_FOUND, NO_MISMATCH_FOUND, VEC_LOOP, DONE;
 
   sll(cnt, length, log2_array_indxscale);
   mv(consumed, x0);
 
   bind(VEC_LOOP);
-  vsetvli(t0, cnt, Assembler::e8, Assembler::m2);
+  vsetvli(t0, cnt, Assembler::e8, Assembler::m8);
+  // read arrays as bytes since no guarantees w.r.t. their alignment
   vle8_v(vra, obja);
   vle8_v(vrb, objb);
   vmsne_vv(vrm, vra, vrb);
   vfirst_m(idx, vrm);
   bgez(idx, MISMATCH_FOUND);
-  sub(cnt, cnt, t0);
-  add(obja, obja, t0);
-  add(objb, objb, t0);
   add(consumed, consumed, t0);
+  sub(cnt, cnt, t0);
+  shadd(obja, consumed, obja, t0, exact_log2(wordSize));
+  shadd(objb, consumed, objb, t0, exact_log2(wordSize));
   bnez(cnt, VEC_LOOP);
 
   bind(NO_MISMATCH_FOUND);
