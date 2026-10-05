@@ -197,11 +197,7 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
           ret = mlib_convMxNnw_s32(dst_i, src_i, kernel, m, n, dm, dn, scale, cmask);
           break;
       default:
-        /* For some reasons, there is no convolution routine for type MLIB_BIT.
-         * For now, we silently ignore it (because this image type is not used by java),
-         * but probably we have to report an error.
-         */
-        break;
+          return MLIB_FAILURE;
       }
     }
 
