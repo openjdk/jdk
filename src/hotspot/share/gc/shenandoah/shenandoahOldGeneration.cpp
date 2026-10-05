@@ -45,20 +45,6 @@
 #include "runtime/threads.hpp"
 #include "utilities/events.hpp"
 
-class ShenandoahPurgeSATBTask : public WorkerTask {
-public:
-  explicit ShenandoahPurgeSATBTask() : WorkerTask("Purge SATB") {
-    Threads::change_thread_claim_token();
-  }
-
-  void work(uint worker_id) override {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahSATBMarkQueueSet &satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
-    ShenandoahFlushSATB flusher(satb_queues);
-    Threads::possibly_parallel_threads_do(true /* is_par */, &flusher);
-  }
-};
-
 class ShenandoahConcurrentCoalesceAndFillTask : public WorkerTask {
 private:
   uint                    _nworkers;
@@ -430,14 +416,6 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
     log_debug(gc)("Suspending coalesce-and-fill of old heap regions");
     return false;
   }
-}
-
-void ShenandoahOldGeneration::transfer_pointers_from_satb() const {
-  const ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
-  log_debug(gc)("Transfer SATB buffers");
-  ShenandoahPurgeSATBTask purge_satb_task;
-  heap->workers()->run_task(&purge_satb_task);
 }
 
 bool ShenandoahOldGeneration::contains(oop obj) const {

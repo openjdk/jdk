@@ -176,11 +176,6 @@ public:
     return _failed_evacuation.try_unset();
   }
 
-  // Test if the cycle recorded evacuation failures in old
-  bool has_failed_evacuations() const {
-    return _failed_evacuation.is_set();
-  }
-
   // Transition to the next state after mixed evacuations have completed
   void complete_mixed_evacuations();
 
@@ -255,28 +250,6 @@ public:
 
   // Cancels old gc and transitions to the idle state
   void cancel_gc();
-
-  // The SATB barrier will be "enabled" until old marking completes. This means it is
-  // possible for an entire young collection cycle to execute while the SATB barrier is enabled.
-  // Consider a situation like this, where we have a pointer 'B' at an object 'A' which is in
-  // the young collection set:
-  //
-  //      +--Young, CSet------+     +--Young, Regular----+
-  //      |                   |     |                    |
-  //      |                   |     |                    |
-  //      |       A <--------------------+ B             |
-  //      |                   |     |                    |
-  //      |                   |     |                    |
-  //      +-------------------+     +--------------------+
-  //
-  // If a mutator thread overwrites pointer B, the SATB barrier will dutifully enqueue
-  // object A. However, this object will be trashed when the young cycle completes. We must,
-  // therefore, filter this object from the SATB buffer before any old mark threads see it.
-  // We do this with a handshake before final-update-refs (see shenandoahConcurrentGC.cpp).
-  //
-  // This method is here only for degenerated cycles. A concurrent cycle may be cancelled before
-  // we have a chance to execute the handshake to flush the SATB in final-update-refs.
-  void transfer_pointers_from_satb() const;
 
   // True if there are old regions waiting to be selected for a mixed collection
   bool has_unprocessed_collection_candidates();
