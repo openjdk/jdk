@@ -247,9 +247,9 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
   assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
   assert(!_heap->global_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
-  size_t obj_size = p->size();
+  size_t obj_size = ShenandoahForwarding::size(p);
   uint from_region_age = _from_region->age();
-  uint object_age = p->age();
+  uint object_age = ShenandoahForwarding::age(p);
 
   bool promote_object = false;
   if ((_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) &&
