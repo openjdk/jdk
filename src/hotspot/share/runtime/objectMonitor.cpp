@@ -1461,7 +1461,7 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
       // We have found a suitable successor w or else w is null as all candidates
       // were suspended virtual threads. We can't make one of those successor as that
       // will cause a later monitor exit to skip finding a replacement successor.
-      // We can only use exit_epilog if there is a successor.
+      // We can only use try_exit_epilog if there is a successor.
       if (w != nullptr) {
         // We'd like to write: guarantee (w->_thread != current), but in
         // practice an exiting thread may find itself on the entry_list.
@@ -1475,8 +1475,12 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
         // Given all that, we have to tolerate the circumstance where "w" is
         // associated with current.
         assert(w->TState == ObjectWaiter::TS_ENTER, "invariant");
-        exit_epilog(current, w);
-        return;
+        if (try_exit_epilog(current, w)) {
+          return;
+        }
+        // The found successor is a recently suspended vthread. We
+        // must go around and find another one.
+        continue;
       }
     }
 
@@ -1544,6 +1548,13 @@ ObjectWaiter* ObjectMonitor::find_successor(JavaThread* current) {
   bool do_vthread_unpark = false;
   bool found = false;
   ObjectWaiter* tail = entry_list_tail(current);
+
+  if (!tail->is_vthread()) {
+    // The tail is clearly not a suspended vthread. So return now to avoid
+    // taking the JvmtiVThreadSuspend_lock.
+    return tail;
+  }
+
   ObjectWaiter* w;
   // fast-path: expected normal case
   // We scan the current entry queue, from the tail, looking for an eligible
@@ -1598,6 +1609,11 @@ ObjectWaiter* ObjectMonitor::find_successor(JavaThread* current) {
       ObjectMonitor::vthread_unparker_ParkEvent()->unpark();
     }
   }
+  // Note that since we're not holding the JvmtiVThreadSuspend_lock
+  // anymore, the found successor w might become suspended before we
+  // can set it as the successor. However, try_exit_epilog() will
+  // recheck the suspension status and let the caller try to find
+  // another successor.
   return w;
 }
 #else
@@ -1608,7 +1624,10 @@ ObjectWaiter* ObjectMonitor::find_successor(JavaThread* current) {
 }
 #endif // INCLUDE_JVMTI
 
-void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
+// Returns false (without doing anything) if the selected successor
+// (Wakee) is a suspended vthread. Otherwise release the monitor,
+// schedule the successor, and return true.
+bool ObjectMonitor::try_exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
   assert(has_owner(current), "invariant");
   assert(Wakee != nullptr, "must have a successor to use this path");
   oop vthread = nullptr;
@@ -1629,6 +1648,12 @@ void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
     assert_not_at_safepoint();
     vthread = Wakee->vthread();
     assert(vthread != nullptr, "");
+#if INCLUDE_JVMTI
+    MutexLocker ml(JvmtiVThreadSuspend_lock, Mutex::_no_safepoint_check_flag);
+    if (JvmtiVTSuspender::is_vthread_suspended(vthread)) {
+      return false; // Wakee is a suspended vthread. Can't use it as a successor.
+    }
+#endif // INCLUDE_JVMTI
     Trigger = ObjectMonitor::vthread_unparker_ParkEvent();
     set_successor(vthread);
   }
@@ -1654,6 +1679,7 @@ void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
       Trigger->unpark();
     }
   }
+  return true;
 }
 
 // Exits the monitor returning recursion count. _owner should

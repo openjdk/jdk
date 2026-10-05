@@ -365,7 +365,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   bool      try_spin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
-  void      exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
+  bool      try_exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
 
  public:
   // Deflation support
