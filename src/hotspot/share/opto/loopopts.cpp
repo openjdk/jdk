@@ -2770,14 +2770,14 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   }
 
   // Step 1: Clone the loop body.  Make the old->new mapping.
-  clone_loop_body_region(loop->_body, old_new, &cm);
+  clone_region_of_loop_body(loop->_body, old_new, &cm);
 
   IdealLoopTree* outer_loop = (head->is_strip_mined() && mode != IgnoreStripMined) ? get_loop(head->as_CountedLoop()->outer_loop()) : loop;
 
   // Step 2: Fix the edges in the new body.  If the old input is outside the
   // loop use it.  If the old input is INside the loop, use the corresponding
   // new node instead.
-  fix_body_region_edges(loop->_body, loop, old_new, dd, outer_loop->_parent, false);
+  fix_region_of_loop_body_edges(loop->_body, loop, old_new, dd, outer_loop->_parent, false);
 
   Node_List extra_data_nodes; // data nodes in the outer strip mined loop
   clone_outer_loop(head, mode, loop, outer_loop, dd, old_new, extra_data_nodes);
@@ -2971,8 +2971,8 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
   }
 }
 
-void PhaseIdealLoop::fix_body_region_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
-                                           IdealLoopTree* parent, bool partial) {
+void PhaseIdealLoop::fix_region_of_loop_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
+                                                   IdealLoopTree* parent, bool partial) {
   for(uint i = 0; i < body.size(); i++ ) {
     Node *old = body.at(i);
     Node *nnn = old_new[old->_idx];
@@ -3008,7 +3008,7 @@ void PhaseIdealLoop::fix_body_region_edges(const Node_List &body, IdealLoopTree*
   }
 }
 
-void PhaseIdealLoop::clone_loop_body_region(const Node_List& body, Node_List &old_new, CloneMap* cm) {
+void PhaseIdealLoop::clone_region_of_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm) {
   for (uint i = 0; i < body.size(); i++) {
     Node* old = body.at(i);
     Node* nnn = old->clone();
@@ -4460,7 +4460,7 @@ public:
       return false;
     }
 
-    if (!find_region()) {
+    if (!select_candidate_path()) {
       return false;
     }
 
@@ -4507,7 +4507,7 @@ public:
 
     update_loop_membership();
 
-    update_regions_and_phis();
+    simplify_path_merges();
 
     try_add_predicates();
 
@@ -4617,7 +4617,7 @@ private:
     return false;
   }
 
-  bool find_region() {
+  bool select_candidate_path() {
     assert(!_loop->_head->is_CountedLoop() || StressDuplicateBackedge, "Non-counted loop only");
     if (!_loop->_head->is_Loop()) {
       return false;
@@ -4710,7 +4710,7 @@ private:
     LoopNode* head = _loop->_head->as_Loop();
     int dd = _phase->dom_depth(_phase->idom(_path_merge_region));
     // clone shared_stmt
-    _phase->clone_loop_body_region(_nodes_to_clone, _old_new, nullptr);
+    _phase->clone_region_of_loop_body(_nodes_to_clone, _old_new, nullptr);
 
     _path_merge_region_clone = _old_new[_path_merge_region->_idx];
     _path_merge_region_clone->set_req(_selected_path_index, _phase->C->top());
@@ -4722,7 +4722,7 @@ private:
     _phase->igvn().replace_input_of(head, LoopNode::EntryControl, _outer_head);
     _phase->set_idom(head, _outer_head, dd);
 
-    _phase->fix_body_region_edges(_nodes_to_clone, _loop, _old_new, dd, _loop->_parent, true);
+    _phase->fix_region_of_loop_body_edges(_nodes_to_clone, _loop, _old_new, dd, _loop->_parent, true);
 
     // Make one of the shared_stmt copies only reachable from stmt1, the
     // other only from stmt2..stmtn.
@@ -4854,7 +4854,7 @@ private:
     }
   }
 
-  void update_regions_and_phis() const {
+  void simplify_path_merges() const {
     // We now have:
     //   _path_merge_region(top, top, selected_path, top, top, ...)
     //   _path_merge_region_clone(other1, other2, top, other3, other4 ...)
@@ -4868,7 +4868,7 @@ private:
         --i;
         --imax;
         // If removing the Phi create a chain of MergeMem nodes, transform the chain
-        if (u->bottom_type() == Type::MEMORY && in->is_MergeMem() && 0) {
+        if (u->bottom_type() == Type::MEMORY && in->is_MergeMem()) {
           assert(u->adr_type() == TypePtr::BOTTOM, "bottom mem only");
           MergeMemNode* in_mm = in->as_MergeMem();
           Node* base = in_mm->base_memory();

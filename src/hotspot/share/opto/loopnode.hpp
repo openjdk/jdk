@@ -2042,9 +2042,9 @@ public:
 
   bool try_merge_identical_ifs(Node* n);
 
-  void clone_loop_body_region(const Node_List& body, Node_List &old_new, CloneMap* cm);
+  void clone_region_of_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm);
 
-  void fix_body_region_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
+  void fix_region_of_loop_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
                       IdealLoopTree* parent, bool partial);
 
   void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
