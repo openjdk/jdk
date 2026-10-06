@@ -202,11 +202,11 @@ private:
     }
 
     oop fwd = obj;
-    if (ShenandoahForwarding::is_forwarded(fwd)) {
+    if (ShenandoahForwarding::is_forwarded(obj)) {
       fwd = ShenandoahForwarding::forwardee_raw(obj);
     }
 
-    ShenandoahHeapRegion* fwd_reg = nullptr;
+    ShenandoahHeapRegion* fwd_reg = obj_reg;
 
     if (obj != fwd) {
       check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in_reserved(fwd),
@@ -242,8 +242,6 @@ private:
 
       check(ShenandoahAsserts::_safe_oop, obj, !ShenandoahForwarding::is_forwarded(fwd),
             "Double forwarding");
-    } else {
-      fwd_reg = obj_reg;
     }
 
     // Do additional checks for special objects: their fields can hold metadata as well.
@@ -315,7 +313,7 @@ private:
         break;
       case ShenandoahVerifier::_verify_cset_forwarded:
         if (_heap->in_collection_set(obj)) {
-          check(ShenandoahAsserts::_safe_all, obj, (obj != fwd),
+          check(ShenandoahAsserts::_safe_all, obj, ShenandoahForwarding::is_forwarded(obj),
                  "Object in collection set, should have forwardee");
         }
         break;
