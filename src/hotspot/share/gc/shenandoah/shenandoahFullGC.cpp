@@ -158,16 +158,11 @@ void ShenandoahFullGC::do_it() {
     ShenandoahGenerationalFullGC::prepare();
   }
 
-#ifdef ASSERT
-  assert(_heap->is_idle(), "Full GC should not be running from incomplete cycle");
-  assert(!_heap->has_forwarded_objects(), "Concurrent cycle should have finished update references");
-  assert(!_heap->is_concurrent_mark_in_progress(), "Cannot be marking now");
-  assert(!_heap->has_self_forwarded_objects(), "Self forwarded objects should be cleared by concurrent cycle.");
-  for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
-    ShenandoahHeapRegion* region = _heap->get_region(i);
-    assert(!region->has_self_forwards(), "Region %zu should not have self forwarded objects here.", i);
-  }
-#endif
+  guarantee(_heap->is_idle(), "Full GC should not be running from incomplete cycle");
+  guarantee(!_heap->has_forwarded_objects(), "Concurrent cycle should have finished update references");
+  guarantee(!_heap->is_concurrent_mark_in_progress(), "Cannot be marking now");
+  guarantee(!_heap->has_self_forwarded_objects(), "Self forwarded objects should be cleared by concurrent cycle.");
+  DEBUG_ONLY(_heap->assert_no_self_forwards());
 
   if (ShenandoahVerify) {
     _heap->verifier()->verify_before_fullgc(_generation);

@@ -86,7 +86,6 @@ void ShenandoahMmuTracker::fetch_cpu_times(double &gc_time, double &mutator_time
 void ShenandoahMmuTracker::update_utilization(size_t gcid, const char* msg) {
   double current = os::elapsedTime();
   _most_recent_gcid = gcid;
-  _most_recent_is_full = false;
 
   if (gcid == 0) {
     fetch_cpu_times(_most_recent_gc_time, _most_recent_mutator_time);
@@ -142,7 +141,6 @@ void ShenandoahMmuTracker::record_mixed(size_t gcid) {
 
 void ShenandoahMmuTracker::record_full(size_t gcid) {
   update_utilization(gcid, "Full GC");
-  _most_recent_is_full = true;
 }
 
 void ShenandoahMmuTracker::report() {

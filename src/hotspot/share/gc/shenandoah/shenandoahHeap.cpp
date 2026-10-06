@@ -26,6 +26,7 @@
 
 
 #include "cds/aotMappedHeapWriter.hpp"
+#include "gc/shared/allocTracer.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -959,12 +960,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // Shenandoah will grind along for quite a while allocating one
     // object at a time using shared (non-tlab) allocations. This check
     // is testing that the GC overhead limit has not been exceeded.
-    // This will notify the collector to start a cycle, but will raise
-    // an OOME to the mutator if the last Full GCs have not made progress.
-    // gc_no_progress_count is incremented following each full GC that
-    // fails to achieve is_good_progress().
-    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
-      control_thread()->handle_alloc_failure(req);
+    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() >= ShenandoahNoProgressThreshold) {
       req.set_actual_size(0);
       return nullptr;
     }
@@ -972,37 +968,46 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     if (result == nullptr) {
       // Block until control thread reacted, then retry allocation.
       //
-      // It might happen that one of the threads requesting allocation would unblock
-      // way later after GC happened, only to fail the second allocation, because
-      // other threads have already depleted the free storage. In this case, a better
-      // strategy is to try again, until at least one full GC has completed.
-      //
-      // Stop retrying and return nullptr to cause OOMError exception if our allocation failed even after:
-      //   a) We experienced a GC that had good progress, or
-      //   b) We experienced at least one Full GC (whether or not it had good progress)
+      // When a thread cannot allocate, it will signal the control thread to run a concurrent cycle. It
+      // will then wait for the control thread to signal in turn that the cycle has completed. The thread
+      // then retries the allocation. It will do this ShenandoahFullGCThreshold times. If no full gc has
+      // yet run, it will request one and retry the allocation one more time. If another thread has caused
+      // a full GC to run, other threads will not request another full GC.
 
-      const size_t original_count = total_collections();
+      ResourceMark rm; // for Thread::name()
+      const size_t req_byte = req.size() * HeapWordSize;
+      const double start = os::elapsedTime();
+      log_debug(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"", PROPERFMTARGS(req_byte), Thread::current()->name());
+      AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(control_thread()->get_gc_id()));
+
+      const size_t original_full_count = shenandoah_policy()->full_gc_count();
+      const size_t original_count = shenandoah_policy()->reclaiming_gc_count();
       while (result == nullptr && !control_thread()->should_terminate()) {
         control_thread()->handle_alloc_failure(req);
         result = allocate_memory_work(req, in_new_region);
         if (result == nullptr) {
-          const size_t current_count = total_collections();
-          if (current_count - original_count > ShenandoahFullGCThreshold) {
-            // We are not getting what we need from concurrent allocations, so request a full gc.
-            // Whether this satisfies the allocation or not, we are done trying.
-            control_thread()->handle_alloc_failure_full();
-            result = allocate_memory_work(req, in_new_region);
+          const size_t current_count = shenandoah_policy()->reclaiming_gc_count();
+          if (current_count - original_count >= ShenandoahFullGCThreshold) {
+            if (original_full_count == shenandoah_policy()->full_gc_count()) {
+              // We are not getting what we need from concurrent collections, and no full gcs ran
+              // while we waited, so request a full gc. Whether this satisfies the allocation or not,
+              // we are done trying.
+              control_thread()->handle_alloc_failure_full();
+              result = allocate_memory_work(req, in_new_region);
+            }
             break;
           }
         }
       }
+
+      log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\", %.3fms, Succeeded: %s",
+                   PROPERFMTARGS(req_byte), Thread::current()->name(), (os::elapsedTime() - start) * MILLIUNITS, BOOL_TO_STR(result != nullptr));
 
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
         notify_gc_progress();
       }
       if (log_develop_is_enabled(Debug, gc, alloc)) {
-        ResourceMark rm;
         log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: %zu"
                              ", Original: %zu, Latest: %zu",
                              Thread::current()->name(), p2i(result), req.type_string(), req.size(),
@@ -1249,6 +1254,7 @@ ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, Shena
   _cs(cs) {
   // Do not reset claim index, these workers pick up from where the evacuation workers left off
   assert(!_cs->all_regions_claimed(), "Only here to self forward objects in unclaimed regions");
+  assert(_heap->has_self_forwarded_objects(), "Workers that did not evacuate a region must set this flag");
 }
 
 void ShenandoahSelfForwardTask::work(uint worker_id) {
@@ -1483,15 +1489,10 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
 
 #ifdef ASSERT
 void ShenandoahHeap::assert_no_self_forwards() const {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
-  ShenandoahCollectionSet* cs = collection_set();
-  if (cs == nullptr) return;
-  cs->clear_current_index();
-  ShenandoahHeapRegion* r;
-  while ((r = cs->next()) != nullptr) {
-    assert(!r->has_self_forwards(), "region still flagged after drain");
+  for (size_t i = 0, n = num_regions(); i < n; ++i) {
+    const ShenandoahHeapRegion* region = get_region(i);
+    assert(!region->has_self_forwards(), "Region %zu should not have self forwarded objects here.", i);
   }
-  cs->clear_current_index();
 }
 #endif
 
@@ -1683,7 +1684,7 @@ size_t ShenandoahHeap::max_tlab_size() const {
 
 void ShenandoahHeap::collect_as_vm_thread(GCCause::Cause cause) {
   // These requests are ignored because we can't easily have Shenandoah jump into
-  // a synchronous (degenerated or full) cycle while it is in the middle of a concurrent
+  // a synchronous (full) cycle while it is in the middle of a concurrent
   // cycle. We _could_ cancel the concurrent cycle and then try to run a cycle directly
   // on the VM thread, but this would confuse the control thread mightily and doesn't
   // seem worth the trouble. Instead, we will have the caller thread run (and wait for) a
@@ -2503,13 +2504,6 @@ void ShenandoahHeap::finish_concurrent_roots() {
   if (unload_classes()) {
     _unloader.finish();
   }
-
-  if (has_self_forwarded_objects()) {
-    const uint nworkers = workers()->active_workers();
-    ShenandoahRootUpdater root_updater(nworkers, ShenandoahPhaseTimings::final_update_refs_self_forwards);
-    ShenandoahUpdateRootsTask update_roots(&root_updater, true);
-    workers()->run_task(&update_roots);
-  }
 }
 
 #ifdef ASSERT
@@ -2746,10 +2740,6 @@ void ShenandoahHeap::safepoint_synchronize_end() {
 void ShenandoahHeap::try_inject_alloc_failure() {
   if (ShenandoahAllocFailureALot && !cancelled_gc() && ((os::random() % 1000) > 950)) {
     _inject_alloc_failure.set();
-    os::naked_short_sleep(1);
-    if (cancelled_gc()) {
-      log_info(gc)("Allocation failure was successfully injected");
-    }
   }
 }
 

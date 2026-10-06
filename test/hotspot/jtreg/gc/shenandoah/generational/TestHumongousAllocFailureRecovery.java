@@ -43,6 +43,7 @@ import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -82,8 +83,13 @@ public class TestHumongousAllocFailureRecovery {
         return info.getGcCause().contains("System.gc");
     }
 
+    private static boolean isHumongousAllocationFailure(GarbageCollectionNotificationInfo info) {
+        return info.getGcCause().contains("Humongous Allocation Failure");
+    }
+
     public static void main(String[] args) throws Exception {
         final List<String> unexpectedFullGCs = Collections.synchronizedList(new ArrayList<>());
+        final AtomicLong humongousAllocFailures = new AtomicLong();
         final CountDownLatch sawSystemGC = new CountDownLatch(1);
 
         NotificationListener listener = (Notification n, Object o) -> {
@@ -93,6 +99,8 @@ public class TestHumongousAllocFailureRecovery {
                     sawSystemGC.countDown();
                 } else if (isFullGC(info)) {
                     unexpectedFullGCs.add(info.getGcCause());
+                } else if (isHumongousAllocationFailure(info)) {
+                    humongousAllocFailures.incrementAndGet();
                 }
             }
         };
@@ -113,6 +121,10 @@ public class TestHumongousAllocFailureRecovery {
         }
 
         unsubscribeToCollectorNotifications(listener);
+
+        if (humongousAllocFailures.get() == 0) {
+            throw new RuntimeException("Test conditions not met, no humongous allocation failures");
+        }
 
         if (!unexpectedFullGCs.isEmpty()) {
             throw new RuntimeException("Unexpected full GCs: " + unexpectedFullGCs);

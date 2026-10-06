@@ -36,8 +36,7 @@
  * The adaptive heuristic tracks the allocation behavior and average cycle
  * time of the application. It attempts to start a cycle with enough time
  * to complete before the available memory is exhausted. It errors on the
- * side of starting cycles early to avoid allocation failures (degenerated
- * cycles).
+ * side of starting cycles early to avoid allocation failures.
  *
  * This heuristic limits the number of regions for evacuation such that the
  * evacuation reserve is respected. This helps it avoid allocation failures

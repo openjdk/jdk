@@ -278,8 +278,7 @@ private:
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
   // Set when an evacuation failure self-forwarded at least one object in this
-  // region. The drain at degen/full GC entry scans flagged regions and CAS-
-  // clears the self_fwd bits. Safety-net reset on region recycle.
+  // region. The flag is cleared when the region is partially recycled during final-update-refs.
   ShenandoahSharedFlag _has_self_forwards;
 
   // This is only read/written by a gc worker to avoid unnecessary bitmap resets
@@ -543,7 +542,7 @@ public:
 
   // Self-forward accounting: set by an evacuating thread after it successfully
   // installs a self-forward mark on an object in this region. Tested and cleared
-  // at the drain phase (degen/full GC entry) and again on region recycle.
+  // when the region is partially recycled in final-update-refs.
   bool has_self_forwards() const { return _has_self_forwards.is_set(); }
   void set_has_self_forwards()   { _has_self_forwards.set(); }
   void clear_has_self_forwards() { _has_self_forwards.unset(); }

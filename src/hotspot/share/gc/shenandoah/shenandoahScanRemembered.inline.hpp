@@ -47,8 +47,7 @@ void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) const {
 // only the portions of the array on dirty cards need to be scanned.
 //
 // Do not CANCEL within process_clusters.  It is assumed that if a worker thread accepts responsibility for processing
-// a chunk of work, it will finish the work it starts.  Otherwise, the chunk of work will be lost in the transition to
-// degenerated execution, leading to dangling references.
+// a chunk of work, it will finish the work it starts.
 template <typename ClosureType>
 void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range,
                                                 ClosureType* cl, bool use_write_table, uint worker_id) {

@@ -178,15 +178,6 @@ void ShenandoahConcurrentRootScanner::update_tlab_stats() {
   }
 }
 
-ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
-  ShenandoahRootProcessor(phase),
-  _vm_roots(phase),
-  _cld_roots(phase, n_workers, false /*heap iteration*/),
-  _thread_roots(phase, n_workers > 1),
-  _weak_roots(phase),
-  _code_roots(phase) {
-}
-
 ShenandoahRootAdjuster::ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
   _vm_roots(phase),
@@ -209,20 +200,6 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   // Process heavy-weight/fully parallel roots the last
   _code_roots.nmethods_do(&code_blob_cl, worker_id);
   _thread_roots.oops_do(oops, nullptr, worker_id);
-}
-
-void ShenandoahUpdateRootsTask::work(uint worker_id) {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  ShenandoahParallelWorkerSession worker_session(worker_id);
-
-  ShenandoahNonConcUpdateRefsClosure cl;
-  if (_check_alive) {
-    ShenandoahForwardedIsAliveClosure is_alive;
-    _root_updater->roots_do<ShenandoahForwardedIsAliveClosure, ShenandoahNonConcUpdateRefsClosure>(worker_id, &is_alive, &cl);
-  } else {
-    AlwaysTrueClosure always_true;
-    _root_updater->roots_do<AlwaysTrueClosure, ShenandoahNonConcUpdateRefsClosure>(worker_id, &always_true, &cl);
-  }
 }
 
 ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner(uint n_workers) :

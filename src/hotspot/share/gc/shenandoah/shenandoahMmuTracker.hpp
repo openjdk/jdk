@@ -67,8 +67,6 @@ private:
   size_t _most_recent_gcid;
   uint _active_processors;
 
-  bool _most_recent_is_full;
-
   ShenandoahMmuTask* _mmu_periodic_task;
   TruncatedSeq _mmu_average;
 

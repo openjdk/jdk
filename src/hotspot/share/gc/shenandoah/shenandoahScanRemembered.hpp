@@ -733,8 +733,8 @@ public:
     _scc = new ShenandoahCardCluster(rs);
 
     // We allocate ParallelGCThreads worth even though we usually only
-    // use up to ConcGCThreads, because degenerate collections may employ
-    // ParallelGCThreads for remembered set scanning.
+    // use up to ConcGCThreads, because allocation stalls may push the
+    // number of concurrent threads up to the parallel thread count.
     if (ShenandoahEnableCardStats) {
       _card_stats = NEW_C_HEAP_ARRAY(HdrSeq*, ParallelGCThreads, mtGC);
       for (uint i = 0; i < ParallelGCThreads; i++) {

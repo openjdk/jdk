@@ -235,7 +235,9 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   ShenandoahConcurrentGC gc(this, heap->global_generation(), false);
   if (gc.collect(cause)) {
-    heap->notify_gc_progress();
+    if (alloc_stall_count() == 0) {
+      heap->notify_gc_progress();
+    }
     heap->global_generation()->heuristics()->record_concurrent_completion();
     heap->shenandoah_policy()->record_success_concurrent(get_gc_id(), false, gc.abbreviated());
     heap->log_heap_status("At end of GC");
