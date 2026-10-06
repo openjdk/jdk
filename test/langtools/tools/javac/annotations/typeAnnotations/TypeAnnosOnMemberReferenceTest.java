@@ -299,9 +299,6 @@ public class TypeAnnosOnMemberReferenceTest {
 
     @Test //JDK-8391567
     public void testDeclarationAnnotation() throws Exception {
-        //annotating "@Ann1 T.N" where N is a static nested class
-        //or "@Ann p.T.N" or "@Ann p.T.I", where I is an inner class
-        //and p is a package is not valid:
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
 
