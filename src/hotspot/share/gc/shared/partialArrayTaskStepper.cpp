@@ -52,7 +52,7 @@ PartialArrayTaskStepper::PartialArrayTaskStepper(uint n_workers) :
   _task_limit(compute_task_limit(n_workers)),
   _task_fanout(compute_task_fanout(_task_limit))
 {
-  // Current stepper code does not support more than 31 bits in array length.
-  // arrayOopDesc::max_array_length() is not constexpr, so we workaround using the return type's digits.
-  static_assert(std::numeric_limits<decltype(arrayOopDesc::max_array_length(T_OBJECT))>::digits <= 31);
+  // Current stepper code only supports up to 2^31 elements in the array.
+  // arrayOopDesc::max_array_length() is not constexpr, so we workaround using the return type's maximum value.
+  static_assert(std::numeric_limits<decltype(arrayOopDesc::max_array_length(T_OBJECT))>::max() <= INT32_MAX);
 }
