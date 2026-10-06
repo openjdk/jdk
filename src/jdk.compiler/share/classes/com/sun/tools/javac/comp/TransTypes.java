@@ -722,7 +722,7 @@ public class TransTypes extends TreeTranslator {
                     receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
                     if (receiverExpression.hasTag(Tag.NULLCHK)) {
                         Type t = types.skipTypeVars(tree.getQualifierExpression().type, false);
-                        receiverExpression.setType(t.isCompound() ? erasure(tree.sym.owner.type) : erasure(t));
+                        receiverExpression.type = t.isCompound() ? erasure(tree.sym.owner.type) : erasure(t);
                     }
                     break;
                 case UNBOUND:
@@ -968,7 +968,7 @@ public class TransTypes extends TreeTranslator {
             } else {
                 JCExpression expr = attr.makeNullCheck(tree.encl);
                 if (expr.hasTag(Tag.NULLCHK)) {
-                    expr.setType(erasure(tree.encl.type));
+                    expr.type = erasure(tree.encl.type);
                 }
                 tree.args = tree.args.prepend(expr);
                 tree.encl = null;
