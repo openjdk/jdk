@@ -79,7 +79,7 @@ public:
    */
   static inline uint age(oop obj);
 
-  /* Bumps the age the object.
+  /* Bumps the age of the object.
    * WARNING: This method is expected to operate on a copy that is
    * not accessible to normal use.
    */
