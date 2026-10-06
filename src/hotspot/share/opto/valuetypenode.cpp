@@ -533,12 +533,21 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
     Node* cast = kit->cast_to_flat_array_exact(base, vk, false, true);
-    Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-    store_flat(kit, cast, ptr, true, false, false, decorators);
+    if (cast->is_top()) {
+      PreserveJVMState pjvms(kit);
+      kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                   Deoptimization::Action_maybe_recompile,
+                    nullptr, "Flat array class meta-data unavailable");
+    } else {
+      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
+      store_flat(kit, cast, ptr, true, false, false, decorators);
 
-    region->init_req(1, kit->control());
-    mem->set_req(1, kit->reset_memory());
-    io->set_req(1, kit->i_o());
+
+      region->init_req(1, kit->control());
+      mem->set_req(1, kit->reset_memory());
+      io->set_req(1, kit->i_o());
+
+    }
   }
 
   // Null-free
@@ -555,12 +564,19 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       Node* cast = kit->cast_to_flat_array_exact(base, vk, true, true);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      store_flat(kit, cast, ptr, true, false, true, decorators);
+      if (cast->is_top()) {
+        PreserveJVMState pjvms(kit);
+        kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                     Deoptimization::Action_maybe_recompile,
+                      nullptr, "Flat array class meta-data unavailable");
+      } else {
+        Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
+        store_flat(kit, cast, ptr, true, false, true, decorators);
 
-      region->init_req(2, kit->control());
-      mem->set_req(2, kit->reset_memory());
-      io->set_req(2, kit->i_o());
+        region->init_req(2, kit->control());
+        mem->set_req(2, kit->reset_memory());
+        io->set_req(2, kit->i_o());
+      }
     }
 
     // Non-atomic
@@ -569,18 +585,25 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       Node* cast = kit->cast_to_flat_array_exact(base, vk, true, false);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      store_flat(kit, cast, ptr, false, false, true, decorators);
+      if (cast->is_top()) {
+        PreserveJVMState pjvms(kit);
+        kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                     Deoptimization::Action_maybe_recompile,
+                      nullptr, "Flat array class meta-data unavailable");
+      } else {
+        Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
+        store_flat(kit, cast, ptr, false, false, true, decorators);
 
-      region->init_req(3, kit->control());
-      mem->set_req(3, kit->reset_memory());
-      io->set_req(3, kit->i_o());
+        region->init_req(3, kit->control());
+        mem->set_req(3, kit->reset_memory());
+        io->set_req(3, kit->i_o());
+      }
     }
   }
 
-  kit->set_control(gvn.transform(region));
-  kit->set_all_memory(gvn.transform(mem));
-  kit->set_i_o(gvn.transform(io));
+  kit->set_control(region);
+  kit->set_all_memory(mem);
+  kit->set_i_o(io);
 }
 
 void ValueTypeNode::store(GraphKit* kit, Node* base, Node* ptr, bool immutable_memory, DecoratorSet decorators) const {
@@ -1627,12 +1650,20 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
     Node* cast = kit->cast_to_flat_array_exact(base, vk, false, true);
-    Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-    vt_nullable = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, false, decorators);
+    if (cast->is_top()) {
+      PreserveJVMState pjvms(kit);
+      kit->inc_sp(2);
+      kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                   Deoptimization::Action_maybe_recompile,
+                    nullptr, "Flat array class meta-data unavailable");
+    } else {
+      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
+      vt_nullable = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, false, decorators);
 
-    region->init_req(1, kit->control());
-    mem->set_req(1, kit->reset_memory());
-    io->set_req(1, kit->i_o());
+      region->init_req(1, kit->control());
+      mem->set_req(1, kit->reset_memory());
+      io->set_req(1, kit->i_o());
+    }
   }
 
   // Null-free
@@ -1649,12 +1680,20 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       Node* cast = kit->cast_to_flat_array_exact(base, vk, true, true);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      vt_null_free = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, true, decorators);
+      if (cast->is_top()) {
+        PreserveJVMState pjvms(kit);
+        kit->inc_sp(2);
+        kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                     Deoptimization::Action_maybe_recompile,
+                      nullptr, "Flat array class meta-data unavailable");
+      } else {
+        Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
+        vt_null_free = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, true, decorators);
 
-      region->init_req(2, kit->control());
-      mem->set_req(2, kit->reset_memory());
-      io->set_req(2, kit->i_o());
+        region->init_req(2, kit->control());
+        mem->set_req(2, kit->reset_memory());
+        io->set_req(2, kit->i_o());
+      }
     }
 
     // Non-Atomic
@@ -1663,12 +1702,20 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       Node* cast = kit->cast_to_flat_array_exact(base, vk, true, false);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      vt_non_atomic = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, false, false, true, decorators);
+      if (cast->is_top()) {
+        PreserveJVMState pjvms(kit);
+        kit->inc_sp(2);
+        kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                     Deoptimization::Action_maybe_recompile,
+                      nullptr, "Flat array class meta-data unavailable");
+      } else {
+        Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
+        vt_non_atomic = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, false, false, true, decorators);
 
-      region->init_req(3, kit->control());
-      mem->set_req(3, kit->reset_memory());
-      io->set_req(3, kit->i_o());
+        region->init_req(3, kit->control());
+        mem->set_req(3, kit->reset_memory());
+        io->set_req(3, kit->i_o());
+      }
     }
   }
 
@@ -1684,9 +1731,9 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     vt = vt_nullable;
   }
   if (vt != nullptr) {
-    kit->set_control(kit->gvn().transform(region));
-    kit->set_all_memory(kit->gvn().transform(mem));
-    kit->set_i_o(kit->gvn().transform(io));
+    kit->set_control(region);
+    kit->set_all_memory(mem);
+    kit->set_i_o(io);
     return vt;
   }
 
@@ -1702,9 +1749,9 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     vt = vt->merge_with(&gvn, vt_non_atomic, 3, false);
   }
 
-  kit->set_control(kit->gvn().transform(region));
-  kit->set_all_memory(kit->gvn().transform(mem));
-  kit->set_i_o(kit->gvn().transform(io));
+  kit->set_control(region);
+  kit->set_all_memory(mem);
+  kit->set_i_o(io);
   return gvn.transform(vt)->as_ValueType();
 }
 
