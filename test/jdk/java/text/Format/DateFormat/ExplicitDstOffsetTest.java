@@ -23,21 +23,26 @@
 
 /*
  * @test
- * @bug 8392995
+ * @bug 8392995 8392991
  * @summary Ensure that a custom time zone does not look up CLDR metazone data via
  *      an explicit offset for daylight names during SimpleDateFormat formatting. Only
- *      a canonical JDK TimeZone should defer to the metazone data in such cases.
- * @run junit CustomZoneTest
+ *      a canonical JDK TimeZone should defer to the metazone data in such cases. Parsing
+ *      should consult the explicit dstOffset of a zone when it exists.
+ * @run junit ExplicitDstOffsetTest
  */
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.FieldSource;
 
 import java.text.DateFormatSymbols;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
@@ -45,7 +50,7 @@ import java.util.TimeZone;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // Any fixed standard strings correspond to CLDR data as of v48.2
-public class CustomZoneTest {
+public class ExplicitDstOffsetTest {
 
     private static final String AMERICA_VANCOUVER = "America/Vancouver";
     private static final TimeZone JDK_AMERICA_VANCOUVER =
@@ -136,5 +141,36 @@ public class CustomZoneTest {
         // the match would fail and daylight would be incorrectly determined as false.
         assertEquals("Pacific Daylight Time", format.format(
                 Date.from(Instant.parse("2020-07-01T12:00:00Z"))));
+    }
+
+    // These instants are formatted/parsed under Europe/Dublin
+    private static final List<Date> EXPLICIT_DST_OFFSET_DATES = List.of(
+            // Historical daylight offset: +00:34:39
+            Date.from(Instant.parse("1916-07-15T00:00:00Z")),
+            // Formats to -> 1916-07-15 00:34:39 Greenwich Mean Time
+            // -------------
+            // Historical standard offset: −00:25:21
+            Date.from(Instant.parse("1916-01-15T00:00:00Z")),
+            // Formats to -> 1916-01-14 23:34:39 Greenwich Mean Time
+            // -------------
+            // Modern daylight offset: +01:00
+            Date.from(Instant.parse("2026-04-04T23:00:00Z")),
+            // Formats to -> 2026-04-05 00:00:00 Irish Standard Time
+            // -------------
+            // Modern standard offset: +00:00
+            Date.from(Instant.parse("2026-12-05T00:00:00Z"))
+            // Formats to -> 2026-12-05 00:00:00 Greenwich Mean Time
+    );
+
+    // Europe/Dublin uses explicit dstOffset. Instead of deriving whether daylight/standard is in effect
+    // from the parsed text name, allow the Calendar to resolve the actual value based on the dates offset.
+    @ParameterizedTest
+    @FieldSource("EXPLICIT_DST_OFFSET_DATES")
+    void dstOffsetRoundTripParsing(Date before) throws ParseException {
+        var format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzzz", Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("Europe/Dublin"));
+        String text = format.format(before);
+        Date after = format.parse(text);
+        assertEquals(before, after, "explicit dstOffset zone did not round trip correctly");
     }
 }

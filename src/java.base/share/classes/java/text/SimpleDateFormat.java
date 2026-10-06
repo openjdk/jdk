@@ -1303,20 +1303,7 @@ public class SimpleDateFormat extends DateFormat {
                 int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
                 int dstOffset = calendar.get(Calendar.DST_OFFSET) + zoneOffset;
 
-                ZoneOffset explicitDstOffset = null;
-                // Check if an explicit metazone DST offset exists.
-                // Only check against instances of ZoneInfo, since the standard JDK timezones
-                // are guaranteed to extend this internal type.
-                if (tz instanceof ZoneInfo zi) {
-                    explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
-                    if (explicitDstOffset != null) {
-                        // The time zone ID has an explicit dst offset. Ensure that
-                        // our current TimeZone is canonical.
-                        if (!ZoneInfo.hasCanonicalRule(zi)) {
-                            explicitDstOffset = null;
-                        }
-                    }
-                }
+                ZoneOffset explicitDstOffset = getExplicitDstOffset(tz);
                 boolean daylight = explicitDstOffset != null ?
                     dstOffset == explicitDstOffset.getTotalSeconds() * 1_000 :
                     dstOffset != zoneOffset;
@@ -1840,15 +1827,21 @@ public class SimpleDateFormat extends DateFormat {
             if (!tz.equals(currentTimeZone)) {
                 setTimeZone(tz);
             }
-            // If the time zone matched uses the same name
-            // (abbreviation) for both standard and daylight time,
-            // let the time zone in the Calendar decide which one.
-            //
-            // Also if tz.getDSTSaving() returns 0 for DST, use tz to
-            // determine the local time. (6645292)
-            int dstAmount = (nameIndex >= 3) ? tz.getDSTSavings() : 0;
-            if (!(useSameName || (nameIndex >= 3 && dstAmount == 0))) {
-                calb.clear(Calendar.ZONE_OFFSET).set(Calendar.DST_OFFSET, dstAmount);
+            ZoneOffset explicitDstOffset = getExplicitDstOffset(tz);
+            // If we do have an explicitDstOffset, let the calendar
+            // eventually resolve the offset itself, instead of using
+            // the name in the text.
+            if (explicitDstOffset == null) {
+                // If the time zone matched uses the same name
+                // (abbreviation) for both standard and daylight time,
+                // let the time zone in the Calendar decide which one.
+                //
+                // Also if tz.getDSTSaving() returns 0 for DST, use tz to
+                // determine the local time. (6645292)
+                int dstAmount = (nameIndex >= 3) ? tz.getDSTSavings() : 0;
+                if (!(useSameName || (nameIndex >= 3 && dstAmount == 0))) {
+                    calb.clear(Calendar.ZONE_OFFSET).set(Calendar.DST_OFFSET, dstAmount);
+                }
             }
             return (start + zoneNames[nameIndex].length());
         }
@@ -2549,6 +2542,27 @@ public class SimpleDateFormat extends DateFormat {
             map.putAll(m);
         }
         return map;
+    }
+
+    /**
+     * Obtains the dstOffset for a time zone ID if it exists, otherwise null.
+     */
+    private ZoneOffset getExplicitDstOffset(TimeZone tz) {
+        ZoneOffset explicitDstOffset = null;
+        // Check if an explicit metazone DST offset exists.
+        // Only check against instances of ZoneInfo, since the standard JDK timezones
+        // are guaranteed to extend this internal type.
+        if (tz instanceof ZoneInfo zi) {
+            explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tz.getID());
+            if (explicitDstOffset != null) {
+                // The time zone ID has an explicit dst offset. Ensure that
+                // our current TimeZone is canonical.
+                if (!ZoneInfo.hasCanonicalRule(zi)) {
+                    explicitDstOffset = null;
+                }
+            }
+        }
+        return explicitDstOffset;
     }
 
     /**
