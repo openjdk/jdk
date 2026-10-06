@@ -3119,10 +3119,10 @@ void InstanceKlass::remove_unshareable_info() {
   // Classes without an AOT-initialized mirror will run <clinit> again. Restore
   // the initial status of their strict static fields for that execution.
   if (has_strict_static_fields() && !has_aot_initialized_mirror()) {
-    for (int index = 0; index < fields_status()->length(); index++) {
-      FieldInfo fi = field(index);
+    for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+      FieldInfo fi = fs.to_FieldInfo();
       if (fi.access_flags().is_strict() && fi.access_flags().is_static() && fi.initializer_index() == 0) {
-        FieldStatus& fs = *fields_status()->adr_at(index);
+        FieldStatus& fs = *fields_status()->adr_at(fi.index());
         fs.update_strict_static_unset(true);
         fs.update_strict_static_unread(true);
       }
