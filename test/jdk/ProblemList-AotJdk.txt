@@ -51,6 +51,9 @@ jdk/incubator/vector/Vector512ConversionTests.java     8337281 linux-aarch64,mac
 jdk/incubator/vector/Vector64ConversionTests.java#id0  8337281 linux-aarch64,macosx-aarch64
 jdk/incubator/vector/VectorMaxConversionTests.java#id0 8337281 linux-aarch64,macosx-aarch64
 
+java/math/BigInteger/SerializationTests.java   8393482 generic-all
+java/util/concurrent/locks/Lock/OOMEInAQS.java 8393490 generic-all
+
 #############################################################################
 
 # Preview project specific failures go here at the end of the file.
