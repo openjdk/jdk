@@ -31,9 +31,10 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @bug 8374307
  * @summary The change reproduces the unstable_if action_none deoptimization storm
+ * @requires vm.flagless
  * @library /test/lib
  *
- * @run main/othervm compiler.uncommontrap.DeoptStorm
+ * @run driver ${test.main.class}
  */
 public class DeoptStorm {
 
@@ -51,7 +52,7 @@ public class DeoptStorm {
         String className = DeoptStorm.class.getName();
         String[] procArgs = {
             "-XX:PerMethodRecompilationCutoff=2",
-            "-XX:CompileCommand=dontinline,compiler.uncommontrap::*",
+            "-XX:CompileCommand=dontinline,compiler.uncommontrap.DeoptStorm::*",
             "-Xlog:deoptimization=debug",
             className, "dummy"};
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
