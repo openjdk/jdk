@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ final class ChannelImpl extends CardChannel {
                             " exceeded maximum " + RESPONSE_ITERATIONS);
                 }
                 byte[] response = SCardTransmit
-                    (card.cardId, card.protocol, command, 0, n);
+                    (card.context.cardId, card.protocol, command, 0, n);
                 int rn = response.length;
                 if (getresponse && (rn >= 2) && (n >= 1)) {
                     // see ISO 7816/2005, 5.1.3
@@ -280,7 +280,7 @@ final class ChannelImpl extends CardChannel {
             byte[] com = new byte[] {0x00, 0x70, (byte)0x80, 0};
             com[3] = (byte)getChannelNumber();
             setChannel(com);
-            byte[] res = SCardTransmit(card.cardId, card.protocol, com, 0, com.length);
+            byte[] res = SCardTransmit(card.context.cardId, card.protocol, com, 0, com.length);
             if (isOK(res) == false) {
                 throw new CardException("close() failed: " + PCSC.toString(res));
             }

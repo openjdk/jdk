@@ -349,7 +349,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
     // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
     // and the heap gets shrunk before the field access.
-    if ((sig == SIGSEGV) || (sig == SIGBUS)) {
+    if (stub == nullptr && ((sig == SIGSEGV) || (sig == SIGBUS))) {
       address addr = JNI_FastGetField::find_slowcase_pc(pc);
       if (addr != (address)-1) {
         stub = addr;
@@ -478,9 +478,3 @@ int os::extra_bang_size_in_bytes() {
 
 void os::setup_fpu() {}
 
-uintptr_t os::vm_page_table_expansion_point() {
-  // On s390x, page table will dynamically expand based on user demand
-  // (eg mmap probing with high addresses). First expansion happens
-  // at 2^42 (4TB).
-  return nth_bit<uintptr_t>(42);
-}

@@ -32,6 +32,7 @@
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
@@ -129,8 +130,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
-  NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
-  NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
+  NOT_PRODUCT(Atomic<size_t> _promotion_failure_alot_count;)
+  NOT_PRODUCT(Atomic<size_t> _promotion_failure_alot_gc_number;)
 
   jlong _vmthread_cpu_time;
 
@@ -503,14 +504,11 @@ protected:
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a
-  // promotion failure.  The no-argument version uses
-  // this->_promotion_failure_alot_count as the counter.
-  bool promotion_should_fail(volatile size_t* count);
+  // promotion failure.
   bool promotion_should_fail();
 
   // Reset the PromotionFailureALot counters.  Should be called at the end of a
   // GC in which promotion failure occurred.
-  void reset_promotion_should_fail(volatile size_t* count);
   void reset_promotion_should_fail();
 #endif  // #ifndef PRODUCT
 };

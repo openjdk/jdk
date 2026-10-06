@@ -1065,6 +1065,8 @@ void ciEnv::register_method(ciMethod* target,
     assert(compiler->type() == compiler_c2 ||
            offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
 
+    bool needs_stack_repair = (compiler->is_c2() && method()->needs_stack_repair());
+
     nm =  nmethod::new_nmethod(method,
                                compile_id(),
                                entry_bci,
@@ -1074,7 +1076,7 @@ void ciEnv::register_method(ciMethod* target,
                                frame_words, oop_map_set,
                                handler_table, inc_table,
                                compiler, CompLevel(task()->comp_level()),
-                               nmethod::Flags(has_unsafe_access, has_wide_vectors, has_monitors, has_scoped_access));
+                               nmethod::Flags(has_unsafe_access, has_wide_vectors, has_monitors, has_scoped_access, needs_stack_repair));
 
     // Free codeBlobs
     code_buffer->free_blob();
@@ -1255,7 +1257,7 @@ bool ciEnv::dyno_loc(const InstanceKlass* ik, const char *&loc) const {
 
 // Associate the current location descriptor with the given class and record for later lookup.
 void ciEnv::set_dyno_loc(const InstanceKlass* ik) {
-  const char *loc = os::strdup(_dyno_name);
+  const char *loc = os::strdup(_dyno_name, mtCompiler);
   bool found = false;
   int pos = _dyno_klasses->find_sorted<const InstanceKlass*, klass_compare>(ik, found);
   if (found) {

@@ -1,0 +1,5 @@
+NPEInTypeIntersectTest.java:30:41: compiler.err.type.var.may.not.be.followed.by.other.bounds
+NPEInTypeIntersectTest.java:30:58: compiler.err.type.var.may.not.be.followed.by.other.bounds
+NPEInTypeIntersectTest.java:30:75: compiler.err.type.var.may.not.be.followed.by.other.bounds
+NPEInTypeIntersectTest.java:30:92: compiler.err.type.var.may.not.be.followed.by.other.bounds
+4 errors

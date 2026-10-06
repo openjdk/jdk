@@ -45,7 +45,7 @@ template <class T> T* objArrayOopDesc::obj_at_addr(int index) const {
 inline oop objArrayOopDesc::obj_at(int index, TRAPS) const {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
   if (is_flatArray()) {
-    return ((const flatArrayOopDesc*)this)->obj_at(index, CHECK_NULL);
+    return ((const flatArrayOopDesc*)this)->obj_at(index, THREAD);
   } else {
     return ((const refArrayOopDesc*)this)->obj_at(index);
   }

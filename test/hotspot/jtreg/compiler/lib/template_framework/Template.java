@@ -23,11 +23,15 @@
 
 package compiler.lib.template_framework;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import compiler.lib.compile_framework.CompileFramework;
 import compiler.lib.ir_framework.TestFramework;
@@ -1062,5 +1066,230 @@ public sealed interface Template permits Template.ZeroArgs,
      */
     static StructuralName.FilteredSet structuralNames() {
         return new StructuralName.FilteredSet();
+    }
+
+
+    /**
+     * Create {@code count} times a {@link ScopeToken}. This can be used inside another {@link #scope}.
+     *
+     * <p>
+     * {@snippet lang=java:
+     * // Output:
+     * // scope
+     * // scope
+     * // scope
+     * Template.make(() -> scope(
+     *     repeat(3, scope("scope\n"))
+     * ));
+     * }
+     *
+     * @param count How many times do we repeat the provided scope?
+     * @param scope The scope() method.
+     * @return      A list of ScopeTokens.
+     */
+    static List<ScopeToken> repeat(int count, ScopeToken scope) {
+        return repeat(count, _ -> scope);
+    }
+
+    /**
+     * Same as {@link #repeat(int, ScopeToken)} but instead of a {@link ScopeToken}, this method takes a
+     * {@code scopeFactory} {@link IntFunction} that takes an integer index, denoting the current iteration index
+     * ranging from iteration 0 to count - 1, and passes it into a {@link #scope}. This can be used inside another
+     * {@link #scope}:
+     *
+     * <p>
+     * {@snippet lang=java:
+     * // Output:
+     * // 1: scope for index 0
+     * // 1: scope for index 1
+     * // 2: scope for index 0
+     * // 2: scope for index 1
+     * // 2: scope for index 2
+     * Template.make(() -> scope(
+     *     repeat(2, index -> scope("1: scope for index " + index +"\n")),
+     *     repeat(3, index -> scope("2: scope for index " + index +"\n"))
+     * ));
+     * }
+     *
+     * @param count How many times do we repeat the provided scope?
+     * @param scope The scope() function taking an iteration index.
+     * @return      A list of ScopeTokens.
+     */
+    static List<ScopeToken> repeat(int count, IntFunction<ScopeToken> scope) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count must not be negative: " + count);
+        }
+        return IntStream.range(0, count)
+                        .mapToObj(scope)
+                        .toList();
+    }
+
+    /**
+     * Same as {@link #repeat(int, ScopeToken)} but join all resulting {@link ScopeToken}s together by using an
+     * additional {@code delimiter} which is put into a separate {@link ScopeToken}s in between.
+     *
+     * <p>
+     * {@snippet lang=java:
+     * // Output:
+     * // Element 1, Element 2, Element 3
+     * Template.make(() -> scope(
+     *     repeatAndJoin(3, ", ", (index) -> scope("Element " + index))
+     * ));
+     * }
+     *
+     * @param count     How many times do we repeat the provided scope?
+     * @param delimiter The delimiter to join the individual repeated scopes together.
+     * @param scope     The scope() function.
+     * @return          A list of ScopeTokens.
+     */
+    static List<ScopeToken> repeatAndJoin(int count, String delimiter, ScopeToken scope) {
+        return repeatAndJoin(count, delimiter, (_) -> scope);
+    }
+
+    /**
+     * Same as the indexed {@link #repeat(int, IntFunction)} but join all resulting {@link ScopeToken}s together by using
+     * an additional {@code delimiter} which is put into a separate {@link ScopeToken}s in between. This is the indexed
+     * version of {@link #repeatAndJoin(int, String, ScopeToken)}.
+     *
+     * <p>
+     * {@snippet lang=java:
+     * // Output:
+     * // Element 0, Element 1, Element 2
+     * Template.make(() -> scope(
+     *     repeatAndJoin(3, ", ", (index) -> scope("Element " + index))
+     * ));
+     * }
+     *
+     * @param count     How many times do we repeat the provided scope?
+     * @param delimiter The delimiter to join the individual repeated scopes together.
+     * @param scope     The scope() function taking an iteration index.
+     * @return          A list of ScopeTokens.
+     */
+    static List<ScopeToken> repeatAndJoin(int count, String delimiter, IntFunction<ScopeToken> scope) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count must not be negative: " + count);
+        }
+
+        List<ScopeToken> scopeTokens = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            if (i > 0) {
+                // Add delimiter before the actual scope, skipping the very first element.
+                scopeTokens.add(scope(delimiter));
+            }
+            // Create the actual scope.
+            scopeTokens.add(scope.apply(i));
+        }
+        // Return an unmodifiable list.
+        return List.copyOf(scopeTokens);
+    }
+
+    /**
+     * Map each element in {@code list} to the {@code scopeFactory} which is a {@link Function} taking an individual
+     * element of the {@code list} which is passed into a {@link #scope}.
+     *
+     * <p>
+     * {@snippet lang=java:
+     * // Output:
+     * // Element 1
+     * // Element 2
+     * // Element 3
+     * Template.make(() -> scope(
+     *     map(List.of(1, 2, 3), element -> scope("Element " + element +"\n"))
+     * ));
+     * }
+     *
+     * @param list  List of elements to be mapped to the provided scope() function.
+     * @param scope The scope() function taking a list element.
+     * @return      A list of ScopeTokens.
+     */
+    static <T> List<ScopeToken> map(List<T> list, Function<T, ScopeToken> scope) {
+        return map(list, (element, _) -> scope.apply(element));
+    }
+
+    /**
+     * Same as {@link #map(List, Function)} but the {@code scopeFactory} is a {@link BiFunction} that takes an additional
+     * integer index, denoting the current list index ranging from iteration 0 to count - 1. Each element and its list
+     * index element are passed into a {@link #scope}.
+     *
+     * <p>
+     * {@snippet lang=java :
+     * // Output:
+     * // Element 1 at index 0
+     * // Element 2 at index 1
+     * // Element 3 at index 2
+     * Template.make(() -> scope(
+     *     map(List.of(1, 2, 3), (element, index) -> scope("Element " + element + " at index " + index + "\n"))
+     * ));
+     * }
+     *
+     * @param list  List of elements to be mapped to the provided scope() function.
+     * @param scope The scope() function taking a list element and list index.
+     * @return      A list of ScopeTokens.
+     */
+    static <T> List<ScopeToken> map(List<T> list, BiFunction<T, Integer, ScopeToken> scope) {
+        List<ScopeToken> scopeTokens = new ArrayList<>(list.size());
+        int i = 0;
+        for (T element : list) {
+            scopeTokens.add(scope.apply(element, i));
+            i++;
+        }
+
+        // Return an unmodifiable list.
+        return List.copyOf(scopeTokens);
+    }
+
+    /**
+     * Same as {@link #map(List, Function)} but join all resulting {@link ScopeToken}s together by using an additional
+     * {@code delimiter} which is put into a separate {@link ScopeToken}s in between.
+     *
+     * <p>
+     * {@snippet lang=java:
+     * // Output:
+     * // Element 1, Element 2, Element 3
+     * Template.make(() -> scope(
+     *     mapAndJoin(List.of(1, 2, 3), ", ", (element) -> scope("Element " + element))
+     * ));
+     *}
+     * @param list      List of elements to be mapped to the provided scope() function and then be joined with delimiter.
+     * @param delimiter The delimiter to join the individual scopes for all list elements together.
+     * @param scope     The scope() function taking a list element.
+     * @return          A list of ScopeTokens.
+     */
+    static <T> List<ScopeToken> mapAndJoin(List<T> list, String delimiter, Function<T, ScopeToken> scope) {
+        return mapAndJoin(list, delimiter, (element, _) -> scope.apply(element));
+    }
+
+    /**
+     * Same as the indexed {@link #map(List, BiFunction)} but join all resulting {@link ScopeToken}s together by using
+     * an additional {@code delimiter} which is put into a separate {@link ScopeToken}s in between. This is the indexed
+     * version of {@link #mapAndJoin(List, String, Function)}.
+     *
+     * <p>
+     * {@snippet lang=java:
+     * // Output:
+     * // Element 1 at index 0, Element 2 at index 1, Element 3 at index 2
+     * Template.make(() -> scope(
+     *     mapAndJoin(List.of(1, 2, 3), ", ", (element, index) -> scope("Element " + element + " at index " + index))
+     * ));
+     *}
+     * @param list      List of elements to be mapped to the provided scope() function and then be joined with delimiter.
+     * @param delimiter The delimiter to join the individual scopes for all list elements together.
+     * @param scope     The scope() function taking a list element and list index.
+     * @return          A list of ScopeTokens.
+     */
+    static <T> List<ScopeToken> mapAndJoin(List<T> list, String delimiter, BiFunction<T, Integer, ScopeToken> scope) {
+        List<ScopeToken> scopeTokens = new ArrayList<>();
+        int i = 0;
+        for (T item : list) {
+            if (i > 0) {
+                // Add delimiter before the actual scope, skipping the very first element.
+                scopeTokens.add(scope(delimiter));
+            }
+            // Create the actual scope.
+            scopeTokens.add(scope.apply(item, i));
+            i++;
+        }
+        // Return an unmodifiable list.
+        return List.copyOf(scopeTokens);
     }
 }

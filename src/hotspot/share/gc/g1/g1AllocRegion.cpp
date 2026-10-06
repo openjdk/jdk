@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,13 +156,13 @@ void G1AllocRegion::init() {
   assert_alloc_region(_alloc_region.load_relaxed() == nullptr, "pre-condition");
   assert_alloc_region(_dummy_region.load_relaxed() != nullptr, "should have been set");
   _alloc_region.release_store(_dummy_region.load_relaxed());
-  _count = 0;
+  _num_regions_used = 0;
   trace("initialized");
 }
 
 void G1AllocRegion::set(G1HeapRegion* alloc_region) {
   trace("setting");
-  assert_alloc_region(_alloc_region.load_relaxed() == _dummy_region.load_relaxed() && _count == 0, "pre-condition");
+  assert_alloc_region(_alloc_region.load_relaxed() == _dummy_region.load_relaxed() && _num_regions_used == 0, "pre-condition");
 
   update_alloc_region(alloc_region);
   trace("set");
@@ -175,7 +175,7 @@ void G1AllocRegion::update_alloc_region(G1HeapRegion* alloc_region) {
   assert_alloc_region(alloc_region != nullptr && !alloc_region->is_empty(), "pre-condition");
 
   _alloc_region.release_store(alloc_region);
-  _count += 1;
+  _num_regions_used += 1;
   trace("updated");
 }
 
@@ -208,7 +208,7 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
     LogStream ls_debug(log.debug());
     outputStream* out = detailed_info ? &ls_trace : &ls_debug;
 
-    out->print("%s: %u ", _name, _count);
+    out->print("%s: %u ", _name, _num_regions_used);
 
     G1HeapRegion* alloc_region = _alloc_region.load_acquire();
     if (alloc_region == nullptr) {
@@ -236,7 +236,7 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 
 G1AllocRegion::G1AllocRegion(const char* name, uint node_index)
   : _alloc_region(),
-    _count(0),
+    _num_regions_used(0),
     _name(name),
     _node_index(node_index)
  { }
@@ -321,10 +321,10 @@ G1HeapRegion* MutatorAllocRegion::release() {
     _retained_alloc_region.store_relaxed(nullptr);
   }
   log_debug(gc, alloc, region)("Mutator Allocation stats, regions: %u, wasted size: %zu%s (%4.1f%%)",
-                               count(),
+                               num_regions_used(),
                                byte_size_in_proper_unit(_wasted_bytes),
                                proper_unit_for_byte_size(_wasted_bytes),
-                               percent_of(_wasted_bytes, count() * G1HeapRegion::GrainBytes));
+                               percent_of(_wasted_bytes, num_regions_used() * G1HeapRegion::GrainBytes));
   return ret;
 }
 

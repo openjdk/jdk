@@ -82,7 +82,7 @@ class Metadata : public MetaspaceObj {
 };
 
 template <typename M>
-static void print_on_maybe_null(outputStream* st, const char* str, const M* m) {
+inline void print_on_maybe_null(outputStream* st, const char* str, const M* m) {
   if (nullptr != m) {
     st->print_raw(str);
     m->print_value_on(st);

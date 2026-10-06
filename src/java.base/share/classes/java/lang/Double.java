@@ -169,7 +169,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * number and is not equal to any value, including itself.
  * </dd>
  *
- * <dt><dfn>{@index "bit-wise equivalence"}</dfn>:</dt>
+ * <dt><dfn>{@index "bit-wise equivalence"} (or indistinguishable)</dfn>:</dt>
  * <dd>The bits of the two floating-point values are the same. This
  * equivalence relation for {@code double} values {@code a} and {@code
  * b} is implemented by the expression
@@ -177,6 +177,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Under this relation, {@code +0.0} and {@code -0.0} are
  * distinguished from each other and every bit pattern encoding a NaN
  * is distinguished from every other bit pattern encoding a NaN.
+ * Note this is the notion of equivalence used when {@linkplain
+ * Object##equalsIndistinguishable comparing value objects for equality}.
  * </dd>
  *
  * <dt><dfn><a id=repEquivalence></a>{@index "representation equivalence"}</dfn>:</dt>

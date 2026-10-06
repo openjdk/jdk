@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,17 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_Module_info} structure, denoting a module, in the
  * constant pool of a {@code class} file.
  * <p>
- * The use of a {@code ModuleEntry} is modeled by a {@link ModuleDesc}.
- * Conversions are through {@link ConstantPoolBuilder#moduleEntry(ModuleDesc)}
- * and {@link #asSymbol()}.
+ * The use of a {@code ModuleEntry} is modeled by a {@link ModuleDesc} that
+ * does not represent an unnamed module.  Conversions are through {@link
+ * ConstantPoolBuilder#moduleEntry(ModuleDesc)} and {@link #asSymbol()}.
  * <p>
  * A module entry is composite:
  * {@snippet lang=text :
  * // @link substring="ModuleEntry" target="ConstantPoolBuilder#moduleEntry(Utf8Entry)" :
  * ModuleEntry(Utf8Entry name) // @link substring="name" target="#name()"
  * }
- * where {@code name} is a {@linkplain #asSymbol() module name}.
+ * where {@code name} is an {@linkplain ModuleDesc#name() encoded module name}
+ * and is not empty.
  *
  * @jvms 4.4.11 The {@code CONSTANT_Module_info} Structure
  * @since 24
@@ -49,7 +50,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 public sealed interface ModuleEntry extends PoolEntry
         permits AbstractPoolEntry.ModuleEntryImpl {
     /**
-     * {@return the name of the {@linkplain #asSymbol() module}}
+     * {@return the encoded name of the {@linkplain #asSymbol() module}}
      */
     Utf8Entry name();
 
@@ -65,6 +66,9 @@ public sealed interface ModuleEntry extends PoolEntry
 
     /**
      * {@return whether this entry describes the given module}
+     * <p>
+     * This method always returns {@code false} for a module descriptor
+     * representing an unnamed module.
      *
      * @param desc the module descriptor
      * @since 25

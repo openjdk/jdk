@@ -485,7 +485,7 @@ public class TypeAnnotations {
             if (type.hasTag(TypeTag.ARRAY)) {
                 ret = rewriteArrayType(typetree, (ArrayType)type, annotations, onlyTypeAnnotations, pos);
             } else if (type.hasTag(TypeTag.TYPEVAR)) {
-                ret = type.annotatedType(onlyTypeAnnotations);
+                ret = type.annotatedType(annotations);
             } else if (type.getKind() == TypeKind.UNION) {
                 // There is a TypeKind, but no TypeTag.
                 UnionClassType ut = (UnionClassType) type;

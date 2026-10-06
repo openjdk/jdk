@@ -97,7 +97,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     ld(xlocals, Address(fp, frame::interpreter_frame_locals_offset * wordSize));
-    shadd(xlocals, xlocals, fp, t0, LogBytesPerWord);
+    shift_left_add(xlocals, xlocals, fp, LogBytesPerWord);
   }
 
   void restore_constant_pool_cache() {
@@ -107,7 +107,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_sp_after_call() {
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-    shadd(t0, t0, fp, t0, LogBytesPerWord);
+    shift_left_add(t0, t0, fp, LogBytesPerWord);
 #ifdef ASSERT
     bnez(t0, L);
     stop("SP is null");
@@ -120,7 +120,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #ifdef ASSERT
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-    shadd(t0, t0, fp, t0, LogBytesPerWord);
+    shift_left_add(t0, t0, fp, LogBytesPerWord);
     beq(sp, t0, L);
     stop(msg);
     bind(L);
@@ -161,7 +161,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_index_at_bcp(Register index, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_method_counters(Register method, Register mcs, Label& skip);
 
-  // Allocate instance in "obj" and read in the content of the inline field
+  // Allocate instance in "obj" and read in the content of the value field
   // NOTES:
   //   - input holder object via "obj", which must be x10,
   //     will return new instance via the same reg
@@ -194,7 +194,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void empty_expression_stack() {
     ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    shadd(esp, t0, fp, t0, LogBytesPerWord);
+    shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
     // null last_sp until next java call
     sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   }

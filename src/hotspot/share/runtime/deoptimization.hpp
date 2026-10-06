@@ -175,7 +175,7 @@ class Deoptimization : AllStatic {
 
   // Support for restoring non-escaping objects
   static bool realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS);
-  static bool realloc_inline_type_result(InlineKlass* vk, const RegisterMap& map, GrowableArray<Handle>& return_oops, TRAPS);
+  static bool realloc_value_type_result(ValueKlass* vk, const RegisterMap& map, GrowableArray<Handle>& return_oops, TRAPS);
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
   static void reassign_flat_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, flatArrayOop obj, FlatArrayKlass* vak, TRAPS);
@@ -250,7 +250,7 @@ class Deoptimization : AllStatic {
     static ByteSize sender_sp_temp_offset()            { return byte_offset_of(UnrollBlock, _sender_sp_temp);            }
 
     BasicType return_type() const { return _return_type; }
-    void print();
+    void print_on(outputStream* st);
   };
 
   //** Returns an UnrollBlock continuing information
