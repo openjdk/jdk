@@ -132,34 +132,38 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         long carry = limbs[6] >> 54;
 
         limbs[6] -= carry << 54;
+
         limbs[2] += (carry << 18) & LIMB_MASK;
         limbs[3] += carry >> 37;
+
         limbs[1] += (carry << 41) & LIMB_MASK;
-        limbs[2] += carry << 14;
-        limbs[0] -= (carry >> 32) & LIMB_MASK;
-        limbs[1] -= carry << 23;
+        limbs[2] += carry >> 14;
+
+        limbs[0] -= (carry << 32) & LIMB_MASK;
+        limbs[1] -= carry >> 23;
+
         limbs[0] += carry;
     }
 
     private void carryReduceUpper(long[] c) {
         // reduce from position 13
-        c[8]  += (c[13] << 19) & LIMB_MASK;
+        c[8] += (c[13] << 19) & LIMB_MASK;
         c[9] += c[13] >> 36;
-        c[7]  += (c[13] << 42) & LIMB_MASK;
-        c[8]  += c[13] >> 13;
-        c[6]  -= (c[13] << 33) & LIMB_MASK;
-        c[7]  -= c[13] >> 22;
-        c[6]  += (c[13] << 1) & LIMB_MASK;
-        c[7]  += c[13] >> 54;
+        c[7] += (c[13] << 42) & LIMB_MASK;
+        c[8] += c[13] >> 13;
+        c[6] -= (c[13] << 33) & LIMB_MASK;
+        c[7] -= c[13] >> 22;
+        c[6] += (c[13] << 1) & LIMB_MASK;
+        c[7] += c[13] >> 54;
         // reduce from position 12
-        c[7]  += (c[12] << 19) & LIMB_MASK;
+        c[7] += (c[12] << 19) & LIMB_MASK;
         c[8] += c[12] >> 36;
-        c[6]  += (c[12] << 42) & LIMB_MASK;
-        c[7]  += c[12] >> 13;
-        c[5]  -= (c[12] << 33) & LIMB_MASK;
-        c[6]  -= c[12] >> 22;
-        c[5]  += (c[12] << 1) & LIMB_MASK;
-        c[6]  += c[12] >> 54;
+        c[6] += (c[12] << 42) & LIMB_MASK;
+        c[7] += c[12] >> 13;
+        c[5] -= (c[12] << 33) & LIMB_MASK;
+        c[6] -= c[12] >> 22;
+        c[5] += (c[12] << 1) & LIMB_MASK;
+        c[6] += c[12] >> 54;
         // reduce from position 11
         c[6] += (c[11] << 19) & LIMB_MASK;
         c[7] += c[11] >> 36;
@@ -390,12 +394,12 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         d6 &= LIMB_MASK;
 
         c[2] += d0;
-        c[3] += d1 + dd1;
-        c[4] += d2 + dd2;
-        c[5] += d3 + dd3;
-        c[6] += d4 + dd4;
-        c[7] += d5 + dd5;
-        c[8] += d6 + dd6;
+        c[3] += d1 + dd0;
+        c[4] += d2 + dd1;
+        c[5] += d3 + dd2;
+        c[6] += d4 + dd3;
+        c[7] += d5 + dd4;
+        c[8] += d6 + dd5;
         c[9]  = dd6;
 
         // Row 3 - multiply by aa3
@@ -467,11 +471,11 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
 
         c[4]  += d0;
         c[5]  += d1 + dd0;
-        c[6]  += d2 + dd2;
-        c[7]  += d3 + dd3;
-        c[8]  += d4 + dd4;
-        c[9]  += d5 + dd5;
-        c[10] += d6 + dd6;
+        c[6]  += d2 + dd1;
+        c[7]  += d3 + dd2;
+        c[8]  += d4 + dd3;
+        c[9]  += d5 + dd4;
+        c[10] += d6 + dd5;
         c[11]  = dd6;
 
         // Row 5 - multiply by aa5
