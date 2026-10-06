@@ -206,11 +206,11 @@ void VM_GC_HeapInspection::doit() {
   }
   HeapInspection inspect;
   if (Universe::heap()->supports_parallel_heap_iteration() && _parallel_thread_num > 1) {
-    // The GC provided a WorkerThreads to be used during a safepoint.
-    // Can't run with more threads than provided by the WorkerThreads.
+    // Use the diagnostic worker pool to inspect the heap in parallel. If the
+    // pool isn't available or fewer than two workers are active, then fall
+    // back to serial heap inspection.
     WorkerThreads* workers = DiagnosticWorkers::workers();
-    const uint capped_parallel_thread_num = MIN2(_parallel_thread_num, workers->max_workers());
-    uint active_workers = workers->set_active_workers(capped_parallel_thread_num);
+    const uint active_workers = DiagnosticWorkers::try_and_set_active_workers(_parallel_thread_num);
     inspect.heap_inspection(_out, active_workers > 1 ? workers : nullptr);
   } else {
     inspect.heap_inspection(_out, nullptr);

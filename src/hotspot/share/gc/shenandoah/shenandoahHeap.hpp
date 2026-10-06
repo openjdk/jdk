@@ -225,7 +225,9 @@ public:
     return true;
   }
 
-  void initialize_diagnostic_workers(WorkerThread* thread) override;
+  // Diagnostic workers may require gclabs if the threads are used to create a heap dump
+  // during a concurrent evacuation phase.
+  void initialize_diagnostic_worker(WorkerThread* thread) override;
 
 // ---------- Heap counters and metrics
 //

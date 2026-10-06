@@ -2661,7 +2661,7 @@ void VM_HeapDumper::doit() {
   WorkerThreads* workers = nullptr;
   if (ch->supports_parallel_heap_iteration() && _num_dumper_threads > 1) {
     workers = DiagnosticWorkers::workers();
-    workers->set_active_workers(MIN2(_num_dumper_threads, workers->max_workers()));
+    DiagnosticWorkers::try_and_set_active_workers(_num_dumper_threads);
   }
 
   prepare_parallel_dump(workers);

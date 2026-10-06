@@ -28,7 +28,6 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zInitialize.hpp"
-#include "gc/z/zRuntimeWorkers.hpp"
 #include "memory/metaspace.hpp"
 #include "services/memoryUsage.hpp"
 
@@ -48,7 +47,6 @@ private:
   ZDriverMajor*     _driver_major;
   ZDirector*        _director;
   ZStat*            _stat;
-  ZRuntimeWorkers   _runtime_workers;
 
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,

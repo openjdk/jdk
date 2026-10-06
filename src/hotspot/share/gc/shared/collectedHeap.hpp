@@ -475,11 +475,15 @@ protected:
   // this collector.  The default implementation returns false.
   virtual bool supports_concurrent_gc_breakpoints() const;
 
-  // Add comment later
+  // Returns true if the collector implements parallel_object_iterator(), so
+  // heap dump and heap inspection may iterate the heap with multiple worker threads.
   virtual bool supports_parallel_heap_iteration() const { return false; }
 
-  // Add comment later
-  virtual void initialize_diagnostic_workers(WorkerThread* thread) { }
+  // Called once for each diagnostic worker when it's created. Collectors override
+  // this method if the worker requires a special property. For example, Shenandoah
+  // gives each worker a GCLAB because if heap dump or heap inspection runs
+  // during concurrent evacuation, LRB may make the worker evacuate objects.
+  virtual void initialize_diagnostic_worker(WorkerThread* thread) { }
 
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. The GC must guarantee

@@ -23,24 +23,40 @@
  */
 
 #include "gc/shared/diagnosticWorkers.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepoint.hpp"
 
-DiagnosticWorkers::DiagnosticWorkers() : WorkerThreads("Diagnostic Worker Threads", os::initial_active_processor_count()) {}
+DiagnosticWorkers::DiagnosticWorkers() :
+    WorkerThreads("DiagWorker", (uint)os::initial_active_processor_count()) { }
 
 WorkerThreads* DiagnosticWorkers::_workers = nullptr;
 
 void DiagnosticWorkers::on_create_worker(WorkerThread* thread) {
-  Universe::heap()->initialize_diagnostic_workers(thread);
+  Universe::heap()->initialize_diagnostic_worker(thread);
 }
 
 WorkerThreads* DiagnosticWorkers::workers() {
-  if (DiagnosticWorkers::_workers == nullptr) {
-    DiagnosticWorkers::_workers = new DiagnosticWorkers();
+  if (_workers == nullptr && os::initial_active_processor_count() > 1) {
+    assert_at_safepoint();
+    _workers = new DiagnosticWorkers();
+    log_info(gc, task)("Created diagnostic worker pool (max %u workers)", _workers->max_workers());
   }
-  return DiagnosticWorkers::_workers;
+  return _workers;
 }
 
-bool DiagnosticWorkers::is_initialized() {
-  return DiagnosticWorkers::_workers != nullptr;
+void DiagnosticWorkers::diagnostic_threads_do(ThreadClosure* tc) {
+  if (_workers != nullptr) {
+    _workers->threads_do(tc);
+  }
+}
+
+uint DiagnosticWorkers::try_and_set_active_workers(uint num_workers) {
+  if (_workers == nullptr) {
+    return 0;
+  }
+
+  return _workers->set_active_workers(MIN2(num_workers, _workers->max_workers()));
 }

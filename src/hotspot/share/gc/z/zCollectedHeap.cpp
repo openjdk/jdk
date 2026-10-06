@@ -66,8 +66,7 @@ ZCollectedHeap::ZCollectedHeap()
     _driver_minor(new ZDriverMinor()),
     _driver_major(new ZDriverMajor()),
     _director(new ZDirector()),
-    _stat(new ZStat()),
-    _runtime_workers() {}
+    _stat(new ZStat()) {}
 
 CollectedHeap::Name ZCollectedHeap::kind() const {
   return CollectedHeap::Z;
@@ -317,7 +316,6 @@ void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_driver_minor);
   tc->do_thread(_stat);
   _heap.threads_do(tc);
-  _runtime_workers.threads_do(tc);
 }
 
 VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {

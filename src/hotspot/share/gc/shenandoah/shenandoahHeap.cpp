@@ -1563,9 +1563,7 @@ void ShenandoahHeap::labs_make_parsable() {
 
   workers()->threads_do(&cl);
 
-  if (DiagnosticWorkers::is_initialized()) {
-    DiagnosticWorkers::workers()->threads_do(&cl);
-  }
+  DiagnosticWorkers::diagnostic_threads_do(&cl);
 }
 
 void ShenandoahHeap::tlabs_retire(bool resize) {
@@ -1603,9 +1601,7 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 
   workers()->threads_do(&cl);
 
-  if (DiagnosticWorkers::is_initialized()) {
-    DiagnosticWorkers::workers()->threads_do(&cl);
-  }
+  DiagnosticWorkers::diagnostic_threads_do(&cl);
 }
 
 // Returns size in bytes
@@ -3030,8 +3026,6 @@ ShenandoahHeapLocker::ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_
   _lock->lock(allow_block_for_safepoint);
 }
 
-void ShenandoahHeap::initialize_diagnostic_workers(WorkerThread* thread) {
-  // Diagnostic workers may require gclabs if the threads are used to create a heap dump
-  // during a concurrent evacuation phase.
+void ShenandoahHeap::initialize_diagnostic_worker(WorkerThread* thread) {
   ShenandoahThreadLocalData::initialize_gclab(thread);
 }
