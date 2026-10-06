@@ -104,9 +104,9 @@ void G1UncommitRegionTask::clear_summary() {
 void G1UncommitRegionTask::execute() {
   assert(_active, "Must be active");
 
-  // Translate the size limit into a number of regions. This cannot be a
-  // compile time constant because G1HeapRegionSize is set ergonomically.
-  static const uint max_num_regions_to_uncommit = (uint)(UncommitSizeLimit / G1HeapRegionSize);
+  // Translate the size limit into a number of regions, taking the minimum
+  // region count into account.
+  static const uint max_num_regions_to_uncommit = MAX2<uint>(MaxUncommitSize / (uint)G1HeapRegionSize, MinNumRegionsToUncommit);
 
   // Prevent from running during a GC pause.
   SuspendibleThreadSetJoiner sts;

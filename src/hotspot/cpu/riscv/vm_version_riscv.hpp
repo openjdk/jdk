@@ -255,6 +255,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zabha       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZabha))                                  \
   /* Load-acquire and store-release instructions */                                                       \
   decl(Zalasr      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZalasr))                                 \
+  /* Wait-on-Reservation-Set instructions */                                                              \
+  decl(Zawrs       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZawrs))                                  \
   /* Zba Address generation instructions */                                                               \
   decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
   /* Zbb Basic bit-manipulation */                                                                        \
@@ -453,6 +455,7 @@ private:
   #define RV_USE_RVA23U64                           \
     RV_ENABLE_EXTENSION(UseRVC)                     \
     RV_ENABLE_EXTENSION(UseRVV)                     \
+    RV_ENABLE_EXTENSION(UseZawrs)                   \
     RV_ENABLE_EXTENSION(UseZba)                     \
     RV_ENABLE_EXTENSION(UseZbb)                     \
     RV_ENABLE_EXTENSION(UseZbs)                     \

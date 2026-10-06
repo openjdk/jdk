@@ -209,8 +209,33 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
-    // Check if recursive.
-    bne(tmp3_owner, tid, slow_path);
+    // Normally, a contended monitor enters the runtime slow path here.
+    // If `Zawrs` is enabled, wait briefly for the current owner to release
+    // the monitor and retry the fast-path acquisition once, which can
+    // potentially avoid a runtime call if the owner releases the monitor soon.
+    if (UseZawrs) {
+      Label recursive;
+      beq(tmp3_owner, tid, recursive);
+      // Defer non-thread owner markers to the runtime rather than waiting on them.
+      mv(t0, (uint64_t)ThreadIdentifier::initial());
+      bltu(tmp3_owner, t0, slow_path);
+
+      Label retry;
+      // Reload the owner to establish a reservation, so WRS.STO can
+      // observe an update to it.
+      lr_d(tmp3_owner, tmp2_owner_addr, Assembler::relaxed);
+      beqz(tmp3_owner, retry);
+      bltu(tmp3_owner, t0, slow_path);
+      wrs_sto();
+      bind(retry);
+      cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
+              /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+      beqz(tmp3_owner, monitor_locked);
+      bne(tmp3_owner, tid, slow_path);
+      bind(recursive);
+    } else {
+      bne(tmp3_owner, tid, slow_path);
+    }
 
     // Recursive.
     increment(recursions_address, 1, tmp2, tmp3);
@@ -2355,8 +2380,11 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
   // construct a NaN in 32 bits from the NaN in 16 bits,
   // we need the payloads of non-canonical NaNs to be preserved.
   __ mv(tmp, 0x7f800000);
-  // sign-bit was already set via sign-extension if necessary.
-  __ slli(t0, src, 13);
+  // The upper 16 bits of a short argument are unspecified. Sign-extend the
+  // low 16 bits before shifting so that the float sign bit comes from the
+  // float16 sign bit.
+  __ sext(t0, src, 16);
+  __ slli(t0, t0, 13);
   __ orr(tmp, t0, tmp);
   __ fmv_w_x(dst, tmp);
 
@@ -2366,7 +2394,7 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
 
 // j.l.Float.float16ToFloat
 void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
-  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path);
+  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 28, float16_to_float_slow_path);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
   // On riscv, Inf does not need a special process as fcvt can handle it correctly.

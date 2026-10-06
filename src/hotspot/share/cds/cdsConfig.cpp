@@ -169,7 +169,7 @@ const char* CDSConfig::default_archive_path() {
       tmp.print_raw("_preview");
     }
     tmp.print_raw(".jsa");
-    _default_archive_path = os::strdup(tmp.base());
+    _default_archive_path = os::strdup(tmp.base(), mtInternal);
   }
   return _default_archive_path;
 }
