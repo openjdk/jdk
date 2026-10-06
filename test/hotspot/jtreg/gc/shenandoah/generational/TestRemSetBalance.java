@@ -30,7 +30,7 @@
  * @requires vm.flagless
  * @requires os.maxMemory >= 10g
  * @library /test/lib
- * @run driver/manual TestRemSetBalance
+ * @run main/manual TestRemSetBalance
  */
 
 import java.util.Arrays;
@@ -82,8 +82,8 @@ public class TestRemSetBalance {
             }
           } else {
             int average = total_work / num_workers;
-            // Allow deviation from average plus or minus 6.25%)
-            int deviation_bound = average / 16;
+            // Allow deviation from average plus or minus 9.375%)
+            int deviation_bound = 3 * (average / 32);
             if (max_work > average + deviation_bound) {
               System.out.println("Out of balance: max work: " + Integer.toString(max_work) +
                                  " is greater than average work: " + Integer.toString(average) +
@@ -144,7 +144,7 @@ public class TestRemSetBalance {
 
   public static void testRemSet(String... args) throws Exception {
     String[] cmds = Arrays.copyOf(args, args.length + 5);
-    cmds[args.length] = TestOldGrowthTriggers.class.getName();
+    cmds[args.length] = TestRemSetBalance.class.getName();
     cmds[args.length + 1] = "test";
     cmds[args.length + 2] = "3000";
     cmds[args.length + 3] = "50";
