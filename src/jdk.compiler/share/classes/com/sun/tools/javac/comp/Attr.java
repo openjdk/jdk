@@ -5941,6 +5941,19 @@ public class Attr extends JCTree.Visitor {
                 scan(annos);
             scan(tree.elems);
         }
+        @Override
+        public void visitReference(JCMemberReference tree) {
+            if (tree.kind != JCMemberReference.ReferenceKind.BOUND &&
+                tree.kind != JCMemberReference.ReferenceKind.SUPER) {
+                if (tree.kind != null) { //remains null if a severe problem occured during attribution
+                    validateAnnotatedType(tree.expr, tree.expr.type);
+                }
+                scan(tree.expr, true);
+            } else {
+                scan(tree.expr, false);
+            }
+            scan(tree.typeargs, true);
+        }
         public void visitClassDef(JCClassDecl tree) {
             //System.err.println("validateTypeAnnotations.visitClassDef " + tree);
             if (sigOnly) {
@@ -5963,15 +5976,6 @@ public class Attr extends JCTree.Visitor {
             scan(tree.args);
         }
         @Override
-        public void visitReference(JCMemberReference tree) {
-            if (tree.kind != JCMemberReference.ReferenceKind.BOUND &&
-                tree.kind != JCMemberReference.ReferenceKind.SUPER) {
-                scan(tree.expr, true);
-            } else {
-                scan(tree.expr, false);
-            }
-            scan(tree.typeargs, true);
-        }
         public void visitBlock(JCBlock tree) {
             if (!sigOnly) {
                 scan(tree.stats);
