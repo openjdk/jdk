@@ -380,6 +380,12 @@ void before_exit(JavaThread* thread, bool halt) {
 
   Events::log(thread, "Before exit entered");
 
+  // A GC requested after we shut down the heap blocks that requesting Java thread.
+  // Suppress GC-a-lot for threads entering shutdown as Monitor::lock() calls in the
+  // remainder of the shutdown sequence could otherwise block when executing a
+  // GC-a-lot caused collection.
+  NOT_PRODUCT(thread->set_skip_gcalot(true);)
+
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
   // A CAS or OSMutex would work just fine but then we need to manipulate

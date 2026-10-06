@@ -137,7 +137,7 @@
   }
 
  public:
-  // Support for scalarized inline type calling convention
+  // Support for scalarized value type calling convention
   ALWAYSINLINE intptr_t* repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const;
   struct CompiledFramePointers {
     intptr_t* sender_sp;       // The top of the stack of the sender

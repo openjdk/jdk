@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ load_const_optimized(Robj, slow_case_addr);
   __ z_br(Robj); // tail call
 
-  __ flush();
+  __ invalidate_icache();
 
   return fast_entry;
 }

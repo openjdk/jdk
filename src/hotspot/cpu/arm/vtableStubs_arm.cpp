@@ -72,7 +72,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
+  assert(SharedRuntime::name_for_receiver() == R0->as_VMReg(), "receiver expected in R0");
 
   const Register tmp = Rtemp; // Rtemp OK, should be free at call sites
 
@@ -110,7 +110,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   address ame_addr = __ pc();
   __ ldr(PC, Address(Rmethod, Method::from_compiled_offset()));
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
@@ -141,7 +141,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
+  assert(SharedRuntime::name_for_receiver() == R0->as_VMReg(), "receiver expected in R0");
 
   // R0-R3 / R0-R7 registers hold the arguments and cannot be spoiled
   const Register Rclass  = R4;
@@ -205,7 +205,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   assert(SharedRuntime::get_handle_wrong_method_stub() != nullptr, "check initialization order");
   __ jump(SharedRuntime::get_handle_wrong_method_stub(), relocInfo::runtime_call_type, Rtemp);
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;

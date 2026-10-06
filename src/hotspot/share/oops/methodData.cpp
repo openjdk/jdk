@@ -1703,6 +1703,14 @@ bool MethodData::profile_parameters_jsr292_only() {
   return profile_parameters_flag() == type_profile_jsr292;
 }
 
+bool MethodData::profile_array_accesses() {
+  return COMPILER2_PRESENT(UseArrayLoadStoreProfile ||) TypeProfileLevel > 0;
+}
+
+bool MethodData::profile_acmp() {
+  return COMPILER2_PRESENT(UseACmpProfile ||) TypeProfileLevel > 0;
+}
+
 bool MethodData::profile_all_parameters() {
   return profile_parameters_flag() == type_profile_all;
 }
@@ -1912,6 +1920,15 @@ void MethodData::clean_weak_method_links() {
 
 void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
   release_C_heap_structures();
+}
+
+void MethodData::release_C_heap_structures() {
+  // The class unloading protocol guarantees that this object is
+  // unreachable at this point, so no synchronization is necessary.
+  if (_extra_data_lock != nullptr) {
+    delete _extra_data_lock;
+    _extra_data_lock = nullptr;
+  }
 }
 
 #if INCLUDE_CDS

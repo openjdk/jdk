@@ -22,19 +22,19 @@
  *
  */
 
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciSymbols.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/flatArrayKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 //------------------------------make_dtrace_method_entry_exit ----------------
@@ -250,37 +250,37 @@ Node* Parse::array_store_check(const Type*& elemtype) {
   Node* p2 = off_heap_plus_addr(array_klass, element_klass_offset);
   Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p2, tak));
 
-  // If we statically know that this is an inline type array, use precise element klass for checkcast
+  // If we statically know that this is a value type array, use precise element klass for checkcast
   const TypeAryPtr* arytype = _gvn.type(ary)->is_aryptr();
   const TypePtr* elem_ptr = elemtype->make_ptr();
   bool null_free = arytype->is_null_free();
-  if (elem_ptr->is_inlinetypeptr()) {
-    // We statically know that this is an inline type array, use precise klass ptr
-    a_e_klass = makecon(TypeKlassPtr::make(elemtype->inline_klass()));
+  if (elem_ptr->is_valueklassptr()) {
+    // We statically know that this is a value type array, use precise klass ptr
+    a_e_klass = makecon(TypeKlassPtr::make(elemtype->value_klass()));
   }
 #ifdef ASSERT
   if (!StressReflectiveCode && array_klass->is_Con() != a_e_klass->is_Con()) {
     // When the element type is exact, the array type also needs to be exact. There is one exception, though:
     // Nullable arrays are not exact because the null-free array is a subtype while the element type being a
     // concrete value class (i.e. final) is always exact.
-    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_inlinetypeptr() && !null_free,
+    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_valueklassptr() && !null_free,
            "a constant element type either matches a constant array type or a non-constant nullable value class array");
   }
 
   // If the element type is exact, the array can be null-free (i.e. the element type is NotNull) if:
-  //   - The elements are inline types
+  //   - The elements are value types
   //   - The array is from an autobox cache.
   // If the element type is inexact, it could represent multiple null-free arrays. Since autobox cache arrays
   // are local to very few cache classes and are only used in the valueOf() methods, they are always exact and are not
   // merged or hidden behind super types. Therefore, an inexact null-free array always represents some kind of
-  // inline type array - either of an abstract value class or Object.
+  // value type array - either of an abstract value class or Object.
   if (null_free) {
     ciKlass* klass = elem_ptr->is_instptr()->instance_klass();
     if (klass->exact_klass()) {
-      assert(elem_ptr->is_inlinetypeptr() || arytype->is_autobox_cache(), "elements must be inline type or autobox cache");
+      assert(elem_ptr->is_valueklassptr() || arytype->is_autobox_cache(), "elements must be value type or autobox cache");
     } else {
-      assert(!arytype->is_autobox_cache() && elem_ptr->can_be_inline_type() &&
-             (klass->is_java_lang_Object() || klass->is_abstract()), "cannot have inexact non-inline type elements");
+      assert(!arytype->is_autobox_cache() && elem_ptr->can_be_value_type() &&
+             (klass->is_java_lang_Object() || klass->is_abstract()), "cannot have inexact non-value type elements");
     }
   }
 #endif // ASSERT

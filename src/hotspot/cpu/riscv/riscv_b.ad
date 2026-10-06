@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -183,7 +183,53 @@ instruct convI2UL_reg_reg_b(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %{
     __ zext_w(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(ialu_reg_shift);
+  ins_pipe(ialu_reg);
+%}
+
+// And with a low 16-bit mask
+instruct andL_16bits_b(iRegLNoSp dst, iRegL src, immL_16bits mask) %{
+  predicate(UseZbb);
+  match(Set dst (AndL src mask));
+
+  format %{ "zext.h  $dst, $src\t#@andL_16bits_b" %}
+
+  ins_cost(ALU_COST);
+  ins_encode %{
+    __ zext_h(as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+// And with a low 32-bit mask
+instruct andL_32bits_b(iRegLNoSp dst, iRegL src, immL_32bits mask) %{
+  predicate(UseZba);
+  match(Set dst (AndL src mask));
+
+  format %{ "zext.w  $dst, $src\t#@andL_32bits_b" %}
+
+  ins_cost(ALU_COST);
+  ins_encode %{
+    __ zext_w(as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct addL_reg_reg_and_uxtw_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_32bits mask) %{
+  predicate(UseZba);
+  match(Set dst (AddL src1 (AndL src2 mask)));
+
+  ins_cost(ALU_COST);
+  format %{ "add.uw $dst, $src2, $src1\t#@addL_reg_reg_and_uxtw_b" %}
+
+  ins_encode %{
+    __ add_uw(as_Register($dst$$reg),
+              as_Register($src2$$reg),
+              as_Register($src1$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
 %}
 
 // BSWAP instructions
@@ -294,7 +340,6 @@ instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm) 
     __ shadd(as_Register($dst$$reg),
              as_Register($src2$$reg),
              as_Register($src1$$reg),
-             t0,
              $imm$$constant);
   %}
 
@@ -312,7 +357,6 @@ instruct shaddP_reg_reg_ext_b(iRegPNoSp dst, iRegP src1, iRegI src2, immIScale i
     __ shadd(as_Register($dst$$reg),
              as_Register($src2$$reg),
              as_Register($src1$$reg),
-             t0,
              $imm$$constant);
   %}
 
@@ -331,7 +375,6 @@ instruct shaddL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immIScale imm) 
     __ shadd(as_Register($dst$$reg),
              as_Register($src2$$reg),
              as_Register($src1$$reg),
-             t0,
              $imm$$constant);
   %}
 
@@ -349,7 +392,6 @@ instruct shaddL_reg_reg_ext_b(iRegLNoSp dst, iRegL src1, iRegI src2, immIScale i
     __ shadd(as_Register($dst$$reg),
              as_Register($src2$$reg),
              as_Register($src1$$reg),
-             t0,
              $imm$$constant);
   %}
 

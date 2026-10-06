@@ -134,7 +134,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_Trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_TransformHelper.c := sign-compare, \
-    DISABLED_WARNINGS_microsoft := 4244 4996, \
+    DISABLED_WARNINGS_microsoft := 4244 4996 4189, \
     DISABLED_WARNINGS_microsoft_awt_Toolkit.cpp := 4267, \
     LDFLAGS_windows := -delayload:comctl32.dll -delayload:comdlg32.dll \
         -delayload:gdi32.dll -delayload:imm32.dll -delayload:ole32.dll \

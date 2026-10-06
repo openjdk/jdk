@@ -86,7 +86,7 @@ class LogDecorators {
     template <LogLevelType Level, LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG,
               LogTagType T3 = LogTag::__NO_TAG, LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
     static DefaultUndecoratedSelection make() {
-      STATIC_ASSERT(GuardTag == LogTag::__NO_TAG);
+      static_assert(GuardTag == LogTag::__NO_TAG);
       return DefaultUndecoratedSelection(Level, T0, T1, T2, T3, T4);
     }
 

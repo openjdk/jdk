@@ -841,6 +841,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
+  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
   if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();
@@ -858,8 +859,6 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // Add to class loader list first before creating the mirror
   // (same order as class file parsing)
   loader_data->add_class(this);
-
-  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
@@ -1003,8 +1002,6 @@ void Klass::print_on(outputStream* st) const {
   st->cr();
 }
 
-#define BULLET  " - "
-
 // Caller needs ResourceMark
 void Klass::oop_print_on(oop obj, outputStream* st) {
   // print title
@@ -1015,14 +1012,14 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
      // print header
      obj->mark().print_on(st);
      st->cr();
-     st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
+     st->print(" - prototype_header: " INTPTR_FORMAT, _prototype_header.value());
      st->cr();
   }
 
   // print class
-  st->print(BULLET"klass: ");
+  st->print(" - klass: ");
   obj->klass()->print_value_on(st);
-  st->print(BULLET"flags: "); _misc_flags.print_on(st); st->cr();
+  st->print(" - flags: "); _misc_flags.print_on(st); st->cr();
   st->cr();
 }
 
@@ -1075,23 +1072,23 @@ void Klass::validate_array_description(const ArrayDescription& ad) {
     assert(ad._layout_kind == LayoutKind::REFERENCE, "Cannot support flattening");
     assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
   } else {
-    assert(is_inline_klass(), "Must be");
-    InlineKlass* ik = InlineKlass::cast(this);
+    assert(is_value_klass(), "Must be");
+    ValueKlass* vk = ValueKlass::cast(this);
     switch(ad._layout_kind) {
       case LayoutKind::BUFFERED:
         fatal("Invalid layout for an array");
         break;
       case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-        assert(ik->has_null_free_atomic_layout(), "Sanity check");
+        assert(vk->has_null_free_atomic_layout(), "Sanity check");
         break;
       case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-        assert(ik->has_null_free_non_atomic_layout(), "Sanity check");
+        assert(vk->has_null_free_non_atomic_layout(), "Sanity check");
         break;
       case LayoutKind::NULLABLE_ATOMIC_FLAT:
-        assert(ik->has_nullable_atomic_layout(), "Sanity check");
+        assert(vk->has_nullable_atomic_layout(), "Sanity check");
         break;
       case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-        assert(ik->has_nullable_non_atomic_layout(), "Sanity check)");
+        assert(vk->has_nullable_non_atomic_layout(), "Sanity check)");
         break;
       case LayoutKind::REFERENCE:
         break;

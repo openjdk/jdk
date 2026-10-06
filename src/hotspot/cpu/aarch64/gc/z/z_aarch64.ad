@@ -33,14 +33,14 @@ source %{
 
 #include "gc/z/zBarrierSetAssembler.hpp"
 
-static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
+static void z_color(MacroAssembler* masm, Register dst, Register src) {
   assert_different_registers(src, dst);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
   __ movzw(dst, barrier_Relocation::unpatched);
   __ orr(dst, dst, src, Assembler::LSL, ZPointerLoadShift);
 }
 
-static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
+static void z_uncolor(MacroAssembler* masm, Register ref) {
   __ lsr(ref, ref, ZPointerLoadShift);
 }
 
@@ -50,7 +50,7 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
   __ tst(ref, tmp);
   ZLoadBarrierStubC2Aarch64* const stub = ZLoadBarrierStubC2Aarch64::create(node, ref_addr, ref);
   __ br(Assembler::NE, *stub->entry());
-  z_uncolor(masm, node, ref);
+  z_uncolor(masm, ref);
   __ bind(*stub->continuation());
 }
 
@@ -66,7 +66,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
   }
 
   if (node->barrier_data() == ZBarrierElided) {
-    z_uncolor(masm, node, ref);
+    z_uncolor(masm, ref);
     return;
   }
 
@@ -81,14 +81,14 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
     __ b(*stub->entry());
     __ bind(good);
   }
-  z_uncolor(masm, node, ref);
+  z_uncolor(masm, ref);
   __ bind(*stub->continuation());
 }
 
 static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, Register tmp, bool is_atomic) {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
-    z_color(masm, node, rnew_zpointer, rnew_zaddress);
+    z_color(masm, rnew_zpointer, rnew_zaddress);
   } else {
     bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
     bool is_nokeepalive = (node->barrier_data() & ZBarrierNoKeepalive) != 0;
@@ -206,7 +206,7 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
-    z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
+    z_color(masm, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword, memory_order_release);
     __ cset($res$$Register, Assembler::EQ);
   %}
@@ -229,7 +229,7 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
-    z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
+    z_color(masm, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword, memory_order_seq_cst);
     __ cset($res$$Register, Assembler::EQ);
   %}
@@ -251,10 +251,10 @@ instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
-    z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
+    z_color(masm, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                memory_order_release, $res$$Register);
-    z_uncolor(masm, this, $res$$Register);
+    z_uncolor(masm, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -274,10 +274,10 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
-    z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
+    z_color(masm, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                memory_order_seq_cst, $res$$Register);
-    z_uncolor(masm, this, $res$$Register);
+    z_uncolor(masm, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -295,7 +295,7 @@ instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   ins_encode %{
     z_store_barrier(masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, rscratch2, true /* is_atomic */);
     __ atomic_xchg($prev$$Register, $prev$$Register, $mem$$Register);
-    z_uncolor(masm, this, $prev$$Register);
+    z_uncolor(masm, $prev$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -313,7 +313,7 @@ instruct zGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) 
   ins_encode %{
     z_store_barrier(masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, rscratch2, true /* is_atomic */);
     __ atomic_xchgal($prev$$Register, $prev$$Register, $mem$$Register);
-    z_uncolor(masm, this, $prev$$Register);
+    z_uncolor(masm, $prev$$Register);
   %}
 
   ins_pipe(pipe_serial);
