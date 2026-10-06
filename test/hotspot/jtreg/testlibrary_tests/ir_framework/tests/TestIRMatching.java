@@ -431,7 +431,7 @@ public class TestIRMatching {
         }
     }
 
-    // Classes with IR rules can also be defined inside the "IR test runner class" as long as it is not defining
+    // Classes with IR rules can also be defined in inner classes as long as the outer class it is not defining
     // IR rules itself.
     static class CountComparisons {
         int iFld;
