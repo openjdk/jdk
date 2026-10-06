@@ -381,12 +381,12 @@ void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (cset->is_in(obj)) {
-        oop fwd = ShenandoahForwarding::forwardee_or_null(obj);
-        if (fwd == nullptr) {
-          fwd = _heap->evacuate_object(obj, thread);
+        oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+        if (resolved == nullptr) {
+          resolved = _heap->evacuate_object(obj, thread);
         }
-        if (fwd != obj) {
-          ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
+        if (resolved != obj) {
+          ShenandoahHeap::atomic_update_oop(resolved, elem_ptr, o);
         }
       }
     }
