@@ -145,6 +145,13 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   }
 
   assert(request.generation != nullptr, "request.generation cannot be null, cause is: %s", GCCause::to_string(request.cause));
+
+  if (request.generation->is_old() && _heap->old_generation()->is_doing_mixed_evacuations()) {
+    request.cause = GCCause::_no_gc;
+    log_debug(gc, thread)("Dropping request to run old cycle because old is: %s", _heap->old_generation()->state_name());
+    return;
+  }
+
   GCMode mode;
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
     mode = prepare_for_allocation_failure_gc(request);
@@ -184,18 +191,19 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
-  ShenandoahHeuristics* heuristics = request.generation->heuristics();
-  heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
-  heuristics->record_requested_gc();
+  ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
+  request.generation = _heap->global_generation();
+  global_heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
+  global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
     return stw_full;
+  } else {
+    // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
+    // the same `should_unload_classes` call as the regulator's concurrent gc request.
+    _heap->set_unload_classes(global_heuristics->can_unload_classes());
+    return concurrent_normal;
   }
-
-  // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
-  // the same `should_unload_classes` call as the regulator's concurrent gc request.
-  _heap->set_unload_classes(heuristics->can_unload_classes());
-  return concurrent_normal;
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const {
@@ -738,7 +746,6 @@ bool ShenandoahGenerationalControlThread::preempt_old_marking(ShenandoahGenerati
 }
 
 void ShenandoahGenerationalControlThread::wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation) {
-
   if (generation->is_old()) {
     wait_for_old_gc_cycle(cause, static_cast<ShenandoahOldGeneration*>(generation));
     return;
@@ -764,15 +771,28 @@ void ShenandoahGenerationalControlThread::wait_for_gc_cycle(GCCause::Cause cause
   }
 }
 
-
 void ShenandoahGenerationalControlThread::wait_for_old_gc_cycle(GCCause::Cause cause, ShenandoahOldGeneration* generation) {
   MonitorLocker ml(&_gc_waiters_lock);
   size_t current_gc_id = generation->started_gc_id();
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
-    // Make requests to run cycles until at least one is completed
-    notify_control_thread(cause, generation);
-    ml.wait();
+    {
+      // Take control lock for gc mode. Old gc state is changed only when the gc mode is not none.
+      MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
+      if (gc_mode() == none) {
+        if (generation->is_doing_mixed_evacuations()) {
+          // If old is running mixed evacuations, we want to have the control thread
+          // finish those up so we can start the old cycle.
+          notify_control_thread(controller, cause, _heap->young_generation());
+        } else {
+          // Make requests to run cycles until at least one is completed. Note: we must only submit
+          // a request if the old generation does not hold mixed evacuation candidates, otherwise we
+          // violate the invariant that an old cycle cannot run on top of another.
+          notify_control_thread(controller, cause, generation);
+        }
+      }
+    }
+    ml.wait(100);
     current_gc_id = generation->completed_gc_id();
   }
 }
@@ -786,9 +806,7 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
     notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
     return;
   }
-  ShenandoahGeneration* generation = cause == GCCause::_wb_young_gc
-                                   ? ShenandoahHeap::heap()->young_generation()
-                                   : ShenandoahHeap::heap()->global_generation();
+  ShenandoahGeneration* generation = ShenandoahHeap::heap()->global_generation();
   wait_for_gc_cycle(cause, generation);
 }
 
@@ -817,8 +835,9 @@ void ShenandoahGenerationalControlThread::set_gc_mode(GCMode new_mode) {
 
 void ShenandoahGenerationalControlThread::set_gc_mode(MonitorLocker& ml, GCMode new_mode) {
   if (_gc_mode != new_mode) {
-    log_debug(gc, thread)("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
-    EventMark event("Control thread transition from: %s, to %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    FormatBuffer<> msg("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    log_debug(gc, thread)("%s", msg.buffer());
+    Events::log(this, "%s", msg.buffer());
     _gc_mode = new_mode;
     ml.notify_all();
   }

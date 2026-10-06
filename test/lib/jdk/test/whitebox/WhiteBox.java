@@ -337,9 +337,6 @@ public class WhiteBox {
   public native long[] g1GetMixedGCInfo(int liveness);
 
   // Shenandoah
-
-  public native int shenandoahRegionSize();
-  public native int shenandoahRegionCount();
   public native void shenandoahOldGC();
 
   // NMT

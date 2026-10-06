@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "runtime/atomic.hpp"
 
 class LogStream;
 class ShenandoahScanRemembered;
@@ -357,7 +358,7 @@ public:
   size_t get_affiliated_region_count() const override;
   size_t max_capacity() const override;
 
-  virtual void record_collection_start(size_t gc_id) {
+  void record_collection_start(size_t gc_id) {
     _started_gc_id.store_relaxed(gc_id);
   }
 
@@ -380,4 +381,4 @@ public:
 };
 
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP

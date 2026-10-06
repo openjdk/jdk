@@ -779,11 +779,10 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 }
 
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
-                                                           ShenandoahObjToScanQueueSet* old_queue_set,
                                                            ShenandoahReferenceProcessor* rp,
                                                            ShenandoahRegionChunkIterator* work_list, bool is_concurrent) :
   WorkerTask("Scan Remembered Set"),
-  _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
+  _queue_set(queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
   bool old_bitmap_stable = ShenandoahHeap::heap()->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
 }

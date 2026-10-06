@@ -30,27 +30,22 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.inline;
+package jdk.internal.org.commonmark.renderer.text;
 
-import jdk.internal.org.commonmark.node.Node;
-import jdk.internal.org.commonmark.parser.beta.Position;
-
-public abstract class ParsedInline {
-
-    protected ParsedInline() {
-    }
-
-    public static ParsedInline none() {
-        return null;
-    }
-
-    public static ParsedInline of(Node node, Position position) {
-        if (node == null) {
-            throw new NullPointerException("node must not be null");
-        }
-        if (position == null) {
-            throw new NullPointerException("position must not be null");
-        }
-        return new ParsedInlineImpl(node, position);
-    }
+/**
+ * Control how line breaks are rendered.
+ */
+public enum LineBreakRendering {
+    /**
+     * Strip all line breaks within blocks and between blocks, resulting in all the text in a single line.
+     */
+    STRIP,
+    /**
+     * Use single line breaks between blocks, not a blank line (also render all lists as tight).
+     */
+    COMPACT,
+    /**
+     * Separate blocks by a blank line (and respect tight vs loose lists).
+     */
+    SEPARATE_BLOCKS,
 }

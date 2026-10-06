@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_RISCV_STUBDECLARATIONS_HPP
-#define CPU_RISCV_STUBDECLARATIONS_HPP
+#ifndef CPU_RISCV_STUBDECLARATIONS_RISCV_HPP
+#define CPU_RISCV_STUBDECLARATIONS_RISCV_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -99,4 +99,4 @@
                 zero_blocks)                                            \
 
 
-#endif // CPU_RISCV_STUBDECLARATIONS_HPP
+#endif // CPU_RISCV_STUBDECLARATIONS_RISCV_HPP

@@ -69,7 +69,7 @@ PartialArrayTaskStepper::next_impl(size_t length, size_t chunk_size, Atomic<size
   // => (F-1)*N + 1
   assert(_task_limit > 0, "precondition");
   assert(_task_fanout > 0, "precondition");
-  uint max_pending = (_task_fanout - 1) * task_num + 1;
+  uint64_t max_pending = (uint64_t)(_task_fanout - 1) * task_num + 1;
 
   // The actual pending may be less than that.  Bound by remaining_tasks to
   // not overrun.  Also bound by _task_limit to avoid spawning an excessive
@@ -78,7 +78,7 @@ PartialArrayTaskStepper::next_impl(size_t length, size_t chunk_size, Atomic<size
   // not be what's actually in the queues, because of concurrent task
   // processing.  That's okay; we just need to determine the correct number
   // of tasks to add for this task.
-  uint pending = MIN3(max_pending, remaining_tasks, _task_limit);
+  uint pending = (uint)MIN3<uint64_t>(max_pending, remaining_tasks, _task_limit);
   uint ncreate = MIN2(_task_fanout, MIN2(remaining_tasks, _task_limit + 1) - pending);
   return Step{ start, ncreate };
 }

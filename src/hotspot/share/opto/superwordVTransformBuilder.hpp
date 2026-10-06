@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include "opto/superword.hpp"
 #include "opto/vtransform.hpp"
 
-#ifndef SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
-#define SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
+#ifndef SHARE_OPTO_SUPERWORDVTRANSFORMBUILDER_HPP
+#define SHARE_OPTO_SUPERWORDVTRANSFORMBUILDER_HPP
 
 // Facility class that builds a VTransform from a SuperWord PackSet.
 class SuperWordVTransformBuilder : public StackObj {
@@ -86,4 +86,4 @@ private:
   LoadNode::ControlDependency load_control_dependency(const Node_List* pack) const;
 };
 
-#endif // SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
+#endif // SHARE_OPTO_SUPERWORDVTRANSFORMBUILDER_HPP
