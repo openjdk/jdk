@@ -241,11 +241,15 @@ class AOTCodeAddressHashTable : public HashTable<
 //    for these guys, like the stubs have.
 //
 //  - The stubs are well-known runtime support subroutines used by compiled code.
-//    They are keyed by an enum EntryId, and populated by add_stub_entries.  They are
+//    They are keyed by an enum EntryId, and populated by publish_stub_entries. They are
 //    not C addresses but rather pointers to JVM-assembled code.  Some stubs are
 //    found in the AOT cache, but they are always OK to regenerate.  Some stubs are
 //    optional, in which case their array slots could be empty (null), and then you
-//    get a fatal crash if you try to refer to one.
+//    get a fatal crash if you try to refer to one. Consistency of stub presence/absence
+//    and stub (code) format and content between assembly and production runs should be
+//    guaranteed by checks which enforce compatible command line compiler and runtime
+//    configuration options across those runs. Missing checks or incorrect assumptions
+//    regarding compatibility may also lead to a crash.
 //
 //  - C strings are addresses of strings that are used in compiled code.  They are
 //    addressed by content.  That is, if you need a string, spell it out, and either
