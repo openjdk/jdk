@@ -64,10 +64,11 @@ public class FlatArray extends ObjArray {
     long baseOffset = baseOffsetInBytes(BasicType.T_FLAT_ELEMENT);
     int elementSize = 1 << shift; // from FlatArrayKlass::oop_oop_iterate_elements_specialized_bounded() (addr_incr)
 
+    long offset = baseOffset;
     for (int index = 0; index < length; index++) {
-      long offset = baseOffset + (index * elementSize);
       OopField field = new OopField(new IndexableFieldIdentifier(index), offset, false);
       visitor.doOop(field, false);
+      offset += elementSize;
     }
   }
 }
