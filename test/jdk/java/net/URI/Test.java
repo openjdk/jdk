@@ -1562,6 +1562,10 @@ public class Test {
         eqHashCompBid("s://u@h:1", "s://v@h:1", "<");
         eqHashCompBid("s://u@h:1", "s://u@i:1", "<");
         eqHashCompBid("s://u@h:1", "s://v@h:2", "<");
+        eqHashCompBid("s://h", "s://h:0", "<");
+        eqHashCompBid("s://h", "s://h:" + Integer.MAX_VALUE, "<");
+        eqHashCompBid("s://h:0", "s://h:" + Integer.MAX_VALUE, "<");
+        eqHashCompBid("s://h:" + Integer.MAX_VALUE, "s://H:" + Integer.MAX_VALUE, "=");
         eqHashCompBid("s://a%20b", "s://a%20c", "<");
         eqHashCompBid("s://a%20b", "s://aab", "<");
         eqHashCompBid("s://AA", "s://A_", "<");
