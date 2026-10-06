@@ -2795,33 +2795,52 @@ void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition
           );
 }
 
+
+ShenandoahFreeSet::MutatorFreeStats ShenandoahFreeSet::mutator_free_stats_locked() const {
+  shenandoah_assert_heaplocked();
+  {
+    idx_t last_idx = 0;
+    size_t max_contig = 0;
+    size_t empty_contig = 0;
+
+    size_t total_used_in_freeset = 0;
+    size_t total_free_ext = 0;
+
+    for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
+          idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx++) {
+      if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
+        ShenandoahHeapRegion *r = _heap->get_region(idx);
+        size_t free = alloc_capacity(r);
+        size_t used_in_region = r->used();
+        if (r->is_empty_or_trash()) {
+          used_in_region = 0;
+          total_free_ext += free;
+          if (last_idx + 1 == idx) {
+            empty_contig++;
+          } else {
+            empty_contig = 1;
+          }
+        } else {
+          empty_contig = 0;
+        }
+        total_used_in_freeset += used_in_region;
+        max_contig = MAX2(max_contig, empty_contig);
+        last_idx = idx;
+      }
+    }
+
+    MutatorFreeStats stats;
+    stats.max_contig_empty_bytes = max_contig * ShenandoahHeapRegion::region_size_bytes();
+    stats.total_free_ext = total_free_ext;
+    stats.used_in_freeset = total_used_in_freeset;
+
+    return stats;
+}
+
 // TODO: can merge with log status
 size_t ShenandoahFreeSet::calc_max_humongous_allocatable() {
   ShenandoahHeapLocker locker(_heap->lock());
-
-  idx_t last_idx = 0;
-  size_t max_contig = 0;
-  size_t empty_contig = 0;
-
-  for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
-        idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx++) {
-    if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
-      ShenandoahHeapRegion *r = _heap->get_region(idx);
-      if (r->is_empty_or_trash()) {
-        if (last_idx + 1 == idx) {
-          empty_contig++;
-        } else {
-          empty_contig = 1;
-        }
-      } else {
-        empty_contig = 0;
-      }
-      max_contig = MAX2(max_contig, empty_contig);
-      last_idx = idx;
-    }
-  }
-
-  return max_contig * ShenandoahHeapRegion::region_size_bytes();
+  return mutator_free_stats_locked().max_contig_empty_bytes;
 }
 
 void ShenandoahFreeSet::log_status() {
@@ -2900,67 +2919,39 @@ void ShenandoahFreeSet::log_status() {
     ResourceMark rm;
     LogStream ls(lt);
 
-    {
-      idx_t last_idx = 0;
-      size_t max_contig = 0;
-      size_t empty_contig = 0;
+    const MutatorFreeStats stats = mutator_free_stats_locked();
+    const size_t max_humongous = stats.max_contig_empty_bytes;
+    const size_t total_free_ext = stats.total_free_ext;
+    const size_t total_used_in_freeset = stats.used_in_freeset;
 
-      size_t total_used_in_freeset = 0;
-      size_t total_free_ext = 0;
+    size_t total_free = available_locked() + collector_available_locked();
+    total_free += old_collector_available_locked();
+    ls.print("Whole heap stats: Total free: " PROPERFMT ", Total used: " PROPERFMT
+              ", Max humongous allocatable: " PROPERFMT "; ",
+              PROPERFMTARGS(total_free), PROPERFMTARGS(global_used()), PROPERFMTARGS(max_humongous));
 
-      for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
-           idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx++) {
-        if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
-          ShenandoahHeapRegion *r = _heap->get_region(idx);
-          size_t free = alloc_capacity(r);
-          size_t used_in_region = r->used();
-          if (r->is_empty_or_trash()) {
-            used_in_region = 0;
-            total_free_ext += free;
-            if (last_idx + 1 == idx) {
-              empty_contig++;
-            } else {
-              empty_contig = 1;
-            }
-          } else {
-            empty_contig = 0;
-          }
-          total_used_in_freeset += used_in_region;
-          max_contig = MAX2(max_contig, empty_contig);
-          last_idx = idx;
-        }
-      }
-
-      size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
-
-      size_t total_free = available_locked() + collector_available_locked();
-      total_free += old_collector_available_locked();
-      ls.print("Whole heap stats: Total free: " PROPERFMT ", Total used: " PROPERFMT
-               ", Max humongous allocatable: " PROPERFMT "; ",
-               PROPERFMTARGS(total_free), PROPERFMTARGS(global_used()), PROPERFMTARGS(max_humongous));
-
-      double frag_ext;
-      if (total_free_ext > 0) {
-        frag_ext = 100 - (100.0 * max_humongous / total_free_ext);
-      } else {
-        frag_ext = 0;
-      }
-      ls.print("External fragmentation: %.2f%%; ", frag_ext);
-
-      double mutator_filling_percentage = 0;
-      size_t mutator_partition = _partitions.count(ShenandoahFreeSetPartitionId::Mutator);
-      if (mutator_partition > 0) {
-        mutator_filling_percentage = 100 * (1.0 * total_used_in_freeset / mutator_partition)
-                    / ShenandoahHeapRegion::region_size_bytes();
-      }
-      ls.print_cr("Mutator freeset filling percentage: %.2f%%", mutator_filling_percentage);
+    double frag_ext;
+    if (total_free_ext > 0) {
+      frag_ext = 100 - (100.0 * max_humongous / total_free_ext);
+    } else {
+      frag_ext = 0;
     }
+    ls.print("External fragmentation: %.2f%%; ", frag_ext);
 
-    log_freeset_stats(ShenandoahFreeSetPartitionId::Mutator, ls);
-    log_freeset_stats(ShenandoahFreeSetPartitionId::Collector, ls);
-    if (_heap->mode()->is_generational()) {
-      log_freeset_stats(ShenandoahFreeSetPartitionId::OldCollector, ls);
+    double mutator_filling_percentage = 0;
+    size_t mutator_partition = _partitions.count(ShenandoahFreeSetPartitionId::Mutator);
+    if (mutator_partition > 0) {
+      mutator_filling_percentage = 100 * (1.0 * total_used_in_freeset / mutator_partition)
+                  / ShenandoahHeapRegion::region_size_bytes();
     }
+    ls.print_cr("Mutator freeset filling percentage: %.2f%%", mutator_filling_percentage);
+  }
+
+  log_freeset_stats(ShenandoahFreeSetPartitionId::Mutator, ls);
+  log_freeset_stats(ShenandoahFreeSetPartitionId::Collector, ls);
+  if (_heap->mode()->is_generational()) {
+    log_freeset_stats(ShenandoahFreeSetPartitionId::OldCollector, ls);
+  }
   }
 }
 

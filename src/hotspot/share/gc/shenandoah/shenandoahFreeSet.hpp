@@ -608,7 +608,15 @@ private:
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
-public:
+  struct MutatorFreeStats {
+    size_t max_contig_empty_bytes; // largest run of contiguous empty/trash regions, in bytes
+    size_t total_free_ext;         // free bytes in empty/trash regions
+    size_t used_in_freeset;        // used bytes in non-empty regions
+  };
+
+  MutatorFreeStats mutator_free_stats_locked() const;
+
+  public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
   ShenandoahRebuildLock* rebuild_lock() {

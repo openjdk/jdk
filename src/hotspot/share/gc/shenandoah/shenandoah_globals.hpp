@@ -283,9 +283,10 @@
           "intervals are present, where GC can run without stealing "       \
           "time from active application. Time is in milliseconds. "         \
           "Setting this to 0 disables the feature.")                        \
-  product(uintx, ShenandoahMinHumongousRegionCount, 5, EXPERIMENTAL,   \
-          "TODO"         \
-          "TODO")                        \
+  product(uintx, ShenandoahMinHumongousRegionCount, 5, EXPERIMENTAL,        \
+          "The minimal consecutive regions on the heap. Once heap has less" \
+          "than this amount of consecutive regions, A concurrent GC will "  \
+          "be triggered.")                                                  \
   product(uintx, ShenandoahGuaranteedOldGCInterval, 10*60*1000, EXPERIMENTAL, \
           "Run a collection of the old generation at least this often. "    \
           "Heuristics may trigger collections more frequently. Time is in " \

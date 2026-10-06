@@ -255,7 +255,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const ShenandoahAnticipatedConsumption humongous_consumption = humongous_alloc_rate.snapshot(anticipated_gc_duration, _margin_of_error_sd);
   const size_t allocatable_bytes = allocatable(available);
   maybe_log_rate_trigger_parameters(consumption, allocatable_bytes, false /* is_humongous */);
-  maybe_log_rate_trigger_parameters(consumption, allocatable_bytes, true /* is_humongous */);
+  maybe_log_rate_trigger_parameters(humongous_consumption, humongous_allocatable_bytes, true /* is_humongous */);
 
   if (trigger_accelerating_allocation_rate(consumption, allocatable_bytes, false /* is_humongous */)) {
     return true;
@@ -277,7 +277,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 }
 
 
-// TODO: can merge...
 bool ShenandoahAdaptiveHeuristics::trigger_min_humongous_threshold(size_t max_humongous_available) {
   // by size, configurable via shen globals. default: ..5 region size ?
   size_t threshold = ShenandoahMinHumongousRegionCount * ShenandoahHeapRegion::region_size_bytes();
