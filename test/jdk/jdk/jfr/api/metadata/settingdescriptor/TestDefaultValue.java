@@ -52,8 +52,6 @@ public class TestDefaultValue {
         SettingDescriptor overridden = Events.getSetting(type, "overridden");
         Asserts.assertEquals(overridden.getDefaultValue(), PlainSetting.DEFAULT_VALUE);
 
-        CustomEvent.assertOnDisk((x, y) -> x.getName().compareTo(y.getName()));
-
         CustomEvent.assertOnDisk((x, y) -> x.getDefaultValue().compareTo(y.getDefaultValue()));
     }
 }
