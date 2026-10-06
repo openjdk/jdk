@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_VALUEPAYLOAD_INLINE_HPP
-#define SHARE_VM_OOPS_VALUEPAYLOAD_INLINE_HPP
+#ifndef SHARE_OOPS_VALUEPAYLOAD_INLINE_HPP
+#define SHARE_OOPS_VALUEPAYLOAD_INLINE_HPP
 
 #include "oops/valuePayload.hpp"
 
@@ -883,4 +883,4 @@ inline FlatArrayPayload::OopHandle FlatArrayPayload::make_oop_handle(OopStorage*
   return OopHandle(*this, storage);
 }
 
-#endif // SHARE_VM_OOPS_VALUEPAYLOAD_INLINE_HPP
+#endif // SHARE_OOPS_VALUEPAYLOAD_INLINE_HPP
