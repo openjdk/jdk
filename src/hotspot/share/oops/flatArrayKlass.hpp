@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,17 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_FLATARRAYKLASS_HPP
-#define SHARE_VM_OOPS_FLATARRAYKLASS_HPP
+#ifndef SHARE_OOPS_FLATARRAYKLASS_HPP
+#define SHARE_OOPS_FLATARRAYKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "utilities/macros.hpp"
 
 /**
- * Array of inline types, gives a layout of typeArrayOop, but needs oops iterators
+ * Array of value types, gives a layout of typeArrayOop, but needs oops iterators
  */
 class FlatArrayKlass : public ObjArrayKlass {
   friend class Deoptimization;
@@ -52,7 +52,7 @@ class FlatArrayKlass : public ObjArrayKlass {
 
   FlatArrayKlass() {} // used by CppVtableCloner<T>::initialize()
 
-  InlineKlass* element_klass() const { return InlineKlass::cast(ObjArrayKlass::element_klass()); }
+  ValueKlass* element_klass() const { return ValueKlass::cast(ObjArrayKlass::element_klass()); }
 
   LayoutKind layout_kind() const  { return _layout_kind; }
   static ByteSize layout_kind_offset() { return in_ByteSize(offset_of(FlatArrayKlass, _layout_kind)); }
@@ -87,7 +87,7 @@ class FlatArrayKlass : public ObjArrayKlass {
 
   void metaspace_pointers_do(MetaspaceClosure* iter) override;
 
-  static jint array_layout_helper(InlineKlass* vklass, LayoutKind lk); // layout helper for values
+  static jint array_layout_helper(ValueKlass* vklass, LayoutKind lk); // layout helper for values
 
   // sizing
   static int header_size()  { return sizeof(FlatArrayKlass) / wordSize; }
@@ -153,4 +153,4 @@ private:
   void oop_verify_on(oop obj, outputStream* st) override;
 };
 
-#endif
+#endif // SHARE_OOPS_FLATARRAYKLASS_HPP

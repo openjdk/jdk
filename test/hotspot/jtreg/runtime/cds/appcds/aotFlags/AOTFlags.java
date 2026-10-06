@@ -101,7 +101,7 @@ public class AOTFlags {
             "-XX:AOTMode=off",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldNotContain(", sharing");
+        out.shouldNotContain(", aot production");
         out.shouldNotContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
@@ -115,7 +115,7 @@ public class AOTFlags {
             "-XX:AOTMode=auto",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain(", sharing");
+        out.shouldContain(", aot production");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
@@ -130,7 +130,7 @@ public class AOTFlags {
                 "-XX:AOTMode=" + mode,
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "prod");
-            out.shouldContain(", sharing");
+            out.shouldContain(", aot production");
             out.shouldContain("Opened AOT cache hello.aot.");
             out.shouldContain("Hello World");
             out.shouldHaveExitValue(0);
@@ -476,8 +476,20 @@ public class AOTFlags {
         out.shouldHaveExitValue(1);
 
         //----------------------------------------------------------------------
-        printTestCase("Cannot use a dynamic CDS archive for -XX:AOTCache");
+        printTestCase("Cannot use a classic CDS archive with -XX:+AOTClassLinking");
         String staticArchive = "static.jsa";
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xshare:dump",
+            "-XX:SharedArchiveFile=" + staticArchive,
+            "-XX:+AOTClassLinking");
+        out = CDSTestUtils.executeAndLog(pb, "static");
+        out.shouldContain("AOTClassLinking is not supported for classic CDS archive");
+        out.shouldHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Cannot use a dynamic CDS archive for -XX:AOTCache");
+        staticArchive = "static.jsa";
         String dynamicArchive = "dynamic.jsa";
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(

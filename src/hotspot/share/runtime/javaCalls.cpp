@@ -30,9 +30,9 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/universe.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jniCheck.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
@@ -373,10 +373,10 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   }
 
   jobject value_buffer = nullptr;
-  if (InlineTypeReturnedAsFields && (result->get_type() == T_OBJECT)) {
-    // Pre allocate a buffered inline type in case the result is returned
+  if (ValueTypeReturnedAsFields && (result->get_type() == T_OBJECT)) {
+    // Pre allocate a buffered value type in case the result is returned
     // flattened by compiled code
-    InlineKlass* vk = method->returns_inline_type();
+    ValueKlass* vk = method->returns_value_type();
     if (vk != nullptr && vk->can_be_returned_as_fields()) {
       oop instance = vk->allocate_instance(CHECK);
       value_buffer = JNIHandles::make_local(thread, instance);

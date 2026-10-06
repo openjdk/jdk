@@ -133,7 +133,7 @@ void G1HeapTransition::print() {
   Data after(_g1_heap);
 
   size_t num_eden_after_gc = _g1_heap->policy()->target_num_young_regions() - after._num_survivor_regions;
-  size_t num_survivor_before_gc = _g1_heap->policy()->max_survivor_regions();
+  size_t num_survivor_before_gc = _g1_heap->policy()->max_num_survivor_regions();
 
   DetailedUsage usage;
   if (log_is_enabled(Trace, gc, heap)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,19 +34,20 @@ import java.lang.reflect.Method;
 public class DeclaredTest {
     private final Method testMethod;
     private final ArgumentsProvider argumentsProvider;
-    private final int warmupIterations;
     private final CompLevel compLevel;
+    private final int warmupIterations;
     private final boolean allowNotCompilable;
     private Method attachedMethod;
 
-    public DeclaredTest(Method testMethod, ArgumentsProvider argumentsProvider, CompLevel compLevel, int warmupIterations, boolean allowNotCompilable) {
+    public DeclaredTest(Method testMethod, ArgumentsProvider argumentsProvider, CompLevel compLevel, int warmupIterations,
+                        boolean allowNotCompilable) {
         // Make sure we can also call non-public or public methods in package private classes
         testMethod.setAccessible(true);
         this.testMethod = testMethod;
-        this.compLevel = compLevel;
-        this.allowNotCompilable = allowNotCompilable;
         this.argumentsProvider = argumentsProvider;
+        this.compLevel = compLevel;
         this.warmupIterations = warmupIterations;
+        this.allowNotCompilable = allowNotCompilable;
         this.attachedMethod = null;
     }
 

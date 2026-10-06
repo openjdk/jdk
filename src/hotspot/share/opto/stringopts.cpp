@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "ci/ciSymbols.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
@@ -52,6 +53,9 @@ class StringConcat : public ResourceObj {
   Node_List           _control;        // List of control nodes that will be deleted
   Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
                                        // to restart at the initial JVMState.
+  Unique_Node_List    _allowed_compares; // validate_control_flow() needs to know which compare nodes are
+                                         // accepted users of call results. In case of stacked concats,
+                                         // these need to be persisted across merges for validation.
 
   static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
                                                           // The value 256 was derived by measuring
@@ -286,6 +290,10 @@ void StringConcat::eliminate_unneeded_control() {
 
 StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   StringConcat* result = new StringConcat(_stringopts, _end);
+
+  Unique_Node_List null_check_ifs;
+  Unique_Node_List skipped_phis;
+
   for (uint x = 0; x < _control.size(); x++) {
     Node* n = _control.at(x);
     if (n->is_Call()) {
@@ -311,6 +319,17 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
         result->append(other->argument(y), other->mode(y));
       }
       arguments_appended += other->num_arguments();
+      // Cache elements for later verification.
+      if (argument(x)->is_Phi()) {
+        Node* phi = argument(x);
+        assert(phi->as_Phi()->is_diamond_phi() > 0, "must be a diamond phi (ref. skip_string_null_check).");
+        Node* iff = phi->in(0)->in(1)->in(0);
+        Node* bol = iff->in(1);
+        Node* cmpp = bol->as_Bool()->in(1);
+        null_check_ifs.push(iff);
+        skipped_phis.push(phi);
+        result->_allowed_compares.push(cmpp);
+      }
     } else {
       result->append(argx, mode(x));
       arguments_appended++;
@@ -327,13 +346,55 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
       return nullptr;
     }
   }
+
+  // Verify that the diamond region isn't shared with non-null check phis;
+  // and that the associated bool doesn't have external uses.
+  for (uint i = 0; i < skipped_phis.size(); i++) {
+    Node* n = skipped_phis.at(i);
+    Node* r = n->in(0);
+    for (SimpleDUIterator j(r); j.has_next(); j.next()) {
+      Node* n2 = j.get();
+      if (n2->is_Phi() && !n2->is_memory_phi() && !skipped_phis.member(n2)) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print_cr("null-check diamond region has external phi uses");
+        }
+#endif
+        return nullptr;
+      }
+    }
+    Node* iff = n->in(0)->in(1)->in(0);
+    Node* bol = iff->in(1);
+    for (SimpleDUIterator j(bol); j.has_next(); j.next()) {
+      if (!null_check_ifs.member(j.get())) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print_cr("null-check diamond bool has external uses.");
+        }
+#endif
+        return nullptr;
+      }
+    }
+  }
+
   result->set_allocation(other->_begin);
   for (uint i = 0; i < _constructors.size(); i++) {
     result->add_constructor(_constructors.at(i));
   }
+
   for (uint i = 0; i < other->_constructors.size(); i++) {
     result->add_constructor(other->_constructors.at(i));
   }
+
+  // We add previous _allowed_compares in case of repeated stacked concatenation.
+  for (uint i = 0; i < _allowed_compares.size(); i++) {
+    result->_allowed_compares.push(_allowed_compares.at(i));
+  }
+
+  for (uint i = 0; i < other->_allowed_compares.size(); i++) {
+    result->_allowed_compares.push(other->_allowed_compares.at(i));
+  }
+
   result->_multiple = true;
   return result;
 }
@@ -657,7 +718,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   Phase(StringOpts),
   _gvn(gvn) {
 
-  assert(OptimizeStringConcat, "shouldn't be here");
+  assert(C->do_stringopts(), "shouldn't be here");
 
   // Collect the types needed to talk about the various slices of memory
   byte_adr_idx = C->get_alias_index(TypeAryPtr::BYTES);
@@ -728,6 +789,9 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   for (int c = 0; c < concats.length(); c++) {
     StringConcat* sc = concats.at(c);
     replace_string_concat(sc);
+    if (C->failing()) {
+      return;
+    }
   }
 
   remove_dead_nodes();
@@ -936,6 +1000,10 @@ bool StringConcat::validate_control_flow() {
   int null_check_count = 0;
   Unique_Node_List ctrl_path;
 
+  // Local version of _allowed_compares that stores allowed comparisons discovered during traversal
+  // but that we won't persist across merges.
+  Unique_Node_List local_allowed_compares;
+
   assert(_control.contains(_begin), "missing");
   assert(_control.contains(_end), "missing");
 
@@ -993,11 +1061,31 @@ bool StringConcat::validate_control_flow() {
       Node* v2 = cmp->in(2);
       Node* otherproj = iff->proj_out(1 - ptr->as_Proj()->_con);
 
-      // Null check of the return of append which can simply be eliminated
+      // Either a null check of the return of append which can simply be eliminated,
+      // or possibly of a toString during stacked concats.
       if (b->_test._test == BoolTest::ne &&
           v2->bottom_type() == TypePtr::NULL_PTR &&
           v1->is_Proj() && ctrl_path.member(v1->in(0))) {
-        // null check of the return value of the append
+        if (!is_SB_toString(v1->in(0))) {
+          // append type
+          assert(v1->in(0)->as_CallStaticJava()->method()->name() == ciSymbols::append_name(), "must be");
+          local_allowed_compares.push(cmp);
+        } else {
+          // toString
+          assert(_multiple, "if not _multiple, we should not have a toString on this control path");
+          if (!_allowed_compares.member(cmp)) {
+            // Should have been populated during merge if valid.
+            // This should also be caught in result use verification later but we can fail early here.
+            fail = true;
+#ifndef PRODUCT
+            if (PrintOptimizeStringConcat) {
+              tty->print_cr("Failing as toString()-dependent compare is not part of a recognized string null check.");
+              cmp->dump();
+            }
+#endif
+            break;
+          }
+        }
         null_check_count++;
         if (otherproj->outcnt() == 1) {
           CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
@@ -1022,6 +1110,8 @@ bool StringConcat::validate_control_flow() {
               ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
                (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
             // iftrue -> if -> bool -> cmpp -> resproj -> tostring
+            assert(!_allowed_compares.member(cmp) && !local_allowed_compares.member(cmp), "Unsound dependency on intermediate values");
+            // Would be caught by containment analysis later but we can fail early here.
             fail = true;
             break;
           }
@@ -1147,7 +1237,9 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
       int opc = use->Opcode();
-      if (opc == Op_CmpP || opc == Op_Node) {
+      if (opc == Op_Node ||
+         (opc == Op_CmpP && (use->outcnt() == 1) // The cmpp validation assumes a unique use.
+                         && (local_allowed_compares.member(use) || _allowed_compares.member(use)))) {
         ctrl_path.push(use);
         continue;
       }
@@ -1822,6 +1914,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     coder = __ intcon(java_lang_String::CODER_UTF16);
   }
 
+  bool static_overflow = false;
+
   for (int argi = 0; argi < sc->num_arguments(); argi++) {
     Node* arg = sc->argument(argi);
     switch (sc->mode(argi)) {
@@ -1971,13 +2065,24 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       default:
         ShouldNotReachHere();
     }
+    if (kit.stopped()) {
+      break;
+    }
     if (argi > 0) {
-      // Check that the sum hasn't overflowed
+      // Check that the sum won't overflow the destination byte array.
       IfNode* iff = kit.create_and_map_if(kit.control(),
-                                          __ Bool(__ CmpI(length, __ intcon(0)), BoolTest::lt),
+                                          __ Bool(_gvn->transform(new CmpUNode(length, __ RShiftI(__ intcon(max_jint), coder))), BoolTest::gt),
                                           PROB_MIN, COUNT_UNKNOWN);
       kit.set_control(__ IfFalse(iff));
       overflow->set_req(argi, __ IfTrue(iff));
+      if (kit.stopped()) {
+        // There could be downstream users in either a later call to replace_string_concat
+        // or late inlines that expect a live result. This is an edge case:
+        // having a statically known overflowing concat, where we would throw an OOM error at runtime if it is reached,
+        // and at this point we have done destructive graph updates; hence do a bailout (with retry).
+        static_overflow = true;
+        break;
+      }
     }
   }
 
@@ -1990,69 +2095,71 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
                       Deoptimization::Action_make_not_entrant);
   }
 
+  if (kit.stopped()) {
+    assert(static_overflow, "no reachable success path for a non-overflow case.");
+    C->record_failure(C2Compiler::retry_no_stringopts());
+    return;
+  }
+
   Node* result;
-  if (!kit.stopped()) {
-    assert(CompactStrings || (coder->is_Con() && coder->get_int() == java_lang_String::CODER_UTF16),
-           "Result string must be UTF16 encoded if CompactStrings is disabled");
+  assert(CompactStrings || (coder->is_Con() && coder->get_int() == java_lang_String::CODER_UTF16),
+         "Result string must be UTF16 encoded if CompactStrings is disabled");
 
-    Node* dst_array = nullptr;
-    if (sc->num_arguments() == 1 &&
-        (sc->mode(0) == StringConcat::StringMode ||
-         sc->mode(0) == StringConcat::StringNullCheckMode)) {
-      // Handle the case when there is only a single String argument.
-      // In this case, we can just pull the value from the String itself.
-      dst_array = kit.load_String_value(sc->argument(0), true);
-    } else {
-      // Allocate destination byte array according to coder
-      dst_array = allocate_byte_array(kit, nullptr, __ LShiftI(length, coder));
+  Node* dst_array = nullptr;
+  if (sc->num_arguments() == 1 &&
+      (sc->mode(0) == StringConcat::StringMode ||
+       sc->mode(0) == StringConcat::StringNullCheckMode)) {
+    // Handle the case when there is only a single String argument.
+    // In this case, we can just pull the value from the String itself.
+    dst_array = kit.load_String_value(sc->argument(0), true);
+  } else {
+    // Allocate destination byte array according to coder
+    dst_array = allocate_byte_array(kit, nullptr, __ LShiftI(length, coder));
 
-      // Now copy the string representations into the final byte[]
-      Node* start = __ intcon(0);
-      for (int argi = 0; argi < sc->num_arguments(); argi++) {
-        Node* arg = sc->argument(argi);
-        switch (sc->mode(argi)) {
-          case StringConcat::NegativeIntCheckMode:
-            break; // Nothing to do, was only needed to add a runtime check earlier.
-          case StringConcat::IntMode: {
-            start = int_getChars(kit, arg, dst_array, coder, start, string_sizes->in(argi));
-            break;
-          }
-          case StringConcat::StringNullCheckMode:
-          case StringConcat::StringMode: {
-            start = copy_string(kit, arg, dst_array, coder, start);
-            break;
-          }
-          case StringConcat::CharMode: {
-            start = copy_char(kit, arg, dst_array, coder, start);
+    // Now copy the string representations into the final byte[]
+    Node* start = __ intcon(0);
+    for (int argi = 0; argi < sc->num_arguments(); argi++) {
+      Node* arg = sc->argument(argi);
+      switch (sc->mode(argi)) {
+        case StringConcat::NegativeIntCheckMode:
+          break; // Nothing to do, was only needed to add a runtime check earlier.
+        case StringConcat::IntMode: {
+          start = int_getChars(kit, arg, dst_array, coder, start, string_sizes->in(argi));
           break;
-          }
-          default:
-            ShouldNotReachHere();
         }
+        case StringConcat::StringNullCheckMode:
+        case StringConcat::StringMode: {
+          start = copy_string(kit, arg, dst_array, coder, start);
+          break;
+        }
+        case StringConcat::CharMode: {
+          start = copy_char(kit, arg, dst_array, coder, start);
+        break;
+        }
+        default:
+          ShouldNotReachHere();
       }
     }
-
-    {
-      PreserveReexecuteState preexecs(&kit);
-      // The original jvms is for an allocation of either a String or
-      // StringBuffer so no stack adjustment is necessary for proper
-      // reexecution.
-      kit.jvms()->set_should_reexecute(true);
-      result = kit.new_instance(__ makecon(TypeKlassPtr::make(C->env()->String_klass())));
-    }
-
-    // Initialize the string
-    kit.store_String_value(result, dst_array);
-    kit.store_String_coder(result, coder);
-
-    // The value field is final. Emit a barrier here to ensure that the effect
-    // of the initialization is committed to memory before any code publishes
-    // a reference to the newly constructed object (see Parse::do_exits()).
-    assert(AllocateNode::Ideal_allocation(result) != nullptr, "should be newly allocated");
-    kit.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease, result);
-  } else {
-    result = C->top();
   }
+
+  {
+    PreserveReexecuteState preexecs(&kit);
+    // The original jvms is for an allocation of either a String or
+    // StringBuffer so no stack adjustment is necessary for proper
+    // reexecution.
+    kit.jvms()->set_should_reexecute(true);
+    result = kit.new_instance(__ makecon(TypeKlassPtr::make(C->env()->String_klass())));
+  }
+
+  // Initialize the string
+  kit.store_String_value(result, dst_array);
+  kit.store_String_coder(result, coder);
+
+  // The value field is final. Emit a barrier here to ensure that the effect
+  // of the initialization is committed to memory before any code publishes
+  // a reference to the newly constructed object (see Parse::do_exits()).
+  assert(AllocateNode::Ideal_allocation(result) != nullptr, "should be newly allocated");
+  kit.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease, result);
   // hook up the outgoing control and result
   kit.replace_call(sc->end(), result);
 

@@ -24,6 +24,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
@@ -103,7 +104,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   // end within a card, we need to calculate this via the card table indexes of
   // the actual start and last addresses covered by the object.
   // Temporarily use the count register for the last element address.
-  __ shadd(count, count, start, tmp, LogBytesPerHeapOop); // end = start + count << LogBytesPerHeapOop
+  __ shift_left_add(count, count, start, LogBytesPerHeapOop); // end = start + count << LogBytesPerHeapOop
   __ subi(count, count, BytesPerHeapOop);                 // Use last element address for end.
 
   __ srli(start, start, CardTable::card_shift());
@@ -257,9 +258,22 @@ static void generate_post_barrier(MacroAssembler* masm,
   assert(thread == xthread, "must be");
   assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg);
   // Does store cross heap regions?
-  __ xorr(tmp1, store_addr, new_val);                    // tmp1 := store address ^ new value
-  __ srli(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);  // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
-  __ beqz(tmp1, done);
+#if INCLUDE_CDS
+  // AOT code needs to load the barrier grain shift from the aot
+  // runtime constants area in the code cache otherwise we can compile
+  // it as an immediate operand
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ xorr(tmp1, store_addr, new_val);
+    __ lwu(tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+    __ srl(tmp1, tmp1, tmp2);
+    __ beqz(tmp1, done);
+  } else
+#endif
+  {
+    __ xorr(tmp1, store_addr, new_val);                    // tmp1 := store address ^ new value
+    __ srli(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);  // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+    __ beqz(tmp1, done);
+  }
 
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
@@ -450,7 +464,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 #undef __
 #define __ ce->masm()->
 
-void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub) {
   G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
 
   // At this point we know that marking is in progress.

@@ -169,7 +169,7 @@ const char* CDSConfig::default_archive_path() {
       tmp.print_raw("_preview");
     }
     tmp.print_raw(".jsa");
-    _default_archive_path = os::strdup(tmp.base());
+    _default_archive_path = os::strdup(tmp.base(), mtInternal);
   }
   return _default_archive_path;
 }
@@ -345,6 +345,12 @@ void CDSConfig::check_incompatible_property(const char* key, const char* value) 
     }
   }
 
+  if (strcmp(key, "jdk.internal.lambda.disableEagerInitialization") == 0 &&
+      strcasecmp(value, "true") == 0) { // Same as Boolean.getBoolean()
+    log_warning(aot)("Disabled AOTInvokeDynamicLinking because "
+                     "jdk.internal.lambda.disableEagerInitialization is set to true");
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+  }
 }
 
 // Returns any JVM command-line option, such as "--patch-module", that's not supported by CDS.
@@ -767,11 +773,20 @@ void CDSConfig::setup_compiler_args() {
 void CDSConfig::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
+  if (is_dumping_classic_static_archive() && AOTClassLinking) {
+    if (FLAG_IS_CMDLINE(AOTClassLinking)) {
+      log_warning(cds)("AOTClassLinking is not supported for classic CDS archive");
+    }
+    FLAG_SET_ERGO(AOTClassLinking, false);
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+  }
+
   if (is_dumping_dynamic_archive() && AOTClassLinking) {
     if (FLAG_IS_CMDLINE(AOTClassLinking)) {
       log_warning(cds)("AOTClassLinking is not supported for dynamic CDS archive");
     }
     FLAG_SET_ERGO(AOTClassLinking, false);
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
   }
 
   if (is_dumping_dynamic_archive() && !is_using_archive()) {
@@ -949,7 +964,7 @@ bool CDSConfig::is_preserving_verification_constraints() {
   } else if (is_dumping_final_static_archive()) { // writing AOT cache
     return is_dumping_aot_linked_classes();
   } else if (is_dumping_classic_static_archive()) {
-    return is_dumping_aot_linked_classes();
+    return false;
   } else {
     return false;
   }
@@ -1055,7 +1070,7 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
 }
 
 bool CDSConfig::is_dumping_aot_linked_classes() {
-  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+  if (is_dumping_final_static_archive()) {
     // FMG is required to guarantee that all cached boot/platform/app classes
     // are visible in the production run, so they can be unconditionally
     // loaded during VM bootstrap.

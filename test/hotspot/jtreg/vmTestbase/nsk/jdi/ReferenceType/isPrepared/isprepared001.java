@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,6 @@ public class isprepared001 {
 
     };
 
-
     public static void main (String argv[]) {
         int result = run(argv,System.out);
         if (result != 0) {
@@ -93,7 +92,7 @@ public class isprepared001 {
     }
 
     private static void print_log_anyway(String message) {
-        test_log_handler.println(message);
+        test_log_handler.display(message);
     }
 
     /**
@@ -110,9 +109,6 @@ public class isprepared001 {
         print_log_on_verbose("    of the com.sun.jdi package for ClassType, InterfaceType\n");
 
         String debugee_launch_command = debugeeName;
-        if (verbose_mode) {
-            debugee_launch_command = debugeeName + " -vbs";
-        }
 
         Debugee debugee = binder.bindToDebugee(debugee_launch_command);
         IOPipe pipe = new IOPipe(debugee);

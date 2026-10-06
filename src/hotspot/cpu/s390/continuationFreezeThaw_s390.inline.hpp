@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_CONTINUATION_S390_INLINE_HPP
-#define CPU_S390_CONTINUATION_S390_INLINE_HPP
+#ifndef CPU_S390_CONTINUATIONFREEZETHAW_S390_INLINE_HPP
+#define CPU_S390_CONTINUATIONFREEZETHAW_S390_INLINE_HPP
 
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
@@ -343,4 +343,4 @@ inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
   // TODO: implement in future;
 }
 
-#endif // CPU_S390_CONTINUATION_S390_INLINE_HPP
+#endif // CPU_S390_CONTINUATIONFREEZETHAW_S390_INLINE_HPP
