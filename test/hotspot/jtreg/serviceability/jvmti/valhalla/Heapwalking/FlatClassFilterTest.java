@@ -76,7 +76,7 @@ public class FlatClassFilterTest {
     static Value[] createValueArray(int seed) throws Exception {
         Value[] arr = (Value[])ValueClass.newNullableAtomicArray(Value.class, 5);
         for (int i = 0; i < arr.length; i++) {
-            arr[i] = i == 2 ? null : new Value(seed + 10 + i);
+            arr[i] = (i == 2 ? null : new Value(seed + 10 + i));
         }
         return arr;
     }
