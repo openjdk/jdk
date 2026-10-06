@@ -54,7 +54,7 @@ void DiagnosticWorkers::diagnostic_threads_do(ThreadClosure* tc) {
 }
 
 uint DiagnosticWorkers::try_and_set_active_workers(uint num_workers) {
-  if (_workers == nullptr) {
+  if (_workers == nullptr || num_workers == 0) {
     return 0;
   }
 

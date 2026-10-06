@@ -41,7 +41,8 @@ protected:
   void on_create_worker(WorkerThread* worker) override;
 
 public:
-  // Creates the diagnostic worker pool on the first call and if calc_max_workers() > 1.
+  // Creates the diagnostic worker pool on the first call and if
+  // os::initial_active_processor_count() > 1.
   static WorkerThreads* workers();
 
   // Applies the closure to each diagnostic worker only if the worker pool is initialized.
