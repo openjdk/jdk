@@ -89,12 +89,12 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  oop fwd = ShenandoahForwarding::forwardee_or_null(obj);
-  if (fwd == nullptr) {
-    fwd = obj;
+  oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+  if (resolved == nullptr) {
+    resolved = obj;
   }
-  shenandoah_assert_not_forwarded_if(nullptr, fwd, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
-  return _mark_context->is_marked_or_old(fwd);
+  shenandoah_assert_not_forwarded_if(nullptr, resolved, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
+  return _mark_context->is_marked_or_old(resolved);
 }
 
 ShenandoahIsAliveClosure::ShenandoahIsAliveClosure() :
