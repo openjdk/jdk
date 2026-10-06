@@ -118,7 +118,7 @@ private:
       verify_oop_at_basic(p, obj);
 
       if (ShenandoahForwarding::is_forwarded(obj) && is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
-        obj = ShenandoahForwarding::get_forwardee_raw(obj);
+        obj = ShenandoahForwarding::forwardee_raw(obj);
       }
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
@@ -203,7 +203,7 @@ private:
 
     oop fwd = obj;
     if (ShenandoahForwarding::is_forwarded(fwd)) {
-      fwd = ShenandoahForwarding::get_forwardee_raw(obj);
+      fwd = ShenandoahForwarding::forwardee_raw(obj);
     }
 
     ShenandoahHeapRegion* fwd_reg = nullptr;
@@ -373,7 +373,7 @@ public:
     // forwarding pointer.
     oop resolved = obj;
     if (ShenandoahForwarding::is_forwarded(obj)) {
-      resolved = ShenandoahForwarding::get_forwardee_raw(obj);
+      resolved = ShenandoahForwarding::forwardee_raw(obj);
     }
     resolved->oop_iterate(this);
     _loc = nullptr;

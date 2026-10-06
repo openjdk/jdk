@@ -33,15 +33,15 @@ class ShenandoahForwarding {
 public:
   /* Returns the forwardee.
    */
-  static inline oop get_forwardee(oop obj);
+  static inline oop forwardee(oop obj);
 
   /* Returns the forwardee, or null if not forwarded.
    */
-  static inline oop get_forwardee_or_null(oop obj);
+  static inline oop forwardee_or_null(oop obj);
 
   /* Returns the raw forwardee without extra checks.
    */
-  static inline oop get_forwardee_raw(oop obj);
+  static inline oop forwardee_raw(oop obj);
 
   /* Returns true iff the object is forwarded.
    */
@@ -82,7 +82,7 @@ public:
   static inline void increase_age(oop obj, uint add);
 
 private:
-  static inline oop get_forwardee_raw(oop obj, markWord mark);
+  static inline oop forwardee_raw(oop obj, markWord mark);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

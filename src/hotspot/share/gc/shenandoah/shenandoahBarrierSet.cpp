@@ -219,7 +219,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_slow(oop obj, T* load_addr) {
   assert(_heap->has_forwarded_objects(), "Filtered by caller");
   assert(_heap->in_collection_set(obj), "Filtered by caller");
 
-  oop resolved = ShenandoahForwarding::get_forwardee_or_null(obj);
+  oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
   if (resolved == nullptr) {
     if (_heap->is_evacuation_in_progress()) {
       resolved = _heap->evacuate_object(obj, Thread::current());
@@ -269,7 +269,7 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (_cset->is_in(obj)) {
-        oop fwd = ShenandoahForwarding::get_forwardee_or_null(obj);
+        oop fwd = ShenandoahForwarding::forwardee_or_null(obj);
         if (EVAC && (fwd == nullptr)) {
           fwd = _heap->evacuate_object(obj, _thread);
         }
@@ -377,7 +377,7 @@ void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (cset->is_in(obj)) {
-        oop fwd = ShenandoahForwarding::get_forwardee_or_null(obj);
+        oop fwd = ShenandoahForwarding::forwardee_or_null(obj);
         if (fwd == nullptr) {
           fwd = _heap->evacuate_object(obj, thread);
         }
@@ -408,7 +408,7 @@ void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
       oop obj = CompressedOops::decode_not_null(o);
       if (cset->is_in(obj)) {
         shenandoah_assert_forwarded(elem_ptr, obj);
-        oop resolved = ShenandoahForwarding::get_forwardee(obj);
+        oop resolved = ShenandoahForwarding::forwardee(obj);
         if (resolved != obj) {
           ShenandoahHeap::atomic_update_oop(resolved, elem_ptr, o);
         }

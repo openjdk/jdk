@@ -89,7 +89,7 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  oop fwd = ShenandoahForwarding::get_forwardee_or_null(obj);
+  oop fwd = ShenandoahForwarding::forwardee_or_null(obj);
   if (fwd == nullptr) {
     fwd = obj;
   }
@@ -152,7 +152,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
     if (_heap->in_collection_set(obj)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop fwd = ShenandoahForwarding::get_forwardee_or_null(obj);
+      oop fwd = ShenandoahForwarding::forwardee_or_null(obj);
       if (fwd == nullptr) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");

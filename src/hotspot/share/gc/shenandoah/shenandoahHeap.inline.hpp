@@ -111,7 +111,7 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
       // Corner case: when evacuation fails, there are objects in collection
       // set that are not forwarded, and can still be in cset.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop resolved = ShenandoahForwarding::get_forwardee_or_null(obj);
+      oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
       if (resolved == nullptr) {
         resolved = obj;
       }
@@ -134,7 +134,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
       // For concurrent update-refs, we cannot reach the state
       // with non-forwarded objects in cset.
       shenandoah_assert_forwarded(p, obj);
-      oop resolved = ShenandoahForwarding::get_forwardee(obj);
+      oop resolved = ShenandoahForwarding::forwardee(obj);
       shenandoah_assert_not_in_cset(p, resolved);
 
       // We should not be updating the cset regions themselves.

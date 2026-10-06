@@ -950,7 +950,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
-      oop fwd = ShenandoahForwarding::get_forwardee_or_null(obj);
+      oop fwd = ShenandoahForwarding::forwardee_or_null(obj);
       if (fwd == nullptr) {
         fwd = _heap->evacuate_object(obj, _thread);
       }

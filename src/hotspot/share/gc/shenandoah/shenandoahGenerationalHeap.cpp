@@ -200,7 +200,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   const ShenandoahAffiliation target_gen = from_region->affiliation();
 
   if (target_gen == YOUNG_GENERATION) {
-    oop fwd = ShenandoahForwarding::get_forwardee_or_null(p);
+    oop fwd = ShenandoahForwarding::forwardee_or_null(p);
     if (fwd != nullptr) {
       return fwd;
     }

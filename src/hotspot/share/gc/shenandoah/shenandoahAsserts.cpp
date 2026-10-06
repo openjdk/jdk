@@ -173,7 +173,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
     } else if (ShenandoahForwarding::is_self_forwarded(obj)) {
       msg.append("  (self forwarded)");
     } else {
-      oop fwd = ShenandoahForwarding::get_forwardee_raw(obj);
+      oop fwd = ShenandoahForwarding::forwardee_raw(obj);
       if (level >= _safe_oop_fwd && os::is_readable_pointer(fwd)) {
         print_obj(msg, fwd);
       } else {
@@ -185,9 +185,9 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
 
   if (level >= _safe_oop_fwd) {
     if (ShenandoahForwarding::is_forwarded(obj) && !ShenandoahForwarding::is_self_forwarded(obj)) {
-      oop fwd = ShenandoahForwarding::get_forwardee_raw(obj);
+      oop fwd = ShenandoahForwarding::forwardee_raw(obj);
       if (ShenandoahForwarding::is_forwarded(fwd)) {
-        oop fwd2 = ShenandoahForwarding::get_forwardee_raw(fwd);
+        oop fwd2 = ShenandoahForwarding::forwardee_raw(fwd);
         msg.append("Second forwardee:\n");
         print_obj_safe(msg, fwd2);
         msg.append("\n");
@@ -243,7 +243,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 
   oop fwd = obj;
   if (ShenandoahForwarding::is_forwarded(obj) && !ShenandoahForwarding::is_self_forwarded(obj)) {
-    fwd = ShenandoahForwarding::get_forwardee_raw(obj);
+    fwd = ShenandoahForwarding::forwardee_raw(obj);
 
     // When Full GC moves the objects, we cannot trust fwdptrs. If we got here, it means something
     // tries fwdptr manipulation when Full GC is running. The only exception is using the fwdptr

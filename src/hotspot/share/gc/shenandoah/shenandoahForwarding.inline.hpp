@@ -31,11 +31,11 @@
 #include "oops/markWord.hpp"
 #include "runtime/javaThread.hpp"
 
-inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
-  return get_forwardee_raw(obj, obj->mark());
+inline oop ShenandoahForwarding::forwardee_raw(oop obj) {
+  return forwardee_raw(obj, obj->mark());
 }
 
-inline oop ShenandoahForwarding::get_forwardee_raw(oop obj, markWord mark) {
+inline oop ShenandoahForwarding::forwardee_raw(oop obj, markWord mark) {
   assert(mark.is_forwarded(), "Must only be here for forwarded objects");
   if (mark.is_marked()) {
     // Historically, JVMTI and JFR used mark words for marking objects
@@ -50,16 +50,16 @@ inline oop ShenandoahForwarding::get_forwardee_raw(oop obj, markWord mark) {
   return obj;
 }
 
-inline oop ShenandoahForwarding::get_forwardee(oop obj) {
+inline oop ShenandoahForwarding::forwardee(oop obj) {
   shenandoah_assert_correct(nullptr, obj);
-  return get_forwardee_raw(obj);
+  return forwardee_raw(obj);
 }
 
-inline oop ShenandoahForwarding::get_forwardee_or_null(oop obj) {
+inline oop ShenandoahForwarding::forwardee_or_null(oop obj) {
   shenandoah_assert_correct(nullptr, obj);
   markWord mark = obj->mark();
   if (mark.is_forwarded()) {
-    return get_forwardee_raw(obj, mark);
+    return forwardee_raw(obj, mark);
   } else {
     return nullptr;
   }
@@ -79,7 +79,7 @@ inline oop ShenandoahForwarding::try_forward_to(oop obj, oop update) {
   // Optimistic: check if object is already forwarded.
   markWord old_mark = obj->mark();
   if (old_mark.is_forwarded()) {
-    return get_forwardee_raw(obj, old_mark);
+    return forwardee_raw(obj, old_mark);
   }
 
   // Attempt to install and return on success.
@@ -97,7 +97,7 @@ inline oop ShenandoahForwarding::try_forward_to(oop obj, oop update) {
   // completing the forwarding install. Self-forwarded objects can have
   // more data layered on top of mark word, this code handles it too.
   assert(prev_mark.is_forwarded(), "Must be forwarded: prev=" INTPTR_FORMAT, prev_mark.value());
-  return get_forwardee_raw(obj, prev_mark);
+  return forwardee_raw(obj, prev_mark);
 }
 
 inline void ShenandoahForwarding::unset_self_forwarded(oop obj) {
@@ -133,7 +133,7 @@ inline uint ShenandoahForwarding::age(oop obj) {
     age = mark.age();
   } else {
     // Otherwise resolve the forwardee and pick age from there.
-    oop fwd = get_forwardee_raw(obj, mark);
+    oop fwd = forwardee_raw(obj, mark);
     markWord fwd_mark = fwd->mark();
     assert(!fwd_mark.is_marked(), "Must not be");
     age = fwd_mark.age();
