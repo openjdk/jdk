@@ -1201,13 +1201,8 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     bc = Bytecodes::_invokestatic;
     methodHandle attached_method(THREAD, extract_attached_method(vfst));
     assert(attached_method.not_null(), "must have attached method");
-    vmClasses::ValueObjectMethods_klass()->initialize(CHECK_NH);
     LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, false, CHECK_NH);
-#ifdef ASSERT
-    Symbol* subst_method_name = vmSymbols::isSubstitutable_name();
-    Method* is_subst = vmClasses::ValueObjectMethods_klass()->find_method(subst_method_name, vmSymbols::object_object_boolean_signature());
-    assert(callinfo.selected_method() == is_subst, "must be isSubstitutable method");
-#endif
+    assert(callinfo.selected_method() == Universe::is_substitutable_method(), "must be isSubstitutable method");
     return receiver;
   }
 
