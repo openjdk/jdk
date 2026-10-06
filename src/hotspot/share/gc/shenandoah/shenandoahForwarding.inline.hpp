@@ -69,6 +69,10 @@ inline bool ShenandoahForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
 }
 
+inline bool ShenandoahForwarding::is_real_forwarded(oop obj) {
+  return obj->mark().is_marked();
+}
+
 inline bool ShenandoahForwarding::is_self_forwarded(oop obj) {
   return obj->mark().is_self_forwarded();
 }

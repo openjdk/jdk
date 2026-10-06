@@ -47,6 +47,10 @@ public:
    */
   static inline bool is_forwarded(oop obj);
 
+  /* Returns true iff the object is real-forwarded.
+   */
+  static inline bool is_real_forwarded(oop obj);
+
   /* Returns true iff the object is self-forwarded.
    */
   static inline bool is_self_forwarded(oop obj);

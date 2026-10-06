@@ -295,7 +295,7 @@ private:
         break;
       }
       case ShenandoahVerifier::_verify_forwarded_allow: {
-        if (ShenandoahForwarding::is_forwarded(obj) && !ShenandoahForwarding::is_self_forwarded(obj)) {
+        if (ShenandoahForwarding::is_real_forwarded(obj)) {
           check(ShenandoahAsserts::_safe_all, obj, obj_reg != fwd_reg,
                  "Forwardee should be in another region");
         }
