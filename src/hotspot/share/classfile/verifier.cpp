@@ -734,7 +734,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   // Collect the initial strict instance fields if there are any
   AssertUnsetFieldTable* strict_fields = nullptr;
-  if (m->is_object_constructor()) {
+  if (m->is_object_constructor() && m->method_holder()->has_strict_instance_fields()) {
     for (AllFieldStream fs(m->method_holder()); !fs.done(); fs.next()) {
       if (fs.access_flags().is_strict() && !fs.access_flags().is_static()) {
         if (strict_fields == nullptr) {
