@@ -224,6 +224,8 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           if (p < start_addr) {
             assert(obj == cast_to_oop(p), "Inconsistency detected");
             if (use_write_table) {
+              // The head card may have become dirty after the worker
+              // responsible for the preceding slice passed it.
               p += obj->oop_iterate_size(cl);
             } else {
               // The stable read table guarantees that the worker processing
@@ -237,8 +239,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
               // Scan the object in its entirety
               p += obj->oop_iterate_size(cl);
             } else {
-              // if (p >= tams), then ctx->is_marked(obj) would have been true above.
-              assert(p < tams, "Error 1 in ctx/marking/tams logic");
+              assert(p < tams, "Objects past TAMS should have been marked");
               // Skip over any intermediate dead objects
               p = ctx->get_next_marked_addr(p, tams);
               assert(p <= tams, "Error 2 in ctx/marking/tams logic");
@@ -410,12 +411,11 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
       }
       // Someone else claimed this region. I'll iterate and try to claim a different region.
     } else {
-      // Misfit. Try to advance cursor to next OLD region.
+     // Misfit. Try to advance cursor to next OLD region. It is fine to lose the update race, as long as it completes.
       while (region_index < _heap->num_regions() && _heap->region_affiliation(region_index) != OLD_GENERATION) {
         region_index++;
       }
       size_t skip_index = (region_index << ShenandoahHeapRegion::region_size_words_shift()) >> _chunk_shift;
-      // Try to advance cursor to next OLD region.  It is fine to lose the update race, as long as it completes.
       _index.compare_set(cur_index, skip_index, memory_order_relaxed);
 #ifdef ASSERT
       for (size_t i = cur_index; i < skip_index; i++) {
