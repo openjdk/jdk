@@ -1590,6 +1590,13 @@ public class PSPrinterJob extends RasterPrinterJob {
             }
         }
         execCmd[n++] = spoolFile;
+        if (IPPPrintService.debugPrint) {
+            System.out.println("PSPrinterJob>> execCmd");
+            for (int i=0; i<execCmd.length; i++) {
+                System.out.print(" "+execCmd[i]);
+            }
+            System.out.println();
+        }
         return execCmd;
     }
 
