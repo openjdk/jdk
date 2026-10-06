@@ -26,6 +26,7 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 
@@ -35,6 +36,7 @@ import javax.print.DocPrintJob;
 import javax.print.PrintException;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
+import javax.print.SimpleDoc;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.Copies;
@@ -43,6 +45,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 /*
@@ -61,7 +64,7 @@ public class Collate2DPrintingTest implements Doc, Printable {
         prSet.add(SheetCollate.COLLATED);
         prSet.add(new Copies(2));
 
-        JButton print2D = new JButton("2D Print");
+        JButton print2D = new JButton("2D Print Wizard");
         print2D.addActionListener((ae) -> {
             try {
                 PrinterJob pj = PrinterJob.getPrinterJob();
@@ -70,25 +73,35 @@ public class Collate2DPrintingTest implements Doc, Printable {
                     pj.print(prSet);
                 }
             } catch (PrinterException ex) {
-                ex.printStackTrace();
-                String msg = "PrinterException: " + ex.getMessage();
-                JOptionPane.showMessageDialog(print2D, msg, "Error occurred",
-                        JOptionPane.ERROR_MESSAGE);
-                PassFailJFrame.forceFail(msg);
+                onPrintFailed(print2D, ex);
             }
         });
 
-        JButton printMerlin = new JButton("PrintService");
+        JButton printMerlin = new JButton("PrintService Default");
         printMerlin.addActionListener((ae) -> {
             try {
                 DocPrintJob pj = defService.createPrintJob();
                 pj.print(new Collate2DPrintingTest(), prSet);
             } catch (PrintException ex) {
-                ex.printStackTrace();
-                String msg = "PrintException: " + ex.getMessage();
-                JOptionPane.showMessageDialog(printMerlin, msg, "Error occurred",
-                        JOptionPane.ERROR_MESSAGE);
-                PassFailJFrame.forceFail(msg);
+                onPrintFailed(printMerlin, ex);
+            }
+        });
+
+        JButton printDocument = new JButton("PrintService Document");
+        printDocument.addActionListener((ae) -> {
+            try {
+                JFileChooser fileChooser = new JFileChooser();
+                int response = fileChooser.showOpenDialog(null);
+                if (response != JFileChooser.APPROVE_OPTION) {
+                    return;
+                }
+
+                DocPrintJob pj = defService.createPrintJob();
+                DocFlavor flavor = DocFlavor.INPUT_STREAM.AUTOSENSE;
+                Doc document = new SimpleDoc(new FileInputStream(fileChooser.getSelectedFile()), flavor, null);
+                pj.print(document, prSet);
+            } catch (Exception ex) {
+                onPrintFailed(printDocument, ex);
             }
         });
 
@@ -98,6 +111,8 @@ public class Collate2DPrintingTest implements Doc, Printable {
         main.add(print2D);
         main.add(Box.createVerticalStrut(4));
         main.add(printMerlin);
+        main.add(Box.createVerticalStrut(4));
+        main.add(printDocument);
         main.add(Box.createVerticalGlue());
         return main;
     }
@@ -138,14 +153,23 @@ public class Collate2DPrintingTest implements Doc, Printable {
         return null;
     }
 
-    private static final String INSTRUCTIONS =
-            "Click on the '2D Print' button.\n" +
+    private static final String INSTRUCTIONS = "Click on the '2D Print' button.\n" +
             "Choose copies as '2' with 'Collated' checkbox and Print\n" +
             "\n" +
-            "Click on the 'PrintService', should get a print from default printer\n" +
+            "Click on the 'PrintService Printable', should get a print from default printer\n" +
+            "\n" +
+            "Click on the 'PrintService Document', should print a selected file from default printer\n" +
             "\n" +
             "If you get only one copy or non 'Collated' prints from any of the above cases, " +
             "test failed";
+
+    private static void onPrintFailed(JComponent component, Exception ex) {
+        ex.printStackTrace();
+        String msg = ex.getClass().getSimpleName() + ": " + ex.getMessage();
+        JOptionPane.showMessageDialog(component, msg, "Error occurred",
+                JOptionPane.ERROR_MESSAGE);
+        PassFailJFrame.forceFail(msg);
+    }
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length == 0) {
