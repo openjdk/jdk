@@ -75,7 +75,9 @@ public final class Grapheme {
             // Update the GB11 state
             if (t1 == EXTENDED_PICTOGRAPHIC) {
                 gb11 = true;
-            } else if ((t1 != EXTEND && t1 != ZWJ) || t0 == ZWJ) {
+            } else if (t0 == ZWJ || (t1 != EXTEND && t1 != ZWJ)) {
+                // A non-Extended_Pictographic character after ZWJ resets the GB11 state,
+                // even if it is another ZWJ or an Extend.
                 gb11 = false;
             }
 
