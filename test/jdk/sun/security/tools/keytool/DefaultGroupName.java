@@ -23,6 +23,7 @@
 
 import jdk.test.lib.Asserts;
 import sun.security.tools.keytool.Main;
+import sun.security.util.KeyUtil;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -47,10 +48,13 @@ import java.security.spec.NamedParameterSpec;
  * @test
  * @bug 8391472
  * @summary Default group name should be hardcoded by keytool instead of
- *          determined by providers
+ *          determined by providers or a system property
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
- * @run main/othervm DefaultGroupName
+ *          java.base/sun.security.util
+ * @run main/othervm
+ *      -Djdk.security.defaultKeySize=RSA:2048,DSA:1024,EC:256,EdDSA:448,XDH:448
+ *      DefaultGroupName
  */
 
 public class DefaultGroupName {
@@ -69,14 +73,18 @@ public class DefaultGroupName {
         Security.insertProviderAt(new ProviderImpl(), 1);
         Files.deleteIfExists(Path.of("ks"));
 
-        // default group names
+        // default
+        test("RSA", 3072);
+        test("DSA", 2048);
         test("EC", "secp384r1");
         test("EdDSA", "Ed25519");
         test("XDH", "X25519");
         test("ML-DSA", "ML-DSA-65");
         test("ML-KEM", "ML-KEM-768");
 
-        // Specified group names
+        // Specified
+        test("RSA", 2048, "-keysize 2048");
+        test("DSA", 1024, "-keysize 1024");
         test("EC", "secp256r1", "-groupname secp256r1");
         test("EdDSA", "Ed448", "-groupname ed448");
         test("EdDSA", "Ed25519", "-groupname ed25519");
@@ -119,9 +127,30 @@ public class DefaultGroupName {
         }
     }
 
+    private static void test(String alg, int expected, String... extras) throws Exception {
+
+        String alias = "a" + count++;
+        String cmd = COMMON + " -genkeypair -alias " + alias
+                + " -dname CN=" + alias + " -keyalg " + alg;
+        for (String extra : extras) {
+            cmd += " " + extra;
+        }
+
+        status = "";
+        Main.main(cmd.split(" "));
+        Asserts.assertEquals(alg, status); // ensure our provider is used
+
+        KeyStore ks = KeyStore.getInstance(new File("ks"), PASS);
+        PublicKey key = ks.getCertificate(alias).getPublicKey();
+        int keySize = KeyUtil.getKeySize(key);
+        Asserts.assertEquals(expected, keySize);
+    }
+
     public static class ProviderImpl extends Provider {
         public ProviderImpl() {
             super("P8391472", "1", "cool");
+            put("KeyPairGenerator.RSA", KPG.RSA.class.getName());
+            put("KeyPairGenerator.DSA", KPG.DSA.class.getName());
             put("KeyPairGenerator.ML-DSA", KPG.MLDSA.class.getName());
             put("KeyPairGenerator.ML-KEM", KPG.MLKEM.class.getName());
             put("KeyPairGenerator.EC", KPG.EC.class.getName());
@@ -138,6 +167,18 @@ public class DefaultGroupName {
 
         // None of these KeyPairGeneratorSpis uses the same default
         // as claimed in keytool
+        public static class RSA extends KPG {
+            public RSA() {
+                super("RSA", "SunRsaSign", 2048);
+            }
+        }
+
+        public static class DSA extends KPG {
+            public DSA() {
+                super("DSA", "SUN", 1024);
+            }
+        }
+
         public static class MLDSA extends KPG {
             public MLDSA() {
                 super("ML-DSA", "SUN", NamedParameterSpec.ML_DSA_44, true);
@@ -192,21 +233,26 @@ public class DefaultGroupName {
             }
         }
 
-        private AlgorithmParameterSpec spec;
+        private int keySize = 0;
+        private AlgorithmParameterSpec spec = null;
+
         private final String algorithm;
         private final String realProvider;
         private final boolean isDynamic;
 
         public KPG(String algorithm, String realProvider,
                 AlgorithmParameterSpec defaultSpec, boolean isDynamic) {
-            try {
-                this.algorithm = algorithm;
-                this.realProvider = realProvider;
-                this.spec = defaultSpec;
-                this.isDynamic = isDynamic;
-            } catch (Exception e) {
-                throw new ProviderException(e);
-            }
+            this.algorithm = algorithm;
+            this.realProvider = realProvider;
+            this.spec = defaultSpec;
+            this.isDynamic = isDynamic;
+        }
+
+        public KPG(String algorithm, String realProvider, int defaultkeySize) {
+            this.algorithm = algorithm;
+            this.realProvider = realProvider;
+            this.keySize = defaultkeySize;
+            this.isDynamic = true;
         }
 
         @Override
@@ -220,15 +266,25 @@ public class DefaultGroupName {
         }
 
         @Override
-        public void initialize(int keysize, SecureRandom random) {
-            throw new InvalidParameterException();
+        public void initialize(int size, SecureRandom random) {
+            if (isDynamic) {
+                keySize = size;
+            } else {
+                throw new InvalidParameterException();
+            }
         }
 
         @Override
         public KeyPair generateKeyPair() {
             try {
                 KeyPairGenerator gen = KeyPairGenerator.getInstance(algorithm, realProvider);
-                gen.initialize(spec);
+                if (keySize > 0 && spec != null) {
+                    throw new IllegalStateException();
+                } else if (keySize > 0) {
+                    gen.initialize(keySize);
+                } else {
+                    gen.initialize(spec);
+                }
                 KeyPair kp = gen.generateKeyPair();
                 status = algorithm;
                 return kp;

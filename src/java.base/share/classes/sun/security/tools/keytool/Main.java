@@ -1929,10 +1929,8 @@ public final class Main {
         } else {
             // Need to choose a default. Could be keysize or groupname
             keysize = switch (keyAlgName.toUpperCase(Locale.ROOT)) {
-                case "RSA" -> SecurityProviderConstants.DEF_RSA_KEY_SIZE;
-                case "RSASSA-PSS" -> SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
-                case "DSA" -> SecurityProviderConstants.DEF_DSA_KEY_SIZE;
-                case "DH" -> SecurityProviderConstants.DEF_DH_KEY_SIZE;
+                case "RSA", "RSASSA-PSS", "DH" -> 3072;
+                case "DSA" -> 2048;
                 default -> -1;
             };
             groupName = switch (keyAlgName.toUpperCase(Locale.ROOT)) {
@@ -1945,8 +1943,9 @@ public final class Main {
             };
             // After this, keysize might still be -1 and groupname might still
             // be null. In some cases this is totally fine, for example, if
-            // keyAlgName is already "ML-KEM-768". In some cases we will depend
-            // on the provider to choose.
+            // keyAlgName is already "ML-KEM-768". Otherwise, we should add
+            // a case above. Without it, it will be up to the implementation
+            // to choose the default keysize or groupname.
         }
 
         if (alias == null) {
