@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 

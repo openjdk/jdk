@@ -23,19 +23,28 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 
+#include "gc/shared/cardTable.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "oops/oop.hpp"
+#include "memory/memRegion.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) const {
   _rs->mark_card_as_dirty(p);
@@ -434,4 +443,4 @@ void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord* p) cons
   bp[0] = CardTable::dirty_card_val();
 }
 
-#endif   // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
+#endif   // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_INLINE_HPP

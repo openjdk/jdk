@@ -28,10 +28,14 @@
 #include "gc/shenandoah/shenandoahParallelCleaning.hpp"
 
 #include "gc/shared/weakProcessor.inline.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 template<typename IsAlive, typename KeepAlive>
 ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::ShenandoahParallelWeakRootsCleaningTask(ShenandoahPhaseTimings::Phase phase,

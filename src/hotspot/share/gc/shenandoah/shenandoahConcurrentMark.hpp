@@ -28,11 +28,11 @@
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 
+class ShenandoahGeneration;
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask;
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask;
-class ShenandoahGeneration;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
   template <ShenandoahGenerationType GENERATION> friend class ShenandoahConcurrentMarkingTask;

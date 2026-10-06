@@ -27,12 +27,12 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP
 
 #include "gc/shenandoah/shenandoahMarkBitMap.hpp"
-#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahObjToScanQueueSet;
 class ShenandoahHeapRegion;
 
 /**

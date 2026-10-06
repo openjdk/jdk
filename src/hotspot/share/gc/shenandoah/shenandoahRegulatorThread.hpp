@@ -25,11 +25,12 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHREGULATORTHREAD_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahHeap;
-class ShenandoahHeuristics;
 class ShenandoahGeneration;
 class ShenandoahGenerationalControlThread;
+class ShenandoahHeap;
+class ShenandoahHeuristics;
 class ShenandoahOldHeuristics;
 
 /*

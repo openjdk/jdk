@@ -25,15 +25,15 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHGENERATIONALHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHGENERATIONALHEURISTICS_HPP
 
-
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
-#include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahGeneration;
-class ShenandoahHeap;
 class ShenandoahCollectionSet;
-class RegionData;
+class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
+class ShenandoahHeap;
+class ShenandoahHeapRegion;
+class ShenandoahInPlacePromotionPlanner;
 
 typedef struct {
   ShenandoahHeapRegion* _region;

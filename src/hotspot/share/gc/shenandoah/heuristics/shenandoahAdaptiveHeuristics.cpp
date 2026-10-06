@@ -24,20 +24,20 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
-
-#include <cmath>
 
 #define PROPERFMT_F         "%.1f %s"
 #define PROPERFMT_F_ARGS(s) byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)

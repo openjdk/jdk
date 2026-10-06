@@ -23,15 +23,17 @@
  *
  */
 
-
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/referenceProcessorStats.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "jfr/jfrEvents.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ticks.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 

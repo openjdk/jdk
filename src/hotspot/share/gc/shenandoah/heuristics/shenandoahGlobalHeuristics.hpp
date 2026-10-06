@@ -26,7 +26,11 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHGLOBALHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
+class ShenandoahCollectionSet;
 class ShenandoahGlobalGeneration;
 
 enum class ShenandoahGlobalRegionDisposition {
