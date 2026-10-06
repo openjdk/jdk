@@ -43,9 +43,9 @@ class G1HeapRegionRange : public StackObj {
   uint num_regions() const { return _end - _start; }
 };
 
-// The G1CommittedRegionMap keeps track of which regions are currently committed.
-// It tracks both regions ready for use and if there are any regions ready for
-// uncommit. We basically have three states. Uncommitted, Active, Inactive. All
+// The G1CommittedRegionMap keeps track of the state of regions.
+// It tracks both regions ready for use (active) and if there are any regions ready for
+// uncommi (inactive). We basically have three states. Uncommitted, Active, Inactive. All
 // regions that are either Active or Inactive are committed.
 //
 // State transitions:
