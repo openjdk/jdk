@@ -62,8 +62,8 @@ public class FileSystemLoopExceptionTest {
 
     @AfterAll
     static void afterAll() throws Exception {
-        Files.delete(link);
-        Files.delete(link.getParent());
+        Files.deleteIfExists(link);
+        Files.deleteIfExists(link.getParent());
     }
 
     @ParameterizedTest
