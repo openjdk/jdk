@@ -156,7 +156,9 @@ private:
   // Print table for young region ages if log is enabled
   void maybe_print_young_region_ages() const;
 
-  // Specialized function that waits for one complete old gc cycle
+  // Specialized function that waits for one complete old gc cycle. Note that this may invoke
+  // young cycles in order to complete mixed evacuations of an existent old gc before starting
+  // another.
   void wait_for_old_gc_cycle(GCCause::Cause cause, ShenandoahOldGeneration* generation);
 };
 

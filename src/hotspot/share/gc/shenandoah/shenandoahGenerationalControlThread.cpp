@@ -771,22 +771,25 @@ void ShenandoahGenerationalControlThread::wait_for_gc_cycle(GCCause::Cause cause
   }
 }
 
-
 void ShenandoahGenerationalControlThread::wait_for_old_gc_cycle(GCCause::Cause cause, ShenandoahOldGeneration* generation) {
   MonitorLocker ml(&_gc_waiters_lock);
   size_t current_gc_id = generation->started_gc_id();
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     {
-      // Take control lock for gc mode. Old gc state is changed outside of a lock, but the control
-      // thread is the only thread that does it. When we see that gc_mode is none under the lock,
-      // the control thread cannot be changing the old gen state.
+      // Take control lock for gc mode. Old gc state is changed only when the gc mode is not none.
       MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
-      if (gc_mode() == none && generation->is_idle()) {
-        // Make requests to run cycles until at least one is completed. Note: we must only submit
-        // a request if the old generation is idle, otherwise we violate the invariant that an old
-        // cycle cannot run on top of another.
-        notify_control_thread(controller, cause, generation);
+      if (gc_mode() == none) {
+        if (generation->is_doing_mixed_evacuations()) {
+          // If old is running mixed evacuations, we want to have the control thread
+          // finish those up so we can start the old cycle.
+          notify_control_thread(controller, cause, _heap->young_generation());
+        } else {
+          // Make requests to run cycles until at least one is completed. Note: we must only submit
+          // a request if the old generation does not hold mixed evacuation candidates, otherwise we
+          // violate the invariant that an old cycle cannot run on top of another.
+          notify_control_thread(controller, cause, generation);
+        }
       }
     }
     ml.wait(100);
