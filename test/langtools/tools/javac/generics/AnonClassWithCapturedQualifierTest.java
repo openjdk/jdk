@@ -24,21 +24,23 @@
 /*
  * @test
  * @bug 8392555
- * @summary Error when compiling method reference with captured self-type and varargs.
- * @compile MethodReferenceCapturedVarargsTest.java
+ * @summary Error when compiling annonymous class creation with captured qualifier.
+ * @compile AnonClassWithCapturedQualifierTest.java
  */
+
 import java.util.function.Consumer;
 
-public class MethodReferenceCapturedVarargsTest {
+public class AnonClassWithCapturedQualifierTest {
 
-    interface Builder<B extends Builder<B>> {
-        void consume(String... values);
-        void update(Consumer<B> consumer);
+    class Inner {}
+
+    interface A<T extends AnonClassWithCapturedQualifierTest> {
+        void update(Consumer<T> action);
     }
 
-    static void test(Builder<?> builder) {
-        builder.update(it -> {
-            Consumer<String> c = it::consume;
+    static void test(A<?> a) {
+        a.update(it -> {
+            Object x = it.new Inner() {};
         });
     }
 }

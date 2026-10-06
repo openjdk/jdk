@@ -966,7 +966,11 @@ public class TransTypes extends TreeTranslator {
             if (tree.def == null) {
                 tree.encl = translate(tree.encl, erasure(tree.encl.type));
             } else {
-                tree.args = tree.args.prepend(attr.makeNullCheck(tree.encl));
+                JCExpression expr = attr.makeNullCheck(tree.encl);
+                if (expr.hasTag(Tag.NULLCHK)) {
+                    expr.setType(erasure(tree.encl.type));
+                }
+                tree.args = tree.args.prepend(expr);
                 tree.encl = null;
             }
         }
