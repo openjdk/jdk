@@ -71,8 +71,6 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/vectorapi/AllBitsSetVectorMatchRuleTest.java 8391806 generic-aarch64
 
-compiler/vectorapi/VectorMaskCompareNotTest.java 8392087 windows-x64
-
 compiler/vectorapi/VectorExpressionFuzzer.java 8337281 linux-aarch64,macosx-aarch64
 
 compiler/igvn/TestIncorrectDeadPathTypeNode.java 8392354 generic-all
