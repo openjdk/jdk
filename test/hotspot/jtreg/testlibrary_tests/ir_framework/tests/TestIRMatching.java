@@ -431,8 +431,8 @@ public class TestIRMatching {
         }
     }
 
-    // Classes with IR rules can also be defined in inner classes as long as the outer class it is not defining
-    // IR rules itself.
+    // IR rules can also be defined in inner classes. In this case, the ourwe class is not allowed to also define
+    // IR rules (results in a format violation).
     static class CountComparisons {
         int iFld;
 
