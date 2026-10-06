@@ -175,9 +175,6 @@ void ValueFieldLayoutInfo::print_on(outputStream* st) const {
 
   st->print("_layout: ");
   LayoutKindHelper::print_on(_kind, st);
-  st->cr();
-
-  st->print("_null_marker_offset: %d", _null_marker_offset);
 }
 
 // A value class is considered naturally atomic if its layout,
@@ -234,6 +231,17 @@ bool InstanceKlass::is_class_in_loadable_descriptors_attribute(Symbol* name) con
     if (class_name == name) return true;
   }
   return false;
+}
+
+int InstanceKlass::field_null_marker_offset(int index) const {
+  const FieldInfo field = this->field(index);
+  if (!field.field_flags().has_null_marker()) {
+    return -1;
+  }
+
+  const ValueKlass* const vk = value_field_layout_info(index).klass();
+  const int nm_offset = vk->null_marker_offset_in_payload();
+  return field_offset(index) + nm_offset;
 }
 
 static inline bool is_stack_chunk_class(const Symbol* class_name,

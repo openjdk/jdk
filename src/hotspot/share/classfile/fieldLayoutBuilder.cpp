@@ -461,7 +461,6 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
   if (LayoutKindHelper::is_nullable_flat(block->layout_kind())) {
     int nm_offset = block->value_klass()->null_marker_offset() - block->value_klass()->payload_offset() + block->offset();
     _field_info->adr_at(block->field_index())->set_null_marker_offset(nm_offset);
-    _value_field_layout_info_array->adr_at(block->field_index())->set_null_marker_offset(nm_offset);
   }
 
   return block;
@@ -638,7 +637,6 @@ void FieldLayout::shift_fields(int shift) {
       if (LayoutKindHelper::is_nullable_flat(b->layout_kind())) {
         int new_nm_offset = _field_info->adr_at(b->field_index())->null_marker_offset() + shift;
         _field_info->adr_at(b->field_index())->set_null_marker_offset(new_nm_offset);
-        _value_field_layout_info_array->adr_at(b->field_index())->set_null_marker_offset(new_nm_offset);
       }
     }
     assert(b->block_kind() == LayoutRawBlock::EMPTY || b->offset() % b->alignment() == 0, "Must still be correctly aligned");
