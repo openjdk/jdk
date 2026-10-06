@@ -1370,28 +1370,32 @@ public:
 
     // Tracks the loop exit test shape after canonicalization:
     //
-    //   back_control -> IfTrue/IfFalse -> If -> Bool(mask) -> _raw_cmp(incr, limit)
+    //   back_control -> IfTrue/IfFalse -> If -> Bool(mask) -> _raw_cmp(_raw_incr, _raw_limit)
     //
-    // _raw_cmp:  the CmpI/CmpL node comparing the IV increment with the limit (after swap canonicalization)
-    // _raw_incr: first operand of _raw_cmp after canonicalization: the loop-variant IV increment.
-    //            For speculative narrowing, this is ConvI2L(int_incr); after narrowing, cmp() and incr()
-    //            return the narrowed integer-type nodes instead.
-    // _limit:    second operand of _raw_cmp after canonicalization: the loop-invariant limit.
-    // _mask:     the canonicalized BoolTest (accounting for IfFalse negation and operand swaps).
-    // _cl_prob:  the loop-back probability
+    // _raw_cmp:   the CmpI/CmpL node comparing the IV increment with the limit (after swap canonicalization)
+    // _raw_incr:  first operand of _raw_cmp after canonicalization: the loop-variant IV increment.
+    //             For speculative narrowing, this is ConvI2L(int_incr); after narrowing, cmp() and incr()
+    //             return the narrowed integer-type nodes instead.
+    // _raw_limit: second operand of _raw_cmp after canonicalization: the loop-invariant limit.
+    //             After speculative narrowing, limit() returns the narrowed ConvL2I node instead.
+    // _mask:      the canonicalized BoolTest (accounting for IfFalse negation and operand swaps).
+    // _cl_prob:   the loop-back probability
     Node* _raw_cmp;
     Node* _raw_incr;
-    Node* _limit;
+    Node* _raw_limit;
     BoolTest::mask _mask;
     float _cl_prob;
 
     // True when the exit test is "(long) int_iv < long_limit" (or similar): we may treat it as an int counted loop
-    // by rewriting the comparision to int (see ::speculatively_narrow_limit()). Until then, _raw_cmp/_limit describe
-    // the graph. After narrowing, _narrowed_cmp/_narrowed_limit hold the new CmpI and ConvL2I(limit).
+    // by rewriting the comparision to int (see ::speculatively_narrow_limit()). Until then, _raw_cmp/_raw_limit
+    // describe the graph. After narrowing, _narrowed_cmp/_narrowed_limit hold the new CmpI and ConvL2I(limit).
     bool _should_speculatively_narrow_limit;
     Node* _narrowed_cmp;
     Node* _narrowed_limit;
-    const TypeInteger* _limit_t;
+    // Only set when _should_speculatively_narrow_limit is true: the type of _raw_limit (a TypeLong)
+    // intersected with [Integer.MIN_VALUE, Integer.MAX_VALUE]. Represents the speculative assumption
+    // that the long limit fits in int. Returned by limit_t() in place of the _raw_limit if available.
+    const TypeLong* _limit_t_in_int_range;
 
   public:
     LoopExitTest(const Node* back_control, const IdealLoopTree* loop, PhaseIdealLoop* phase) :
@@ -1401,13 +1405,13 @@ public:
       _phase(phase),
       _raw_cmp(nullptr),
       _raw_incr(nullptr),
-      _limit(nullptr),
+      _raw_limit(nullptr),
       _mask(BoolTest::illegal),
       _cl_prob(0.0f),
       _should_speculatively_narrow_limit(false),
       _narrowed_cmp(nullptr),
       _narrowed_limit(nullptr),
-      _limit_t(nullptr) {}
+      _limit_t_in_int_range(nullptr) {}
 
     void build();
     void canonicalize_mask(jlong stride_con);
@@ -1441,24 +1445,24 @@ public:
     // The original long limit from the parsed CmpL (second operand after canonicalization). Use this to get the
     // dominance, ctrl nodes and/or predicates that must refer to the same node as in the original graph before
     // narrowing.
-    Node* raw_limit() const { return _limit; }
+    Node* raw_limit() const { return _raw_limit; }
 
-    // Limit used for counted-loop math: after speculative narrowing, ConvL2I(_limit); otherwise _limit (same as raw).
+    // Limit used for counted-loop math: after speculative narrowing, ConvL2I(_raw_limit); otherwise _raw_limit.
     Node* limit() const {
       if (_should_speculatively_narrow_limit) {
         assert(_narrowed_limit != nullptr, "must call speculatively_narrow_limit() first");
         return _narrowed_limit;
       }
-      return _limit;
+      return _raw_limit;
     }
 
     const TypeInteger* limit_t(PhaseIterGVN& igvn, BasicType bt) const {
       if (_should_speculatively_narrow_limit) {
-        assert(_limit_t != nullptr && _limit_t != Type::TOP,
+        assert(_limit_t_in_int_range != nullptr && _limit_t_in_int_range != Type::TOP,
           "checked in can_speculatively_narrow_limit()");
-        return _limit_t;
+        return _limit_t_in_int_range;
       }
-      return igvn.type(_limit)->is_integer(bt);
+      return igvn.type(_raw_limit)->is_integer(bt);
     }
 
     bool can_speculatively_narrow_limit(PhaseIterGVN& igvn) {
@@ -1469,9 +1473,9 @@ public:
 
       if (_should_speculatively_narrow_limit) {
         // The limit must overlap with the int range; otherwise narrowing is provably impossible.
-        const Type* narrowed = TypeLong::INT->filter(igvn.type(_limit));
+        const Type* narrowed = TypeLong::INT->filter(igvn.type(_raw_limit));
         assert (narrowed != Type::TOP, "IGVN should have folded the CmpL/ConvI2L away");
-        _limit_t = narrowed->is_long();
+        _limit_t_in_int_range = narrowed->is_long();
       }
 
       return _should_speculatively_narrow_limit;

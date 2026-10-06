@@ -42,7 +42,7 @@ import static compiler.lib.template_framework.Template.*;
  *          random init values, boundary limits, and zero/one-iteration edge cases.
  * @requires vm.compiler2.enabled
  * @library /test/lib /
- * @run driver/timeout=600 compiler.loopopts.TestIntCountedLoopLongLimitTemplated default
+ * @run driver/timeout=600 ${test.main.class} default
  */
 
 /*
@@ -55,7 +55,7 @@ import static compiler.lib.template_framework.Template.*;
  *          narrow back to int -> deopt -> recompile cycle.
  * @requires vm.compiler2.enabled & vm.debug
  * @library /test/lib /
- * @run driver/timeout=600 compiler.loopopts.TestIntCountedLoopLongLimitTemplated stress
+ * @run driver/timeout=600 ${test.main.class} stress
  */
 public class TestIntCountedLoopLongLimitTemplated {
 
@@ -71,6 +71,8 @@ public class TestIntCountedLoopLongLimitTemplated {
                         "-XX:+StressShortRunningLongLoop",
                         "-XX:+StressIGVN",
                         "-XX:+StressCCP",
+                        // Combining with StressLongCountedLoop, we trigger more speculative-narrowing
+                        // deoptimizations.
                         "-XX:+StressLoopLimitSpeculativeNarrowing"
                 });
                 break;

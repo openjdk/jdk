@@ -38,13 +38,13 @@ import static compiler.lib.generators.Generators.*;
  * @summary Test long limits in int counted loops are speculatively converted
  *          to int for counted loop optimizations - IR shape verification.
  * @requires vm.compiler2.enabled
- * @requires (vm.opt.StressLongCountedLoop == null | vm.opt.StressLongCountedLoop != 0)
+ * @requires (vm.opt.StressLongCountedLoop == null | vm.opt.StressLongCountedLoop == 0)
  * @library /test/lib /
- * @run driver compiler.loopopts.TestIntCountedLoopLongLimit
+ * @run driver ${test.main.class}
  */
 public class TestIntCountedLoopLongLimit {
 
-    private static final Generator<Long> SMALL_UNIFORMS = G.uniformLongs(0, 1024 * 1024 - 1);
+    private static final Generator<Long> SMALL_INT_RANGE_LONGS = G.uniformLongs(0, 1024 * 1024 - 1);
     private static final int LARGE_STRIDE = Integer.MAX_VALUE / 1024 / 1024;
     private static volatile long SOME_LONG = 42;
 
@@ -54,7 +54,7 @@ public class TestIntCountedLoopLongLimit {
 
     @Test
     @IR(counts = { IRNode.COUNTED_LOOP, "2" })
-    @IR(failOn = { IRNode.LOOP })
+    @IR(failOn = { IRNode.LOOP, IRNode.LOOP_LIMIT_CHECK_TRAP })
     public static int testControlledCountedLoop(int limit) {
         int sum = 0;
         for (int i = 0; i < limit; i++) {
@@ -64,7 +64,7 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "2" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "2", IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
     @IR(failOn = { IRNode.LOOP })
     public static int testCountedLoopWithLongLimit(long limit) {
         int sum = 0;
@@ -75,7 +75,7 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "2" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "2", IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
     @IR(failOn = { IRNode.LOOP })
     public static int testCountedLoopWithSwappedComparisonOperand(long limit) {
         int sum = 0;
@@ -88,7 +88,7 @@ public class TestIntCountedLoopLongLimit {
     @Run(test = { "testControlledCountedLoop", "testCountedLoopWithLongLimit",
             "testCountedLoopWithSwappedComparisonOperand" })
     public static void runTestSimpleCountedLoops() {
-        long limit = SMALL_UNIFORMS.next();
+        long limit = SMALL_INT_RANGE_LONGS.next();
         int expected = testControlledCountedLoop((int) limit);
         int observed1 = testCountedLoopWithLongLimit(limit);
         int observed2 = testCountedLoopWithSwappedComparisonOperand(limit);
@@ -98,6 +98,7 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
+    @IR(counts = { IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
     @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LOOP }) // Eliminated by IR replacement
     public static int testIvReplacedCountedLoop(long limit) {
         int sum = 0;
@@ -108,6 +109,7 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
+    @IR(counts = { IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
     @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LOOP }) // Eliminated by IR replacement
     public static long testLongIvReplacedCountedLoop(long limit) {
         long sum = 0;
@@ -119,14 +121,14 @@ public class TestIntCountedLoopLongLimit {
 
     @Run(test = { "testIvReplacedCountedLoop", "testLongIvReplacedCountedLoop" })
     public static void runTestIvReplacedCountedLoop() {
-        long limit = SMALL_UNIFORMS.next();
+        long limit = SMALL_INT_RANGE_LONGS.next();
 
         Asserts.assertEQ(limit, (long) testIvReplacedCountedLoop(limit));
         Asserts.assertEQ(limit, testLongIvReplacedCountedLoop(limit));
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "2" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "2", IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
     @IR(failOn = { IRNode.LOOP })
     public static int testCountedLoopWithOverflow(int init, long limit) {
         int sum = 0;
@@ -141,7 +143,7 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "2" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "2", IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
     @IR(failOn = { IRNode.LOOP })
     public static int testCountedLoopWithUnderflow(int init, long limit) {
         int sum = 0;
@@ -157,7 +159,7 @@ public class TestIntCountedLoopLongLimit {
 
     @Run(test = { "testCountedLoopWithOverflow", "testCountedLoopWithUnderflow" })
     public static void runTestCountedLoopWithOverflow() {
-        long trips = SMALL_UNIFORMS.next();
+        long trips = SMALL_INT_RANGE_LONGS.next();
         int init = G.uniformInts(0, 10).next() * LARGE_STRIDE;
         long limit = init + trips * LARGE_STRIDE; // within int range, no over/underflow
 
@@ -167,7 +169,7 @@ public class TestIntCountedLoopLongLimit {
 
     @Test
     @IR(counts = { IRNode.CONV_I2L, "1" })
-    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.CONV_L2I })
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.CONV_L2I, IRNode.LOOP_LIMIT_CHECK_TRAP })
     @Arguments(values = { Argument.NUMBER_42 })
     public static int testLimitNotInvariant(long limit) {
         int sum = 0;
@@ -179,7 +181,7 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=2" })
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=2", IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
     @IR(failOn = { IRNode.LOOP })
     public static int testMemorySegmentSizeLimit(MemorySegment segment) {
         int sum = 0;
@@ -191,7 +193,7 @@ public class TestIntCountedLoopLongLimit {
 
     @Test
     @IR(counts = { IRNode.COUNTED_LOOP, "2" })
-    @IR(failOn = { IRNode.LOOP })
+    @IR(failOn = { IRNode.LOOP, IRNode.LOOP_LIMIT_CHECK_TRAP })
     public static int testWithConstantLongLimit() {
         int sum = 0;
         for (int i = 0; i < 1024L; i++) {

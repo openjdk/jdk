@@ -1739,19 +1739,19 @@ void PhaseIdealLoop::LoopExitTest::build() {
   }
 
   // Find the trip-counter increment & limit. Limit must be loop invariant.
-  _raw_incr = _raw_cmp->in(1);
-  _limit    = _raw_cmp->in(2);
+  _raw_incr  = _raw_cmp->in(1);
+  _raw_limit = _raw_cmp->in(2);
 
   // ---------
   // need 'loop()' test to tell if limit is loop invariant
   // ---------
 
   if (_loop->is_invariant(_raw_incr)) { // Swapped trip counter and limit?
-    swap(_raw_incr, _limit);   // Then reverse order into the CmpI
+    swap(_raw_incr, _raw_limit);   // Then reverse order into the CmpI
     _mask = BoolTest(_mask).commute(); // And commute the exit test
   }
 
-  if (!_loop->is_invariant(_limit)) { // Limit must be loop-invariant
+  if (!_loop->is_invariant(_raw_limit)) { // Limit must be loop-invariant
      return;
   }
   if (_loop->is_invariant(_raw_incr)) { // Trip counter must be loop-variant
@@ -1798,16 +1798,16 @@ void PhaseIdealLoop::LoopExitTest::canonicalize_mask(jlong stride_con) {
 //  }
 //
 // When StressLoopLimitSpeculativeNarrowing is set, we guard (byte) long_limit == long_limit instead
-// for  more deopts.
+// to trigger more deopts.
 Node* PhaseIdealLoop::LoopExitTest::speculatively_narrow_limit(PhaseIterGVN& igvn) {
   assert(_should_speculatively_narrow_limit, "must call can_speculatively_narrow_limit() first");
 
-  assert(_raw_incr->Opcode() == Op_ConvI2L, "");
+  assert(_raw_incr->Opcode() == Op_ConvI2L, "unexpected shape");
   Node* narrowed_incr = _raw_incr->in(1);
 
   // Optimistically transform "(long) i < long_limit" to "i < (int) long_limit".
-  _narrowed_limit = igvn.register_new_node_with_optimizer(new ConvL2INode(_limit), _limit);
-  _phase->set_ctrl(_narrowed_limit, _phase->get_ctrl(_limit));
+  _narrowed_limit = igvn.register_new_node_with_optimizer(new ConvL2INode(_raw_limit), _raw_limit);
+  _phase->set_ctrl(_narrowed_limit, _phase->get_ctrl(_raw_limit));
 
   _narrowed_cmp = _raw_cmp->in(1) == _raw_incr
                          ? new CmpINode(narrowed_incr, _narrowed_limit)
@@ -1832,10 +1832,8 @@ Node* PhaseIdealLoop::LoopExitTest::speculatively_narrow_limit(PhaseIterGVN& igv
   #endif
 
   Node* i2l_limit = igvn.register_new_node_with_optimizer(new ConvI2LNode(guard_value));
-  Node* cmp_limit = new CmpLNode(i2l_limit, _limit);
-  Node* bol_limit = new BoolNode(cmp_limit, BoolTest::eq);
-
-  return bol_limit;
+  Node* cmp_limit = new CmpLNode(i2l_limit, _raw_limit);
+  return new BoolNode(cmp_limit, BoolTest::eq);
 }
 
 void PhaseIdealLoop::LoopIVIncr::build(Node* old_incr) {
@@ -2597,8 +2595,8 @@ bool CountedLoopConverter::is_safepoint_invalid(SafePointNode* sfpt) const {
 }
 
 ParsePredicateNode* CountedLoopConverter::loop_limit_check_parse_predicate() const {
-  Node* init_control = _head->in(LoopNode::EntryControl);
-  const Predicates predicates(init_control);
+  Node* loop_entry = _head->in(LoopNode::EntryControl);
+  const Predicates predicates(loop_entry);
   const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
 
   if (!loop_limit_check_predicate_block->has_parse_predicate()) {
