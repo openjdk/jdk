@@ -36,23 +36,7 @@
 using SuspendedThreadTaskTryLock = JfrMutexTryLock;
 #endif
 
-static inline uint64_t nmethod_id(nmethod* nm, int compile_id) {
-  uint64_t offset = (uint64_t)((uintptr_t)nm - (uintptr_t)CodeCache::low_bound());
-  guarantee(offset < (uint64_t)4*G, "code cache offset overflow");
-  return (offset << 32) | (uint32_t)compile_id;
-}
-
-uint32_t Candidates::nmethod_compile_id(uint64_t nm_id) {
-  return nm_id & 0xffffffffU;
-}
-
-nmethod* Candidates::nmethod_from_id(uint64_t nm_id) {
-  return (nmethod*)((uintptr_t)(nm_id >> 32) + CodeCache::low_bound());
-}
-
 bool ThreadSampler::sample_all_java_threads() {
-  assert(Thread::current()->is_Java_thread(), "ThreadSampler should only be called from a JavaThread");
-
   // Collect samples for each JavaThread
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     if (jt->is_hidden_from_external_view() ||
@@ -87,6 +71,7 @@ bool ThreadSampler::sample_all_java_threads() {
 
     // We can dereference the nmethod pointer here because we are sampling from a JavaThread and
     // the code blob cannot be purged while the thread does not reach a safepoint.
+    assert(Thread::current()->is_Java_thread(), "ThreadSampler should only be called from a JavaThread");
     int compile_id = nm->compile_id();
     CodeBlobType code_blob_type = CodeCache::get_code_blob_type(nm);
 
@@ -102,8 +87,8 @@ bool ThreadSampler::sample_all_java_threads() {
     _non_profiled_sample_count++;
 
     bool created = false;
-    int* count = _samples.put_if_absent(nmethod_id(nm, compile_id), 0, &created);
-    (*count)++;
+    Pair<nmethod*, int>* sampled_nm = _samples.put_if_absent(compile_id, Pair(nm, 0), &created);
+    sampled_nm->second++;
     if (created) {
       _samples.maybe_grow();
     }
@@ -111,11 +96,14 @@ bool ThreadSampler::sample_all_java_threads() {
   return true;
 }
 
+#define NMETHOD_PTR(sampled_nm) (sampled_nm.first)
+#define SAMPLE_COUNT(sampled_nm) (sampled_nm.second)
+
 Candidates::Candidates(ThreadSampler& sampler)
   : _hot_sample_count(sampler.hot_sample_count()),
     _non_profiled_sample_count(sampler.non_profiled_sample_count()) {
-  auto func = [&](uint64_t nm_id, int count) {
-    _candidates.append(Pair<uint64_t, int>(nm_id, count));
+  auto func = [&](int compile_id, const Pair<nmethod*, int> sampled_nm) {
+    _candidates.append(Candidate(NMETHOD_PTR(sampled_nm), compile_id, SAMPLE_COUNT(sampled_nm)));
   };
   sampler.iterate_samples(func);
 
@@ -129,9 +117,9 @@ void Candidates::move_samples_to_hot(int count) {
 
 void Candidates::sort() {
   _candidates.sort(
-    [](Pair<uint64_t, int>* a, Pair<uint64_t, int>* b) {
-      if (a->second > b->second) return 1;
-      if (a->second < b->second) return -1;
+    [](Candidate* a, Candidate* b) {
+      if (a->sample_count() > b->sample_count()) return 1;
+      if (a->sample_count() < b->sample_count()) return -1;
       return 0;
     }
   );
@@ -141,7 +129,7 @@ bool Candidates::has_candidates() {
   return !_candidates.is_empty();
 }
 
-Pair<uint64_t, int> Candidates::get_candidate() {
+Candidate Candidates::get_candidate() {
   assert(has_candidates(), "must not be empty");
   return _candidates.pop();
 }

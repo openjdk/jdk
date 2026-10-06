@@ -42,9 +42,33 @@ static inline uint rand_sampling_period_ms() {
 class ThreadSampler;
 class nmethod;
 
+class Candidate : public StackObj {
+ private:
+  nmethod* _nm;
+  int _compile_id;
+  int _sample_count;
+
+ public:
+  Candidate() : _nm(nullptr), _compile_id(0), _sample_count(0) {}
+  Candidate(nmethod* nm, int compile_id, int samples_count) : _nm(nm),
+      _compile_id(compile_id), _sample_count(samples_count) {}
+
+  nmethod* nmethod() const {
+    return _nm;
+  }
+
+  int compile_id() const {
+    return _compile_id;
+  }
+
+  int sample_count() const {
+    return _sample_count;
+  }
+};
+
 class Candidates : public StackObj {
  private:
-  GrowableArray<Pair<uint64_t, int>> _candidates;
+  GrowableArray<Candidate> _candidates;
   int _hot_sample_count;
   int _non_profiled_sample_count;
 
@@ -55,11 +79,8 @@ class Candidates : public StackObj {
   void sort();
 
   bool has_candidates();
-  Pair<uint64_t, int> get_candidate();
+  Candidate get_candidate();
   double get_hot_sample_percent();
-
-  static uint32_t nmethod_compile_id(uint64_t nm_id);
-  static nmethod* nmethod_from_id(uint64_t id);
 };
 
 class GetPCTask : public SuspendedThreadTask {
@@ -87,7 +108,8 @@ class ThreadSampler : public StackObj {
   static const int INITIAL_TABLE_SIZE = 109;
 
   // Table of nmethods found during profiling with sample count
-  ResizeableHashTable<uint64_t, int, AnyObj::C_HEAP, mtInternal> _samples;
+  // hash table: key = compile_id, value = Pair<nmethod*, sample_count>
+  ResizeableHashTable<int, Pair<nmethod*, int>, AnyObj::C_HEAP, mtInternal> _samples;
 
   int _hot_sample_count;
   int _non_profiled_sample_count;

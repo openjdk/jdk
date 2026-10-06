@@ -139,28 +139,25 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
       break;
     }
 
-    Pair<uint64_t, int> candidate = candidates.get_candidate();
+    Candidate candidate = candidates.get_candidate();
 
     MutexLocker ml_Compile_lock(Compile_lock);
     MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
     MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    address nm_addr = (address)Candidates::nmethod_from_id(candidate.first);
-    nmethod* nm = find_nmethod(nm_addr);
-    uint32_t compile_id = Candidates::nmethod_compile_id(candidate.first);
-    int sample_count = candidate.second;
+    nmethod* nm = find_nmethod((address)candidate.nmethod());
     if (nm == nullptr ||
-        (address)nm != nm_addr ||
-        (uint32_t)nm->compile_id() != compile_id) {
-      log_debug(hotcode)("Skipped stale candidate: address=%p, compile_id=%u, samples=%d",
-                         nm_addr, compile_id, sample_count);
+        nm != candidate.nmethod() ||
+        nm->compile_id() != candidate.compile_id()) {
+      log_debug(hotcode)("Skipped stale candidate: address=%p, compile_id=%d, samples=%d",
+                         candidate.nmethod(), candidate.compile_id(), candidate.sample_count());
       num_skipped++;
       continue;
     }
 
     switch (do_relocation(nm, 0, &num_relocated)) {
       case nmethod::RelocationResult::SUCCESS:
-        candidates.move_samples_to_hot(sample_count);
+        candidates.move_samples_to_hot(candidate.sample_count());
         break;
       case nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP: {
         CodeHeap* heap = CodeCache::get_code_heap(CodeBlobType::MethodHot);
