@@ -616,7 +616,7 @@ private:
 
   MutatorFreeStats mutator_free_stats_locked() const;
 
-  public:
+public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
   ShenandoahRebuildLock* rebuild_lock() {
