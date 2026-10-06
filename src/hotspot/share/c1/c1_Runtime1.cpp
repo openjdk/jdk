@@ -485,15 +485,34 @@ JRT_END
 
 
 static void profile_flat_array(JavaThread* current, bool load, bool null_free) {
-  ResourceMark rm(current);
-  vframeStream vfst(current, true);
-  assert(!vfst.at_end(), "Java frame must exist");
-  // Check if array access profiling is enabled
-  if (vfst.nm()->comp_level() != CompLevel_full_profile || !C1UpdateMethodData) {
+  // Skip profiling if array access profiling is disabled.
+  if (!C1UpdateMethodData || !MethodData::profile_array_accesses()) {
     return;
   }
-  int bci = vfst.bci();
-  Method* method = vfst.method();
+
+  ResourceMark rm(current);
+  RegisterMap reg_map(
+    current,
+    RegisterMap::UpdateMap::skip,
+    RegisterMap::ProcessFrames::include,
+    RegisterMap::WalkContinuation::skip
+  );
+
+  frame f_runtime = current->last_frame();
+  assert(f_runtime.is_runtime_frame(), "must be a runtime frame");
+
+  frame f_caller = f_runtime.sender(&reg_map);
+  assert(f_caller.is_compiled_frame(), "must be compiled");
+
+  nmethod* nm = f_caller.cb()->as_nmethod();
+  // Check if array access profiling is enabled
+  if (nm->comp_level() != CompLevel_full_profile) {
+    return;
+  }
+
+  SimpleScopeDesc scope(nm, f_caller.pc());
+  int bci = scope.bci();
+  Method* method = scope.method();
   MethodData* md = method->method_data();
   if (md != nullptr) {
     // Lock to access ProfileData, and ensure lock is not broken by a safepoint
@@ -549,11 +568,8 @@ JRT_ENTRY(int, Runtime1::substitutability_check(JavaThread* current, oopDesc* le
   args.push_oop(Handle(THREAD, left));
   args.push_oop(Handle(THREAD, right));
   JavaValue result(T_BOOLEAN);
-  JavaCalls::call_static(&result,
-                         vmClasses::ValueObjectMethods_klass(),
-                         vmSymbols::isSubstitutable_name(),
-                         vmSymbols::object_object_boolean_signature(),
-                         &args, CHECK_0);
+  methodHandle method(current, Universe::is_substitutable_method());
+  JavaCalls::call(&result, method, &args, CHECK_0);
   return result.get_jboolean() ? 1 : 0;
 JRT_END
 

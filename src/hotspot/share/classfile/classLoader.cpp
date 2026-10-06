@@ -392,8 +392,8 @@ bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle 
     assert(SystemDictionaryShared::is_builtin_loader(ClassLoaderData::class_loader_data(class_loader())), "must be");
     JavaValue result(T_OBJECT);
     oop class_name_oop = java_lang_String::create_oop_from_str(name, current);
-    oop zip_name_oop = CDSProtectionDomain::to_file_URL(_zip_name, Handle(), current);
     Handle h_class_name(current, class_name_oop);
+    oop zip_name_oop = CDSProtectionDomain::to_file_URL(_zip_name, Handle(), current);
     Handle h_zip_name(current, zip_name_oop);
 
     // URL ClassLoader.getResource(String name)
@@ -1247,7 +1247,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
 
 #if INCLUDE_CDS
 static const char* skip_uri_protocol(const char* source) {
-  if (strncmp(source, "file:", 5) == 0) {
+  if (strncasecmp(source, "file:", 5) == 0) {
     // file: protocol path could start with file:/ or file:///
     // locate the char after all the forward slashes
     int offset = 5;

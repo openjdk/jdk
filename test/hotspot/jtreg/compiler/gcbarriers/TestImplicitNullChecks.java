@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,10 +82,19 @@ public class TestImplicitNullChecks {
     @Test
     // On aarch64, volatile loads always use indirect memory operands, which
     // leads to a pattern that cannot be exploited by the current C2 analysis.
+    // The same holds on RISC-V when UseZalasr is enabled.
     // On PPC64, volatile loads are preceded by membar_volatile instructions,
     // which also inhibits the current C2 analysis.
-    @IR(applyIfPlatformAnd = {"aarch64", "false", "ppc", "false"},
+    @IR(applyIfPlatformAnd = {"aarch64", "false", "ppc", "false", "riscv64", "false"},
         applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        counts = {IRNode.NULL_CHECK, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = {"UseZalasr", "false", "UseZGC", "true"},
+        counts = {IRNode.NULL_CHECK, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = {"UseZalasr", "false", "UseG1GC", "true"},
         counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testLoadVolatile(OuterWithVolatileField o) {
