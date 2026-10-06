@@ -1238,10 +1238,6 @@ bool Node::has_special_unique_user() const {
   } else if (op == Op_LoadUS && n->Opcode() == Op_LShiftI) {
     // Condition for RShiftI(LShiftI(LoadUS(...), 16), 16) => LoadS(...), see RShiftINode::Ideal
     return true;
-  } else if ((op == Op_LoadB || op == Op_LoadS) && n->Opcode() == Op_AndI) {
-    // AndINode::Ideal turns AndI(LoadB/S) into AndI(LoadUB/US), if the LoadB
-    // only has a single use.
-    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
