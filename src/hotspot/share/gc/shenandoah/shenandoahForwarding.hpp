@@ -35,6 +35,10 @@ public:
    */
   static inline oop get_forwardee(oop obj);
 
+  /* Returns the forwardee, or null if not forwarded.
+   */
+  static inline oop get_forwardee_or_null(oop obj);
+
   /* Returns the raw forwardee without extra checks.
    */
   static inline oop get_forwardee_raw(oop obj);

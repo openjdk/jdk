@@ -55,6 +55,16 @@ inline oop ShenandoahForwarding::get_forwardee(oop obj) {
   return get_forwardee_raw(obj);
 }
 
+inline oop ShenandoahForwarding::get_forwardee_or_null(oop obj) {
+  shenandoah_assert_correct(nullptr, obj);
+  markWord mark = obj->mark();
+  if (mark.is_forwarded()) {
+    return get_forwardee_raw(obj, mark);
+  } else {
+    return nullptr;
+  }
+}
+
 inline bool ShenandoahForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
 }

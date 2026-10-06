@@ -219,11 +219,13 @@ oop ShenandoahBarrierSet::load_reference_barrier_slow(oop obj, T* load_addr) {
   assert(_heap->has_forwarded_objects(), "Filtered by caller");
   assert(_heap->in_collection_set(obj), "Filtered by caller");
 
-  oop resolved = obj;
-  if (ShenandoahForwarding::is_forwarded(obj)) {
-    resolved = ShenandoahForwarding::get_forwardee(obj);
-  } else if (_heap->is_evacuation_in_progress()) {
-    resolved = _heap->evacuate_object(obj, Thread::current());
+  oop resolved = ShenandoahForwarding::get_forwardee_or_null(obj);
+  if (resolved == nullptr) {
+    if (_heap->is_evacuation_in_progress()) {
+      resolved = _heap->evacuate_object(obj, Thread::current());
+    } else {
+      resolved = obj;
+    }
   }
   if (load_addr != nullptr && resolved != obj) {
     // Since we are here and we know the load address, update the reference.
@@ -267,14 +269,12 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (_cset->is_in(obj)) {
-        oop resolved = obj;
-        if (ShenandoahForwarding::is_forwarded(obj)) {
-          resolved = ShenandoahForwarding::get_forwardee(obj);
-        } else if (EVAC) {
-          resolved = _heap->evacuate_object(obj, _thread);
+        oop fwd = ShenandoahForwarding::get_forwardee_or_null(obj);
+        if (EVAC && (fwd == nullptr)) {
+          fwd = _heap->evacuate_object(obj, _thread);
         }
-        if (resolved != obj) {
-          ShenandoahHeap::atomic_update_oop(resolved, p, o);
+        if (fwd != obj) {
+          ShenandoahHeap::atomic_update_oop(fwd, p, o);
         }
       }
     }
@@ -377,14 +377,12 @@ void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (cset->is_in(obj)) {
-        oop resolved;
-        if (ShenandoahForwarding::is_forwarded(obj)) {
-          resolved = ShenandoahForwarding::get_forwardee(obj);
-        } else {
-          resolved = _heap->evacuate_object(obj, thread);
+        oop fwd = ShenandoahForwarding::get_forwardee_or_null(obj);
+        if (fwd == nullptr) {
+          fwd = _heap->evacuate_object(obj, thread);
         }
-        if (resolved != obj) {
-          ShenandoahHeap::atomic_update_oop(resolved, elem_ptr, o);
+        if (fwd != obj) {
+          ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
         }
       }
     }

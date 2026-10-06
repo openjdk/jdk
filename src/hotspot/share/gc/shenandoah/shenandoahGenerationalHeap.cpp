@@ -200,8 +200,9 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   const ShenandoahAffiliation target_gen = from_region->affiliation();
 
   if (target_gen == YOUNG_GENERATION) {
-    if (ShenandoahForwarding::is_forwarded(p)) {
-      return ShenandoahForwarding::get_forwardee(p);
+    oop fwd = ShenandoahForwarding::get_forwardee_or_null(p);
+    if (fwd != nullptr) {
+      return fwd;
     }
     if (age_census()->is_tenurable(from_region->age() + ShenandoahForwarding::age(p))) {
       // If the object is tenurable, try to promote it

@@ -111,9 +111,9 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
       // Corner case: when evacuation fails, there are objects in collection
       // set that are not forwarded, and can still be in cset.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop resolved = obj;
-      if (ShenandoahForwarding::is_forwarded(obj)) {
-        resolved = ShenandoahForwarding::get_forwardee(obj);
+      oop resolved = ShenandoahForwarding::get_forwardee_or_null(obj);
+      if (resolved == nullptr) {
+        resolved = obj;
       }
       shenandoah_assert_not_in_cset_except(p, resolved, cancelled_gc());
 
