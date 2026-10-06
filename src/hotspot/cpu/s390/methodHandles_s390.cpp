@@ -168,7 +168,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ z_bre(L_no_such_method);
 
   ByteSize offset = for_compiler_entry ?
-                       Method::from_compiled_inline_offset() : Method::from_interpreted_offset();
+                       Method::from_compiled_value_offset() : Method::from_interpreted_offset();
   Address method_from(method, offset);
 
   __ z_lg(target, method_from);

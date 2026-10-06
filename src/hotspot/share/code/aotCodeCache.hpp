@@ -302,7 +302,7 @@ public:
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseIntPolyIntrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
-  do_var(bool,  InlineTypeReturnedAsFields) \
+  do_var(bool,  ValueTypeReturnedAsFields) \
   do_var(bool,  VMContinuations) \
   do_var(bool,  VerifyOops) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
@@ -360,6 +360,7 @@ public:
   do_var(bool,  UseCtxFencei)                           /* method entry barrier stub */ \
   do_var(bool,  UseSecondarySupersCache)                /* secondary supers cache in nmethods */ \
   do_var(bool,  UseZabha)                               /* narrow cmpxchg selection in nmethods */ \
+  do_fun(int,   SatpMode,                               (int)VM_Version::satp_mode.value()) \
   do_fun(int,   RVZicbozBlockSize,                      (int)VM_Version::zicboz_block_size.value()) \
   // END
 #else

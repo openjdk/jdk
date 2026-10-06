@@ -60,7 +60,6 @@
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
@@ -70,6 +69,7 @@
 #include "oops/oopCast.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "oops/refArrayOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.inline.hpp"
 #include "prims/foreignGlobals.hpp"
 #include "prims/jvm_misc.hpp"
@@ -449,7 +449,7 @@ JVM_ENTRY(jarray, JVM_CopyOfSpecialArray(JNIEnv *env, jarray orig, jint from, ji
     dest = fak->allocate_instance(len, CHECK_NULL);
   } else {
     const ArrayProperties props = ArrayProperties::Default().with_null_restricted(ak->is_null_free_array_klass());
-    InlineKlass* vk = InlineKlass::cast(ak->element_klass());
+    ValueKlass* vk = ValueKlass::cast(ak->element_klass());
     dest = oopFactory::new_objArray(vk, len, props,  CHECK_NULL);
   }
 
@@ -481,7 +481,7 @@ static void verify_array_arguments(jclass elmClass, jint len) {
   assert(elmClass != nullptr, "Null element class");
   oop mirror = JNIHandles::resolve_non_null(elmClass);
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  assert(klass->is_inline_klass(), "Element class must be an inline class");
+  assert(klass->is_value_klass(), "Element class must be a value class");
 }
 #endif // ASSERT
 
@@ -790,13 +790,10 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
     return 0;
   }
   oop obj = JNIHandles::resolve_non_null(handle);
-  if (Arguments::is_valhalla_enabled() && obj->klass()->is_inline_klass()) {
+  if (Arguments::is_valhalla_enabled() && obj->klass()->is_value_klass()) {
     const intptr_t obj_identity_hash = obj->mark().hash();
-    // Check if mark word contains hash code already.
-    // It is possible that the generated identity hash is 0, which is not
-    // distinct from the no_hash value. In such a case, the hash will be
-    // computed and set every time JVM_IHashCode is called. If that happens,
-    // the only consequence is losing out on the optimization.
+    // Check if mark word contains hash code already. The hash code is guaranteed
+    // not to be markWord::no_hash, which is 0.
     if (obj_identity_hash != markWord::no_hash) {
       return checked_cast<jint>(obj_identity_hash);
     }
@@ -808,7 +805,6 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
     Handle ho(THREAD, obj);
     args.push_oop(ho);
     methodHandle method(THREAD, Universe::value_object_hash_code_method());
-    method->method_holder()->initialize(CHECK_0); // Ensure class ValueObjectMethods is initialized
     JavaCalls::call(&result, method, &args, THREAD);
     Exceptions::wrap_exception_in_internal_error("Internal error in hashCode", CHECK_0);
 
@@ -883,7 +879,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
     THROW_MSG_NULL(vmSymbols::java_lang_CloneNotSupportedException(), klass->external_name());
   }
 
-  if (klass->is_inline_klass()) {
+  if (klass->is_value_klass()) {
     // Value instances have no identity, so return the current instance instead of allocating a new one
     // Value classes cannot have finalizers, so the method can return immediately
     return JNIHandles::make_local(THREAD, obj());

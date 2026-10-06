@@ -79,7 +79,6 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
@@ -87,6 +86,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/trainingData.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -615,7 +615,7 @@ static void rewrite_bytecodes(const methodHandle& method) {
         case btos: new_code = Bytecodes::_fast_bputfield; break;
         case ztos: new_code = Bytecodes::_fast_zputfield; break;
         case atos: {
-          if (rfe->is_flat() || rfe->is_null_free_inline_type()) {
+          if (rfe->is_flat() || rfe->is_null_free_value_type()) {
             new_code = Bytecodes::_fast_vputfield;
           } else {
             new_code = Bytecodes::_fast_aputfield;
@@ -1032,22 +1032,6 @@ void AOTMetaspace::init_heap_settings() {
 
   if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
     return;
-  }
-  // CDS heap dumping requires all string oops to have an offset
-  // from the heap bottom that can be encoded in 32-bit.
-  julong max_heap_size = (julong)(4 * G);
-
-  if (MinHeapSize > max_heap_size) {
-    log_debug(aot)("Setting MinHeapSize to 4G for CDS dumping, original size = %zuM", MinHeapSize/M);
-    FLAG_SET_ERGO(MinHeapSize, max_heap_size);
-  }
-  if (InitialHeapSize > max_heap_size) {
-    log_debug(aot)("Setting InitialHeapSize to 4G for CDS dumping, original size = %zuM", InitialHeapSize/M);
-    FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
-  }
-  if (MaxHeapSize > max_heap_size) {
-    log_debug(aot)("Setting MaxHeapSize to 4G for CDS dumping, original size = %zuM", MaxHeapSize/M);
-    FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
   }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64

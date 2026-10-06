@@ -33,9 +33,9 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -458,11 +458,11 @@ int LIR_Assembler::emit_deopt_handler() {
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == r0, "word returns are in r0,");
 
-  if (InlineTypeReturnedAsFields) {
-    // Check if we are returning a non-null inline type and load its fields into registers
+  if (ValueTypeReturnedAsFields) {
+    // Check if we are returning a non-null value type and load its fields into registers
     ciType* return_type = compilation()->method()->return_type();
-    if (return_type->is_inlinetype()) {
-      ciInlineKlass* vk = return_type->as_inline_klass();
+    if (return_type->is_value_klass()) {
+      ciValueKlass* vk = return_type->as_value_klass();
       if (vk->can_be_returned_as_fields()) {
         address unpack_handler = vk->unpack_handler();
         assert(unpack_handler != nullptr, "must be");
@@ -483,14 +483,14 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       __ b(skip);
       __ bind(not_null);
 
-      // Check if we are returning a non-null inline type and load its fields into registers
-      __ test_oop_is_not_inline_type(r0, rscratch2, skip, /* can_be_null= */ false);
+      // Check if we are returning a non-null value type and load its fields into registers
+      __ test_oop_is_not_value_type(r0, rscratch2, skip, /* can_be_null= */ false);
 
-      // Load fields from a buffered value with an inline class specific handler
+      // Load fields from a buffered value with a value class specific handler
       __ load_klass(rscratch1 /*dst*/, r0 /*src*/, rscratch2 /*tmp*/);
-      __ ldr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
-      __ ldr(rscratch1, Address(rscratch1, InlineKlass::unpack_handler_offset()));
-      // Unpack handler can be null if inline type is not scalarizable in returns
+      __ ldr(rscratch1, Address(rscratch1, ValueKlass::adr_members_offset()));
+      __ ldr(rscratch1, Address(rscratch1, ValueKlass::unpack_handler_offset()));
+      // Unpack handler can be null if value type is not scalarizable in returns
       __ cbz(rscratch1, skip);
       __ blr(rscratch1);
 
@@ -513,8 +513,8 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   __ ret(lr);
 }
 
-int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
-  return (__ store_inline_type_fields_to_buf(vk, false));
+int LIR_Assembler::store_value_type_fields_to_buf(ciValueKlass* vk) {
+  return (__ store_value_type_fields_to_buf(vk, false));
 }
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
@@ -1371,10 +1371,14 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
+  Register mdo = noreg;
+  if (should_profile) {
+    mdo = klass_RInfo;
+    __ mov_metadata(mdo, md->constant_encoding());
+  }
+
   if (op->need_null_check()) {
     if (should_profile) {
-      Register mdo  = klass_RInfo;
-      __ mov_metadata(mdo, md->constant_encoding());
       Label not_null;
       __ cbnz(obj, not_null);
       // Object is null; update MDO and exit
@@ -1387,13 +1391,15 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ strb(rscratch1, data_addr);
       __ b(*obj_is_null);
       __ bind(not_null);
-
-      Register recv = k_RInfo;
-      __ load_klass(recv, obj, rscratch1);
-      type_profile_helper(mdo, md, data, recv);
     } else {
       __ cbz(obj, *obj_is_null);
     }
+  }
+
+  if (should_profile) {
+      Register recv = k_RInfo;
+      __ load_klass(recv, obj, rscratch1);
+      type_profile_helper(mdo, md, data, recv);
   }
 
   if (!k->is_loaded()) {
@@ -1593,25 +1599,25 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   ciKlass* left_klass = op->left_klass();
   ciKlass* right_klass = op->right_klass();
 
-  // (2) Inline type check -- if either of the operands is not an inline type,
+  // (2) Value type check -- if either of the operands is not a value type,
   //     they are not substitutable. We do this only if we are not sure that the
-  //     operands are inline type
+  //     operands are value type
   if ((left_klass == nullptr || right_klass == nullptr) ||// The klass is still unloaded, or came from a Phi node.
-      !left_klass->is_inlinetype() || !right_klass->is_inlinetype()) {
+      !left_klass->is_value_klass() || !right_klass->is_value_klass()) {
     Register tmp1 = op->tmp1()->as_register();
     Register tmp2 = op->tmp2()->as_register();
-    __ mov(tmp1, markWord::inline_type_pattern);
+    __ mov(tmp1, markWord::value_type_pattern);
     __ ldr(tmp2, Address(left, oopDesc::mark_offset_in_bytes()));
     __ andr(tmp1, tmp1, tmp2);
     __ ldr(tmp2, Address(right, oopDesc::mark_offset_in_bytes()));
     __ andr(tmp1, tmp1, tmp2);
-    __ cmp(tmp1, (u1)markWord::inline_type_pattern);
+    __ cmp(tmp1, (u1)markWord::value_type_pattern);
     __ br(Assembler::NE, L_oops_not_equal);
   }
 
   // (3) Same klass check: if the operands are of different klasses, they are not substitutable.
-  if (left_klass != nullptr && left_klass->is_inlinetype() && left_klass == right_klass) {
-    // No need to load klass -- the operands are statically known to be the same inline klass.
+  if (left_klass != nullptr && left_klass->is_value_klass() && left_klass == right_klass) {
+    // No need to load klass -- the operands are statically known to be the same value klass.
     __ b(*op->stub()->entry());
   } else {
     Register tmp1 = op->tmp1()->as_register();
@@ -2323,7 +2329,7 @@ void LIR_Assembler::store_parameter(jobject o,  int offset_from_rsp_in_words) {
   __ str(rscratch1, Address(sp, offset_from_rsp_in_bytes));
 }
 
-void LIR_Assembler::arraycopy_inlinetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check) {
+void LIR_Assembler::arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check) {
   if (null_check) {
     __ cbz(obj, *slow_path->entry());
   }
@@ -2411,12 +2417,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     return;
   }
 
-  // Handle inline type arrays
-  if (flags & LIR_OpArrayCopy::src_inlinetype_check) {
-    arraycopy_inlinetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
+  // Handle value type arrays
+  if (flags & LIR_OpArrayCopy::src_valuetype_check) {
+    arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
   }
-  if (flags & LIR_OpArrayCopy::dst_inlinetype_check) {
-    arraycopy_inlinetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+  if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
+    arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
   }
 
   assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
@@ -2933,25 +2939,25 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   COMMENT("} emit_profile_type");
 }
 
-void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
   Register obj = op->obj()->as_register();
   Register tmp = op->tmp()->as_pointer_register();
   bool not_null = op->not_null();
   int flag = op->flag();
 
-  Label not_inline_type;
+  Label not_value_type;
   if (!not_null) {
-    __ cbz(obj, not_inline_type);
+    __ cbz(obj, not_value_type);
   }
 
-  __ test_oop_is_not_inline_type(obj, tmp, not_inline_type);
+  __ test_oop_is_not_value_type(obj, tmp, not_value_type);
 
   Address mdo_addr = as_Address(op->mdp()->as_address_ptr(), rscratch2);
   __ ldrb(rscratch1, mdo_addr);
   __ orr(rscratch1, rscratch1, flag);
   __ strb(rscratch1, mdo_addr);
 
-  __ bind(not_inline_type);
+  __ bind(not_value_type);
 }
 
 void LIR_Assembler::align_backward_branch_target() {

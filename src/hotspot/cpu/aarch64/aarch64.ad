@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
-// Copyright 2025 Arm Limited and/or its affiliates.
+// Copyright 2025, 2026 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -545,6 +545,9 @@ reg_class int_r3_reg(R3);
 
 // Singleton class for R4 int register
 reg_class int_r4_reg(R4);
+
+// Singleton class for R5 int register
+reg_class int_r5_reg(R5);
 
 // Singleton class for R31 int register
 reg_class int_r31_reg(R31);
@@ -1810,10 +1813,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     __ bind(*_verified_entry);
   }
 
-  if (VerifyStackAtCalls) {
-    Unimplemented();
-  }
-
   C->output()->set_frame_complete(__ offset());
 
   if (C->has_mach_constant_base_node()) {
@@ -2191,7 +2190,7 @@ void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   if (!_verified) {
     st->print_cr("\t load_class");
   } else {
-    st->print_cr("\t unpack_inline_arg");
+    st->print_cr("\t unpack_value_arg");
   }
 }
 #endif
@@ -2201,19 +2200,20 @@ void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
   if (!_verified) {
     __ ic_check(1);
   } else {
-    if (ra_->C->stub_function() == nullptr) {
-      // Emit the entry barrier in a temporary frame before unpacking because
-      // it can deopt, which would require packing the scalarized args again.
-      __ verified_entry(ra_->C, 0);
-      __ entry_barrier();
-      int framesize = ra_->C->output()->frame_slots() << LogBytesPerInt;
-      __ remove_frame(framesize, false);
-    }
-    // Unpack inline type args passed as oop and then jump to
+    assert(ra_->C->is_method_compilation(), "should be");
+    // Emit the entry barrier in a temporary frame before unpacking because
+    // it can deopt, which would require packing the scalarized args again.
+    __ verified_entry(ra_->C, 0);
+    __ entry_barrier();
+    int framesize = ra_->C->output()->frame_slots() << LogBytesPerInt;
+    __ remove_frame(framesize, false);
+
+    // Unpack value type args passed as oop and then jump to
     // the verified entry point (skipping the unverified entry).
-    int sp_inc = __ unpack_inline_args(ra_->C, _receiver_only);
-    // Emit code for verified entry and save increment for stack repair on return
-    __ verified_entry(ra_->C, sp_inc);
+    int sp_inc = __ unpack_value_args(ra_->C, _receiver_only);
+    // Emit code for verified entry and save increment for stack repair on return.
+    // Skip stack bang since we already did it above.
+    __ verified_entry(ra_->C, sp_inc, false/*do_stack_bang*/);
     if (Compile::current()->output()->in_scratch_emit_size()) {
       Label dummy_verified_entry;
       __ b(dummy_verified_entry);
@@ -3679,11 +3679,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_call_epilog() %{
-    if (VerifyStackAtCalls) {
-      // Check that stack depth is unchanged: find majik cookie on stack
-      __ call_Unimplemented();
-    }
-    if (tf()->returns_inline_type_as_fields() && !_method->is_method_handle_intrinsic() && _method->return_type()->is_loaded()) {
+    if (tf()->returns_value_type_as_fields() && !_method->is_method_handle_intrinsic() && _method->return_type()->is_loaded()) {
       // The last return value is not set by the callee but used to pass the null marker to compiled code.
       // Search for the corresponding projection, get the register and emit code that initializes it.
       uint con = (tf()->range_cc()->cnt() - 1);
@@ -3704,9 +3700,9 @@ encode %{
         }
       }
       if (return_value_is_used()) {
-        // An inline type is returned as fields in multiple registers.
-        // R0 either contains an oop if the inline type is buffered or a pointer
-        // to the corresponding InlineKlass with the lowest bit set to 1. Zero r0
+        // A value type is returned as fields in multiple registers.
+        // R0 either contains an oop if the value type is buffered or a pointer
+        // to the corresponding ValueKlass with the lowest bit set to 1. Zero r0
         // if the lowest bit is set to allow C2 to use the oop after null checking.
         // r0 &= (r0 & 1) - 1
         __ andr(rscratch1, r0, 0x1);
@@ -3856,15 +3852,9 @@ frame %{
   // return address specifies a type (REG or STACK) and a number
   // representing the register number (i.e. - use a register name) or
   // stack slot.
-  // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
-  // Otherwise, it is above the locks and verification slot and alignment word
-  // TODO this may well be correct but need to check why that - 2 is there
-  // ppc port uses 0 but we definitely need to allow for fixed_slots
-  // which folds in the space used for monitors
-  return_addr(STACK - 2 +
-              align_up((Compile::current()->in_preserve_stack_slots() +
-                        Compile::current()->fixed_slots()),
-                       stack_alignment_in_slots()));
+  // Ret Addr is on stack 2 slots below _old_SP, i.e. in slot 0 if no locks
+  // or verification or alignment.
+  return_addr(STACK OptoReg::reg2stack(_old_SP) - 2);
 
   // Location of compiled Java return values.  Same as C for now.
   return_value
@@ -4919,6 +4909,18 @@ operand iRegI_R3()
 operand iRegI_R4()
 %{
   constraint(ALLOC_IN_RC(int_r4_reg));
+  match(RegI);
+  match(iRegINoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+
+// Register R5 only
+operand iRegI_R5()
+%{
+  constraint(ALLOC_IN_RC(int_r5_reg));
   match(RegI);
   match(iRegINoSp);
   op_cost(0);
@@ -16156,18 +16158,50 @@ instruct stringU_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
-                        iRegI_R0 result, rFlagsReg cr)
+instruct string_equalsL_sve(
+    iRegP_R1   str1,      // str1 (kill)
+    iRegP_R3   str2,      // str2 (kill)
+    iRegINoSp   cnt,       // int length
+    iRegINoSp   result,    // boolean
+    vecA ztmp1, vecA ztmp2, // SVE z registers
+    pRegGov pg, pReg pdata, // SVE predicate registers
+    rFlagsReg  cr)
 %{
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(UseSVE > 0 && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
+  effect(USE_KILL str1, USE_KILL str2, USE cnt, TEMP ztmp1, TEMP ztmp2, TEMP pg, TEMP pdata, KILL cr);
+
+  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ string_equals_sve($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register,
+                     $ztmp1$$FloatRegister,
+                     $ztmp2$$FloatRegister, $pg$$PRegister,
+                     $pdata$$PRegister);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_equalsL(
+    iRegP_R1   str1,      // str1 (kill)
+    iRegP_R3   str2,      // str2 (kill)
+    iRegI_R4   cnt,       // int length (kill)
+    iRegI_R0   result,    // boolean
+    iRegINoSp  str1_hi,     // temp: str1 high 8B
+    iRegINoSp  str2_hi,     // temp: str2 high 8B (reused as shift amount in SMALL)
+    rFlagsReg  cr)
+%{
+  predicate(UseSVE == 0 && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (StrEquals (Binary str1 str2) cnt));
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP str1_hi, TEMP str2_hi, KILL cr);
 
   format %{ "String Equals $str1,$str2,$cnt -> $result" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register);
+                     $result$$Register, $cnt$$Register,
+                     $str1_hi$$Register, $str2_hi$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16223,19 +16257,22 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 %}
 
 instruct arrays_hashcode(iRegP_R1 ary, iRegI_R2 cnt, iRegI_R0 result, immI basic_type,
+                         iRegI_R3 blocks, iRegI_R4 tail, iRegI_R5 sum,
                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
                          vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
                          vRegD_V12 vtmp8, vRegD_V13 vtmp9, rFlagsReg cr)
 %{
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
-  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5, TEMP vtmp6,
+  effect(TEMP blocks, TEMP tail, TEMP sum,
+         TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5, TEMP vtmp6,
          TEMP vtmp7, TEMP vtmp8, TEMP vtmp9, USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
 
   format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
   ins_encode %{
     address tpc = __ arrays_hashcode($ary$$Register, $cnt$$Register, $result$$Register,
-                                     $vtmp3$$FloatRegister, $vtmp2$$FloatRegister,
-                                     $vtmp1$$FloatRegister, $vtmp0$$FloatRegister,
+                                     $blocks$$Register, $tail$$Register, $sum$$Register,
+                                     $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                                     $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
                                      $vtmp4$$FloatRegister, $vtmp5$$FloatRegister,
                                      $vtmp6$$FloatRegister, $vtmp7$$FloatRegister,
                                      $vtmp8$$FloatRegister, $vtmp9$$FloatRegister,
