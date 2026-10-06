@@ -2687,8 +2687,10 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
       _igvn.register_new_node_with_optimizer(new_sfpt);
       _igvn.register_new_node_with_optimizer(new_cle_out);
     } else if (mode == CloneIncludesSafepoint) {
+      // Restore loop-carried memory before moving sunk stores into the cloned loop.
       OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(new_cl, new_cle_out->as_IfFalse(),
                                                                         &_igvn, this);
+      // The safepoint's data dependencies must dominate it; their loop membership follows control.
       Node* sfpt_ctrl = new_cle->in(CountedLoopEndNode::TestControl);
       for (uint i = 0; i < extra_data_nodes.size(); i++) {
         Node* n = old_new[extra_data_nodes.at(i)->_idx];
@@ -2698,6 +2700,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
         }
       }
       new_sfpt->set_req(TypeFunc::Control, sfpt_ctrl);
+      // Match fix_body_edges(): use the enclosing loop until the loop tree is rebuilt.
       set_loop(new_sfpt, outer_loop->_parent);
       set_idom(new_sfpt, sfpt_ctrl, dd);
       _igvn.replace_input_of(new_cle, CountedLoopEndNode::TestControl, new_sfpt);

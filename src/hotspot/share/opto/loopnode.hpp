@@ -1516,8 +1516,8 @@ public:
                                  // result control flow branches
                                  // either to inner clone or outer
                                  // strip mined loop.
-    CloneIncludesSafepoint = 3   // Clone the inner loop and place a clone of
-                                 // the outer safepoint on its backedge.
+    CloneIncludesSafepoint = 3   // Clone the inner loop with the outer safepoint
+                                 // before its exit test.
   };
   void clone_loop( IdealLoopTree *loop, Node_List &old_new, int dom_depth,
                   CloneLoopMode mode, Node* side_by_side_idom = nullptr);
@@ -1552,7 +1552,7 @@ public:
   Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
                          Node* incr, Node* limit, CountedLoopNode*& post_head,
-                         CloneLoopMode clone_mode, OpaqueRCESideLoopNode* rce_side_loop);
+                         CloneLoopMode clone_mode, OpaqueLoopInfoNode* loop_info);
 
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);

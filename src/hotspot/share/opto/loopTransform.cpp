@@ -1494,15 +1494,15 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // Add the post loop
   CountedLoopNode *post_head = nullptr;
   Node* post_incr = incr;
-  OpaqueRCESideLoopNode* rce_side_loop = nullptr;
+  OpaqueLoopInfoNode* loop_info = nullptr;
   // A peeled pre-loop permanently disables RCE for the main loop.
   const CloneLoopMode clone_mode = peel_only ? ControlAroundStripMined : CloneIncludesSafepoint;
   if (!peel_only && main_head->is_strip_mined()) {
-    rce_side_loop = new OpaqueRCESideLoopNode(C, intcon(0));
-    register_new_node(rce_side_loop, main_head->skip_strip_mined()->in(LoopNode::EntryControl));
+    loop_info = new OpaqueLoopInfoNode(C, intcon(0));
+    register_new_node(loop_info, main_head->skip_strip_mined()->in(LoopNode::EntryControl));
   }
   Node* main_exit = insert_post_loop(loop, old_new, main_head, main_end, post_incr, limit, post_head,
-                                    clone_mode, rce_side_loop);
+                                    clone_mode, loop_info);
   C->print_method(PHASE_AFTER_POST_LOOP, 4, post_head);
 
   //------------------------------
@@ -1542,8 +1542,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // zero-trip guard will become the minimum-trip guard when we unroll
   // the main-loop.
   OpaqueZeroTripGuardNode* min_opaq = new OpaqueZeroTripGuardNode(C, limit, b_test);
-  if (rce_side_loop != nullptr) {
-    min_opaq->add_req(rce_side_loop);
+  if (loop_info != nullptr) {
+    min_opaq->add_req(loop_info);
   }
   Node *min_cmp  = new CmpINode(pre_incr, min_opaq);
   Node *min_bol  = new BoolNode(min_cmp, b_test);
@@ -1608,8 +1608,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // Save the original loop limit in this Opaque1 node for
   // use by range check elimination.
   Opaque1Node* pre_opaq = new Opaque1Node(C, pre_limit, limit);
-  if (rce_side_loop != nullptr) {
-    pre_opaq->add_req(rce_side_loop);
+  if (loop_info != nullptr) {
+    pre_opaq->add_req(loop_info);
   }
 
   register_new_node(pre_limit, pre_head->in(LoopNode::EntryControl));
@@ -1769,7 +1769,7 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
 Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                                        CountedLoopNode* main_head, CountedLoopEndNode* main_end,
                                        Node* incr, Node* limit, CountedLoopNode*& post_head,
-                                       CloneLoopMode clone_mode, OpaqueRCESideLoopNode* rce_side_loop) {
+                                       CloneLoopMode clone_mode, OpaqueLoopInfoNode* loop_info) {
   IfNode* outer_main_end = main_end;
   IdealLoopTree* outer_loop = loop;
   if (main_head->is_strip_mined()) {
@@ -1812,8 +1812,8 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // the exit value (via additional unrolling) so we cannot constant-fold away the zero
   // trip guard until all unrolling is done.
   OpaqueZeroTripGuardNode* zer_opaq = new OpaqueZeroTripGuardNode(C, incr, main_end->test_trip());
-  if (rce_side_loop != nullptr) {
-    zer_opaq->add_req(rce_side_loop);
+  if (loop_info != nullptr) {
+    zer_opaq->add_req(loop_info);
   }
   Node *zer_cmp = new CmpINode(zer_opaq, limit);
   Node *zer_bol = new BoolNode(zer_cmp, main_end->test_trip());
@@ -1900,6 +1900,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
         Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
         Node* store_new = old_new[store->_idx];
         if (clone_mode == CloneIncludesSafepoint) {
+          // The phi added during cloning has no main-loop counterpart for the entry-wiring pass above.
           Node* phi = store_new->in(MemNode::Memory);
           assert(phi->is_memory_phi() && phi->in(0) == post_head, "cloning added a memory phi");
           _igvn.replace_input_of(phi, LoopNode::EntryControl, mem_out);
@@ -2738,18 +2739,18 @@ static void remove_unneeded_rce_side_loop_safepoint(CountedLoopNode* head, Phase
   bool remove = false;
   if (head->is_pre_loop() && head->limit()->Opcode() == Op_Opaque1) {
     Opaque1Node* limit = head->limit()->as_Opaque1();
-    OpaqueRCESideLoopNode* rce_side_loop = limit->rce_side_loop();
-    remove = rce_side_loop != nullptr && !rce_side_loop->range_check_eliminated();
+    OpaqueLoopInfoNode* loop_info = limit->loop_info();
+    remove = loop_info != nullptr && !loop_info->range_check_eliminated();
   } else if (head->is_post_loop()) {
     Node* zero_trip_guard = head->is_canonical_loop_entry();
     if (zero_trip_guard != nullptr && zero_trip_guard->req() == 3 &&
-        zero_trip_guard->in(2)->is_OpaqueRCESideLoop()) {
-      remove = !zero_trip_guard->in(2)->as_OpaqueRCESideLoop()->range_check_eliminated();
+        zero_trip_guard->in(2)->is_OpaqueLoopInfo()) {
+      remove = !zero_trip_guard->in(2)->as_OpaqueLoopInfo()->range_check_eliminated();
     }
   }
   if (remove) {
     Node* safepoint = head->loopexit()->in(CountedLoopEndNode::TestControl);
-    if (safepoint->is_SafePoint()) {
+    if (safepoint->Opcode() == Op_SafePoint) {
       igvn.replace_node(safepoint, safepoint->in(TypeFunc::Control));
     }
   }
@@ -2814,6 +2815,10 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
   Node* const zero_trip_guard = zero_trip_guard_success_proj->in(0);
   Node* const opaque_zero_trip_guard = zero_trip_guard->in(1)->in(1)->in(2);
   assert(opaque_zero_trip_guard->in(1) == main_limit, "unexpected limit node: %s", opaque_zero_trip_guard->in(1)->Name());
+  // Do not lengthen side loops unless their shared information can be updated.
+  if (opaque_zero_trip_guard->req() == 3 && !opaque_zero_trip_guard->in(2)->is_OpaqueLoopInfo()) {
+    return;
+  }
 
   // Find the pre-loop limit; we will expand its iterations to
   // not ever trip low tests.
@@ -3082,7 +3087,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
     } // End of is IF
   }
   if (range_check_eliminated && opaque_zero_trip_guard->req() == 3) {
-    opaque_zero_trip_guard->in(2)->as_OpaqueRCESideLoop()->mark_range_check_eliminated();
+    opaque_zero_trip_guard->in(2)->as_OpaqueLoopInfo()->mark_range_check_eliminated();
   }
   if (loop_entry != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
     _igvn.replace_input_of(cl->skip_strip_mined(), LoopNode::EntryControl, loop_entry);
