@@ -40,7 +40,7 @@ import java.util.Set;
 
 /**
  * ASN.1 stream formatter; a debugging utility for visualizing the contents
- * of an ASN.1 stream. The ANS1Formatter can be used standalone by calling the
+ * of an ASN.1 stream. The ASN1Formatter can be used standalone by calling the
  * {@link #annotate(DataInputStream)}
  * or {@link #annotate(DataInputStream, Appendable)} methods.
  * The ASN1Formatter implements the Formatter interface so it can be used
@@ -232,14 +232,10 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             int tag = in.readByte() & 0xff;
             available--;
             if (tagType(tag) == 0x1f) {
-                // Multi-byte tag
-                tag = 0;
-                int tagbits;
-                do {
-                    tagbits = in.readByte();
-                    available--;
-                    tag = (tag << 7) | (tagbits & 0x7f);
-                } while ((tagbits & 0x80) == 0x80);
+                // multi-byte tag has tag number followed but tag class types
+                // still encoded in the first byte (the current `tag` value).
+                throw new UnsupportedOperationException(
+                        "No support for multi-byte tag");
             }
             // Decode the length
             int len = in.readByte() & 0xff;
@@ -457,7 +453,6 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @return a String representation of the tag.
      */
     private String tagName(int tag) {
-        String tagString = (isConstructed(tag) ? "CONSTRUCTED " : "") + tagNames[tagType(tag)];
         switch (tag & 0xc0) {
             case TAG_APPLICATION:
                 return "APPLICATION " + tagType(tag);
@@ -465,16 +460,16 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 return "PRIVATE " + tagType(tag);
             case TAG_CONTEXT:
                 return "CONTEXT " + tagType(tag);
-            case TAG_UNIVERSAL:
-                if (tag > 0 && tag < tagNames.length)
-                    return tagNames[tag];
-                if (tag == TAG_Set)
-                    return "SET";
-                if (tag == TAG_Sequence)
-                    return "SEQUENCE";
-                return "UNIVERSAL " + tagString;
             default:
-                return "TAG__" + (tag & 0xc0);
+                if (tag == TAG_Set) {
+                    return "SET";
+                } else if (tag == TAG_Sequence) {
+                    return "SEQUENCE";
+                } else if (isConstructed(tag)) {
+                    return "CONSTRUCTED " + tagNames[tagType(tag)];
+                } else {
+                    return tagNames[tag];
+                }
         }
     }
 
