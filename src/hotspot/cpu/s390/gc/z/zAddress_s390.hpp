@@ -1,11 +1,11 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,27 +22,15 @@
  * questions.
  */
 
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, a notice that is now available elsewhere in this distribution
- * accompanied the original version of this file, and, per its terms,
- * should not be removed.
- */
+#ifndef CPU_S390_GC_Z_ZADDRESS_S390_HPP
+#define CPU_S390_GC_Z_ZADDRESS_S390_HPP
 
-package jdk.internal.org.commonmark.internal.inline;
+#include "utilities/globalDefinitions.hpp"
 
-/**
- * Position within a {@link Scanner}. This is intentionally kept opaque so as not to expose the internal structure of
- * the Scanner.
- */
-public class Position {
+const size_t ZPointerLoadShift = 16;
 
-    final int lineIndex;
-    final int index;
+size_t ZPlatformAddressOffsetBits();
+size_t ZPlatformAddressHeapBaseShift();
 
-    Position(int lineIndex, int index) {
-        this.lineIndex = lineIndex;
-        this.index = index;
-    }
-}
+#endif // CPU_S390_GC_Z_ZADDRESS_S390_HPP
+

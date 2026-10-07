@@ -1,11 +1,11 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,27 +22,20 @@
  * questions.
  */
 
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, a notice that is now available elsewhere in this distribution
- * accompanied the original version of this file, and, per its terms,
- * should not be removed.
- */
+#ifndef OS_CPU_LINUX_S390_GC_Z_ZSYSCALL_LINUX_S390_HPP
+#define OS_CPU_LINUX_S390_GC_Z_ZSYSCALL_LINUX_S390_HPP
 
-package jdk.internal.org.commonmark.internal.renderer.text;
+#include <sys/syscall.h>
 
-import jdk.internal.org.commonmark.node.BulletList;
+//
+// Support for building on older Linux systems
+//
 
-public class BulletListHolder extends ListHolder {
-    private final String marker;
+#ifndef SYS_memfd_create
+#define SYS_memfd_create     350
+#endif
+#ifndef SYS_fallocate
+#define SYS_fallocate        314
+#endif
 
-    public BulletListHolder(ListHolder parent, BulletList list) {
-        super(parent);
-        marker = list.getMarker();
-    }
-
-    public String getMarker() {
-        return marker;
-    }
-}
+#endif // OS_CPU_LINUX_S390_GC_Z_ZSYSCALL_LINUX_S390_HPP
