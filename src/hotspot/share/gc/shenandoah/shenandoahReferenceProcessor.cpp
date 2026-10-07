@@ -295,7 +295,6 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
   T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(reference);
   T heap_oop = RawAccess<>::oop_load(referent_addr);
   oop referent = CompressedOops::decode(heap_oop);
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (is_inactive<T>(reference, referent, type)) {
     log_trace(gc,ref)("Reference inactive: " PTR_FORMAT, p2i(reference));
