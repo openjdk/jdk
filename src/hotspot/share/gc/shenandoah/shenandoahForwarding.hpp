@@ -43,15 +43,18 @@ public:
    */
   static inline oop forwardee_raw(oop obj);
 
-  /* Returns true iff the object is forwarded.
+  /* Returns true iff the object is forwarded:
+   * either real-forwarded or self-forwarded.
    */
   static inline bool is_forwarded(oop obj);
 
-  /* Returns true iff the object is real-forwarded.
+  /* Returns true iff the object is real-forwarded:
+   * there is a forwardee that is not the object itself.
    */
   static inline bool is_real_forwarded(oop obj);
 
-  /* Returns true iff the object is self-forwarded.
+  /* Returns true iff the object is self-forwarded:
+   * there is a forwardee, it is the object itself.
    */
   static inline bool is_self_forwarded(oop obj);
 
