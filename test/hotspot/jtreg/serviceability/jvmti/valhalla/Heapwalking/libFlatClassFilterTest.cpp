@@ -29,6 +29,7 @@ extern "C" {
 static jvmtiEnv* jvmti = nullptr;
 static jlong wanted_tag = 0;
 static jint object_count = 0;
+static jint heap_filter = 0;
 
 static jint JNICALL
 heap_iteration(jlong class_tag, jlong size, jlong* tag_ptr, jint length, void* user_data) {
@@ -39,7 +40,7 @@ heap_iteration(jlong class_tag, jlong size, jlong* tag_ptr, jint length, void* u
 }
 
 JNIEXPORT jint JNICALL
-Java_FlatClassFilterTest_count(JNIEnv* jni, jclass ignored, jclass filter,
+Java_FlatClassFilterTest_count(JNIEnv* jni, jclass ignored, jclass class_filter,
                                jclass tagged_class, jlong class_tag) {
   jvmtiError err = jvmti->SetTag(tagged_class, class_tag);
   check_jvmti_status(jni, err, "SetTag");
@@ -51,7 +52,7 @@ Java_FlatClassFilterTest_count(JNIEnv* jni, jclass ignored, jclass filter,
   object_count = 0;
   callbacks.heap_iteration_callback = heap_iteration;
 
-  err = jvmti->IterateThroughHeap(0, filter, &callbacks, nullptr);
+  err = jvmti->IterateThroughHeap(heap_filter, class_filter, &callbacks, nullptr);
   check_jvmti_status(jni, err, "IterateThroughHeap");
 
   return object_count;
@@ -61,6 +62,9 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
   if (vm->GetEnv(reinterpret_cast<void**>(&jvmti), JVMTI_VERSION_1_2) != JNI_OK) {
     return JNI_ERR;
+  }
+  if (options != nullptr && strcmp(options, "heap_filter_class_untagged") == 0) {
+    heap_filter = JVMTI_HEAP_FILTER_CLASS_UNTAGGED;
   }
   jvmtiCapabilities caps;
   memset(&caps, 0, sizeof(caps));

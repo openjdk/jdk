@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8389460
  * @summary JVMTI IterateThroughHeap class filter should not skip flattened value objects
  * @modules java.base/jdk.internal.misc
@@ -31,6 +31,25 @@
  * @requires vm.jvmti
  * @enablePreview
  * @run main/othervm/native -agentlib:FlatClassFilterTest
+ *                          -XX:+UnlockDiagnosticVMOptions
+ *                          -XX:+UnlockExperimentalVMOptions
+ *                          -XX:+UseArrayFlattening
+ *                          -XX:+UseFieldFlattening
+ *                          -XX:+UseNullFreeAtomicValueFlattening
+ *                          -XX:+UseNullableAtomicValueFlattening
+ *                          FlatClassFilterTest
+ */
+
+/*
+ * @test id=class_untagged
+ * @bug 8389460
+ * @summary JVMTI IterateThroughHeap class filter should not skip flattened value objects
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @requires vm.jvmti
+ * @enablePreview
+ * @run main/othervm/native -agentlib:FlatClassFilterTest=heap_filter_class_untagged
  *                          -XX:+UnlockDiagnosticVMOptions
  *                          -XX:+UnlockExperimentalVMOptions
  *                          -XX:+UseArrayFlattening
