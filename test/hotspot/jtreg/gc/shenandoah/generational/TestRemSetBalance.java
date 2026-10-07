@@ -23,6 +23,12 @@
  *
  */
 
+/* This test is marked manual because it is known to require human
+ * interpretation of the results. The data gathered and reported by
+ * the test can be informative, though failure or passing of the test
+ * is not conclusive.
+ */
+
 /*
  * @test id=generational
  * @summary Test that scanning of the remembered set is well balanced
@@ -83,7 +89,7 @@ public class TestRemSetBalance {
           } else {
             int average = total_work / num_workers;
             // Allow deviation from average plus or minus 9.375%)
-            int deviation_bound = 3 * (average / 32);
+            int deviation_bound = (3 * average) / 32;
             if (max_work > average + deviation_bound) {
               System.out.println("Out of balance: max work: " + Integer.toString(max_work) +
                                  " is greater than average work: " + Integer.toString(average) +
