@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,11 +75,11 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(const ShenandoahAllocReq
   // Only need to update alloc metadata for lab alloc, shared alloc is counted implicitly by tlab/gclab allocs
   if (req.is_lab_alloc()) {
     if (req.is_mutator_alloc()) {
-      _tlab_allocs += size;
+      _tlab_allocs = checked_cast<uint32_t>(_tlab_allocs + size);
     } else if (req.is_old()) {
-      _plab_allocs += size;
+      _plab_allocs = checked_cast<uint32_t>(_plab_allocs + size);
     } else {
-      _gclab_allocs += size;
+      _gclab_allocs = checked_cast<uint32_t>(_gclab_allocs + size);
     }
   }
 }

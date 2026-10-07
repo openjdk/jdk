@@ -357,8 +357,10 @@ jint ShenandoahHeap::initialize() {
   //
   // Create regions and region sets
   //
-  size_t region_align = align_up(sizeof(ShenandoahHeapRegion), SHENANDOAH_CACHE_LINE_SIZE);
-  size_t region_storage_size_orig = region_align * _num_regions;
+  static_assert(sizeof(ShenandoahHeapRegion) <= 2 * SHENANDOAH_CACHE_LINE_SIZE,
+                "Performance: should take at most two cache lines");
+  size_t region_granule = align_up(sizeof(ShenandoahHeapRegion), SHENANDOAH_CACHE_LINE_SIZE);
+  size_t region_storage_size_orig = region_granule * _num_regions;
   size_t region_storage_size = align_up(region_storage_size_orig,
                                         MAX2(region_page_size, os::vm_allocation_granularity()));
 
@@ -419,7 +421,7 @@ jint ShenandoahHeap::initialize() {
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
-      void* loc = region_storage.base() + i * region_align;
+      void* loc = region_storage.base() + i * region_granule;
 
       ShenandoahHeapRegion* r = new (loc) ShenandoahHeapRegion(start, i, is_committed);
       assert(is_aligned(r, SHENANDOAH_CACHE_LINE_SIZE), "Sanity");

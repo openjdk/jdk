@@ -239,49 +239,72 @@ private:
   static size_t MaxTLABSizeBytes;
   static size_t MaxTLABSizeWords;
 
-  // Never updated fields
-  size_t const _index;
+  // NOTE: This class is allocated specially by ShenandoahHeap, starting on cache line
+  // boundary. We have to carefully manage the order of these fields and the total density
+  // of the instance. Sometimes we arrange the fields in "unnatural" order to get more
+  // compact memory representation. If you change/rearrange the fields here, check the new
+  // layout with pahole. ShenandoahHeap::initialize() statically asserts the size limit.
+
+  // We split fields in two groups to hit two different cache lines (assuming 64-byte lines,
+  // see SHENANDOAH_CACHE_LINE_SIZE). The first cache line contains fields that are read very
+  // often but written rarely: the immutable region bounds, the region state (a few transitions
+  // per GC cycle, but consulted on every state check) and per-cycle GC bookkeeping. The second
+  // cache line contains fields updated frequently during allocation and marking, where
+  // contention is unfortunate but at least contained, plus the small flags and counters that
+  // fit in the remaining bytes.
+
   HeapWord* const _bottom;
   HeapWord* const _end;
+  uint32_t const _index;
 
-  // Rarely updated fields
+  Atomic<RegionState> _state;
   HeapWord* _new_top;
-  double _empty_time;
-
   HeapWord* _top_before_promoted;
   HeapWord* _top_at_evac_start;
 
-  // Seldom updated fields
-  Atomic<RegionState> _state;
-  HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
-
-  // Frequently updated fields
-  HeapWord* _top;
-
-  size_t _tlab_allocs;
-  size_t _gclab_allocs;
-  size_t _plab_allocs;
-
-  Atomic<size_t> _live_data;
-  Atomic<size_t> _critical_pins;
+  // For old regions not selected as collection set candidates
+  HeapWord* _coalesce_and_fill_boundary;
 
   size_t _mixed_candidate_garbage_words;
 
+  // --- cache line boundary here --
+
+  // Live data can include humongous region size.
+  Atomic<size_t> _live_data;
+
+  Atomic<size_t> _critical_pins;
+
   Atomic<HeapWord*> _update_watermark;
 
-  uint _age;
-  bool _promoted_in_place;
-  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
+  HeapWord* _top;
 
-  ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
+  // Lab allocation counters, in heap words. Their sum is bounded by region_size_words()
+  // only count allocations between bottom() and top(); reset_alloc_metadata() resets them to zero whenever top is reset.
+  uint32_t _tlab_allocs;
+  uint32_t _gclab_allocs;
+  uint32_t _plab_allocs;
+
+  // Tracks epochs of retrograde ageing (rejuvenation). Accumulates without clamping,
+  // so it needs a full-width type. Placed here to fill the slot before _empty_time.
+  CENSUS_NOISE(uint _youth;)
+
+  double _empty_time;
 
   // Set when an evacuation failure self-forwarded at least one object in this
   // region. The drain at degen/full GC entry scans flagged regions and CAS-
   // clears the self_fwd bits. Safety-net reset on region recycle.
-  ShenandoahSharedFlag _has_self_forwards;
+  Atomic<bool> _has_self_forwards;
+
+  // Used to indicate that the region is being recycled; see try_recycle*()
+  Atomic<bool> _recycling;
+
+  // Region age, clamped at markWord::max_age
+  uint8_t _age;
 
   // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
+
+  bool _promoted_in_place;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -540,9 +563,10 @@ public:
   // Self-forward accounting: set by an evacuating thread after it successfully
   // installs a self-forward mark on an object in this region. Tested and cleared
   // at the drain phase (degen/full GC entry) and again on region recycle.
-  bool has_self_forwards() const { return _has_self_forwards.is_set(); }
-  void set_has_self_forwards()   { _has_self_forwards.set(); }
-  void clear_has_self_forwards() { _has_self_forwards.unset(); }
+  // Release/acquire is enough here: readers only run at a safepoint, after all evacuating threads stop
+  bool has_self_forwards() const { return _has_self_forwards.load_acquire(); }
+  void set_has_self_forwards()   { _has_self_forwards.release_store(true); }
+  void clear_has_self_forwards() { _has_self_forwards.release_store(false); }
 
 private:
   void decrement_humongous_waste();
