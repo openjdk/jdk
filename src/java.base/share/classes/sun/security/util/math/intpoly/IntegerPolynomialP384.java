@@ -858,7 +858,7 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[8]  += d4;
         c[9]  += (d5 << 1) + dd4;
         c[10] += (d6 + dd5) << 1;
-        c[11] = dd6;
+        c[11] = dd6 << 1;
 
         // Row 5 - multiply by aa4
         d5 = aa5 * aa5;
