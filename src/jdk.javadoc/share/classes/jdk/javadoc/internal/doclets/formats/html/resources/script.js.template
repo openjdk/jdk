@@ -336,11 +336,6 @@ function makeFilterWidget(sidebar, updateToc) {
  * Theme support
  */
 function initTheme() {
-    const osDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
-    let [currentTheme, underlineLinks] = getTheme();
-
-    setTheme(currentTheme, underlineLinks);
-
     const template = document.createElement("template");
     template.innerHTML =
         `<li style="text-transform:none;">
@@ -363,6 +358,9 @@ function initTheme() {
     const themeButton = themeUI.querySelector("button#theme-button");
     const themePanel = themeUI.querySelector("div#theme-panel");
     var themePanelVisible = false;
+    const osDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
+    let [currentTheme, underlineLinks] = getTheme();
+    setTheme(currentTheme, underlineLinks);
 
     function getTheme() {
         return [
@@ -377,6 +375,8 @@ function initTheme() {
         document.documentElement.setAttribute("data-theme", theme);
         if (underlineLinks) {
             document.documentElement.setAttribute("data-underline-links", underlineLinks);
+        } else {
+            themePanel.querySelector("input#underline-links").checked = (theme === THEME_DARK);
         }
     }
     osDarkTheme.addEventListener("change", e => {
