@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,26 +282,59 @@ public class BufferedImage extends java.awt.Image
         initIDs();
     }
 
+    private static void checkDimensions(final int width, final int height) {
+         if (width <= 0 || height <= 0) {
+             throw new IllegalArgumentException(
+                      "width " + width + " and height " + height + " must both be > 0");
+         }
+         long lsz = (long)width * height;
+         if (lsz > Integer.MAX_VALUE) {
+             throw new IllegalArgumentException(
+                      "width " + width + " * height " + height + " overflows int");
+         }
+    }
+
     /**
      * Constructs a {@code BufferedImage} of one of the predefined
      * image types.  The {@code ColorSpace} for the image is the
      * default sRGB space.
+     * @apiNote
+     * There are limits on the size of a {@code BufferedImage} that derive from
+     * the APIs involved and the exact implementation of a particular pre-defined type.
+     * <ul>
+     * <li> {@code BufferedImage} is an image type that supports {@link #getNumXTiles() only one tile}.
+     * <li> The organization of samples (e.g. red, green, blue, and alpha channels) for the pixels
+     * are specified by the {@code SampleModel}.
+     * <li>Each of the pre-defined image types documents the {@code SampleModel} subtypes
+     * that it can use, not always directly, but as required by the {@code ColorModel}.
+     * <li> {@code SampleModel} supports only supports up to {@code Integer.MAX_VALUE} pixels,
+     * so no {@code BufferedImage} can exceed that number of pixels.
+     * <li> The pixels are stored in a {@code DataBuffer}.
+     * <li> A {@code DataBuffer} is a container for one or more banks of
+     * Java primitive arrays so the number of data elements that can be
+     * stored per bank are limited by the maximum size of a Java array.
+     * This is at most {@code Integer.MAX_VALUE} elements, and may be less.
+     * </ul>
+     * Therefore, the number of data elements needed per pixel for an {@code imageType}
+     * further limits the maximum image size, and this is not the same for all pre-defined
+     * image types.
      * <p>
-     * {@code BufferedImage} is a type that supports only one tile.
-     * The pixels are stored in a {@code DataBuffer}.
-     * A {@code DataBuffer} is a container for one or more banks of
-     * Java primitive arrays so the number of samples that can be
-     * stored are limited by the maximum size of a Java array.
-     * This is at most {@code Integer.MAX_VALUE}.
-     * The number of samples per-pixel for an {@code imageType} affect
-     * the maximum. For example, if an image format uses bytes to store
-     * separately each of the four samples in an ARGB pixel format image,
-     * it will only be able to hold one fourth as many pixels as an image
-     * that uses an int to store all four samples.
-     * For example, {@code TYPE_4BYTE_ABGR} may use 4 bytes to store a pixel
-     * whereas {@code TYPE_INT_ARGB} may use a single int.
+     * For example {@code TYPE_3BYTE_BGR} uses byte array elements for storage.
+     * If the {@code ComponentSampleModel} used by the implementation supports
+     * only a single bank in its {@code DataBuffer}, then it will only be able
+     * to hold one third as many pixels as an implementation that uses a
+     * {@code BandedSampleModel} and a {@code DataBuffer} with 3 banks, one per band.
+     * <p>
+     * And {@code TYPE_INT_BGR} needs only one bank in its {@code DataBuffer}
+     * to support the same image size as the banded 3 byte format.
+     * <p>
      * So the maximum number of pixels in a {@code BufferedImage} is
-     * format dependent.
+     * format and implementation dependent. Applications must be aware of these
+     * limitations when creating images.
+     * @implNote
+     * This implementation uses a single data bank to store all image data for
+     * the pre-defined image types {@code TYPE_3BYTE_BGR}, {@code TYPE_4BYTE_BGR},
+     * and {@code TYPE_4BYTE_ABGR}.
      *
      * @param width     width of the created image
      * @param height    height of the created image
@@ -309,8 +342,10 @@ public class BufferedImage extends java.awt.Image
      * @throws IllegalArgumentException if {@code width} or {@code height} is
      *          not greater than zero.
      * @throws IllegalArgumentException if the multiplication product of
-     *          {@code width}, {@code height}, and the number of samples per pixel
-     *          for the specified format exceeds the maximum length of a Java array.
+     *          {@code width} and {@code height} exceeds {@code Integer.MAX_VALUE},
+     *          or, when further multiplied by the number of data elements per pixel
+     *          for the specified {@code imageType}, exceeds the maximum that can be stored
+     *          by this implementation.
      * @throws IllegalArgumentException if the {@code imageType} is not one of
      *         the pre-defined recognized image types.
      * @see ColorSpace
@@ -332,16 +367,9 @@ public class BufferedImage extends java.awt.Image
                          int height,
                          int imageType) {
 
-        if (width <= 0 || height <= 0) {
-            throw new IllegalArgumentException(
-                     "width " + width + " height " + height + " must both be > 0");
-        }
-        long lsz = (long)width * height;
-        if (lsz > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException(
-                     "width " + width + " * height " + height + " overflow int");
-        }
-        /* most BufferedImage formats use one data buffer element per pixel.
+        checkDimensions(width, height);
+
+        /* Most BufferedImage formats use one data buffer element per pixel.
          * But for the NBYTE formats the BufferedImage implementation
          * uses an interleaved raster which has a ByteDataBuffer of a single bank,
          * so either 3 or 4 bytes is used for each pixel.
@@ -356,9 +384,10 @@ public class BufferedImage extends java.awt.Image
                spp = 4;
                break;
         }
+        long lsz = (long)width * height;
         if ((spp != 1) && (lsz * spp > Integer.MAX_VALUE)) {
             throw new IllegalArgumentException(
-                    "width " + width + " height " + height + " * " +
+                    "width " + width + " * height " + height + " * " +
                      spp + " samples per pixel overflow int");
         }
 
@@ -575,8 +604,7 @@ public class BufferedImage extends java.awt.Image
      * @throws IllegalArgumentException if {@code width} or {@code height} is
      *          not greater than zero.
      * @throws IllegalArgumentException if the multiplication product of
-     *          {@code width} and {@code height}
-     *          exceeds the maximum length of a Java array.
+     *          {@code width} and {@code height} exceeds {@code Integer.MAX_VALUE}.
      * @throws IllegalArgumentException   if the imageType is not
      * TYPE_BYTE_BINARY or TYPE_BYTE_INDEXED or if the imageType is
      * TYPE_BYTE_BINARY and the color map has more than 16 entries.
@@ -588,15 +616,7 @@ public class BufferedImage extends java.awt.Image
                           int imageType,
                           IndexColorModel cm) {
 
-         if (width <= 0 || height <= 0) {
-             throw new IllegalArgumentException(
-                      "width " + width + " height " + height + " must both be > 0");
-         }
-         long lsz = (long)width * height;
-         if (lsz > Integer.MAX_VALUE) {
-             throw new IllegalArgumentException(
-                      "width " + width + " height " + height + " overflow int");
-         }
+        checkDimensions(width, height);
 
         if (cm.hasAlpha() && cm.isAlphaPremultiplied()) {
             throw new IllegalArgumentException("This image types do not have "+
@@ -668,7 +688,7 @@ public class BufferedImage extends java.awt.Image
      * @throws IllegalArgumentException if
      *          {@code raster} is incompatible with {@code cm}
      * @throws IllegalArgumentException if
-     *          {@code raster}, {@code minX} or {@code minY} is not zero
+     *          {@code raster.minX} or {@code m.minXinY} is not zero
      * @see ColorModel
      * @see Raster
      * @see WritableRaster
