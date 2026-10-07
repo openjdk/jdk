@@ -56,6 +56,9 @@ public final class Argon2Util {
 
     private static int parseInt(String s, String varName, int max) {
         String[] pair = s.split("=");
+        if (pair.length != 2) {
+            throw new IllegalArgumentException("Invalid setting " + s);
+        }
         String name = pair[0];
         if (!varName.equals(name)) {
             throw new IllegalArgumentException("Expected " + varName +

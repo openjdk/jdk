@@ -208,7 +208,7 @@ public final class ByteArrayAccess {
     /**
      * special optimized long to byte[] conversion, little endian byte order
      */
-    public static void l2bLittle8(long value, byte[] in, int inOfs) {
-        LE.LONG_ARRAY.set(in, inOfs, value);
+    public static void l2bLittle8(long value, byte[] out, int outOfs) {
+        LE.LONG_ARRAY.set(out, outOfs, value);
     }
 }

@@ -51,13 +51,16 @@ public final class Argon2DerivedKey implements SecretKey {
     @java.io.Serial
     private static final long serialVersionUID = 724953279128L;
 
-    // cannot be final; set to null after destroy() is called
-    private byte[] key;
     private final String algo;
+    private final byte[] key;
+    private final transient Cleaner.Cleanable cleaner;
+    private boolean destroyed;
 
     // for including Argon2 parameters in toString() method
-    private final transient String info;
-    private transient Cleaner.Cleanable cleaner;
+    private final String info;
+
+    // need to keep the same hash value post-destruction
+    private final int hashCode;
 
     /**
      * Create an Argon2 derived secret key using the supplied arguments.
@@ -69,21 +72,22 @@ public final class Argon2DerivedKey implements SecretKey {
      */
     Argon2DerivedKey(String type, Argon2ParameterSpec spec,
             byte[] key, String algo) {
-        this.key = key; // internally derived, no need to clone
         this.algo = algo;
-
-        this.info = String.format("%s key derived using %s with params = %s",
-                algo, type, spec.toString());
+        this.key = key; // internally derived, no need to clone
+        this.hashCode = Arrays.hashCode(this.key) ^
+                    algo.toLowerCase(Locale.ENGLISH).hashCode();
         final byte[] k = key;
-        cleaner = CleanerFactory.cleaner().register(this,
+        this.cleaner = CleanerFactory.cleaner().register(this,
                 () -> {
                    Arrays.fill(k, (byte) 0x00);
                 });
+        this.info = String.format("%s key derived using %s with params = %s",
+                algo, type, spec.toString());
     }
 
     @Override
-    public byte[] getEncoded() {
-        if (isDestroyed()) {
+    public synchronized byte[] getEncoded() {
+        if (destroyed) {
             throw new IllegalStateException("key destroyed");
         }
         try {
@@ -112,25 +116,16 @@ public final class Argon2DerivedKey implements SecretKey {
      */
     @Override
     public int hashCode() {
-        if (isDestroyed()) {
-            throw new IllegalStateException("key destroyed");
-        }
-        try {
-            return Arrays.hashCode(key) ^
-                    algo.toLowerCase(Locale.ENGLISH).hashCode();
-        } finally {
-            // prevent this from being cleaned for the above block
-            Reference.reachabilityFence(this);
-        }
+        return hashCode;
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public synchronized boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (isDestroyed()) {
+        if (destroyed) {
             throw new IllegalStateException("key destroyed");
         }
 
@@ -163,16 +158,16 @@ public final class Argon2DerivedKey implements SecretKey {
     }
 
     @Override
-    public void destroy() {
-        if (cleaner != null) {
+    public synchronized void destroy() {
+        if (!destroyed) {
             cleaner.clean();
-            cleaner = null;
+            destroyed = true;
         }
     }
 
     @Override
-    public boolean isDestroyed() {
-        return (cleaner == null);
+    public synchronized boolean isDestroyed() {
+        return destroyed;
     }
 
     /**

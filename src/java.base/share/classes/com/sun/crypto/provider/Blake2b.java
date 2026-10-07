@@ -38,7 +38,7 @@ import static sun.security.provider.ByteArrayAccess.*;
  *
  * @since 28
  */
-public final class Blake2b {
+final class Blake2b {
 
     private static final long[] IV = {
        0x6A09E667F3BCC908L, 0xBB67AE8584CAA73BL,

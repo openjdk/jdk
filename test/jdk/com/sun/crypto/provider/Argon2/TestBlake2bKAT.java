@@ -20,17 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.crypto.provider;
+
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Locale;
-import com.sun.crypto.provider.Blake2b;
 
 /**
  * @test
  * @bug 8253914
- * @modules java.base/com.sun.crypto.provider:+open
- *          java.base/sun.security.provider
+ * @modules java.base/com.sun.crypto.provider
  * @summary Test the Blake2b impl with various known answer tests vectors
+ * @compile --patch-module java.base=${test.src} TestBlake2bKAT.java
+ * @run main/othervm --patch-module java.base=${test.class.path} com.sun.crypto.provider.TestBlake2bKAT
  */
 public class TestBlake2bKAT {
 

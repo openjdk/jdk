@@ -41,26 +41,32 @@ public class InvalidArgs {
     public static void main(String[] args) throws Exception {
         Class iaeCls = IllegalArgumentException.class;
 
+        final byte[] b8 = "12345678".getBytes();
+
         final Builder b = Argon2ParameterSpec.newBuilder();
+        Utils.runAndCheckException(()->b.build(b8, b8), iaeCls);
         Utils.runAndCheckException(()->b.parallelism(-1), iaeCls);
         Utils.runAndCheckException(()->b.parallelism(0), iaeCls);
-        Utils.runAndCheckException(()->b.parallelism(2).memoryKiB(12), iaeCls);
-        Utils.runAndCheckException(()->b.parallelism(2).memoryPowerOfTwo(3),
+        Utils.runAndCheckException
+                (()->b.parallelism(2).memoryKiB(12).build(b8, b8), iaeCls);
+        Utils.runAndCheckException
+                (()->b.parallelism(2).memoryPowerOfTwo(3).build(b8, b8),
                 iaeCls);
         Utils.runAndCheckException(()->b.tagLen(0), iaeCls);
         Utils.runAndCheckException(()->b.tagLen(2), iaeCls);
         Utils.runAndCheckException(()->b.memoryKiB(-1), iaeCls);
         Utils.runAndCheckException(()->b.memoryKiB(0), iaeCls);
         Utils.runAndCheckException(()->b.memoryKiB(7), iaeCls);
-        Utils.runAndCheckException(()->b.memoryKiB(16).parallelism(3), iaeCls);
+        Utils.runAndCheckException
+                (()->b.memoryKiB(16).parallelism(3).build(b8, b8), iaeCls);
         Utils.runAndCheckException(()->b.memoryPowerOfTwo(2), iaeCls);
-        Utils.runAndCheckException(()->b.memoryPowerOfTwo(4).parallelism(3),
+        Utils.runAndCheckException
+                (()->b.memoryPowerOfTwo(4).parallelism(3).build(b8, b8),
                 iaeCls);
         Utils.runAndCheckException(()->b.iterations(0), iaeCls);
         Utils.runAndCheckException(()->b.secret(null), iaeCls);
         Utils.runAndCheckException(()->b.associatedData(null), iaeCls);
 
-        final byte[] b8 = "12345678".getBytes();
         final char[] c0 = new char[0];
         // setup the builder w/ the required parameters
         b.parallelism(2).memoryKiB(32).tagLen(8).iterations(5);

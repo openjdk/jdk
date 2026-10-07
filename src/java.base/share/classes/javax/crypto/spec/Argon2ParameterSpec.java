@@ -41,9 +41,27 @@ import sun.security.util.PBEUtil;
  * iterations, degree of parallelism, output tag length, version, and optional
  * secret and associated data.
  *
- * <p>This class can be used to initialize a {@link javax.crypto.KDF} object
- * for one of the {@code Argon2} algorithm: {@code Argon2i}, {@code Argon2d},
- * or {@code Argon2id}.
+ * <p>This class is for key derivation using a {@link javax.crypto.KDF}
+ * object for one of the {@code Argon2} algorithms: {@code Argon2i},
+ * {@code Argon2d}, or {@code Argon2id}.
+ *
+ * <p>To create an {@code Argon2ParameterSpec}, obtain a {@link Builder}
+ * with {@link #newBuilder()}, set the required parameters, and call a
+ * {@code build} method with the salt and password.
+ *
+ * Examples:
+ * {@snippet lang = java:
+ * // this usage depicts the initialization of an Argon2 AlgorithmParameterSpec
+ * // using t=1 iteration, p=4 lanes, m=2^(21) (2 GiB of RAM), 256-bit tag size,
+ * // 128-bit salt, and the desired passwd.
+ * byte[] salt = ... // 16-byte
+ * byte[] passwd = ...
+ * AlgorithmParameterSpec.Builder builder =
+ *             Argon2ParameterSpec.newBuilder()
+ *                     .parallelism(4).memoryPowerOfTwo(21)
+ *                     .iterations(1).tagLen(32);
+ * AlgorithmParameterSpec spec = builder.build(salt, passwd);
+ *}
  *
  * @spec https://www.rfc-editor.org/info/rfc9106
  *      RFC 9106: Argon2 Memory-Hard Function for Password Hashing and Proof-of-Work Applications
@@ -105,9 +123,18 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      * This {@code Builder} constructs {@code Argon2ParameterSpec} objects.
      *
      * <p>Obtain a {@code Builder} by calling
-     * {@code Argon2ParameterSpec.newBuilder}. Supply the required parameters
-     * with the builder methods, then call {@code build} to create the
-     * {@code Argon2ParameterSpec} object.
+     * {@link Argon2ParameterSpec#newBuilder()}.
+     * Before calling {@code build}, supply the required parameters, e.g.
+     * set the memory cost with either
+     * {@link #memoryKiB(int)} or {@link #memoryPowerOfTwo(int)}, set
+     * {@link #iterations(int) iterations},
+     * {@link #parallelism(int) parallelism}, and
+     * {@link #tagLen(int) output tag length}. Lastly, supply the salt and
+     * password with {@link #build(byte[], byte[])} or
+     * {@link #build(byte[],char[],Charset)}.
+     *
+     * <p>The version defaults to {@code V13}. The secret and associated data
+     * are optional. A builder is not thread-safe.
      *
      * <p>Note that the {@code Builder} is not thread-safe.
      */
@@ -172,30 +199,23 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
          *
          * @param m the memory cost, in KiB
          * @return this builder
-         * @throws IllegalArgumentException
-         *         if {@code m} is less than 8; or if {@code parallelism(p)}
-         *         has already been called and {@code m} is less than
-         *         {@code 8 * p}
+         * @throws IllegalArgumentException if {@code m} is less than 8
          */
         public Builder memoryKiB(int m) {
-            this.memory = checkInteger(m, (p > 0 ? p << 3 : M_MIN),
-                    -1, "memory cost in KiB");
+            this.memory = checkInteger(m, M_MIN, -1, "memory cost in KiB");
             return this;
         }
 
         /**
-         * Sets the memory cost to {@code 2}<sup>{@code mPower}</sup> KiB.
+         * Sets the memory cost to 2<sup>{@code mPower}</sup> KiB.
          *
          * @param mPower the base-2 exponent used to derive the memory cost
          * @return this builder
          * @throws IllegalArgumentException
-         *         if {@code mPower} is less than 3 or greater than 30; or if
-         *         {@code parallelism(p)} has already been called and
-         *         {@code mPower} is less than {@code 3 + ceil(log2(p))}
+         *         if {@code mPower} is less than 3 or greater than 30
          */
         public Builder memoryPowerOfTwo(int mPower) {
-            checkInteger(mPower, ((p > 0 ? ceilingOfLog2(p) : 0) + 3),
-                    MP_MAX, "memory cost in power of two");
+            checkInteger(mPower, 3, MP_MAX, "memory cost in power of two");
             this.memory = 1 << mPower;
             return this;
         }
@@ -218,12 +238,10 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
          * @param p the degree of parallelism
          * @return this builder
          * @throws IllegalArgumentException if {@code p} is not positive,
-         *         greater than {@code 16777215}, or greater than {@code m / 8}
-         *         if the memory cost has already been set
+         *         or greater than 2<sup>24</sup> - 1 (16,777,215)
          */
         public Builder parallelism(int p) {
-            int max = (memory > 0 ? Math.min(P_MAX, memory >>> 3) : P_MAX);
-            this.p = checkInteger(p, 1, max, "parallellism");
+            this.p = checkInteger(p, 1, P_MAX, "parallellism");
             return this;
         }
 
@@ -240,7 +258,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
         }
 
         /**
-         * Sets the Argon2 version.
+         * Sets the Argon2 version. Defaults to {@code V13} if not set.
          *
          * @param ver the Argon2 Version
          * @return this builder
@@ -255,12 +273,17 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
         /**
          * Sets the optional secret value.
          *
+         * <p>Note that if a secret was previously set, the builder clears
+         * its copy of the previous secret before replacing it with the
+         * newly supplied one.
+         *
          * @param k the secret value
          * @return this builder
          * @throws IllegalArgumentException if {@code k} is {@code null}
          */
         public Builder secret(byte[] k) {
             checkNonNull(k, "secret");
+            // erase earlier secret if set
             if (this.k != B0) {
                 Arrays.fill(this.k, (byte)0);
             }
@@ -290,7 +313,9 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
          * @return a new {@code Argon2ParameterSpec} object
          * @throws IllegalArgumentException if {@code salt} is {@code null} or
          *         has fewer than 8 bytes; if {@code password} is {@code null};
-         *         or if any required builder parameter has not been set
+         *         or if any required builder parameter has not been set; or
+         *         if the memory cost is less than eight times the degree of
+         *         parallelism
          */
         public Argon2ParameterSpec build(byte[] salt, byte[] password) {
             checkBytes(salt, NONCE_LEN_MIN, "salt");
@@ -316,7 +341,8 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
          * @throws IllegalArgumentException if {@code salt} is {@code null}
          *         or has fewer than 8 bytes; if {@code passwdChar} or
          *         {@code cs} is {@code null}; or if any required builder
-         *         parameter has not been set.
+         *         parameter has not been set; or if the memory cost is
+         *         less than eight times the degree of parallelism
          */
         public Argon2ParameterSpec build(byte[] salt, char[] passwdChar,
                 Charset cs) {
@@ -364,6 +390,8 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
     // output hash
     private final byte[] x;
 
+    private volatile boolean destroyed = false;
+
     /**
      * Constructs a parameter set for Argon2 from the given values.
      *
@@ -379,8 +407,8 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
         this.tagLen = builder.tagLen;
         this.memory = builder.memory;
         this.t = builder.t;
-        this.k = builder.k.clone();
-        this.x = builder.x.clone();
+        this.k = (builder.k == B0 ? B0 : builder.k.clone());
+        this.x = (builder.x == B0 ? B0 : builder.x.clone());
     }
 
     /**
@@ -442,10 +470,10 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      * @throws IllegalStateException if {@code destroy()} has been called
      */
     public byte[] secret() {
-        if (k == null) {
+        if (destroyed) {
             throw new IllegalStateException("secret has been cleared");
         }
-        return (k.length == 0 ? B0 : k.clone());
+        return (k == B0 ? B0 : k.clone());
     }
 
     /**
@@ -453,7 +481,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      * if not set}
      */
     public byte[] associatedData() {
-        return (x.length == 0 ? B0 : x.clone());
+        return (x == B0 ? B0 : x.clone());
     }
 
     /**
@@ -463,6 +491,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      *
      * @return a string representation of this parameter set
      */
+    @Override
     public String toString() {
         // skip password and secret due to their sensitivity
         return String.format("%s, memoryKiB=%d, iterations=%d, parallelism=%d, tagLen=%d, associatedData=%s, salt=%s",
@@ -475,11 +504,10 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      */
     @Override
     public void destroy() {
-        if (!isDestroyed()) {
+        if (!destroyed) {
             Arrays.fill(passwd, (byte)0);
             Arrays.fill(k, (byte)0);
-            passwd = null;
-            k = null;
+            destroyed = true;
         }
     }
 
@@ -489,6 +517,6 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      */
     @Override
     public boolean isDestroyed() {
-        return (passwd == null && k == null);
+        return destroyed;
     }
 }
