@@ -45,6 +45,9 @@ public class TestVectorIdentityTransforms {
     static final VectorSpecies<Long>    L_SPECIES = LongVector.SPECIES_PREFERRED;
     static final VectorSpecies<Float>   F_SPECIES = FloatVector.SPECIES_PREFERRED;
     static final VectorSpecies<Double>  D_SPECIES = DoubleVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Float16> H_SPECIES = Float16Vector.SPECIES_PREFERRED;
+    static final short F16_ZERO = Float.floatToFloat16(0.0f);
+    static final short F16_ONE  = Float.floatToFloat16(1.0f);
     static final int LENGTH = 1024;
 
     private byte[]    byteInput,   byteOutput;
@@ -53,6 +56,7 @@ public class TestVectorIdentityTransforms {
     private long[]    longInput,   longOutput;
     private float[]   floatInput,  floatOutput;
     private double[]  doubleInput, doubleOutput;
+    private short[]   float16Input, float16Output;
     private boolean[] maskArr;
 
     public static void main(String[] args) {
@@ -68,6 +72,7 @@ public class TestVectorIdentityTransforms {
         Generator<Long>    lGen = g.longs();
         Generator<Float>   fGen = g.floats();
         Generator<Double>  dGen = g.doubles();
+        Generator<Short>   hGen = g.float16s();
 
         byteInput   = new byte[LENGTH];
         byteOutput  = new byte[LENGTH];
@@ -81,6 +86,8 @@ public class TestVectorIdentityTransforms {
         floatOutput = new float[LENGTH];
         doubleInput  = new double[LENGTH];
         doubleOutput = new double[LENGTH];
+        float16Input  = new short[LENGTH];
+        float16Output = new short[LENGTH];
         maskArr = new boolean[LENGTH];
 
         for (int i = 0; i < LENGTH; i++) {
@@ -92,6 +99,7 @@ public class TestVectorIdentityTransforms {
         g.fill(lGen, longInput);
         g.fill(fGen, floatInput);
         g.fill(dGen, doubleInput);
+        g.fill(hGen, float16Input);
     }
     // ========================= Byte Tests =========================
 
@@ -1480,6 +1488,209 @@ public class TestVectorIdentityTransforms {
         }
         for (int i = 0; i < D_SPECIES.loopBound(LENGTH); i++) {
             Verify.checkEQ(doubleOutput[i], maskArr[i] ? doubleInput[i] : 1.0);
+        }
+    }
+
+    // ========================= Float16 Tests =========================
+    // Same identities as float/double. AddV(X, 0), SubV(X, X) and MulV(X, 0)
+    // must not fold: signed-zero and NaN make those identities invalid.
+
+    // MulV(X, Replicate(1)) => X
+    @Test
+    @IR(failOn = {IRNode.MUL_VHF},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
+    @IR(failOn = {IRNode.MUL_VHF},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public void testFloat16MulOne(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        v.mul(Float16Vector.broadcast(H_SPECIES, F16_ONE))
+         .intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16MulOne")
+    public void runFloat16MulOne() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16MulOne(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]), Float16.shortBitsToFloat16(float16Input[i]));
+        }
+    }
+
+    // MulV(Replicate(1), X) => X
+    @Test
+    @IR(failOn = {IRNode.MUL_VHF},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
+    @IR(failOn = {IRNode.MUL_VHF},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public void testFloat16OneMulX(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        Float16Vector.broadcast(H_SPECIES, F16_ONE).mul(v)
+                 .intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16OneMulX")
+    public void runFloat16OneMulX() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16OneMulX(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]), Float16.shortBitsToFloat16(float16Input[i]));
+        }
+    }
+
+    // SubV(X, Replicate(0)) => X
+    @Test
+    @IR(failOn = {IRNode.SUB_VHF},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
+    @IR(failOn = {IRNode.SUB_VHF},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public void testFloat16SubZero(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        v.sub(Float16Vector.broadcast(H_SPECIES, F16_ZERO))
+         .intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16SubZero")
+    public void runFloat16SubZero() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16SubZero(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]), Float16.shortBitsToFloat16(float16Input[i]));
+        }
+    }
+
+    // Predicated: SubV(X, Replicate(0), mask) => X
+    @Test
+    @IR(failOn = {IRNode.SUB_VHF},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    public void testFloat16MaskedSubZero(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        VectorMask<Float16> mask = VectorMask.fromArray(H_SPECIES, maskArr, index);
+        v.lanewise(VectorOperators.SUB, Float16Vector.broadcast(H_SPECIES, F16_ZERO), mask)
+         .intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16MaskedSubZero")
+    public void runFloat16MaskedSubZero() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16MaskedSubZero(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]), Float16.shortBitsToFloat16(float16Input[i]));
+        }
+    }
+
+    // Predicated: MulV(X, Replicate(1), mask) => X
+    @Test
+    @IR(failOn = {IRNode.MUL_VHF},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    public void testFloat16MaskedMulOne(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        VectorMask<Float16> mask = VectorMask.fromArray(H_SPECIES, maskArr, index);
+        v.lanewise(VectorOperators.MUL, Float16Vector.broadcast(H_SPECIES, F16_ONE), mask)
+         .intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16MaskedMulOne")
+    public void runFloat16MaskedMulOne() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16MaskedMulOne(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]), Float16.shortBitsToFloat16(float16Input[i]));
+        }
+    }
+
+    // Negative: predicated MulV(Replicate(1), X, mask) must NOT be folded
+    @Test
+    @IR(counts = {IRNode.MUL_VHF, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    public void testFloat16MaskedOneMulX(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        VectorMask<Float16> mask = VectorMask.fromArray(H_SPECIES, maskArr, index);
+        Float16Vector.broadcast(H_SPECIES, F16_ONE)
+                 .lanewise(VectorOperators.MUL, v, mask)
+                 .intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16MaskedOneMulX")
+    public void runFloat16MaskedOneMulX() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16MaskedOneMulX(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]),
+                           Float16.shortBitsToFloat16(maskArr[i] ? float16Input[i] : F16_ONE));
+        }
+    }
+
+    // Negative: AddV(X, Replicate(0)) must NOT fold (IEEE-754: -0.0 + 0.0 = +0.0)
+    @Test
+    @IR(counts = {IRNode.ADD_VHF, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
+    @IR(counts = {IRNode.ADD_VHF, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public void testFloat16AddZero(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        v.add(Float16Vector.broadcast(H_SPECIES, F16_ZERO))
+         .intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16AddZero")
+    public void runFloat16AddZero() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16AddZero(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            short expected = Float.floatToFloat16(Float.float16ToFloat(float16Input[i]) + 0.0f);
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]), Float16.shortBitsToFloat16(expected));
+        }
+    }
+
+    // Negative: SubV(X, X) must NOT fold (NaN - NaN is NaN; signed-zero)
+    @Test
+    @IR(counts = {IRNode.SUB_VHF, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
+    @IR(counts = {IRNode.SUB_VHF, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public void testFloat16SubSelf(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        v.sub(v).intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16SubSelf")
+    public void runFloat16SubSelf() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16SubSelf(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            short expected = Float.floatToFloat16(Float.float16ToFloat(float16Input[i]) - Float.float16ToFloat(float16Input[i]));
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]), Float16.shortBitsToFloat16(expected));
+        }
+    }
+
+    // Negative: MulV(X, Replicate(0)) must NOT fold (0 * NaN is NaN; signed-zero)
+    @Test
+    @IR(counts = {IRNode.MUL_VHF, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
+    @IR(counts = {IRNode.MUL_VHF, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public void testFloat16MulZero(int index) {
+        Float16Vector v = Float16Vector.fromArray(H_SPECIES, float16Input, index);
+        v.mul(Float16Vector.broadcast(H_SPECIES, F16_ZERO))
+         .intoArray(float16Output, index);
+    }
+
+    @Run(test = "testFloat16MulZero")
+    public void runFloat16MulZero() {
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i += H_SPECIES.length()) {
+            testFloat16MulZero(i);
+        }
+        for (int i = 0; i < H_SPECIES.loopBound(LENGTH); i++) {
+            short expected = Float.floatToFloat16(Float.float16ToFloat(float16Input[i]) * 0.0f);
+            Verify.checkEQ(Float16.shortBitsToFloat16(float16Output[i]), Float16.shortBitsToFloat16(expected));
         }
     }
 

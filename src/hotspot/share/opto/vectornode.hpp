@@ -177,6 +177,9 @@ class VectorNode : public TypeNode {
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
+  static bool is_hf_vector_opcode(int opc);
+  static bool is_floating_point_node(const Node* n);
+  static bool is_integral_node(const Node* n);
   // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
   // Return true if every bit in this vector is 0.
@@ -285,9 +288,9 @@ public:
 };
 
 // Vector add half float
-class AddVHFNode : public VectorNode {
+class AddVHFNode : public AddVNode {
 public:
-  AddVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  AddVHFNode(Node* in1, Node* in2, const TypeVect* vt) : AddVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -512,9 +515,9 @@ class SaturatingSubVNode : public SaturatingVectorNode {
 };
 
 // Vector subtract half float
-class SubVHFNode : public VectorNode {
+class SubVHFNode : public SubVNode {
 public:
-  SubVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  SubVHFNode(Node* in1, Node* in2, const TypeVect* vt) : SubVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -572,9 +575,9 @@ public:
 };
 
 // Vector multiply half float
-class MulVHFNode : public VectorNode {
+class MulVHFNode : public MulVNode {
 public:
-  MulVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVHFNode(Node* in1, Node* in2, const TypeVect* vt) : MulVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
