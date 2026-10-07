@@ -312,7 +312,7 @@ public class BufferedImage extends java.awt.Image
      * <li> The pixels are stored in a {@code DataBuffer}.
      * <li> A {@code DataBuffer} is a container for one or more banks of
      * Java primitive arrays so the number of data elements that can be
-     * stored per bank are limited by the maximum size of a Java array.
+     * stored per bank is limited by the maximum size of a Java array.
      * This is at most {@code Integer.MAX_VALUE} elements, and may be less.
      * </ul>
      * Therefore, the number of data elements needed per pixel for an {@code imageType}
