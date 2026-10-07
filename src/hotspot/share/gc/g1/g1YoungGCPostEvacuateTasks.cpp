@@ -53,6 +53,7 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/ticks.hpp"
 
 class G1PostEvacuateCollectionSetCleanupTask1::FlushPssTask : public G1AbstractSubTask {
@@ -178,6 +179,8 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
 
   uint _num_chunks_per_region;
   uint _num_evac_failed_regions;
+  // Total chunks over all evacuation failed regions; may exceed uint range.
+  size_t _num_chunks;
   size_t _chunk_size;
 
   class PhaseTimesStat {
@@ -251,15 +254,15 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
     Prefetch::write(obj_addr, PrefetchScanIntervalInBytes);
   }
 
-  bool claim_chunk(uint chunk_idx) {
+  bool claim_chunk(size_t chunk_idx) {
     return _chunk_bitmap.par_set_bit(chunk_idx);
   }
 
-  void process_chunk(uint worker_id, uint chunk_idx) {
+  void process_chunk(uint worker_id, size_t chunk_idx) {
     PhaseTimesStat stat(_g1h->phase_times(), worker_id);
 
     G1CMBitMap* bitmap = _cm->mark_bitmap();
-    const uint region_idx = _evac_failure_regions->get_region_idx(chunk_idx / _num_chunks_per_region);
+    const uint region_idx = _evac_failure_regions->get_region_idx(checked_cast<uint>(chunk_idx / _num_chunks_per_region));
     G1HeapRegion* hr = _g1h->region_at(region_idx);
 
     HeapWord* hr_bottom = hr->bottom();
@@ -340,13 +343,14 @@ public:
 
     _num_evac_failed_regions = _evac_failure_regions->num_evac_failed_regions();
     _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region_for_scan();
+    _num_chunks = (size_t) _num_chunks_per_region * _num_evac_failed_regions;
 
     _chunk_size = static_cast<uint>(G1HeapRegion::GrainWords / _num_chunks_per_region);
 
     log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region",
                         _num_chunks_per_region);
 
-    _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_failed_regions);
+    _chunk_bitmap.resize(_num_chunks);
   }
 
   double worker_cost() const override {
@@ -358,11 +362,10 @@ public:
 
   void do_work(uint worker_id) override {
     const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-    const uint total_chunks = _num_chunks_per_region * _num_evac_failed_regions;
-    const uint start_chunk_idx = (uint)((uint64_t)worker_id * total_chunks / total_workers);
+    const size_t start_chunk_idx = worker_id * _num_chunks / total_workers;
 
-    for (uint i = 0; i < total_chunks; i++) {
-      const uint chunk_idx = (start_chunk_idx + i) % total_chunks;
+    for (size_t i = 0; i < _num_chunks; i++) {
+      const size_t chunk_idx = (start_chunk_idx + i) % _num_chunks;
       if (claim_chunk(chunk_idx)) {
         process_chunk(worker_id, chunk_idx);
       }
