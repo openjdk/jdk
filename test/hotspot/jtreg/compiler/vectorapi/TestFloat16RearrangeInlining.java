@@ -23,8 +23,10 @@
 
 /**
  * @test
- * @bug 8337821
- * @summary Ensure reasonable inlining in Float16Vector rearrange.
+ * @bug 8337821 8393397
+ * @summary Test that C2's register allocator gracefully handles pathological
+ *          input resulting from extreme inlining. See 8393397 for the
+ *          inlining issue (observed on aarch64).
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run main/othervm -Xbatch
