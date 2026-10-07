@@ -73,11 +73,11 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _tlab_allocs(0),
   _gclab_allocs(0),
   _plab_allocs(0),
-  _empty_time(os::elapsedTime()),
-  _age(0),
   #ifdef SHENANDOAH_CENSUS_NOISE
   _youth(0),
-  #endif
+  #endif // SHENANDOAH_CENSUS_NOISE
+  _empty_time(os::elapsedTime()),
+  _age(0),
   _needs_bitmap_reset(false),
   _promoted_in_place(false)
 {
@@ -324,8 +324,8 @@ void ShenandoahHeapRegion::make_empty() {
   CENSUS_NOISE(clear_youth();)
   switch (state()) {
     case _trash:
-      set_state(_empty_committed);
       _empty_time = os::elapsedTime();
+      set_state(_empty_committed);
       return;
     default:
       report_illegal_transition("emptying");
@@ -610,6 +610,9 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
       // by more time-precise accounting of these details.
       recycle_internal();
     }
+    // A release store is enough to hand the recycled region over: a racing recycler
+    // observes it through the CAS or the acquire load in the spin loop below, and
+    // nothing after this point depends on the store. No trailing fence is needed.
     _recycling.release_store(false);
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
@@ -642,6 +645,7 @@ void ShenandoahHeapRegion::try_recycle() {
       // by more time-precise accounting of these details.
       recycle_internal();
     }
+    // A release store is enough here as well, see try_recycle_under_lock().
     _recycling.release_store(false);
   }
 }
