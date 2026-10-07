@@ -585,7 +585,7 @@ void G1Policy::record_full_collection_start() {
   record_pause_start_time();
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_full_gc();
-  _collection_set->abandon_all_candidates();
+  candidates()->clear();
 }
 
 void G1Policy::record_full_collection_end(size_t allocation_word_size) {
@@ -720,7 +720,7 @@ void G1Policy::record_concurrent_mark_remark_end() {
 }
 
 G1CollectionSetCandidates* G1Policy::candidates() const {
-  return _collection_set->candidates();
+  return _g1h->collection_set_candidates();
 }
 
 double G1Policy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const {
@@ -1375,7 +1375,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
 }
 
 void G1Policy::abandon_collection_set_candidates() {
-  _collection_set->abandon_all_candidates();
+  candidates()->clear();
 }
 
 void G1Policy::update_gc_pause_time_ratios(Pause gc_type, double start_time_sec, double end_time_sec) {

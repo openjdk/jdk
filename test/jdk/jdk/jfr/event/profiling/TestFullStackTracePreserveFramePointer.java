@@ -1,11 +1,10 @@
 /*
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,17 +21,22 @@
  * questions.
  */
 
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, a notice that is now available elsewhere in this distribution
- * accompanied the original version of this file, and, per its terms,
- * should not be removed.
+package jdk.jfr.event.profiling;
+
+import jdk.test.lib.jfr.EventNames;
+
+/**
+ * @test
+ * @requires vm.hasJFR
+ * @requires vm.opt.DeoptimizeALot != true
+ * @library /test/lib
+ * @build jdk.jfr.event.profiling.StackTraceTestMatrix
+ * @run main/othervm -XX:CompileCommand=compileonly,jdk.test.lib.jfr.RecurseThread::recurse* -XX:+PreserveFramePointer ${test.main.class}
  */
+public class TestFullStackTracePreserveFramePointer {
 
-package jdk.internal.org.commonmark.internal.inline;
+    public static void main(String[] args) throws Throwable {
+        StackTraceTestMatrix.runPlatformThreads(EventNames.ExecutionSample, "sampledThread");
+    }
 
-public interface InlineContentParser {
-
-    ParsedInline tryParse(InlineParserState inlineParserState);
 }

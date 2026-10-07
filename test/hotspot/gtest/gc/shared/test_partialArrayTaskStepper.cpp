@@ -79,3 +79,19 @@ TEST(PartialArrayTaskStepperTest, doit) {
     }
   }
 }
+
+// Verifies that with below constants the stepper won't create tasks beyond the original array.
+TEST(PartialArrayTaskStepperTest, overflow_beyond_array) {
+  const size_t Length = INT32_MAX;
+  const size_t ChunkSize = 1;
+  const size_t Index = 1431655765;
+  const size_t NumWorkers = 16; // Fanout is 4.
+
+  const Stepper stepper(NumWorkers);
+
+  Atomic<size_t> to_length;
+  to_length.store_relaxed(Index);
+
+  Step step = StepperSupport::next(&stepper, Length, ChunkSize, &to_length);
+  ASSERT_EQ(1u, step._ncreate);
+}

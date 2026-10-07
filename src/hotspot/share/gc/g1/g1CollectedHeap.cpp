@@ -31,7 +31,6 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
-#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
@@ -1327,11 +1326,10 @@ G1CollectedHeap::G1CollectedHeap() :
   _gc_tracer_stw(new G1NewTracer()),
   _policy(new G1Policy(_gc_timer_stw)),
   _heap_sizing_policy(nullptr),
-  _collection_set(this, _policy),
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_card_set_group(card_set_config(), &_card_set_freelist_pool, G1CardSetGroup::YoungId),
+  _collection_set(this, _policy),
   _cm(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
@@ -1622,6 +1620,7 @@ jint G1CollectedHeap::initialize() {
   // values in the heap have been properly initialized.
   _monitoring_support = new G1MonitoringSupport(this);
 
+  _collection_set_candidates.initialize(max_num_regions());
   _collection_set.initialize(max_num_regions());
 
   start_new_collection_set();
@@ -2848,8 +2847,7 @@ void G1CollectedHeap::set_humongous_stats(uint num_humongous_total, uint num_hum
 }
 
 bool G1CollectedHeap::should_sample_collection_set_candidates() const {
-  const G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  return !candidates->is_empty();
+  return !collection_set_candidates()->is_empty();
 }
 
 void G1CollectedHeap::set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats) {
@@ -2904,7 +2902,7 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
 
 void G1CollectedHeap::retain_region(G1HeapRegion* hr) {
   MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
-  collection_set()->candidates()->add_retained_region_unsorted(hr);
+  collection_set_candidates()->add_retained_region_unsorted(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(G1HeapRegion* hr,
