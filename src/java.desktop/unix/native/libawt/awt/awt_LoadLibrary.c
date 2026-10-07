@@ -51,8 +51,6 @@
 
 static void *awtHandle = NULL;
 
-typedef jint JNICALL JNI_OnLoad_type(JavaVM *vm, void *reserved);
-
 /* Initialize the Java VM instance variable when the library is
    first loaded */
 JNIEXPORT JavaVM *jvm;
