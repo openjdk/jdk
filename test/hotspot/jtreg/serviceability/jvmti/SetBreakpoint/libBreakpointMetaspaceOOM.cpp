@@ -25,8 +25,9 @@
 #include <stdio.h>
 
 #include "jvmti.h"
+#include "jvmti_common.hpp"
 
-#define LOG(...) do { printf(__VA_ARGS__); printf("\n"); fflush(stdout); } while (0)
+extern "C" {
 
 static jvmtiEnv* jvmti = nullptr;
 static jmethodID target = nullptr;
@@ -37,7 +38,8 @@ Breakpoint(jvmtiEnv* env, JNIEnv* jni, jthread thread, jmethodID method, jlocati
   hits++;
 }
 
-JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
   if (vm->GetEnv((void**)&jvmti, JVMTI_VERSION_1_0) != JNI_OK) {
     LOG("Agent_OnLoad: GetEnv failed");
     return JNI_ERR;
@@ -46,31 +48,21 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
   jvmtiCapabilities caps;
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_breakpoint_events = 1;
-  jvmtiError err = jvmti->AddCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Agent_OnLoad: AddCapabilities failed: %d", err);
-    return JNI_ERR;
-  }
+  check_jvmti_error(jvmti->AddCapabilities(&caps), "AddCapabilities");
 
   jvmtiEventCallbacks callbacks;
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.Breakpoint = Breakpoint;
-  err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Agent_OnLoad: SetEventCallbacks failed: %d", err);
-    return JNI_ERR;
-  }
+  check_jvmti_error(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks)),
+                   "SetEventCallbacks");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Agent_OnLoad: SetEventNotificationMode failed: %d", err);
-    return JNI_ERR;
-  }
+  check_jvmti_error(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                    JVMTI_EVENT_BREAKPOINT,
+                                                    nullptr),
+                   "SetEventNotificationMode");
 
   return JNI_OK;
 }
-
-extern "C" {
 
 // Resolve the jmethodID while metaspace still has room: FromReflectedMethod can allocate,
 // and the whole point of the test is to call setBreakpoint() once metaspace is exhausted.
