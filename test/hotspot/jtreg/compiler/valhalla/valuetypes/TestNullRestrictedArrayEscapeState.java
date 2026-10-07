@@ -40,8 +40,25 @@ import jdk.internal.value.ValueClass;
 class TestNullRestrictedArrayEscapeState {
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                                   "--enable-preview");
+        Scenario defaultLayout =
+            new Scenario(0);
+        Scenario referenceLayout =
+            new Scenario(1, "-XX:-UseArrayFlattening");
+        Scenario nonAtomicFlatLayout =
+            new Scenario(2, "-XX:+UseArrayFlattening",
+                            "-XX:+UnlockExperimentalVMOptions",
+                            "-XX:+UseNullFreeNonAtomicValueFlattening");
+        Scenario atomicFlatLayout
+            = new Scenario(3, "-XX:+UseArrayFlattening",
+                              "-XX:+UnlockExperimentalVMOptions",
+                              "-XX:-UseNullFreeNonAtomicValueFlattening",
+                              "-XX:+UseNullFreeAtomicValueFlattening");
+        TestFramework testFramework = new TestFramework();
+        testFramework
+            .addFlags("--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
+                      "--enable-preview")
+            .addScenarios(defaultLayout, referenceLayout, nonAtomicFlatLayout, atomicFlatLayout);
+        testFramework.start();
     }
 
     static class IdentityObject {
