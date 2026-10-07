@@ -1421,7 +1421,7 @@ public class Test {
      * @param s Either a URI, or a string to be converted to URI
      * @param t Either a URI, or a string to be converted to URI
      * @param expectedRelation One of following relation identifiers: {@code <},
-     * {@code >}, {@code =}, and {@code !=}.
+     * {@code >}, and {@code =}.
      */
     private static void eqHashCompBid(Object s, Object t, String expectedRelation)
             throws URISyntaxException {
@@ -1459,7 +1459,7 @@ public class Test {
      * @param s Either a URI, or a string to be converted to URI
      * @param t Either a URI, or a string to be converted to URI
      * @param expectedRelation One of following relation identifiers: {@code <},
-     * {@code >}, {@code =}, and {@code !=}.
+     * {@code >}, and {@code =}.
      */
     private static void eqHashCompUni(Object s, Object t, String expectedRelation)
             throws URISyntaxException {
@@ -1473,9 +1473,9 @@ public class Test {
         int comp = u.compareTo(v);
         final boolean compMatched;
         if (comp < 0) {
-            compMatched = "<".equals(expectedRelation) || "!=".equals(expectedRelation);
+            compMatched = "<".equals(expectedRelation);
         } else if (comp > 0) {
-            compMatched = ">".equals(expectedRelation) || "!=".equals(expectedRelation);
+            compMatched = ">".equals(expectedRelation);
         } else {
             compMatched = "=".equals(expectedRelation);
         }
@@ -1550,7 +1550,7 @@ public class Test {
         eqHashCompBid(t, "http://example.com/%5BSegment%5D", ">");
         eqHashCompBid("http://example.com/%5Asegment%5D", "http://example.com/%5Bsegment%5D", "<");
         eqHashCompBid("http://host/a%00bcd", "http://host/a%00bcd", "=");
-        eqHashCompBid("http://host/a%00bcd", "http://host/aZ00bcd", "!=");
+        eqHashCompBid("http://host/a%00bcd", "http://host/aZ00bcd", "<");
         eqHashCompBid("http://host/abc%e2def%C3ghi", "http://host/abc%E2def%c3ghi", "=");
 
         eqHashCompBid("p", "s:p", "<");
