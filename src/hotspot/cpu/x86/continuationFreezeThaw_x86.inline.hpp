@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,4 +347,4 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   assert(f.at_absolute(frame::interpreter_frame_monitor_block_top_offset) <= frame::interpreter_frame_initial_sp_offset, "");
 }
 
-#endif // CPU_X86_CONTINUATIONFREEZE_THAW_X86_INLINE_HPP
+#endif // CPU_X86_CONTINUATIONFREEZETHAW_X86_INLINE_HPP

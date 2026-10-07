@@ -216,62 +216,9 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
       case MLIB_EDGE_DST_FILL_ZERO:
         mlib_ImageConvZeroEdge(dst_e, dx_l, dx_r, dy_t, dy_b, cmask);
         break;
-      case MLIB_EDGE_DST_COPY_SRC:
-        mlib_ImageConvCopyEdge(dst_e, src_e, dx_l, dx_r, dy_t, dy_b, cmask);
-        break;
     default:
       /* Other edge conditions do not need additional handling.
        *  Note also that they are not exposed in public Java API
-       */
-      break;
-    }
-  }
-  else {                                    /* MLIB_EDGE_SRC_EXTEND */
-    /* adjust src_e image */
-    mlib_ImageSetSubimage(src_e, src_e, dx_l - dm, dy_t - dn,
-                          mlib_ImageGetWidth(src_e), mlib_ImageGetHeight(src_e));
-
-    switch (type) {
-      case MLIB_BYTE:
-        ret =
-          mlib_convMxNext_u8(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, scale,
-                             cmask);
-        break;
-      case MLIB_SHORT:
-        if (mlib_ImageConvVersion(m, n, scale, type) == 0)
-          ret =
-            mlib_convMxNext_s16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, scale,
-                                cmask);
-        else
-          ret =
-            mlib_i_convMxNext_s16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b,
-                                  scale, cmask);
-        break;
-      case MLIB_USHORT:
-        if (mlib_ImageConvVersion(m, n, scale, type) == 0)
-          ret =
-            mlib_convMxNext_u16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, scale,
-                                cmask);
-        else
-          ret =
-            mlib_i_convMxNext_u16(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b,
-                                  scale, cmask);
-        break;
-      case MLIB_INT:
-        ret =
-          mlib_convMxNext_s32(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, scale,
-                              cmask);
-        break;
-      case MLIB_FLOAT:
-        mlib_convMxNext_f32(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, cmask);
-        break;
-      case MLIB_DOUBLE:
-        mlib_convMxNext_d64(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, cmask);
-        break;
-    default:
-      /* For some reasons, there is no convolution routine for type MLIB_BIT.
-       * For now, we silently ignore it (because this image type is not used by java),
-       * but probably we have to report an error.
        */
       break;
     }

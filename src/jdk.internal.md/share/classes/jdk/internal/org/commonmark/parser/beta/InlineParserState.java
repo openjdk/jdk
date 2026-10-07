@@ -30,19 +30,16 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.inline;
+package jdk.internal.org.commonmark.parser.beta;
 
-/**
- * Position within a {@link Scanner}. This is intentionally kept opaque so as not to expose the internal structure of
- * the Scanner.
- */
-public class Position {
+public interface InlineParserState {
 
-    final int lineIndex;
-    final int index;
-
-    Position(int lineIndex, int index) {
-        this.lineIndex = lineIndex;
-        this.index = index;
-    }
+    /**
+     * Return a scanner for the input for the current position (on the trigger character that the inline parser was
+     * added for).
+     * <p>
+     * Note that this always returns the same instance, if you want to backtrack you need to use
+     * {@link Scanner#position()} and {@link Scanner#setPosition(Position)}.
+     */
+    Scanner scanner();
 }

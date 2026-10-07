@@ -2029,7 +2029,7 @@ void JavaThread::pretouch_stack() {
 
 // Deferred OopHandle release support.
 
-class OopHandleList : public CHeapObj<mtInternal> {
+class OopHandleList : public CHeapObj<mtThread> {
   static const int _count = 4;
   OopHandle _handles[_count];
   OopHandleList* _next;

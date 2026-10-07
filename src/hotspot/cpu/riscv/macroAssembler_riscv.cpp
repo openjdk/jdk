@@ -4643,7 +4643,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     // Or in the new value to create complete new value.
     orr(scratch0, scratch0, new_val);
 
-    mv(scratch1, result); // save our expected value
+    // scratch1 holds the expected word.
     atomic_cas(result, scratch0, aligned_addr, operand_size::int32, acquire, release);
     bne(scratch1, result, retry);
   } else {
@@ -4726,7 +4726,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
     // Or in the new value to create complete new value.
     orr(scratch0, scratch0, new_val);
 
-    mv(scratch1, result); // save our expected value
+    // scratch1 holds the expected word.
     atomic_cas(result, scratch0, aligned_addr, operand_size::int32, acquire, release);
     bne(scratch1, result, fail); // This weak, so just bail-out.
   } else {
@@ -7029,6 +7029,26 @@ void MacroAssembler::sext(Register dst, Register src, int bits) {
 
   slli(dst, src, XLEN - bits);
   srai(dst, dst, XLEN - bits);
+}
+
+void MacroAssembler::narrow_subword_type(Register reg, BasicType bt) {
+  assert(is_subword_type(bt), "expected subword type");
+  switch (bt) {
+    case T_SHORT:
+      sext(reg, reg, 16);
+      break;
+    case T_CHAR:
+      zext(reg, reg, 16);
+      break;
+    case T_BYTE:
+      sext(reg, reg, 8);
+      break;
+    case T_BOOLEAN:
+      andi(reg, reg, 1);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
 }
 
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
