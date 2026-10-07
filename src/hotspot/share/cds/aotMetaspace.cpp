@@ -1581,7 +1581,12 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
       if (RequireSharedSpaces) {
         AOTMetaspace::unrecoverable_loading_error("Unable to map shared spaces");
       } else {
-        report_loading_error("Unable to map shared spaces");
+        if (CDSConfig::is_dumping_aot_configuration()) {
+          precond(AOTIgnoreIncompatibleCacheInTraining);
+          log_error(aot)("-XX:AOTCache=%s is ignored because it is incompatible with the current VM settings", AOTCache);
+        } else {
+          report_loading_error("Unable to map shared spaces");
+        }
       }
     }
   }
@@ -1607,7 +1612,7 @@ FileMapInfo* AOTMetaspace::open_static_archive() {
   FileMapInfo* mapinfo = FileMapInfo::allocate_static_input_archive(static_archive);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
-    log_info(cds)("Opening of static archive %s failed", static_archive);
+    aot_log_info(aot)("Opening of %s %s failed", CDSConfig::type_of_archive_being_loaded(), static_archive);
     return nullptr;
   }
   return mapinfo;

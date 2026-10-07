@@ -587,7 +587,9 @@ void CDSConfig::check_aotmode_record() {
     log_info(aot)("re-training: loading AOTCache=%s and writing AOTConfiguration=%s",
                   AOTCache, AOTConfiguration);
     UseSharedSpaces = true;
-    RequireSharedSpaces = true;
+    if (!AOTIgnoreIncompatibleCacheInTraining) {
+      RequireSharedSpaces = true;
+    }
   }
 
   _is_dumping_static_archive = true;

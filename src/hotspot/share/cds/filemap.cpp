@@ -130,7 +130,7 @@ bool CDSMustMatchFlags::runtime_check() const {
     ss.print(") and runtime ("); \
     do_print(&ss, n); \
     ss.print(")"); \
-    log_info(cds)("%s", ss.as_string()); \
+    aot_log_info(aot)("%s", ss.as_string()); \
     return false; \
   }
   CDS_MUST_MATCH_FLAGS_DO(CHECK_CDS_MUST_MATCH_FLAG);
