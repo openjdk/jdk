@@ -46,7 +46,7 @@ import jdk.test.lib.process.ProcessTools;
  * @requires vm.gc != "Z"
  * @requires vm.gc != "Shenandoah"
  * @library /test/lib
- * @run driver TestHeapDumpForUnmountedVirtualThread
+ * @run driver/timeout=960 TestHeapDumpForUnmountedVirtualThread
  */
 public class TestHeapDumpForUnmountedVirtualThread {
 
@@ -110,7 +110,7 @@ public class TestHeapDumpForUnmountedVirtualThread {
         }
         try {
             theApp = new LingeredAppWithUnmountedVirtualThread();
-            LingeredApp.startApp(theApp, "-XX:+UsePerfData", "-Xmx512m");
+            LingeredApp.startApp(theApp, "-Xmx512m");
             attachDumpAndVerify(heapDumpFileName, theApp.getPid());
         } finally {
             LingeredApp.stopApp(theApp);

@@ -909,7 +909,14 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             return false;
         }
         OopField carrier = (OopField) ik.findField("carrierThread", "Ljava/lang/Thread;");
-        return carrier != null && carrier.getValue(instance) == null;
+        if (carrier == null || carrier.getValue(instance) != null) {
+            return false;
+        }
+        // NEW and TERMINATED are left out, as the hotspot dumper does
+        int state = ((IntField) ik.findField("state", "I")).getValue(instance);
+        int newState = ((IntField) ik.findField("NEW", "I")).getValue(ik.getJavaMirror());
+        int terminatedState = ((IntField) ik.findField("TERMINATED", "I")).getValue(ik.getJavaMirror());
+        return state != newState && state != terminatedState;
     }
 
     @Override
@@ -926,6 +933,12 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     // a thread object root and a java frame root for each oop in its stack
     // chunks, all on the dummy stack trace.
     private void writeVirtualThreadRoots(Instance vt, final int serial) throws IOException {
+        // the thread root is written whether or not there are frames, as in hotspot
+        writeHeapRecordPrologue(BYTE_SIZE + OBJ_ID_SIZE + INT_SIZE * 2);
+        out.writeByte((byte) HPROF_GC_ROOT_THREAD_OBJ);
+        writeObjectID(vt);
+        out.writeInt(serial);
+        out.writeInt(DUMMY_STACK_TRACE_ID);
         InstanceKlass ik = (InstanceKlass) vt.getKlass();
         OopField contField = (OopField) ik.findField("cont", "Ljdk/internal/vm/Continuation;");
         Oop cont = contField == null ? null : contField.getValue(vt);
@@ -934,14 +947,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
         OopField tailField = (OopField) ((InstanceKlass) cont.getKlass()).findField("tail", "Ljdk/internal/vm/StackChunk;");
         Oop chunk = tailField == null ? null : tailField.getValue(cont);
-        if (chunk == null) {
-            return;
-        }
-        writeHeapRecordPrologue(BYTE_SIZE + OBJ_ID_SIZE + INT_SIZE * 2);
-        out.writeByte((byte) HPROF_GC_ROOT_THREAD_OBJ);
-        writeObjectID(vt);
-        out.writeInt(serial);
-        out.writeInt(DUMMY_STACK_TRACE_ID);
         while (chunk != null) {
             InstanceStackChunkKlass sck = (InstanceStackChunkKlass) chunk.getKlass();
             final Oop current = chunk;
@@ -963,6 +968,11 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                 }
             };
             visitor.setObj(chunk);
+            if (!sck.hasBitmap(chunk)) {
+                System.err.println("WARNING: skipping thread #" + OopUtilities.threadOopGetTID(vt)
+                    + " (" + OopUtilities.threadOopGetName(vt) + ") because its stack chunk has no bitmap");
+                break;
+            }
             sck.iterateStackOops(visitor, chunk);
             OopField parentField = (OopField) sck.findField("parent", "Ljdk/internal/vm/StackChunk;");
             chunk = parentField == null ? null : parentField.getValue(chunk);

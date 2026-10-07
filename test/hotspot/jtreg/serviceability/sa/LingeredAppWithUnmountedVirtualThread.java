@@ -22,9 +22,15 @@
  */
 
 import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.whitebox.WhiteBox;
 
 public class LingeredAppWithUnmountedVirtualThread extends LingeredApp {
 
@@ -34,16 +40,44 @@ public class LingeredAppWithUnmountedVirtualThread extends LingeredApp {
 
     private static final CountDownLatch started = new CountDownLatch(1);
 
+    public static final String ADDR_FILE_PROPERTY = "test.chunk.address.file";
+
+    // only the virtual thread's frame holds the object strongly
+    private static WeakReference<ChunkReferenced> chunkReference;
+
+    // runs after LingeredApp's own startup GC, then hands the address to the driver
+    private static void publishAddress(Path addressFile) {
+        try {
+            while (!isReady()) {
+                Thread.sleep(10);
+            }
+            long address = WhiteBox.getWhiteBox().getObjectAddress(chunkReference.get());
+            chunkReference.clear();
+            Properties addresses = new Properties();
+            addresses.setProperty("chunkReferenced", String.format("0x%x", address));
+            Path tmp = Path.of(addressFile + ".tmp");
+            try (var out = Files.newOutputStream(tmp)) {
+                addresses.store(out, null);
+            }
+            Files.move(tmp, addressFile, StandardCopyOption.ATOMIC_MOVE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
     public static void main(String[] args) {
         try {
             Thread thread = Thread.ofVirtual().name("parked thread").start(() -> {
                 ChunkReferenced ref = new ChunkReferenced();
+                chunkReference = new WeakReference<>(ref);
                 started.countDown();
                 try {
                     Thread.sleep(3600_000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+                // keeps ref alive through the sleep, a dead local is dropped from the oop map
                 Reference.reachabilityFence(ref);
             });
             started.await();
@@ -52,6 +86,10 @@ public class LingeredAppWithUnmountedVirtualThread extends LingeredApp {
             }
             // Transform the chunk so it gets its bitmap.
             System.gc();
+            String addressFile = System.getProperty(ADDR_FILE_PROPERTY);
+            if (addressFile != null) {
+                Thread.ofPlatform().daemon().start(() -> publishAddress(Path.of(addressFile)));
+            }
             LingeredApp.main(args);
         } catch (Exception e) {
             throw new RuntimeException(e);

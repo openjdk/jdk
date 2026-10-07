@@ -22,66 +22,63 @@
  */
 
 /**
- * @test id=serial
+ * @test
  * @bug 8261848
  * @summary Test that clhsdb 'revptrs' finds references from a virtual thread's stack chunk
  * @requires vm.hasSA
- * @requires vm.gc.Serial
  * @requires vm.continuations
+ * @requires vm.gc != "Z"
+ * @requires vm.gc != "Shenandoah"
  * @library /test/lib
- * @run main/othervm/timeout=1200 ClhsdbRevPtrsForVirtualThread UseSerialGC
+ * @build jdk.test.whitebox.WhiteBox LingeredAppWithUnmountedVirtualThread
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm/timeout=1200 ClhsdbRevPtrsForVirtualThread
  */
 
-/**
- * @test id=parallel
- * @bug 8261848
- * @summary Test that clhsdb 'revptrs' finds references from a virtual thread's stack chunk
- * @requires vm.hasSA
- * @requires vm.gc.Parallel
- * @requires vm.continuations
- * @library /test/lib
- * @run main/othervm/timeout=1200 ClhsdbRevPtrsForVirtualThread UseParallelGC
- */
-
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Properties;
 
+import jdk.test.lib.SA.SATestUtils;
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class ClhsdbRevPtrsForVirtualThread {
 
-    private static final String TARGET_TYPE =
-        "LingeredAppWithUnmountedVirtualThread$ChunkReferenced";
-
-    private static void testWithGcType(String gc) throws Exception {
-        LingeredApp theApp = null;
+    public static void main(String[] args) throws Exception {
+        SATestUtils.skipIfCannotAttach();
+        LingeredApp theApp = new LingeredAppWithUnmountedVirtualThread();
+        Path addressFile = Path.of(System.getProperty("java.io.tmpdir"),
+                                   theApp.getLockFileName() + ".properties").toAbsolutePath();
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
 
-            theApp = new LingeredAppWithUnmountedVirtualThread();
-            LingeredApp.startApp(theApp, gc, "-XX:InitialHeapSize=100M");
+            LingeredApp.startApp(theApp,
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+WhiteBoxAPI",
+                "-Xbootclasspath/a:.",
+                "-XX:InitialHeapSize=100M",
+                "-D" + LingeredAppWithUnmountedVirtualThread.ADDR_FILE_PROPERTY + "=" + addressFile);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
-            String universeOutput = test.run(theApp.getPid(), List.of("universe"), null, null);
-
-            String oldGenMarker;
-            String edenMarker;
-            if (gc.contains("UseParallelGC")) {
-                oldGenMarker = "PSOldGen \\[  ";
-                edenMarker = "eden =  ";
-            } else {
-                oldGenMarker = "old  \\[";
-                edenMarker = "eden \\[";
+            // the app writes the address once its chunk has been through a GC
+            ProcessHandle app = ProcessHandle.of(theApp.getPid()).orElseThrow();
+            if (!Utils.waitForCondition(() -> Files.exists(addressFile) || !app.isAlive(),
+                                        Utils.adjustTimeout(120_000))) {
+                throw new RuntimeException("Timed out waiting for " + addressFile);
             }
-
-            // The instance was created before the System.gc() in the app, so
-            // look for it in the old gen first and fall back to eden.
-            String addr = scan(test, theApp, universeOutput, oldGenMarker);
-            if (addr == null) {
-                addr = scan(test, theApp, universeOutput, edenMarker);
+            if (!Files.exists(addressFile)) {
+                throw new RuntimeException("LingeredApp exited before writing " + addressFile);
             }
+            Properties addresses = new Properties();
+            try (var in = Files.newInputStream(addressFile)) {
+                addresses.load(in);
+            }
+            String addr = addresses.getProperty("chunkReferenced");
             if (addr == null) {
-                throw new RuntimeException("No " + TARGET_TYPE + " instance found in the heap");
+                throw new RuntimeException("No chunkReferenced address in " + addressFile);
             }
 
             String output = test.run(theApp.getPid(), List.of("revptrs " + addr), null, null);
@@ -89,31 +86,11 @@ public class ClhsdbRevPtrsForVirtualThread {
             out.shouldNotContain("ReversePtrs: WARNING");
             out.shouldContain("jdk/internal/vm/StackChunk");
         } finally {
-            LingeredApp.stopApp(theApp);
-        }
-    }
-
-    private static String scan(ClhsdbLauncher test, LingeredApp theApp,
-                               String universeOutput, String regionMarker) throws Exception {
-        String[] snippets = universeOutput.split(regionMarker);
-        if (snippets.length < 2) {
-            return null;
-        }
-        String[] words = snippets[1].split(",");
-        String start = words[0].replace("[", "");
-        String end = words[1];
-        String cmd = "scanoops " + start + " " + end;
-        String output = test.run(theApp.getPid(), List.of(cmd), null, null);
-        for (String line : output.split("\\R")) {
-            if (line.contains(TARGET_TYPE)) {
-                return line.trim().split("\\s+")[0];
+            try {
+                LingeredApp.stopApp(theApp);
+            } finally {
+                Files.deleteIfExists(addressFile);
             }
         }
-        return null;
-    }
-
-    public static void main(String[] args) throws Exception {
-        String gc = args[0];
-        testWithGcType("-XX:+" + gc);
     }
 }
