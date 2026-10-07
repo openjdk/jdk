@@ -1442,7 +1442,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
     // If OSR compilation is not possible, compile normal version instead, and hope
     // the back branch bearing method would be re-entered soon.
     if (!CompileBroker::compilation_is_in_queue(imh) && (next_osr_level != level)) {
-      if (can_be_osr_compiled(imh, next_osr_level)) {
+      if (can_be_osr_compiled(imh, CompLevel_any)) {
         compile(imh, bci, next_osr_level, CHECK);
       } else if (comp_level(imh()) < next_osr_level) {
         compile(imh, InvocationEntryBci, next_osr_level, CHECK);
