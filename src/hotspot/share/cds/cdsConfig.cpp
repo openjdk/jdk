@@ -39,6 +39,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/vmOperation.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -913,12 +914,12 @@ CDSConfig::DumperThreadMark::~DumperThreadMark() {
   _dumper_thread = nullptr;
 }
 
-bool CDSConfig::current_thread_is_vm_or_dumper() {
+bool CDSConfig::in_aot_safepoint() {
   Thread* t = Thread::current();
-  return t->is_VM_thread() || t == _dumper_thread;
+  return t->is_VM_thread() && VMThread::vm_op_type() == VM_Operation::VMOp_PopulateDumpSharedSpace;
 }
 
-bool CDSConfig::current_thread_is_dumper() {
+bool CDSConfig::in_dumper_thread() {
   return Thread::current() == _dumper_thread;
 }
 

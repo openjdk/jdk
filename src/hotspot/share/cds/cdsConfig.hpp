@@ -213,7 +213,7 @@ public:
 
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:
-  //    - The VM thread (e.g., inside VM_PopulateDumpSharedSpace)
+  //    - A VMOp_PopulateDumpSharedSpace operation in the VMThread, or
   //    - The thread that performs prepatory steps before switching to the VM thread
   // Since these two threads never execute concurrently, we can avoid using locks in these CDS
   // function. For safety, these functions should assert with CDSConfig::current_thread_is_vm_or_dumper().
@@ -223,8 +223,9 @@ public:
     ~DumperThreadMark();
   };
 
-  static bool current_thread_is_dumper() NOT_CDS_RETURN_(false);
-  static bool current_thread_is_vm_or_dumper() NOT_CDS_RETURN_(false);
+  static bool in_dumper_thread() NOT_CDS_RETURN_(false);
+  static bool in_aot_safepoint() NOT_CDS_RETURN_(false);
+  static bool in_dumper_thread_or_aot_safepoint() { return in_dumper_thread() || in_aot_safepoint(); }
 };
 
 #endif // SHARE_CDS_CDSCONFIG_HPP

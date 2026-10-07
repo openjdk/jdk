@@ -954,7 +954,7 @@ void SystemDictionaryShared::link_all_exclusion_check_candidates(InstanceKlass* 
 // it can be checked by should_be_excluded_impl().
 bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  assert(CDSConfig::current_thread_is_vm_or_dumper(), "sanity");
+  assert(CDSConfig::in_dumper_thread_or_aot_safepoint(), "sanity");
 
   if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(k)) {
     // We have reached a super type that's already in the base archive. Treat it
@@ -1067,13 +1067,17 @@ void SystemDictionaryShared::set_from_class_file_load_hook(InstanceKlass* ik) {
 }
 
 void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
-  assert_lock_strong(DumpTimeTable_lock);
+  assert(CDSConfig::in_aot_safepoint(), "exclusion check is complete in AOT safepoint");
+  assert_lock_strong(DumpTimeTable_lock); // Prevent concurrent class unloading
 
   auto do_klass = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
+    if (info.is_excluded()) {
+      return;
+    }
     if ((CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) && !k->is_loaded()) {
       assert(k->defined_by_other_loaders(), "must be");
       info.metaspace_pointers_do(it);
-    } else if (k->is_loader_alive() && !info.is_excluded()) {
+    } else if (k->is_loader_alive()) {
       info.metaspace_pointers_do(it);
     }
   };
