@@ -127,7 +127,7 @@ public class TestGenerationalReferenceProcessing {
     private static final int OBJECT_COUNT = OBJECTS_PER_REGION * REGIONS_TO_FILL;
 
     private static final Collection<WeakReference<?>> WEAK_REFS = new HashSet<>(OBJECT_COUNT);
-    private static final List<LeakedObject> REFERENTS = new ArrayList<>(OBJECT_COUNT);
+    private static final ArrayList<LeakedObject> REFERENTS = new ArrayList<>(OBJECT_COUNT);
     private static final ReferenceQueue<LeakedObject> REF_QUEUE = new ReferenceQueue<>();
 
     private static final int MINIMUM_CROSS_GENERATIONAL_REFERENCE_COUNT = 50;
@@ -217,45 +217,18 @@ public class TestGenerationalReferenceProcessing {
 
             int cleared = removeClearedWeakReferences();
             classifier.classify();
-            System.out.println("After " + name(referentGen) + " GC, cleared: " + cleared + ", referents: " + classifier);
+            System.out.println("After Young GC, cleared: " + cleared + ", referents: " + classifier);
 
             assertReferencesCleared(YOUNG, YOUNG, classifier);
             assertReferencesCleared(OLD, YOUNG, classifier);
         } else {
-            // Print address of old references before old GC.
-            var oldToOld = classifier.getReferences(referentGen, referentGen);
-            var youngToOld = classifier.getReferences(YOUNG, referentGen);
-            var sorted = new ArrayList<WeakReference<?>>(oldToOld);
-            sorted.sort(Comparator.comparingInt(Object::hashCode));
-            printReferences(OLD, OLD, sorted);
-
             WB.shenandoahOldGC();
 
-            var youngToOldReferents = new HashSet<Object>();
-            for (WeakReference<?> ref: youngToOld) {
-                var youngOldReferent = ref.get();
-                if (youngOldReferent != null) {
-                    youngToOldReferents.add(youngOldReferent);
-                }
-            }
+            int cleared = removeClearedWeakReferences();
+            classifier.classify();
+            System.out.println("After Old GC, cleared: " + cleared + ", referents: " + classifier);
 
-            System.out.println("After running Old GC");
-            int uncleared = 0;
-            int references_shown = 0;
-            final int max_references = 10;
-            for (WeakReference<?> ref : sorted) {
-                var referent = ref.get();
-                if (referent != null) {
-                    uncleared++;
-                    if (references_shown < max_references) {
-                        printReference(OLD, OLD, ref);
-                        references_shown++;
-                    }
-                }
-            }
-            if (uncleared > 0) {
-                throw new RuntimeException("Old -> old references uncleared: " + uncleared);
-            }
+            assertReferencesCleared(OLD, OLD, classifier);
         }
     }
 
@@ -312,11 +285,21 @@ public class TestGenerationalReferenceProcessing {
         // with referents in a different region. We also don't want to allocate
         // everything up front, or else they will all end up in old together, and
         // we won't get a good mix of cross generational pointers.
+        //
+        // We reuse the same arraylist to avoid having it be resized in the old
+        // generation. In this case, the replaced backing array is unreachable,
+        // but it may point to referents in the young generation. Without running
+        // an old collection, the remembered set scan must assume the old objects
+        // on these dirty cards are still alive and so it will strongly mark them.
+        // This form of nepotism would defeat the test scenario.
+        var referents = new ArrayList<LeakedObject>(OBJECTS_PER_REGION);
         for (int i = 0; i < REGIONS_TO_FILL; i += 4) {
-            List<LeakedObject> referents = allocateReferents(2);
+            allocateReferents(OBJECTS_PER_REGION, referents);
             allocateReferences(referents);
             REFERENTS.addAll(referents);
+            referents.clear();
 
+            // Some objects will be promoted, some will not.
             WB.youngGC();
             if (exitCondition.get()) {
                 break;
@@ -324,30 +307,24 @@ public class TestGenerationalReferenceProcessing {
         }
     }
 
-    private static List<LeakedObject> allocateReferents(int regions) {
-        var referents = new ArrayList<LeakedObject>(regions * OBJECTS_PER_REGION);
-        for (int j = 0; j < regions; j++) {
-            for (int i = 0; i < OBJECTS_PER_REGION; ++i) {
-                var leakedObject = new LeakedObject();
-                referents.add(leakedObject);
-                byte[] garbage = new byte[OBJECT_SIZE];
-                garbage[i % garbage.length] = (byte) i;
-            }
+    private static void allocateReferents(int objects, ArrayList<LeakedObject> referents) {
+        for (int i = 0; i < objects; ++i) {
+            var leakedObject = new LeakedObject();
+            referents.add(leakedObject);
+            byte[] garbage = new byte[OBJECT_SIZE];
+            garbage[0] = (byte) 1;
         }
-        return referents;
     }
 
     private static void allocateReferences(List<LeakedObject> referents) {
         // Fill up regions that are equal parts garbage and references
         // We want to create cross region references to increase the chances
         // of cross generational references.
-        int i = 0;
         for (var referent : referents) {
             var ref = new WeakReference<>(referent, REF_QUEUE);
             WEAK_REFS.add(ref);
             byte[] garbage = new byte[OBJECT_SIZE];
-            garbage[i % garbage.length] = (byte) i;
-            i++;
+            garbage[0] = (byte) 1;
         }
     }
 }
