@@ -947,9 +947,11 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
         OopField tailField = (OopField) ((InstanceKlass) cont.getKlass()).findField("tail", "Ljdk/internal/vm/StackChunk;");
         Oop chunk = tailField == null ? null : tailField.getValue(cont);
-        // no frames in the tail means no stack roots, as in hotspot
-        if (chunk == null || ((InstanceStackChunkKlass) chunk.getKlass()).isEmpty(chunk)) {
-            return;
+        // an empty tail keeps its frames in the parent, like last_nonempty_chunk in hotspot
+        InstanceStackChunkKlass tailKlass = chunk == null ? null : (InstanceStackChunkKlass) chunk.getKlass();
+        if (tailKlass != null && tailKlass.isEmpty(chunk)) {
+            OopField parentField = (OopField) tailKlass.findField("parent", "Ljdk/internal/vm/StackChunk;");
+            chunk = parentField == null ? null : parentField.getValue(chunk);
         }
         while (chunk != null) {
             InstanceStackChunkKlass sck = (InstanceStackChunkKlass) chunk.getKlass();
