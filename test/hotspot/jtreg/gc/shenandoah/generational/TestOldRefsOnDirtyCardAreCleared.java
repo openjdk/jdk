@@ -33,8 +33,8 @@
  * @run main/othervm -Xbootclasspath/a:.
  *      -Xms512m -Xmx512m
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
- *      -XX:-DisableExplicitGC -XX:+ExplicitGCInvokesConcurrent
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:+UnlockExperimentalVMOptions
+ *      -XX:-DisableExplicitGC -XX:+ExplicitGCInvokesConcurrent -XX:ShenandoahGenerationalMinPIPUsage=0
  *      gc.shenandoah.generational.TestOldRefsOnDirtyCardAreCleared
  */
 
@@ -60,6 +60,10 @@ public final class TestOldRefsOnDirtyCardAreCleared {
     private static final List<WeakReferenceWithYoungPointer> WEAK_REFS = new ArrayList<>();
     private static final List<Object> STRONG = new ArrayList<>();
 
+    // These will be intentionally strongly reachable to be sure the reference is NOT cleared
+    private static final Object RETAIN_REFERENT = new Object();
+    private static final WeakReferenceWithYoungPointer RETAIN_REF = new WeakReferenceWithYoungPointer(RETAIN_REFERENT);
+
     // Put a safety net on the number of System.gcs that will be used for tenuring.
     private static final int MAX_FULL_GCS = 5;
 
@@ -76,6 +80,12 @@ public final class TestOldRefsOnDirtyCardAreCleared {
         return true;
     }
 
+    private static boolean testConditionsMet() {
+        return allAreInOld(WEAK_REFS) && allAreInOld(STRONG)
+            && WB.isObjectInOldGen(RETAIN_REFERENT)
+            && WB.isObjectInOldGen(RETAIN_REF);
+    }
+
     public static void main(String[] args) throws Exception {
         // Step 1. Make references with strongly reachable referents.
         for (int i = 0; i < REF_COUNT; ++i) {
@@ -87,7 +97,7 @@ public final class TestOldRefsOnDirtyCardAreCleared {
 
         // Step 2. Run global GCs until all the references and their referents are promoted
         int tries = 0;
-        while (!allAreInOld(WEAK_REFS) || !allAreInOld(STRONG)) {
+        while (!testConditionsMet()) {
             if (tries >= MAX_FULL_GCS) {
                 throw new RuntimeException("Test condition unmet: weak refs and referents not promoted");
             }
@@ -102,6 +112,7 @@ public final class TestOldRefsOnDirtyCardAreCleared {
         for (WeakReferenceWithYoungPointer ref : WEAK_REFS) {
             ref.youngPointer = new Object();
         }
+        RETAIN_REF.youngPointer = new Object();
 
         // Step 5. Run an old GC cycle. This should clear out the weak referents
         WB.shenandoahOldGC();
@@ -114,6 +125,11 @@ public final class TestOldRefsOnDirtyCardAreCleared {
                 throw new RuntimeException("Uncleared weak ref = " + wr +
                                            ", referent = " + referent + ", at index = " + i);
             }
+        }
+
+        // Step 7. Verify that are strongly reachable referent was not cleared
+        if (RETAIN_REF.get() == null) {
+            throw new RuntimeException("Strongly reachable referent was cleared: " + RETAIN_REF);
         }
     }
 }
