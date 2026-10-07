@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *     2) app loader will load the class from the jimage by default;
  *        app loader will load the class from the bootclasspath if the
  *        "--limit-modules java.base" option is specified
- * @requires vm.cds & !vm.graal.enabled
+ * @requires vm.cds
  * @requires test.thread.factory == null
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @modules java.base/jdk.internal.access

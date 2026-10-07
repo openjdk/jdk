@@ -42,7 +42,6 @@ class Thread;
 class LockStack {
   friend class LockStackTest;
   friend class VMStructs;
-  JVMCI_ONLY(friend class JVMCIVMStructs;)
  public:
   static const int CAPACITY = 8;
  private:
@@ -131,19 +130,14 @@ class LockStack {
 
 class OMCache {
   friend class VMStructs;
- public:
-  static constexpr int CAPACITY = 2;
 
  private:
-  struct OMCacheEntry {
-    oop _oop = nullptr;
-    ObjectMonitor* _monitor = nullptr;
-  } _entries[CAPACITY];
+  oop _obj = nullptr;
+  ObjectMonitor* _monitor = nullptr;
 
  public:
-  static ByteSize entries_offset() { return byte_offset_of(OMCache, _entries); }
-  static constexpr ByteSize oop_to_oop_difference() { return in_ByteSize(sizeof(OMCacheEntry)); }
-  static constexpr ByteSize oop_to_monitor_difference() { return in_ByteSize(sizeof(oop)); }
+  static constexpr ByteSize obj_offset() { return byte_offset_of(OMCache, _obj); }
+  static constexpr ByteSize monitor_offset() { return byte_offset_of(OMCache, _monitor); }
 
   explicit OMCache(JavaThread* jt);
 

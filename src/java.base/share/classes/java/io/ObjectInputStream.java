@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package java.io;
 
 import java.io.ObjectInputFilter.Config;
-import java.io.ObjectStreamClass.RecordSupport;
+import java.io.ObjectStreamClass.AlternativeDeserialization;
 import java.lang.System.Logger;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Array;
@@ -235,6 +235,17 @@ import jdk.internal.util.ByteArray;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          <p>{@linkplain Class#isValue Value classes} that are not records cannot be
+ *          deserialized directly. To serialize an instance of a value class, a proxy
+ *          object should be used instead. That object can then implement
+ *          <a href="{@docRoot}/../specs/serialization/input.html#the-readresolve-method">
+ *          {@code readResolve}</a> to construct and return the expected value class
+ *          instance.
+ *      </div>
+ * </div>
+ *
  * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
@@ -429,6 +440,17 @@ public class ObjectInputStream
      * classes that should not be deserialized.  All exceptions are fatal to
      * the InputStream and leave it in an indeterminate state; it is up to the
      * caller to ignore or recover the stream state.
+     *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>An object in the stream that instantiates a concrete
+     *          {@linkplain Class#isValue value class}, or that extends a
+     *          Serializable abstract value class that declares instance fields,
+     *          can only be deserialized if it is a record or a boxed primitive
+     *          value. Otherwise, {@code readObject} throws an
+     *          {@code InvalidClassException}.
+     *      </div>
+     * </div>
      *
      * @throws  ClassNotFoundException Class of a serialized object cannot be
      *          found.
@@ -2122,9 +2144,9 @@ public class ObjectInputStream
         }
 
         final boolean isRecord = desc.isRecord();
-        if (isRecord) {
+        if (isRecord || desc.hasDeserializer()) {
             assert obj == null;
-            obj = readRecord(desc);
+            obj = readAlternative(desc);
             if (!unshared)
                 handles.setObject(passHandle, obj);
         } else if (desc.isExternalizable()) {
@@ -2214,13 +2236,14 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads and returns a record.
+     * Reads and returns an alternatively-deserialized object, such as a record
+     * or a wrapper class as a value class.
      * If an exception is marked for any of the fields, the dependency
-     * mechanism marks the record as having an exception.
-     * Null is returned from readRecord and later the exception is thrown at
+     * mechanism marks the object as having an exception.
+     * Null is returned from readFromFactory and later the exception is thrown at
      * the exit of {@link #readObject(Class)}.
      */
-    private Object readRecord(ObjectStreamClass desc) throws IOException {
+    private Object readAlternative(ObjectStreamClass desc) throws IOException {
         ObjectStreamClass.ClassDataSlot[] slots = desc.getClassDataLayout();
         if (slots.length != 1) {
             // skip any superclass stream field values
@@ -2233,17 +2256,17 @@ public class ObjectInputStream
 
         FieldValues fieldValues = new FieldValues(desc, true);
         if (handles.lookupException(passHandle) != null) {
-            return null;     // slot marked with exception, don't create record
+            return null;     // slot marked with exception, don't create object
         }
 
-        // get canonical record constructor adapted to take two arguments:
+        // get the factory adapted to take two arguments:
         // - byte[] primValues
         // - Object[] objValues
         // and return Object
-        MethodHandle ctrMH = RecordSupport.deserializationCtr(desc);
+        MethodHandle factoryMH = AlternativeDeserialization.getFactory(desc);
 
         try {
-            return (Object) ctrMH.invokeExact(fieldValues.primValues, fieldValues.objValues);
+            return (Object) factoryMH.invokeExact(fieldValues.primValues, fieldValues.objValues);
         } catch (Exception e) {
             throw new InvalidObjectException(e.getMessage(), e);
         } catch (Error e) {

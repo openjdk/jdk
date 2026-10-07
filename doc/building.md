@@ -171,9 +171,11 @@ possible to use [cross-compiling](#cross-compiling).
 
 In order to use Branch Protection features in the VM,
 `--enable-branch-protection` must be used. This option requires C++ compiler
-support (GCC 9.1.0+ or Clang 10+). The resulting build can be run on both
-machines with and without support for branch protection in hardware. Branch
-Protection is only supported for Linux targets.
+support for `-mbranch-protection=standard` in GCC 9.1.0+ or Clang 10+ on
+Linux/AArch64 or for `/guard:signret` in Visual Studio 2019+ on Windows/ARM64.
+The resulting build can be run on both machines with and without support for
+branch protection in hardware. Branch Protection is fully supported for the
+Linux/AArch64 target and only partially supported for the Windows/ARM64 target.
 
 ### Building on 32-bit ARM
 
@@ -195,8 +197,8 @@ time of writing.
 
 | Operating system  | Vendor/version used                |
 | ----------------- | ---------------------------------- |
-| Linux/x64         | Oracle Enterprise Linux 6.4 / 8.x  |
-| Linux/aarch64     | Oracle Enterprise Linux 7.6 / 8.x  |
+| Linux/x64         | Oracle Linux 6.4 / 8.x             |
+| Linux/aarch64     | Oracle Linux 7.6 / 8.x             |
 | macOS             | macOS 14.x                         |
 | Windows           | Windows Server 2016                |
 
@@ -355,7 +357,7 @@ earlier versions may also work.
 Starting with Xcode 26, introduced in macOS 26, the Metal toolchain no longer
 comes bundled with Xcode, so it needs to be installed separately. This can
 either be done via the Xcode's Settings/Components UI, or in the command line
-calling `xcodebuild -downloadComponent metalToolchain`.
+calling `xcodebuild -downloadComponent MetalToolchain`.
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
@@ -1288,27 +1290,26 @@ at least the following targets are known to work:
 | riscv64-linux-gnu        |
 | s390x-linux-gnu          |
 
-`BASE_OS` must be one of `OL` for Oracle Enterprise Linux or `Fedora`. If the
-base OS is `Fedora` the corresponding Fedora release can be specified with the
-help of the `BASE_OS_VERSION` option. If the build is successful, the new
-devkits can be found in the `build/devkit/result` subdirectory:
+`BASE_OS` must be one of `OL` for Oracle Linux or `Fedora`. The release/version
+of the base OS can be specified using the `BASE_OS_VERSION` option. If the build
+is successful, the new devkits can be found in the `build/devkit/result`
+subdirectory:
 
 ```
 cd make/devkit
-make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=21
+make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora
 ls -1 ../../build/devkit/result/
 x86_64-linux-gnu-to-aarch64-linux-gnu
 x86_64-linux-gnu-to-ppc64le-linux-gnu
 ```
 
 Notice that devkits are not only useful for targeting different build
-platforms. Because they contain the full build dependencies for a system (i.e.
-compiler and root file system), they can easily be used to build well-known,
-reliable and reproducible build environments. You can for example create and
-use a devkit with GCC 7.3 and a Fedora 12 sysroot environment (with glibc 2.11)
-on Ubuntu 14.04 (which doesn't have GCC 7.3 by default) to produce JDK binaries
-which will run on all Linux systems with runtime libraries newer than the ones
-from Fedora 12 (e.g. Ubuntu 16.04, SLES 11 or RHEL 6).
+platforms. Because they contain the full build dependencies for a system (i.e.,
+compiler and root file system/sysroot), they can easily be used to build
+well-known, reliable, and reproducible build environments. You can, for example,
+create and use a devkit with a version of the GCC compiler not provided by the
+host OS, using a sysroot from an older Linux distribution to produce JDK
+binaries which will run on all Linux systems with newer runtime libraries.
 
 #### Using Debian debootstrap
 
@@ -1555,6 +1556,15 @@ ccache can radically speed up compilation of native code if you often rebuild
 the same sources. Your mileage may vary however, so we recommend evaluating it
 for yourself. To enable it, make sure it's on the path and configure with
 `--enable-ccache`.
+
+### Sccache
+
+The JDK build supports building with sccache when using gcc, clang, or Microsoft
+toolchains.  To enable it, make sure the sccache binary is on the path (or
+specify the path to the binary using the `SCCACHE` argument to the configure
+script) and configure with `--enable-sccache`.  To optionally specify where
+sccache stores its cache files, use `--with-sccache-dir`.  Precompiled headers
+are disabled when sccache is enabled.
 
 ### Precompiled Headers
 

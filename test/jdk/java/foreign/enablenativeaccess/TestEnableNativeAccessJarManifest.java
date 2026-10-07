@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,10 @@
  * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires !vm.musl
  *
- * @enablePreview
  * @build TestEnableNativeAccessJarManifest
  *        panama_module/*
  *        org.openjdk.foreigntest.unnamed.PanamaMainUnnamedModule
- * @run testng/native TestEnableNativeAccessJarManifest
+ * @run junit/native TestEnableNativeAccessJarManifest
  */
 
 import java.nio.file.Files;
@@ -48,16 +47,19 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestEnableNativeAccessJarManifest extends TestEnableNativeAccessBase {
 
     private static final String REINVOKER = "TestEnableNativeAccessJarManifest$Reinvoker";
 
     static record Attribute(String name, String value) {}
 
-    @Test(dataProvider = "cases")
+    @ParameterizedTest
+    @MethodSource("cases")
     public void testEnableNativeAccessInJarManifest(String action, String cls, Result expectedResult,
                                                     List<Attribute> attributes, List<String> vmArgs, List<String> programArgs) throws Exception {
         Manifest man = new Manifest();
@@ -90,7 +92,6 @@ public class TestEnableNativeAccessJarManifest extends TestEnableNativeAccessBas
         checkResult(expectedResult, outputAnalyzer);
     }
 
-    @DataProvider
     public Object[][] cases() {
         return new Object[][] {
             // simple cases where a jar contains a single main class with no dependencies

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8267265
+ * @bug 8267265 8389218
  * @summary Test that Ideal transformations of AddINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.AddINodeIdealizationTests
@@ -45,7 +45,8 @@ public class AddINodeIdealizationTests {
                  "test14", "test15", "test16",
                  "test17", "test18", "test19",
                  "test20", "test21", "test22",
-                 "test23", "test24", "test25"})
+                 "test23", "test24", "test25",
+                 "test26", "test27"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -90,6 +91,8 @@ public class AddINodeIdealizationTests {
         Asserts.assertEQ((a - b) + 190                  , test23(a, b));
         Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test24(a, b));
         Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test25(a, b));
+        Asserts.assertEQ(Math.max((a | -2) + Integer.MIN_VALUE, 0), test26(a));
+        Asserts.assertEQ(Math.min(((a & 1) | 2) + Integer.MAX_VALUE, 0), test27(a));
     }
 
     @Test
@@ -310,5 +313,23 @@ public class AddINodeIdealizationTests {
     // Checks Math.min(a, b) + Math.max(a, b) => a + b
     public int test25(int a, int b) {
         return Math.min(a, b) + Math.max(a, b);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MAX })
+    // Checks that AddI keeps a precise range when the entire sum
+    // range underflows.
+    public int test26(int x) {
+        int value = (x | -2) + Integer.MIN_VALUE;
+        return Math.max(value, 0);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MIN })
+    // Checks that AddI keeps a precise range when the entire sum
+    // range overflows.
+    public int test27(int x) {
+        int value = ((x & 1) | 2) + Integer.MAX_VALUE;
+        return Math.min(value, 0);
     }
 }

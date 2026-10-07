@@ -602,11 +602,22 @@ public class Basic {
     private static final String classpath =
         System.getProperty("java.class.path");
 
-    private static final List<String> javaChildArgs =
-        Arrays.asList(javaExe,
-                      "-XX:+DisplayVMOutputToStderr",
-                      "-classpath", absolutifyPath(classpath),
-                      "Basic$JavaChild");
+    private static List<String> prepareJavaChildArgs() {
+        List<String> javaArgs = new ArrayList<>();
+        javaArgs.add(javaExe);
+        javaArgs.add("-XX:+DisplayVMOutputToStderr");
+        // Propagate launchMechanism mode to spawned java processes if specified.
+        var launchMechanism = System.getProperty("jdk.lang.Process.launchMechanism");
+        if (launchMechanism != null) {
+            javaArgs.add("-Djdk.lang.Process.launchMechanism=" + launchMechanism);
+        }
+        javaArgs.add("-classpath");
+        javaArgs.add(absolutifyPath(classpath));
+        javaArgs.add("Basic$JavaChild");
+        return javaArgs;
+    }
+
+    private static final List<String> javaChildArgs = prepareJavaChildArgs();
 
     private static void testEncoding(String encoding, String tested) {
         try {
@@ -1954,12 +1965,15 @@ public class Basic {
             if (Windows.is() && Platform.isAArch64()) {
                 commandOutput = removeWindowsAArch64ExpectedVars(commandOutput);
             }
-            check(commandOutput.equals(Windows.is()
-                    ? "LC_ALL=C,SystemRoot="+systemRoot+","
+            String expectedOutput = Windows.is()
+                    ? "LC_ALL=C,SystemRoot=" + systemRoot + ","
                     : AIX.is()
-                            ? "LC_ALL=C,LIBPATH="+libpath+","
-                            : "LC_ALL=C,"),
-                  "Incorrect handling of envstrings containing NULs");
+                    ? "LC_ALL=C,LIBPATH=" + libpath + ","
+                    : "LC_ALL=C,";
+            check(commandOutput.equals(expectedOutput),
+                  "Incorrect handling of envstrings containing NULs, "+
+                    "got: >'" + commandOutput +
+                    "'<, expected: >'" + expectedOutput + "'<");
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------

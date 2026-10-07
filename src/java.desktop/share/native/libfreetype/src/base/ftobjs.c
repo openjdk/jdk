@@ -4,7 +4,7 @@
  *
  *   The FreeType private base classes (body).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -385,6 +385,7 @@
     FT_Pos   y_shift = 0;
     FT_Pos   x_left, y_top;
     FT_Pos   width, height, pitch;
+    FT_Bool  ret;
 
 
     if ( slot->format == FT_GLYPH_FORMAT_SVG )
@@ -495,6 +496,20 @@
     width  = pbox.xMax - pbox.xMin;
     height = pbox.yMax - pbox.yMin;
 
+    /* Flag the width or height unsuitable for rendering.   */
+    /* The limit is based on the ppem value when available. */
+    /* FT_Renderer modules should check the return value.   */
+    ret = FT_BOOL(     width >= 0x10000   ||    height >= 0x10000   ||
+                   pbox.xMin < -0x1000000 || pbox.xMax >= 0x1000000 ||
+                   pbox.yMin < -0x1000000 || pbox.yMax >= 0x1000000 ||
+             ( slot->face                                         &&
+               ( width  > 10 * slot->face->size->metrics.x_ppem ||
+                 height > 10 * slot->face->size->metrics.y_ppem ) ) );
+
+    if ( ret )
+      FT_TRACE3(( "ft_glyphslot_preset_bitmap: [%ld %ld %ld %ld]\n",
+                  pbox.xMin, pbox.yMin, pbox.xMax, pbox.yMax ));
+
     switch ( pixel_mode )
     {
     case FT_PIXEL_MODE_MONO:
@@ -524,31 +539,7 @@
     bitmap->rows       = (unsigned int)height;
     bitmap->pitch      = pitch;
 
-    /* Flag the bounding box size unsuitable for rendering. */
-    /* FT_Renderer modules should check the return value.   */
-    /* The limit is based on the ppem value when available. */
-    {
-      FT_Face  face = slot->face;
-      FT_Pos   xlim = 0x8000;
-      FT_Pos   ylim = 0x8000;
-
-
-      if ( face )
-      {
-        xlim = FT_MIN( xlim, 10 * face->size->metrics.x_ppem );
-        ylim = FT_MIN( ylim, 10 * face->size->metrics.y_ppem );
-      }
-
-      if ( pbox.xMin < -xlim || pbox.xMax >= xlim ||
-           pbox.yMin < -ylim || pbox.yMax >= ylim )
-      {
-        FT_TRACE3(( "ft_glyphslot_preset_bitmap: [%ld %ld %ld %ld]\n",
-                    pbox.xMin, pbox.yMin, pbox.xMax, pbox.yMax ));
-        return 1;
-      }
-    }
-
-    return 0;
+    return ret;
   }
 
 

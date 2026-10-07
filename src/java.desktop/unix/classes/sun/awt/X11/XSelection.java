@@ -478,8 +478,6 @@ final class XSelection {
         int count = 0;
 
         try {
-            SunToolkit.insertTargetMapping(this);
-
             byteData = DataTransferer.getInstance().convertData(this,
                                                                 contents,
                                                                 format,

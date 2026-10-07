@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,42 +39,38 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTLinkedVarHandles {
-    static final String classList = "AOTLinkedVarHandles.classlist";
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
     static final String mainClass = AOTLinkedVarHandlesApp.class.getName();
 
     public static void main(String[] args) throws Exception {
-        CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldContain("Hello AOTLinkedVarHandlesApp");
-            });
-
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
+        SimpleCDSAppTester t = SimpleCDSAppTester.of("AOTLinkedVarHandles")
+            .classpath(appJar)
+            .appCommandLine(mainClass)
+            .addVmArgs("-esa",
                        "-XX:+AOTClassLinking",
                        "-Xlog:aot+resolve=trace",
-                       "-Xlog:cds+class=debug",
-                       "-cp", appJar);
+                       "-Xlog:cds+class=debug")
+            .setTrainingChecker((OutputAnalyzer output) -> {
+                output.shouldContain("Hello AOTLinkedVarHandlesApp");
+            })
+            .setAssemblyChecker((OutputAnalyzer output) -> {
+                String s = "archived method CP entry.* AOTLinkedVarHandlesApp ";
+                output.shouldMatch(s + "java/lang/invoke/VarHandle.compareAndExchangeAcquire:\\(\\[DIDI\\)D =>");
+                output.shouldMatch(s + "java/lang/invoke/VarHandle.get:\\(\\[DI\\)D => ");
+                output.shouldNotContain("rejected .* CP entry.*");
+            })
+            .runAOTTrainingAndAssemblyWorkflow();
 
-        String s = "archived method CP entry.* AOTLinkedVarHandlesApp ";
-        OutputAnalyzer dumpOut = CDSTestUtils.createArchiveAndCheck(opts);
-        dumpOut.shouldMatch(s + "java/lang/invoke/VarHandle.compareAndExchangeAcquire:\\(\\[DIDI\\)D =>");
-        dumpOut.shouldMatch(s + "java/lang/invoke/VarHandle.get:\\(\\[DI\\)D => ");
-        dumpOut.shouldNotContain("rejected .* CP entry.*");
-
-        CDSOptions runOpts = (new CDSOptions())
-            .setUseVersion(false)
-            .addPrefix("-Xlog:cds",
-                       "-esa",
-                       "-cp", appJar)
-            .addSuffix(mainClass);
-
-        CDSTestUtils.run(runOpts)
-            .assertNormalExit("Hello AOTLinkedVarHandlesApp");
+        t.setVmArgs("-Xlog:cds,aot", "-esa")
+        .setProductionChecker((OutputAnalyzer output) -> {
+            output.shouldContain("Hello AOTLinkedVarHandlesApp");
+        })
+        .productionRun();
     }
 }
 

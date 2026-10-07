@@ -42,6 +42,7 @@ import java.util.Arrays;
 
 import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.VM;
+import jdk.internal.module.Modules;
 
 /**
  * Compiles a source file, and executes the main method it contains.
@@ -217,6 +218,13 @@ public final class SourceLauncher {
             }
         }
 
+        // Open packages needed for reflection for main class construction and
+        // main method invocation.
+        var thisModule = getClass().getModule();
+        var mainMethodDeclaringClass = mainMethod.getDeclaringClass();
+        openPackageTo(mainMethodDeclaringClass.getModule(), mainMethodDeclaringClass.getPackageName(), thisModule);
+        openPackageTo(mainClass.getModule(), mainClass.getPackageName(), thisModule);
+
         String mainClassName = mainClass.getName();
         var isStatic = Modifier.isStatic(mainMethod.getModifiers());
 
@@ -277,5 +285,12 @@ public final class SourceLauncher {
         }
 
         return mainClass;
+    }
+
+    private static void openPackageTo(Module module, String packageName, Module target) {
+        // Packages outside named modules are already open
+        if (module.isNamed()) {
+            Modules.addOpens(module, packageName, target);
+        }
     }
 }

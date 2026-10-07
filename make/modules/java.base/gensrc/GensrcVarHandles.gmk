@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,35 +30,59 @@ ifeq ($(INCLUDE), true)
 
 VARHANDLES_INPUT_DIR := $(MODULE_SRC)/share/classes/java/lang/invoke
 VARHANDLES_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/invoke
+# These guys are cased because make cannot preserve case...
+VARHANDLE_OBJECT_TYPES := Reference FlatValue NonAtomicReference NonAtomicFlatValue
 
 ################################################################################
 # Setup a rule for generating a VarHandle java class
 #
 # arg $1: type for this varhandle
 define GenerateVarHandle
-  VARHANDLE_$1_type := $$(strip $$(if $$(filter reference, $1), Object, $1))
-  VARHANDLE_$1_Type := $$(call Conv, $1, Type)
+  # Underlying erased signature type, Object or a primitive type
+  VARHANDLE_$1_type := \
+      $$(strip $$(if $$(filter $(VARHANDLE_OBJECT_TYPES), $1), Object, $1))
+  VARHANDLE_$1_InputType := \
+      $$(strip $$(if $$(filter $(VARHANDLE_OBJECT_TYPES), $1), $1, \
+      $$(call Conv, $1, Type)))
+  VARHANDLE_$1_Type := \
+      $$(strip $$(subst NonAtomicReference, Reference, \
+      $$(subst NonAtomicFlatValue, FlatValue, $$(VARHANDLE_$1_InputType))))
 
   $1_KEYS := $$(VARHANDLE_$1_type) CAS
+  ifneq ($$(filter $(PRIMITIVE_TYPES), $1),)
+    # Reference types use ArrayVarHandle class
+    $1_KEYS += Array Static
+  else ifneq ($$(filter Reference NonAtomicReference, $1),)
+    $1_KEYS += Reference Static
+  else ifneq ($$(filter FlatValue NonAtomicFlatValue, $1),)
+    # No static field is flat in Hotspot
+    $1_KEYS += FlatValue
+  endif
+
   ifneq ($$(filter byte short char, $1),)
     $1_KEYS += ShorterThanInt
   endif
-  ifeq ($$(filter boolean reference, $1),)
+  ifneq ($$(filter $(NUMBER_TYPES), $1),)
     $1_KEYS += AtomicAdd
   endif
-  ifeq ($$(filter float double reference, $1),)
+  ifneq ($$(filter $(BITWISE_PRIMITIVE_TYPES), $1),)
     $1_KEYS += Bitwise
+  endif
+  ifeq ($$(filter NonAtomicReference NonAtomicFlatValue, $1),)
+    # Everyone except NonAtomicXxx have non-plain access
+    $1_KEYS += NonPlainAccess
   endif
 
   $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_$1, \
       SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandle.java.template, \
-      OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandle$$(VARHANDLE_$1_Type)s.java, \
+      OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandle$$(VARHANDLE_$1_InputType)s.java, \
       INFO := Generating VarHandle class for $1, \
       SUBST_EMPTY_LINES := false, \
       KEYS := $$($1_KEYS), \
       REPLACEMENTS := \
           type=$$(VARHANDLE_$1_type) \
-          Type=$$(VARHANDLE_$1_Type), \
+          Type=$$(VARHANDLE_$1_Type) \
+          InputType=$$(VARHANDLE_$1_InputType), \
   ))
   TARGETS += $$(GEN_VARHANDLE_$1)
 endef
@@ -111,7 +135,7 @@ define GenerateVarHandleMemorySegment
     $1_KEYS += CAS
   endif
   ifneq ($$(filter boolean byte, $1),)
-    $1_KEYS += byte
+    $1_KEYS += ByteOrBoolean
   endif
   ifneq ($$(filter float double, $1),)
     $1_KEYS += floatingPoint
@@ -143,7 +167,7 @@ endef
 ################################################################################
 # Generate all VarHandle related classes
 
-$(foreach t, $(PRIMITIVE_TYPES) reference, \
+$(foreach t, $(PRIMITIVE_TYPES) $(VARHANDLE_OBJECT_TYPES), \
   $(eval $(call GenerateVarHandle,$t)) \
 )
 

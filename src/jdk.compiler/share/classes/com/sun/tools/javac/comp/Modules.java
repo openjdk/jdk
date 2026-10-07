@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,15 +689,12 @@ public class Modules extends JCTree.Visitor {
             ListBuffer<ExportsDirective> exports = new ListBuffer<>();
             Set<String> seenPackages = new HashSet<>();
 
-            for (JavaFileObject clazz : fileManager.list(msym.classLocation, "", EnumSet.of(Kind.CLASS), true)) {
-                String binName = fileManager.inferBinaryName(msym.classLocation, clazz);
-                String pack = binName.lastIndexOf('.') != (-1) ? binName.substring(0, binName.lastIndexOf('.')) : ""; //unnamed package????
-                if (seenPackages.add(pack)) {
-                    ExportsDirective d = new ExportsDirective(syms.enterPackage(msym, names.fromString(pack)), null);
-                    //TODO: opens?
-                    directives.add(d);
-                    exports.add(d);
-                }
+            findPackages(msym, msym.classLocation, EnumSet.of(Kind.CLASS),
+                         seenPackages, directives, exports);
+
+            if (msym.patchLocation != null) {
+                findPackages(msym, msym.patchLocation, EnumSet.of(Kind.CLASS, Kind.SOURCE),
+                             seenPackages, directives, exports);
             }
 
             msym.exports = exports.toList();
@@ -709,6 +706,23 @@ public class Modules extends JCTree.Visitor {
             throw new IllegalStateException(ex);
         }
     }
+        //where:
+        private void findPackages(ModuleSymbol msym,
+                                  Location location,
+                                  Set<Kind> fileObjectKinds,
+                                  Set<String> seenPackages,
+                                  ListBuffer<Directive> directives,
+                                  ListBuffer<ExportsDirective> exports) throws IOException {
+            for (JavaFileObject clazz : fileManager.list(location, "", fileObjectKinds, true)) {
+                String binName = fileManager.inferBinaryName(location, clazz);
+                String pack = binName.lastIndexOf('.') != (-1) ? binName.substring(0, binName.lastIndexOf('.')) : ""; //unnamed package????
+                if (seenPackages.add(pack)) {
+                    ExportsDirective d = new ExportsDirective(syms.enterPackage(msym, names.fromString(pack)), null);
+                    directives.add(d);
+                    exports.add(d);
+                }
+            }
+        }
 
     private void completeAutomaticModule(ModuleSymbol msym) throws CompletionFailure {
         ListBuffer<Directive> directives = new ListBuffer<>();
@@ -1520,21 +1534,19 @@ public class Modules extends JCTree.Visitor {
         }
 
         Set<ModuleSymbol> readable = new LinkedHashSet<>();
-        Set<ModuleSymbol> requiresTransitive = new HashSet<>();
 
-        for (RequiresDirective d : msym.requires) {
-            d.module.complete();
-            readable.add(d.module);
-            Set<ModuleSymbol> s = retrieveRequiresTransitive(d.module);
-            Assert.checkNonNull(s, () -> "no entry in cache for " + d.module);
-            readable.addAll(s);
-            if (d.flags.contains(RequiresFlag.TRANSITIVE)) {
-                requiresTransitive.add(d.module);
-                requiresTransitive.addAll(s);
+        if ((msym.flags() & Flags.AUTOMATIC_MODULE) != 0) {
+            readable.addAll(allModules());
+            readable.remove(msym);
+            readable.forEach(Symbol::complete);
+        } else {
+            for (RequiresDirective d : msym.requires) {
+                d.module.complete();
+                readable.add(d.module);
+                readable.addAll(retrieveRequiresTransitive(d.module));
             }
         }
 
-        requiresTransitiveCache.put(msym, requiresTransitive);
         initVisiblePackages(msym, readable);
         for (ExportsDirective d: msym.exports) {
             if (d.packge != null) {
@@ -1576,6 +1588,7 @@ public class Modules extends JCTree.Visitor {
             }
 
             requiresTransitive.remove(msym);
+            requiresTransitiveCache.putIfAbsent(msym, requiresTransitive);
         }
 
         return requiresTransitive;

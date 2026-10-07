@@ -56,6 +56,9 @@ ciSignature::ciSignature(ciKlass* accessing_klass, const constantPoolHandle& cpo
     } else {
       type = ciType::make(ss.type());
     }
+
+    assert(type == type->unwrap(), "signature type should not be wrapped");
+
     if (ss.at_return_type()) {
       // don't include return type in size calculation
       _return_type = type;

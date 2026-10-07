@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import javax.swing.JTable;
+import javax.swing.JToolTip;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -48,6 +49,13 @@ public abstract class XTable extends JTable {
         setRowSelectionAllowed(false);
         setColumnSelectionAllowed(false);
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+    }
+
+    @Override
+    public JToolTip createToolTip() {
+        JToolTip t = super.createToolTip();
+        t.putClientProperty("html.disable", Boolean.TRUE);
+        return t;
     }
 
     Color getDefaultColor() {
@@ -135,6 +143,8 @@ public abstract class XTable extends JTable {
     public TableCellRenderer getCellRenderer(int row, int column) {
         DefaultTableCellRenderer tcr =
             (DefaultTableCellRenderer) super.getCellRenderer(row,column);
+
+        tcr.putClientProperty("html.disable", Boolean.TRUE);
         tcr.setToolTipText(getToolTip(row,column));
         if (defaultColor == null) {
             defaultColor = tcr.getForeground();

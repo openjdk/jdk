@@ -67,6 +67,8 @@ public:
 
   static bool supports_float16() { return PowerArchitecturePPC64 >= 9; }
 
+  static bool supports_on_spin_wait() { return true; }
+
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support
   static bool has_mfdscr() { return (_features & mfdscr_m) != 0; } // Power8, but may be unavailable (QEMU)

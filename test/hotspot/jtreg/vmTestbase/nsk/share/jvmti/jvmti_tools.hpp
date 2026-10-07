@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,7 @@ void nsk_jvmti_agentFailed();
 
 /**
 * This method makes the thread to be suspended at the right place when the top frame
-* belongs to the test rather than to incidental Java code (classloading, JVMCI, etc).
+* belongs to the test rather than to incidental Java code (classloading, etc).
 */
 int suspendThreadAtMethod(jvmtiEnv *jvmti, jclass cls, jobject thread, jmethodID method);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_ZERO_CONTINUATION_ZERO_INLINE_HPP
-#define CPU_ZERO_CONTINUATION_ZERO_INLINE_HPP
+#ifndef CPU_ZERO_CONTINUATIONFREEZETHAW_ZERO_INLINE_HPP
+#define CPU_ZERO_CONTINUATIONFREEZETHAW_ZERO_INLINE_HPP
 
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
@@ -39,7 +39,7 @@ inline frame FreezeBase::sender(const frame& f) {
   return frame();
 }
 
-template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
+template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& caller, int size_adjust) {
   Unimplemented();
   return frame();
 }
@@ -56,7 +56,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   Unimplemented();
 }
 
-inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
+inline void FreezeBase::patch_pd(frame& hf, const frame& caller, bool is_bottom_frame) {
   Unimplemented();
 }
 
@@ -82,7 +82,7 @@ inline frame ThawBase::new_entry_frame() {
   return frame();
 }
 
-template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom) {
+template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom, int size_adjust) {
   Unimplemented();
   return frame();
 }
@@ -123,4 +123,4 @@ inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
   Unimplemented();
 }
 
-#endif // CPU_ZERO_CONTINUATION_ZERO_INLINE_HPP
+#endif // CPU_ZERO_CONTINUATIONFREEZETHAW_ZERO_INLINE_HPP

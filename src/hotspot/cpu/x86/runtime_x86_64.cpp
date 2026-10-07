@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,8 +231,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Jump to interpreter
   __ ret(0);
 
-  // Make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   UncommonTrapBlob *ut_blob = UncommonTrapBlob::create(&buffer, oop_maps,
                                                        SimpleRuntimeFrame::framesize >> 1);
@@ -370,8 +369,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   __ jmp(r8);
 
-  // Make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   // Set exception blob
   ExceptionBlob* ex_blob = ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);

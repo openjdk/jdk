@@ -339,10 +339,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   }
 }
 
-uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
-  return MachNode::size(ra_);
-}
-
 int MachPrologNode::reloc() const {
   return 10; // a large enough number
 }
@@ -382,10 +378,6 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   if (do_polling() && ra_->C->is_method_compilation()) {
     __ read_polling_page(Rtemp, relocInfo::poll_return_type);
   }
-}
-
-uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  return MachNode::size(ra_);
 }
 
 int MachEpilogNode::reloc() const {
@@ -850,6 +842,18 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 #ifndef PRODUCT
+void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
+{
+  Unimplemented();
+}
+#endif
+
+void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
+{
+  Unimplemented();
+}
+
+#ifndef PRODUCT
 #define R_RTEMP "R_R12"
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
@@ -862,11 +866,6 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 void MachUEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   __ ic_check(InteriorEntryAlignment);
 }
-
-uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
-  return MachNode::size(ra_);
-}
-
 
 //=============================================================================
 
@@ -1112,26 +1111,26 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? 30 : FLOATPRESSURE;
 }
 
-// Register for DIVI projection of divmodI
-const RegMask& Matcher::divI_proj_mask() {
+// Register for the first projection of an int pair
+const RegMask& Matcher::firstI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for MODI projection of divmodI
-const RegMask& Matcher::modI_proj_mask() {
+// Register for the second projection of an int pair
+const RegMask& Matcher::secondI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for DIVL projection of divmodL
-const RegMask& Matcher::divL_proj_mask() {
+// Register for the first projection of a long pair
+const RegMask& Matcher::firstL_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for MODL projection of divmodL
-const RegMask& Matcher::modL_proj_mask() {
+// Register for the second projection of a long pair
+const RegMask& Matcher::secondL_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
@@ -4266,6 +4265,27 @@ instruct storeL_volatile_fp(memoryD mem, iRegL src) %{
   ins_encode %{
     __ fmdrr(S14, $src$$Register, $src$$Register->successor());
     __ fstd(S14, $mem$$Address);
+  %}
+  ins_pipe(istore_mem_reg);
+%}
+
+instruct storeL_immI0(memorylong mem, immI0 zero, iRegI temp) %{
+  predicate(!((StoreLNode*)n)->require_atomic_access());
+  match(Set mem (StoreL mem zero));
+  effect(TEMP temp);
+  ins_cost(MEMORY_REF_COST + DEFAULT_COST);
+
+  size(12);
+  format %{ "MOV    $temp,0\n\t"
+            "STR    $temp,$mem\t! long zero\n\t"
+            "STR    $temp,$mem+4" %}
+
+  ins_encode %{
+    __ mov($temp$$Register, 0);
+    Address Amemlo = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp, relocInfo::none);
+    Address Amemhi = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp + 4, relocInfo::none);
+    __ str($temp$$Register, Amemlo);
+    __ str($temp$$Register, Amemhi);
   %}
   ins_pipe(istore_mem_reg);
 %}
@@ -9008,8 +9028,8 @@ instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, i
 
 // Count and Base registers are fixed because the allocator cannot
 // kill unknown registers.  The encodings are generic.
-instruct clear_array(iRegX cnt, iRegP base, iRegI temp, iRegX zero, Universe dummy, flagsReg cpsr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct clear_array(iRegX cnt, iRegP base, iRegI temp, iRegX zero, immI0 val, Universe dummy, flagsReg cpsr) %{
+  match(Set dummy (ClearArray (Binary cnt base) val));
   effect(TEMP temp, TEMP zero, KILL cpsr);
   ins_cost(300);
   format %{ "MOV    $zero,0\n"

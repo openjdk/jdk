@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.io.IOException;
  * <p> A {@code VirtualMachine} represents a Java virtual machine to which this
  * Java virtual machine has attached. The Java virtual machine to which it is
  * attached is sometimes called the <i>target virtual machine</i>, or <i>target VM</i>.
- * An application (typically a tool such as a managemet console or profiler) uses a
+ * An application (typically a tool such as a management console or profiler) uses a
  * VirtualMachine to load an agent into the target VM. For example, a profiler tool
  * written in the Java Language might attach to a running application and load its
  * profiler agent to profile the running application. </p>

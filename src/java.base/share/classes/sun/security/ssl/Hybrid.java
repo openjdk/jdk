@@ -28,7 +28,7 @@ package sun.security.ssl;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
-import sun.security.util.RawKeySpec;
+import sun.security.util.KeyUtil;
 import sun.security.x509.X509Key;
 
 import javax.crypto.DecapsulateException;
@@ -171,67 +171,19 @@ public class Hybrid {
         @Override
         protected PublicKey engineGeneratePublic(KeySpec keySpec)
                 throws InvalidKeySpecException {
-            if (keySpec == null) {
-                throw new InvalidKeySpecException("keySpec must not be null");
-            }
+            throw new InvalidKeySpecException("Not supported");
+        }
 
-            if (keySpec instanceof RawKeySpec rks) {
-                byte[] key = rks.getKeyArr();
-                if (key == null) {
-                    throw new InvalidKeySpecException(
-                            "RawkeySpec contains null key data");
-                }
-                if (key.length <= leftlen) {
-                    throw new InvalidKeySpecException(
-                            "Hybrid key length " + key.length +
-                            " is too short and its left key length is " +
-                            leftlen);
-                }
+        @Override
+        protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws
+                InvalidKeySpecException {
+            throw new InvalidKeySpecException("Not supported");
+        }
 
-                byte[] leftKeyBytes = Arrays.copyOfRange(key, 0, leftlen);
-                byte[] rightKeyBytes = Arrays.copyOfRange(key, leftlen,
-                        key.length);
-                PublicKey leftKey, rightKey;
-
-                try {
-                    if (leftname.startsWith("secp")) {
-                        var curve = CurveDB.lookup(leftname);
-                        var ecSpec = new ECPublicKeySpec(
-                                ECUtil.decodePoint(leftKeyBytes,
-                                curve.getCurve()), curve);
-                        leftKey = left.generatePublic(ecSpec);
-                    } else if (leftname.startsWith("ML-KEM")) {
-                        leftKey = left.generatePublic(new RawKeySpec(
-                                leftKeyBytes));
-                    } else {
-                        throw new InvalidKeySpecException("Unsupported left" +
-                                " algorithm" + leftname);
-                    }
-
-                    if (rightname.equals("X25519")) {
-                        ArrayUtil.reverse(rightKeyBytes);
-                        var xecSpec = new XECPublicKeySpec(
-                                new NamedParameterSpec(rightname),
-                                new BigInteger(1, rightKeyBytes));
-                        rightKey = right.generatePublic(xecSpec);
-                    } else if (rightname.startsWith("ML-KEM")) {
-                        rightKey = right.generatePublic(new RawKeySpec(
-                                rightKeyBytes));
-                    } else {
-                        throw new InvalidKeySpecException("Unsupported right" +
-                                " algorithm: " + rightname);
-                    }
-
-                    return new PublicKeyImpl("Hybrid", leftKey, rightKey);
-                } catch (Exception e) {
-                    throw new InvalidKeySpecException("Failed to decode " +
-                            "hybrid key", e);
-                }
-            }
-
-            throw new InvalidKeySpecException(
-                    "KeySpec type:" +
-                    keySpec.getClass().getName() + " not supported");
+        @Override
+        protected <T extends KeySpec> T engineGetKeySpec(Key key,
+                Class<T> keySpec) throws InvalidKeySpecException {
+            throw new InvalidKeySpecException("Not supported");
         }
 
         private static int leftPublicLength(String name) {
@@ -245,20 +197,83 @@ public class Hybrid {
         }
 
         @Override
-        protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws
-                InvalidKeySpecException {
-            throw new UnsupportedOperationException();
-        }
+        protected Key engineTranslateKey(Key inKey) throws InvalidKeyException {
+            if (inKey == null) {
+                throw new InvalidKeyException("key must not be null");
+            }
 
-        @Override
-        protected <T extends KeySpec> T engineGetKeySpec(Key key,
-                Class<T> keySpec) throws InvalidKeySpecException {
-            throw new UnsupportedOperationException();
-        }
+            if (inKey instanceof PublicKey
+                    && "RAW".equalsIgnoreCase(inKey.getFormat())) {
+                byte[] key = inKey.getEncoded();
+                if (key == null) {
+                    throw new InvalidKeyException(
+                            "Key contains null key data");
+                }
+                if (key.length <= leftlen) {
+                    throw new InvalidKeyException(
+                            "Hybrid key length " + key.length +
+                                    " is too short and its left key length is " +
+                                    leftlen);
+                }
 
-        @Override
-        protected Key engineTranslateKey(Key key) throws InvalidKeyException {
-            throw new UnsupportedOperationException();
+                byte[] leftKeyBytes = Arrays.copyOfRange(key, 0, leftlen);
+                byte[] rightKeyBytes = Arrays.copyOfRange(key, leftlen,
+                        key.length);
+                PublicKey leftKey, rightKey;
+
+                try {
+                    if (leftname.startsWith("secp")) {
+                        var curve = CurveDB.lookup(leftname);
+                        var ecSpec = new ECPublicKeySpec(
+                                ECUtil.decodePoint(leftKeyBytes,
+                                        curve.getCurve()), curve);
+                        leftKey = left.generatePublic(ecSpec);
+                    } else if (leftname.startsWith("ML-KEM")) {
+                        try {
+                            leftKey = (PublicKey) left.translateKey(KeyUtil
+                                    .newRawPublicKey(leftname, leftKeyBytes));
+                        } catch (InvalidKeyException e) {
+                            // Fallback to X.509 encoding if ML-KEM impl
+                            // does not support translating from RAW
+                            leftKey = left.generatePublic(new X509EncodedKeySpec(
+                                    KeyUtil.rawToX509(leftname, leftKeyBytes)));
+                        }
+                    } else {
+                        throw new InvalidKeySpecException("Unsupported left" +
+                                " algorithm" + leftname);
+                    }
+
+                    if (rightname.equals("X25519")) {
+                        ArrayUtil.reverse(rightKeyBytes);
+                        var xecSpec = new XECPublicKeySpec(
+                                new NamedParameterSpec(rightname),
+                                new BigInteger(1, rightKeyBytes));
+                        rightKey = right.generatePublic(xecSpec);
+                    } else if (rightname.startsWith("ML-KEM")) {
+                        try {
+                            rightKey = (PublicKey) right.translateKey(KeyUtil
+                                    .newRawPublicKey(rightname, rightKeyBytes));
+                        } catch (InvalidKeyException e) {
+                            // Fallback to X.509 encoding if ML-KEM impl
+                            // does not support translating from RAW
+                            rightKey = right.generatePublic(new X509EncodedKeySpec(
+                                    KeyUtil.rawToX509(rightname, rightKeyBytes)));
+                        }
+                    } else {
+                        throw new InvalidKeySpecException("Unsupported right" +
+                                " algorithm: " + rightname);
+                    }
+
+                    return new PublicKeyImpl("Hybrid", leftKey, rightKey);
+                } catch (Exception e) {
+                    throw new InvalidKeyException("Failed to decode " +
+                            "hybrid key", e);
+                }
+            } else {
+                throw new InvalidKeyException("Unknown key "
+                        + inKey.getClass().getName() + " in "
+                        + inKey.getFormat());
+            }
         }
     }
 

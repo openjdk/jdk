@@ -222,7 +222,7 @@ public final class Recording implements Closeable {
      * @return recording settings, not {@code null}
      */
     public Map<String, String> getSettings() {
-        return new HashMap<>(internal.getSettings());
+        return internal.getSettingsCopy();
     }
 
     /**

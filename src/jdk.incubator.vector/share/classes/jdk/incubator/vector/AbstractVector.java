@@ -35,7 +35,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 
 @SuppressWarnings("cast")
 abstract sealed class AbstractVector<E> extends Vector<E>
-        permits ByteVector, DoubleVector, FloatVector, IntVector, LongVector, ShortVector {
+        permits ByteVector, DoubleVector, FloatVector, IntVector, LongVector, ShortVector, Float16Vector {
     /**
      * The order of vector bytes when stored in natural,
      * array elements of the same lane type.
@@ -177,53 +177,20 @@ abstract sealed class AbstractVector<E> extends Vector<E>
 
     /*package-private*/
     @ForceInline
+    @SuppressWarnings({"unchecked", "rawtypes"})
     final AbstractVector<?> asVectorRawTemplate(LaneType laneType) {
         // NOTE:  This assumes that convert0('X')
         // respects REGISTER_ENDIAN order.
-        return convert0('X', vspecies().withLanes(laneType)).swapIfNeeded(vspecies());
-    }
-
-    @ForceInline
-    protected static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
-        final int lanes = targetSpecies.laneCount();
-
-        if ((lanes % subLanesPerSrc) != 0) {
-            throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
-        }
-
-        // Each group corresponds to one source lane.
-        // For each group, reverse the lanes inside that group.
-        final int groups = lanes / subLanesPerSrc;
-        int[] map = new int[lanes];
-        for (int g = 0; g < groups; ++g) {
-            int base = g * subLanesPerSrc;
-            for (int j = 0; j < subLanesPerSrc; ++j) {
-                 map[base + j] = base + (subLanesPerSrc - 1 - j);
-            }
-        }
-        return VectorShuffle.fromArray(targetSpecies, map, 0);
-    }
-
-    @ForceInline
-    protected final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
-        if (java.nio.ByteOrder.nativeOrder() != ByteOrder.BIG_ENDIAN) {
-            return -1;
-        }
-        int sBytes = srcSpecies.elementSize();
-        int tBytes = vspecies().elementSize();
-
-        // No lane reordering needed for same size or widening reinterprets
-        if (sBytes == tBytes || (sBytes % tBytes) != 0) {
-            return -1;
-        }
-        int subLanesPerSrc = sBytes / tBytes;
-        return subLanesPerSrc;
+        AbstractSpecies<E> srcSpecies = vspecies();
+        AbstractSpecies dstSpecies = srcSpecies.withLanes(laneType);
+        return dstSpecies.swapIfNeeded(srcSpecies, convert0('X', dstSpecies));
     }
 
     /*package-private*/
     @ForceInline
     ByteVector asByteVectorRawTemplate() {
-        return (ByteVector) asVectorRawTemplate(LaneType.BYTE);
+        // NOTE: asByteVectorRaw respects REGISTER_ENDIAN order.
+        return (ByteVector) convert0('X', vspecies().byteSpecies());
     }
 
 
@@ -278,9 +245,6 @@ abstract sealed class AbstractVector<E> extends Vector<E>
     abstract AbstractVector<E> maybeSwap(ByteOrder bo);
 
     /*package-private*/
-    abstract AbstractVector<?> swapIfNeeded(AbstractSpecies<?> srcSpecies);
-
-    /*package-private*/
     @ForceInline
     VectorShuffle<Byte> swapBytesShuffle() {
         return vspecies().swapBytesShuffle();
@@ -329,6 +293,15 @@ abstract sealed class AbstractVector<E> extends Vector<E>
     @ForceInline
     public DoubleVector reinterpretAsDoubles() {
         return (DoubleVector) asVectorRaw(LaneType.DOUBLE);
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    @ForceInline
+    public Float16Vector reinterpretAsFloat16s() {
+        return (Float16Vector) asVectorRaw(LaneType.FLOAT16);
     }
 
     /**
@@ -682,6 +655,8 @@ abstract sealed class AbstractVector<E> extends Vector<E>
             return FloatVector.fromMemorySegment(rsp.check(float.class), ms, 0, bo, m.check(float.class)).check0(rsp);
         case LaneType.SK_DOUBLE:
             return DoubleVector.fromMemorySegment(rsp.check(double.class), ms, 0, bo, m.check(double.class)).check0(rsp);
+        case LaneType.SK_FLOAT16:
+            return Float16Vector.fromMemorySegment(rsp.check(Float16.class), ms, 0, bo, m.check(Float16.class)).check0(rsp);
         default:
             throw new AssertionError(rsp.toString());
         }
@@ -744,6 +719,13 @@ abstract sealed class AbstractVector<E> extends Vector<E>
                 }
                 return DoubleVector.fromArray(dsp.check(double.class), a, 0).check0(dsp);
             }
+            case LaneType.SK_FLOAT16: {
+                short[] a = new short[rlength];
+                for (int i = 0; i < limit; i++) {
+                    a[i] = Float16.float16ToRawShortBits(Float16.valueOf((float) lanes[i]));
+                }
+                return Float16Vector.fromArray(dsp.check(Float16.class), a, 0).check0(dsp);
+            }
             default: break;
             }
         } else {
@@ -793,6 +775,13 @@ abstract sealed class AbstractVector<E> extends Vector<E>
                     a[i] = (double) lanes[i];
                 }
                 return DoubleVector.fromArray(dsp.check(double.class), a, 0).check0(dsp);
+            }
+            case LaneType.SK_FLOAT16: {
+                short[] a = new short[rlength];
+                for (int i = 0; i < limit; i++) {
+                    a[i] = Float16.float16ToRawShortBits(Float16.valueOf((float) lanes[i]));
+                }
+                return Float16Vector.fromArray(dsp.check(Float16.class), a, 0).check0(dsp);
             }
             default: break;
             }

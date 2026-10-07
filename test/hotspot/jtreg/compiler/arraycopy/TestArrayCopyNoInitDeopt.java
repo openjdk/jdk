@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8072016
  * @summary Infinite deoptimization/recompilation cycles in case of arraycopy with tightly coupled allocation
- * @requires vm.flavor == "server" & !vm.graal.enabled
+ * @requires vm.flavor == "server"
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management

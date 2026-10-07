@@ -805,6 +805,15 @@ final class ServerHello {
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
+
+
+            if (shc.sentHRR) {
+                throw shc.conContext.fatal(
+                        Alert.HANDSHAKE_FAILURE,
+                        "TLS 1.3 server MUST NOT send a second HelloRetryRequest " +
+                        "in the same connection");
+            }
+
             ClientHelloMessage clientHello = (ClientHelloMessage) message;
 
             // negotiate the cipher suite.
@@ -840,6 +849,7 @@ final class ServerHello {
             // Output the handshake message.
             hhrm.write(shc.handshakeOutput);
             shc.handshakeOutput.flush();
+            shc.sentHRR = true;
 
             // In TLS1.3 middlebox compatibility mode the server sends a
             // dummy change_cipher_spec record immediately after its

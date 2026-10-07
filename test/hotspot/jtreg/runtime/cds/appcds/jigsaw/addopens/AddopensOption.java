@@ -123,8 +123,7 @@ public class AddopensOption {
             "--add-opens", addOpensNio,
             "-m", moduleOption,
             "-version");
-        oa.shouldContain("optimized module handling: enabled")
-          .shouldHaveExitValue(0);
+        oa.shouldHaveExitValue(0);
 
         // dump an archive with multiple --add-modules args
         archiveName = TestCommon.getNewArchiveName("muti-addopens");

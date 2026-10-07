@@ -87,7 +87,7 @@ public class CLDRConverter {
     static final String EXEMPLAR_CITY_PREFIX = "timezone.excity.";
     static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
-    static final String METAZONE_DSTOFFSET_PREFIX = "metazone.dstoffset.";
+    static final String METAZONE_DSTOFFSETS = "metazone.dstoffsets";
     static final String PARENT_LOCALE_PREFIX = "parentLocale.";
     static final String LIKELY_SCRIPT_PREFIX = "likelyScript.";
     static final String META_EMPTY_ZONE_NAME = "EMPTY_ZONE";
@@ -815,6 +815,13 @@ public class CLDRConverter {
                 data = map.get(TIMEZONE_ID_PREFIX + tzLink);
             }
 
+            String meta = handlerMetaZones.get(tzKey);
+            if (meta == null && tzLink != null) {
+                // Check for tzLink
+                meta = handlerMetaZones.get(tzLink);
+            }
+            String metaKey = meta != null ? METAZONE_ID_PREFIX + meta : null;
+
             if (data instanceof String[] tznames) {
                 // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
                 if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
@@ -826,24 +833,14 @@ public class CLDRConverter {
                     tznames = Arrays.copyOf(tznames, tznames.length);
                     fillTZDBShortNames(tzKey, tznames);
                     names.put(tzid, tznames);
+                    if (meta != null && map.get(metaKey) instanceof String[] metaNames) {
+                        recordMetazone(names, meta, tzKey, metaNames);
+                    }
                 }
             } else {
-                String meta = handlerMetaZones.get(tzKey);
-                if (meta == null && tzLink != null) {
-                    // Check for tzLink
-                    meta = handlerMetaZones.get(tzLink);
-                }
                 if (meta != null) {
-                    String metaKey = METAZONE_ID_PREFIX + meta;
-                    data = map.get(metaKey);
-                    if (data instanceof String[] tznames) {
-                        if (isDefaultZone(meta, tzKey)) {
-                            // Record the metazone names only from the default
-                            // (001) zone, with short names filled from TZDB
-                            tznames = Arrays.copyOf(tznames, tznames.length);
-                            fillTZDBShortNames(tzKey, tznames);
-                            names.put(metaKey, tznames);
-                        }
+                    if (map.get(metaKey) instanceof String[] metaNames) {
+                        recordMetazone(names, meta, tzKey, metaNames);
                         names.put(tzid, meta);
                         if (tzLink != null && availableIds.contains(tzLink)) {
                             names.put(tzLink, meta);
@@ -866,10 +863,21 @@ public class CLDRConverter {
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         names.putAll(exCities);
 
-        // Explicit metazone offsets
-        if (id.equals("root")) {
-            explicitDstOffsets.forEach((k, v) ->
-                names.put(METAZONE_DSTOFFSET_PREFIX + k, v));
+        // Explicit metazone offsets. For example,
+        // "metazone.dstoffsets" -> "America/Vancouver=-07;Europe/Dublin=+01"
+        if (id.equals("root") && !explicitDstOffsets.isEmpty()) {
+            names.put(METAZONE_DSTOFFSETS,
+                explicitDstOffsets.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(e -> {
+                        String tzid = e.getKey();
+                        if (tzid.isEmpty() || tzid.indexOf('=') >= 0 || tzid.indexOf(';') >= 0) {
+                            throw new IllegalArgumentException("Invalid timezone ID: " + tzid);
+                        }
+                        ZoneOffset.of(e.getValue()); // checks if the offset is valid
+                        return tzid + "=" + e.getValue();
+                    })
+                    .collect(Collectors.joining(";")));
         }
 
         // If there's no UTC entry at this point, add an empty one
@@ -1231,7 +1239,7 @@ public class CLDRConverter {
                     String zone001 = handlerMetaZones.zidMap().get(meta);
                     return zone001 == null ? "" :
                             String.format("        \"%s\", \"%s\", \"%s\",",
-                                            id, meta, zone001);
+                                escape(id), escape(meta), escape(zone001));
                 })
                 .filter(s -> !s.isEmpty())
                 .sorted();
@@ -1508,11 +1516,18 @@ public class CLDRConverter {
         }
     }
 
-    private static boolean isDefaultZone(String meta, String tzid) {
+    private static void recordMetazone(Map<String, Object> names, String meta, String tzid, String[] tznames) {
         String zone001 = handlerMetaZones.zidMap().get(meta);
         var tzLink = getTZDBLink(tzid);
-        return canonicalTZMap.getOrDefault(tzid, tzid).equals(zone001) ||
-            tzLink != null && canonicalTZMap.getOrDefault(tzLink, tzLink).equals(zone001);
+
+        // Record the metazone names only from the default
+        // (001) zone, with short names filled from TZDB
+        if (canonicalTZMap.getOrDefault(tzid, tzid).equals(zone001) ||
+            tzLink != null && canonicalTZMap.getOrDefault(tzLink, tzLink).equals(zone001)) {
+            tznames = Arrays.copyOf(tznames, tznames.length);
+            fillTZDBShortNames(tzid, tznames);
+            names.put(METAZONE_ID_PREFIX + meta, tznames);
+        }
     }
 
     private static String getTZDBLink(String tzid) {

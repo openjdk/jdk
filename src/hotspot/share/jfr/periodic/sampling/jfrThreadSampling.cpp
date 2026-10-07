@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "code/codeCache.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
@@ -148,7 +149,7 @@ static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame,
   return true;
 }
 
-static inline const PcDesc* get_pc_desc(nmethod* nm, void* pc) {
+static inline PcDesc* get_pc_desc(nmethod* nm, void* pc) {
   assert(nm != nullptr, "invariant");
   assert(pc != nullptr, "invariant");
   return nm->pc_desc_near(static_cast<address>(pc));
@@ -209,13 +210,38 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
           // on the stack. For extra assurance, we know that we can create this frame size at this
           // very location because we just popped such a frame before we hit the return poll site.
           //
-          // Let's attempt to correct for the safepoint bias.
-          const PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
+          // For frames that need stack repair, special care is needed. This is because the general stack-walking code
+          // reads the frame size from the stack, but here that memory is already overwritten by the SafepointBlob.
+          // If we are careful, we don't need to reconstruct a frame that needs stack repair, because we can process
+          // the nmethod directly, unpacking it in the first part of the stack trace.
+          // To accomplish this, we must provide both the PcDesc and the nmethod to the stack-walking code,
+          // which is done by updating the JfrSampleRequest. A special marker, NEEDS_STACK_REPAIR, is set in the bcp field.
+          // In this case, the top_frame becomes the sender frame of the nmethod, similar to how interpreter frames are handled.
+          //
+          // Let's attempt to correct for the safepoint bias
+          PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
           if (is_valid(pc_desc)) {
             intptr_t* const synthetic_sp = sender_sp - sampled_nm->frame_size();
+            in_continuation = Continuation::get_continuation_entry_for_sp(jt, synthetic_sp) != nullptr;
+            if (sampled_nm->needs_stack_repair()) {
+              JfrSampleRequest& modified_request = const_cast<JfrSampleRequest&>(request);
+              modified_request._sample_pc = pc_desc;
+              modified_request._sample_sp = sampled_nm;
+              modified_request._sample_bcp = reinterpret_cast<address>(JfrSampleRequestFrameType::NEEDS_STACK_REPAIR);
+              if (!stream.is_done()) {
+                stream.next();
+                // If the needs stack repair frame is in a continuation, check that the sender frame is too.
+                if (in_continuation && !is_in_continuation(*stream.current(), jt)) {
+                  // Leave sender frame empty.
+                  return true;
+                }
+                // The top_frame becomes the sender of the nmethod that needs stack repair.
+                top_frame = *stream.current();
+              }
+              return true;
+            }
             intptr_t* const synthetic_fp = sender_sp AARCH64_ONLY( - frame::sender_sp_offset);
             top_frame = frame(synthetic_sp, synthetic_sp, synthetic_fp, pc_desc->real_pc(sampled_nm), sampled_nm);
-            in_continuation = is_in_continuation(top_frame, jt);
             return true;
           }
         }
@@ -290,6 +316,8 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   }
   assert(sid != 0, "invariant");
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
   send_sample_event<EventExecutionSample>(request._sample_ticks, now, sid, tid);
   if (current == jt) {
     send_safepoint_latency_event(request, now, sid, jt);
@@ -305,10 +333,13 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   bool biased = false;
   bool in_continuation = false;
   bool could_compute_top_frame = compute_top_frame(request._request, top_frame, in_continuation, jt, biased);
+
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
 
   if (!could_compute_top_frame) {
-    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, request._cpu_time_period);
     return;
   }
   traceid sid;
@@ -317,15 +348,13 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
     JfrStackTrace stacktrace;
     if (!stacktrace.record(jt, top_frame, in_continuation, request._request)) {
       // Unable to record stacktrace. Fail.
-      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, request._cpu_time_period);
       return;
     }
     sid = JfrStackTraceRepository::add(stacktrace);
   }
   assert(sid != 0, "invariant");
-
-
-  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased);
+  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, request._cpu_time_period, biased);
   if (current == jt) {
     send_safepoint_latency_event(request._request, now, sid, jt);
   }
@@ -343,6 +372,7 @@ static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, Jav
       record_thread_in_java(request, now, tl, jt, current);
     }
     tl->clear_enqueued_requests();
+    JfrThreadLocal::stop_impersonating(current);
   }
   assert(!tl->has_enqueued_requests(), "invariant");
 }
@@ -364,7 +394,11 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   assert(queue.is_empty(), "invariant");
   tl->set_has_cpu_time_jfr_requests(false);
   if (queue.lost_samples() > 0) {
-    JfrCPUTimeThreadSampling::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
+    // Lost samples belong to the platform thread that owns the queue.
+    const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
+    JfrThreadLocal::impersonate(current, tid);
+    assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
+    JfrCPUTimeThreadSampling::send_lost_event(now, queue.get_and_reset_lost_samples());
     queue.resize_if_needed();
   }
   if (lock) {
@@ -376,9 +410,9 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
 // Entry point for a thread that has been sampled in native code and has a pending JFR CPU time request.
 void JfrThreadSampling::process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock) {
   assert(jt != nullptr, "invariant");
-
   const JfrTicks now = JfrTicks::now();
   drain_enqueued_cpu_time_requests(now, tl, jt, current, lock);
+  JfrThreadLocal::stop_impersonating(current);
 }
 
 static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
@@ -388,6 +422,7 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   drain_enqueued_requests(now, tl, jt, current);
   if (tl->has_cpu_time_jfr_requests()) {
     drain_enqueued_cpu_time_requests(now, tl, jt, current, true);
+    JfrThreadLocal::stop_impersonating(current);
   }
 }
 
@@ -427,12 +462,16 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
       }
       sid = JfrStackTraceRepository::add(stacktrace);
     }
-    // Read the tid under the monitor to ensure that if its a virtual thread,
+
+    // Read the tid under the monitor to ensure that if it is a virtual thread,
     // it is not unmounted until we are done with it.
     tid = JfrThreadLocal::thread_id(jt);
+    // Since the sampler thread cannot commit any other event except its next sample,
+    // no explicit cleanup is required; the next processed sample overwrites the alias.
+    JfrThreadLocal::impersonate(sampler_thread, tid);
   }
-
   assert(tl->sample_state() == NO_SAMPLE, "invariant");
+  assert(JfrThreadLocal::thread_id(sampler_thread) == tid, "invariant");
   send_sample_event<EventNativeMethodSample>(start_time, start_time, sid, tid);
   return true;
 }
@@ -467,4 +506,3 @@ void JfrThreadSampling::process_sample_request(JavaThread* jt) {
   }
   drain_all_enqueued_requests(now, tl, jt, jt);
 }
-

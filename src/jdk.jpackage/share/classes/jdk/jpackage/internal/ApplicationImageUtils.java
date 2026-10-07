@@ -29,8 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import jdk.jpackage.internal.PackagingPipeline.ApplicationImageTaskAction;
@@ -40,7 +38,7 @@ import jdk.jpackage.internal.model.CustomLauncherIcon;
 import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.ExplodedPath;
 
 
 final class ApplicationImageUtils {
@@ -83,13 +81,9 @@ final class ApplicationImageUtils {
 
     static ApplicationImageTaskAction<Application, ApplicationLayout> createCopyContentAction() {
         return env -> {
-            for (var e : List.of(
-                    Map.entry(env.app().appDirSources(), env.resolvedLayout().appDirectory()),
-                    Map.entry(env.app().contentDirSources(), env.resolvedLayout().contentDirectory())
-            )) {
-                RootedPath.copy(e.getKey().stream(), e.getValue(),
-                        StandardCopyOption.REPLACE_EXISTING, LinkOption.NOFOLLOW_LINKS);
-            }
+            ExplodedPath.copy(env.app().userContent().stream().map(spec -> {
+                return ExplodedPath.copySpec(spec.getKey(), spec.getValue().resolve(env.resolvedLayout()));
+            }).toList(), StandardCopyOption.REPLACE_EXISTING, LinkOption.NOFOLLOW_LINKS);
         };
     }
 

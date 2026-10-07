@@ -69,6 +69,18 @@
  *      TestLargeArrayInitGCStress
  */
 
+/*
+ * @test id=compressed-oops-off
+ * @summary Verify correct object metadata for large arrays with compressed oops disabled under GC stress
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx256m -Xms256m
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:-UseCompressedOops
+ *      TestLargeArrayInitGCStress
+ */
+
 /**
  *
  * Allocates large arrays of various types under GC stress (aggressive heuristics,

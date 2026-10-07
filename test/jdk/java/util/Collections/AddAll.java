@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,11 @@
  * @summary Basic test for Collections.addAll
  * @author  Josh Bloch
  * @key randomness
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,6 +49,11 @@ public class AddAll {
         test(new LinkedList<Integer>());
         test(new HashSet<Integer>());
         test(new LinkedHashSet<Integer>());
+
+        testTuple(new ArrayList<VClass>());
+        testTuple(new LinkedList<VClass>());
+        testTuple(new HashSet<VClass>());
+        testTuple(new LinkedHashSet<VClass>());
     }
 
     private static Random rnd = new Random();
@@ -55,7 +63,7 @@ public class AddAll {
         for (int i = 0; i < N; i++) {
             int rangeLen = rnd.nextInt(10);
             if (Collections.addAll(c, range(x, x + rangeLen)) !=
-                (rangeLen != 0))
+                    (rangeLen != 0))
                 throw new RuntimeException("" + rangeLen);
             x += rangeLen;
         }
@@ -72,6 +80,31 @@ public class AddAll {
         Integer[] result = new Integer[to - from];
         for (int i = from, j=0; i < to; i++, j++)
             result[j] = new Integer(i);
+        return result;
+    }
+
+    static void testTuple(Collection<VClass> c) {
+        int x = 0;
+        for (int i = 0; i < N; i++) {
+            int rangeLen = rnd.nextInt(10);
+            if (Collections.addAll(c, rangeTuple(x, x + rangeLen)) !=
+                    (rangeLen != 0))
+                throw new RuntimeException("" + rangeLen);
+            x += rangeLen;
+        }
+        if (c instanceof List) {
+            if (!c.equals(Arrays.asList(rangeTuple(0, x))))
+                throw new RuntimeException(x + ": " + c);
+        } else {
+            if (!c.equals(new HashSet<VClass>(Arrays.asList(rangeTuple(0, x)))))
+                throw new RuntimeException(x + ": " + c);
+        }
+    }
+
+    private static VClass[] rangeTuple(int from, int to) {
+        VClass[] result = new VClass[to - from];
+        for (int i = from, j = 0; i < to; i++, j++)
+            result[j] = new VClass(i, new int[] { i });
         return result;
     }
 }

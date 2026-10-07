@@ -29,7 +29,8 @@ import jdk.internal.vm.annotation.Stable;
 
 /**
  * Port of the "Freely Distributable Math Library", version 5.3, from
- * C to Java.
+ * C to Java, with a fix to pow so that its error bounds conform to
+ * the quality of implementation criteria for the method.
  *
  * <p>The C version of fdlibm relied on the idiom of pointer aliasing
  * a 64-bit double floating-point value as a two-element array of
@@ -2207,8 +2208,8 @@ final class FdLibm {
             // |y| is huge
             if (y_abs > 0x1.00000_ffff_ffffp31) { // if |y| > ~2**31
                 final double INV_LN2   =  0x1.7154_7652_b82fep0;   //  1.44269504088896338700e+00 = 1/ln2
-                final double INV_LN2_H =  0x1.715476p0;            //  1.44269502162933349609e+00 = 24 bits of 1/ln2
-                final double INV_LN2_L =  0x1.4ae0_bf85_ddf44p-26; //  1.92596299112661746887e-08 = 1/ln2 tail
+                final double INV_LN2_H =  0x1.7154_7p+0;           //  1.4426946640014648438      = 21 bits of 1/ln2
+                final double INV_LN2_L =  0x1.94ae_0bf8_5ddf4p-22; //  3.7688749856360991145e-07  = 1/ln2 tail
 
                 // Over/underflow if x is not close to one
                 if (x_abs < 0x1.fffff_0000_0000p-1) // |x| < ~0.9999995231628418

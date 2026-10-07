@@ -282,6 +282,7 @@ Form::DataType Form::is_store_to_memory(const char *opType) const {
   if( strcmp(opType,"StoreF")==0)  return Form::idealF;
   if( strcmp(opType,"StoreI")==0)  return Form::idealI;
   if( strcmp(opType,"StoreL")==0)  return Form::idealL;
+  if( strcmp(opType,"StoreLSpecial")==0)  return Form::idealL;
   if( strcmp(opType,"StoreP")==0)  return Form::idealP;
   if( strcmp(opType,"StoreN")==0)  return Form::idealN;
   if( strcmp(opType,"StoreNKlass")==0)  return Form::idealNKlass;

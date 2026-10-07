@@ -41,9 +41,9 @@ import jdk.test.lib.process.ProcessTools;
 public class TestHumongousAllocConcurrentStart {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to
     // fulfill alignment constraints.
-    private static final int heapSize                       = 224; // MB
-    private static final int heapRegionSize                 = 1;   // MB
-    private static final int initiatingHeapOccupancyPercent = 50;  // %
+    private static final int heapSize       = 224; // MB
+    private static final int heapRegionSize = 1;   // MB
+    private static final int G1IHOP         = 50;  // %
 
     public static void main(String[] args) throws Exception {
         OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
@@ -51,7 +51,7 @@ public class TestHumongousAllocConcurrentStart {
             "-Xms" + heapSize + "m",
             "-Xmx" + heapSize + "m",
             "-XX:G1HeapRegionSize=" + heapRegionSize + "m",
-            "-XX:InitiatingHeapOccupancyPercent=" + initiatingHeapOccupancyPercent,
+            "-XX:G1IHOP=" + G1IHOP,
             "-Xlog:gc",
             HumongousObjectAllocator.class.getName());
 
@@ -70,7 +70,7 @@ public class TestHumongousAllocConcurrentStart {
 
             // Number of objects to allocate to go above IHOP
             final int humongousObjectAllocations =
-                (int)((heapSize * initiatingHeapOccupancyPercent / 100.0) / heapRegionSize) + 1;
+                (int)((heapSize * G1IHOP / 100.0) / heapRegionSize) + 1;
 
             // Allocate
             for (int i = 1; i <= humongousObjectAllocations; i++) {

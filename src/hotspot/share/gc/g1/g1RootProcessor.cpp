@@ -52,12 +52,13 @@ G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, bool is_parallel) :
     _threads_claim_token_scope(),
     _is_parallel(is_parallel) {}
 
-void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) {
+void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss) {
   G1GCPhaseTimes* phase_times = _g1h->phase_times();
 
-  G1EvacPhaseTimesTracker timer(phase_times, pss, G1GCPhaseTimes::ExtRootScan, worker_id);
+  G1EvacPhaseTimesTracker timer(phase_times, pss, G1GCPhaseTimes::ExtRootScan);
 
   G1EvacuationRootClosures* closures = pss->closures();
+  uint worker_id = pss->worker_id();
   process_java_roots(closures, phase_times, worker_id);
 
   process_vm_roots(closures, phase_times, worker_id);

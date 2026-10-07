@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,6 @@ public class sourcename002 {
     /** Debugee's class for check **/
     private final static String checked_class = package_prefix + "sourcename002b";
 
-
-
     public static void main (String argv[]) {
         int result = run(argv,System.out);
         if (result != 0) {
@@ -83,12 +81,8 @@ public class sourcename002 {
         test_log_handler.display(message);
     }
 
-    private static void print_log_without_verbose(String message) {
-        test_log_handler.comment(message);
-    }
-
     private static void print_log_anyway(String message) {
-        test_log_handler.println(message);
+        test_log_handler.display(message);
     }
 
     /**
@@ -152,8 +146,6 @@ public class sourcename002 {
                 ("--> sourcename002: getting ReferenceType object for loaded checked class...");
             ReferenceType refType = debugee.classByName(checked_class);
             if (refType == null) {
-                print_log_without_verbose
-                    ("--> sourcename002: getting ReferenceType object for loaded checked class...");
                 print_log_anyway("##> sourcename002: FAILED: Could NOT FIND checked class: " + checked_class);
                 class_not_found_error = true;
                 break;
@@ -173,8 +165,6 @@ public class sourcename002 {
             if ( debugee_signal.equals("not_unloaded")) {
                 print_log_anyway
                     ("--> sourcename002: debugee's \"not_unloaded\" signal recieved!");
-                print_log_without_verbose
-                    ("-->                checked class may be NOT unloaded!");
                 print_log_anyway
                     ("-->                ReferenceType.sourceName() method can NOT be checked!");
                 break;
@@ -195,8 +185,6 @@ public class sourcename002 {
                     ("--> sourcename002: checked class has been unloaded really: " + checked_class);
             }
             else {
-                print_log_without_verbose
-                    ("--> sourcename002: check that checked class has been unloaded really...");
                 print_log_anyway
                     ("--> sourcename002: checked class FOUND: " + checked_class
                     + " => it has NOT been unloaded!");

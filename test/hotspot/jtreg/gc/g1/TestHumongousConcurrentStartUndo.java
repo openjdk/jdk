@@ -49,10 +49,10 @@ import java.lang.ref.Reference;
 public class TestHumongousConcurrentStartUndo {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to
     // fulfill alignment constraints.
-    private static final int HeapSize                       = 224; // MB
-    private static final int HeapRegionSize                 = 1;   // MB
-    private static final int InitiatingHeapOccupancyPercent = 50;  // %
-    private static final int YoungSize                      = HeapSize / 8;
+    private static final int HeapSize       = 224; // MB
+    private static final int HeapRegionSize = 1;   // MB
+    private static final int G1IHOP         = 50;  // %
+    private static final int YoungSize      = HeapSize / 8;
 
     public static void main(String[] args) throws Exception {
         OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
@@ -62,7 +62,7 @@ public class TestHumongousConcurrentStartUndo {
             "-Xmx" + HeapSize + "m",
             "-Xmn" + YoungSize + "m",
             "-XX:G1HeapRegionSize=" + HeapRegionSize + "m",
-            "-XX:InitiatingHeapOccupancyPercent=" + InitiatingHeapOccupancyPercent,
+            "-XX:G1IHOP=" + G1IHOP,
             "-XX:-G1UseAdaptiveIHOP",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",

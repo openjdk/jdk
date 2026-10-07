@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/continuationGCSupport.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
@@ -128,6 +129,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   _generation->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
 
+  // Leaving full GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
+
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
     heap->propagate_gc_state_to_all_threads();
@@ -136,6 +140,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
 
   // A full GC may be entered directly, or as an upgrade from a failed
   // degenerated GC. In the latter case, self-forwarded objects may be
@@ -855,15 +860,15 @@ void ShenandoahFullGC::phase3_update_references() {
   WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
   {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
     ShenandoahRootAdjuster rp(nworkers, ShenandoahPhaseTimings::full_gc_adjust_roots);
     ShenandoahAdjustRootPointersTask task(&rp, _preserved_marks);
     workers->run_task(&task);
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
   }
 
   ShenandoahAdjustPointersTask adjust_pointers_task;

@@ -52,7 +52,7 @@ import jdk.test.lib.security.CertificateBuilder;
  *          java.base/sun.security.util
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm CompressedCertMsgCache
+ * @run main/othervm -Djdk.tls.server.newSessionTicketCount=0 CompressedCertMsgCache
  */
 
 public class CompressedCertMsgCache extends SSLSocketTemplate {

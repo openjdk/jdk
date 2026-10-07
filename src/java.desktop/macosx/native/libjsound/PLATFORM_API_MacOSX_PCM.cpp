@@ -764,10 +764,16 @@ static OSStatus InputCallback(void                          *inRefCon,
             }
             device->lastWrittenSampleTime = sampleTime + inNumberFrames;
 
-            int bytesWritten = device->resampler->Process(abl.mBuffers[0].mData, (int)abl.mBuffers[0].mDataByteSize, &device->ringBuffer);
+#ifdef USE_TRACE
+            int bytesWritten =
+#endif
+            device->resampler->Process(abl.mBuffers[0].mData, (int)abl.mBuffers[0].mDataByteSize, &device->ringBuffer);
             TRACE2("<<InputCallback (RESAMPLED, saved %d bytes of %d)\n", bytesWritten, (int)abl.mBuffers[0].mDataByteSize);
         } else {
-            int bytesWritten = device->ringBuffer.Write(abl.mBuffers[0].mData, (int)abl.mBuffers[0].mDataByteSize, false);
+#ifdef USE_TRACE
+            int bytesWritten =
+#endif
+            device->ringBuffer.Write(abl.mBuffers[0].mData, (int)abl.mBuffers[0].mDataByteSize, false);
             TRACE2("<<InputCallback (saved %d bytes of %d)\n", bytesWritten, (int)abl.mBuffers[0].mDataByteSize);
         }
     }

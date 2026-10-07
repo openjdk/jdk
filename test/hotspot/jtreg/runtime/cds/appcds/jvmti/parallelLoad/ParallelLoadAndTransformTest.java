@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  *     /test/hotspot/jtreg/runtime/cds/appcds/test-classes /test/hotspot/jtreg/runtime/cds/appcds/jvmti
  *     /test/hotspot/jtreg/testlibrary/jvmti
  * @requires vm.cds
- * @requires !vm.graal.enabled
  * @requires vm.jvmti
  * @build TransformUtil TransformerAgent ParallelLoad
  * @run driver ParallelLoadAndTransformTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8004741
  * @summary Missing compiled exception handle table entry for multidimensional array allocation
  *
- * @requires !vm.graal.enabled
  * @library /test/lib
  *
  * @build jdk.test.whitebox.WhiteBox

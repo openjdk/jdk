@@ -54,7 +54,7 @@
   // PowerPC requires masked shift counts.
   static const bool need_masked_shift_count = true;
 
-  // Power6 requires postalloc expand (see block.cpp for description of postalloc expand).
+  // PPC64 requires postalloc expand (see block.cpp for description of postalloc expand).
   static const bool require_postalloc_expand = true;
 
   // No support for generic vector operands.
@@ -157,7 +157,7 @@
 
   // true means we have fast l2f conversion
   static constexpr bool convL2FSupported(void) {
-    // fcfids can do the conversion (>= Power7).
+    // fcfids can do the conversion.
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
     return true;
   }
@@ -198,6 +198,12 @@
 
   // Is SIMD sort supported for this CPU?
   static bool supports_simd_sort(BasicType bt) {
+    return false;
+  }
+
+  // Return true if VectorSlice is better served by a two source permute than by
+  // the native slice lowering.
+  static bool vector_slice_prefers_select_from_two_vector(BasicType elem_bt, int byte_origin) {
     return false;
   }
 

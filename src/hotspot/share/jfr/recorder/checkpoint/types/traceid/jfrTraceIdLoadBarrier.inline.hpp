@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
-#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_INLINE_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_INLINE_HPP
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.hpp"
 
@@ -150,12 +150,11 @@ inline traceid JfrTraceIdLoadBarrier::load(const ClassLoaderData* cld) {
   if (cld->has_class_mirror_holder()) {
     return 0;
   }
-  const traceid id = set_used_and_get(cld);
   const Klass* const class_loader_klass = cld->class_loader_klass();
   if (class_loader_klass != nullptr) {
     load(class_loader_klass);
   }
-  return id;
+  return set_used_and_get(cld);
 }
 
 inline traceid JfrTraceIdLoadBarrier::load(const ModuleEntry* module) {
@@ -216,4 +215,4 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp_previous_epoch(const Klass* kla
   return (METHOD_ID(klass, method));
 }
 
-#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_INLINE_HPP

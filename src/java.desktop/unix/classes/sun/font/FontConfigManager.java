@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,8 +267,8 @@ public final class FontConfigManager {
                 Font2D f2d = fm.findFont2D(fcInfo.firstFont.familyName,
                                            fcInfo.style,
                                            FontManager.NO_FALLBACK);
-                if (f2d instanceof PhysicalFont) { /* paranoia */
-                    return (PhysicalFont)f2d;
+                if (f2d instanceof PhysicalFont pf) { /* paranoia */
+                    return pf;
                 } else {
                     return null;
                 }
@@ -295,8 +295,8 @@ public final class FontConfigManager {
                     Font2D f2d = fm.findFont2D(fcInfo.firstFont.familyName,
                                                fcInfo.style,
                                                FontManager.NO_FALLBACK);
-                    if (f2d instanceof PhysicalFont) { /* paranoia */
-                        return (PhysicalFont)f2d;
+                    if (f2d instanceof PhysicalFont pf) { /* paranoia */
+                        return pf;
                     } else {
                         return null;
                     }
@@ -387,8 +387,8 @@ public final class FontConfigManager {
         PhysicalFont physFont = null;
         if (family != null) {
             Font2D f2D = family.getFontWithExactStyleMatch(fcInfo.style);
-            if (f2D instanceof PhysicalFont) {
-                physFont = (PhysicalFont)f2D;
+            if (f2D instanceof PhysicalFont pf) {
+                physFont = pf;
             }
         }
 

@@ -39,9 +39,6 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 int BarrierSetNMethod::disarmed_guard_value() const {
   return *disarmed_guard_value_address();
@@ -65,7 +62,7 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  if (nm->is_native_method() || nm->is_compiled_by_c2() || nm->is_compiled_by_c1() || nm->is_compiled_by_jvmci()) {
+  if (nm->is_native_method() || nm->is_compiled_by_c2() || nm->is_compiled_by_c1()) {
     return true;
   }
 
@@ -136,6 +133,10 @@ int* BarrierSetNMethod::disarmed_guard_value_address() const {
 
 ByteSize BarrierSetNMethod::thread_disarmed_guard_value_offset() const {
   return Thread::nmethod_disarmed_guard_value_offset();
+}
+
+void BarrierSetNMethod::set_thread_disarmed_guard_value(Thread* thread) {
+  thread->set_nmethod_disarmed_guard_value(disarmed_guard_value());
 }
 
 class BarrierSetNMethodArmClosure : public ThreadClosure {

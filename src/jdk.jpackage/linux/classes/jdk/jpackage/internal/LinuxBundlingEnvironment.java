@@ -136,7 +136,8 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
             });
         } else {
             return LinuxPackageArch.create(type).map(arch -> {
-                return new LinuxSystemEnvironment.Stub(sysEnv.soLookupAvailable(), sysEnv.nativePackageType(), arch);
+                return new LinuxSystemEnvironment.Stub(
+                        sysEnv.soLookupAvailable(), sysEnv.nativePackageType(), arch, sysEnv.desktopEntryFileValidator());
             });
         }
     }

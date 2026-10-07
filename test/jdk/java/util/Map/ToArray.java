@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8008785
+ * @bug 8008785 8336669
  * @summary Ensure toArray() implementations return correct results.
  * @author Mike Duigou
  */
@@ -38,8 +38,12 @@ public class ToArray {
      */
     private static final int TEST_SIZE = 5000;
 
+    static String genString(int i) {
+        return "BASE-" + HexFormat.of().toHexDigits(i);
+    }
+
     private static void realMain(String[] args) throws Throwable {
-        Map<Integer, Long>[] maps = (Map<Integer, Long>[]) new Map[]{
+        Map<String, Long>[] maps = (Map<String, Long>[]) new Map<?,?>[]{
                     new HashMap<>(),
                     new Hashtable<>(),
                     new IdentityHashMap<>(),
@@ -51,7 +55,7 @@ public class ToArray {
                 };
 
         // for each map type.
-        for (Map<Integer, Long> map : maps) {
+        for (Map<String, Long> map : maps) {
              try {
                 testMap(map);
              } catch(Exception all) {
@@ -60,19 +64,20 @@ public class ToArray {
         }
     }
 
-    private static final Integer[] KEYS = new Integer[TEST_SIZE];
+    private static final String[] KEYS = new String[TEST_SIZE];
 
     private static final Long[] VALUES = new Long[TEST_SIZE];
 
     static {
         for (int each = 0; each < TEST_SIZE; each++) {
-            KEYS[each]   = Integer.valueOf(each);
+            // BUG: WeakHashMap of value object!
+            KEYS[each]   = genString(each);
             VALUES[each] = Long.valueOf(each + TEST_SIZE);
         }
     }
 
 
-    private static void testMap(Map<Integer, Long> map) {
+    private static void testMap(Map<String, Long> map) {
         System.out.println("Testing " + map.getClass());
         System.out.flush();
 
@@ -98,9 +103,9 @@ public class ToArray {
         }
 
         // check the entries
-        Map.Entry<Integer,Long>[] entries = map.entrySet().toArray(new Map.Entry[TEST_SIZE]);
-        Arrays.sort( entries,new Comparator<Map.Entry<Integer,Long>>() {
-                public int compare(Map.Entry<Integer,Long> o1, Map.Entry<Integer,Long> o2) {
+        Map.Entry<String,Long>[] entries = map.entrySet().toArray(new Map.Entry[TEST_SIZE]);
+        Arrays.sort( entries,new Comparator<Map.Entry<String,Long>>() {
+                public int compare(Map.Entry<String,Long> o1, Map.Entry<String,Long> o2) {
                         return o1.getKey().compareTo(o2.getKey());
                 }});
 

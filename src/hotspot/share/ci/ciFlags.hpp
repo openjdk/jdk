@@ -54,12 +54,15 @@ public:
   bool is_static               () const { return _flags.is_static();       }
   bool is_final                () const { return _flags.is_final();        }
   bool is_synchronized         () const { return _flags.is_synchronized(); }
-  bool is_super                () const { return _flags.is_super();        }
   bool is_volatile             () const { return _flags.is_volatile();     }
   bool is_transient            () const { return _flags.is_transient();    }
   bool is_native               () const { return _flags.is_native();       }
   bool is_interface            () const { return _flags.is_interface();    }
   bool is_abstract             () const { return _flags.is_abstract();     }
+  bool is_varargs              () const { return _flags.is_varargs();      }
+  bool is_identity             () const { return _flags.is_identity_class(); }
+  bool is_strict               () const { return _flags.is_strict();       }
+
   bool is_stable               () const { return _stable; }
   // In case the current object represents a field, return true if
   // the field is modified outside of instance initializer methods

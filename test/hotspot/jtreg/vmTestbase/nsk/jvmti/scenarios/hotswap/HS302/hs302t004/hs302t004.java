@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,9 @@ public class hs302t004 extends RedefineAgent {
             Method[] methods = klass.getDeclaredMethods();
             for(Method method : methods) {
                 if (method.getName().equals("setName")) {
-                    log.println(" Modified "+method.getModifiers());
+                    log.display(" Modified "+method.getModifiers());
                     if ( (Modifier.PRIVATE &  method.getModifiers())==Modifier.PRIVATE ) {
-                        log.println("...Private..");
+                        log.display("...Private..");
                         pass = true;
                     }
                 }
@@ -76,9 +76,9 @@ public class hs302t004 extends RedefineAgent {
         }catch(Exception exp) {
             if ( isRedefined() ) {
                 pass =true;
-                log.println(" Passed ..");
+                log.display(" Passed ..");
             } else {
-                log.println(" Failed ..");
+                log.display(" Failed ..");
             }
             return pass;
         }
@@ -86,7 +86,7 @@ public class hs302t004 extends RedefineAgent {
         if ( redefineAttempted() && !isRedefined() ) {
             pass = true;
         }
-        log.println(" PASS = "+pass);
+        log.display(" PASS = "+pass);
         return pass;
     }
 }

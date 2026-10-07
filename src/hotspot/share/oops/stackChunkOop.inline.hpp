@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,15 @@ inline void stackChunkOopDesc::set_has_bitmap(bool value)          { set_flag(FL
 
 inline bool stackChunkOopDesc::has_thaw_slowpath_condition() const { return flags() != 0; }
 
+inline void stackChunkOopDesc::force_slow_path() {
+#if INCLUDE_ZGC || INCLUDE_SHENANDOAHGC
+  if (UseZGC || UseShenandoahGC) {
+    relativize_derived_pointers_concurrently();
+  }
+#endif
+  set_flag(FLAG_HAS_INTERPRETED_FRAMES, true);
+}
+
 inline bool stackChunkOopDesc::requires_barriers() {
   return Universe::heap()->requires_barriers(this);
 }
@@ -360,7 +369,7 @@ inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t
   assert(to >= start_address(), "Chunk underflow");
   assert(to + size <= end_address(), "Chunk overflow");
 
-#if !(defined(AMD64) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)) || defined(ZERO)
+#if !(defined(AMD64) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390)) || defined(ZERO)
   // Suppress compilation warning-as-error on unimplemented architectures
   // that stub out arch-specific methods. Some compilers are smart enough
   // to figure out the argument is always null and then warn about it.
@@ -379,7 +388,7 @@ inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t
   assert(from >= start_address(), "");
   assert(from + size <= end_address(), "");
 
-#if !(defined(AMD64) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)) || defined(ZERO)
+#if !(defined(AMD64) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390)) || defined(ZERO)
   // Suppress compilation warning-as-error on unimplemented architectures
   // that stub out arch-specific methods. Some compilers are smart enough
   // to figure out the argument is always null and then warn about it.

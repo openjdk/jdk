@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,9 +302,6 @@ void ExternalsRecorder::print_statistics() {
         if (addr != nullptr) {
           if (StubRoutines::contains(addr)) {
             StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
-            if (desc == nullptr) {
-              desc = StubCodeDesc::desc_for(addr + frame::pc_return_offset);
-            }
             const char* stub_name = (desc != nullptr) ? desc->name() : "<unknown>";
             tty->print(" stub: %s", stub_name);
           } else {

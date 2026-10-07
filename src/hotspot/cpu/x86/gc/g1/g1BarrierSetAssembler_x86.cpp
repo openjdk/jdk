@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
   Address buffer_addr(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
   // This code assumes that buffer index is pointer sized.
-  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
+  static_assert(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
 
   Label L_runtime;
 
@@ -413,8 +413,9 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                                          Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
-  bool needs_pre_barrier = as_normal;
+  bool needs_pre_barrier = as_normal && !dest_uninitialized;
   bool needs_post_barrier = val != noreg && in_heap;
 
   // flatten object address if needed
@@ -461,7 +462,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 #undef __
 #define __ ce->masm()->
 
-void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub) {
   G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
   // At this point we know that marking is in progress.
   // If do_load() is true then we have to emit the
@@ -500,7 +501,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
 
 void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm) {
   // Generated code assumes that buffer index is pointer sized.
-  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
+  static_assert(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
 
   __ prologue("g1_pre_barrier", false);
   // arg0 : previous value of memory

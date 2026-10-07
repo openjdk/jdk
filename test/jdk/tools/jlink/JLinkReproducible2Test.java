@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.spi.ToolProvider;
 
+import jdk.test.lib.util.FileUtils;
+
 /*
  * @test
  * @summary Make sure that jimages are consistent when created by jlink.
@@ -35,6 +37,8 @@ import java.util.spi.ToolProvider;
  *          jdk.management
  *          jdk.unsupported
  *          jdk.charsets
+ * @library /test/lib
+ * @build jdk.test.lib.util.FileUtils
  * @run main JLinkReproducible2Test
  */
 public class JLinkReproducible2Test {
@@ -53,6 +57,10 @@ public class JLinkReproducible2Test {
         if (Files.mismatch(image1.resolve("lib").resolve("modules"), image2.resolve("lib").resolve("modules")) != -1L) {
             throw new RuntimeException("jlink producing inconsistent result");
         }
+
+        // Free disk space before creating the next pair of images.
+        FileUtils.deleteFileTreeWithRetry(image1);
+        FileUtils.deleteFileTreeWithRetry(image2);
 
         Path image3 = Paths.get("./image3");
         Path image4 = Paths.get("./image4");

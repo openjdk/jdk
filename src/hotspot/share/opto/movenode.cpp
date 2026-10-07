@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@
 
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
-// Move constants to the right.
+// Move constants to the true-case input.
 Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
@@ -95,14 +95,14 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return progress;
   }
 
-  // Check for Min/Max patterns. This is called before constants are pushed to the right input, as that transform can
+  // Check for Min/Max patterns. This is called before constants are pushed to the true-case input, as that transform can
   // make BoolTests non-canonical.
   Node* minmax = Ideal_minmax(phase, this);
   if (minmax != nullptr) {
     return minmax;
   }
 
-  // Canonicalize the node by moving constants to the right input.
+  // Canonicalize the node by moving constants to the true-case input.
   if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
     return make(phase->transform(b), in(IfTrue), in(IfFalse), _type);
@@ -142,10 +142,10 @@ Node* CMoveNode::Identity(PhaseGVN* phase) {
     return in(IfFalse); // Then it doesn't matter
   }
   if (phase->type(in(Condition)) == TypeInt::ZERO) {
-    return in(IfFalse); // Always pick left(false) input
+    return in(IfFalse); // Always pick false value input
   }
   if (phase->type(in(Condition)) == TypeInt::ONE) {
-    return in(IfTrue);  // Always pick right(true) input
+    return in(IfTrue);  // Always pick true value input
   }
 
   // Check for CMove'ing a constant after comparing against the constant.
@@ -176,10 +176,10 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
   if (phase->type(in(Condition)) == TypeInt::ZERO) {
-    return phase->type(in(IfFalse))->filter(_type); // Always pick left (false) input
+    return phase->type(in(IfFalse))->filter(_type); // Always pick false value input
   }
   if (phase->type(in(Condition)) == TypeInt::ONE) {
-    return phase->type(in(IfTrue))->filter(_type);  // Always pick right (true) input
+    return phase->type(in(IfTrue))->filter(_type);  // Always pick true value input
   }
 
   const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
@@ -189,15 +189,15 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
 //------------------------------make-------------------------------------------
 // Make a correctly-flavored CMove.  Since _type is directly determined
 // from the inputs we do not need to specify it here.
-CMoveNode* CMoveNode::make(Node* bol, Node* left, Node* right, const Type* t) {
+CMoveNode* CMoveNode::make(Node* bol, Node* false_value, Node* true_value, const Type* t) {
   switch (t->basic_type()) {
-    case T_INT:     return new CMoveINode(bol, left, right, t->is_int());
-    case T_FLOAT:   return new CMoveFNode(bol, left, right, t);
-    case T_DOUBLE:  return new CMoveDNode(bol, left, right, t);
-    case T_LONG:    return new CMoveLNode(bol, left, right, t->is_long());
-    case T_OBJECT:  return new CMovePNode(bol, left, right, t->is_oopptr());
-    case T_ADDRESS: return new CMovePNode(bol, left, right, t->is_ptr());
-    case T_NARROWOOP: return new CMoveNNode(bol, left, right, t);
+    case T_INT:     return new CMoveINode(bol, false_value, true_value, t->is_int());
+    case T_FLOAT:   return new CMoveFNode(bol, false_value, true_value, t);
+    case T_DOUBLE:  return new CMoveDNode(bol, false_value, true_value, t);
+    case T_LONG:    return new CMoveLNode(bol, false_value, true_value, t->is_long());
+    case T_OBJECT:  return new CMovePNode(bol, false_value, true_value, t->is_oopptr());
+    case T_ADDRESS: return new CMovePNode(bol, false_value, true_value, t->is_ptr());
+    case T_NARROWOOP: return new CMoveNNode(bol, false_value, true_value, t);
     default:
       ShouldNotReachHere();
       return nullptr;
@@ -286,9 +286,9 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *x = CMoveNode::Ideal(phase, can_reshape);
   if( x ) return x;
 
-  // If zero is on the left (false-case, no-move-case) it must mean another
-  // constant is on the right (otherwise the shared CMove::Ideal code would
-  // have moved the constant to the right). This situation is bad for x86 because
+  // If zero is the false-case (no-move-case) it must mean another
+  // constant is on the true-case input (otherwise the shared CMove::Ideal code would
+  // have moved the constant to the true-case input). This situation is bad for x86 because
   // the zero has to be manifested in a register with a XOR which kills flags,
   // which are live on input to the CMoveI, leading to a situation which causes
   // excessive spilling. See bug 4677505.

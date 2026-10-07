@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
@@ -65,12 +66,11 @@ protected:
 };
 
 size_t ShenandoahGenerationalHeap::calculate_min_plab() {
-  return align_up(PLAB::min_size(), CardTable::card_size_in_words());
+  return PLAB::min_size();
 }
 
 size_t ShenandoahGenerationalHeap::calculate_max_plab() {
-  size_t MaxTLABSizeWords = ShenandoahHeapRegion::max_tlab_size_words();
-  return align_down(MaxTLABSizeWords, CardTable::card_size_in_words());
+  return ShenandoahHeapRegion::max_tlab_size_words();
 }
 
 // Returns size in bytes
@@ -86,8 +86,6 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   _regulator_thread(nullptr),
   _young_gen_memory_pool(nullptr),
   _old_gen_memory_pool(nullptr) {
-  assert(is_aligned(_min_plab_size, CardTable::card_size_in_words()), "min_plab_size must be aligned");
-  assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
 }
 
 void ShenandoahGenerationalHeap::initialize_generations() {
@@ -163,8 +161,8 @@ void ShenandoahGenerationalHeap::start_idle_span() {
 }
 
 bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
-  if (is_idle()) {
-    return false;
+  if (ShenandoahHeap::requires_barriers(obj)) {
+    return true;
   }
 
   if (is_concurrent_young_mark_in_progress() && is_in_young(obj) && !marking_context()->allocated_after_mark_start(obj)) {
@@ -174,11 +172,6 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
 
   if (is_in_old(obj)) {
     // Card marking barriers are required for objects in the old generation
-    return true;
-  }
-
-  if (has_forwarded_objects()) {
-    // Object may have pointers that need to be updated
     return true;
   }
 
@@ -210,13 +203,10 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     markWord mark = p->mark();
     if (mark.is_marked()) {
       // Already forwarded.
-      return ShenandoahBarrierSet::resolve_forwarded(p);
+      return ShenandoahForwarding::get_forwardee(p);
     }
 
-    if (mark.has_displaced_mark_helper()) {
-      // We don't want to deal with MT here just to ensure we read the right mark word.
-      // Skip the potential promotion attempt for this one.
-    } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+    if (age_census()->is_tenurable(from_region->age() + mark.age())) {
       // If the object is tenurable, try to promote it
       oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 
@@ -350,7 +340,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   oop copy_val = cast_to_oop(copy);
 
   // Update the age of the evacuated object
-  if (TO_GENERATION == YOUNG_GENERATION && is_aging_cycle()) {
+  if (TO_GENERATION == YOUNG_GENERATION) {
     increase_object_age(copy_val, from_region_age + 1);
   }
 
@@ -672,7 +662,7 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 
     void work(uint worker_id) override {
       ShenandoahWorkerTimingsTracker timer(_phase,
-                                           ShenandoahPhaseTimings::ScanClusters,
+                                           ShenandoahPhaseTimings::Work,
                                            worker_id, true);
       ShenandoahHeapRegion* region;
       while ((region = _regions.next()) != nullptr) {
@@ -724,10 +714,12 @@ public:
 
   void work(uint worker_id) override {
     if (CONCURRENT) {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       SuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahParallelWorkerSession worker_session(worker_id);
       do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
     }
@@ -867,7 +859,7 @@ private:
       oop obj = cast_to_oop(p);
       objs.do_object(obj);
       HeapWord* prev_p = p;
-      p += obj->size();
+      p += ShenandoahForwarding::size(obj);
       if (p < tams) {
         p = ctx->get_next_marked_addr(p, tams);
         // If there are no more marked objects before tams, this returns tams.  Note that tams is
@@ -978,7 +970,7 @@ public:
         // There have been allocations in this region since the start of the cycle.
         // Any objects new to this region must not assimilate elevated age.
         r->reset_age();
-      } else if (ShenandoahGenerationalHeap::heap()->is_aging_cycle()) {
+      } else {
         r->increment_age();
       }
     }
@@ -1023,7 +1015,7 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
   const char* msg = "Coalescing and filling old regions";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
 
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
   EventMark em("%s", msg);

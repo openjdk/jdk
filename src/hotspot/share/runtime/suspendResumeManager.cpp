@@ -48,7 +48,7 @@ public:
     current->set_thread_state(jts);
     current->suspend_resume_manager()->set_async_suspend_handshake(false);
   }
-  virtual bool is_suspend() { return true; }
+  virtual bool is_self_suspend() { return true; }
 };
 
 // This is the closure that synchronously honors the suspend request.
@@ -64,6 +64,16 @@ public:
     _did_suspend = target->suspend_resume_manager()->suspend_with_handshake(_register_vthread_SR);
   }
   bool did_suspend() { return _did_suspend; }
+  virtual bool is_suspend_request() { return true; }
+
+  // If the target is in a JNI deferred suspension region, then we cannot
+  // process this operation. This must be checked with the HandshakeState lock
+  // held, which together with the fact the target only enters a deferred
+  // region from a handshake-unsafe state, means we cannot race with the
+  // target entering that region.
+  virtual bool is_enabled(Thread* target) {
+    return !JavaThread::cast(target)->jni_deferred_suspension();
+  }
 };
 
 void SuspendResumeManager::set_suspended(bool is_suspend, bool register_vthread_SR) {

@@ -510,3 +510,18 @@ intptr_t* frame::real_fp() const {
   assert(! is_compiled_frame(), "unknown compiled frame size");
   return fp();
 }
+
+intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
+  Unimplemented();
+  return nullptr;
+}
+
+intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
+  Unimplemented();
+  return nullptr;
+}
+
+bool frame::was_augmented_on_entry(int& real_size) const {
+  Unimplemented();
+  return false;
+}

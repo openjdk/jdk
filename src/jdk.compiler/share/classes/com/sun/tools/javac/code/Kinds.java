@@ -174,6 +174,7 @@ public class Kinds {
         public static final KindSelector MDL = new KindSelector(0x40);
         public static final KindSelector ERR = new KindSelector(0x7f);
         public static final KindSelector ASG = new KindSelector(0x84);
+        public static final KindSelector ASG_OP = new KindSelector(0x184);
 
         //common derived selectors
         public static final KindSelector TYP_PCK = of(TYP, PCK);
@@ -182,14 +183,14 @@ public class Kinds {
         public static final KindSelector VAL_TYP = of(VAL, TYP);
         public static final KindSelector VAL_TYP_PCK = of(VAL, TYP, PCK);
 
-        private final byte data;
+        private final int data;
 
         private KindSelector(int data) {
-            this.data = (byte) data;
+            this.data = data;
         }
 
         public static KindSelector of(KindSelector... kindSelectors) {
-            byte newData = 0;
+            int newData = 0;
             for (KindSelector kindSel : kindSelectors) {
                 newData |= kindSel.data;
             }
@@ -202,6 +203,10 @@ public class Kinds {
 
         public boolean contains(KindSelector other) {
             return (data & other.data) != 0;
+        }
+
+        public boolean isAssignment() {
+            return ASG.subset(this) && !ASG_OP.subset(this);
         }
 
         /** A set of KindName(s) representing a set of symbol's kinds. */

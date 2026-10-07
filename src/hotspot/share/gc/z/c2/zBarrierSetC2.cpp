@@ -320,7 +320,7 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
     stubs->at(i)->emit_code(masm);
   }
 
-  masm.flush();
+  // Code will be copied. No ICache sync required.
 }
 
 int ZBarrierSetC2::estimate_stub_size() const {
@@ -418,7 +418,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
 
   if (ac->is_clone_array() && ary_ptr != nullptr) {
     BasicType bt = ary_ptr->elem()->array_element_basic_type();
-    if (is_reference_type(bt)) {
+    if (is_reference_type(bt) && !ary_ptr->is_flat()) {
       // Clone object array
       bt = T_OBJECT;
     } else {
@@ -444,7 +444,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
         assert(UseCompactObjectHeaders, "should only happen with COH");
         assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
-        length = phase->transform_later(new SubLNode(length, phase->longcon(1))); // Size is in longs
+        length = phase->transform_later(new SubXNode(length, phase->MakeConX(1))); // Size is in longs
         src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
         dest_offset = src_offset;
       }
@@ -473,7 +473,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
 
 #undef XTOP
 
-void ZBarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
+void ZBarrierSetC2::elide_dominated_barrier(MachNode* mach, MachNode* dominator) const {
   mach->set_barrier_data(ZBarrierElided);
 }
 
@@ -551,7 +551,8 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
   elide_dominated_barriers(atomics, atomic_dominators);
 }
 
-void ZBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+
+void ZBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   eliminate_gc_barrier_data(node);
 }
 

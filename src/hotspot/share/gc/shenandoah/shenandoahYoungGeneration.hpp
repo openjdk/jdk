@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -59,7 +59,6 @@ public:
   bool contains(ShenandoahHeapRegion* region) const override;
   bool contains(oop obj) const override;
 
-  void reserve_task_queues(uint workers) override;
   void set_old_gen_task_queues(ShenandoahObjToScanQueueSet* old_gen_queues) {
     _old_gen_task_queues = old_gen_queues;
   }
@@ -69,11 +68,10 @@ public:
 
   // Returns true if the young generation is configured to enqueue old
   // oops for the old generation mark queues.
-  bool is_bootstrap_cycle() {
+  bool is_old_marking_active() const {
     return _old_gen_task_queues != nullptr;
   }
 
-  size_t bytes_allocated_since_gc_start() const override;
   size_t used() const override;
   size_t used_regions() const override;
   size_t used_regions_size() const override;
@@ -90,4 +88,4 @@ public:
   void prepare_gc() override;
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP

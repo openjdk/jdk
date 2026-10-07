@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,19 @@
  * @summary Basic test for content-based array object methods
  * @author  Josh Bloch, Martin Buchholz
  * @key randomness
+ * @library /test/lib
  */
 
 import java.util.*;
 import java.io.*;
 
+import jdk.test.lib.valueclass.AsValueClass;
+
 public class ArrayObjectMethods {
+
+    @AsValueClass
+    record V(int x, int y) implements Serializable {}
+
     int[] sizes = {0, 10, 100, 200, 1000};
 
     void test(String[] args) throws Throwable {
@@ -290,11 +297,11 @@ class Rnd {
     }
 
     public static Object nextObject() {
-        switch(rnd.nextInt(10)) {
+        switch(rnd.nextInt(12)) {
             case 0:  return null;
             case 1:  return "foo";
-            case 2:  case 3: case 4:
-                     return Double.valueOf(nextDouble());
+            case 2: case 3: case 4: return Double.valueOf(nextDouble());
+            case 5: case 6: return nextV();
             default: return Integer.valueOf(nextInt());
         }
     }
@@ -362,6 +369,17 @@ class Rnd {
         return result;
     }
 
+    public static ArrayObjectMethods.V nextV() {
+        return new ArrayObjectMethods.V(nextInt(), nextInt());
+    }
+
+    public static ArrayObjectMethods.V[] vArray(int length) {
+        ArrayObjectMethods.V[] result = new ArrayObjectMethods.V[length];
+        for (int i = 0; i < length; i++)
+            result[i] = nextV();
+        return result;
+    }
+
     // Calling this for length >> 100 is likely to run out of memory!  It
     // should be perhaps be tuned to allow for longer arrays
     public static Object[] nestedObjectArray(int length) {
@@ -385,6 +403,10 @@ class Rnd {
                 case 7:  result[i] = doubleArray(length/2);
                          break;
                 case 8:  result[i] = longArray(length/2);
+                         break;
+                case 9:  result[i] = vArray(length/2);
+                         break;
+                case 10: result[i] = nextV();
                          break;
                 default: result[i] = Rnd.nextObject();
             }
