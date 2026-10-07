@@ -102,7 +102,6 @@ private:
 public:
   void initialize() {
     precond(!_initialized);
-    precond(UseNUMA);
 
     populate_id_mappings();
     populate_node_mappings();
@@ -140,15 +139,23 @@ static ZNUMAConverter z_numa_converter;
 void ZNUMA::pd_initialize() {
   _enabled = UseNUMA;
 
-  if (UseNUMA) {
+  const int configured_nodes = os::Linux::numa_num_configured_nodes();
+  if (configured_nodes > 0) {
     z_numa_converter.initialize();
-    _count = z_numa_converter.count();
+
+    _node_count = integer_cast<uint32_t>(configured_nodes);
+    _bound_node_count = z_numa_converter.count();
   } else {
-    // UseNUMA and is_faked() are mutually excluded in zArguments.cpp.
-    _count = !FLAG_IS_DEFAULT(ZFakeNUMA)
-        ? ZFakeNUMA
-        : 1; // No NUMA nodes
+    _node_count = 1;
+    _bound_node_count = 1;
   }
+
+  // UseNUMA and is_faked() are mutually excluded in zArguments.cpp.
+  _count = UseNUMA
+      ? _bound_node_count
+      : !FLAG_IS_DEFAULT(ZFakeNUMA)
+            ? ZFakeNUMA
+            : 1; // No NUMA nodes
 }
 
 uint32_t ZNUMA::id() {

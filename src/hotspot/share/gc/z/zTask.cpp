@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,29 @@
  */
 
 #include "gc/z/zTask.hpp"
+#include "gc/z/zWorkers.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ZTask::Task::Task(ZTask* task, const char* name)
   : WorkerTask(name),
-    _task(task) {}
+    _task(task),
+    _workers(nullptr) {}
 
 void ZTask::Task::work(uint worker_id) {
+  if (!_task->account_vtime()) {
+    _task->work();
+    return;
+  }
+
+  jlong start = os::current_thread_cpu_time(true /* user + sys */);
   _task->work();
+  jlong elapsed = os::current_thread_cpu_time(true /* user + sys */) - start;
+  _workers->add_accumulated_vtime(double(elapsed) / NANOSECS_PER_SEC);
 }
 
-ZTask::ZTask(const char* name)
-  : _worker_task(this, name) {}
+ZTask::ZTask(const char* name, bool account_vtime)
+  : _worker_task(this, name),
+    _account_vtime(account_vtime) {}
 
 const char* ZTask::name() const {
   return _worker_task.name();
@@ -40,6 +52,14 @@ const char* ZTask::name() const {
 
 WorkerTask* ZTask::worker_task() {
   return &_worker_task;
+}
+
+void ZTask::set_workers(ZWorkers* workers) {
+  _worker_task._workers = workers;
+}
+
+bool ZTask::account_vtime() const {
+  return _account_vtime;
 }
 
 ZRestartableTask::ZRestartableTask(const char* name)
