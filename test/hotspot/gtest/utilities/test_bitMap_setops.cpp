@@ -54,7 +54,7 @@ public:
 
   BitMapView make_view(idx_t bits, bm_word_t value) {
     vmassert(BitMap::calc_size_in_words(bits) <= _words, "invalid request");
-    STATIC_ASSERT(sizeof(bm_word_t) == sizeof(HeapWord));
+    static_assert(sizeof(bm_word_t) == sizeof(HeapWord));
     Copy::fill_to_aligned_words((HeapWord*)_memory, _words, value);
     return BitMapView(_memory, bits);
   }
@@ -143,7 +143,7 @@ TEST(BitMap, is_same__unaligned) {
   {
     BitMapView aligned = BitMapView(mx.memory(), aligned_size);
     const idx_t index = aligned_size - 2;
-    STATIC_ASSERT(unaligned_size <= index);
+    static_assert(unaligned_size <= index);
 
     WithBitClear wbc(aligned, index);
     EXPECT_TRUE(x.is_same(y));
@@ -257,7 +257,7 @@ TEST(BitMap, contains__unaligned) {
   {
     BitMapView aligned = BitMapView(mx.memory(), aligned_size);
     const idx_t index = aligned_size - 2;
-    STATIC_ASSERT(unaligned_size <= index);
+    static_assert(unaligned_size <= index);
 
     WithBitClear wbc(aligned, index);
     EXPECT_TRUE(x.contains(y));
@@ -302,7 +302,7 @@ TEST(BitMap, intersects__unaligned) {
     BitMapView aligned_x = BitMapView(mx.memory(), aligned_size);
     BitMapView aligned_y = BitMapView(my.memory(), aligned_size);
     const idx_t index = aligned_size - 2;
-    STATIC_ASSERT(unaligned_size <= index);
+    static_assert(unaligned_size <= index);
     ASSERT_TRUE(aligned_x.at(index));
 
     WithBitSet wbs(aligned_y, index);

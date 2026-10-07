@@ -94,14 +94,6 @@ jint  IPv4_supported()
     return JNI_TRUE;
 }
 
-#if defined(DONT_ENABLE_IPV6)
-jint  IPv6_supported()
-{
-    return JNI_FALSE;
-}
-
-#else /* !DONT_ENABLE_IPV6 */
-
 jint  IPv6_supported()
 {
     int fd;
@@ -149,7 +141,6 @@ jint  IPv6_supported()
         return JNI_TRUE;
     }
 }
-#endif /* DONT_ENABLE_IPV6 */
 
 jint reuseport_supported(int ipv6_available)
 {
@@ -395,9 +386,7 @@ NET_GetSockOpt(int fd, int level, int opt, void *result,
     }
 #endif
 
-/* Workaround for Mac OS treating linger value as
- *  signed integer
- */
+/* macOS stores linger values as signed shorts in the kernel. */
 #ifdef MACOSX
     if (level == SOL_SOCKET && opt == SO_LINGER) {
         struct linger* to_cast = (struct linger*)result;
@@ -423,6 +412,16 @@ int
 NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
                int len)
 {
+
+#ifdef MACOSX
+    /* macOS stores linger values as signed shorts in the kernel. */
+    if (level == SOL_SOCKET && opt == SO_LINGER) {
+        struct linger* to_cast = (struct linger*)arg;
+        if (to_cast->l_linger > 32767) {
+            to_cast->l_linger = 32767;
+        }
+    }
+#endif
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e

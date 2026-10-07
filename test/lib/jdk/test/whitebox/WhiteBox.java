@@ -104,6 +104,8 @@ public class WhiteBox {
   // printed by the VM.
   public native String printString(String str, int maxLength);
 
+  public native String printObject(Object obj);
+
   public native void lockAndStuckInSafepoint();
 
   public int countAliveClasses(String name) {
@@ -847,6 +849,11 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+
+  // Total physical memory as seen by the VM, respecting container limits.
+  public native long physicalMemory();
+
+  // Total physical memory as seen by the VM, deliberately ignoring container limits.
   public native long hostPhysicalMemory();
   public native long hostAvailableMemory();
   public native long hostPhysicalSwap();

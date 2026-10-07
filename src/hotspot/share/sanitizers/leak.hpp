@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -90,4 +91,4 @@
 #define LSAN_DO_RECOVERABLE_LEAK_CHECK() ((int) 0)
 #endif
 
-#endif // SHARE_SANITIZERS_ADDRESS_HPP
+#endif // SHARE_SANITIZERS_LEAK_HPP

@@ -119,9 +119,9 @@ static LayoutKind adjust_with_budget(FieldInfo field_info, Array<ValueFieldLayou
   }
 }
 
-static bool field_is_inlineable(FieldInfo fieldinfo, LayoutKind lk, Array<ValueFieldLayoutInfo>* li) {
+static bool field_is_flattenable(FieldInfo fieldinfo, LayoutKind lk, Array<ValueFieldLayoutInfo>* li) {
   if (fieldinfo.field_flags().is_null_free_value_type()) {
-    // A null-free value type is always inlineable
+    // A null-free value type is always flattenable
     return true;
   }
 
@@ -461,7 +461,6 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
   if (LayoutKindHelper::is_nullable_flat(block->layout_kind())) {
     int nm_offset = block->value_klass()->null_marker_offset() - block->value_klass()->payload_offset() + block->offset();
     _field_info->adr_at(block->field_index())->set_null_marker_offset(nm_offset);
-    _value_field_layout_info_array->adr_at(block->field_index())->set_null_marker_offset(nm_offset);
   }
 
   return block;
@@ -638,7 +637,6 @@ void FieldLayout::shift_fields(int shift) {
       if (LayoutKindHelper::is_nullable_flat(b->layout_kind())) {
         int new_nm_offset = _field_info->adr_at(b->field_index())->null_marker_offset() + shift;
         _field_info->adr_at(b->field_index())->set_null_marker_offset(new_nm_offset);
-        _value_field_layout_info_array->adr_at(b->field_index())->set_null_marker_offset(new_nm_offset);
       }
     }
     assert(b->block_kind() == LayoutRawBlock::EMPTY || b->offset() % b->alignment() == 0, "Must still be correctly aligned");
@@ -808,8 +806,8 @@ FieldLayoutBuilder::FieldLayoutBuilder(const Symbol* classname, ClassLoaderData*
   _is_naturally_atomic(false),
   _must_be_atomic(must_be_atomic),
   _has_nonstatic_fields(false),
-  _has_inlineable_fields(false),
-  _has_inlined_fields(false),
+  _has_flattenable_fields(false),
+  _has_flat_fields(false),
   _is_contended(is_contended),
   _is_concrete_value(is_concrete_value),
   _is_abstract_value(is_abstract_value),
@@ -863,8 +861,8 @@ int FieldLayoutBuilder::add_field_to_group(FieldInfo fieldinfo, int idx, FieldGr
     const bool use_atomic_flat = !is_value_compatible_class || _must_be_atomic;
     LayoutKind lk = field_layout_selection(fieldinfo, _value_field_layout_info_array, use_atomic_flat);
     lk = adjust_with_budget(fieldinfo, _value_field_layout_info_array, lk, _flattening_budget);
-    if (field_is_inlineable(fieldinfo, lk, _value_field_layout_info_array)) {
-      _has_inlineable_fields = true;
+    if (field_is_flattenable(fieldinfo, lk, _value_field_layout_info_array)) {
+      _has_flattenable_fields = true;
     }
 
     if (lk == LayoutKind::REFERENCE) {
@@ -882,7 +880,7 @@ int FieldLayoutBuilder::add_field_to_group(FieldInfo fieldinfo, int idx, FieldGr
     const int field_index = (int)fieldinfo.index();
     assert(_value_field_layout_info_array != nullptr, "Array must have been created");
     assert(_value_field_layout_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
-    _has_inlined_fields = true;
+    _has_flat_fields = true;
     ValueKlass* vk = _value_field_layout_info_array->adr_at(field_index)->klass();
     if (is_value_compatible_class && !vk->is_naturally_atomic(LayoutKindHelper::is_null_free_flat(lk))) {
       _has_non_naturally_atomic_fields = true;
@@ -1533,7 +1531,7 @@ void FieldLayoutBuilder::epilogue() {
   _info->_static_field_size = static_fields_size;
   _info->_nonstatic_field_size = (nonstatic_field_end - instanceOopDesc::base_offset_in_bytes()) / heapOopSize;
   _info->_has_nonstatic_fields = _has_nonstatic_fields;
-  _info->_has_inlined_fields = _has_inlined_fields;
+  _info->_has_flat_fields = _has_flat_fields;
   _info->_is_naturally_atomic = _is_naturally_atomic;
   if (_is_concrete_value) {
     _info->_must_be_atomic = _must_be_atomic;
@@ -1589,7 +1587,7 @@ void FieldLayoutBuilder::epilogue() {
 
   static bool first_layout_print = true;
 
-  if (PrintFieldLayout || (PrintValueLayout && (_has_inlineable_fields || _is_concrete_value || _is_abstract_value))) {
+  if (PrintFieldLayout || (PrintValueLayout && (_has_flattenable_fields || _is_concrete_value || _is_abstract_value))) {
     ResourceMark rm;
     stringStream st;
     if (first_layout_print) {
