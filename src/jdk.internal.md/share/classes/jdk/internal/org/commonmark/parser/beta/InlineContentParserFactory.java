@@ -30,19 +30,27 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.inline;
+package jdk.internal.org.commonmark.parser.beta;
+
+import java.util.Set;
 
 /**
- * Position within a {@link Scanner}. This is intentionally kept opaque so as not to expose the internal structure of
- * the Scanner.
+ * A factory for extending inline content parsing.
+ * <p>
+ * See {@link org.commonmark.parser.Parser.Builder#customInlineContentParserFactory} for how to register it.
  */
-public class Position {
+public interface InlineContentParserFactory {
 
-    final int lineIndex;
-    final int index;
+    /**
+     * An inline content parser needs to have a special "trigger" character which activates it. When this character is
+     * encountered during inline parsing, {@link InlineContentParser#tryParse} is called with the current parser state.
+     * It can also register for more than one trigger character.
+     */
+    Set<Character> getTriggerCharacters();
 
-    Position(int lineIndex, int index) {
-        this.lineIndex = lineIndex;
-        this.index = index;
-    }
+    /**
+     * Create an {@link InlineContentParser} that will do the parsing. Create is called once per text snippet of inline
+     * content inside block structures, and then called each time a trigger character is encountered.
+     */
+    InlineContentParser create();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 
-#ifndef SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
-#define SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
+#ifndef SHARE_PRIMS_SCOPEDMEMORYACCESS_HPP
+#define SHARE_PRIMS_SCOPEDMEMORYACCESS_HPP
 
 #include "jni.h"
 
@@ -32,4 +32,4 @@ extern "C" {
   void JNICALL JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jclass scopedMemoryAccessClass);
 }
 
-#endif // SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
+#endif // SHARE_PRIMS_SCOPEDMEMORYACCESS_HPP
