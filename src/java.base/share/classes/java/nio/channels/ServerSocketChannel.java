@@ -129,9 +129,8 @@ public abstract class ServerSocketChannel
      * java.nio.channels.spi.SelectorProvider} object.
      *
      * <p> The new channel's socket is initially unbound; it must be bound to a
-     * specific address via one of its socket's {@link
-     * java.net.ServerSocket#bind(SocketAddress) bind} methods before
-     * connections can be accepted.  </p>
+     * specific address via one of this class's {@link #bind(java.net.SocketAddress, int)
+     * bind} methods, before connections can be accepted.  </p>
      *
      * @return  A new socket channel
      *
@@ -240,9 +239,10 @@ public abstract class ServerSocketChannel
      * Binding a server socket channel for a <i>Unix Domain</i> socket, creates a
      * file corresponding to the file path in the {@link UnixDomainSocketAddress}.
      * This file persists after the channel is closed, and must be removed before
-     * another socket can bind to the same name. Binding to a {@code null} address
-     * causes the socket to be <i>automatically</i> bound to some unique file
-     * in a system temporary location. The associated socket file also persists
+     * another socket can bind to the same name. Binding to a {@code null} or
+     * <a href="../../../java/net/UnixDomainSocketAddress.html#unnamed">unnamed</a>
+     * address causes the socket to be <i>automatically</i> bound to some unique
+     * file in a system temporary location. The associated socket file also persists
      * after the channel is closed. Its name can be obtained from the channel's
      * local socket address.
      *
