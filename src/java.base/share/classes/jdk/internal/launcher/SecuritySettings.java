@@ -53,33 +53,34 @@ public final class SecuritySettings {
     private static final String PROV_INFO_STRING = "Provider information: ";
     private static PrintStream ostream = null;
 
-    static void printSecuritySettings(ShowSettings.Option o, PrintStream stream, boolean verbose) {
+    static void printSecuritySettings(ShowSettings.Option o, PrintStream stream,
+                                      boolean verbose, boolean fromLauncher) {
         ostream = stream;
         if (!verbose) {
-            printSecuritySummarySettings();
+            printSecuritySummarySettings(fromLauncher);
             return;
         }
         switch (o) {
             case SECURITY_PROPERTIES -> printSecurityProperties();
-            case SECURITY_PROVIDERS -> printSecurityProviderConfig(true);
+            case SECURITY_PROVIDERS -> printSecurityProviderConfig(true, fromLauncher);
             case SECURITY_TLS -> printSecurityTLSConfig(true);
-            case SECURITY, SECURITY_ALL -> printAllSecurityConfig();
+            case SECURITY, SECURITY_ALL -> printAllSecurityConfig(fromLauncher);
         }
     }
 
     // A non-verbose description of some core security configuration settings
-    static void printSecuritySummarySettings() {
+    private static void printSecuritySummarySettings(boolean fromLauncher) {
         ostream.println("Security settings summary:");
         ostream.println(INDENT + "Use \"-XshowSettings:security\" " +
                 "option for verbose security settings options");
-        printSecurityProviderConfig(false);
+        printSecurityProviderConfig(false, fromLauncher);
         printSecurityTLSConfig(false);
     }
 
-    static void printAllSecurityConfig() {
+    private static void printAllSecurityConfig(boolean fromLauncher) {
         ostream.println("Security settings:");
         printSecurityProperties();
-        printSecurityProviderConfig(true);
+        printSecurityProviderConfig(true, fromLauncher);
         printSecurityTLSConfig(true);
     }
 
@@ -161,8 +162,10 @@ public final class SecuritySettings {
         ostream.println();
     }
 
-    private static void printSecurityProviderConfig(boolean verbose) {
-        ostream.println(INDENT + "Currently registered security providers (in order of preference):");
+    private static void printSecurityProviderConfig(boolean verbose, boolean fromLauncher) {
+        ostream.println(INDENT + (fromLauncher
+                ? "Security provider static configuration: (in order of preference)"
+                : "Currently registered security providers (in order of preference):"));
         for (Provider p : Security.getProviders()) {
             if (verbose) {
                 // separate the views out

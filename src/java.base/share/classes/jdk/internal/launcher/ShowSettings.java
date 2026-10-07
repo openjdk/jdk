@@ -101,21 +101,25 @@ public final class ShowSettings {
      *    line entirely.
      */
     static void showSettingsTo(String optionFlag,
-                               long initialHeapSize, long maxHeapSize, long stackSize) {
+                               long initialHeapSize, long maxHeapSize, long stackSize,
+                               boolean fromLauncher) {
 
         Option component = validateOption(optionFlag);
         switch (component) {
-            case ALL -> printAllSettings(initialHeapSize, maxHeapSize, stackSize, true);
+            case ALL -> printAllSettings(initialHeapSize, maxHeapSize, stackSize,
+                                         true, fromLauncher);
             case LOCALE -> printLocale(true);
             case PROPERTIES -> printProperties();
             case SECURITY,
                  SECURITY_ALL,
                  SECURITY_PROPERTIES,
                  SECURITY_PROVIDERS,
-                 SECURITY_TLS -> SecuritySettings.printSecuritySettings(component, ostream, true);
+                 SECURITY_TLS -> SecuritySettings.printSecuritySettings(
+                         component, ostream, true, fromLauncher);
             case SYSTEM -> printSystemMetrics();
             case VM -> printVmSettings(initialHeapSize, maxHeapSize, stackSize);
-            case DEFAULT -> printAllSettings(initialHeapSize, maxHeapSize, stackSize, false);
+            case DEFAULT -> printAllSettings(initialHeapSize, maxHeapSize, stackSize,
+                                             false, fromLauncher);
         }
     }
 
@@ -123,7 +127,7 @@ public final class ShowSettings {
                              long initialHeapSize, long maxHeapSize, long stackSize) {
         initOutput(printToStderr);
         try {
-            showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
+            showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize, true);
         } catch (IllegalArgumentException e) {
             // the invalid option message has already been written to ostream.
             System.exit(1);
@@ -138,7 +142,7 @@ public final class ShowSettings {
             PrintStream old = ostream;
             try {
                 ostream = ps;
-                showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
+                showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize, false);
             } catch (IllegalArgumentException e) {
                 // the invalid option message has already been written to ostream.
             } finally {
@@ -186,12 +190,13 @@ public final class ShowSettings {
      * in verbose or non-verbose mode.
      */
     private static void printAllSettings(long initialHeapSize, long maxHeapSize,
-                                         long stackSize, boolean verbose) {
+                                         long stackSize, boolean verbose,
+                                         boolean fromLauncher) {
         printVmSettings(initialHeapSize, maxHeapSize, stackSize);
         printProperties();
         printLocale(verbose);
         SecuritySettings.printSecuritySettings(
-                Option.SECURITY_ALL, ostream, verbose);
+                Option.SECURITY_ALL, ostream, verbose, fromLauncher);
         if (OperatingSystem.isLinux()) {
             printSystemMetrics();
         }

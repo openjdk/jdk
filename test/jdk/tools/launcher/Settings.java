@@ -74,7 +74,7 @@ public class Settings extends TestHelper {
     private static final String SEC_SUMMARY_PROPS_SETTINGS =
                 "Security settings summary:";
     private static final String SEC_PROVIDER_SETTINGS =
-                "Currently registered security providers (in order of preference):";
+                "Security provider static configuration: (in order of preference)";
     private static final String SEC_TLS_SETTINGS = "Security TLS configuration";
     private static final String BAD_SEC_OPTION_MSG = "Valid \"security\" suboption values are";
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
