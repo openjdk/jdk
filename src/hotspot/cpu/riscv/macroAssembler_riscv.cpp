@@ -494,9 +494,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
-  lbu(tmp, Address(klass, InstanceKlass::init_state_offset()));
-  membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  la(tmp, Address(klass, InstanceKlass::init_state_offset()));
+  lbu_acquire(tmp, tmp);
   sub(tmp, tmp, InstanceKlass::fully_initialized);
   beqz(tmp, *L_fast_path);
 
@@ -4620,7 +4619,16 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   Label retry, fail, done;
 
   if (UseZacas) {
-    lw(result, aligned_addr);
+    // This word load pre-checks the target byte/short. A mismatch branches
+    // directly to fail, so the acquiring amocas below is never executed.
+    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
+    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
+    // the required RCsc ordering on this failure path.
+    if (UseZalasr && (acquire == Assembler::aq)) {
+      lw_aq(result, aligned_addr);
+    } else {
+      lw(result, aligned_addr);
+    }
 
     bind(retry); // amocas loads the current value into result
     notr(scratch1, mask);
@@ -4635,7 +4643,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     // Or in the new value to create complete new value.
     orr(scratch0, scratch0, new_val);
 
-    mv(scratch1, result); // save our expected value
+    // scratch1 holds the expected word.
     atomic_cas(result, scratch0, aligned_addr, operand_size::int32, acquire, release);
     bne(scratch1, result, retry);
   } else {
@@ -4695,7 +4703,16 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   Label fail, done;
 
   if (UseZacas) {
-    lw(result, aligned_addr);
+    // This word load pre-checks the target byte/short. A mismatch branches
+    // directly to fail, so the acquiring amocas below is never executed.
+    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
+    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
+    // the required RCsc ordering on this failure path.
+    if (UseZalasr && (acquire == Assembler::aq)) {
+      lw_aq(result, aligned_addr);
+    } else {
+      lw(result, aligned_addr);
+    }
 
     notr(scratch1, mask);
 
@@ -4709,7 +4726,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
     // Or in the new value to create complete new value.
     orr(scratch0, scratch0, new_val);
 
-    mv(scratch1, result); // save our expected value
+    // scratch1 holds the expected word.
     atomic_cas(result, scratch0, aligned_addr, operand_size::int32, acquire, release);
     bne(scratch1, result, fail); // This weak, so just bail-out.
   } else {
@@ -7012,6 +7029,26 @@ void MacroAssembler::sext(Register dst, Register src, int bits) {
 
   slli(dst, src, XLEN - bits);
   srai(dst, dst, XLEN - bits);
+}
+
+void MacroAssembler::narrow_subword_type(Register reg, BasicType bt) {
+  assert(is_subword_type(bt), "expected subword type");
+  switch (bt) {
+    case T_SHORT:
+      sext(reg, reg, 16);
+      break;
+    case T_CHAR:
+      zext(reg, reg, 16);
+      break;
+    case T_BYTE:
+      sext(reg, reg, 8);
+      break;
+    case T_BOOLEAN:
+      andi(reg, reg, 1);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
 }
 
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,

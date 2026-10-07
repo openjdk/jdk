@@ -25,10 +25,11 @@
 
 #include "compiler/oopMap.hpp"
 #include "cppstdlib/new.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
@@ -107,7 +108,7 @@ public:
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     G1MonotonicArenaMemoryStats _total;
-    G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
+    G1CollectionSetCandidates* candidates = g1h->collection_set_candidates();
     for (G1CardSetGroup* gr : candidates->from_marking_groups()) {
       _total.add(gr->card_set_memory_stats());
     }
@@ -852,7 +853,7 @@ public:
 
     bool has_new_retained_regions = _num_retained_regions.load_relaxed() != 0;
     if (has_new_retained_regions) {
-      G1CollectionSetCandidates* candidates = _g1h->collection_set()->candidates();
+      G1CollectionSetCandidates* candidates = _g1h->collection_set_candidates();
       candidates->sort_by_efficiency();
     }
 

@@ -42,7 +42,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test correct handling of value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -54,7 +53,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test correct handling of value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -66,7 +64,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test correct handling of value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -78,7 +75,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test correct handling of value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -90,7 +86,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test correct handling of value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -102,7 +97,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test correct handling of value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -114,7 +108,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test correct handling of value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -126,9 +119,6 @@ public class TestValueClasses {
 
     public static void main(String[] args) {
         Scenario[] scenarios = ValueTypes.DEFAULT_SCENARIOS;
-        // Don't generate bytecodes but call through runtime for reflective calls
-        scenarios[0].addFlags("-Dsun.reflect.inflationThreshold=10000");
-        scenarios[1].addFlags("-Dsun.reflect.inflationThreshold=10000");
         scenarios[3].addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
         scenarios[4].addFlags("-XX:-UseTLAB", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
 

@@ -186,6 +186,9 @@ public class BasicInternalFrameTitlePane extends JComponent
     private String maxButtonToolTip;
     private Handler handler;
 
+    private static final String FRAME_TYPE = "JInternalFrame.frameType";
+    private static final String OPTION_DIALOG = "optionDialog";
+
     /**
      * Constructs a new instance of {@code BasicInternalFrameTitlePane}.
      *
@@ -440,13 +443,17 @@ public class BasicInternalFrameTitlePane extends JComponent
         return menuBar;
     }
 
+    private boolean isOptionDialog() {
+        return OPTION_DIALOG.equals(frame.getClientProperty(FRAME_TYPE));
+    }
+
     /**
      * Shows system menu.
      */
     protected void showSystemMenu(){
-        //      windowMenu.setPopupMenuVisible(true);
-      //      windowMenu.setVisible(true);
-      windowMenu.doClick();
+        if (!isOptionDialog()) {
+            windowMenu.doClick();
+        }
     }
 
     public void paintComponent(Graphics g)  {
@@ -903,7 +910,9 @@ public class BasicInternalFrameTitlePane extends JComponent
 
         public void actionPerformed(ActionEvent e) {
             if (show) {
-                windowMenu.doClick();
+                if (!isOptionDialog()) {
+                    windowMenu.doClick();
+                }
             } else {
                 windowMenu.setVisible(false);
             }

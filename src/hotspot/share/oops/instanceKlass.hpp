@@ -132,10 +132,9 @@ class ValueFieldLayoutInfo : public MetaspaceObj {
 
   ValueKlass* _klass;
   LayoutKind _kind;
-  int _null_marker_offset; // null marker offset for this field, relative to the beginning of the current container
 
  public:
-  ValueFieldLayoutInfo(): _klass(nullptr), _kind(LayoutKind::UNKNOWN), _null_marker_offset(-1)  {}
+  ValueFieldLayoutInfo(): _klass(nullptr), _kind(LayoutKind::UNKNOWN)  {}
 
   ValueKlass* klass() const { return _klass; }
   void set_klass(ValueKlass* k) { _klass = k; }
@@ -146,17 +145,10 @@ class ValueFieldLayoutInfo : public MetaspaceObj {
   }
   void set_kind(LayoutKind lk) { _kind = lk; }
 
-  int null_marker_offset() const {
-    assert(_null_marker_offset != -1, "Not set");
-    return _null_marker_offset;
-  }
-  void set_null_marker_offset(int o) { _null_marker_offset = o; }
-
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return ValueFieldLayoutInfoType; }
 
   static ByteSize klass_offset() { return byte_offset_of(ValueFieldLayoutInfo, _klass); }
-  static ByteSize null_marker_offset_offset() { return byte_offset_of(ValueFieldLayoutInfo, _null_marker_offset); }
 
   // Print
   void print() const;
@@ -465,7 +457,7 @@ class InstanceKlass: public Klass {
   bool field_is_null_free_value_type(int index) const;
   bool is_class_in_loadable_descriptors_attribute(Symbol* name) const;
 
-  int field_null_marker_offset(int index) const { return value_field_layout_info(index).null_marker_offset(); }
+  int field_null_marker_offset(int index) const;
 
   // Number of Java declared fields
   int java_fields_count() const;

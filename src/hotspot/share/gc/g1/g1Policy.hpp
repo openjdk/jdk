@@ -172,9 +172,9 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
+private:
   G1CollectionSetCandidates* candidates() const;
 
-private:
   G1CollectionSet* _collection_set;
 
   double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
