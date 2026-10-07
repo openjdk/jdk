@@ -596,6 +596,13 @@ public class Object {
      * determines that there are no more references to the object.
      * An identity class may override the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          A value class cannot override the {@code finalize} method, and
+     *          the garbage collector never invokes {@code finalize} on a value
+     *          object.
+     *      </div>
+     * </div>
      * <p>
      * <b>When running in a Java virtual machine in which finalization has been
      * disabled or removed, the garbage collector will never call {@code finalize()}
@@ -641,13 +648,6 @@ public class Object {
      * Any exception thrown by the {@code finalize} method causes
      * the finalization of this object to be halted, but is otherwise
      * ignored.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
-     *          A value class cannot override the {@code finalize} method, and
-     *          the garbage collector never invokes {@code finalize} on a value
-     *          object.
-     *      </div>
-     * </div>
      *
      * @apiNote
      * Classes that embed non-heap resources have many options
