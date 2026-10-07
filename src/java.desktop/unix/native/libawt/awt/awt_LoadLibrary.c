@@ -33,7 +33,6 @@
 #include "gdefs.h"
 
 #include <sys/param.h>
-#include <sys/utsname.h>
 
 #ifdef AIX
 #define dladdr JVM_dladdr
