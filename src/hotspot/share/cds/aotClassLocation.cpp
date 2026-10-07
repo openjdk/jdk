@@ -769,7 +769,7 @@ bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, Insta
       bool found = zip->has_entry(file_name, class_loader, cl->is_multi_release_jar(), current);
       if (current->has_pending_exception()) {
         AOTMetaspace::writing_error(current->pending_exception());
-        aot_log_warning(aot)("class %s cannot be archived because an exception is thrown when checking %s",
+        aot_log_warning(aot)("class %s cannot be archived because an exception was thrown when checking %s",
                              class_name, zip->name());
         current->clear_pending_exception();
         // Treat it as if the zip file didn't contain this class. This means transient OOM would
