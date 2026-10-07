@@ -71,13 +71,13 @@ public class CompressedCPUSpecificClassSpaceReservation {
         final boolean doNotOptimizeForZeroBased = CDS || COH;
         final String tryReserveBelow4G = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
         // Encoding range for unscaled:
-        // +COH: [0] to [1 << 22]
-        // -COH: [0] to [1 << 32]
+        // +COH: [0, 2^22)
+        // -COH: [0, 2^32)
         final String tryReserveForUnscaled = "reserve_between (range [" +
                 (COH ? "0x0000000000000000-0x0000000000400000" : "0x0000000000000000-0x0000000100000000") + ")";
         // Encoding range for zero based:
-        // +COH: [1 << 22] to [1 << 22 + 10]
-        // -COH: [0] to [1 << 32 + 3]
+        // +COH: [2^22, 2^32)
+        // -COH: [0, 2^35)
         final String tryReserveForZeroBased = "reserve_between (range [" +
                 (COH ? "0x0000000000400000-0x0000000100000000" : "0x0000000100000000-0x0000000800000000") + ")";
         // Failing zero-based allocation, platforms will often attempt allocation suitable for a disjointed move:
