@@ -2515,7 +2515,7 @@ JvmtiEnv::SetBreakpoint(Method* method, jlocation location) {
   JvmtiBreakpoint bp(method, location);
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
 
-  jvmtiError err = jvmti_breakpoints.set(bp);
+  jvmtiError err = (jvmtiError) jvmti_breakpoints.set(bp);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
