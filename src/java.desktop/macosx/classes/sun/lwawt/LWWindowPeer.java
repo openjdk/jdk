@@ -1437,8 +1437,11 @@ public class LWWindowPeer
                 : (LWWindowPeer) AWTAccessor.getComponentAccessor()
                         .getPeer(focusedWindow);
 
+        if (focusedPeer == null || focusedPeer == this) {
+            return;
+        }
         synchronized (focusRestoreLock) {
-            focusRestoreTarget = focusedPeer != null && focusedPeer.isSimpleWindow()
+            focusRestoreTarget = focusedPeer.isSimpleWindow()
                     ? new WeakReference<>(focusedPeer) : null;
         }
     }
