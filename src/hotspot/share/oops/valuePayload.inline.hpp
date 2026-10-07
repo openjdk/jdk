@@ -43,13 +43,6 @@
 #include "utilities/vmError.hpp"
 
 template <typename OopOrHandle>
-inline ValuePayload::StorageImpl<OopOrHandle>::StorageImpl()
-    : _container(nullptr),
-      _offset(BAD_OFFSET),
-      _klass(nullptr),
-      _layout_kind(LayoutKind::UNKNOWN) {}
-
-template <typename OopOrHandle>
 inline ValuePayload::StorageImpl<OopOrHandle>::StorageImpl(OopOrHandle container,
                                                            ptrdiff_t offset,
                                                            ValueKlass* klass,
