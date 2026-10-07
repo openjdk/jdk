@@ -240,7 +240,7 @@ public abstract class ServerSocketChannel
      * file corresponding to the file path in the {@link UnixDomainSocketAddress}.
      * This file persists after the channel is closed, and must be removed before
      * another socket can bind to the same name. Binding to a {@code null} or
-     * <a href="../../../java/net/UnixDomainSocketAddress.html#unnamed">unnamed</a>
+     * {@linkplain UnixDomainSocketAddress##unnamed unnamed}
      * address causes the socket to be <i>automatically</i> bound to some unique
      * file in a system temporary location. The associated socket file also persists
      * after the channel is closed. Its name can be obtained from the channel's
