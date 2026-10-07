@@ -29,7 +29,7 @@ import java.math.BigInteger;
 public final class IntegerPolynomialP384 extends IntegerPolynomial {
     private static final int BITS_PER_LIMB = 55;
     private static final int NUM_LIMBS = 7;
-    private static final int MAX_ADDS = 1;
+    private static final int MAX_ADDS = 2;
     public static final BigInteger MODULUS = evaluateModulus();
     private static final long CARRY_ADD = 1L << (BITS_PER_LIMB - 1);
     private static final long LIMB_MASK = -1L >>> (64 - BITS_PER_LIMB);
@@ -611,76 +611,88 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
     @Override
     protected void multByInt(long[] a, long b) {
         long[] ba = new long[NUM_LIMBS];
-
-        ba[0] = b;
-        mult(a, ba, a);
-/*
         long aa0 = a[0];
         long aa1 = a[1];
         long aa2 = a[2];
         long aa3 = a[3];
         long aa4 = a[4];
-
+        long aa5 = a[5];
+        long aa6 = a[6];
         long bb0 = b;
-
         final long shift1 = 64 - BITS_PER_LIMB;
         final long shift2 = BITS_PER_LIMB;
-
         long d0;      // low digit from multiplication
         long dd0;     // high digit from multiplication
         // multiplication result digits for each column
-        long c0, c1, c2, c3, c4, c5;
+        long[] c = new long[NUM_LIMBS + 1];
 
         // Row 0 - multiply by aa0
         d0 = aa0 * bb0;
         dd0 = Math.multiplyHigh(aa0, bb0) << shift1 | (d0 >>> shift2);
         d0 &= LIMB_MASK;
 
-        c0 = d0;
-        c1 = dd0;
+        c[0] = d0;
+        c[1] = dd0;
 
         // Row 1 - multiply by aa1
         d0 = aa1 * bb0;
         dd0 = Math.multiplyHigh(aa1, bb0) << shift1 | (d0 >>> shift2);
         d0 &= LIMB_MASK;
 
-        c1 += d0;
-        c2 = dd0;
+        c[1] += d0;
+        c[2] = dd0;
 
         // Row 2 - multiply by aa2
         d0 = aa2 * bb0;
         dd0 = Math.multiplyHigh(aa2, bb0) << shift1 | (d0 >>> shift2);
         d0 &= LIMB_MASK;
 
-        c2 += d0;
-        c3 = dd0;
+        c[2] += d0;
+        c[3] = dd0;
 
         // Row 3 - multiply by aa3
         d0 = aa3 * bb0;
         dd0 = Math.multiplyHigh(aa3, bb0) << shift1 | (d0 >>> shift2);
         d0 &= LIMB_MASK;
 
-        c3 += d0;
-        c4 = dd0;
+        c[3] += d0;
+        c[4] = dd0;
 
         // Row 4 - multiply by aa4
         d0 = aa4 * bb0;
         dd0 = Math.multiplyHigh(aa4, bb0) << shift1 | (d0 >>> shift2);
         d0 &= LIMB_MASK;
 
-        c4 += d0;
-        c5 = dd0;
+        c[4] += d0;
+        c[5] = dd0;
 
-        // Perform pseudo-Mersenne reduction
-        a[0] = c0 + (19 * c5);
+        // Row 5 - multiply by aa5
+        d0 = aa5 * bb0;
+        dd0 = Math.multiplyHigh(aa5, bb0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
 
-        a[1] = c1;
-        a[2] = c2;
-        a[3] = c3;
-        a[4] = c4;
+        c[5] += d0;
+        c[6] = dd0;
 
-        reduce(a);
-*/
+        // Row 6 - multiply by aa6
+        d0 = aa6 * bb0;
+        dd0 = Math.multiplyHigh(aa6, bb0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
+
+        c[6] += d0;
+        c[7] = dd0;
+
+        // Reduce single high-order limb before reduce/carry the rest
+        reduceIn(c, c[7], 7);
+        reduce(c);
+
+        a[0] = c[0];
+        a[1] = c[1];
+        a[2] = c[2];
+        a[3] = c[3];
+        a[4] = c[4];
+        a[5] = c[5];
+        a[6] = c[6];
     }
 
    /**
@@ -692,21 +704,21 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
      * @param r [out] the resulting square of the limb which is fully reduced.
      */
     protected void square(long[] a, long[] r) {
-        mult(a, a, r);
-/*
         long aa0 = a[0];
         long aa1 = a[1];
         long aa2 = a[2];
         long aa3 = a[3];
         long aa4 = a[4];
-
+        long aa5 = a[5];
+        long aa6 = a[6];
         final long shift1 = 64 - BITS_PER_LIMB;
         final long shift2 = BITS_PER_LIMB;
-
-        long d0, d1, d2, d3, d4;      // low digits from multiplication
-        long dd0, dd1, dd2, dd3, dd4; // high digits from multiplication
+        // low digits from multiplication
+        long d0, d1, d2, d3, d4, d5, d6;
+        // high digits from multiplication
+        long dd0, dd1, dd2, dd3, dd4, dd5, dd6;
         // multiplication result digits for each column
-        long c0, c1, c2, c3, c4, c5, c6, c7, c8, c9;
+        long[] c = new long[NUM_LIMBS * 2];
 
         // Row 0 - multiply by aa0
         d0 = aa0 * aa0;
@@ -729,12 +741,22 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         dd4 = Math.multiplyHigh(aa0, aa4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        c0 = d0;
-        c1 = (d1 << 1) + dd0;
-        c2 = (d2 + dd1) << 1;
-        c3 = (d3 + dd2) << 1;
-        c4 = (d4 + dd3) << 1;
-        c5 = dd4 << 1;
+        d5 = aa0 * aa5;
+        dd5 = Math.multiplyHigh(aa0, aa5) << shift1 | (d5 >>> shift2);
+        d5 &= LIMB_MASK;
+
+        d6 = aa0 * aa6;
+        dd6 = Math.multiplyHigh(aa0, aa6) << shift1 | (d6 >>> shift2);
+        d6 &= LIMB_MASK;
+
+        c[0] = d0;
+        c[1] = (d1 << 1) + dd0;
+        c[2] = (d2 + dd1) << 1;
+        c[3] = (d3 + dd2) << 1;
+        c[4] = (d4 + dd3) << 1;
+        c[5] = (d5 + dd4) << 1;
+        c[6] = (d6 + dd5) << 1;
+        c[7] = dd6 << 1;
 
         // Row 1 - multiply by aa1
         d1 = aa1 * aa1;
@@ -753,11 +775,21 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         dd4 = Math.multiplyHigh(aa1, aa4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        c2 += d1;
-        c3 += (d2 << 1) + dd1;
-        c4 += (d3 + dd2) << 1;
-        c5 += (d4 + dd3) << 1;
-        c6 = dd4 << 1;
+        d5 = aa1 * aa5;
+        dd5 = Math.multiplyHigh(aa1, aa5) << shift1 | (d5 >>> shift2);
+        d5 &= LIMB_MASK;
+
+        d6 = aa1 * aa6;
+        dd6 = Math.multiplyHigh(aa1, aa6) << shift1 | (d6 >>> shift2);
+        d6 &= LIMB_MASK;
+
+        c[2] += d1;
+        c[3] += (d2 << 1) + dd1;
+        c[4] += (d3 + dd2) << 1;
+        c[5] += (d4 + dd3) << 1;
+        c[6] += (d5 + dd4) << 1;
+        c[7] += (d6 + dd5) << 1;
+        c[8] = dd6 << 1;
 
         // Row 2 - multiply by aa2
         d2 = aa2 * aa2;
@@ -772,10 +804,20 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         dd4 = Math.multiplyHigh(aa2, aa4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        c4 += d2;
-        c5 += (d3 << 1) + dd2;
-        c6 += (d4 + dd3) << 1;
-        c7 = dd4 << 1;
+        d5 = aa2 * aa5;
+        dd5 = Math.multiplyHigh(aa2, aa5) << shift1 | (d5 >>> shift2);
+        d5 &= LIMB_MASK;
+
+        d6 = aa2 * aa6;
+        dd6 = Math.multiplyHigh(aa2, aa6) << shift1 | (d6 >>> shift2);
+        d6 &= LIMB_MASK;
+
+        c[4] += d2;
+        c[5] += (d3 << 1) + dd2;
+        c[6] += (d4 + dd3) << 1;
+        c[7] += (d5 + dd4) << 1;
+        c[8] += (d6 + dd5) << 1;
+        c[9] = dd6 << 1;
 
         // Row 3 - multiply by aa3
         d3 = aa3 * aa3;
@@ -786,26 +828,67 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         dd4 = Math.multiplyHigh(aa3, aa4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        c6 += d3;
-        c7 += (d4 << 1) + dd3;
-        c8 = dd4 << 1;
+        d5 = aa3 * aa5;
+        dd5 = Math.multiplyHigh(aa3, aa5) << shift1 | (d5 >>> shift2);
+        d5 &= LIMB_MASK;
+
+        d6 = aa3 * aa6;
+        dd6 = Math.multiplyHigh(aa3, aa6) << shift1 | (d6 >>> shift2);
+        d6 &= LIMB_MASK;
+
+        c[6]  += d3;
+        c[7]  += (d4 << 1) + dd3;
+        c[8]  += (d5 + dd4) << 1;
+        c[9]  += (d6 + dd5) << 1;
+        c[10] = dd6 << 1;
 
         // Row 4 - multiply by aa4
         d4 = aa4 * aa4;
         dd4 = Math.multiplyHigh(aa4, aa4) << shift1 | (d4 >>> shift2);
         d4 &= LIMB_MASK;
 
-        c8 += d4;
-        c9 = dd4;
+        d5 = aa4 * aa5;
+        dd5 = Math.multiplyHigh(aa4, aa5) << shift1 | (d5 >>> shift2);
+        d5 &= LIMB_MASK;
 
-        // Perform pseudo-Mersenne reduction
-        r[0] = c0 + (19 * c5);
-        r[1] = c1 + (19 * c6);
-        r[2] = c2 + (19 * c7);
-        r[3] = c3 + (19 * c8);
-        r[4] = c4 + (19 * c9);
+        d6 = aa4 * aa6;
+        dd6 = Math.multiplyHigh(aa4, aa6) << shift1 | (d6 >>> shift2);
+        d6 &= LIMB_MASK;
 
-        reduce(r);
-*/
+        c[8]  += d4;
+        c[9]  += (d5 << 1) + dd4;
+        c[10] += (d6 + dd5) << 1;
+        c[11] = dd6;
+
+        // Row 5 - multiply by aa4
+        d5 = aa5 * aa5;
+        dd5 = Math.multiplyHigh(aa5, aa5) << shift1 | (d5 >>> shift2);
+        d5 &= LIMB_MASK;
+
+        d6 = aa5 * aa6;
+        dd6 = Math.multiplyHigh(aa5, aa6) << shift1 | (d6 >>> shift2);
+        d6 &= LIMB_MASK;
+
+        c[10] += d5;
+        c[11] += (d6 << 1) + dd5;
+        c[12] = dd6 << 1;
+
+        // Row 6 - multiply by aa6
+        d6 = aa6 * aa6;
+        dd6 = Math.multiplyHigh(aa6, aa6) << shift1 | (d6 >>> shift2);
+        d6 &= LIMB_MASK;
+
+        c[12] += d6;
+        c[13] = dd6;
+
+        carryReduceUpper(c);
+
+        r[0] = c[0];
+        r[1] = c[1];
+        r[2] = c[2];
+        r[3] = c[3];
+        r[4] = c[4];
+        r[5] = c[5];
+        r[6] = c[6];
     }
 }
