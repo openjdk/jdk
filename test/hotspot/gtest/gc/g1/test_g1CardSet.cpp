@@ -525,6 +525,6 @@ TEST_VM(G1CardSetTest, mt_card_set_test) {
   G1CardSetTest::card_set_mt_test();
 }
 
-TEST_VM(G1CardSetContainersTest, howl_container_bucket_bounds) {
+TEST_VM(G1CardSetTest, howl_container_bucket_bounds) {
   G1CardSetTest::card_set_howl_bounds_test();
 }
