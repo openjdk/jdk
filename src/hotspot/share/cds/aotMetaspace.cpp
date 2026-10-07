@@ -1506,7 +1506,6 @@ void AOTMetaspace::writing_error(const char* message) {
 }
 
 void AOTMetaspace::writing_error(oop exception_oop) {
-  precond(exception_oop->is_a(vmClasses::Throwable_klass()));
   if (exception_oop->is_a(vmClasses::OutOfMemoryError_klass())) {
     aot_log_error(aot)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
                        "%zuM", MaxHeapSize/M);
