@@ -302,7 +302,7 @@ class CodeSection {
 
 class CHeapString : public CHeapObj<mtCode> {
  public:
-  CHeapString(const char* str) : _string(os::strdup(str)) {}
+  CHeapString(const char* str) : _string(os::strdup(str, mtCode)) {}
   ~CHeapString();
   const char* string() const { return _string; }
 

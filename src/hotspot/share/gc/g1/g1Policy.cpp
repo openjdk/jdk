@@ -25,9 +25,10 @@
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1Arguments.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
-#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
@@ -611,7 +612,7 @@ void G1Policy::record_full_collection_end(size_t allocation_word_size) {
 static void log_refinement_stats(const G1ConcurrentRefineStats& stats) {
   log_debug(gc, refine, stats)
            ("Refinement: sweep: %.2fms, yield: %.2fms refined: %zu, dirtied: %zu",
-            TimeHelper::counter_to_millis(stats.sweep_duration()),
+            TimeHelper::counter_to_millis(stats.sweep_work_duration()),
             TimeHelper::counter_to_millis(stats.yield_during_sweep_duration()),
             stats.refined_cards(),
             stats.cards_pending());
@@ -623,7 +624,7 @@ void G1Policy::record_refinement_stats(G1ConcurrentRefineStats* refine_stats) {
   // Record the rate at which cards were refined.
   // Don't update the rate if the current sample is empty or time is zero (which is
   // the case during GC).
-  double refinement_time = TimeHelper::counter_to_millis(refine_stats->sweep_duration());
+  double refinement_time = TimeHelper::counter_to_millis(refine_stats->sweep_work_duration());
   size_t refined_cards = refine_stats->refined_cards();
   if ((refined_cards > 0) && (refinement_time > 0)) {
     double rate = refined_cards / refinement_time;

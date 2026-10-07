@@ -1447,7 +1447,7 @@ void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst,
       incq(mask_idx);
     }
   } else {
-    assert(elem_bt == T_BYTE, "");
+    assert(elem_bt == T_BYTE, "only handles short and byte");
     for (int i = 0; i < 8; i++) {
       // dst[i] = mask[i] ? src[idx_base[i]] : 0
       Label skip_load;
@@ -1472,7 +1472,7 @@ void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst,
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
     }
   } else {
-    assert(elem_bt == T_BYTE, "");
+    assert(elem_bt == T_BYTE, "only handles short and byte");
     for (int i = 0; i < 8; i++) {
       // dst[i] = src[idx_base[i]]
       movl(rtmp, Address(idx_base, i * 4));
@@ -1509,7 +1509,7 @@ void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
                                         Register rtmp, Register mask_idx,
                                         Register length, int vector_len, int vlen_enc) {
   Label GATHER8_LOOP;
-  assert(is_subword_type(elem_ty), "");
+  assert(is_signed_subword_type(elem_ty), "only handles short and byte");
   movl(length, vector_len);
   vpxor(xtmp1, xtmp1, xtmp1, vlen_enc); // xtmp1 = {0, ...}
   vpxor(dst, dst, dst, vlen_enc); // dst = {0, ...}
@@ -2513,7 +2513,7 @@ void C2_MacroAssembler::get_elem(BasicType typ, Register dst, XMMRegister src, i
   int esize =  type2aelembytes(typ);
   int elem_per_lane = 16/esize;
   int eindex = elemindex % elem_per_lane;
-  assert(is_integral_type(typ),"required");
+  assert(is_signed_subword_type(typ) || is_non_subword_integral_type(typ), "only handles signed integral types");
 
   if (eindex == 0) {
     if (typ == T_LONG) {

@@ -1257,7 +1257,7 @@ bool ciEnv::dyno_loc(const InstanceKlass* ik, const char *&loc) const {
 
 // Associate the current location descriptor with the given class and record for later lookup.
 void ciEnv::set_dyno_loc(const InstanceKlass* ik) {
-  const char *loc = os::strdup(_dyno_name);
+  const char *loc = os::strdup(_dyno_name, mtCompiler);
   bool found = false;
   int pos = _dyno_klasses->find_sorted<const InstanceKlass*, klass_compare>(ik, found);
   if (found) {

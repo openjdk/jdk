@@ -5550,8 +5550,8 @@ Node* LibraryCallKit::get_hashcode_from_header(Node* header, RegionNode* unset_r
   Node* hash_val = _gvn.transform(new AndINode(hshifted_header, hash_mask));
 
   Node* no_hash_val = _gvn.intcon(markWord::no_hash);
-  Node* chk_assigned = _gvn.transform(new CmpINode( hash_val, no_hash_val));
-  Node* test_assigned = _gvn.transform(new BoolNode( chk_assigned, BoolTest::eq));
+  Node* chk_assigned = _gvn.transform(new CmpINode(hash_val, no_hash_val));
+  Node* test_assigned = _gvn.transform(new BoolNode(chk_assigned, BoolTest::eq));
 
   generate_slow_guard(test_assigned, unset_region);
 
@@ -5701,6 +5701,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_region->init_req(1, IfTrue(iff_is_empty_object));
             unmasked_result->init_req(1, result_empty);
 
+            // There is a segment (case 2. or 3.)
             set_control(IfFalse(iff_is_empty_object));
 
             Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
@@ -5729,9 +5730,28 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_region->init_req(3, IfTrue(iff_is_long_payload));
             unmasked_result->init_req(3, result_long);
 
-            Node* fast_path_result = AndI(_gvn.transform(unmasked_result), intcon(markWord::hash_mask));
-            result_reg->init_req(_value_fast_path, _gvn.transform(unmasked_region));
-            result_val->init_req(_value_fast_path, fast_path_result);
+            set_control(_gvn.transform(unmasked_region));
+            Node* hash_mask_con = intcon(markWord::hash_mask);
+            Node* masked_result = AndI(_gvn.transform(unmasked_result), hash_mask_con);
+
+            // Now, we have computed the hash. But we don't want it to be markWord::no_hash.
+            // If it is, let's just take the hash of the Class, and since this Class is an identity object,
+            // it must be different from markWord::no_hash. Let's do a little diamond since it's easy enough
+            // and cmove experimentally failed to be as efficient.
+            RegionNode* avoid_no_hash_region = new RegionNode(3);
+            Node* no_hash_avoided_result = new PhiNode(avoid_no_hash_region, TypeInt::INT);
+
+            Node* no_hash_con = intcon(checked_cast<int>(markWord::no_hash));
+            Node* bol_hash_would_be_no_hash = BoolCmpI(masked_result, BoolTest::eq, no_hash_con);
+            IfNode* iff_hash_would_be_no_hash = create_and_map_if(control(), bol_hash_would_be_no_hash, PROB_FAIR, COUNT_UNKNOWN);
+            avoid_no_hash_region->init_req(1, IfTrue(iff_hash_would_be_no_hash));
+            no_hash_avoided_result->init_req(1, result_empty);
+
+            avoid_no_hash_region->init_req(2, IfFalse(iff_hash_would_be_no_hash));
+            no_hash_avoided_result->init_req(2, masked_result);
+
+            result_reg->init_req(_value_fast_path, _gvn.transform(avoid_no_hash_region));
+            result_val->init_req(_value_fast_path, _gvn.transform(no_hash_avoided_result));
           }
         }
       }

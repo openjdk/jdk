@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,8 +283,9 @@ dbgsysGetLastIOError(char *buf, jint size) {
 int
 dbgsysTlsAlloc() {
     pthread_key_t key;
-    if (pthread_key_create(&key, NULL)) {
-        perror("pthread_key_create");
+    int res = pthread_key_create(&key, NULL);
+    if (res != 0) {
+        printf("pthread_key_create failed with result %d\n", res);
         exit(-1);
     }
     return (int)key;

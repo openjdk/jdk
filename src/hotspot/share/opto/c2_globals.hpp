@@ -443,9 +443,6 @@
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
                                                                             \
-  product_pd(bool, OptoBundling,                                            \
-          "Generate nops to fill i-cache lines")                            \
-                                                                            \
   product_pd(intx, ConditionalMoveLimit,                                    \
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
@@ -761,10 +758,6 @@
   product(bool, SplitIfBlocks, true,                                        \
           "Clone compares and control flow through merge points to fold "   \
           "some branches")                                                  \
-                                                                            \
-  develop(intx, FreqCountInvocations,  1,                                   \
-          "Scaling factor for branch frequencies (deprecated)")             \
-          range(1, max_intx)                                                \
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \

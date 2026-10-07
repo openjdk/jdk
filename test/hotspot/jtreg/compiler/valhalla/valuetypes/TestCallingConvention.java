@@ -51,7 +51,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -63,7 +62,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -75,7 +73,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -87,7 +84,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -99,7 +95,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -111,7 +106,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -123,7 +117,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @key randomness
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation

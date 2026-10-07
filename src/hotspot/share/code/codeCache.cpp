@@ -594,6 +594,27 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
   return (CodeBlob*)heap->next(cb);
 }
 
+static int report_code_heap_full_event(CodeBlobType code_blob_type) {
+  CodeHeap* heap = CodeCache::get_code_heap(code_blob_type);
+  assert(heap != nullptr, "heap is null");
+  int full_count = heap->report_full();
+  EventCodeCacheFull event;
+  if (event.should_commit()) {
+    event.set_codeBlobType((u1)code_blob_type);
+    event.set_startAddress((u8)heap->low_boundary());
+    event.set_commitedTopAddress((u8)heap->high());
+    event.set_reservedTopAddress((u8)heap->high_boundary());
+    event.set_entryCount(heap->blob_count());
+    event.set_methodCount(heap->nmethod_count());
+    event.set_adaptorCount(heap->adapter_count());
+    event.set_unallocatedCapacity(heap->unallocated_capacity());
+    event.set_fullCount(full_count);
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
+  }
+  return full_count;
+}
+
 /**
  * Do not seize the CodeCache lock here--if the caller has not
  * already done so, we are going to lose bigtime, since the code
@@ -639,9 +660,6 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
             type = CodeBlobType::MethodNonProfiled;
           }
           break;
-        case CodeBlobType::MethodHot:
-          type = CodeBlobType::MethodNonProfiled;
-          break;
         default:
           break;
         }
@@ -656,6 +674,8 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       if (handle_alloc_failure) {
         MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
         CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      } else if (orig_code_blob_type == CodeBlobType::MethodHot) {
+        report_code_heap_full_event(orig_code_blob_type);
       }
       return nullptr;
     } else {
@@ -1533,11 +1553,7 @@ void CodeCache::verify() {
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
-  // Get nmethod heap for the given CodeBlobType and build CodeCacheFull event
-  CodeHeap* heap = get_code_heap(code_blob_type);
-  assert(heap != nullptr, "heap is null");
-
-  int full_count = heap->report_full();
+  int full_count = report_code_heap_full_event(code_blob_type);
 
   if ((full_count == 1) || print) {
     // Not yet reported for this heap, report
@@ -1580,21 +1596,6 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
         CompileBroker::print_heapinfo(tty, "all", 4096); // details, may be a lot!
       }
     }
-  }
-
-  EventCodeCacheFull event;
-  if (event.should_commit()) {
-    event.set_codeBlobType((u1)code_blob_type);
-    event.set_startAddress((u8)heap->low_boundary());
-    event.set_commitedTopAddress((u8)heap->high());
-    event.set_reservedTopAddress((u8)heap->high_boundary());
-    event.set_entryCount(heap->blob_count());
-    event.set_methodCount(heap->nmethod_count());
-    event.set_adaptorCount(heap->adapter_count());
-    event.set_unallocatedCapacity(heap->unallocated_capacity());
-    event.set_fullCount(heap->full_count());
-    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
-    event.commit();
   }
 }
 PRAGMA_DIAG_POP

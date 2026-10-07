@@ -40,6 +40,7 @@
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -1494,7 +1495,13 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   post_init();
 }
 
-nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
+static inline void set_relocation_result(nmethod::RelocationResult* relocation_result, nmethod::RelocationResult result) {
+  if (relocation_result != nullptr) {
+    *relocation_result = result;
+  }
+}
+
+nmethod* nmethod::relocate(CodeBlobType code_blob_type, RelocationResult* relocation_result) {
   assert(NMethodRelocation, "must enable use of function");
 
   // Locks required to be held by caller to ensure the nmethod
@@ -1504,15 +1511,21 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
 
   if (!is_relocatable()) {
+    set_relocation_result(relocation_result, RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD);
     return nullptr;
   }
 
   run_nmethod_entry_barrier();
-  nmethod* nm_copy = new (size(), code_blob_type) nmethod(*this);
 
-  if (nm_copy == nullptr) {
+  // Relocation is not compilation: on allocation failure it should not
+  // stop compilation.
+  void* blob = CodeCache::allocate(size(), code_blob_type, false /* handle_alloc_failure */);
+  if (blob == nullptr) {
+    set_relocation_result(relocation_result, RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP);
     return nullptr;
   }
+
+  nmethod* nm_copy = ::new (blob) nmethod(*this);
 
   // To make dependency checking during class loading fast, record
   // the nmethod dependencies in the classes it is dependent on.
@@ -1554,12 +1567,13 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
       nm_copy->log_relocated_nmethod(this);
 
+      set_relocation_result(relocation_result, RelocationResult::SUCCESS);
       return nm_copy;
     }
   }
 
   nm_copy->make_not_used();
-
+  set_relocation_result(relocation_result, RelocationResult::FAILED_INVALIDATED_NMETHOD);
   return nullptr;
 }
 
@@ -1593,10 +1607,6 @@ bool nmethod::is_relocatable() {
 
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
-}
-
-void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {
-  return CodeCache::allocate(nmethod_size, code_blob_type);
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw () {

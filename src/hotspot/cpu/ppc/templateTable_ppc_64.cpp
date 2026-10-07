@@ -1866,7 +1866,7 @@ void TemplateTable::if_acmp(Condition cc) {
 
   __ pop_ptr(Rfirst);
 
-  __ profile_acmp(Rsecond, Rfirst, R11_scratch1, R12_scratch2);
+  __ profile_acmp(Rfirst, Rsecond, R11_scratch1, R12_scratch2);
 
   const int is_value_type_mask = markWord::value_type_pattern;
   if (Arguments::is_valhalla_enabled()) {
