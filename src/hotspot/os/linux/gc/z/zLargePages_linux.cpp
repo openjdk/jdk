@@ -36,7 +36,7 @@
 #define MADV_COLLAPSE MADV_COLLAPSE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MADV_COLLAPSE == MADV_COLLAPSE_value);
+  static_assert(MADV_COLLAPSE == MADV_COLLAPSE_value);
 #endif
 
 bool ZLargePages::pd_collapse(void* addr, size_t bytes) {
