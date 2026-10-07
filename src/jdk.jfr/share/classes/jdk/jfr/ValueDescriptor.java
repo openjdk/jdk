@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,11 @@ public final class ValueDescriptor {
     private final String name;
     private final boolean isArray;
     private final boolean constantPool;
-    private final String javaFieldName;
     private String label = UNKNOWN;
     private String contentType = UNKNOWN;
 
     // package private, invoked by jdk.internal.
-    ValueDescriptor(Type type, String name, List<AnnotationElement> annotations, int dimension, boolean constantPool, String fieldName) {
+    ValueDescriptor(Type type, String name, List<AnnotationElement> annotations, int dimension, boolean constantPool) {
         Objects.requireNonNull(annotations);
         if (dimension < 0) {
             throw new IllegalArgumentException("Dimension must be positive");
@@ -66,7 +65,6 @@ public final class ValueDescriptor {
         this.isArray = dimension > 0;
         this.constantPool = constantPool;
         this.annotationConstruct = new AnnotationConstruct(annotations);
-        this.javaFieldName = fieldName;
     }
 
     /**
@@ -137,7 +135,6 @@ public final class ValueDescriptor {
         this(type, name, List.copyOf(annotations), false);
     }
 
-
     ValueDescriptor(Class<?> type, String name, List<AnnotationElement> annotations, boolean allowArray) {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(name, "name");
@@ -151,7 +148,6 @@ public final class ValueDescriptor {
         Utils.ensureJavaIdentifier(name);
         this.type = Objects.requireNonNull(Utils.getValidType(Objects.requireNonNull(type), Objects.requireNonNull(name)));
         this.annotationConstruct = new AnnotationConstruct(annotations);
-        this.javaFieldName = name; // Needed for dynamic events
         this.isArray = type.isArray();
         // Assume we always want to store String and Thread in constant pool
         this.constantPool = type == Class.class || type == Thread.class;
@@ -319,11 +315,6 @@ public final class ValueDescriptor {
     // package private
     boolean isConstantPool() {
         return constantPool;
-    }
-
-    // package private
-    String getJavaFieldName() {
-        return javaFieldName;
     }
 
     // package private

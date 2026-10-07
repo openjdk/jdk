@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ final class MetadataReader {
                 boolean constantPool = fieldElement.attribute(ATTRIBUTE_CONSTANT_POOL) != null;
                 // Add annotation later, because they may refer to undefined
                 // types at this stage
-                t.add(PrivateAccess.getInstance().newValueDescriptor(name, fieldType, new ArrayList<>(), (int) dimension, constantPool, null));
+                t.add(PrivateAccess.getInstance().newValueDescriptor(name, fieldType, new ArrayList<>(), (int) dimension, constantPool));
             }
             t.trimFields();
         }
