@@ -18642,6 +18642,7 @@ instruct vReplS_reg(vec dst, rRegI src) %{
 %}
 
 instruct ReplHF_imm(vec dst, immH con, rRegI rtmp) %{
+  predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate con));
   effect(TEMP rtmp);
   format %{ "replicateHF $dst, $con \t! using $rtmp as TEMP" %}

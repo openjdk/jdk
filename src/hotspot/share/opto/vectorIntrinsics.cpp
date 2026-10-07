@@ -793,10 +793,19 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
     switch (elem_bt) {
       case T_BOOLEAN: // fall-through
       case T_BYTE:    // fall-through
-      case T_SHORT:   // fall-through
       case T_CHAR:    // fall-through
       case T_INT: {
         elem = gvn().transform(new ConvL2INode(bits));
+        break;
+      }
+      case T_SHORT: {
+        elem = gvn().transform(new ConvL2INode(bits));
+        const TypeInt* elem_t = gvn().type(elem)->isa_int();
+        if (!is_mask && vltype == VectorSupport::LaneType::LT_FLOAT16 &&
+            elem_t != nullptr && elem_t->is_con() &&
+            Matcher::match_rule_supported(Op_ReinterpretS2HF)) {
+          elem = gvn().makecon(TypeH::make((jshort)elem_t->get_con()));
+        }
         break;
       }
       case T_DOUBLE: {
