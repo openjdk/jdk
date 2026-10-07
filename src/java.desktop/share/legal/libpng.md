@@ -1,4 +1,4 @@
-## libpng v1.6.58
+## libpng v1.6.59
 
 ### libpng License
 <pre>
@@ -160,6 +160,7 @@ Authors, for copyright and licensing purposes.
  * Adam Richter
  * Alexander Smorkalov
  * Andreas Dilger
+ * Anthony Hurtado
  * Chris Blume
  * Cosmin Truta
  * Dave Martindale
@@ -197,6 +198,7 @@ Authors, for copyright and licensing purposes.
  * Vadim Barkov
  * Willem van Schaik
  * Yuelin Wang (王跃林)
+ * Yuki Sekiguchi
  * Zhijie Liang
  * Apple Inc.
     - Zixu Wang (王子旭)

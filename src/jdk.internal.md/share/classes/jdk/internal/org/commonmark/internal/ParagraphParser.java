@@ -32,10 +32,7 @@
 
 package jdk.internal.org.commonmark.internal;
 
-import jdk.internal.org.commonmark.node.Block;
-import jdk.internal.org.commonmark.node.LinkReferenceDefinition;
-import jdk.internal.org.commonmark.node.Paragraph;
-import jdk.internal.org.commonmark.node.SourceSpan;
+import jdk.internal.org.commonmark.node.*;
 import jdk.internal.org.commonmark.parser.InlineParser;
 import jdk.internal.org.commonmark.parser.SourceLine;
 import jdk.internal.org.commonmark.parser.SourceLines;
@@ -82,7 +79,20 @@ public class ParagraphParser extends AbstractBlockParser {
     }
 
     @Override
+    public List<DefinitionMap<?>> getDefinitions() {
+        var map = new DefinitionMap<>(LinkReferenceDefinition.class);
+        for (var def : linkReferenceDefinitionParser.getDefinitions()) {
+            map.putIfAbsent(def.getLabel(), def);
+        }
+        return List.of(map);
+    }
+
+    @Override
     public void closeBlock() {
+        for (var def : linkReferenceDefinitionParser.getDefinitions()) {
+            block.insertBefore(def);
+        }
+
         if (linkReferenceDefinitionParser.getParagraphLines().isEmpty()) {
             block.unlink();
         } else {
@@ -102,7 +112,7 @@ public class ParagraphParser extends AbstractBlockParser {
         return linkReferenceDefinitionParser.getParagraphLines();
     }
 
-    public List<LinkReferenceDefinition> getDefinitions() {
-        return linkReferenceDefinitionParser.getDefinitions();
+    public List<SourceSpan> removeLines(int lines) {
+        return linkReferenceDefinitionParser.removeLines(lines);
     }
 }

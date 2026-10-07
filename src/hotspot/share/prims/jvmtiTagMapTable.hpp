@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_TAGMAPTABLE_HPP
-#define SHARE_VM_PRIMS_TAGMAPTABLE_HPP
+#ifndef SHARE_PRIMS_JVMTITAGMAPTABLE_HPP
+#define SHARE_PRIMS_JVMTITAGMAPTABLE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
@@ -228,4 +228,4 @@ public:
   void clear();
 };
 
-#endif // SHARE_VM_PRIMS_TAGMAPTABLE_HPP
+#endif // SHARE_PRIMS_JVMTITAGMAPTABLE_HPP

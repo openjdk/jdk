@@ -32,6 +32,8 @@
 // Records various memory allocation statistics gathered during evacuation. All sizes
 // are in HeapWords.
 class G1EvacStats : public PLABStats {
+  friend class G1EvacStatsTest;
+
   size_t _default_plab_size;
   size_t _desired_net_plab_size; // Output of filter (below), suitably trimmed and quantized
   AdaptiveWeightedAverage
