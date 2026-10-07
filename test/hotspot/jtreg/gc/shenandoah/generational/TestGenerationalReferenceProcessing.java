@@ -99,6 +99,9 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.ref.ReferenceQueue;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.TreeSet;
+import java.util.Set;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
@@ -159,10 +162,10 @@ public class TestGenerationalReferenceProcessing {
             getReferences(YOUNG, YOUNG).clear();
         }
 
-        HashSet<WeakReference<?>> getReferences(int reference, int referent) {
+        Set<WeakReference<?>> getReferences(int reference, int referent) {
             assert reference == OLD || reference == YOUNG;
             assert referent == OLD || referent == YOUNG;
-            return (HashSet<WeakReference<?>>)references[reference][referent];
+            return (Set<WeakReference<?>>)references[reference][referent];
         }
 
         @Override
@@ -211,19 +214,49 @@ public class TestGenerationalReferenceProcessing {
 
         if (referentGen == YOUNG) {
             WB.youngGC();
+
+            int cleared = removeClearedWeakReferences();
+            classifier.classify();
+            System.out.println("After " + name(referentGen) + " GC, cleared: " + cleared + ", referents: " + classifier);
+
+            assertReferencesCleared(YOUNG, YOUNG, classifier);
+            assertReferencesCleared(OLD, YOUNG, classifier);
         } else {
             // Print address of old references before old GC.
             var oldToOld = classifier.getReferences(referentGen, referentGen);
-            printReferences(OLD, OLD, oldToOld);
+            var youngToOld = classifier.getReferences(YOUNG, referentGen);
+            var sorted = new ArrayList<WeakReference<?>>(oldToOld);
+            sorted.sort(Comparator.comparingInt(Object::hashCode));
+            printReferences(OLD, OLD, sorted);
+
             WB.shenandoahOldGC();
+
+            var youngToOldReferents = new HashSet<Object>();
+            for (WeakReference<?> ref: youngToOld) {
+                var youngOldReferent = ref.get();
+                if (youngOldReferent != null) {
+                    youngToOldReferents.add(youngOldReferent);
+                }
+            }
+
+            System.out.println("After running Old GC");
+            int uncleared = 0;
+            int references_shown = 0;
+            final int max_references = 10;
+            for (WeakReference<?> ref : sorted) {
+                var referent = ref.get();
+                if (referent != null) {
+                    uncleared++;
+                    if (references_shown < max_references) {
+                        printReference(OLD, OLD, ref);
+                        references_shown++;
+                    }
+                }
+            }
+            if (uncleared > 0) {
+                throw new RuntimeException("Old -> old references uncleared: " + uncleared);
+            }
         }
-
-        int cleared = removeClearedWeakReferences();
-        classifier.classify();
-        System.out.println("After " + name(referentGen) + " GC, cleared: " + cleared + ", referents: " + classifier);
-
-        assertReferencesCleared(referentGen, referentGen, classifier);
-        assertReferencesCleared(referenceGen, referentGen, classifier);
     }
 
     private static void assertReferencesCleared(int referenceGen, int referentGen, ReferenceClassifier classifier) {
@@ -237,7 +270,7 @@ public class TestGenerationalReferenceProcessing {
         throw new AssertionError(name(referenceGen) + " to " + name(referentGen) + " referents should have been cleared");
     }
 
-    private static void printReferences(int referenceGen, int referentGen, HashSet<WeakReference<?>> references) {
+    private static void printReferences(int referenceGen, int referentGen, Collection<WeakReference<?>> references) {
         final int max_references = 10;
         int references_shown = 0;
         for (var reference : references) {
@@ -246,10 +279,14 @@ public class TestGenerationalReferenceProcessing {
             }
 
             ++references_shown;
-            System.out.printf("reference: 0x%x in %s refers to 0x%x in %s\n",
-                    WB.getObjectAddress(reference), name(referenceGen),
-                    WB.getObjectAddress(reference.get()), name(referentGen));
+            printReference(referenceGen, referentGen, reference);
         }
+    }
+
+    private static void printReference(int referenceGen, int referentGen, WeakReference<?> reference) {
+        System.out.printf("reference: 0x%x (%d) in %s refers to 0x%x (%d) in %s\n",
+                          WB.getObjectAddress(reference), reference.hashCode(), name(referenceGen),
+                          WB.getObjectAddress(reference.get()), reference.get().hashCode(), name(referentGen));
     }
 
     private static int removeClearedWeakReferences() {
@@ -276,8 +313,9 @@ public class TestGenerationalReferenceProcessing {
         // everything up front, or else they will all end up in old together, and
         // we won't get a good mix of cross generational pointers.
         for (int i = 0; i < REGIONS_TO_FILL; i += 4) {
-            allocateReferents(2);
-            allocateReferences(2);
+            List<LeakedObject> referents = allocateReferents(2);
+            allocateReferences(referents);
+            REFERENTS.addAll(referents);
 
             WB.youngGC();
             if (exitCondition.get()) {
@@ -286,30 +324,30 @@ public class TestGenerationalReferenceProcessing {
         }
     }
 
-    private static void allocateReferents(int regions) {
+    private static List<LeakedObject> allocateReferents(int regions) {
+        var referents = new ArrayList<LeakedObject>(regions * OBJECTS_PER_REGION);
         for (int j = 0; j < regions; j++) {
             for (int i = 0; i < OBJECTS_PER_REGION; ++i) {
                 var leakedObject = new LeakedObject();
-                REFERENTS.add(leakedObject);
+                referents.add(leakedObject);
                 byte[] garbage = new byte[OBJECT_SIZE];
                 garbage[i % garbage.length] = (byte) i;
             }
         }
+        return referents;
     }
 
-    private static void allocateReferences(int regions) {
+    private static void allocateReferences(List<LeakedObject> referents) {
         // Fill up regions that are equal parts garbage and references
         // We want to create cross region references to increase the chances
         // of cross generational references.
-        int referentCount = REFERENTS.size() - 1;
-        for (int j = 0; j < regions; j++) {
-            for (int i = 0; i < OBJECTS_PER_REGION; ++i) {
-                var leakedObject = REFERENTS.get(referentCount - i);
-                var ref = new WeakReference<>(leakedObject, REF_QUEUE);
-                WEAK_REFS.add(ref);
-                byte[] garbage = new byte[OBJECT_SIZE];
-                garbage[i % garbage.length] = (byte) i;
-            }
+        int i = 0;
+        for (var referent : referents) {
+            var ref = new WeakReference<>(referent, REF_QUEUE);
+            WEAK_REFS.add(ref);
+            byte[] garbage = new byte[OBJECT_SIZE];
+            garbage[i % garbage.length] = (byte) i;
+            i++;
         }
     }
 }
