@@ -26,6 +26,7 @@
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/diagnosticWorkers.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -221,10 +222,14 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 #undef HANDLE_THREAD
 
   if (Universe::heap() != nullptr) {
-    GCThreadClosure cl(from, to);
-    Universe::heap()->gc_threads_do(&cl);
-    if (cl._found) {
-      print_thread_details(cl._tid, "GC Thread", st);
+    GCThreadClosure gc_cl(from, to);
+    GCThreadClosure diag_cl(from, to);
+    Universe::heap()->gc_threads_do(&gc_cl);
+    DiagnosticWorkers::diagnostic_threads_do(&diag_cl);
+    if (gc_cl._found) {
+      print_thread_details(gc_cl._tid, "GC Thread", st);
+    } else if (diag_cl._found) {
+      print_thread_details(diag_cl._tid, "DiagWorker", st);
     }
   }
 }

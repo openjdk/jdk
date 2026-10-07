@@ -28,7 +28,6 @@
 #include "cds/aotMappedHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
-#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
@@ -1562,8 +1561,6 @@ void ShenandoahHeap::labs_make_parsable() {
   }
 
   workers()->threads_do(&cl);
-
-  DiagnosticWorkers::diagnostic_threads_do(&cl);
 }
 
 void ShenandoahHeap::tlabs_retire(bool resize) {
@@ -1600,8 +1597,6 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
   }
 
   workers()->threads_do(&cl);
-
-  DiagnosticWorkers::diagnostic_threads_do(&cl);
 }
 
 // Returns size in bytes
@@ -3024,8 +3019,4 @@ ShenandoahHeapLocker::ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_
   assert(_lock != nullptr, "Must not");
 #endif
   _lock->lock(allow_block_for_safepoint);
-}
-
-void ShenandoahHeap::initialize_diagnostic_worker(WorkerThread* thread) {
-  ShenandoahThreadLocalData::initialize_gclab(thread);
 }

@@ -42,10 +42,10 @@ import jdk.test.lib.hprof.HprofParser;
 
 /**
  * @test
- * @bug 8306441 8319053
+ * @bug 8306441 8319053 8392050
  * @summary Verify the integrity of generated heap dump and capability of parallel dump
  * @library /test/lib
- * @run main HeapDumpParallelTest
+ * @run main/othervm -XX:ActiveProcessorCount=4 HeapDumpParallelTest
  */
 
 public class HeapDumpParallelTest {
@@ -63,9 +63,11 @@ public class HeapDumpParallelTest {
             expectSerial = true;
         }
         if (!expectSerial && Runtime.getRuntime().availableProcessors() > 1) {
+            appOut.shouldContain("Created diagnostic worker pool");
             appOut.shouldContain("Dump heap objects in parallel");
             appOut.shouldContain("Merge heap files complete");
         } else {
+            appOut.shouldNotContain("Created diagnostic worker pool");
             appOut.shouldNotContain("Dump heap objects in parallel");
         }
         HprofParser.parseAndVerify(heapDumpFile);
@@ -86,9 +88,9 @@ public class HeapDumpParallelTest {
 
     private static LingeredApp launchApp() throws IOException {
         LingeredApp theApp = new LingeredApp();
-        LingeredApp.startApp(theApp, "-Xlog:heapdump", "-Xmx512m",
-                             "-XX:-UseDynamicNumberOfGCThreads",
-                             "-XX:ParallelGCThreads=2");
+        LingeredApp.startApp(theApp, "-Xlog:heapdump,gc+task", "-Xmx512m",
+                             "-XX:ActiveProcessorCount=4",
+                             "-XX:ParallelGCThreads=4");
         return theApp;
     }
 

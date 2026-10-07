@@ -10,7 +10,7 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
-* accompanied this code).
+ * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
@@ -24,24 +24,39 @@
 
 #include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
-#include "memory/universe.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/thread.hpp"
 
-DiagnosticWorkers::DiagnosticWorkers() :
-    WorkerThreads("DiagWorker", (uint)os::initial_active_processor_count()) { }
+class DiagnosticThreadClosure : public ThreadClosure {
+private:
+  bool _found = false;
+  const Thread* _target;
+public:
+  DiagnosticThreadClosure(const Thread* t) : _target(t) {}
+
+  void do_thread(Thread* t) override {
+    if (_target == t) {
+      _found = true;
+    }
+  }
+
+  bool found() const { return _found; }
+};
 
 WorkerThreads* DiagnosticWorkers::_workers = nullptr;
 
-void DiagnosticWorkers::on_create_worker(WorkerThread* thread) {
-  Universe::heap()->initialize_diagnostic_worker(thread);
+uint DiagnosticWorkers::calc_max_workers() {
+  return clamp(ParallelGCThreads, 1u, (uint)os::initial_active_processor_count());
 }
 
 WorkerThreads* DiagnosticWorkers::workers() {
-  if (_workers == nullptr && os::initial_active_processor_count() > 1) {
+  if (_workers == nullptr && calc_max_workers() > 1) {
     assert_at_safepoint();
-    _workers = new DiagnosticWorkers();
+    _workers = new WorkerThreads("DiagWorker", calc_max_workers());
     log_info(gc, task)("Created diagnostic worker pool (max %u workers)", _workers->max_workers());
   }
   return _workers;
@@ -59,4 +74,14 @@ uint DiagnosticWorkers::try_and_set_active_workers(uint num_workers) {
   }
 
   return _workers->set_active_workers(MIN2(num_workers, _workers->max_workers()));
+}
+
+bool DiagnosticWorkers::is_diagnostic_thread(const Thread* t) {
+  if (_workers == nullptr) {
+    return false;
+  }
+
+  DiagnosticThreadClosure cl(t);
+  _workers->threads_do(&cl);
+  return cl.found();
 }

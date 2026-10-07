@@ -221,14 +221,6 @@ public:
     return true;
   }
 
-  bool supports_parallel_heap_iteration() const override {
-    return true;
-  }
-
-  // Diagnostic workers may require gclabs if the threads are used to create a heap dump
-  // during a concurrent evacuation phase.
-  void initialize_diagnostic_worker(WorkerThread* thread) override;
-
 // ---------- Heap counters and metrics
 //
 private:
@@ -288,6 +280,8 @@ public:
   WorkerThreads* workers() const;
 
   void gc_threads_do(ThreadClosure* tcl) const override;
+
+  bool supports_parallel_heap_iteration() const override { return true; }
 
 // ---------- Heap regions handling machinery
 //

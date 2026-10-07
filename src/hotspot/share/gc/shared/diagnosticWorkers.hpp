@@ -25,24 +25,26 @@
 #ifndef SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP
 #define SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP
 
-#include "gc/shared/workerThread.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class Thread;
+class ThreadClosure;
+class WorkerThreads;
 
 // Worker pool shared by heap dump and heap inspection. The pool is created lazily
 // on the first parallel request and threads are added to the pool as each request
 // needs them. Threads are reused and exist until the VM exits.
-class DiagnosticWorkers : public WorkerThreads {
+class DiagnosticWorkers : public AllStatic {
 private:
-  DiagnosticWorkers();
   static WorkerThreads* _workers;
 
-protected:
-  // Calls initialize_diagnostic_worker() to add a property for each thread that
-  // the collector needs. By default, initialize_diagnostic_worker() does nothing.
-  void on_create_worker(WorkerThread* worker) override;
+  // Calculates the maximum number of workers the pool can hold.
+  static uint calc_max_workers();
 
 public:
-  // Creates the diagnostic worker pool on the first call and if
-  // os::initial_active_processor_count() > 1.
+  // Returns the diagnostic worker pool, creating it on the first call. Returns
+  // nullptr if calc_max_workers() <= 1, since the pool could not run in parallel.
   static WorkerThreads* workers();
 
   // Applies the closure to each diagnostic worker only if the worker pool is initialized.
@@ -51,6 +53,9 @@ public:
   // Sets the number of active worker threads (capped at max_workers()) and returns the
   // active thread count.
   static uint try_and_set_active_workers(uint num_workers);
+
+  // Returns true if the thread passed in is a diagnostic worker thread.
+  static bool is_diagnostic_thread(const Thread* t);
 };
 
 #endif // SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP

@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  *
  */
 
+#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
@@ -121,6 +122,7 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
 
   ShenandoahStatAggregator aggregate_workers(&workers);
   ShenandoahHeap::heap()->gc_threads_do(&aggregate_workers);
+  DiagnosticWorkers::diagnostic_threads_do(&aggregate_workers);
 
   _mutators_global.accumulate(&mutators);
   _workers_global.accumulate(&workers);
