@@ -170,11 +170,24 @@ reg_def R28_H(SOC, SOC, Op_RegI, 28, r28->as_VMReg()->next());
 reg_def R29  (SOC, SOC, Op_RegI, 29, r29->as_VMReg());
 reg_def R29_H(SOC, SOC, Op_RegI, 29, r29->as_VMReg()->next());
 
+#ifdef _WIN64
+
+// On Win64, R30 and R31 are nonvolatile (callee saved)
+reg_def R30  (SOC, SOE, Op_RegI, 30, r30->as_VMReg());
+reg_def R30_H(SOC, SOE, Op_RegI, 30, r30->as_VMReg()->next());
+
+reg_def R31  (SOC, SOE, Op_RegI, 31, r31->as_VMReg());
+reg_def R31_H(SOC, SOE, Op_RegI, 31, r31->as_VMReg()->next());
+
+#else
+
 reg_def R30  (SOC, SOC, Op_RegI, 30, r30->as_VMReg());
 reg_def R30_H(SOC, SOC, Op_RegI, 30, r30->as_VMReg()->next());
 
 reg_def R31  (SOC, SOC, Op_RegI, 31, r31->as_VMReg());
 reg_def R31_H(SOC, SOC, Op_RegI, 31, r31->as_VMReg()->next());
+
+#endif
 
 // Floating Point Registers
 
