@@ -133,6 +133,17 @@ public class referringObjects003 extends HeapwalkingDebugger {
         }
     }
 
+    private void logLeftover(ObjectReference objectReference) {
+        try {
+            log.complain(objectReference.toString());
+            for (ObjectReference referrer : objectReference.referringObjects(0)) {
+                log.complain("    referred from " + referrer);
+            }
+        } catch (ObjectCollectedException e) {
+            log.complain("object " + objectReference.uniqueID() + " was collected before it could be described");
+        }
+    }
+
     public void doTest() {
         int threadCount = 15;
 
@@ -178,35 +189,37 @@ public class referringObjects003 extends HeapwalkingDebugger {
         if (!isDebuggeeReady())
             return;
 
-        // Force the test ThreadGroup to be collected. The only reference to it is a weak
-        // reference from the parent ThreadGroup.
-        forceGC();
+        // The joined threads still hold the group in holder.group and the VM releases
+        // its handles to them a little later, so one collection may not be enough.
+        for (int i = 0; i < 5; i++) {
+            forceGC();
+            threadGroups = HeapwalkingDebugger.filterObjectReferrence(threadGroupsToFilter, HeapwalkingDebugger
+                    .getObjectReferences("java.lang.ThreadGroup", vm));
+            threads = HeapwalkingDebugger.filterObjectReferrence(threadsToFilter, HeapwalkingDebugger
+                    .getObjectReferences("java.lang.Thread", vm));
+            if (threadGroups.isEmpty() && threads.isEmpty()) {
+                break;
+            }
+        }
 
         checkDebugeeAnswer_instances("java.lang.ThreadGroup", threadGroupsToFilter.size());
         checkDebugeeAnswer_instances("java.lang.Thread", threadsToFilter.size());
-
-        threadGroups = HeapwalkingDebugger.filterObjectReferrence(threadGroupsToFilter, HeapwalkingDebugger
-                .getObjectReferences("java.lang.ThreadGroup", vm));
 
         if (threadGroups.size() != 0) {
             setSuccess(false);
             log.complain("All test threads groups should be removed");
             log.complain("Unexpected threads groups:");
             for (ObjectReference objectReference : threadGroups) {
-                log.complain(objectReference.toString());
+                logLeftover(objectReference);
             }
         }
-
-        threads = HeapwalkingDebugger.filterObjectReferrence(threadsToFilter, HeapwalkingDebugger.getObjectReferences(
-                "java.lang.Thread",
-                vm));
 
         if (threads.size() != 0) {
             setSuccess(false);
             log.complain("All test threads should be removed");
             log.complain("Unexpected threads:");
             for (ObjectReference objectReference : threads) {
-                log.complain(objectReference.toString());
+                logLeftover(objectReference);
             }
         }
     }
