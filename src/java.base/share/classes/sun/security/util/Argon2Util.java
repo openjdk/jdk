@@ -88,7 +88,12 @@ public final class Argon2Util {
         builder.parallelism(parseInt(assignments[2], "p", 256));
         int index = 3;
         while (index < assignments.length) {
-            String[] nextPair = assignments[index++].split("=");
+            String setting = assignments[index++];
+            String[] nextPair = setting.split("=");
+            if (nextPair.length != 2) {
+                throw new IllegalArgumentException("Invalid setting: " +
+                        setting);
+            }
             byte[] value = dec.decode(nextPair[1]);
             if (nextPair[0].equals("keyid")) {
                 if (value.length > 8) {
@@ -164,8 +169,7 @@ public final class Argon2Util {
         while (++idx < values.length) {
             switch (idx) {
                 case 2 -> {
-                    Version ver = Version.of(Integer.parseInt
-                            (values[2].split("=")[1]));
+                    Version ver = Version.of(parseInt(values[2], "v", -1));
                     builder.version(ver);
                 }
                 case 3 -> {

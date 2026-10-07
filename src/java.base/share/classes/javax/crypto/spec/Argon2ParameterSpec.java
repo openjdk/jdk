@@ -54,13 +54,14 @@ import sun.security.util.PBEUtil;
  * // this usage depicts the initialization of an Argon2 AlgorithmParameterSpec
  * // using t=1 iteration, p=4 lanes, m=2^(21) (2 GiB of RAM), 256-bit tag size,
  * // 128-bit salt, and the desired passwd.
- * byte[] salt = ... // 16-byte
+ * byte[] salt = new byte[16];
+ * new SecureRandom().nextBytes(salt);
  * byte[] passwd = ...
- * AlgorithmParameterSpec.Builder builder =
+ * Argon2ParameterSpec.Builder builder =
  *             Argon2ParameterSpec.newBuilder()
  *                     .parallelism(4).memoryPowerOfTwo(21)
  *                     .iterations(1).tagLen(32);
- * AlgorithmParameterSpec spec = builder.build(salt, passwd);
+ * Argon2ParameterSpec spec = builder.build(salt, passwd);
  *}
  *
  * @spec https://www.rfc-editor.org/info/rfc9106
