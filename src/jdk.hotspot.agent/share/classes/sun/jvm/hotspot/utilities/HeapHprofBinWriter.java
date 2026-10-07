@@ -947,6 +947,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
         OopField tailField = (OopField) ((InstanceKlass) cont.getKlass()).findField("tail", "Ljdk/internal/vm/StackChunk;");
         Oop chunk = tailField == null ? null : tailField.getValue(cont);
+        // no frames in the tail means no stack roots, as in hotspot
+        if (chunk == null || ((InstanceStackChunkKlass) chunk.getKlass()).isEmpty(chunk)) {
+            return;
+        }
         while (chunk != null) {
             InstanceStackChunkKlass sck = (InstanceStackChunkKlass) chunk.getKlass();
             final Oop current = chunk;
@@ -968,12 +972,12 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                 }
             };
             visitor.setObj(chunk);
-            if (!sck.hasBitmap(chunk)) {
-                System.err.println("WARNING: skipping thread #" + OopUtilities.threadOopGetTID(vt)
-                    + " (" + OopUtilities.threadOopGetName(vt) + ") because its stack chunk has no bitmap");
-                break;
+            if (sck.hasBitmap(chunk)) {
+                sck.iterateStackOops(visitor, chunk);
+            } else {
+                System.err.println("WARNING: skipping a stack chunk of thread #" + OopUtilities.threadOopGetTID(vt)
+                    + " (" + OopUtilities.threadOopGetName(vt) + ") because it has no bitmap");
             }
-            sck.iterateStackOops(visitor, chunk);
             OopField parentField = (OopField) sck.findField("parent", "Ljdk/internal/vm/StackChunk;");
             chunk = parentField == null ? null : parentField.getValue(chunk);
         }

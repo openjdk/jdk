@@ -63,7 +63,7 @@ public class ClhsdbRevPtrsForVirtualThread {
                 "-D" + LingeredAppWithUnmountedVirtualThread.ADDR_FILE_PROPERTY + "=" + addressFile);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
-            // the app writes the address once its chunk has been through a GC
+            // the app writes the address after its System.gc()
             ProcessHandle app = ProcessHandle.of(theApp.getPid()).orElseThrow();
             if (!Utils.waitForCondition(() -> Files.exists(addressFile) || !app.isAlive(),
                                         Utils.adjustTimeout(120_000))) {

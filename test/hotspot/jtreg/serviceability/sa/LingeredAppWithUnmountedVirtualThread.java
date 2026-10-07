@@ -45,7 +45,7 @@ public class LingeredAppWithUnmountedVirtualThread extends LingeredApp {
     // only the virtual thread's frame holds the object strongly
     private static WeakReference<ChunkReferenced> chunkReference;
 
-    // runs after LingeredApp's own startup GC, then hands the address to the driver
+    // runs after LingeredApp's own System.gc(), then hands the address to the driver
     private static void publishAddress(Path addressFile) {
         try {
             while (!isReady()) {

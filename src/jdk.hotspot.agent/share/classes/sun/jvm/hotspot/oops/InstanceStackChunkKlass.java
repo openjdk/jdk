@@ -100,8 +100,8 @@ public class InstanceStackChunkKlass extends InstanceKlass {
     return null;
   }
 
-  // Visit the bitmap range from sp to the end of the stack, then the lock
-  // stack, the way oop_oop_iterate_stack does in the VM.
+  // Visit the bitmap range below sp to the end of the stack like
+  // oop_oop_iterate_stack in the VM, then the lock stack like iterate_lockstack.
   public void iterateStackOops(OopVisitor visitor, Oop obj) {
     if (!hasBitmap(obj)) {
       return;
@@ -145,6 +145,12 @@ public class InstanceStackChunkKlass extends InstanceKlass {
   public boolean hasBitmap(Oop obj) {
     byte flags = ((ByteField) findInjectedField("flags", "B")).getValue(obj);
     return (flags & 0x10) != 0;   // FLAG_HAS_BITMAP, only set once the GC transforms the chunk
+  }
+
+  public boolean isEmpty(Oop obj) {
+    long sp = ((IntField) findField("sp", "I")).getValue(obj);
+    long bottom = ((IntField) findField("bottom", "I")).getValue(obj);
+    return sp >= bottom;
   }
 
   private void visitStackOop(OopVisitor visitor, long index, long offset) {
