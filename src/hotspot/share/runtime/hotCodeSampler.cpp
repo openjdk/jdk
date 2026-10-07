@@ -118,8 +118,8 @@ void Candidates::move_samples_to_hot(int count) {
 void Candidates::sort() {
   _candidates.sort(
     [](Candidate* a, Candidate* b) {
-      if (a->sample_count() > b->sample_count()) return 1;
-      if (a->sample_count() < b->sample_count()) return -1;
+      if (a->get_sample_count() > b->get_sample_count()) return 1;
+      if (a->get_sample_count() < b->get_sample_count()) return -1;
       return 0;
     }
   );

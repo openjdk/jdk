@@ -145,19 +145,19 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
     MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
     MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    nmethod* nm = find_nmethod((address)candidate.nmethod());
+    nmethod* nm = find_nmethod(candidate.get_nmethod());
     if (nm == nullptr ||
-        nm != candidate.nmethod() ||
-        nm->compile_id() != candidate.compile_id()) {
+        nm != candidate.get_nmethod() ||
+        nm->compile_id() != candidate.get_compile_id()) {
       log_debug(hotcode)("Skipped stale candidate: address=%p, compile_id=%d, samples=%d",
-                         candidate.nmethod(), candidate.compile_id(), candidate.sample_count());
+                         candidate.get_nmethod(), candidate.get_compile_id(), candidate.get_sample_count());
       num_skipped++;
       continue;
     }
 
     switch (do_relocation(nm, 0, &num_relocated)) {
       case nmethod::RelocationResult::SUCCESS:
-        candidates.move_samples_to_hot(candidate.sample_count());
+        candidates.move_samples_to_hot(candidate.get_sample_count());
         break;
       case nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP: {
         CodeHeap* heap = CodeCache::get_code_heap(CodeBlobType::MethodHot);

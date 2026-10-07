@@ -53,15 +53,15 @@ class Candidate : public StackObj {
   Candidate(nmethod* nm, int compile_id, int samples_count) : _nm(nm),
       _compile_id(compile_id), _sample_count(samples_count) {}
 
-  nmethod* nmethod() const {
+  nmethod* get_nmethod() const {
     return _nm;
   }
 
-  int compile_id() const {
+  int get_compile_id() const {
     return _compile_id;
   }
 
-  int sample_count() const {
+  int get_sample_count() const {
     return _sample_count;
   }
 };
