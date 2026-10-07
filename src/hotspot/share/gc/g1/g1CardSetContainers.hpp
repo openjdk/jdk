@@ -252,6 +252,8 @@ public:
 };
 
 class G1CardSetHowl : public G1CardSetContainer {
+  DEBUG_ONLY(uint _num_buckets;)
+
 public:
   typedef uint EntryCountType;
   using ContainerPtr = G1CardSet::ContainerPtr;
