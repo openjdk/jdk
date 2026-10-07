@@ -61,10 +61,16 @@ Java_FlatClassFilterTest_count(JNIEnv* jni, jclass ignored, jclass class_filter,
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
   if (vm->GetEnv(reinterpret_cast<void**>(&jvmti), JVMTI_VERSION_1_2) != JNI_OK) {
+    LOG("Agent_OnLoad: Failed: Could not initialize JVMTI\n");
     return JNI_ERR;
   }
-  if (options != nullptr && strcmp(options, "heap_filter_class_untagged") == 0) {
-    heap_filter = JVMTI_HEAP_FILTER_CLASS_UNTAGGED;
+  if (options != nullptr) {
+    if (strcmp(options, "heap_filter_class_untagged") == 0) {
+      heap_filter = JVMTI_HEAP_FILTER_CLASS_UNTAGGED;
+    } else {
+      LOG("Agent_OnLoad: Failed: unrecognized agent option");
+      return JNI_ERR;
+    }
   }
   jvmtiCapabilities caps;
   memset(&caps, 0, sizeof(caps));
