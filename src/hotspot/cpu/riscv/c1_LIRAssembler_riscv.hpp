@@ -42,12 +42,19 @@ private:
   }
 
   Address as_Address(LIR_Address* addr, Register tmp);
+  bool is_null_or_zero_constant(BasicType type, LIR_Opr opr);
 
   void mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
                CodeEmitInfo* info, bool wide, bool is_volatile);
+  void reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
+               CodeEmitInfo* info, bool wide, bool is_volatile);
+  void const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info, bool wide, bool is_volatile);
   void load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info);
   void load_acquire(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
   void load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
+  void store_unordered(Address addr, LIR_Opr src, BasicType type, bool wide, CodeEmitInfo* info);
+  void store_release(Address addr, LIR_Opr src, BasicType type, CodeEmitInfo* info);
+  void store_volatile(Address addr, LIR_Opr src, BasicType type, CodeEmitInfo* info);
 
   // helper functions which checks for overflow and sets bailout if it
   // occurs.  Always returns a valid embeddable pointer but in the
