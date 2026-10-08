@@ -62,6 +62,9 @@ const char* C2Compiler::retry_no_reduce_allocation_merges() {
 const char* C2Compiler::retry_no_superword() {
   return "retry without SuperWord";
 }
+const char* C2Compiler::retry_no_stringopts() {
+  return "retry without StringOpts";
+}
 
 void compiler_stubs_init(bool in_compiler_thread);
 
@@ -142,8 +145,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
+  bool do_stringopts = OptimizeStringConcat;
   bool for_aot_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
   assert(!for_aot_preload || (ClassInitBarrierMode > 0), "sanity");
+
   while (!env->failing()) {
     ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
@@ -154,6 +159,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     eliminate_boxing,
                     do_locks_coarsening,
                     do_superword,
+                    do_stringopts,
                     for_aot_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
@@ -196,6 +202,12 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
         env->report_failure(C.failure_reason());
         continue;  // retry
       }
+      if (C.failure_reason_is(retry_no_stringopts())) {
+        assert(do_stringopts, "must make progress");
+        do_stringopts = false;
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
       if (C.has_boxed_value()) {
         // Recompile without boxing elimination regardless failure reason.
         assert(eliminate_boxing, "must make progress");
@@ -219,6 +231,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
       }
       if (do_locks_coarsening) {
         do_locks_coarsening = false;
+        continue;  // retry
+      }
+      if (do_stringopts) {
+        do_stringopts = false;
         continue;  // retry
       }
     }

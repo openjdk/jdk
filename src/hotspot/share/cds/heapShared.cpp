@@ -519,13 +519,22 @@ int HeapShared::append_root(oop obj) {
       return obj_info->root_index();
     } else {
       assert(obj_info->root_index() < 0, "must not be zero");
-      int i = _pending_roots->append(obj);
+      int i = add_to_pending_roots(obj);
       obj_info->set_root_index(i);
       return i;
     }
   } else {
-    return _pending_roots->append(obj);
+    return add_to_pending_roots(obj);
   }
+}
+
+int HeapShared::add_to_pending_roots(oop obj) {
+  if (_pending_roots->length() == (int)max_jint) {
+    // This should never happen, but just in case we have HUGE caches ...
+    AOTMetaspace::unrecoverable_writing_error("too many pending roots");
+    ShouldNotReachHere();
+  }
+  return _pending_roots->append(obj);
 }
 
 int HeapShared::get_root_index(oop obj) {
@@ -741,7 +750,7 @@ void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
   _dumptime_resolved_methods = new (mtClassShared) GrowableArray<int>(100, mtClassShared);
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
-  _pending_roots->append(nullptr); // root index 0 represents a null oop
+  add_to_pending_roots(nullptr); // root index 0 represents a null oop
   DEBUG_ONLY(_dumptime_classes_with_cached_oops = new (mtClassShared)ArchivableKlassTable());
 }
 

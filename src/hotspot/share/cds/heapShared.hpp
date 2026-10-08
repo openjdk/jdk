@@ -334,7 +334,7 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
   static bool archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgraph_info);
-
+  static int add_to_pending_roots(oop obj);
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
   static void resolve_classes_for_subgraph_of(JavaThread* current, Klass* k);
   static void clear_archived_roots_of(Klass* k);
@@ -438,7 +438,7 @@ private:
   // Returns -1 if obj is not in the heap root set.
   static int get_root_index(oop obj) NOT_CDS_JAVA_HEAP_RETURN_(-1);
 
-  static GrowableArrayCHeap<oop, mtClassShared>* pending_roots() { return _pending_roots; }
+  static GrowableArrayCHeap<oop, mtClassShared> const* pending_roots() { return _pending_roots; }
 
   // Dump-time and runtime
   static objArrayOop root_segment(int segment_idx);

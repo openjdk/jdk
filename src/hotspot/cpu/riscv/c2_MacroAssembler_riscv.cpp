@@ -2382,8 +2382,11 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
   // construct a NaN in 32 bits from the NaN in 16 bits,
   // we need the payloads of non-canonical NaNs to be preserved.
   __ mv(tmp, 0x7f800000);
-  // sign-bit was already set via sign-extension if necessary.
-  __ slli(t0, src, 13);
+  // The upper 16 bits of a short argument are unspecified. Sign-extend the
+  // low 16 bits before shifting so that the float sign bit comes from the
+  // float16 sign bit.
+  __ sext(t0, src, 16);
+  __ slli(t0, t0, 13);
   __ orr(tmp, t0, tmp);
   __ fmv_w_x(dst, tmp);
 
@@ -2393,7 +2396,7 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
 
 // j.l.Float.float16ToFloat
 void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
-  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path);
+  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 28, float16_to_float_slow_path);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
   // On riscv, Inf does not need a special process as fcvt can handle it correctly.
@@ -3347,6 +3350,9 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
     slidedown_v(vtmp, src, idx);
     vmv_x_s(dst, vtmp);
   }
+  if (is_unsigned_subword_type(bt)) {
+    narrow_subword_type(dst, bt);
+  }
 }
 
 // Extract a scalar element from a vector at position 'idx'.
@@ -3358,6 +3364,9 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
   vsetvli_helper(bt, 1);
   vslidedown_vx(vtmp, src, idx);
   vmv_x_s(dst, vtmp);
+  if (is_unsigned_subword_type(bt)) {
+    narrow_subword_type(dst, bt);
+  }
 }
 
 // Extract a scalar element from an vector at position 'idx'.

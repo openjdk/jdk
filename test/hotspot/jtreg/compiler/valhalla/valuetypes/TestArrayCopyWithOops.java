@@ -29,35 +29,37 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main/timeout=240 compiler.valhalla.valuetypes.TestArrayCopyWithOops
+ * @run main/timeout=240 ${test.main.class}
  */
 
 /*
  * @test id=do
+ * @key stress
  * @bug 8252506
  * @summary Verify that arraycopy intrinsics properly handle flat value class arrays with oop fields.
  * @library /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main/othervm/timeout=240 -XX:CompileCommand=dontinline,compiler.valhalla.valuetypes.TestArrayCopyWithOops::test*
- *                               -XX:CompileCommand=dontinline,compiler.valhalla.valuetypes.TestArrayCopyWithOops::create*
+ * @run main/othervm/timeout=240 -XX:CompileCommand=dontinline,${test.main.class}::test*
+ *                               -XX:CompileCommand=dontinline,${test.main.class}::create*
  *                               -Xbatch
- *                               compiler.valhalla.valuetypes.TestArrayCopyWithOops
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=do-no-flattening
+ * @key stress
  * @bug 8252506
  * @summary Verify that arraycopy intrinsics properly handle flat value class arrays with oop fields.
  * @library /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main/othervm/timeout=240 -XX:CompileCommand=dontinline,compiler.valhalla.valuetypes.TestArrayCopyWithOops::test*
- *                               -XX:CompileCommand=dontinline,compiler.valhalla.valuetypes.TestArrayCopyWithOops::create*
+ * @run main/othervm/timeout=240 -XX:CompileCommand=dontinline,${test.main.class}::test*
+ *                               -XX:CompileCommand=dontinline,${test.main.class}::create*
  *                               -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:-UseArrayFlattening
- *                               compiler.valhalla.valuetypes.TestArrayCopyWithOops
+ *                               ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;
@@ -71,6 +73,7 @@ import jdk.internal.vm.annotation.LooselyConsistentValue;
 
 public class TestArrayCopyWithOops {
     static final int LEN = 200;
+    static final int WARMUP_ITERATIONS = 20_000;
 
     static class MyObject {
         long val = Integer.MAX_VALUE;
@@ -188,7 +191,7 @@ public class TestArrayCopyWithOops {
         ManyOops[] dst13 = createValueClassArray();
 
         // Warmup runs to trigger compilation
-        for (int i = 0; i < 50_000; ++i) {
+        for (int i = 0; i < WARMUP_ITERATIONS; ++i) {
             test1(dst1);
             test2(dst2);
             test3(dst3);
@@ -234,8 +237,8 @@ public class TestArrayCopyWithOops {
             Asserts.assertEquals(dst3[i].hash(), expected);
             Asserts.assertEquals(dst4[i].hash(), expected);
             Asserts.assertEquals(((ManyOops)dst5[i]).hash(), expected);
+            Asserts.assertEquals(((ManyOops)dst6[i]).hash(), expected);
             Asserts.assertEquals(((ManyOops)dst7[i]).hash(), expected);
-            Asserts.assertEquals(((ManyOops)dst8[i]).hash(), expected);
             Asserts.assertEquals(((ManyOops)dst8[i]).hash(), expected);
             Asserts.assertEquals(((ManyOops)dst9[i]).hash(), expected);
             Asserts.assertEquals(((ManyOops)dst10[i]).hash(), expected);
