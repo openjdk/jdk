@@ -4681,15 +4681,6 @@ private:
       return false;
     }
 
-    LoopNode* head = _loop->_head->as_Loop();
-    if (head->is_CountedLoop()) {
-      // If the counted loop has Assertion Predicates, then transforming into a loop nest will cause the compiler to loose
-      // track of the predicates.
-      if (!KillPathsReachableByDeadTypeNode) {
-        return false;
-      }
-    }
-
     return true;
   }
 
