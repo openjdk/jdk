@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=240 -Xbootclasspath/a:.
+ * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+TracePhaseCCP -XX:+PrintCompilation
  *                   -XX:+LogVMOutput -XX:LogFile=ccp_test.log

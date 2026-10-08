@@ -2577,6 +2577,9 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     current->set_memory_at(index, current->base_memory());
   }
   igvn.optimize();
+  if (failing()) {
+    return;
+  }
 
 #ifdef ASSERT
   wq.clear();
@@ -3010,6 +3013,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
     if (failing())  return;
 
     inline_incrementally_cleanup(igvn);
+    if (failing())  return;
   }
   DEBUG_ONLY( _modified_nodes = modified_nodes; )
   set_strength_reduction(false);
@@ -3157,6 +3161,9 @@ void Compile::Optimize() {
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
   // safepoints
   remove_root_to_sfpts_edges(igvn);
+  if (failing()) {
+    return;
+  }
 
   // Process value type nodes now that all inlining is over
   process_value_types(igvn);
@@ -3216,9 +3223,9 @@ void Compile::Optimize() {
 
       // Optimize out fields loads from scalar replaceable allocations.
       igvn.optimize(true);
-      print_method(PHASE_ITER_GVN_AFTER_EA, 2);
-
       if (failing()) return;
+
+      print_method(PHASE_ITER_GVN_AFTER_EA, 2);
 
       if (congraph() != nullptr && macro_count() > 0) {
         TracePhase tp(_t_macroEliminate);
@@ -3304,9 +3311,9 @@ void Compile::Optimize() {
     igvn.reset_from_igvn(&ccp);
     igvn.optimize(true);
   }
-  print_method(PHASE_ITER_GVN2, 2);
-
   if (failing())  return;
+
+  print_method(PHASE_ITER_GVN2, 2);
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.

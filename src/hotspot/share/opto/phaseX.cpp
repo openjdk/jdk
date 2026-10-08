@@ -1225,7 +1225,7 @@ void PhaseIterGVN::optimize(bool deep) {
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
 
-static bool klass_bottom_type_changed(const Node* n, const Type* new_type) {
+static bool klass_bottom_type_invalidated(const Node* n, const Type* new_type) {
   // Concurrent class loading can invalidate a klass bottom type.
   const Type* bt = n->bottom_type();
   return (bt->isa_klassptr() != nullptr ||
@@ -1253,7 +1253,8 @@ void PhaseIterGVN::verify_optimize(bool deep_revisit_converged) {
       // in the verification methods below if that is not possible for some reason (like Load nodes).
       if (is_verify_Value()) {
         const Type* tnew = n->Value(this);
-        if (klass_bottom_type_changed(n, tnew)) {
+        if (klass_bottom_type_invalidated(n, tnew)) {
+          C->record_failure("concurrent class loading");
           return;
         }
         verify_Value_for(n, tnew, deep_revisit_converged /* strict */);
@@ -3102,7 +3103,7 @@ void PhaseCCP::analyze() {
 
 bool PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
   const Type* new_type = n->Value(this);
-  if (klass_bottom_type_changed(n, new_type)) {
+  if (klass_bottom_type_invalidated(n, new_type)) {
     C->record_failure("concurrent class loading");
     return false;
   }
@@ -3152,7 +3153,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
     // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
     // them at the end of the round.
     const Type* tnew = n->Value(this);
-    if (klass_bottom_type_changed(n, tnew)) {
+    if (klass_bottom_type_invalidated(n, tnew)) {
       C->record_failure("concurrent class loading");
       return;
     }
