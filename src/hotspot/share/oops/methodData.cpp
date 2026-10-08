@@ -41,12 +41,18 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
+
+
+volatile StripedMutex* MethodData::_striped_mutex = nullptr;
+
+
 
 // ==================================================================
 // DataLayout
@@ -1238,7 +1244,6 @@ MethodData::MethodData(const methodHandle& method)
     // Holds Compile_lock
     _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
-    _extra_data_lock = nullptr;
     initialize();
 }
 
@@ -1795,18 +1800,9 @@ public:
 };
 
 Mutex* MethodData::extra_data_lock() {
-  Mutex* lock = AtomicAccess::load_acquire(&_extra_data_lock);
-  if (lock == nullptr) {
-    // This lock could be acquired while we are holding DumpTimeTable_lock/nosafepoint
-    lock = new Mutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
-    Mutex* old = AtomicAccess::cmpxchg(&_extra_data_lock, (Mutex*)nullptr, lock);
-    if (old != nullptr) {
-      // Another thread created the lock before us. Use that lock instead.
-      delete lock;
-      return old;
-    }
-  }
-  return lock;
+  StripedMutex* sm = MethodData::get_striped_mutex();
+  Mutex* m = sm->get(this);
+  return m;
 }
 
 // Remove SpeculativeTrapData entries that reference an unloaded or
@@ -1923,21 +1919,13 @@ void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
 }
 
 void MethodData::release_C_heap_structures() {
-  // The class unloading protocol guarantees that this object is
-  // unreachable at this point, so no synchronization is necessary.
-  if (_extra_data_lock != nullptr) {
-    delete _extra_data_lock;
-    _extra_data_lock = nullptr;
-  }
 }
 
 #if INCLUDE_CDS
 void MethodData::remove_unshareable_info() {
-  _extra_data_lock = nullptr;
 }
 
 void MethodData::restore_unshareable_info(TRAPS) {
-  //_extra_data_lock = new Mutex(Mutex::nosafepoint, "MDOExtraData_lock");
 }
 #endif // INCLUDE_CDS
 

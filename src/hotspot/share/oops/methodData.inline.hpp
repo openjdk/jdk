@@ -54,6 +54,20 @@ inline void RetData::release_set_bci(uint row, int bci) {
   release_set_int_at(bci0_offset + row * ret_row_cell_count, bci);
 }
 
+inline StripedMutex* MethodData::get_striped_mutex() {
+  StripedMutex* sm = (StripedMutex*) AtomicAccess::load_acquire(&_striped_mutex);
+  if (sm == nullptr) {
+    sm = new StripedMutex;
+    StripedMutex* old = (StripedMutex*) AtomicAccess::cmpxchg(&_striped_mutex, (StripedMutex*)nullptr, sm);
+    if (old != nullptr) {
+      // Another thread created the striped mutex before us. Use that one instead.
+      delete sm;
+      return old;
+    }
+  }
+  return sm;
+}
+
 inline uint MethodData::arg_modified(int a) {
   // Lock and avoid breaking lock with Safepoint
   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);

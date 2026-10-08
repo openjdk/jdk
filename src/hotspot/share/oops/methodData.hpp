@@ -2182,6 +2182,41 @@ public:
 
 class ciMethodData;
 
+class StripedMutex : public CHeapObj<mtSynchronizer> {
+  uint32_t const _num_stripes;
+  uint32_t const _stripe_mask; // _num_stripes - 1
+  PaddedMutex*   _stripes;
+
+  inline static uintptr_t hash(const uintptr_t key) {
+    return key ^ (key >> 20) ^ (key >> 9);
+  }
+
+public:
+  StripedMutex()
+    : _num_stripes(round_down_power_of_2((uint32_t) MAX2(os::processor_count(), 1)))
+    , _stripe_mask(_num_stripes - 1)
+    ,  _stripes(reinterpret_cast<PaddedMutex*> (AllocateHeap((_num_stripes * sizeof(PaddedMutex)), mtSynchronizer))) {
+    for (size_t i = 0; i < _num_stripes; i++) {
+      ::new(&_stripes[i]) PaddedMutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
+    }
+  }
+
+  ~StripedMutex() {
+    for (size_t i = 0; i < _num_stripes; i++) {
+      PaddedMutex* pm{&_stripes[i]};
+      pm->~PaddedMutex();
+    }
+  }
+
+  template <typename T>
+  Mutex* get(T* key) {
+    const uintptr_t h = StripedMutex::hash((uintptr_t) key);
+    const uint32_t index = static_cast<uint32_t>(h) & _stripe_mask;
+    return &_stripes[index];
+  }
+};
+
+
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class ProfileData;
@@ -2200,7 +2235,8 @@ class MethodData : public Metadata {
   // Cached hint for bci_to_dp and bci_to_data
   int _hint_di;
 
-  Mutex* volatile _extra_data_lock;
+  inline static StripedMutex* get_striped_mutex();
+  static volatile StripedMutex* _striped_mutex;
 
   MethodData(const methodHandle& method);
 public:
