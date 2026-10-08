@@ -91,7 +91,7 @@ public:
 // A very simple fixed-width FIFO buffer, used for the phase timeline
 template <typename T, int size>
 class SimpleFifo {
-  STATIC_ASSERT((size * 2) < INT_MAX);
+  static_assert((size * 2) < INT_MAX);
   T _v[size];
   int _pos;
   int _oldest;

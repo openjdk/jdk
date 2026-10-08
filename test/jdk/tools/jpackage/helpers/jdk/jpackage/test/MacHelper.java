@@ -1340,8 +1340,7 @@ public final class MacHelper {
         )).map(Path::of).collect(toSet());
     }
 
-    static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
-            "Contents/Home/lib/server/libjvm.dylib"));
+    static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of("lib/server/libjvm.dylib"));
 
     private static final Method getServicePListFileName = initGetServicePListFileName();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.IOException;
 import java.util.Random;
+import jdk.test.lib.Utils;
 import javax.swing.JPanel;
 import java.awt.Font;
 
@@ -78,7 +79,7 @@ import java.util.Arrays;
  * - MyDrawingPanel: drawing all the parts to the screen.
  */
 public class NormalMapping {
-    public static Random RANDOM = new Random();
+    public static Random RANDOM = Utils.getRandomInstance();
 
     // Increasing this number will make the demo slower.
     public static final int NUMBER_OF_LIGHTS = 5;

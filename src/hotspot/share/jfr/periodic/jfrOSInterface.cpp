@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,37 +266,6 @@ const char* JfrOSInterface::virtualization_name() {
   }
 
   return "No virtualization detected";
-}
-
-int JfrOSInterface::generate_initial_environment_variable_events() {
-  if (os::get_environ() == nullptr) {
-    return OS_ERR;
-  }
-
-  if (EventInitialEnvironmentVariable::is_enabled()) {
-    // One time stamp for all events, so they can be grouped together
-    JfrTicks time_stamp = JfrTicks::now();
-    for (char** p = os::get_environ(); *p != nullptr; p++) {
-      char* variable = *p;
-      char* equal_sign = strchr(variable, '=');
-      if (equal_sign != nullptr) {
-        // Extract key/value
-        ResourceMark rm;
-        ptrdiff_t key_length = equal_sign - variable;
-        char* key = NEW_RESOURCE_ARRAY(char, key_length + 1);
-        char* value = equal_sign + 1;
-        strncpy(key, variable, key_length);
-        key[key_length] = '\0';
-        EventInitialEnvironmentVariable event(UNTIMED);
-        event.set_starttime(time_stamp);
-        event.set_endtime(time_stamp);
-        event.set_key(key);
-        event.set_value(value);
-        event.commit();
-      }
-    }
-  }
-  return OS_OK;
 }
 
 int JfrOSInterface::system_processes(SystemProcess** sys_processes, int* no_of_sys_processes) {

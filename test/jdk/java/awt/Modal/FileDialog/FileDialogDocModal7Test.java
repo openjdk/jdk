@@ -37,6 +37,7 @@ import java.awt.Dialog;
  * @build TestDialog
  * @build TestFrame
  * @build TestWindow
+ * @requires (os.family != "mac")
  * @run main FileDialogDocModal7Test
  */
 

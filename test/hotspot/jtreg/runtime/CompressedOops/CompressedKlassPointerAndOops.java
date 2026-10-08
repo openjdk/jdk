@@ -29,6 +29,8 @@
  *          java.management
  * @requires vm.bits == 64
  * @requires vm.flagless
+ * @comment With larger ObjectAlignmentInBytes, the VM heap and shadow memory of ASan overlap
+ * @requires !vm.asan
  * @run driver CompressedKlassPointerAndOops
  */
 

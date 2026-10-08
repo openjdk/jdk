@@ -30,8 +30,7 @@ import java.io.Serial;
 import sun.awt.SunToolkit;
 
 /**
- * A wrapping tag for a nested AWTEvent which indicates that the event was
- * sent from another AppContext. The destination AppContext should handle the
+ * A wrapping tag for a nested AWTEvent. The EventQueue should handle the
  * event even if it is currently blocked waiting for a SequencedEvent or
  * another SentEvent to be handled.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ enum CompilerType : u1 {
   compiler_none,
   compiler_c1,
   compiler_c2,
-  compiler_jvmci,
   compiler_number_of_types
 };
 
@@ -59,7 +58,7 @@ enum CompLevel : s1 {
   CompLevel_simple            = 1,         // C1
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
-  CompLevel_full_optimization = 4,         // C2 or JVMCI
+  CompLevel_full_optimization = 4,         // C2
   CompLevel_count             = 5
 };
 
@@ -67,24 +66,17 @@ class CompilationModeFlag : AllStatic {
   enum class Mode {
     NORMAL,
     QUICK_ONLY,
-    HIGH_ONLY,
-    HIGH_ONLY_QUICK_INTERNAL
+    HIGH_ONLY
   };
   static Mode _mode;
   static void print_error();
 public:
   static bool initialize();
-  static bool normal()                   { return _mode == Mode::NORMAL;                   }
-  static bool quick_only()               { return _mode == Mode::QUICK_ONLY;               }
-  static bool high_only()                { return _mode == Mode::HIGH_ONLY;                }
-  static bool high_only_quick_internal() { return _mode == Mode::HIGH_ONLY_QUICK_INTERNAL; }
+  static bool normal()                   { return _mode == Mode::NORMAL;     }
+  static bool quick_only()               { return _mode == Mode::QUICK_ONLY; }
+  static bool high_only()                { return _mode == Mode::HIGH_ONLY;  }
 
-  static bool disable_intermediate()     { return high_only() || high_only_quick_internal(); }
-  static bool quick_internal()           { return !high_only(); }
-
-  static void set_high_only_quick_internal() { _mode = Mode::HIGH_ONLY_QUICK_INTERNAL; }
-  static void set_quick_only()               { _mode = Mode::QUICK_ONLY;               }
-  static void set_high_only()                { _mode = Mode::HIGH_ONLY;                }
+  static bool disable_intermediate()     { return high_only(); }
 };
 
 inline bool is_c1_compile(int comp_level) {
@@ -119,41 +111,27 @@ public:
   // Which compilers are baked in?
   constexpr static bool has_c1()     { return COMPILER1_PRESENT(true) NOT_COMPILER1(false); }
   constexpr static bool has_c2()     { return COMPILER2_PRESENT(true) NOT_COMPILER2(false); }
-  constexpr static bool has_jvmci()  { return JVMCI_ONLY(true) NOT_JVMCI(false);            }
-  constexpr static bool has_tiered() { return has_c1() && (has_c2() || has_jvmci());        }
+  constexpr static bool has_tiered() { return has_c1() && has_c2();                         }
 
-  inline static bool is_jvmci_compiler();
-  inline static bool is_jvmci();
   inline static bool is_interpreter_only();
 
   // is_*_only() functions describe situations in which the JVM is in one way or another
-  // forced to use a particular compiler or their combination. The constraint functions
-  // deliberately ignore the fact that there may also be methods installed
-  // through JVMCI (where the JVMCI compiler was invoked not through the broker). Be sure
-  // to check for those (using is_jvmci()) in situations where it matters.
+  // forced to use a particular compiler or their combination.
 
   inline static bool is_tiered();
 
   inline static bool is_c1_enabled();
   inline static bool is_c1_only();
   inline static bool is_c1_simple_only();
-  inline static bool is_c1_or_interpreter_only_no_jvmci();
-  inline static bool is_c1_only_no_jvmci();
+  inline static bool is_c1_or_interpreter_only();
   inline static bool is_c1_profiling();
 
-  inline static bool is_jvmci_compiler_enabled();
-  inline static bool is_jvmci_compiler_only();
 
   inline static bool is_c2_only();
   inline static bool is_c2_enabled();
-  inline static bool is_c2_or_jvmci_compiler_only();
-  inline static bool is_c2_or_jvmci_compiler_enabled();
-
-  inline static CompilerType compiler_type();
 
 private:
   static void set_compilation_policy_flags();
-  static void set_jvmci_specific_flags();
   static void set_legacy_emulation_flags();
 };
 

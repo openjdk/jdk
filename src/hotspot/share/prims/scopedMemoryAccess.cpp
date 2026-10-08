@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,13 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/stackwalk.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/spinYield.hpp"
 
 template<typename Func>
 static void for_scoped_methods(JavaThread* jt, bool agents_loaded, const Func& func) {
@@ -115,32 +117,45 @@ static bool is_accessing_session(JavaThread* jt, oop session, bool& in_scoped) {
   return is_accessing_session;
 }
 
-static frame get_last_frame(JavaThread* jt) {
+static frame get_last_frame(JavaThread* jt, RegisterMap* register_map) {
   frame last_frame = jt->last_frame();
-  RegisterMap register_map(jt,
-                            RegisterMap::UpdateMap::include,
-                            RegisterMap::ProcessFrames::include,
-                            RegisterMap::WalkContinuation::skip);
-
   if (last_frame.is_safepoint_blob_frame()) {
-    last_frame = last_frame.sender(&register_map);
+    last_frame = last_frame.sender(register_map);
   }
   return last_frame;
 }
 
+// There are two properties that we rely on for these handshakes to work correctly:
+// 1. Async handshakes are always 'self processed' by the target thread, which means they
+//    only run when the target thread is itself stopped at a safepoint poll, and not when
+//    the thread is actively executing code, such as a memory access.
+// 2. After the handshake sets the thread's pending exception, it will be thrown immediately
+//    when continuing execution. The important part is that no more code is executed, and
+//    the thread unwinds out of the scoped access it was in.
 class ScopedAsyncExceptionHandshakeClosure : public AsyncExceptionHandshakeClosure {
   OopHandle _session;
+  Atomic<int>* _async_exceptions;
+  bool _processed;
+
+  // non-copyable to make sure counter remains consistent
+  NONCOPYABLE(ScopedAsyncExceptionHandshakeClosure);
 
 public:
-  ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error)
-    : AsyncExceptionHandshakeClosure(error),
-      _session(session) {}
+  ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error, Atomic<int>* async_exceptions)
+    : AsyncExceptionHandshakeClosure(error, "ScopedAsyncExceptionHandshakeClosure"),
+      _session(session), _async_exceptions(async_exceptions), _processed(false) {
+    _async_exceptions->add_then_fetch(1);
+  }
 
   ~ScopedAsyncExceptionHandshakeClosure() {
+    guarantee(_processed, "must process to avoid hang");
     _session.release(Universe::vm_global());
   }
 
   virtual void do_thread(Thread* thread) {
+    _processed = true;
+    // We are stopped, safe to free memory.
+    _async_exceptions->sub_then_fetch(1);
     JavaThread* jt = JavaThread::cast(thread);
     bool ignored;
     if (is_accessing_session(jt, _session.resolve(), ignored)) {
@@ -153,12 +168,14 @@ public:
 class CloseScopedMemoryHandshakeClosure : public HandshakeClosure {
   jobject _session;
   jobject _error;
+  Atomic<int>* _async_exceptions;
 
 public:
-  CloseScopedMemoryHandshakeClosure(jobject session, jobject error)
-    : HandshakeClosure("CloseScopedMemory")
+  CloseScopedMemoryHandshakeClosure(jobject session, jobject error, Atomic<int>* async_exceptions)
+    : HandshakeClosure("CloseScopedMemoryHandshakeClosure")
     , _session(session)
-    , _error(error) {}
+    , _error(error)
+    , _async_exceptions(async_exceptions) {}
 
   void do_thread(Thread* thread) {
     JavaThread* jt = JavaThread::cast(thread);
@@ -180,64 +197,123 @@ public:
       // An asynchronous handshake is sent to the target thread, telling it
       // to throw an exception, which will unwind the target thread out from
       // the scoped access.
+      //
+      // Since CloseScopedMemoryHandshakeClosure::do_thread may run concurrently
+      // with the target thread, because the target thread might be in native
+      // code, we may not install the async exception directly. Instead, we
+      // install another handshake that will deliver the exception the next
+      // time the target thread stops at a safepoint poll and is able to handle
+      // async exceptions.
       OopHandle session(Universe::vm_global(), JNIHandles::resolve(_session));
       OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
-      jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error));
+      jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error, _async_exceptions));
     } else if (!in_scoped) {
-      frame last_frame = get_last_frame(jt);
-      if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
-        // We are not at a safepoint that is 'in' an @Scoped method, but due to the compiler
-        // moving code around/hoisting checks, we may be in a situation like this:
-        //
-        // liveness check (from @Scoped method)
-        // for (...) {
-        //    for (...) { // strip-mining inner loop
-        //        memory access (from @Scoped method)
-        //    }
-        //    safepoint <-- STOPPED HERE
-        // }
-        //
-        // The safepoint at which we're stopped may be in between the liveness check
-        // and actual memory access, but is itself 'outside' of @Scoped code
-        //
-        // However, we're not sure whether we are in this exact situation, and
-        // we're also not sure whether a memory access will actually occur after
-        // this safepoint. So, we can not just install an async exception here
-        //
-        // Instead, we mark the frame for deoptimization (which happens just before
-        // execution in this frame continues) to get back to code like this:
-        //
-        // for (...) {
-        //     call to ScopedMemoryAccess
-        //     safepoint <-- STOPPED HERE
-        // }
-        //
-        // This means that we will re-do the liveness check before attempting
-        // another memory access. If the scope has been closed at that point,
-        // the target thread will see it and throw an exception.
-
+      RegisterMap register_map(jt,
+                               RegisterMap::UpdateMap::include,
+                               RegisterMap::ProcessFrames::include,
+                               RegisterMap::WalkContinuation::skip);
+      frame last_frame = get_last_frame(jt, &register_map);
+      if (last_frame.is_compiled_frame()) {
         nmethod* code = last_frame.cb()->as_nmethod();
-        if (code->has_scoped_access()) {
-          // We would like to deoptimize here only if last_frame::oops_do
-          // reports the session oop being live at this safepoint, but this
-          // currently isn't possible due to JDK-8290892
-          Deoptimization::deoptimize(jt, last_frame);
+        if (last_frame.can_be_deoptimized()) {
+          // We are not at a safepoint that is 'in' an @Scoped method, but due to the compiler
+          // moving code around/hoisting checks, we may be in a situation like this:
+          //
+          // liveness check (from @Scoped method)
+          // for (...) {
+          //    for (...) { // strip-mining inner loop
+          //        memory access (from @Scoped method)
+          //    }
+          //    safepoint <-- STOPPED HERE
+          // }
+          //
+          // The safepoint at which we're stopped may be in between the liveness check
+          // and actual memory access, but is itself 'outside' of @Scoped code
+          //
+          // However, we're not sure whether we are in this exact situation, and
+          // we're also not sure whether a memory access will actually occur after
+          // this safepoint. So, we can not just install an async exception here
+          //
+          // Instead, we mark the frame for deoptimization (which happens just before
+          // execution in this frame continues) to get back to code like this:
+          //
+          // for (...) {
+          //     call to ScopedMemoryAccess
+          //     safepoint <-- STOPPED HERE
+          // }
+          //
+          // This means that we will re-do the liveness check before attempting
+          // another memory access. If the scope has been closed at that point,
+          // the target thread will see it and throw an exception.
+#ifndef PRODUCT
+          {
+            LogMessage(foreign, deoptimization) msg;
+            NonInterleavingLogStream ls{LogLevelType::Trace, msg};
+            if (ls.is_enabled()) {
+              ls.print_cr("Inspected compiled frame. has_scoped_access=%s is_session_live=%s:",
+                BOOL_TO_STR(code->has_scoped_access()),
+                BOOL_TO_STR(is_session_live(last_frame, register_map)));
+              last_frame.print_on(&ls);
+            }
+          }
+#endif
+          if (code->has_scoped_access() && is_session_live(last_frame, register_map)) {
+            Deoptimization::deoptimize(jt, last_frame);
+          }
+        } else {
+          assert(!code->has_scoped_access(), "Scoped access in non-deoptimizable frame!");
         }
       }
     }
+  }
+
+  bool is_session_live(frame the_frame, const RegisterMap& register_map) {
+    struct OopFinder : public OopClosure {
+      bool _found;
+      oop _the_oop;
+      OopFinder(oop the_oop) : _found(false), _the_oop(the_oop) {}
+      void check(oop o) { if (o == _the_oop) { _found = true; } }
+      void do_oop(oop* p) { check(*p); }
+      void do_oop(narrowOop* p) { check(CompressedOops::decode(*p)); }
+    };
+
+    struct NMethodOopFinder : public NMethodClosure {
+      OopFinder* _oop_finder;
+      NMethodOopFinder(OopFinder* oop_finder) : _oop_finder(oop_finder) {}
+      void do_nmethod(nmethod* n) { n->oops_do(_oop_finder); }
+    };
+
+    OopFinder finder(JNIHandles::resolve(_session));
+    NMethodOopFinder nmof(&finder);
+    the_frame.oops_do(&finder, &nmof, &register_map);
+    return finder._found;
   }
 };
 
 /*
  * This function performs a thread-local handshake against all threads running at the time
- * the given session (deopt) was closed. If the handshake for a given thread is processed while
- * one or more threads is found inside a scoped method (that is, a method inside the ScopedMemoryAccess
- * class annotated with the '@Scoped' annotation), and whose local variables mention the session being
- * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
+ * the given session was closed. If a thread is found to be accessing the given session,
+ * it is made to throw the given exception (error).
  */
 JVM_ENTRY(void, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject session, jobject error))
-  CloseScopedMemoryHandshakeClosure cl(session, error);
+  Atomic<int> async_exceptions;
+  CloseScopedMemoryHandshakeClosure cl(session, error, &async_exceptions);
+  // We rely on the fact that executing a handshake
+  // synchronizes this thread with all other threads,
+  // which means that each thread will see any updates
+  // to the liveness bit of the session we made before
+  // this point, and will see the session as closed,
+  // after the handshake finishes.
   Handshake::execute(&cl);
+
+  // Wait until any async exceptions are delivered before continuing,
+  // because we will free the memory after this. This guarantees the target
+  // thread does not continue to access the memory.
+  ThreadBlockInVM tbivm(thread);
+  SpinYield spin_yield;
+  while (async_exceptions.load_acquire() > 0) {
+    spin_yield.wait();
+  }
 JVM_END
 
 /// JVM_RegisterUnsafeMethods

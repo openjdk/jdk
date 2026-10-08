@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2025 SAP SE. All rights reserved.
+// Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2025, 2026 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,136 @@ static void post_write_barrier(MacroAssembler* masm,
   g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, tmp1, tmp2, new_val_may_be_null, decode_new_val);
 }
 
+
+ static void extract_narrow_oop(MacroAssembler* masm, Register dst, Register src, int off) {
+#ifdef VM_LITTLE_ENDIAN
+   // offset 0 corresponds to the low word in the register.
+   if (off == 0) {
+     __ clrldi(dst, src, 32); // zero high word
+   } else {
+     precond(off == 4);
+     __ srdi(dst, src, 32);   // shift right 32 bits and zero high word
+   }
+#else
+   // offset 0 corresponds to the high word in the register.
+   if (off == 0) {
+     __ srdi(dst, src, 32);   // shift right 32 bits and zero high word
+   } else {
+     precond(off == 4);
+     __ clrldi(dst, src, 32); // zero high word
+   }
+#endif
+ }
+
+%}
+
+// TODO 8350865 (same applies to g1StoreLSpecialTwoOops)
+// - Do not set/overwrite barrier data here, also handle G1C2BarrierPostNotNull
+instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLsrc src, immI_0 off, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, flagsRegCR0 cr0)
+%{
+  predicate(UseG1GC);
+  match(Set mem (StoreLSpecial mem (Binary src off)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  ins_cost(2 * MEMORY_REF_COST);
+  format %{ "std    $mem, $src\t# g1StoreLSpecialOneOopOff0" %}
+  ins_encode %{
+    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
+    pre_write_barrier(masm, this,
+                      $mem$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register) /* preserve */);
+
+    __ std($src$$Register, 0, $mem$$Register);
+
+    extract_narrow_oop(masm, $tmp1$$Register, $src$$Register, 0);
+    __ decode_heap_oop($tmp1$$Register);
+    post_write_barrier(masm, this,
+                       $mem$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLsrc src, immI_4 off, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, iRegPdst tmp4, flagsRegCR0 cr0)
+%{
+  predicate(UseG1GC);
+  match(Set mem (StoreLSpecial mem (Binary src off)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0);
+  ins_cost(2 * MEMORY_REF_COST);
+  format %{ "std    $mem, $src\t# g1StoreLSpecialOneOopOff4" %}
+  ins_encode %{
+    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
+
+    // Adjust address to point to the narrow oop at offset 4.
+    __ addi($tmp4$$Register, $mem$$Register, 4);
+    pre_write_barrier(masm, this,
+                      $tmp4$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register, $tmp4$$Register) /* preserve */);
+
+    __ std($src$$Register, 0, $mem$$Register);
+
+    extract_narrow_oop(masm, $tmp1$$Register, $src$$Register, 4);
+    __ decode_heap_oop($tmp1$$Register);
+    post_write_barrier(masm, this,
+                       $tmp4$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct g1StoreLSpecialTwoOops(indirect mem, iRegLsrc src, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, iRegPdst tmp4, flagsRegCR0 cr0)
+%{
+  predicate(UseG1GC);
+  match(Set mem (StoreLSpecial mem src));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0);
+  ins_cost(2 * MEMORY_REF_COST);
+  format %{ "std    $mem, $src\t# g1StoreLSpecialTwoOops" %}
+  ins_encode %{
+    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
+
+    // Issue 2 pre-barriers for oops at offset 0 and 4
+    pre_write_barrier(masm, this,
+                      $mem$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register) /* preserve */);
+    __ addi($tmp4$$Register, $mem$$Register, 4);
+    pre_write_barrier(masm, this,
+                      $tmp4$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register, $tmp4$$Register) /* preserve */);
+
+    __ std($src$$Register, 0, $mem$$Register);
+
+    extract_narrow_oop(masm, $tmp1$$Register, $src$$Register, 0);
+    __ decode_heap_oop($tmp1$$Register);
+    post_write_barrier(masm, this,
+                       $mem$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+
+    extract_narrow_oop(masm, $tmp1$$Register, $src$$Register, 4);
+    __ decode_heap_oop($tmp1$$Register);
+    post_write_barrier(masm, this,
+                       $tmp4$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 instruct g1StoreP(indirect mem, iRegPsrc src, iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr0)

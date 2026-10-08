@@ -115,10 +115,18 @@ void AOTArtifactFinder::find_artifacts() {
 
   // Add all the InstanceKlasses (and their array classes) that are always included.
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
-    // Skip "AOT tooling classes" in this block. They will be included in the AOT cache only if
-    // - One of their subtypes is included
-    // - One of their instances is found by HeapShared.
-    if (!info.is_excluded() && !info.is_aot_tooling_class()) {
+    bool skip = info.is_excluded();
+    if (!(ik->is_initialized() && ik->has_aot_safe_initializer())) {
+      if (info.is_aot_tooling_class()) {
+        // This class is loading only by AOT tooling (not as part of the app's training run).
+        // Skip this class for now, but it might be added later if
+        // - One of its subtypes is included
+        // - One of its instances is found by HeapShared.
+        skip = true;
+      }
+    }
+
+    if (!skip) {
       bool add = false;
       if (!ik->is_hidden()) {
         // All non-hidden classes are always included into the AOT cache
@@ -259,6 +267,13 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
     if (CDSConfig::is_dumping_final_static_archive() && ik->defined_by_other_loaders()) {
       // The following are not appliable to unregistered classes
       return;
+    }
+    ConstantPoolCache* cpCache = ik->constants()->cache();
+    if (cpCache != nullptr) {
+      // Resolved{Field,Indy,Method}Entries in cpCache are not walked by MetaspaceClosure,
+      // because only some of the resolved entries are archivable. The following call will
+      // discover the anonymous classes that are reachable only from the archivable entries.
+      cpCache->record_classes_in_archivable_entries();
     }
     scan_oops_in_instance_class(ik);
     if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {

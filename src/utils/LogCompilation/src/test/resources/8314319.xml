@@ -7,15 +7,15 @@ OpenJDK 64-Bit Server VM
 </vm_version>
 <compilation_log thread='111900'>
 <start_compile_thread name='C2 CompilerThread0' thread='111900' process='111885' stamp='0.410'/>
-<task_queued compile_id='457' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic_or_optimized_type_check_traps='4' blocking='1' stamp='11.681' comment='tiered' hot_count='6656'/>
-<nmethod compile_id='457' compiler='c2' entry='0x00007fbaa497bba0' size='6296' address='0x00007fbaa497b890' relocation_offset='368' insts_offset='784' stub_offset='3088' scopes_data_offset='3312' scopes_pcs_offset='3800' dependencies_offset='5784' handler_table_offset='5800' nul_chk_table_offset='6208' oops_offset='3184' metadata_offset='3192' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic_or_optimized_type_check_traps='4' stamp='11.907'/>
-<task compile_id='457' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic_or_optimized_type_check_traps='4' blocking='1' stamp='11.681'>
+<task_queued compile_id='457' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic='4' blocking='1' stamp='11.681' comment='tiered' hot_count='6656'/>
+<nmethod compile_id='457' compiler='c2' entry='0x00007fbaa497bba0' size='6296' address='0x00007fbaa497b890' relocation_offset='368' insts_offset='784' stub_offset='3088' scopes_data_offset='3312' scopes_pcs_offset='3800' dependencies_offset='5784' handler_table_offset='5800' nul_chk_table_offset='6208' oops_offset='3184' metadata_offset='3192' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic='4' stamp='11.907'/>
+<task compile_id='457' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic='4' blocking='1' stamp='11.681'>
 <type id='1205' name='boolean'/>
 <klass id='1362' name='java.util.Collection' flags='1537'/>
 <klass id='1319' name='java.util.AbstractCollection' flags='1025'/>
 <method id='1387' holder='1319' name='addAll' return='1205' arguments='1362' flags='1' bytes='42' iicount='6656'/>
 <parse method='1387' uses='6656.000000' stamp='11.682'>
-<observe trap='bimorphic_or_optimized_type_check' count='4' total='4'/>
+<observe trap='bimorphic' count='4' total='4'/>
 <bc code='185' bci='3'/>
 <klass id='1389' name='java.util.HashSet' flags='1'/>
 <klass id='1390' name='java.util.Arrays$ArrayList' flags='10'/>
@@ -66,7 +66,7 @@ OpenJDK 64-Bit Server VM
 <inline_success reason='inline (hot)'/>
 <predicted_call bci='19' exact='1' klass='1391'/>
 <predicted_call bci='19' exact='1' klass='1393'/>
-<uncommon_trap bci='19' reason='bimorphic_or_optimized_type_check' action='maybe_recompile' debug_id='0'/>
+<uncommon_trap bci='19' reason='bimorphic' action='maybe_recompile' debug_id='0'/>
 <predicted_call bci='19' exact='0' klass='1393'/>
 <parse method='1411' uses='7880.000000' stamp='11.686'>
 <bc code='182' bci='1'/>
@@ -118,7 +118,7 @@ OpenJDK 64-Bit Server VM
 <inline_success reason='inline (hot)'/>
 <predicted_call bci='29' exact='1' klass='1389'/>
 <predicted_call bci='29' exact='1' klass='1394'/>
-<uncommon_trap bci='29' reason='bimorphic_or_optimized_type_check' action='maybe_recompile' debug_id='0'/>
+<uncommon_trap bci='29' reason='bimorphic' action='maybe_recompile' debug_id='0'/>
 <predicted_call bci='29' exact='0' klass='1389'/>
 <parse method='1424' uses='7880.000000' stamp='11.689'>
 <bc code='182' bci='8'/>
@@ -136,7 +136,7 @@ OpenJDK 64-Bit Server VM
 <call method='1431' count='5121' prof_factor='1.000000' inline='1'/>
 <inline_success reason='inline (hot)'/>
 <parse method='1431' uses='6785.000000' stamp='11.691'>
-<observe trap='bimorphic_or_optimized_type_check' count='4' total='8'/>
+<observe trap='bimorphic' count='4' total='8'/>
 <bc code='199' bci='1'/>
 <branch target_bci='8' taken='6913' not_taken='0' cnt='6913.000000' prob='always'/>
 <uncommon_trap bci='1' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken always'/>
@@ -173,7 +173,7 @@ OpenJDK 64-Bit Server VM
 <call method='1431' count='5121' prof_factor='1.000000' inline='1'/>
 <inline_success reason='inline (hot)'/>
 <parse method='1431' uses='6785.000000' stamp='11.695'>
-<observe trap='bimorphic_or_optimized_type_check' count='4' total='12'/>
+<observe trap='bimorphic' count='4' total='12'/>
 <bc code='199' bci='1'/>
 <branch target_bci='8' taken='6913' not_taken='0' cnt='6913.000000' prob='always'/>
 <uncommon_trap bci='1' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken always'/>
@@ -285,7 +285,7 @@ OpenJDK 64-Bit Server VM
 <direct_call bci='10'/>
 <failure reason='retry without subsuming loads' phase='compile'/>
 <parse method='1387' uses='6656.000000' stamp='11.779'>
-<observe trap='bimorphic_or_optimized_type_check' count='4' total='4'/>
+<observe trap='bimorphic' count='4' total='4'/>
 <bc code='185' bci='3'/>
 <call method='1395' count='4996' prof_factor='1.000000' virtual='1' inline='1' receiver='1389' receiver_count='4959' receiver2='1390' receiver2_count='30'/>
 <call method='1399' count='4996' prof_factor='1.000000' inline='1'/>
@@ -321,7 +321,7 @@ OpenJDK 64-Bit Server VM
 <inline_success reason='inline (hot)'/>
 <predicted_call bci='19' exact='1' klass='1391'/>
 <predicted_call bci='19' exact='1' klass='1393'/>
-<uncommon_trap bci='19' reason='bimorphic_or_optimized_type_check' action='maybe_recompile' debug_id='0'/>
+<uncommon_trap bci='19' reason='bimorphic' action='maybe_recompile' debug_id='0'/>
 <predicted_call bci='19' exact='0' klass='1393'/>
 <parse method='1411' uses='7880.000000' stamp='11.782'>
 <bc code='182' bci='1'/>
@@ -358,7 +358,7 @@ OpenJDK 64-Bit Server VM
 <inline_success reason='inline (hot)'/>
 <predicted_call bci='29' exact='1' klass='1389'/>
 <predicted_call bci='29' exact='1' klass='1394'/>
-<uncommon_trap bci='29' reason='bimorphic_or_optimized_type_check' action='maybe_recompile' debug_id='0'/>
+<uncommon_trap bci='29' reason='bimorphic' action='maybe_recompile' debug_id='0'/>
 <predicted_call bci='29' exact='0' klass='1389'/>
 <parse method='1424' uses='7880.000000' stamp='11.785'>
 <bc code='182' bci='8'/>
@@ -372,7 +372,7 @@ OpenJDK 64-Bit Server VM
 <call method='1431' count='5121' prof_factor='1.000000' inline='1'/>
 <inline_success reason='inline (hot)'/>
 <parse method='1431' uses='6785.000000' stamp='11.786'>
-<observe trap='bimorphic_or_optimized_type_check' count='4' total='8'/>
+<observe trap='bimorphic' count='4' total='8'/>
 <bc code='199' bci='1'/>
 <branch target_bci='8' taken='6913' not_taken='0' cnt='6913.000000' prob='always'/>
 <uncommon_trap bci='1' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken always'/>
@@ -405,7 +405,7 @@ OpenJDK 64-Bit Server VM
 <call method='1431' count='5121' prof_factor='1.000000' inline='1'/>
 <inline_success reason='inline (hot)'/>
 <parse method='1431' uses='6785.000000' stamp='11.789'>
-<observe trap='bimorphic_or_optimized_type_check' count='4' total='12'/>
+<observe trap='bimorphic' count='4' total='12'/>
 <bc code='199' bci='1'/>
 <branch target_bci='8' taken='6913' not_taken='0' cnt='6913.000000' prob='always'/>
 <uncommon_trap bci='1' reason='unstable_if' action='reinterpret' debug_id='0' comment='taken always'/>

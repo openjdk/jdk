@@ -25,45 +25,71 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 
+#include "oops/markWord.hpp"
 #include "oops/oop.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahForwarding {
 public:
-  /* Gets forwardee from the given object.
+  /* Returns the forwardee.
    */
-  static inline oop get_forwardee(oop obj);
+  static inline oop forwardee(oop obj);
 
-  /* Gets forwardee from the given object. Only from mutator thread.
+  /* Returns the forwardee, or null if not forwarded.
    */
-  static inline oop get_forwardee_mutator(oop obj);
+  static inline oop forwardee_or_null(oop obj);
 
-  /* Returns the raw value from forwardee slot.
+  /* Returns the raw forwardee without extra checks.
    */
-  static inline oop get_forwardee_raw(oop obj);
+  static inline oop forwardee_raw(oop obj);
 
-  /* Returns the raw value from forwardee slot without any checks.
-   * Used for quick verification.
-   */
-  static inline oop get_forwardee_raw_unchecked(oop obj);
-
-  /**
-   * Returns true if the object is forwarded, false otherwise.
+  /* Returns true iff the object is forwarded:
+   * either real-forwarded or self-forwarded.
    */
   static inline bool is_forwarded(oop obj);
 
-  /* Tries to atomically update forwardee in $holder object to $update.
-   * Assumes $holder points at itself.
-   * Asserts $holder is in from-space.
-   * Asserts $update is in to-space.
-   *
-   * Returns the new object 'update' upon success, or
-   * the new forwardee that a competing thread installed.
+  /* Returns true iff the object is real-forwarded:
+   * there is a forwardee that is not the object itself.
    */
-  static inline oop try_update_forwardee(oop obj, oop update);
+  static inline bool is_real_forwarded(oop obj);
 
+  /* Returns true iff the object is self-forwarded:
+   * there is a forwardee, it is the object itself.
+   */
+  static inline bool is_self_forwarded(oop obj);
+
+  /* Tries to atomically update forwardee in $obj to $update.
+   *
+   * Returns the actual forwardee, whether installed by this call
+   * or discovered during the conflict.
+   */
+  static inline oop try_forward_to(oop obj, oop update);
+
+  /* Unsets self-forwarding bit on the object.
+   * WARNING: This is only safe to do when no evacuations happen.
+   */
+  static inline void unset_self_forwarded(oop obj);
+
+  /* Gets the size of the object, taking care of any forwardings.
+   */
   static inline size_t size(oop obj);
+
+  /* Gets the klass of the object, taking care of any forwardings.
+   */
   static inline Klass* klass(oop obj);
+
+  /* Gets the age of the object, taking care of any forwardings.
+   */
+  static inline uint age(oop obj);
+
+  /* Bumps the age of the object.
+   * WARNING: This method is expected to operate on a copy that is
+   * not accessible to normal use.
+   */
+  static inline void increase_age(oop obj, uint add);
+
+private:
+  static inline oop forwardee_raw(oop obj, markWord mark);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

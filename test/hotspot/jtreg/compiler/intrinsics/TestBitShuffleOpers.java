@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ package compiler.intrinsics;
 
 import java.util.concurrent.Callable;
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import java.util.Random;
 
@@ -498,7 +499,13 @@ public class TestBitShuffleOpers {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:CompileThresholdScaling=0.3");
+        if (Platform.getOsArch().equals("x86_64")) {
+            TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                       "-XX:CompileThresholdScaling=0.3",
+                                       "-XX:+UseParallelBitInstructions");
+        } else {
+            TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                       "-XX:CompileThresholdScaling=0.3");
+        }
     }
 }

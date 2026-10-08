@@ -215,9 +215,9 @@ public class TestWindow extends Window implements ActionListener,
             dummyButton.equals(b)) && robot != null) {
             robot.mouseMove((int) b.getLocationOnScreen().x + b.getSize().width / 2,
                             (int) b.getLocationOnScreen().y + b.getSize().height / 2);
-            robot.delay(delay);
+            robot.waitForIdle(delay);
             robot.click();
-            robot.delay(delay);
+            robot.waitForIdle(delay);
         }
     }
 

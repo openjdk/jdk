@@ -95,7 +95,6 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_CAST,                      "= 0", // Optimized away
                   IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
                   applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
@@ -170,7 +169,6 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_CAST,                      "= 0", // Optimized away
                   IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
                   applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
@@ -221,7 +219,6 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_CAST,                      "= 0", // Optimized away
                   IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
                   applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "= 0",

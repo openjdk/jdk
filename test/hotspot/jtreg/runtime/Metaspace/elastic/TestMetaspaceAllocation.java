@@ -26,6 +26,7 @@
 /*
  * @test id=debug
  * @bug 8251158
+ * @key randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -37,6 +38,7 @@
 /*
  * @test id=ndebug
  * @bug 8251158
+ * @key randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.management
  * @build jdk.test.whitebox.WhiteBox

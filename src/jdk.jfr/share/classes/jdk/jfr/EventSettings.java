@@ -151,8 +151,8 @@ public abstract class EventSettings {
         }
 
         @Override
-        public Recording newRecording(RecordingState state) {
-            return new Recording(state, Map.of());
+        public Recording newRecording(Boolean register) {
+            return new Recording(register, Map.of());
         }
 
         @Override

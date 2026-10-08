@@ -99,11 +99,13 @@ public class Oop {
   }
 
   // Type test operations
+  public boolean isValue()             { return false; }
   public boolean isInstance()          { return false; }
   public boolean isInstanceRef()       { return false; }
   public boolean isArray()             { return false; }
   public boolean isObjArray()          { return false; }
   public boolean isTypeArray()         { return false; }
+  public boolean isFlatArray()         { return false; }
   public boolean isThread()            { return false; }
 
   // Align the object size.
@@ -128,7 +130,7 @@ public class Oop {
   /** Identity hash in the target VM */
   public long identityHash() {
     Mark mark = getMark();
-    if (mark.isUnlocked() && (!mark.hasNoHash())) {
+    if (mark.isNeutral() && (!mark.hasNoHash())) {
       return (int) mark.hash();
     } else if (mark.isMarked()) {
       return (int) mark.hash();

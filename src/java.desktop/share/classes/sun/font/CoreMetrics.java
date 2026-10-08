@@ -70,36 +70,24 @@ public final class CoreMetrics {
         return Float.floatToIntBits(ascent + ssOffset);
     }
 
-    public boolean equals(Object rhs) {
-        try {
-            return equals((CoreMetrics)rhs);
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
         }
-        catch(ClassCastException e) {
-            return false;
-        }
-    }
-
-    public boolean equals(CoreMetrics rhs) {
-        if (rhs != null) {
-            if (this == rhs) {
-                return true;
-            }
-
-            return ascent == rhs.ascent
-                && descent == rhs.descent
-                && leading == rhs.leading
-                && baselineIndex == rhs.baselineIndex
-                && baselineOffsets[0] == rhs.baselineOffsets[0]
-                && baselineOffsets[1] == rhs.baselineOffsets[1]
-                && baselineOffsets[2] == rhs.baselineOffsets[2]
-                && strikethroughOffset == rhs.strikethroughOffset
-                && strikethroughThickness == rhs.strikethroughThickness
-                && underlineOffset == rhs.underlineOffset
-                && underlineThickness == rhs.underlineThickness
-                && ssOffset == rhs.ssOffset
-                && italicAngle == rhs.italicAngle;
-        }
-        return false;
+        return o instanceof CoreMetrics rhs
+            && ascent == rhs.ascent
+            && descent == rhs.descent
+            && leading == rhs.leading
+            && baselineIndex == rhs.baselineIndex
+            && baselineOffsets[0] == rhs.baselineOffsets[0]
+            && baselineOffsets[1] == rhs.baselineOffsets[1]
+            && baselineOffsets[2] == rhs.baselineOffsets[2]
+            && strikethroughOffset == rhs.strikethroughOffset
+            && strikethroughThickness == rhs.strikethroughThickness
+            && underlineOffset == rhs.underlineOffset
+            && underlineThickness == rhs.underlineThickness
+            && ssOffset == rhs.ssOffset
+            && italicAngle == rhs.italicAngle;
     }
 
     // fullOffsets is an array of 5 baseline offsets,

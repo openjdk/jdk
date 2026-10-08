@@ -31,8 +31,6 @@
 
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gc_state(0),
-  _oom_scope_nesting_level(0),
-  _oom_during_evac(false),
   _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
   _card_table(nullptr),
   _gclab(nullptr),
@@ -40,7 +38,9 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _shenandoah_plab(nullptr),
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),
-  _invisible_root_word_size(0) {
+  _invisible_root_word_size(0),
+  _pin_region_idx(0),
+  _pin_count(0) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

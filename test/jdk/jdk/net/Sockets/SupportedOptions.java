@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,41 @@
 
 /*
  * @test
- * @bug 8062744
+ * @bug 8062744 8392528
+ * @summary Sockets.supportedOptions should report the same options as the socket itself
  * @modules jdk.net
- * @run main SupportedOptions
+ * @run junit ${test.main.class}
  */
 
 import java.net.*;
-import java.io.IOException;
 import jdk.net.*;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SupportedOptions {
 
-    public static void main(String[] args) throws Exception {
-        if (!Sockets.supportedOptions(ServerSocket.class)
-              .contains(StandardSocketOptions.IP_TOS)) {
-            throw new RuntimeException("Test failed");
+    @Test
+    void supportedOptionsMatchSocketInstances() throws Exception {
+        try (var socket = new Socket()) {
+            assertEquals(socket.supportedOptions(), Sockets.supportedOptions(Socket.class));
         }
-        // Now set the option
-        ServerSocket ss = new ServerSocket();
-        if (!ss.supportedOptions().contains(StandardSocketOptions.IP_TOS)) {
-            throw new RuntimeException("Test failed");
+        try (var serverSocket = new ServerSocket()) {
+            assertEquals(serverSocket.supportedOptions(), Sockets.supportedOptions(ServerSocket.class));
         }
-        Sockets.setOption(ss, java.net.StandardSocketOptions.IP_TOS, 128);
+        try (var datagramSocket = new DatagramSocket(null)) {
+            assertEquals(datagramSocket.supportedOptions(), Sockets.supportedOptions(DatagramSocket.class));
+        }
+        try (var multicastSocket = new MulticastSocket(null)) {
+            assertEquals(multicastSocket.supportedOptions(), Sockets.supportedOptions(MulticastSocket.class));
+        }
+    }
+
+    @Test
+    void invalidSocketTypes() {
+        assertThrows(IllegalArgumentException.class, () -> Sockets.supportedOptions(null));
+        assertThrows(IllegalArgumentException.class, () -> Sockets.supportedOptions(String.class));
     }
 }

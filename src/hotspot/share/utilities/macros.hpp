@@ -265,20 +265,6 @@
 #define NOT_JFR_RETURN_(code) { return code; }
 #endif
 
-#ifndef INCLUDE_JVMCI
-#define INCLUDE_JVMCI 1
-#endif
-
-#if INCLUDE_JVMCI
-#define JVMCI_ONLY(code) code
-#define NOT_JVMCI(code)
-#define NOT_JVMCI_RETURN /* next token must be ; */
-#else
-#define JVMCI_ONLY(code)
-#define NOT_JVMCI(code) code
-#define NOT_JVMCI_RETURN {}
-#endif // INCLUDE_JVMCI
-
 // COMPILER1 variant
 #ifdef COMPILER1
 #define COMPILER1_PRESENT(code) code
@@ -296,21 +282,6 @@
 #define COMPILER2_PRESENT(code)
 #define NOT_COMPILER2(code) code
 #endif // COMPILER2
-
-// COMPILER2 or JVMCI
-#if defined(COMPILER2) || INCLUDE_JVMCI
-#define COMPILER2_OR_JVMCI 1
-#define COMPILER2_OR_JVMCI_PRESENT(code) code
-#define NOT_COMPILER2_OR_JVMCI(code)
-#define NOT_COMPILER2_OR_JVMCI_RETURN        /* next token must be ; */
-#define NOT_COMPILER2_OR_JVMCI_RETURN_(code) /* next token must be ; */
-#else
-#define COMPILER2_OR_JVMCI 0
-#define COMPILER2_OR_JVMCI_PRESENT(code)
-#define NOT_COMPILER2_OR_JVMCI(code) code
-#define NOT_COMPILER2_OR_JVMCI_RETURN {}
-#define NOT_COMPILER2_OR_JVMCI_RETURN_(code) { return code; }
-#endif
 
 // COMPILER1 and COMPILER2
 #if defined(COMPILER1) && defined(COMPILER2)

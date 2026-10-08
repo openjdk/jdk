@@ -48,6 +48,7 @@ import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
 import jdk.javadoc.internal.html.Text;
 
 /**
@@ -402,17 +403,19 @@ public class Navigation {
         HtmlTree link = switch (elem) {
             case ModuleElement mdle -> links.createLink(pathToRoot.resolve(
                     docPaths.moduleSummary(mdle)),
-                    Text.of(mdle.getQualifiedName()));
+                    Text.of(mdle.getQualifiedName()),
+                    getTitle(elem));
             case PackageElement pkg -> links.createLink(pathToRoot.resolve(
                     docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_SUMMARY)),
                     pkg.isUnnamed()
                             ? configuration.contents.defaultPackageLabel
-                            : Text.of(pkg.getQualifiedName()));
+                            : Text.of(pkg.getQualifiedName()),
+                    getTitle(elem));
             // Breadcrumb navigation displays nested classes as separate links.
             // Enclosing classes may be undocumented, in which case we just display the class name.
             case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.isHidden(type))
-                    ? links.createLink(pathToRoot.resolve(
-                            docPaths.forClass(type)), type.getSimpleName().toString())
+                    ? links.createLink(pathToRoot.resolve(docPaths.forClass(type)),
+                                    Text.of(type.getSimpleName().toString()), getTitle(elem))
                     : HtmlTree.SPAN(Text.of(type.getSimpleName().toString()));
             default -> throw new IllegalArgumentException(Objects.toString(elem));
         };
@@ -420,6 +423,28 @@ public class Navigation {
             link.setStyle(HtmlStyles.currentSelection);
         }
         contents.add(link);
+    }
+
+    private String getTitle(Element elem) {
+        return switch (elem) {
+            case ModuleElement moduleElement -> contents.moduleLabel + " " + moduleElement.getQualifiedName();
+            case PackageElement packageElement ->  packageElement.isUnnamed()
+                    ? contents.defaultPackageLabel.toString()
+                    : contents.packageLabel + " " + configuration.utils.getPackageName(packageElement);
+            case TypeElement typeElement -> {
+                String key = switch (typeElement.getKind()) {
+                    case INTERFACE       -> "doclet.Interface";
+                    case ENUM            -> "doclet.Enum";
+                    case RECORD          -> "doclet.RecordClass";
+                    case ANNOTATION_TYPE -> "doclet.AnnotationType";
+                    case CLASS           -> "doclet.Class";
+                    default -> throw new IllegalStateException(typeElement.getKind() + " " + typeElement);
+                };
+                yield configuration.getDocResources().getText(key) + " "
+                    + configuration.utils.getSimpleName(typeElement);
+            }
+            default -> throw new IllegalArgumentException(Objects.toString(elem));
+        };
     }
 
     private void addPageElementLink(Content list) {
@@ -509,7 +534,7 @@ public class Navigation {
     private void addThemePanel(Content target) {
         var selectTheme = contents.getContent("doclet.theme.select_theme");
         target.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
-                .add(HtmlTree.DIV(selectTheme))
+                .add(HtmlTree.DIV(HtmlStyles.panelHeading, selectTheme))
                 .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
                                 .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_LIGHT)
                                         .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_LIGHT.name()))
@@ -521,13 +546,21 @@ public class Navigation {
                         .add(HtmlTree.LABEL(HtmlIds.THEME_OS.name(), Text.EMPTY)
                                 .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_OS)
                                         .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_OS.name()))
-                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system"))))));
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system")))))
+                .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlId.of("underline-links").name(),
+                                        HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of("underline-links"))
+                                                .put(HtmlAttr.ONCLICK, ""))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.underline_links")))))
+                .add(HtmlTree.BUTTON(HtmlId.of("theme-panel-close-button"))));
+        target.add(new Script().append("initTheme();\n").asContent());
     }
 
     private void addSearch(Content target) {
         var resources = configuration.getDocResources();
+        var placeholder = resources.getText("doclet.search_placeholder");
         var inputText = HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlIds.SEARCH_INPUT)
-                .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
+                .put(HtmlAttr.TITLE, placeholder)
+                .put(HtmlAttr.PLACEHOLDER, placeholder)
                 .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
                 .put(HtmlAttr.AUTOCOMPLETE, "off")
                 .put(HtmlAttr.SPELLCHECK, "false");

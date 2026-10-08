@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public final class WinExecutableIconVerifier {
 
         Path extractedIcon = outputDir.resolve(extractedIconFilename + ".bmp");
 
-        Executor.of("powershell", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted",
+        Executor.of(WindowsHelper.PowerShellPath(), "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted",
                 "-File", EXTRACT_ICON_PS1.toString(),
                 "-InputExecutable", executable.toAbsolutePath().normalize().toString(),
                 "-OutputIcon", extractedIcon.toAbsolutePath().normalize().toString()

@@ -1,0 +1,129 @@
+== SLEEF - SIMD Library for Evaluating Elementary Functions
+
+image:http://img.shields.io/badge/DOI-10.1109/TPDS.2019.2960333-blue.svg[TPDS, link=https://ieeexplore.ieee.org/document/8936472]
+
+SLEEF is a library that implements vectorized versions of C standard
+math functions. This library also includes DFT subroutines.
+
+* *Web Page:* https://sleef.org/
+* *Sources:* https://github.com/shibatch/sleef
+
+== Supported environment
+
+=== Test matrix
+
+The following table summarizes currently supported OSes and compilers.
+
+[cols="1,1,1,1,1,1,1,1,1"]
+|===
+|        2+|Linux            4+|Windows                              2+|Mac
+|          |gcc      |llvm     |MSVC     |Clang    |MinGW    |Cygwin   |Clang    |GCC
+|x86_64    |&#x2714; |&#x2714; |&#x2714; |&#x2714; |&#x2714; |&#x2753; |&#x2714; |&#x2753;
+|RISC-V 64 |&#x2714; |&#x2753; |N/A      |N/A      |N/A      |N/A      |N/A      |N/A
+|AArch64   |&#x2714; |&#x2714; |&#x274c; |&#x274c; |&#x274c; |&#x274c; |&#x2714; |&#x2753;
+|POWER     |&#x2714; |&#x2753; |N/A      |N/A      |N/A      |N/A      |N/A      |N/A
+|S390X     |&#x2714; |&#x2753; |N/A      |N/A      |N/A      |N/A      |N/A      |N/A
+|AArch32   |&#x2714; |&#x2753; |N/A      |N/A      |N/A      |N/A      |N/A      |N/A
+|===
+
+&#x2714; : Tested on CI, &#x2753; : Not tested, &#x274c; : Not supported
+
+
+== How to build SLEEF
+
+The library itself does not have any additional dependency.
+
+In order to build SLEEF, you need CMake 3.18+, and C and C++ compilers of the same version.
+It is also recommended to have the following tools.
+
+* Ninja
+* Git
+
+https://github.com/shibatch/tlfloat[TLFloat] is automatically downloaded if no suitable version is found on your system.
+
+Some tests require:
+
+* libssl and libcrypto, that can be provided by installing openssl.
+* libm, libgmp and libmpfr
+* libfftw.
+
+
+The build procedure is as follows.
+
+[arabic]
+. Check out the source code from our GitHub repository
+
+....
+git clone https://github.com/shibatch/sleef
+....
+
+[arabic, start=2]
+. Make a separate directory to create an out-of-source build
+
+....
+cd sleef && mkdir build
+....
+
+[arabic, start=3]
+. Run cmake to configure the project
+
+....
+cmake -S . -B build
+....
+
+By default this will generate shared libraries. In order to generate
+static libraries, pass option `-DBUILD_SHARED_LIBS=OFF`.
+
+For more verbose output add option `-DSLEEF_SHOW_CONFIG=ON`.
+
+[arabic, start=4]
+. Run make to build the project
+
+....
+cmake --build build -j --clean-first
+....
+
+[arabic, start=5]
+. Run tests using ctests
+
+....
+ctest --test-dir build -j
+....
+
+For more detailed build instructions please refer to
+https://sleef.org/compile.xhtml#preliminaries[our web page].
+
+== How to cross-compile SLEEF
+
+For more detailed please refer to
+https://sleef.org/compile.xhtml#cross[cross-compile SLEEF]
+
+== Install SLEEF
+
+=== From source
+
+Assuming following instructions were followed.
+
+[arabic, start=6]
+. Install to specified directory `<prefix>`
+
+....
+cmake --install build --prefix=<prefix>
+....
+
+=== Uninstall
+
+In order to uninstall SLEEF library and headers run
+
+....
+sudo xargs rm -v < build/install_manifest.txt
+....
+
+== License
+
+The software is distributed under the Boost Software License, Version
+1.0. See accompanying file link:./LICENSE.txt[LICENSE.txt] or copy at
+http://www.boost.org/LICENSE_1_0.txt. Contributions to this project are
+accepted under the same license.
+
+Copyright © 2010-2025 SLEEF Project, Naoki Shibata and contributors.

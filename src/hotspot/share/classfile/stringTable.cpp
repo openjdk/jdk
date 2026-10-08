@@ -86,7 +86,7 @@ typedef CompactHashtable<
   StringTable::read_string_from_compact_hashtable,
   StringTable::wrapped_string_equals> SharedStringTable;
 
-static SharedStringTable _shared_table;
+static SharedStringTable _shared_table, _shared_table_for_dumping;
 #endif
 
 // --------------------------------------------------------------------------
@@ -422,7 +422,7 @@ const jchar* StringTable::to_unicode(const StringWrapper& wrapped_str, int &len,
     len = static_cast<int>(wrapped_str.length);
     return wrapped_str.unicode_str;
   case StringType::OopStr:
-    return java_lang_String::as_unicode_string(wrapped_str.oop_str(), len, CHECK_NULL);
+    return java_lang_String::as_unicode_string(wrapped_str.oop_str(), len, THREAD);
   case StringType::SymbolStr: {
     const char* utf8_str = get_symbol_utf8(wrapped_str);
     int unicode_length = UTF8::unicode_length(utf8_str, wrapped_str.symbol_str->utf8_length());
@@ -961,7 +961,7 @@ void StringTable::write_shared_table() {
   precond(CDSConfig::is_dumping_heap());
   assert(HeapShared::is_writing_mapping_mode(), "not used for streamed oops");
 
-  _shared_table.reset();
+  _shared_table_for_dumping.reset();
   CompactHashtableWriter writer((int)items_count_acquire(), ArchiveBuilder::string_stats());
 
   auto copy_into_shared_table = [&] (WeakHandle* val) {
@@ -974,17 +974,16 @@ void StringTable::write_shared_table() {
     return true;
   };
   _local_table->do_safepoint_scan(copy_into_shared_table);
-  writer.dump(&_shared_table, "string");
+  writer.dump(&_shared_table_for_dumping, "string");
 }
 
 void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
-  _shared_table.serialize_header(soc);
+  SharedStringTable* table = soc->reading() ? &_shared_table : &_shared_table_for_dumping;
 
-  if (soc->writing()) {
-    // Sanity. Make sure we don't use the shared table at dump time
-    _shared_table.reset();
-  } else if (!AOTMappedHeapLoader::is_in_use()) {
-    _shared_table.reset();
+  table->serialize_header(soc);
+  if (soc->reading() && !AOTMappedHeapLoader::is_in_use()) {
+    // AOTStreamedHeapLoader does not use _shared_table.
+    table->reset();
   }
 }
 

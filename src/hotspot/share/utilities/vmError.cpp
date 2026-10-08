@@ -73,9 +73,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 #ifndef PRODUCT
 #include <signal.h>
@@ -519,24 +516,20 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                 buf, jdk_debug_level, runtime_version);
 
    // This is the long version with some default settings added
-   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s%s%s, %s, %s)",
+   const char* vm_info_str = VM_Version::vm_info_string();
+   st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s, %s, %s)",
                  VM_Version::vm_name(),
                 (*vendor_version != '\0') ? " " : "", vendor_version,
                  jdk_debug_level,
                  VM_Version::vm_release(),
-                 VM_Version::vm_info_string(),
+                 vm_info_str,
                  TieredCompilation ? ", tiered" : "",
-#if INCLUDE_JVMCI
-                 EnableJVMCI ? ", jvmci" : "",
-                 UseJVMCICompiler ? ", jvmci compiler" : "",
-#else
-                 "", "",
-#endif
                  UseCompressedOops ? ", compressed oops" : "",
                  UseCompactObjectHeaders ? ", compact obj headers" : "",
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
+   FREE_C_HEAP_ARRAY(vm_info_str);
 }
 
 // Returns true if at least one thread reported a fatal error and fatal error handling is in process.
@@ -549,15 +542,11 @@ bool VMError::is_error_reported_in_current_thread() {
   return _first_error_tid.load_relaxed() == os::current_thread_id();
 }
 
-// Helper, return current timestamp for timeout handling.
-jlong VMError::get_current_timestamp() {
-  return os::javaTimeNanos();
-}
 // Factor to translate the timestamp to seconds.
-#define TIMESTAMP_TO_SECONDS_FACTOR (1000 * 1000 * 1000)
+#define SECONDS_TO_NANOS_FACTOR (1000 * 1000 * 1000)
 
 void VMError::record_reporting_start_time() {
-  const jlong now = get_current_timestamp();
+  const jlong now = os::javaTimeNanos();
   _reporting_start_time.store_relaxed(now);
 }
 
@@ -566,7 +555,7 @@ jlong VMError::get_reporting_start_time() {
 }
 
 void VMError::record_step_start_time() {
-  const jlong now = get_current_timestamp();
+  const jlong now = os::javaTimeNanos();
   _step_start_time.store_relaxed(now);
 }
 
@@ -1795,15 +1784,13 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         // The current step had a timeout. Lets continue reporting with the next step.
         st->print_raw("[timeout occurred during error reporting in step \"");
         st->print_raw(_current_step_info);
-        st->print_cr("\"] after " INT64_FORMAT " s.",
-                     (int64_t)
-                     ((get_current_timestamp() - get_step_start_time()) / TIMESTAMP_TO_SECONDS_FACTOR));
+        st->print_cr("\"] after " JLONG_FORMAT " s.",
+                     ((os::javaTimeNanos() - get_step_start_time()) / SECONDS_TO_NANOS_FACTOR));
       } else if (_reporting_did_timeout.load_relaxed()) {
         // We hit ErrorLogTimeout. Reporting will stop altogether. Let's wrap things
         // up, the process is about to be stopped by the WatcherThread.
-        st->print_cr("------ Timeout during error reporting after " INT64_FORMAT " s. ------",
-                     (int64_t)
-                     ((get_current_timestamp() - get_reporting_start_time()) / TIMESTAMP_TO_SECONDS_FACTOR));
+        st->print_cr("------ Timeout during error reporting after " JLONG_FORMAT " s. ------",
+                     ((os::javaTimeNanos() - get_reporting_start_time()) / SECONDS_TO_NANOS_FACTOR));
         st->flush();
         // Watcherthread is about to call os::die. Lets just wait.
         os::infinite_sleep();
@@ -1936,13 +1923,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       }
     }
   }
-
-#if INCLUDE_JVMCI
-  if (JVMCI::fatal_log_filename() != nullptr) {
-    out.print_raw("#\n# The JVMCI shared library error report file is saved as:\n# ");
-    out.print_raw_cr(JVMCI::fatal_log_filename());
-  }
-#endif
 
   static bool skip_bug_url = !should_submit_bug_report(_id);
   if (!skip_bug_url) {
@@ -2095,14 +2075,14 @@ bool VMError::check_timeout() {
             || (OnError != nullptr && OnError[0] != '\0')
             || Arguments::abort_hook() != nullptr);
 
-  const jlong now = get_current_timestamp();
+  const jlong now = os::javaTimeNanos();
 
   // Global timeout hit?
   if (!ignore_global_timeout) {
     const jlong reporting_start_time = get_reporting_start_time();
     // Timestamp is stored in nanos.
     if (reporting_start_time > 0) {
-      const jlong end = reporting_start_time + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
+      const jlong end = reporting_start_time + (jlong)ErrorLogTimeout * SECONDS_TO_NANOS_FACTOR;
       if (end <= now && !_reporting_did_timeout.load_relaxed()) {
         // We hit ErrorLogTimeout and we haven't interrupted the reporting
         // thread yet.
@@ -2116,11 +2096,14 @@ bool VMError::check_timeout() {
   // Reporting step timeout?
   const jlong step_start_time = get_step_start_time();
   if (step_start_time > 0) {
-    // A step times out after a quarter of the total timeout. Steps are mostly fast unless they
-    // hang for some reason, so this simple rule allows for three hanging step and still
-    // hopefully leaves time enough for the rest of the steps to finish.
-    const int max_step_timeout_secs = 5;
-    const jlong timeout_duration = MAX2((jlong)max_step_timeout_secs, (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4);
+    // Steps are very fast. If they are not fast, they typically hang without recovering. There are a few
+    // exceptions to this (printing a callstack from debug information located on a slow file system, or
+    // printing a memory map of an extremely fragmented process). To give those rare slow steps enough
+    // breathing space while still allowing us to skip any hanging steps, we use a per-step timeout of
+    // <total timeout>/4, or 15 seconds, whichever is smaller.
+    const jlong step_timeout_nanos = ((jlong)ErrorLogTimeout * SECONDS_TO_NANOS_FACTOR) / 4;
+    const jlong max_step_timeout_nanos = 15LL * SECONDS_TO_NANOS_FACTOR;
+    const jlong timeout_duration = MIN2(max_step_timeout_nanos, step_timeout_nanos);
     const jlong end = step_start_time + timeout_duration;
     if (end <= now && !_step_did_timeout.load_relaxed()) {
       // The step timed out and we haven't interrupted the reporting

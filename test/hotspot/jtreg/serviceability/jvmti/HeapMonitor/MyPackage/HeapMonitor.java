@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,12 +24,8 @@
 
 package MyPackage;
 
-import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
 
 /** API for handling the underlying heap sampling monitoring system. */
 public class HeapMonitor {
@@ -61,7 +57,7 @@ public class HeapMonitor {
     int sum = 0;
     List<Frame> frames = new ArrayList<Frame>();
     allocate(frames);
-    frames.add(new Frame("allocate", "()Ljava/util/List;", "HeapMonitor.java", 63));
+    frames.add(new Frame("allocate", "()Ljava/util/List;", "HeapMonitor.java", 59));
     return frames;
   }
 
@@ -70,8 +66,8 @@ public class HeapMonitor {
     for (int j = 0; j < allocationIterations; j++) {
       sum += actuallyAllocate();
     }
-    frames.add(new Frame("actuallyAllocate", "()I", "HeapMonitor.java", 98));
-    frames.add(new Frame("allocate", "(Ljava/util/List;)V", "HeapMonitor.java", 71));
+    frames.add(new Frame("actuallyAllocate", "()I", "HeapMonitor.java", 94));
+    frames.add(new Frame("allocate", "(Ljava/util/List;)V", "HeapMonitor.java", 67));
   }
 
   public static List<Frame> repeatAllocate(int max) {
@@ -79,7 +75,7 @@ public class HeapMonitor {
     for (int i = 0; i < max; i++) {
       frames = allocate();
     }
-    frames.add(new Frame("repeatAllocate", "(I)Ljava/util/List;", "HeapMonitor.java", 80));
+    frames.add(new Frame("repeatAllocate", "(I)Ljava/util/List;", "HeapMonitor.java", 76));
     return frames;
   }
 
@@ -104,10 +100,7 @@ public class HeapMonitor {
   }
 
   private static long oneElementSize;
-  private static native long getSize(Frame[] frames, boolean checkLines);
-  private static long getSize(Frame[] frames) {
-    return getSize(frames, getCheckLines());
-  }
+  private static native long getSize(Frame[] frames);
 
   // Calculate the size of a 1-element array in order to assess sampling interval
   // via the HeapMonitorStatIntervalTest.
@@ -119,7 +112,7 @@ public class HeapMonitor {
     List<Frame> frameList = allocate();
     disableSamplingEvents();
 
-    frameList.add(new Frame("calculateOneElementSize", "()V", "HeapMonitor.java", 119));
+    frameList.add(new Frame("calculateOneElementSize", "()V", "HeapMonitor.java", 112));
     Frame[] frames = frameList.toArray(new Frame[0]);
 
     // Get the actual size.
@@ -210,7 +203,7 @@ public class HeapMonitor {
     System.gc();
     List<Frame> frameList = allocate();
     frameList.add(new Frame("allocateAndCheckFrames", "(ZZ)[LMyPackage/Frame;", "HeapMonitor.java",
-          211));
+          204));
     Frame[] frames = frameList.toArray(new Frame[0]);
 
     boolean foundLive = obtainedEvents(frames);
@@ -235,40 +228,13 @@ public class HeapMonitor {
   }
 
   public native static int sampledEvents();
-  public native static boolean obtainedEvents(Frame[] frames, boolean checkLines);
-  public native static boolean garbageContains(Frame[] frames, boolean checkLines);
+  public native static boolean obtainedEvents(Frame[] frames);
+  public native static boolean garbageContains(Frame[] frames);
   public native static boolean eventStorageIsEmpty();
   public native static void resetEventStorage();
   public native static int getEventStorageElementCount();
   public native static void forceGarbageCollection();
   public native static boolean enableVMEvents();
-
-  private static boolean getCheckLines() {
-    boolean checkLines = true;
-
-    // Do not check lines for Graal since it is not always "precise" with BCIs at uncommon traps.
-    try {
-      HotSpotDiagnosticMXBean bean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
-
-      VMOption enableJVMCI = bean.getVMOption("EnableJVMCI");
-      VMOption useJVMCICompiler = bean.getVMOption("UseJVMCICompiler");
-
-      checkLines = !(enableJVMCI.getValue().equals("true")
-          && useJVMCICompiler.getValue().equals("true"));
-    } catch (Exception e) {
-      // NOP.
-    }
-
-    return checkLines;
-  }
-
-  public static boolean obtainedEvents(Frame[] frames) {
-    return obtainedEvents(frames, getCheckLines());
-  }
-
-  public static boolean garbageContains(Frame[] frames) {
-    return garbageContains(frames, getCheckLines());
-  }
 
   public static boolean statsHaveExpectedNumberSamples(int expected, int acceptedErrorPercentage) {
     double actual = sampledEvents();

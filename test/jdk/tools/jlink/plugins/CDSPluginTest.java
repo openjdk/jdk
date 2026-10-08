@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,15 +77,13 @@ public class CDSPluginTest {
         subDir += "server" + sep;
 
         WhiteBox wb = WhiteBox.getWhiteBox();
-        boolean COMPACT_HEADERS = Platform.is64bit() &&
-                                  wb.getBooleanVMFlag("UseCompactObjectHeaders") &&
-                                  wb.isDefaultVMFlag("UseCompactObjectHeaders");
-
-        String suffix = COMPACT_HEADERS ? "_coh.jsa" : ".jsa";
+        boolean NOCOMPACT_HEADERS = Platform.is64bit() &&
+                                  !wb.getBooleanVMFlag("UseCompactObjectHeaders");
+        String suffix = NOCOMPACT_HEADERS ? "_nocoh.jsa" : ".jsa";
 
         if (Platform.isAArch64() || Platform.isX64()) {
             helper.checkImage(image, module, null, null,
-                      new String[] { subDir + "classes" + suffix, subDir + "classes_nocoops" + suffix });
+                      new String[] { subDir + "classes" + suffix, subDir + "classes_nocoops" + suffix});
         } else {
             helper.checkImage(image, module, null, null,
                       new String[] { subDir + "classes" + suffix });

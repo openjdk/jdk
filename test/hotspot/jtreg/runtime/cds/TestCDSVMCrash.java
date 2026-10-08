@@ -25,6 +25,7 @@
  * @test TestCDSVMCrash
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -62,7 +63,7 @@ public class TestCDSVMCrash {
             throw new Error("Expected VM to crash");
         } catch(RuntimeException e) {
             if (!e.getMessage().contains("A fatal error has been detected")) {
-                throw new Error("Expected message: A fatal error has been detected");
+                throw new Error("Expected message: A fatal error has been detected. Instead message is: " + e.getMessage());
             }
         }
         System.out.println("PASSED");

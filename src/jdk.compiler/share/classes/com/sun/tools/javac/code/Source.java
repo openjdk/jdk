@@ -163,6 +163,11 @@ public enum Source {
       * 27, tbd
       */
     JDK27("27"),
+
+    /**
+      * 28, tbd
+      */
+    JDK28("28"),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
@@ -213,8 +218,22 @@ public enum Source {
         return this.compareTo(MIN) >= 0;
     }
 
+    public static boolean isSupported(Feature feature, int majorVersion) {
+        Source source = null;
+        for (Target target : Target.values()) {
+            if (majorVersion == target.majorVersion) {
+                source = lookup(target.name);
+            }
+        }
+        if (source != null) {
+            return feature.allowedInSource(source);
+        }
+        return false;
+    }
+
     public Target requiredTarget() {
         return switch(this) {
+        case JDK28  -> Target.JDK1_28;
         case JDK27  -> Target.JDK1_27;
         case JDK26  -> Target.JDK1_26;
         case JDK25  -> Target.JDK1_25;
@@ -285,6 +304,7 @@ public enum Source {
         PRIVATE_MEMBERS_IN_PERMITS_CLAUSE(JDK19),
         ERASE_POLY_SIG_RETURN_TYPE(JDK24),
         CAPTURE_MREF_RETURN_TYPE(JDK26),
+        VALUE_CLASSES(DEFAULT, Fragments.FeatureValueClasses, DiagKind.PLURAL),
         ;
 
         enum DiagKind {
@@ -374,6 +394,7 @@ public enum Source {
         case JDK25  -> RELEASE_25;
         case JDK26  -> RELEASE_26;
         case JDK27  -> RELEASE_27;
+        case JDK28  -> RELEASE_28;
         default     -> null;
         };
     }

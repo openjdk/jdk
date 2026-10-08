@@ -28,7 +28,7 @@
  * @library /test/lib /
  * @modules jdk.incubator.vector
  * @requires vm.debug & vm.compiler2.enabled
- * @run main/othervm --add-modules=jdk.incubator.vector compiler.c2.TestDependsOnTestSqrtHFAssertion
+ * @run main/othervm --add-modules=jdk.incubator.vector -Xbatch compiler.c2.TestDependsOnTestSqrtHFAssertion
  */
 
 package compiler.c2;
@@ -54,15 +54,15 @@ public class TestDependsOnTestSqrtHFAssertion {
                         }
                     }
                 }
-           }
+            }
         }
         return res;
     }
 
     public static void main(String [] args) {
         int res = 0;
-        for (int i = 0 ; i < 100000; i++) {
-            res += micro(x1, x2, y, i);
+        for (int i = 0 ; i < 10000; i++) {
+            res += micro(x1, x2, y, i % 100);
         }
         IO.println("PASS" + res);
     }

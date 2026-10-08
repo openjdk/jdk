@@ -109,12 +109,35 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
      };
    }
 
+   private JavaThread getJavaThreadFromThreadProxy(ThreadProxy tp) {
+     Threads threads = VM.getVM().getThreads();
+     for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+       var jthread = threads.getJavaThreadAt(i);
+       if (tp.equals(jthread.getThreadProxy())) {
+         return jthread;
+       }
+     }
+     throw new DebuggerException("JavaThread not found");
+   }
+
+   // Most of code is copied from AARCH64Frame.java.
+   // CFrame need to consider PAC in native frame even if -XX:UseBranchProtection is disabled.
+   // (_rop_protection in HotSpot)
+   private Address stripPAC(Address addr) {
+      return addr.andWithMask(AARCH64Frame.pacMask());
+   }
+
    @Override
    public CFrame sender(ThreadProxy thread, Address senderSP, Address senderFP, Address senderPC) {
       if (linuxDbg().isSignalTrampoline(pc())) {
         // SP points signal context
         //   https://github.com/torvalds/linux/blob/v6.17/arch/arm64/kernel/signal.c#L1357
         return getFrameFromReg(linuxDbg(), r -> LinuxAARCH64ThreadContext.getRegFromSignalTrampoline(sp(), r.intValue()));
+      }
+
+      if (hasNativeLibrary() && dwarf() == null) {
+        // Cannot find a sender frame if DWARF is missing even though PC in native library.
+        return null;
       }
 
       if (senderPC == null) {
@@ -131,19 +154,36 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
         CodeCache cc = VM.getVM().getCodeCache();
         CodeBlob currentBlob = cc.findBlobUnsafe(pc());
 
-        // This case is different from HotSpot. See JDK-8371194 for details.
-        if (currentBlob != null && (currentBlob.isContinuationStub() || currentBlob.isNativeMethod())) {
-          // Use FP since it should always be valid for these cases.
-          // TODO: These should be walked as Frames not CFrames.
-          senderSP = fp().addOffsetTo(2 * VM.getVM().getAddressSize());
-        } else {
-          CodeBlob codeBlob = cc.findBlobUnsafe(senderPC);
-          boolean useCodeBlob = codeBlob != null && codeBlob.getFrameSize() > 0;
-          senderSP = useCodeBlob ? senderFP.addOffsetTo((2 * VM.getVM().getAddressSize()) - codeBlob.getFrameSize()) : getSenderSP(null);
+        // This case is different from HotSpot. See JDK-8371194 and JDK-8382548 for details.
+        if (currentBlob == null) { // current frame is native
+          senderSP = getSenderSP(null);
+        } else { // current frame is Java
+          if (currentBlob.isContinuationStub()) {
+            var jthread = getJavaThreadFromThreadProxy(thread);
+            var contEntry = Continuation.getContinuationEntryForSP(jthread, sp());
+            senderSP = contEntry.getEntrySP();
+            senderFP = contEntry.getEntryFP();
+            senderPC = contEntry.getEntryPC();
+          } else if (currentBlob.getFrameSize() == 0) {
+            senderSP = fp().addOffsetTo(2 * VM.getVM().getAddressSize());
+          } else {
+            // Calculate sender SP and FP without FP
+            // because we cannot believe FP if PreserveFramePointer is disabled.
+            senderSP = sp().addOffsetTo(currentBlob.getFrameSize());
+            senderFP = senderSP.getAddressAt(-2 * VM.getVM().getAddressSize());
+            senderPC = senderSP.getAddressAt(- VM.getVM().getAddressSize());
+          }
         }
       }
       if (senderSP == null) {
         return null;
+      }
+
+      // Strip PAC
+      if (((MachineDescriptionAArch64)linuxDbg().getMachineDescription()).isPACEnabled() &&
+          ((dwarf() != null && ((AARCH64DwarfParser)dwarf()).isRASigned() /* for native */ ) ||
+           (AARCH64Frame.ropProtection() != 0 /* for Java */ ))) {
+        senderPC = stripPAC(senderPC);
       }
 
       DwarfParser senderDwarf = null;
@@ -163,10 +203,11 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
             return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf);
           }
 
-          // DWARF processing should succeed when the frame is native
-          // but it might fail if Common Information Entry (CIE) has language
-          // personality routine and/or Language Specific Data Area (LSDA).
-          return null;
+          // Returns CFrame if the sender is native frame even though it does not have DWARF,
+          // otherwise returns null because we cannot unwind anymore.
+          return linuxDbg().findLibPtrByAddress(senderPC) != null
+            ? new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null /* no CFA */, senderPC, null /* no DWARF */)
+            : null;
         }
       }
 

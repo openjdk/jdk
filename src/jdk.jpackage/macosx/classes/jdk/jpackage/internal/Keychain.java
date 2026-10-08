@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ record Keychain(String name) {
         // Get the current keychain list
         final List<String> cmdOutput;
         try {
-            cmdOutput = Executor.of("/usr/bin/security", "list-keychains").saveOutput(true).executeExpectSuccess().getOutput();
+            cmdOutput = Executor.of("/usr/bin/security", "list-keychains").quiet().saveOutput(true).executeExpectSuccess().stdout();
         } catch (IOException ex) {
             throw I18N.buildException().message("message.keychain.error").cause(ex).create(KeychainException::new);
         }

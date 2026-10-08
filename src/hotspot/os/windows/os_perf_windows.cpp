@@ -779,6 +779,114 @@ static OSReturn allocate_pdh_constants() {
   return OS_OK;
 }
 
+// Look up the PDH index by reading the English (locale 009) counter name
+// registry.  See KB Q287159: Using PDH APIs Correctly in a Localized Language
+// for details.
+static OSReturn lookup_perf_index_by_english_name(const char* english_name,
+                                                  DWORD* result) {
+  ResourceMark rm;
+
+  DWORD type = 0;
+  DWORD size = 0;
+
+  // Determine the required buffer size
+  if (RegQueryValueEx(HKEY_PERFORMANCE_DATA, "Counter 009",
+                      nullptr, &type, nullptr, &size) != ERROR_SUCCESS) {
+    return OS_ERR;
+  }
+
+  // Since registry entries in `HKEY_PERFORMANCE_DATA` are generated on the fly,
+  // they could change between calls, so we can't rely just on the size returned
+  // by the first call.  Instead, Microsoft's documentation suggests running
+  // these calls in a loop until the return code is no longer `ERROR_MORE_DATA`.
+
+  char* buffer;
+  do {
+    if (size == 0) {
+      return OS_ERR;
+    }
+
+    // When `RegQueryValueEx()` returns `ERROR_MORE_DATA`, the value in the
+    // callback argument is undefined, so we need to create a new variable whose
+    // address is passed as the callback size argument.
+    buffer = NEW_RESOURCE_ARRAY(char, size);
+
+    DWORD cb_size = size;
+    LSTATUS status = RegQueryValueEx(HKEY_PERFORMANCE_DATA, "Counter 009",
+                                     nullptr, &type, (LPBYTE)buffer,
+                                     &cb_size);
+    if (status == ERROR_MORE_DATA) {
+      // We need to increase the buffer size.  Since we don't know _how much_ to
+      // increase it by, we use an estimate (4096) for the increment.
+      DWORD increment = 4096;
+      if (size > MAXDWORD - increment) {
+        return OS_ERR;
+      }
+      size += increment;
+    } else if (status == ERROR_SUCCESS) {
+      break;
+    } else {
+      // If there was some other problem fetching this registry entry, tell the
+      // caller that we couldn't lookup the index.
+      return OS_ERR;
+    }
+  } while (true);
+
+  if (type != REG_MULTI_SZ) {
+    return OS_ERR;
+  }
+
+  // The buffer contains indices and names in the form (<index>\0<name>\0)*, so
+  // iterate character by character to parse the name and if it matches the
+  // English name, then we return the integer value of the index.
+  for (const char* p = buffer; *p != '\0'; ) {
+    const char* idx_str = p;
+    p += strlen(p) + 1;
+    if (*p == '\0') {
+      break;
+    }
+
+    const char* name = p;
+    p += strlen(p) + 1;
+    if (strcmp(name, english_name) == 0) {
+      errno = 0;
+      char* end = nullptr;
+      unsigned long value = strtoul(idx_str, &end, 10);
+      if (errno == 0 && end != idx_str && value <= MAXDWORD) {
+        *result = (DWORD)value;
+        return OS_OK;
+      }
+    }
+  }
+
+  return OS_ERR;
+}
+
+// Return the counter index of the 'Processor Information' counter, if
+// available, or else the 'Processor' counter.  The former is aware of the
+// possibility of multiple processor groups and thus provides a more accurate
+// processor count whereas the latter serves as fallback.
+static DWORD get_proc_counter() {
+  static DWORD pdh_idx = 0;
+  if (pdh_idx != 0) {
+    return pdh_idx;
+  }
+
+  // Some APIs accept English counter names whereas others accept counter names
+  // in the specific user's locale.  We determine the locale-specific name using
+  // the counter index, but to find the counter index, we use the English name
+  // of the counter and look for it in a specific registry key.
+  DWORD info_idx;
+  if (lookup_perf_index_by_english_name("Processor Information",
+                                        &info_idx) != OS_OK) {
+    info_idx = PDH_PROCESSOR_IDX;
+  }
+
+  // Assign to the static variable so that the value persists across calls.
+  pdh_idx = info_idx;
+  return pdh_idx;
+}
+
 /*
  * Enuerate the Processor PDH object and returns a buffer containing the enumerated instances.
  * Caller needs ResourceMark;
@@ -786,8 +894,11 @@ static OSReturn allocate_pdh_constants() {
  * @return  buffer if successful, null on failure.
 */
 static const char* enumerate_cpu_instances() {
-  char* processor; //'Processor' == PDH_PROCESSOR_IDX
-  if (lookup_name_by_index(PDH_PROCESSOR_IDX, &processor) != OS_OK) {
+  // The `PdhEnumObjectItems()` function accepts a localized name of the perf
+  // counter.  To obtain the name that is specific to the user's locale, we
+  // perform a reverse lookup from counter index to counter name.
+  char* processor;
+  if (lookup_name_by_index(get_proc_counter(), &processor) != OS_OK) {
     return nullptr;
   }
   DWORD c_size = 0;
@@ -821,13 +932,17 @@ static const char* enumerate_cpu_instances() {
 
 static int count_logical_cpus(const char* instances) {
   assert(instances != nullptr, "invariant");
-  // count logical instances.
-  DWORD count;
-  char* tmp;
-  for (count = 0, tmp = const_cast<char*>(instances); *tmp != '\0'; tmp = &tmp[strlen(tmp) + 1], count++);
-  // PDH reports an instance for each logical processor plus an instance for the total (_Total)
-  assert(count == os::processor_count() + 1, "invalid enumeration!");
-  return count - 1;
+  DWORD count = 0;
+  for (const char* tmp = instances; *tmp != '\0'; tmp += strlen(tmp) + 1) {
+    // In both the 'Processor' counter and the 'Processor Information' counter,
+    // the output contains totals for the processor group(s).  We filter those
+    // out by looking for the `_Total` substring.
+    if (strstr(tmp, "_Total") == nullptr) {
+      count++;
+    }
+  }
+  assert(count >= 1, "invalid enumeration!");
+  return count;
 }
 
 static int number_of_logical_cpus() {
@@ -847,7 +962,16 @@ static double cpu_factor() {
   static double cpuFactor = .0;
   if (numCpus == 0) {
     numCpus = number_of_logical_cpus();
-    assert(os::processor_count() <= (int)numCpus, "invariant");
+
+    // If we are using the legacy 'Processor' counter, which counts processors
+    // only in the first processor group, then `numCpus` can undercount, in
+    // which case, `numCpus` will be likely smaller than `os_processor_count`.
+    // However, when we use the 'Processor Information' counter, we expect both
+    // `numCpus` and `os::processorCount` to be identical.  In both cases, we
+    // expect to see at least one CPU.
+    assert(numCpus >= 1 && numCpus <= (DWORD)os::processor_count(),
+           "unexpected cpu count");
+
     cpuFactor = numCpus * 100;
   }
   return cpuFactor;
@@ -861,8 +985,8 @@ static void log_error_message_on_no_PDH_artifact(const char* counter_path) {
 static int initialize_cpu_query_counters(MultiCounterQueryP query, DWORD pdh_counter_idx) {
   assert(query != nullptr, "invariant");
   assert(query->counters != nullptr, "invariant");
-  char* processor; //'Processor' == PDH_PROCESSOR_IDX
-  if (lookup_name_by_index(PDH_PROCESSOR_IDX, &processor) != OS_OK) {
+  char* processor;
+  if (lookup_name_by_index(get_proc_counter(), &processor) != OS_OK) {
     return OS_ERR;
   }
   char* counter_name = nullptr;
@@ -880,7 +1004,11 @@ static int initialize_cpu_query_counters(MultiCounterQueryP query, DWORD pdh_cou
   counter_len += OBJECT_WITH_INSTANCES_COUNTER_FMT_LEN; // "\\%s(%s)\\%s"
   const char* instances = enumerate_cpu_instances();
   DWORD index = 0;
-  for (char* tmp = const_cast<char*>(instances); *tmp != '\0'; tmp = &tmp[strlen(tmp) + 1], index++) {
+  for (char* tmp = const_cast<char*>(instances); *tmp != '\0'; tmp = &tmp[strlen(tmp) + 1]) {
+    // Skip totals for each processor group.
+    if (strstr(tmp, ",_Total") != nullptr) {
+      continue;
+    }
     const size_t tmp_len = strlen(tmp);
     char* counter_path = NEW_RESOURCE_ARRAY(char, counter_len + tmp_len + 1);
     const size_t jio_snprintf_result = jio_snprintf(counter_path,
@@ -896,6 +1024,7 @@ static int initialize_cpu_query_counters(MultiCounterQueryP query, DWORD pdh_cou
       // return OS_OK to have the system continue to run without the missing counter
       return OS_OK;
     }
+    index++;
   }
   // Query once to initialize the counters which require at least two samples
   // (like the % CPU usage) to calculate correctly.

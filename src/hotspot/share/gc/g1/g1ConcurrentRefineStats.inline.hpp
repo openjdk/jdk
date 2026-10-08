@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 
-inline jlong G1ConcurrentRefineStats::sweep_duration() const {
-  return _sweep_duration.load_relaxed() - yield_during_sweep_duration();
+inline jlong G1ConcurrentRefineStats::sweep_work_duration() const {
+  return _sweep_work_duration.load_relaxed();
 }
 
 inline jlong G1ConcurrentRefineStats::yield_during_sweep_duration() const {
@@ -79,40 +79,12 @@ inline size_t G1ConcurrentRefineStats::cards_to_cset() const {
   return cards_already_refer_to_cset() + cards_refer_to_cset();
 }
 
-inline void G1ConcurrentRefineStats::inc_sweep_time(jlong t) {
-  _sweep_duration.store_relaxed(_sweep_duration.load_relaxed() + t);
+inline void G1ConcurrentRefineStats::inc_sweep_duration(jlong t) {
+  _sweep_work_duration.fetch_then_add(t, memory_order_relaxed);
 }
 
 inline void G1ConcurrentRefineStats::inc_yield_during_sweep_duration(jlong t) {
-  _yield_during_sweep_duration.store_relaxed(yield_during_sweep_duration() + t);
-}
-
-inline void G1ConcurrentRefineStats::inc_refine_duration(jlong t) {
-  _refine_duration.store_relaxed(refine_duration() + t);
-}
-
-inline void G1ConcurrentRefineStats::inc_cards_scanned(size_t increment) {
-  _cards_scanned.store_relaxed(cards_scanned() + increment);
-}
-
-inline void G1ConcurrentRefineStats::inc_cards_clean(size_t increment) {
-  _cards_clean.store_relaxed(cards_clean() + increment);
-}
-
-inline void G1ConcurrentRefineStats::inc_cards_not_parsable() {
-  _cards_not_parsable.store_relaxed(cards_not_parsable() + 1);
-}
-
-inline void G1ConcurrentRefineStats::inc_cards_already_refer_to_cset() {
-  _cards_already_refer_to_cset.store_relaxed(cards_already_refer_to_cset() + 1);
-}
-
-inline void G1ConcurrentRefineStats::inc_cards_refer_to_cset() {
-  _cards_refer_to_cset.store_relaxed(cards_refer_to_cset() + 1);
-}
-
-inline void G1ConcurrentRefineStats::inc_cards_no_cross_region() {
-  _cards_no_cross_region.store_relaxed(cards_no_cross_region() + 1);
+  _yield_during_sweep_duration.fetch_then_add(t, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINESTATS_INLINE_HPP

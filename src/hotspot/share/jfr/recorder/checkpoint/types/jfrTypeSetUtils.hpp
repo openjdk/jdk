@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ /*
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,14 +135,22 @@ class SymbolPredicate {
 
 template <bool leakp>
 class MethodFlagPredicate {
-  bool _current_epoch;
+  const bool _previous_epoch;
+  const bool _class_unload;
  public:
-  MethodFlagPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
+  MethodFlagPredicate(bool previous_epoch, bool class_unload) : _previous_epoch(previous_epoch), _class_unload(class_unload)  {}
   bool operator()(const Method* method) {
-    if (_current_epoch) {
-      return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
+    if (leakp) {
+      return METHOD_IS_LEAKP(method);
     }
-    return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    if (_previous_epoch) {
+      assert(!_class_unload, "invariant");
+      return METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    }
+    if (_class_unload) {
+      return METHOD_FLAG_USED_THIS_EPOCH(method) || METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    }
+    return METHOD_FLAG_USED_THIS_EPOCH(method);
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,6 @@ class ReservedSpace;
 
 class CodeCache : AllStatic {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   template <class T, class Filter, bool is_relaxed> friend class CodeBlobIterator;
   friend class WhiteBox;
   friend class ShenandoahParallelCodeHeapIterator;
@@ -108,7 +107,12 @@ class CodeCache : AllStatic {
   static double            _last_unloading_time;
   static TruncatedSeq      _unloading_gc_intervals;
   static TruncatedSeq      _unloading_allocation_rates;
-  static volatile bool     _unloading_threshold_gc_requested;
+  enum UnloadingRequestState : uint {
+    Idle,
+    Active,
+    Deferred
+  };
+  static volatile UnloadingRequestState _unloading_threshold_gc_state;
 
   static ExceptionCache* volatile _exception_cache_purge_list;
 
@@ -199,6 +203,9 @@ class CodeCache : AllStatic {
   static uint64_t previous_completed_gc_marking_cycle();
   static void on_gc_marking_cycle_start();
   static void on_gc_marking_cycle_finish();
+
+  static void defer_unloading_gc_request();
+  static void clear_deferred_unloading_gc_request();
   // Arm nmethods so that special actions are taken (nmethod_entry_barrier) for
   // on-stack nmethods. It's used in two places:
   // 1. Used before the start of concurrent marking so that oops inside

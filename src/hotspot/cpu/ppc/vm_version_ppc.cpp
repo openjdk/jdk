@@ -109,6 +109,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX) && CompilerConfig::is_c2_enabled()) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
+  } else if (SuperwordUseVSX) {
+    warning("SuperwordUseVSX specified, but needs at least Power9.");
+    FLAG_SET_DEFAULT(SuperwordUseVSX, false);
   }
 
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
@@ -189,7 +192,7 @@ void VM_Version::initialize() {
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
   if (Verbose) {
     print_features();
   }
@@ -246,10 +249,8 @@ void VM_Version::initialize() {
     }
   }
 
-  // TODO: Provide implementation.
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
   }
 
   // The AES intrinsic stubs require AES instruction support.
@@ -337,6 +338,15 @@ void VM_Version::initialize() {
   // This machine allows unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
+  }
+
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+  }
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
 
   check_virtualizations();
@@ -494,7 +504,7 @@ void VM_Version::determine_features() {
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
+  a->invalidate_icache();
   _features = VM_Version::unknown_m;
 
   // Print the detection code.
@@ -550,7 +560,7 @@ void VM_Version::config_dscr() {
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
+  a->invalidate_icache();
 
   // Print the detection code.
   if (PrintAssembly) {

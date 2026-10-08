@@ -113,6 +113,9 @@ public class PostImageScriptTest {
 
             test.addInitializer(cmd -> {
                 cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
+
+                // Ensure the full output is enabled as custom scripts write to jpackage's "out" stream.
+                cmd.setEnabledMessageCategories(JPackageCommand.messageCategoriesConsoleAll());
             });
 
             return test;
