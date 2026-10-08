@@ -97,6 +97,8 @@ public class TestVM {
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
     private static final String TEST_LIST = SystemProperty.getTestList();
     private static final String EXCLUDE_LIST = SystemProperty.getExcludeList();
+    // We ignore @Skip when running with -DIgnoreSkip=true
+    private static final boolean IGNORE_SKIP = Boolean.getBoolean("IgnoreSkip");
     private static final boolean DUMP_REPLAY = Boolean.getBoolean("DumpReplay");
     private static final boolean GC_AFTER = Boolean.getBoolean("GCAfter");
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));
@@ -312,11 +314,13 @@ public class TestVM {
      * A test is excluded from execution if:
      * - -DTest does not list the method
      * - -DExclude lists the method
+     * - The method specifies a (temporary) @Skip annotation.
      */
     private boolean shouldExcludeTest(Method testMethod) {
         String testName = testMethod.getName();
         return isNotOnTestList(testName) ||
-               isOnExcludeList(testName);
+               isOnExcludeList(testName) ||
+               shouldSkip(testMethod);
     }
 
     private boolean isNotOnTestList(String testName) {
@@ -325,6 +329,14 @@ public class TestVM {
 
     private boolean isOnExcludeList(String testName) {
         return excludeList.contains(testName);
+    }
+
+    private boolean shouldSkip(Method method) {
+        return !IGNORE_SKIP && hasSkipAnnotation(method);
+    }
+
+    private boolean hasSkipAnnotation(Method method) {
+        return getAnnotation(method, Skip.class) != null;
     }
 
     /**
@@ -560,6 +572,8 @@ public class TestVM {
                                             "Found @IR annotation on non-@Test method " + m);
                     TestFormat.checkNoThrow(!m.isAnnotationPresent(Warmup.class) || getAnnotation(m, Run.class) != null,
                                             "Found @Warmup annotation on non-@Test or non-@Run method " + m);
+                    TestFormat.checkNoThrow(!m.isAnnotationPresent(Skip.class) ,
+                                            "Found @Skip annotation on non-@Test method " + m);
                 }
             } catch (TestFormatException e) {
                 // Failure logged. Continue and report later.
@@ -582,16 +596,22 @@ public class TestVM {
             // Don't inline test methods by default. Do not apply this when -DIgnoreCompilerControls=true is set.
             WHITE_BOX.testSetDontInlineMethod(m, true);
         }
+
         CompLevel compLevel = restrictCompLevel(testAnno.compLevel());
         if (FLIP_C1_C2) {
             compLevel = restrictCompLevel(compLevel.flipCompLevel());
         }
+
         if (EXCLUDE_RANDOM) {
             compLevel = compLevel.excludeCompilationRandomly(m);
         }
+
         boolean allowNotCompilable = testAnno.allowNotCompilable() || ALLOW_METHOD_NOT_COMPILABLE;
         ArgumentsProvider argumentsProvider = ArgumentsProviderBuilder.build(m, setupMethodMap);
-        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations, allowNotCompilable);
+        Skip skip = getAnnotation(m, Skip.class);
+        boolean hasSkip = skip != null;
+        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations,
+                                             hasSkip, allowNotCompilable);
         declaredTests.put(m, test);
         testMethodMap.put(m.getName(), m);
     }
@@ -762,6 +782,14 @@ public class TestVM {
                 // Logged, continue.
             }
         }
+
+        if (tests.size() != runAnno.test().length) {
+            // At least one test is invalid. Return and report the already recorded format violation(s) later.
+            return;
+        }
+
+        checkNoneOrAllAssociatedTestsSkipped(m, tests);
+
         if (tests.isEmpty()) {
             return; // There was a format violation. Return.
         }
@@ -807,6 +835,32 @@ public class TestVM {
         Warmup warmupAnno = getAnnotation(m, Warmup.class);
         TestFormat.checkNoThrow(warmupAnno == null || runAnno.mode() != RunMode.STANDALONE,
                                 "Cannot set @Warmup at @Run method " + m + " when used with RunMode.STANDALONE. The @Run method is only invoked once.");
+    }
+
+    private void checkNoneOrAllAssociatedTestsSkipped(Method runMethod, List<DeclaredTest> tests) {
+        List<Method> testMethodsWithoutSkip = testMethodsWithoutSkipAnnotation(tests);
+        if (testMethodsWithoutSkip.isEmpty() ||
+            testMethodsWithoutSkip.size() == tests.size()) {
+            // All with @Skip or none.
+            return;
+        }
+
+        // Skipping some tests but not all is a format violation.
+        reportPartiallySkippingTests(runMethod, testMethodsWithoutSkip);
+    }
+
+    private List<Method> testMethodsWithoutSkipAnnotation(List<DeclaredTest> tests) {
+        return tests.stream().filter(test -> !test.hasSkipAnno()).map(DeclaredTest::getTestMethod).toList();
+    }
+
+    private void reportPartiallySkippingTests(Method runMethod, List<Method> testMethodsWithoutSkip) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("@Run-methods with multiple tests can only either skip none or all methods with @Skip:")
+               .append(System.lineSeparator())
+               .append("   - @Run-method: ").append(runMethod);
+        testMethodsWithoutSkip.forEach(method -> builder.append(System.lineSeparator())
+                                                        .append("   - @Test without @Skip: ").append(method));
+        TestFormat.fail(builder.toString());
     }
 
     private static <T extends Annotation> T getAnnotation(AnnotatedElement element, Class<T> c) {
