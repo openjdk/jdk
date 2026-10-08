@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,21 +35,21 @@ import java.io.*;
 /**
  * This class represents debuggee part in the test.
  */
-public class popframes001a {
+public class popframes002a {
 
     // name of the tested thread
     public static final String THREAD_NAME = "testedThread";
 
     // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 114;
+    public static final int BREAKPOINT_LINE_NUMBER = 127;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
     private static volatile Log log = null;
 
     public static void main(String args[]) {
-        popframes001a _popframes001a = new popframes001a();
-        System.exit(popframes001.JCK_STATUS_BASE + _popframes001a.runIt(args, System.err));
+        popframes002a _popframes002a = new popframes002a();
+        System.exit(popframes002.JCK_STATUS_BASE + _popframes002a.runIt(args, System.err));
     }
 
     public int runIt(String args[], PrintStream out) {
@@ -75,11 +75,11 @@ public class popframes001a {
         } catch(InterruptedException e) {
             log.complain("Interruption while waiting for tested thread finished:\n\t" + e);
             log.display("Debugee FAILED");
-            return popframes001.FAILED;
+            return popframes002.FAILED;
         }
 
         log.display("Debugee PASSED");
-        return popframes001.PASSED;
+        return popframes002.PASSED;
     }
 
     // tested thread class
@@ -110,6 +110,19 @@ public class popframes001a {
             int boo = 0;
 
             log.display("Breakpoint line reached");
+            // joining a virtual thread unmounts a virtual tested thread, so the frame below is frozen when popped
+            Thread parker = Thread.ofVirtual().start(() -> {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            try {
+                parker.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             // next line is for breakpoint
             boo = arg * 2; // BREAKPOINT_LINE_NUMBER
             log.display("Breakpoint line passed");
