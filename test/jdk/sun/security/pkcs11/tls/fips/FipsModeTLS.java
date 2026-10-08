@@ -133,6 +133,7 @@ public final class FipsModeTLS extends SecmodTest {
                 KeyGenerator.getInstance(
                         "SunTls12RsaPremasterSecret", sunPKCS11NSSProvider);
                 KeyGenerator.getInstance("SunTls12Prf", sunPKCS11NSSProvider);
+                KeyGenerator.getInstance("SunTls12ExtendedMasterSecret", sunPKCS11NSSProvider);
             }
         } catch (NoSuchAlgorithmException e) {
             return false;
