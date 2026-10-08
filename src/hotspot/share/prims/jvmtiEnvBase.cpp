@@ -2547,6 +2547,11 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
       return;
     }
     is_interpreted[frame_count] = vfs.is_interpreted_frame();
+    // A compiled frame still frozen in a chunk can't be deoptimized from here.
+    if (!is_interpreted[frame_count] && vfs.reg_map()->in_cont()) {
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return;
+    }
     frame_sp[frame_count] = vfs.frame_id();
     if (++frame_count > 1) break;
   }
