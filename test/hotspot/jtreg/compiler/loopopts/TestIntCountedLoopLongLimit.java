@@ -170,7 +170,6 @@ public class TestIntCountedLoopLongLimit {
     @Test
     @IR(counts = { IRNode.CONV_I2L, "1" })
     @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.CONV_L2I, IRNode.LOOP_LIMIT_CHECK_TRAP })
-    @Arguments(values = { Argument.NUMBER_42 })
     public static int testLimitNotInvariant(long limit) {
         int sum = 0;
         for (int i = 0; i < limit; i++) {
@@ -178,6 +177,35 @@ public class TestIntCountedLoopLongLimit {
             limit = SOME_LONG;
         }
         return sum;
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, "2", IRNode.LOOP_LIMIT_CHECK_TRAP, "1" })
+    @IR(failOn = { IRNode.LOOP })
+    public static int testLimitFromCmove(long a, long b, boolean cond) {
+        long limit = cond ? a : b;
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    @Run(test = { "testLimitNotInvariant", "testLimitFromCmove" })
+    public static void runTestLimitVariants() {
+        long limit = SMALL_INT_RANGE_LONGS.next();
+        testLimitNotInvariant(limit);
+
+        boolean cond = G.uniformInts(0, 1).next() == 0;
+        long a = SMALL_INT_RANGE_LONGS.next();
+        long b = SMALL_INT_RANGE_LONGS.next();
+        long expected = cond ? a : b;
+
+        int expectedSum = 0;
+        for (int i = 0; i < (int) expected; i++) {
+            expectedSum += i;
+        }
+        Asserts.assertEQ(expectedSum, testLimitFromCmove(a, b, cond));
     }
 
     @Test
