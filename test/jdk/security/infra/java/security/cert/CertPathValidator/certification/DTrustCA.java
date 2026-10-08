@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,16 @@
  * questions.
  */
 
- /*
+import jtreg.SkippedException;
+
+import java.util.List;
+
+/*
  * @test
  * @bug 8189131
  * @summary Interoperability tests with "D-Trust Root Class 3 CA 2 2009" and
  *          "D-Trust Root Class 3 CA 2 EV 2009" CAs
+ * @library /test/lib/
  * @build ValidatePathWithParams
  * @run main/othervm/manual -Djava.security.debug=certpath DTrustCA OCSP
  * @run main/othervm/manual -Djava.security.debug=certpath DTrustCA CRL
@@ -48,6 +53,13 @@ public class DTrustCA {
 
         new RootClass3CA2().runTest(pathValidator, ocspEnabled);
         new RootClass3CA2EV().runTest(pathValidator, ocspEnabled);
+
+        final List<String> skippedValidations =
+                pathValidator.getSkippedValidations();
+        if (!skippedValidations.isEmpty()){
+            throw new SkippedException("Some validations/tests were skipped " +
+                                       skippedValidations);
+        }
     }
 }
 
