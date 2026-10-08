@@ -1213,7 +1213,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Get mirror and store it in the frame as GC root for this Method*.
   __ mem2reg_opt(Z_R1_scratch, Address(constants_addr, ConstantPool::pool_holder_offset()));
   __ mem2reg_opt(Z_R1_scratch, Address(Z_R1_scratch, Klass::java_mirror_offset()));
-  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
+  Register mirror_tmp = Z_R4;
+  __ resolve_oop_handle(Z_R1_scratch, mirror_tmp, Z_R0_scratch);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(mirror), fp);
 
   BLOCK_COMMENT("} generate_fixed_frame: initialize interpreter state");
@@ -1575,34 +1576,31 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // In order for GC to work, don't clear the last_Java_sp until after
   // blocking.
 
-  __ set_thread_state(_thread_in_vm);
+  // Transition from _thread_in_native to _thread_in_Java.
+  // Force this write out before the read below;
+  __ set_thread_state(_thread_in_Java);
   if (!UseSystemMemoryBarrier) {
     __ z_fence();
   }
 
-  // Now before we return to java we must look for a current safepoint
-  // (a new safepoint can not start since we entered _thread_in_vm).
+  // Now before we return to java we must look for a current safepoint.
   // We must check here because a current safepoint could be in progress.
 
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
     Label Continue, do_safepoint;
-    __ safepoint_poll(do_safepoint, Z_R1);
+    __ safepoint_poll(do_safepoint, Z_R1, true /* at_return */, false /* in_nmethod */);
     // Check for suspend.
     __ load_and_test_int(Z_R0/*suspend_flags*/, thread_(suspend_flags));
     __ z_bre(Continue); // 0 -> no flag set -> not suspended
     __ bind(do_safepoint);
     __ z_lgr(Z_ARG1, Z_thread);
-    __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ call_c(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
     __ bind(Continue);
   }
 
   //=============================================================================
   // Back in Interpreter Frame.
-
-  // We are in _thread_in_vm here and back in the normal
-  // interpreter frame. We don't have to do anything special about
-  // safepoints and we can switch to Java mode anytime we are ready.
 
   // Note: frame::interpreter_frame_result has a dependency on how the
   // method result is saved across the call to post_method_exit. For
@@ -1613,10 +1611,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   //=============================================================================
   // Back in Java.
-
-  // Memory ordering: Z does not reorder store/load with subsequent
-  // load. That's strong enough.
-  __ set_thread_state(_thread_in_Java);
 
   __ reset_last_Java_frame();
 
@@ -1896,7 +1890,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, Z_R1);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   BLOCK_COMMENT("CRC32_update {");
 
@@ -1945,7 +1939,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, Z_R1);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   // We don't generate local frame and don't align stack because
   // we call stub code and there is no safepoint on this path.
@@ -2085,7 +2079,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   uint64_t entry_off = __ offset();
 
   __ z_lg(Z_RET, Address(Z_thread, JavaThread::vthread_offset()));
-  __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
+  __ resolve_oop_handle(Z_RET, Z_R1_scratch, Z_R0_scratch);
 
   // Restore caller sp for c2i case.
   __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.

@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ dependencies in DOT language (see the `-dotoutput` option).
 
 `-dotoutput` *dir* or `--dot-output` *dir*
 :   Specifies the destination directory for DOT file output. If this option is
-    specified, then the `jdeps`command generates one `.dot` file for each
+    specified, then the `jdeps` command generates one `.dot` file for each
     analyzed archive named `archive-file-name.dot` that lists the dependencies,
     and also a summary file named `summary.dot` that lists the dependencies
     among the archive files.
@@ -119,7 +119,7 @@ dependencies in DOT language (see the `-dotoutput` option).
     should be an integer \>=9 or base.
 
 `-q` or `-quiet`
-:   Doesn't show missing dependencies from `-generate-module-info` output.
+:   Doesn't show missing dependencies from `--generate-module-info` output.
 
 `-version` or `--version`
 :   Prints version information.
@@ -143,7 +143,7 @@ dependencies in DOT language (see the `-dotoutput` option).
 `--check` *module-name* \[`,` *module-name*...\]
 :   Analyzes the dependence of the specified modules. It prints the module
     descriptor, the resulting module dependences after analysis and the graph
-    after transition reduction. It also identifies any unused qualified
+    after transitive reduction. It also identifies any unused qualified
     exports.
 
 `--list-deps`
@@ -220,7 +220,7 @@ dependencies in DOT language (see the `-dotoutput` option).
 
 `-I` or `--inverse`
 :   Analyzes the dependences per other given options and then finds all
-    artifacts that directly and indirectly depend on the matching nodes. This
+    artifacts that directly or indirectly depend on the matching nodes. This
     is equivalent to the inverse of the compile-time view analysis and the
     print dependency summary. This option must be used with the `--require`,
     `--package`, or `--regex` options.

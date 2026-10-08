@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_CONTINUATIONENTRY_HPP
-#define SHARE_VM_RUNTIME_CONTINUATIONENTRY_HPP
+#ifndef SHARE_RUNTIME_CONTINUATIONENTRY_HPP
+#define SHARE_RUNTIME_CONTINUATIONENTRY_HPP
 
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -150,4 +150,4 @@ class ContinuationEntry {
 #endif
 };
 
-#endif // SHARE_VM_RUNTIME_CONTINUATIONENTRY_HPP
+#endif // SHARE_RUNTIME_CONTINUATIONENTRY_HPP

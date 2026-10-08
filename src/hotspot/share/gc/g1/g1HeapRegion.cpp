@@ -25,8 +25,8 @@
 #include "code/nmethod.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionBounds.inline.hpp"
@@ -109,7 +109,7 @@ void G1HeapRegion::handle_evacuation_failure(bool retain) {
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  assert(!_rem_set->has_cset_group(), "must not have a cset group");
+  assert(!_rem_set->has_card_set_group(), "must not have a card set group");
   if (retain) {
     assert(_rem_set->is_tracked(), "must be");
   } else {
@@ -128,7 +128,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
-  uninstall_cset_group();
+  uninstall_card_set_group();
   set_free();
   reset_pre_dummy_top();
 
@@ -198,8 +198,8 @@ void G1HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  G1CSetCandidateGroup* cset_group = new G1CSetCandidateGroup();
-  cset_group->add(this);
+  G1CardSetGroup* card_set_group = new G1CardSetGroup();
+  card_set_group->add(this);
 
   _bot->update_for_block(bottom(), obj_top);
   if (fill_size > 0) {
@@ -222,18 +222,18 @@ void G1HeapRegion::clear_humongous() {
 
   assert(capacity() == G1HeapRegion::GrainBytes, "pre-condition");
   if (is_starts_humongous()) {
-    G1CSetCandidateGroup* cset_group = _rem_set->cset_group();
-    assert(cset_group != nullptr, "pre-condition %u missing cardset", hrm_index());
-    uninstall_cset_group();
-    cset_group->clear();
-    delete cset_group;
+    G1CardSetGroup* card_set_group = _rem_set->card_set_group();
+    assert(card_set_group != nullptr, "pre-condition %u missing card set group", hrm_index());
+    uninstall_card_set_group();
+    card_set_group->clear();
+    delete card_set_group;
   }
   _humongous_start_region = nullptr;
 }
 
 void G1HeapRegion::prepare_remset_for_scan() {
   if (is_young()) {
-    uninstall_cset_group();
+    uninstall_card_set_group();
   }
   _rem_set->reset_table_scanner();
 }
@@ -396,7 +396,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
   }
 
   G1HeapRegionRemSet* hrrs = rem_set();
-  size_t code_roots_length = hrrs->code_roots_list_length();
+  size_t code_roots_length = hrrs->code_roots_length();
 
   // if this region is empty then there should be no entries
   // on its code root list
@@ -437,7 +437,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
   if (in_collection_set()) {
     st->print("|CS");
   } else if (is_collection_set_candidate()) {
-    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
+    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set_candidates();
     st->print("|%s", candidates->get_short_type_str(this));
   } else {
     st->print("|  ");
@@ -629,7 +629,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     bool failed() const {
       if (_from != _to && !_from->is_young() &&
           _to->rem_set()->is_complete() &&
-          _from->rem_set()->cset_group() != _to->rem_set()->cset_group()) {
+          _from->rem_set()->card_set_group() != _to->rem_set()->card_set_group()) {
         const CardValue clean = G1CardTable::clean_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?

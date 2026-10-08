@@ -79,7 +79,6 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
@@ -87,6 +86,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/trainingData.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -615,7 +615,7 @@ static void rewrite_bytecodes(const methodHandle& method) {
         case btos: new_code = Bytecodes::_fast_bputfield; break;
         case ztos: new_code = Bytecodes::_fast_zputfield; break;
         case atos: {
-          if (rfe->is_flat() || rfe->is_null_free_inline_type()) {
+          if (rfe->is_flat() || rfe->is_null_free_value_type()) {
             new_code = Bytecodes::_fast_vputfield;
           } else {
             new_code = Bytecodes::_fast_aputfield;
@@ -978,17 +978,7 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
   StaticArchiveBuilder builder;
   dump_static_archive_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
-      aot_log_error(aot)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-                     "%zuM", MaxHeapSize/M);
-      AOTMetaspace::writing_error();
-    } else {
-      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
-      aot_log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
-                         message == nullptr ? "(null)" : java_lang_String::as_utf8_string(message));
-      AOTMetaspace::writing_error(err_msg("Unexpected exception, use -Xlog:aot%s,exceptions=trace for detail",
-                                             CDSConfig::new_aot_flags_used() ? "" : ",cds"));
-    }
+    writing_error(PENDING_EXCEPTION);
   }
 
   if (CDSConfig::new_aot_flags_used()) {
@@ -1010,6 +1000,8 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
       vm_direct_exit(0);
     }
   }
+
+  // If we have a pending exception here, it will be propagated to the caller of this function.
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
@@ -1032,22 +1024,6 @@ void AOTMetaspace::init_heap_settings() {
 
   if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
     return;
-  }
-  // CDS heap dumping requires all string oops to have an offset
-  // from the heap bottom that can be encoded in 32-bit.
-  julong max_heap_size = (julong)(4 * G);
-
-  if (MinHeapSize > max_heap_size) {
-    log_debug(aot)("Setting MinHeapSize to 4G for CDS dumping, original size = %zuM", MinHeapSize/M);
-    FLAG_SET_ERGO(MinHeapSize, max_heap_size);
-  }
-  if (InitialHeapSize > max_heap_size) {
-    log_debug(aot)("Setting InitialHeapSize to 4G for CDS dumping, original size = %zuM", InitialHeapSize/M);
-    FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
-  }
-  if (MaxHeapSize > max_heap_size) {
-    log_debug(aot)("Setting MaxHeapSize to 4G for CDS dumping, original size = %zuM", MaxHeapSize/M);
-    FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
   }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64
@@ -1528,6 +1504,22 @@ void AOTMetaspace::writing_error(const char* message) {
     aot_log_error(aot)("%s", message);
   }
 }
+
+void AOTMetaspace::writing_error(oop exception_oop) {
+  if (exception_oop->is_a(vmClasses::OutOfMemoryError_klass())) {
+    aot_log_error(aot)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+                       "%zuM", MaxHeapSize/M);
+    AOTMetaspace::writing_error();
+  } else {
+    ResourceMark rm;
+    oop message = java_lang_Throwable::message(exception_oop);
+    aot_log_error(aot)("%s: %s", exception_oop->klass()->external_name(),
+                       message == nullptr ? "(null)" : java_lang_String::as_utf8_string(message));
+    AOTMetaspace::writing_error(err_msg("Unexpected exception, use -Xlog:aot%s,exceptions=trace for detail",
+                                        CDSConfig::new_aot_flags_used() ? "" : ",cds"));
+  }
+}
+
 
 void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");

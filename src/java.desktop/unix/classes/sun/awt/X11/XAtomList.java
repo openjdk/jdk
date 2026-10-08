@@ -41,20 +41,6 @@ final class XAtomList {
 
     /**
      * Creates instance of XAtomList and initializes it with
-     * the contents pointer by {@code data}.
-     * Uses default display to initialize atoms.
-     */
-    public XAtomList(long data, int count) {
-        init(data, count);
-    }
-    private void init(long data, int count) {
-        for (int i = 0; i < count; i++) {
-            add(new XAtom(XToolkit.getDisplay(), XAtom.getAtom(data+count*XAtom.getAtomSize())));
-        }
-    }
-
-    /**
-     * Creates instance of XAtomList and initializes it with
      * the arrays of atoms. Array can contain null atoms.
      */
     public XAtomList(XAtom[] atoms) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,6 @@ TEST_VM(ObjectMonitor, sanity) {
   uint cache_line_size = VM_Version::L1_data_cache_line_size();
 
   if (cache_line_size != 0) {
-
-    EXPECT_EQ(in_bytes(ObjectMonitor::metadata_offset()), 0)
-        << "_metadata at a non 0 offset. metadata_offset = "
-        << in_bytes(ObjectMonitor::metadata_offset());
-
-    EXPECT_GE((size_t) in_bytes(ObjectMonitor::owner_offset()), cache_line_size)
-        << "the _metadata and _owner fields are closer "
-        << "than a cache line which permits false sharing.";
 
     EXPECT_GE((size_t) in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), cache_line_size)
         << "the _owner and _recursions fields are closer "

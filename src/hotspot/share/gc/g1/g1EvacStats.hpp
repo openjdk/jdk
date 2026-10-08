@@ -32,13 +32,15 @@
 // Records various memory allocation statistics gathered during evacuation. All sizes
 // are in HeapWords.
 class G1EvacStats : public PLABStats {
+  friend class G1EvacStatsTest;
+
   size_t _default_plab_size;
   size_t _desired_net_plab_size; // Output of filter (below), suitably trimmed and quantized
   AdaptiveWeightedAverage
          _net_plab_size_filter;  // Integrator with decay
 
   Atomic<size_t> _region_end_waste; // Number of words wasted due to skipping to the next region.
-  Atomic<uint>   _regions_filled;   // Number of regions filled completely.
+  Atomic<uint>   _num_filled_regions; // Number of regions filled completely.
   Atomic<size_t> _num_plab_filled; // Number of PLABs filled and retired.
   Atomic<size_t> _direct_allocated; // Number of words allocated directly into the regions.
   Atomic<size_t> _num_direct_allocated; // Number of direct allocation attempts.
@@ -69,7 +71,7 @@ public:
   // Should be called at the end of a GC pause.
   void adjust_desired_plab_size();
 
-  uint regions_filled() const;
+  uint num_filled_regions() const;
   size_t num_plab_filled() const;
   size_t region_end_waste() const;
   size_t direct_allocated() const;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017, 2025, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  */
 
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -116,8 +117,8 @@ private:
       oop obj = CompressedOops::decode_raw_not_null(o);
       verify_oop_at_basic(p, obj);
 
-      if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
-        obj = ShenandoahForwarding::get_forwardee(obj);
+      if (ShenandoahForwarding::is_forwarded(obj) && is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
+        obj = ShenandoahForwarding::forwardee_raw(obj);
       }
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
@@ -200,9 +201,12 @@ private:
       }
     }
 
-    oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+    oop fwd = obj;
+    if (ShenandoahForwarding::is_forwarded(obj)) {
+      fwd = ShenandoahForwarding::forwardee_raw(obj);
+    }
 
-    ShenandoahHeapRegion* fwd_reg = nullptr;
+    ShenandoahHeapRegion* fwd_reg = obj_reg;
 
     if (obj != fwd) {
       check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in_reserved(fwd),
@@ -236,11 +240,8 @@ private:
       check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + ShenandoahForwarding::size(fwd)) <= fwd_reg->top(),
              "Forwardee end should be within the region");
 
-      oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
-      check(ShenandoahAsserts::_safe_oop, obj, (fwd == fwd2),
-             "Double forwarding");
-    } else {
-      fwd_reg = obj_reg;
+      check(ShenandoahAsserts::_safe_oop, obj, !ShenandoahForwarding::is_forwarded(fwd),
+            "Double forwarding");
     }
 
     // Do additional checks for special objects: their fields can hold metadata as well.
@@ -287,12 +288,12 @@ private:
         // skip
         break;
       case ShenandoahVerifier::_verify_forwarded_none: {
-        check(ShenandoahAsserts::_safe_all, obj, (obj == fwd),
+        check(ShenandoahAsserts::_safe_all, obj, !ShenandoahForwarding::is_forwarded(obj),
                "Should not be forwarded");
         break;
       }
       case ShenandoahVerifier::_verify_forwarded_allow: {
-        if (obj != fwd) {
+        if (ShenandoahForwarding::is_real_forwarded(obj)) {
           check(ShenandoahAsserts::_safe_all, obj, obj_reg != fwd_reg,
                  "Forwardee should be in another region");
         }
@@ -312,7 +313,7 @@ private:
         break;
       case ShenandoahVerifier::_verify_cset_forwarded:
         if (_heap->in_collection_set(obj)) {
-          check(ShenandoahAsserts::_safe_all, obj, (obj != fwd),
+          check(ShenandoahAsserts::_safe_all, obj, ShenandoahForwarding::is_forwarded(obj),
                  "Object in collection set, should have forwardee");
         }
         break;
@@ -368,8 +369,11 @@ public:
     // oop_iterate() can not deal with forwarded objects, because
     // it needs to load klass(), which may be overridden by the
     // forwarding pointer.
-    oop fwd = ShenandoahForwarding::get_forwardee_raw(obj);
-    fwd->oop_iterate(this);
+    oop resolved = obj;
+    if (ShenandoahForwarding::is_forwarded(obj)) {
+      resolved = ShenandoahForwarding::forwardee_raw(obj);
+    }
+    resolved->oop_iterate(this);
     _loc = nullptr;
   }
 
@@ -1268,8 +1272,7 @@ private:
       oop obj = CompressedOops::decode_raw_not_null(o);
       ShenandoahAsserts::assert_correct(p, obj, __FILE__, __LINE__);
 
-      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (obj != fwd) {
+      if (ShenandoahForwarding::is_forwarded(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                          "Verify Roots", "Should not be forwarded", __FILE__, __LINE__);
       }
@@ -1302,8 +1305,7 @@ private:
                 "Verify Roots In To-Space", "Should not be in collection set", __FILE__, __LINE__);
       }
 
-      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (obj != fwd) {
+      if (ShenandoahForwarding::is_forwarded(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be forwarded", __FILE__, __LINE__);
       }
@@ -1317,11 +1319,13 @@ public:
 
 void ShenandoahVerifier::verify_roots_in_to_space(ShenandoahGeneration* generation) {
   ShenandoahVerifyInToSpaceClosure cl;
+  ShenandoahGCStateResetter resetter;
   ShenandoahRootVerifier::roots_do(&cl, generation);
 }
 
 void ShenandoahVerifier::verify_roots_no_forwarded(ShenandoahGeneration* generation) {
   ShenandoahVerifyNoForwarded cl;
+  ShenandoahGCStateResetter resetter;
   ShenandoahRootVerifier::roots_do(&cl, generation);
 }
 
@@ -1440,8 +1444,12 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
 
   ShenandoahScanRemembered* scanner = old_generation->card_scan();
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    if (!_heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    if (r->is_old() && r->is_active()) {
+    if (r->is_active()) {
       help_verify_region_rem_set(scanner, r, r->end(), "Verify init-mark remembered set violation");
     }
   }
@@ -1453,8 +1461,12 @@ void ShenandoahVerifier::verify_rem_set_after_full_gc() {
 
   ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    if (!_heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    if (r->is_old() && !r->is_cset()) {
+    if (!r->is_cset()) {
       help_verify_region_rem_set(&scanner, r, r->top(), "Remembered set violation at end of Full GC");
     }
   }
@@ -1470,8 +1482,12 @@ void ShenandoahVerifier::verify_rem_set_before_update_ref() {
 
   ShenandoahWriteTableScanner scanner(_heap->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    if (!_heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    if (r->is_old() && !r->is_cset()) {
+    if (!r->is_cset()) {
       help_verify_region_rem_set(&scanner, r, r->get_update_watermark(), "Remembered set violation at init-update-references");
     }
   }

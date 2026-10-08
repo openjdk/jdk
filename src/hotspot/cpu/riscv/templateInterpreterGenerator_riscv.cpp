@@ -332,7 +332,7 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   {
     Label L;
     __ ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    __ shadd(t0, t0, fp, t0, LogBytesPerWord);
+    __ shift_left_add(t0, t0, fp, LogBytesPerWord);
     // maximal sp for current fp (stack grows negative)
     // check if frame is complete
     __ bge(t0, sp, L);
@@ -429,7 +429,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   // Restore stack bottom in case i2c adjusted stack
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
+  __ shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
   // and null it as marker that esp is now tos until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ restore_bcp();
@@ -451,14 +451,14 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   if (index_size == sizeof(u4)) {
     __ load_resolved_indy_entry(cache, index);
     __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
-    __ shadd(esp, cache, esp, t0, 3);
+    __ shift_left_add(esp, cache, esp, 3, t0);
   } else {
     // Pop N words from the stack
     assert(index_size == sizeof(u2), "Can only be u2");
     __ load_method_entry(cache, index);
     __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
 
-    __ shadd(esp, cache, esp, t0, 3);
+    __ shift_left_add(esp, cache, esp, 3, t0);
   }
 
   // Restore machine SP
@@ -487,7 +487,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
 
   // Restore expression stack pointer
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
+  __ shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
   // null last_sp until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
@@ -550,13 +550,13 @@ address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter()
 
   // Restore Java expression stack pointer
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shadd(esp, t0, fp, t0, Interpreter::logStackElementSize);
+  __ shift_left_add(esp, t0, fp, Interpreter::logStackElementSize, t0);
   // and null it as marker that esp is now tos until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   // Restore machine SP
   __ ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ shadd(sp, t0, fp, t0, LogBytesPerWord);
+  __ shift_left_add(sp, t0, fp, LogBytesPerWord, t0);
 
   // Restore method
   __ ld(xmethod, Address(fp, frame::interpreter_frame_method_offset * wordSize));
@@ -659,8 +659,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // the stack before the red zone
 
   // locals + overhead, in bytes
-  __ mv(x10, overhead_size);
-  __ shadd(x10, x13, x10, t0, Interpreter::logStackElementSize);  // 2 slots per parameter.
+  __ mv(t0, overhead_size);
+  __ shift_left_add(x10, x13, t0, Interpreter::logStackElementSize);  // 2 slots per parameter.
 
   const Address stack_limit(xthread, JavaThread::stack_overflow_limit_offset());
   __ ld(t0, stack_limit);
@@ -939,8 +939,32 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
  * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  // TODO: Unimplemented generate_CRC32C_updateBytes_entry
-  return nullptr;
+  assert(UseCRC32CIntrinsics, "this intrinsic is not supported");
+  address entry = __ pc();
+
+  const Register crc = c_rarg0; // initial crc
+  const Register buf = c_rarg1; // source java byte array address
+  const Register len = c_rarg2; // len argument to the kernel
+  const Register off = c_rarg3; // offset
+
+  // Arguments are reversed on the Java expression stack.
+  __ lwu(len, Address(esp));                 // end
+  __ lwu(off, Address(esp, wordSize));       // offset
+  __ sub(len, len, off);                     // end - offset
+  __ ld(buf, Address(esp, 2 * wordSize));    // byte[] | direct buffer address
+  __ add(buf, buf, off);
+
+  if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
+    __ lwu(crc, Address(esp, 4 * wordSize));
+  } else {
+    __ addi(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ lwu(crc, Address(esp, 3 * wordSize));
+  }
+
+  __ andi(sp, x19_sender_sp, -16);  // Restore caller's SP.
+  __ far_jump(RuntimeAddress(StubRoutines::updateBytesCRC32C()));
+
+  return entry;
 }
 
 // Not supported
@@ -1018,7 +1042,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // for natives the size of locals is zero
 
   // compute beginning of parameters (xlocals)
-  __ shadd(xlocals, x12, esp, xlocals, 3);
+  __ shift_left_add(xlocals, x12, esp, 3);
   __ subi(xlocals, xlocals, wordSize);
 
   // Pull SP back to minimum size: this avoids holes in the stack
@@ -1180,10 +1204,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #endif
 
   // Change state to native
-  __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
-  __ mv(t0, _thread_in_native);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(t1));
+  __ mv(t1, _thread_in_native);
+  __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw_release(t1, t0);
 
   __ push_cont_fastpath();
 
@@ -1210,11 +1233,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(ltos);
 
   // change thread state
-  // Force all preceding writes to be observed prior to thread state change
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-
-  __ mv(t0, _thread_in_vm);
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ mv(t1, _thread_in_Java);
+  __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw_release(t1, t0);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -1236,18 +1257,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  // Force all preceding writes to be observed prior to thread state change
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-
-  __ mv(t0, _thread_in_Java);
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Check preemption for Object.wait()
   Label not_preempted;
@@ -1451,7 +1465,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, b
   generate_stack_overflow_check();
 
   // compute beginning of parameters (xlocals)
-  __ shadd(xlocals, x12, esp, t1, 3);
+  __ shift_left_add(xlocals, x12, esp, 3);
   __ subi(xlocals, xlocals, wordSize);
 
   // Make room for additional locals
@@ -1697,7 +1711,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // Restore the last_sp and null it out
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
+  __ shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   __ restore_bcp();
@@ -1888,7 +1902,7 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   //   _counters[_index] ++;
   Register counter_addr = t1;
   __ mv(x7, (address) &BytecodePairHistogram::_counters);
-  __ shadd(counter_addr, index, x7, counter_addr, LogBytesPerInt);
+  __ shift_left_add(counter_addr, index, x7, LogBytesPerInt);
   __ atomic_addw(noreg, 1, counter_addr);
  }
 
