@@ -1365,7 +1365,7 @@ methodHandle SharedRuntime::find_callee_method(bool& caller_does_not_scalarize, 
     find_callee_info_helper(vfst, bc, callinfo, CHECK_(methodHandle()));
 
     // Calls via mismatching methods are always non-scalarized
-    if (callinfo.resolved_method()->mismatch()) {
+    if (!caller_does_not_scalarize) {
       RegisterMap reg_map(current,
                     RegisterMap::UpdateMap::skip,
                     RegisterMap::ProcessFrames::include,
@@ -1378,15 +1378,15 @@ methodHandle SharedRuntime::find_callee_method(bool& caller_does_not_scalarize, 
 
       address call_addr = caller_nm->call_instruction_address(caller.pc());
 
-      bool res = true;
+      bool is_optimized = false;
       if (call_addr != nullptr) {
         RelocIterator iter(caller_nm, call_addr, call_addr+1);
         bool ret = iter.next(); // Get item
         if (ret && iter.type() == relocInfo::opt_virtual_call_type) {
-          res = false;
+          is_optimized = true;
         }
       }
-      caller_does_not_scalarize = res;
+      caller_does_not_scalarize = is_optimized ? callinfo.selected_method()->mismatch() : callinfo.resolved_method()->mismatch();
     }
     callee_method = methodHandle(current, callinfo.selected_method());
   }
