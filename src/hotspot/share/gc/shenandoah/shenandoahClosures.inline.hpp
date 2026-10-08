@@ -201,14 +201,26 @@ void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oo
 //
 // ========= Update References
 //
+template<bool CONCURRENT>
 template<class T>
-inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
-  _heap->non_conc_update_with_forwarded(p);
-}
+void ShenandoahUpdateRefsClosure<CONCURRENT>::work(T* p) {
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    if (_heap->in_collection_set(obj)) {
+      shenandoah_assert_forwarded(p, obj);
+      oop resolved = ShenandoahForwarding::forwardee(obj);
+      shenandoah_assert_not_in_cset_except(p, resolved, _heap->cancelled_gc() || _heap->has_self_forwarded_objects());
 
-template<class T>
-inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
-  _heap->conc_update_with_forwarded(p);
+      if (resolved != obj) {
+        if (CONCURRENT) {
+          _heap->atomic_update_oop(resolved, p, o);
+        } else {
+          RawAccess<IS_NOT_NULL>::oop_store(p, resolved);
+        }
+      }
+    }
+  }
 }
 
 inline void ShenandoahFlushSATB::do_thread(Thread* thread) {

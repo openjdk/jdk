@@ -2515,7 +2515,7 @@ public:
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     SuspendibleThreadSetJoiner stsj;
-    do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
+    do_work<ShenandoahUpdateRefsClosure<true>>(worker_id);
   }
 
 private:

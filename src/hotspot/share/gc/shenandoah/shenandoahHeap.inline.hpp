@@ -102,45 +102,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   return result;
 }
 
-template <class T>
-inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      shenandoah_assert_forwarded(p, obj);
-      oop resolved = ShenandoahForwarding::forwardee(obj);
-      shenandoah_assert_not_in_cset_except(p, resolved, cancelled_gc() || has_self_forwarded_objects());
-
-      if (resolved != obj) {
-        // Unconditionally store the update: no concurrent updates expected.
-        RawAccess<IS_NOT_NULL>::oop_store(p, resolved);
-      }
-    }
-  }
-}
-
-template <class T>
-inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      // For concurrent update-refs, we cannot reach the state
-      // with non-forwarded objects in cset.
-      shenandoah_assert_forwarded(p, obj);
-      oop resolved = ShenandoahForwarding::forwardee(obj);
-      shenandoah_assert_not_in_cset_except(p, resolved, cancelled_gc() || has_self_forwarded_objects());
-
-      if (resolved != obj) {
-        // Either we succeed in updating the reference, or something else gets in our way.
-        // We don't care if that is another concurrent GC update, or another mutator update.
-        atomic_update_oop(resolved, p, o);
-      }
-    }
-  }
-}
-
 // Atomic updates of heap location. This is only expected to work with updating the same
 // logical object with its forwardee. The reason why we need stronger-than-relaxed memory
 // ordering has to do with coordination with GC barriers and mutator accesses.
