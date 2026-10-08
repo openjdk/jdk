@@ -252,8 +252,8 @@ bool file_canread_pd(const char* filename) {
 }
 
 bool file_exists_indir_pd(const char* dirname, const char* filename) {
-    char path[BUFLEN];
-    snprintf(path, BUFLEN - 1, "%s%s%s", dirname, FILE_SEPARATOR, filename);
+    char path[PATH_MAX];
+    snprintf(path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", dirname, filename);
     return file_exists_pd(path);
 }
 
@@ -331,36 +331,6 @@ void* symbol_dynamiclookup_pd(void* h, const char* str) {
         return (void*) -1;
     }
     return s;
-}
-
-
-/**
- * Create a file name for the core page file, in the revivaldir.
- * Delete any existing file, otherwise it grows without limit.
- */
-const char* createTempFilename() {
-    char* tempName  = (char*) calloc(1, BUFLEN); // never free'd
-    if (tempName == nullptr) {
-        error("createTempFilename: calloc failed");
-    }
-    char* p = strncat(tempName, revivaldir, BUFLEN - 1);
-    p = strncat(p, "/revivaltemp", BUFLEN - 1);
-    logv("core page file: '%s'", tempName);
-    int fdTemp = open(tempName, O_WRONLY | O_CREAT | O_EXCL, 0600);
-    if (fdTemp < 0) {
-        if (errno == EEXIST) {
-            logv("revival: remove existing core page file '%s'", tempName);
-            int e = unlink(tempName);
-            if (e < 0) {
-                warn("revival: remove existing core page file failed: %d", e);
-            }
-            fdTemp = open(tempName, O_WRONLY | O_CREAT | O_EXCL, 0600);
-            if (fdTemp < 0) {
-                error("cannot remove open existing core page file '%s': %d", tempName, fdTemp);
-            }
-        }
-    }
-    return tempName;
 }
 
 /**
@@ -542,10 +512,10 @@ const char* JVM_SYMS[N_JVM_SYMS] = {
 };
 
 void write_symbols(int symbols_fd, const char* symbols[], int count, const char* revival_dirname) {
-    char buf[BUFLEN];
-    memset(buf, 0, BUFLEN);
-    strncpy(buf, revival_dirname, BUFLEN - 1);
-    strncat(buf, "/" JVM_FILENAME, BUFLEN - 1);
+    char buf[PATH_MAX];
+    memset(buf, 0, PATH_MAX);
+    strncpy(buf, revival_dirname, PATH_MAX - 1);
+    strncat(buf, "/" JVM_FILENAME, PATH_MAX - 1);
     ELFFile lib_copy(buf);
     lib_copy.write_symbols(symbols_fd, symbols, count);
 }
@@ -579,7 +549,7 @@ void write_sharedlib_mapping(int mappings_fd, char* filename, void* address) {
         }
         char buf[BUFLEN];
         const char* checksum = "0";
-        snprintf(buf, BUFLEN, "L %s %llx %s\n", basename(filename), (unsigned long long) address, checksum);
+        snprintf(buf, BUFLEN - 1, "L %s %llx %s\n", basename(filename), (unsigned long long) address, checksum);
         write0(mappings_fd, buf);
 }
 
@@ -599,32 +569,32 @@ void write_sharedlib_mappings(ELFFile& core, int mappings_fd) {
 }
 
 void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t address) {
-    char copy_path[BUFLEN];
+    char copy_path[PATH_MAX];
 
     ELFFile elf(srcfile);
     if (!elf.is_sharedlib()) {
         logv("copy_and_relocate: not an ELF sharedlib: %s", srcfile);
         return;
     }
-    memset(copy_path, 0, BUFLEN);
-    strncpy(copy_path, destdir, BUFLEN - 1);
-    strncat(copy_path, "/", BUFLEN - 1);
+    memset(copy_path, 0, PATH_MAX);
+    strncpy(copy_path, destdir, PATH_MAX - 1);
+    strncat(copy_path, "/", PATH_MAX - 1);
     char* basefilename = basename((char*) srcfile);
-    strncat(copy_path, basefilename, BUFLEN - 1);
+    strncat(copy_path, basefilename, PATH_MAX - 1);
     logv("Copying %s to %s", srcfile, copy_path);
     if (!copy_file_pd(srcfile, copy_path)) {
         return;
     }
 
     // Copy .debuginfo if present:
-    char debuginfo_path[BUFLEN];
-    char debuginfo_copy_path[BUFLEN];
-    snprintf(debuginfo_path, BUFLEN, "%s", srcfile);
+    char debuginfo_path[PATH_MAX];
+    char debuginfo_copy_path[PATH_MAX];
+    snprintf(debuginfo_path, PATH_MAX - 1, "%s", srcfile);
     char* p = strstr(debuginfo_path, ".so");
     if (p != nullptr) {
-        snprintf(p, BUFLEN, ".debuginfo"); // Append to debuginfo_path in place of .so
+        snprintf(p, PATH_MAX - 1, ".debuginfo"); // Append to debuginfo_path in place of .so
         if (file_exists_pd(debuginfo_path)) {
-            snprintf(debuginfo_copy_path, BUFLEN - 1, "%s/%s.debuginfo", destdir, basefilename);
+            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s/%s.debuginfo", destdir, basefilename);
             logv("Copying debuginfo %s to %s", debuginfo_path, debuginfo_copy_path);
             copy_file_pd(debuginfo_path, debuginfo_copy_path);
         }

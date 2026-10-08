@@ -156,7 +156,7 @@ public abstract class AttachProvider {
      * Java virtual machine is a version to which this provider cannot attach, then
      * an {@code AttachNotSupportedException} is thrown.
      *
-     * @implNote The default implementation of this method always throws {@link AttachNotSupportedException}.
+     * @implSpec The default implementation of this method always throws {@link AttachNotSupportedException}.
      *
      * @param  id
      *         The abstract identifier that identifies the Java virtual machine.
@@ -182,7 +182,7 @@ public abstract class AttachProvider {
      * @since 28
      */
     public VirtualMachine attachVirtualMachine(String id, Map<String, ?> env)
-        throws AttachNotSupportedException, IllegalArgumentException, IOException {
+        throws AttachNotSupportedException, IOException {
 
         throw new AttachNotSupportedException("Not implemented in base AttachProvider class");
     }

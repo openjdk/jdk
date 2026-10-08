@@ -296,7 +296,7 @@ public abstract class VirtualMachine {
      * @since 28
      */
     public static VirtualMachine attach(String id, Map<String, ?> env)
-        throws AttachNotSupportedException, IllegalArgumentException, IOException
+        throws AttachNotSupportedException, IOException
     {
         if (id == null) {
             throw new NullPointerException("id cannot be null");

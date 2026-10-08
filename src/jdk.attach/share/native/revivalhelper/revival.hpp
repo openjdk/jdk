@@ -74,6 +74,7 @@
 
 #include <dlfcn.h>
 #include <libgen.h>
+#include <limits.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/time.h>
@@ -99,6 +100,11 @@ void tls_fixup_pd(void* tlsPtr);
 #define JVM_FILENAME "jvm.dll"
 #define FILE_SEPARATOR  "\\"
 #define PATH_SEPARATOR  ";"
+
+#ifndef PATH_MAX
+#define PATH_MAX 32767
+// Not expecting to be limited to the traditional MAX_PATH of 260
+#endif
 
 #else
 #error "revival.hpp: OS Not implemented."
@@ -134,7 +140,7 @@ struct revival_data {
   void* info3;
 };
 
-// The revivalhelper tool uses the  functions: revive_image, revived_dcmd, revived_exit
+// The revivalhelper tool uses the functions: revive_image, revived_dcmd, revived_exit
 
 /**
  * Process Revival setup entry point.
@@ -142,7 +148,7 @@ struct revival_data {
  * Accept optional library search directory, and directory for revival cache directory, which may both be null.
  * Return 0 for success, -1 for failure.
  */
-int revive_image(const char* corefile, const char* libdirs, const char* revival_data_path);
+int revive_image(const char* corefile, const char* libdirs, const char* revival_cache_path);
 
 /**
  * Invoke the given jcmd operation, e.g. "Thread.print" or a string containing command and parameters
@@ -331,10 +337,11 @@ bool can_lazycopy_pd(void* vaddr);
  */
 
 /**
- * Simple pause for debugging when REVIVAL_WAIT is set in env.
+ * Simple pause for diagnostics when REVIVAL_WAIT is set in env.
+ * Waits for character input (i.e. hit return to continue).
  * Only for when revivalhelper is run manually at command-line, as requires stdin.
  */
-void waitHitRet();
+void diagWait();
 
 // Avoid "error: format string is not a string literal [-Werror,-Wformat-nonliteral]"
 // on Mac, but __attribute__ not a feature on MSVC/Windows.

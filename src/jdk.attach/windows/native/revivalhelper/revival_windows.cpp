@@ -138,8 +138,8 @@ bool file_canread_pd(const char* filename) {
 }
 
 bool file_exists_indir_pd(const char* dirname, const char* filename) {
-    char path[BUFLEN];
-    snprintf(path, BUFLEN - 1, "%s" FILE_SEPARATOR "%s", dirname, filename);
+    char path[PATH_MAX];
+    snprintf(path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", dirname, filename);
     return file_exists_pd(path);
 }
 
@@ -175,7 +175,7 @@ void tls_fixup_pd(void* teb) {
     // Get pointer to TLS pointer in current process:
     uint64_t* cur_tls = (uint64_t*) ((char*) cur_teb + 0x58); // Read TLS ptr at known offset, effectively __readgsqword(0x58);
     logv("tls_fixup: current teb = 0x%llx tls ptr at 0x%llx", cur_teb, cur_tls);
-    waitHitRet();
+    diagWait();
 
     // Given we have revived memory, read core TEB address, to find old TLS pointer.
     logv("tls_fixup: MiniDump TEB addr 0x%llx", teb);
@@ -184,7 +184,7 @@ void tls_fixup_pd(void* teb) {
 
     *cur_tls = *core_tls; // Replace current TLS with that from MiniDump
     logv("tls_fixup: fixed, cur teb = 0x%llx new tls = 0x%llx contains 0x%llx", cur_teb, cur_tls, *cur_tls);
-    waitHitRet();
+    diagWait();
 }
 
 void clock_fixup_pd(struct revival_data* rdata) {
@@ -208,8 +208,8 @@ void init_pd() {
 }
 
 void dump() {
-    char filename[BUFLEN];
-    snprintf(filename, BUFLEN, "revival_dump_%ld.mdmp", _getpid());
+    char filename[PATH_MAX];
+    snprintf(filename, PATH_MAX - 1, "revival_dump_%ld.mdmp", _getpid());
     MINIDUMP_TYPE dumpType =  (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData | MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo | MiniDumpWithUnloadedModules);
     HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -241,7 +241,7 @@ void set_prot(void* addr, uint64_t length, DWORD prot) {
         logv("set_prot: failed (1) setting prot (0x%lx) for: 0x%p, len 0x%lx: error 0x%x.",  prot, addr, length, GetLastError());
         if (logLevel >= LOG_VERBOSE) {
             printMemBasicInfo(addr);
-            waitHitRet();
+            diagWait();
         }
     }
 }
@@ -269,7 +269,7 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
         }
     }
     warn("revival: handler: PID %ld thread: 0x%lx pc 0x%llx address 0x%llx: not handled. ", _getpid(), GetCurrentThreadId(), pc, addr);
-    waitHitRet();
+    diagWait();
     if (logLevel >= LOG_DEBUG) {
         dump();
     }
@@ -367,7 +367,7 @@ void* do_mmap_pd(void* addr, size_t length, char* filename, int fd, size_t offse
     if ((uint64_t) p != (uint64_t) addr) {
         logv("do_mmap_pd: MapViewOfFile3 0x%p failed, ret=0x%p error=0x%lx", addr, p, GetLastError());
         p = (void*) -1;
-        waitHitRet();
+        diagWait();
     }
     CloseHandle(h2);
     CloseHandle(h);
@@ -554,13 +554,13 @@ int relocate_sharedlib_pd(const char* filename, const void* addr) {
         // EDITBIN.EXE /DYNAMICBASE:NO /REBASE:BASE=0xaddress filename
         char command[BUFLEN];
         memset(command, 0, BUFLEN);
-        strncat(command, editbin, BUFLEN - 1);
-        strncat(command, " /DYNAMICBASE:NO /REBASE:BASE=0x", BUFLEN - 1);
+        strncat(command, editbin, BUFLEN);
+        strncat(command, " /DYNAMICBASE:NO /REBASE:BASE=0x", BUFLEN);
         char address[32];
         sprintf(address, "%llx", (unsigned long long) addr);
-        strncat(command, address, BUFLEN - 1);
-        strncat(command, " ", BUFLEN - 1);
-        strncat(command, filename, BUFLEN - 1);
+        strncat(command, address, BUFLEN);
+        strncat(command, " ", BUFLEN);
+        strncat(command, filename, BUFLEN);
 
         int e = system(command);
         logv("relocate_sharedlib_pd: '%s' returns %d", command, e);
@@ -685,8 +685,8 @@ void write_symbols(int symbols_fd, const char* symbols[], int count, const char*
         error("write_symbols: SymInitialize error : 0x%lx", GetLastError());
     }
 
-    char moduleFilename[BUFLEN];
-    snprintf(moduleFilename, BUFLEN, "%s" FILE_SEPARATOR JVM_FILENAME, revival_dirname);
+    char moduleFilename[PATH_MAX];
+    snprintf(moduleFilename, PATH_MAX - 1, "%s" FILE_SEPARATOR JVM_FILENAME, revival_dirname);
     SymLoadModuleEx(h2, nullptr, moduleFilename, nullptr, 0, 0, nullptr, 0);
 
     TCHAR szSymbolName[MAX_SYM_NAME];
@@ -701,7 +701,7 @@ void write_symbols(int symbols_fd, const char* symbols[], int count, const char*
         if (!SymFromName(h2, szSymbolName, pSymbol)) {
             warn("write_symbols: %d: SymFromName '%s' failed, error: %d", i, szSymbolName, GetLastError());
         } else {
-            snprintf(buf, MAX_SYM_NAME, "%s %llx", szSymbolName, pSymbol->Address);
+            snprintf(buf, MAX_SYM_NAME - 1, "%s %llx", szSymbolName, pSymbol->Address);
             logv("write_symbols: %d: %s", i, buf);
             write0(symbols_fd, buf);
             write0(symbols_fd, "\n");
@@ -735,7 +735,7 @@ void delete_file_pd(char* filename) {
 void write_sharedlib_mapping(int mappings_fd, char* filename, void* address) {
         char buf[BUFLEN];
         const char* checksum = "0";
-        snprintf(buf, BUFLEN, "L %s %llx %s\n", basename_pd(filename), (unsigned long long) address, checksum);
+        snprintf(buf, BUFLEN - 1, "L %s %llx %s\n", basename_pd(filename), (unsigned long long) address, checksum);
         write0(mappings_fd, buf);
 }
 
@@ -755,45 +755,45 @@ void write_sharedlib_mappings(int mappings_fd, MiniDump* dump) {
 }
 
 void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t address) {
-    char copy_path[BUFLEN]; // destination
-    memset(copy_path, 0, BUFLEN);
-    strncpy(copy_path, destdir, BUFLEN - 1);
-    strncat(copy_path, FILE_SEPARATOR, BUFLEN - 1);
+    char copy_path[PATH_MAX]; // destination
+    memset(copy_path, 0, PATH_MAX);
+    strncpy(copy_path, destdir, PATH_MAX);
+    strncat(copy_path, FILE_SEPARATOR, PATH_MAX);
     char* basefilename = basename_pd((char*) srcfile); // basefilename is e.g. "file.dll"
-    strncat(copy_path, basefilename, BUFLEN - 1);
+    strncat(copy_path, basefilename, PATH_MAX);
     logv("Copying %s to %s", srcfile, copy_path);
     copy_file_pd(srcfile, copy_path);
 
     // Copy .pdb and .map if present:
-    char debuginfo_path[BUFLEN];
-    char debuginfo_copy_path[BUFLEN];
-    snprintf(debuginfo_path, BUFLEN, "%s", srcfile);
+    char debuginfo_path[PATH_MAX];
+    char debuginfo_copy_path[PATH_MAX];
+    snprintf(debuginfo_path, PATH_MAX - 1, "%s", srcfile);
     char* p = strstr(debuginfo_path, ".dll");
     if (p != nullptr) {
         // It is a dll, check for .pdb and .map files.
         // JDK builds now create e.g. file.dll.pdb  but also check for just file.pdb
-        snprintf(p, BUFLEN, ".pdb"); // Append to debuginfo_path in place of .dll
+        snprintf(p, PATH_MAX - 1, ".pdb"); // Append to debuginfo_path in place of .dll
         if (file_exists_pd(debuginfo_path)) {
             // file.pdb exists
-            snprintf(debuginfo_copy_path, BUFLEN - 1, "%s/%s.pdb", destdir, basefilename);
+            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s/%s.pdb", destdir, basefilename);
             copy_file_pd(debuginfo_path, debuginfo_copy_path);
         }
-        snprintf(p, BUFLEN, ".map");
+        snprintf(p, PATH_MAX - 1, ".map");
         if (file_exists_pd(debuginfo_path)) {
             // file.map exists
-            snprintf(debuginfo_copy_path, BUFLEN - 1, "%s/%s.map", destdir, basefilename);
+            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s/%s.map", destdir, basefilename);
             copy_file_pd(debuginfo_path, debuginfo_copy_path);
         }
-        snprintf(p, BUFLEN, ".dll.pdb");
+        snprintf(p, PATH_MAX - 1, ".dll.pdb");
         if (file_exists_pd(debuginfo_path)) {
             // file.dll.pdb exists
-            snprintf(debuginfo_copy_path, BUFLEN - 1, "%s/%s.pdb", destdir, basefilename);
+            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s/%s.pdb", destdir, basefilename);
             copy_file_pd(debuginfo_path, debuginfo_copy_path);
         }
-        snprintf(p, BUFLEN, ".dll.map");
+        snprintf(p, PATH_MAX - 1, ".dll.map");
         if (file_exists_pd(debuginfo_path)) {
             // file.dll.map exists
-            snprintf(debuginfo_copy_path, BUFLEN - 1, "%s/%s.map", destdir, basefilename);
+            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s/%s.map", destdir, basefilename);
             copy_file_pd(debuginfo_path, debuginfo_copy_path);
         }
     }
@@ -894,7 +894,7 @@ int create_revival_cache_pd(const char* corename, const char* revival_dirname, c
     write_symbols(symbols_fd, JVM_SYMS, N_JVM_SYMS, revival_dirname);
     close(symbols_fd);
     logv("Write symbols done");
-    waitHitRet();
+    diagWait();
 
     logv("create_revival_cache_pd returning %d", 0);
     return 0;

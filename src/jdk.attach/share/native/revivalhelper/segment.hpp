@@ -36,6 +36,8 @@ void write0(int fd, const char* buf); // revival.cpp
 /**
  * A Segment describes a memory range, as required by the process revival mechanism.
  * It may have a name, and may describe from what offset in a file its contents can be read.
+ *
+ * If a name string is used, it is commonly used directly from the mapped dump file, and not managed/free'd here.
  */
 class Segment {
     public:

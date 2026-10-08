@@ -59,7 +59,7 @@ int Segment::write_mapping(int fd, const char* type) {
     //
     // Permissions are currently not implemented.
     char buf[BUFLEN];
-    snprintf(buf, BUFLEN, "%s %llx %llx %llx %llx %llx %s\n",
+    snprintf(buf, BUFLEN - 1, "%s %llx %llx %llx %llx %llx %s\n",
              type,
              (unsigned long long) vaddr,
              (unsigned long long) end(),
@@ -73,7 +73,7 @@ int Segment::write_mapping(int fd, const char* type) {
 }
 
 int Segment::toString(char* buf, int len) {
-    return snprintf(buf, len, "Segment: %llx - %llx '%s' off: %llx len:%llx",
+    return snprintf(buf, len - 1, "Segment: %llx - %llx '%s' off: %llx len:%llx",
              (unsigned long long) vaddr,
              (unsigned long long) end(),
              name != nullptr ? name : "",

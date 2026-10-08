@@ -191,7 +191,7 @@ void error(const char* format, ...) {
 /**
  * Diagnostic pause (e.g. for debugger attach) when revivalhelper is run with REVIVAL_WAIT=1 in environment.
  */
-void waitHitRet() {
+void diagWait() {
     if (debugPause) {
         warn("(waiting, hit return)");
         getchar();
@@ -365,11 +365,15 @@ int revival_mapping_copy(void* vaddr, size_t length, size_t offset, bool allocat
  * Returns the value from load_sharedobject_pd(), which is an opaque handle (not necessarily the address), or -1 for error.
  */
 void* load_sharedlibrary_fromdir(const char* dirname, const char* libname, void* vaddr, char* sum) {
-    char buf[BUFLEN];
-    snprintf(buf, BUFLEN, "%s/%s", dirname, libname);
-    void* a = load_sharedobject_pd(buf, vaddr);
-    logv("load_sharedobject_pd: %s: returns %p", buf, a);
-    return a;
+    char buf[PATH_MAX];
+    if (snprintf(buf, PATH_MAX - 1, "%s/%s", dirname, libname) < PATH_MAX) {
+        void* a = load_sharedobject_pd(buf, vaddr);
+        logv("load_sharedobject_pd: %s: returns %p", buf, a);
+        return a;
+    } else {
+        logv("load_sharedobject_pd: path too long %s %s", dirname, libname);
+        return (void*) -1;
+    }
 }
 
 /**
@@ -443,7 +447,7 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
         return -1;
     }
 #endif
-    waitHitRet();
+    diagWait();
 
     // Read and process the mappings:
     while (1) {
@@ -468,10 +472,13 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
             logv("Loaded library '%s' at %p", s1, vaddr);
             // Record jvm details: needed for version check.
             if (strstr(s1, JVM_FILENAME)) {
-                jvm_filename = (char*) malloc(BUFLEN);
-                snprintf(jvm_filename, BUFLEN - 1, "%s%s%s", dirname, FILE_SEPARATOR, s1);
+                jvm_filename = (char*) malloc(PATH_MAX);
+                if (jvm_filename == nullptr) {
+                    error("Failed to allocate for jvm_filename");
+                }
+                snprintf(jvm_filename, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", dirname, s1);
                 jvm_address = vaddr;
-                waitHitRet();
+                diagWait();
             }
             continue;
         }
@@ -554,19 +561,22 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
         close(core_fd);
     }
     fclose(f);
-    waitHitRet();
+    diagWait();
     return 0;
 }
 
 /**
- * Lookup a symbol in the symbols file in a given direcory.
+ * Lookup a symbol in the symbols file.
  */
-void* symbol_resolve_from_symbol_file(const char* dirname, const char* sym) {
-    char buf[BUFLEN];
-    snprintf(buf, BUFLEN, "%s/%s", dirname, SYMBOLS_FILENAME);
+void* symbol_resolve_from_symbol_file(const char* sym) {
+    char buf[PATH_MAX];
+    if (!revivaldir) {
+        error("symbol_resolve_from_symbol_file: call revive_image first.");
+    }
+    snprintf(buf, PATH_MAX - 1, "%s/%s", revivaldir, SYMBOLS_FILENAME);
     int e = 0;
     void* addr = (void*) -1;
-    FILE* f = fopen((char*) &buf, "r");
+    FILE* f = fopen((char*) buf, "r");
     if (!f) {
         warn("Cannot open symbol file: %s: %s", buf, strerror(errno));
         return (void*) -1;
@@ -612,7 +622,7 @@ void* symbol(const char* sym) {
         warn("symbol: call revive_image first.");
         return (void*) -1;
     }
-    void* p = symbol_resolve_from_symbol_file(revivaldir, sym);
+    void* p = symbol_resolve_from_symbol_file(sym);
     if (p == (void*) -1) {
         // Lookup e.g. with dlsym:
         p = symbol_dynamiclookup_pd(h, sym);
@@ -706,36 +716,33 @@ int symbol_set(const char* sym, void* value) {
 }
 
 /**
- * Attempt to find the given filename/path in the given directory.
- *
+ * Attempt to find the given filename/path in the the given directory.
  * The filename may be a path such as /some/dir/jdk/lib/server/libjvm.so
  *
- * Remove leading directory elements from the filename path, until
- * a file exists in the directory or the end of filename is reached.
- *
- * If found, return the path that exists, as a new C heap allocation
- * (strdup) that the caller must free.
+ * If found, return path that exists, as a new C heap allocation that the caller should free.
  * Return nullptr if not found.
  */
-char* find_filename_in_one_dir(const char* dir, const char* filename) {
-    char path[BUFLEN];
+char* find_filename_in_dir(const char* dir, const char* filename) {
+    char path[PATH_MAX];
     char* p = (char*) filename; // Pointer to traverse the given filename/path
 
+    // Remove leading directory elements from the filename, until
+    // a file exists in the directory or the end of filename is reached.
     while (true) {
-        snprintf(path, BUFLEN - 1, "%s%s%s", dir, FILE_SEPARATOR, p);
+        snprintf(path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", dir, p);
         if (file_exists_pd(path)) {
+           logv("find_filename_in_dir: found '%s'", path);
            return strdup(path);
         }
         // Move to next dir entry in filename:
         p = strstr(p, FILE_SEPARATOR);
         if (p != nullptr) {
-            // Found, skip the separator itself
-            p++;
+            p++; // Separator found, also skip the separator
         } else {
             break;
         }
     }
-    logd("find_filename_in_one_dir: Could not find '%s' in '%s'", filename, dir);
+    logd("find_filename_in_dir: Could not find '%s' in '%s'", filename, dir);
     return nullptr;
 }
 
@@ -743,9 +750,13 @@ char* find_filename_in_one_dir(const char* dir, const char* filename) {
  * Attempt to find the given filename/path in the the given directory list,
  * which is a single string that may contain multiple directories separated by
  * PATH_SEPARATOR characters.
+ * The filename may be a path such as /some/dir/jdk/lib/server/libjvm.so
+ *
+ * If found, return path that exists, as a new C heap allocation that the caller should free.
+ * Return nullptr if not found.
  */
 char* find_filename_in_libdirs(const char* libdirs, const char* filename) {
-    char dir[BUFLEN];
+    char dir[PATH_MAX];
     char* result = nullptr;
 
     // On Windows, filename may begin with C:\ which does not work inside a directory, but is removed on next iteration.
@@ -757,9 +768,8 @@ char* find_filename_in_libdirs(const char* libdirs, const char* filename) {
         if (len > 0) {
             strncpy(dir, start, len);
             dir[len] = 0;
-            result = find_filename_in_one_dir(dir, filename);
+            result = find_filename_in_dir(dir, filename);
             if (result != nullptr) {
-                logv("find_filename_in_libdirs: query '%s' found '%s'", filename, result);
                 return result;
             }
         }
@@ -767,18 +777,19 @@ char* find_filename_in_libdirs(const char* libdirs, const char* filename) {
         end = strstr(start, PATH_SEPARATOR);
     }
     // No separator, or no further separator:
-    return find_filename_in_one_dir(start, filename);
+    return find_filename_in_dir(start, filename);
 }
 
 int mappings_file_create(const char* dirname, const char* corename) {
-// Create file and header lines:
-// core FILENAME size 0 (0 is placeholder for possible checksum)
-// time 123213123
-//
-// Shared libraries written later:
-// L jvm addresshex 0   (0 is placeholder for possible checksum)
     char buf[BUFLEN];
-    snprintf(buf, BUFLEN, "%s%s", dirname, "/" MAPPINGS_FILENAME);
+    // Create file and header lines:
+    // core FILENAME SIZE_BYTES 0    (0 is placeholder for possible checksum)
+    // time 123213123
+    //
+    // Shared libraries written later:
+    // L jvm addresshex 0   (0 is placeholder for possible checksum)
+
+    snprintf(buf, BUFLEN - 1, "%s%s", dirname, "/" MAPPINGS_FILENAME);
     logv("mappings_file_create: %s", buf);
 #ifdef WINDOWS
     int fd = _open(buf, _O_CREAT | _O_WRONLY | _O_TRUNC, _S_IREAD | _S_IWRITE);
@@ -791,20 +802,20 @@ int mappings_file_create(const char* dirname, const char* corename) {
         return fd;
     }
     // Header:
-    snprintf(buf, BUFLEN, "revival %d\n", REVIVAL_VERSION);
+    snprintf(buf, BUFLEN - 1, "revival %d\n", REVIVAL_VERSION);
     write0(fd, buf);
     // Write core file details.  Use base filename (no path), as it can be moved.
     unsigned long long coresize = file_size(corename);
-    snprintf(buf, BUFLEN, "core %s %lld 0\n", basename_pd((char*) corename), coresize);
+    snprintf(buf, BUFLEN - 1, "core %s %lld 0\n", basename_pd((char*) corename), coresize);
     write0(fd, buf);
-    snprintf(buf, BUFLEN, "time %llu\n", file_time(corename));
+    snprintf(buf, BUFLEN - 1, "time %llu\n", file_time(corename));
     write0(fd, buf);
     return fd;
 }
 
 int symbols_file_create(const char* dirname) {
-    char buf[BUFLEN];
-    snprintf(buf, BUFLEN, "%s%s", dirname, "/" SYMBOLS_FILENAME);
+    char buf[PATH_MAX];
+    snprintf(buf, PATH_MAX - 1, "%s%s", dirname, "/" SYMBOLS_FILENAME);
     logv("symbols_file_create: %s", buf);
 #ifdef WINDOWS
     int fd = _open(buf, _O_CREAT | _O_WRONLY | _O_TRUNC, _S_IREAD | _S_IWRITE);
@@ -820,7 +831,7 @@ int symbols_file_create(const char* dirname) {
 
 /**
  * Return true if the given character pointer is a defined
- * environment variable (one which exists and is not null).
+ * environment variable (one which exists and is not empty).
  */
 bool env_check(char* s) {
     char* env = getenv(s);
@@ -845,7 +856,7 @@ int revive_image_cooperative() {
 #endif
     logv("revive_image: calling JVM revival helper method %p", s);
     void*(*helper)() = (void*(*)()) s;
-    waitHitRet();
+    diagWait();
     rdata = (struct revival_data *) (helper)();
     logv("revive_image: JVM revival helper method returns %p", rdata);
     if (rdata == nullptr) {
@@ -873,33 +884,38 @@ int revive_image_cooperative() {
 }
 
 /**
- * Create (allocate) revival cache directory name, based on corefile name.
- * Use revival_data_path as prefix if non-null.
+ * Create revival cache directory name, based on corefile name.
+ * Use revival_cache_path as prefix if non-null.
+ * Return a pointer from a new malloc allocation.
  */
-char* revival_dirname_create(const char* corename, const char* revival_data_path) {
-    char* buf = (char*) calloc(1, BUFLEN);
+char* revival_dirname_create(const char* corename, const char* revival_cache_path) {
+    char* buf = (char*) malloc(PATH_MAX);
     if (!buf) {
         error("Failed to allocate buffer for revival directory name.");
     }
     int len;
-    if (revival_data_path != nullptr) {
-        len = snprintf(buf, BUFLEN, "%s%s%s%s", revival_data_path, FILE_SEPARATOR, basename_pd((char*) corename), REVIVAL_SUFFIX);
+    if (revival_cache_path != nullptr) {
+        len = snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s" REVIVAL_SUFFIX, revival_cache_path, basename_pd((char*) corename));
     } else {
-        len = snprintf(buf, BUFLEN, "%s%s", corename, REVIVAL_SUFFIX);
+        len = snprintf(buf, PATH_MAX - 1, "%s" REVIVAL_SUFFIX, corename);
     }
-    if (len >= BUFLEN) {
+    if (len >= PATH_MAX) {
         error("Revival directory name too long.");
     }
     return buf;
 }
 
-char* mappings_filename_create(const char* revival_data_path) {
-    char* buf = (char*) calloc(1, BUFLEN);
+/**
+ * Create the mappings filename, based on a revival cache directory path.
+ * Return a pointer from a new malloc allocation.
+ */
+char* mappings_filename_create(const char* revival_cache_path) {
+    char* buf = (char*) malloc(PATH_MAX);
     if (!buf) {
         error("Failed to allocate buffer for mappings file name.");
     }
-    int len = snprintf(buf, BUFLEN, "%s%s%s", revival_data_path, FILE_SEPARATOR, "core.mappings");
-    if (len >= BUFLEN) {
+    int len = snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", revival_cache_path, "core.mappings");
+    if (len >= PATH_MAX) {
         error("core.mappings filename too long.");
     }
     return buf;
@@ -913,7 +929,7 @@ void version_check(const char* corename, const char* directory, const char* file
                     const char* version_symbol) {
 
     // Called when memory mappings are in place, jvm_filename and jvm_address are set.
-    void* ver = symbol_resolve_from_symbol_file(directory, version_symbol);
+    void* ver = symbol_resolve_from_symbol_file(version_symbol);
     if (ver == nullptr || ver == (void*) -1) {
         warn("No version symbol '%s' found, no version check.", version_symbol);
         return;
@@ -936,8 +952,8 @@ void version_check(const char* corename, const char* directory, const char* file
         error("JVM version check failed: pointer invalid.");
     }
     // Read from binary:
-    char jvm_name[BUFLEN];
-    snprintf(jvm_name, BUFLEN - 1, "%s" FILE_SEPARATOR "%s", directory, filename);
+    char jvm_name[PATH_MAX];
+    snprintf(jvm_name, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", directory, filename);
 
     // Location as relative virtual address:
     uint64_t vm_release_relative_vaddr = (uint64_t) ptr - (uint64_t) base_address;
@@ -956,7 +972,7 @@ void version_check(const char* corename, const char* directory, const char* file
     char* vm_release_binary = readstring_at_offset_pd(jvm_name, vm_release_offset);
     logv("Version check: version from binary:  %s", vm_release_binary);
 
-    if (strncmp(vm_release_core, vm_release_binary, BUFLEN) != 0) {
+    if (strncmp(vm_release_core, vm_release_binary, PATH_MAX) != 0) {
         error("JVM version check failed: mismatch, core '%s', jvm binary '%s'", vm_release_core, vm_release_binary);
     }
 }
@@ -969,15 +985,15 @@ bool revival_cache_exists(char* dirname, const char* mappings_filename) {
     if (!file_exists_pd(mappings_filename)) {
         return false;
     }
-    char buf[BUFLEN];
-    snprintf(buf, BUFLEN - 1, "%s" FILE_SEPARATOR JVM_FILENAME, dirname);
+    char buf[PATH_MAX];
+    snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR JVM_FILENAME, dirname);
     if (!file_exists_pd(buf)) {
         return false;
     }
     return true;
 }
 
-int revive_image(const char* corename, const char* libdirs, const char* revival_data_path) {
+int revive_image(const char* corename, const char* libdirs, const char* revival_cache_path) {
     int e;
     char* dirname;
     if (rdata != nullptr && rdata->vm_thread) {
@@ -1026,7 +1042,7 @@ int revive_image(const char* corename, const char* libdirs, const char* revival_
         return -1;
     }
     // Decide core.revival directory name:
-    dirname = revival_dirname_create(corename, revival_data_path);
+    dirname = revival_dirname_create(corename, revival_cache_path);
     if (file_exists_pd(dirname) && !file_canread_pd(dirname)) {
         warn("%s: exists but cannot read.", dirname);
         return -1;
@@ -1046,7 +1062,7 @@ int revive_image(const char* corename, const char* libdirs, const char* revival_
         logv("Creating revival data cache in directory: %s", dirname);
         e = create_revival_cache_pd(corename, dirname, libdirs);
         logv("revive_image: create_revival_cache_pd returns: %d", e);
-        waitHitRet();
+        diagWait();
         if (e != 0) {
             warn("revive_image: create_revival_cache failed.  Return code: %d", e);
             return e;
@@ -1070,14 +1086,14 @@ int revive_image(const char* corename, const char* libdirs, const char* revival_
     logv("Installing signal handler.");
     install_handler_pd();
 
+    // Preparation done:
+    revivaldir = dirname;
+
     if (!versionCheckEnabled) {
         warn("JVM version check skipped.");
     } else {
         version_check(corename, dirname, JVM_FILENAME, jvm_address, SYM_VM_RELEASE);
     }
-
-    // Preparation done:
-    revivaldir = dirname;
 
     e = revive_image_cooperative();
     if (e < 0) {

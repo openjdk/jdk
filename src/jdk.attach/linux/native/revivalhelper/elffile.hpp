@@ -26,11 +26,13 @@
 #include <elf.h>
 #include <errno.h>
 
+#include <set>
+
 #include "revival.hpp"
 
 /**
  * An ELF file.
- * Operations as required by the process revival mechanism, to enable jcmd to operate on a MiniDump.
+ * Operations required by the process revival mechanism, to enable jcmd to operate on a core file.
  *
  * File inspection to read memory segments, and also a destructive operation to relocate the file to a new base virtual address.
  *
@@ -77,10 +79,13 @@ class ELFFile {
     char* shdr_strings;
     std::list<Segment> file_mappings;
     std::list<Segment> libs;
+    std::set<char*>    strings;
 
     bool verify();
 
     char* find_note_data(Elf64_Phdr* notes_ph, Elf64_Word type);
+    char* file_name_for_nt_file(char* name, const char* libdirs);
+
     void read_file_mappings();
 
     // Section header actual address in mmapped file.

@@ -451,25 +451,24 @@ char* ELFFile::find_note_data(Elf64_Phdr* notes_ph, Elf64_Word type) {
 // Return the filename to use in our sharedlib list, for a name from NT_FILE info.
 // Handle any name filtering, and return nullptr if file should not be included in library list.
 // Handle substitution from the libdirs list.
-char* file_name_for_nt_file(char* name, const char* libdirs) {
-    // Filter on name from the NT_FILE list.
+char* ELFFile::file_name_for_nt_file(char* name, const char* libdirs) {
     // Keep all files in NT_FILE list, not just ELF sharedlibs.
-    // But not classes.jsa or other ".jsa" file, we need the core file data for that.
+    // Filter to remove classes.jsa or other ".jsa" files, we need the core file data for that.
     // In a transported core actual files are not available, so cannot check file type.
-
     char* p = strrchr(name, '.');
     if (p != nullptr && strcmp(p, ".jsa") == 0) {
         return nullptr;
     }
+
     // Ignore " (deleted)" which can be at the end of a path.
     char* name2 = nullptr;
-    if (strlen(name) > 10) {
+    int len = strlen(name);
+    if (len > 10) {
         p = strrchr(name, ' ');
         if (p != nullptr && strcmp(p, " (deleted)") == 0) {
-            int len = strlen(name) - 10;
-            name2 = (char*) malloc(len + 1);
-            strncpy(name2, name, len);
-            name2[len] = 0;
+            name2 = strdup(name);
+            name2[len - 10] = 0;
+            strings.insert(name2);
             name = name2;
         }
     }
@@ -479,11 +478,10 @@ char* file_name_for_nt_file(char* name, const char* libdirs) {
         if (alt_name != nullptr) {
             logv("Using from libdirs: '%s'", alt_name);
             name = alt_name; // heap allocated
-            if (name2 != nullptr) {
-                free(name2);
-            }
+            strings.insert(name);
         }
     }
+    logd("file_name_for_nt_file returns: %s", name);
     return name;
 }
 
@@ -515,9 +513,9 @@ void ELFFile::read_file_mappings() {
     long pagesize = *(long*) note_nt_file;
     note_nt_file += 8;
     logd("NT_FILE count %d pagesize 0x%lx", nt_file_count, pagesize);
-    if (nt_file_count > 65536) {
+    if (nt_file_count > 30000) {
         // Arbitrary number but have a sanity check and warn if data looks strange.
-        warn("NT_FILE extreme file mapping count %d pagesize 0x%lx", nt_file_count, pagesize);
+        warn("%s: NT_FILE extreme file mapping count %d pagesize 0x%lx", filename, nt_file_count, pagesize);
     }
     // Read numerical data, then library names.
     // NT_FILE lists can contain multiple entries for the same filename.
@@ -536,18 +534,19 @@ void ELFFile::read_file_mappings() {
         note_nt_file++; // terminator
     }
 
-    // Reread that info to build final library list. Use libdirs if set, to rewrite paths.
+    // Iterate that info to build final library list. Use libdirs if set, to rewrite paths.
     // Do not skip duplicate names, as would need to coalesce entries/ranges for same filename.
     // Lookups will get first match, which is what is needed to find base address.
     for (int i = 0; i < nt_file_count; i++) {
         logd("NT_FILE: 0x%lx - 0x%lx %s", (uint64_t) files[i].vaddr, (uint64_t) files[i].end(), files[i].name);
         Segment lib = files[i];
-        char* name = file_name_for_nt_file(lib.name, libdirs);
+        char* name = this->file_name_for_nt_file(lib.name, libdirs);
         if (name != nullptr) {
-            if (name != lib.name) {
-                // name changed, is now heap allocated
-            }
             Segment seg(name, lib.vaddr, lib.length);
+            if (name != lib.name) {
+                logd("nt_file name changed now %p %s", name, name);
+                strings.insert(name);
+            }
             file_mappings.push_back(seg);
         }
     }
@@ -618,8 +617,7 @@ void ELFFile::write_symbols(int symbols_fd, const char* symbols[], int count) {
             int ret = strcmp(symbols[j], SYMTAB_BUFFER + sym->st_name);
             if (ret == 0) {
                 char buf[BUFLEN];
-                int len = snprintf(buf, BUFLEN, "%s %llx\n",
-                        SYMTAB_BUFFER + sym->st_name,
+                int len = snprintf(buf, BUFLEN - 1, "%s %llx\n", SYMTAB_BUFFER + sym->st_name,
                         (unsigned long long) sym->st_value);
                 int e = write(symbols_fd, buf, len);
                 if (e != len) {
