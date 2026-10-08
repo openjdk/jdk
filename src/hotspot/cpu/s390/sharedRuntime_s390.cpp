@@ -4214,11 +4214,11 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   address start = __ pc();
   __ save_return_pc(); // save return_pc (Z_R14)
   __ push_frame_abi160(0);
+  __ get_PC(Z_R1_scratch);
   int frame_complete = __ pc() - start;
-  __ set_last_Java_frame(Z_SP, noreg);
+  __ set_last_Java_frame(Z_SP, Z_R1_scratch);
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), Z_thread);
-  address calls_return_pc = __ last_calls_return_pc();
   __ reset_last_Java_frame();
 
   // The handle is dereferenced through a load barrier.
@@ -4229,7 +4229,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
   OopMapSet* oop_maps = new OopMapSet();
   OopMap* map = new OopMap(framesize, 0);
-  oop_maps->add_gc_map(calls_return_pc - start, map);
+  oop_maps->add_gc_map(frame_complete, map);
 
   RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
     RuntimeStub::new_runtime_stub(name, &code, frame_complete,
@@ -4249,11 +4249,11 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
   address start = __ pc();
   __ save_return_pc(); // save return_pc (Z_R14)
   __ push_frame_abi160(0);
+  __ get_PC(Z_R1_scratch);
   int frame_complete = __ pc() - start;
-  __ set_last_Java_frame(Z_SP, noreg);
+  __ set_last_Java_frame(Z_SP, Z_R1_scratch);
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), Z_thread);
-  address calls_return_pc = __ last_calls_return_pc();
 
   __ reset_last_Java_frame();
 
@@ -4263,7 +4263,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
   OopMapSet* oop_maps = new OopMapSet();
   OopMap* map = new OopMap(framesize, 0);
-  oop_maps->add_gc_map(calls_return_pc - start, map);
+  oop_maps->add_gc_map(frame_complete, map);
 
   RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
     RuntimeStub::new_runtime_stub(name, &code, frame_complete,
