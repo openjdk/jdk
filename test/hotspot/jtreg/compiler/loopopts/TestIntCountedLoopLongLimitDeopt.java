@@ -97,6 +97,17 @@ public class TestIntCountedLoopLongLimitDeopt {
         return sum;
     }
 
+    // Test that an out-of-int-range long limit directly triggers the loop_limit_check trap.
+    // Early exit at i >= 100 bounds iteration count after deopt.
+    public static int testOutOfRangeLongLimit(long limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += i;
+            if (i >= 100) return sum;
+        }
+        return sum;
+    }
+
     public static int testEarlyBreak(long limit) {
         int sum = 0;
         for (int i = 0; i < limit; i++) {
@@ -176,6 +187,12 @@ public class TestIntCountedLoopLongLimitDeopt {
         assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE }, (int) -compileArg, 1);
         assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE - 1L }, (int) -compileArg, 1);
         assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE - compileArg }, (int) -compileArg, 1);
+
+        // Test that an out-of-int-range limit triggers the loop_limit_check trap.
+        // Compile with limit=14: sum(0..13) = 91, never hits early exit.
+        // Trap with limit=MAX+1: deopt, interpreter runs, early exit at i=100: sum(0..100) = 5050.
+        Method testOutOfRangeLongLimit = TestIntCountedLoopLongLimitDeopt.class.getDeclaredMethod("testOutOfRangeLongLimit", long.class);
+        assertShouldTrap(testOutOfRangeLongLimit, new Object[]{ 14L }, new Object[]{ (long) Integer.MAX_VALUE + 1L }, 91, 5050);
 
         // Test loops with early exits (return/break). After deopt, the Loop Limit Check Parse Predicate is not
         // regenerated. Speculative narrowing must bail out gracefully instead of asserting.
