@@ -28,7 +28,6 @@
 #define __MLIB_IMAGEAFFINE_H
 
 #include "mlib_image.h"
-#include "mlib_ImageDivTables.h"
 #include "mlib_ImageFilters.h"
 
 #ifdef __cplusplus
