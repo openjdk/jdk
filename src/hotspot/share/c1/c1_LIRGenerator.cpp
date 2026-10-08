@@ -329,8 +329,6 @@ void LIRGenerator::deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm, CodeEmi
 }
 
 
-//--------------------------------------------------------------
-
 // Create a control flow diamond during LIR generation. This RAII object takes
 // care of adding new basic blocks and inserting them into the control flow graph.
 // Use the (Not)TakenBlock RAII objects to enter the LIR generation context of the
@@ -2120,6 +2118,34 @@ void LIRGenerator::check_flat_array(LIR_Opr array, CodeStub* slow_path) {
   __ check_flat_array(array, tmp, slow_path);
 }
 
+// Returns the condition code used.
+LIR_Condition LIRGenerator::is_array_flat(LIRItem& array, CodeEmitInfo* info) {
+#ifndef _LP64
+  // 32-bit ports do not implement flattening. So associated branches should effectively be false.
+  __ cmp(lir_cond_notEqual, array.result(), array.result());
+#else
+  LIR_Opr mark_word = new_register(T_LONG);
+  __ load(generate_address(array.result(), oopDesc::mark_offset_in_bytes(), T_LONG), mark_word, info);
+  __ logical_and(mark_word, LIR_OprFact::longConst(markWord::flat_array_bit_in_place), mark_word);
+  __ cmp(lir_cond_notEqual, mark_word, LIR_OprFact::longConst(0));
+#endif // _LP64
+  return lir_cond_notEqual;
+}
+
+// Returns the condition code used.
+LIR_Condition LIRGenerator::is_array_null_free(LIRItem& array, CodeEmitInfo* info) {
+#ifndef _LP64
+  // 32-bit ports do not implement non-free arrays. So associated branches should effectively be false.
+  __ cmp(lir_cond_notEqual, array.result(), array.result());
+#else
+  LIR_Opr mark_word = new_register(T_LONG);
+  __ load(generate_address(array.result(), oopDesc::mark_offset_in_bytes(), T_LONG), mark_word, info);
+  __ logical_and(mark_word, LIR_OprFact::longConst(markWord::null_free_array_bit_in_place), mark_word);
+  __ cmp(lir_cond_notEqual, mark_word, LIR_OprFact::longConst(0));
+#endif // _LP64
+  return lir_cond_notEqual;
+}
+
 void LIRGenerator::check_null_free_array(LIRItem& array, LIRItem& value, CodeEmitInfo* info) {
   LabelObj* L_end = new LabelObj();
   LIR_Opr tmp = new_register(T_METADATA);
@@ -2249,28 +2275,90 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
       access_flat_array(false, array, index, value);
     }
   } else {
-    StoreFlattenedArrayStub* slow_path = nullptr;
-
     if (needs_flat_array_store_check(x)) {
-      // Check if we indeed have a flat array
-      index.load_item();
-      slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, x->state_before()));
-      check_flat_array(array.result(), slow_path);
-    }
+      LateControlFlowDiamond lcfd(this, x, [&](BlockBegin* taken, BlockBegin* not_taken) {
+        const LIR_Condition cond = is_array_flat(array, new CodeEmitInfo(range_check_info));
+        __ branch(cond, taken);
+        __ jump(not_taken);
+      });
+      {
+        LateControlFlowDiamond::NotTakenBlock block(lcfd);
 
-    if (needs_null_free_array_store_check(x)) {
-      CodeEmitInfo* info = new CodeEmitInfo(range_check_info);
-      check_null_free_array(array, value, info);
-    }
+        if (needs_null_free_array_store_check(x)) {
+          LIRItem array(x->array(), this);
+          array.load_item();
+          CodeEmitInfo* info = new CodeEmitInfo(range_check_info);
+          LateControlFlowDiamond value_null_check_lcfd(block, [&](BlockBegin* taken, BlockBegin* not_taken) {
+            const LIR_Condition cond = is_array_null_free(array, info);
+            __ branch(cond, taken);
+            __ jump(not_taken);
+          });
+          {
+            LateControlFlowDiamond::TakenBlock block(value_null_check_lcfd);
+            LIRItem value(x->value(), this);
+            value.load_item();
+            __ null_check(value.result(), new CodeEmitInfo(info));
+          }
+        }
 
-    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
-    if (x->check_boolean()) {
-      decorators |= C1_MASK_BOOLEAN;
-    }
+        LIRItem array(x->array(), this);
+        LIRItem value(x->value(), this);
+        LIRItem index(x->index(), this);
+        array.load_item();
+        value.load_item();
+        index.load_nonconstant();
 
-    access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
-    if (slow_path != nullptr) {
-      __ branch_destination(slow_path->continuation());
+        DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+        if (x->check_boolean()) {
+          decorators |= C1_MASK_BOOLEAN;
+        }
+
+        access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
+      } {
+        LateControlFlowDiamond::TakenBlock block(lcfd);
+
+        LIRItem array(x->array(), this);
+        LIRItem value(x->value(), this);
+        LIRItem index(x->index(), this);
+        array.load_item();
+        value.load_item();
+        index.load_item();
+
+        StoreFlattenedArrayStub* slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), lcfd.info());
+        __ jump(slow_path);
+        __ branch_destination(slow_path->continuation());
+      }
+    } else {
+      if (needs_null_free_array_store_check(x)) {
+        CodeEmitInfo* info = new CodeEmitInfo(range_check_info);
+        {
+          LateControlFlowDiamond null_check_lcfd(this, x, [&](BlockBegin* taken, BlockBegin* not_taken) {
+            const LIR_Condition cond = is_array_null_free(array, info);
+            __ branch(cond, taken);
+            __ jump(not_taken);
+          });
+          {
+            LateControlFlowDiamond::TakenBlock block(null_check_lcfd);
+            LIRItem value(x->value(), this);
+            value.load_item();
+            __ null_check(value.result(), new CodeEmitInfo(info));
+          }
+        }
+        // Rebind and reload the LIRItems in the continuation block.
+        array.set_instruction(x->array());
+        value.set_instruction(x->value());
+        index.set_instruction(x->index());
+        array.load_item();
+        value.load_item();
+        index.load_nonconstant();
+      }
+
+      DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+      if (x->check_boolean()) {
+        decorators |= C1_MASK_BOOLEAN;
+      }
+
+      access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
     }
   }
 }

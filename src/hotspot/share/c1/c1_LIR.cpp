@@ -347,7 +347,6 @@ LIR_OpFlattenedArrayCheck::LIR_OpFlattenedArrayCheck(LIR_Opr array, LIR_Opr tmp,
   , _tmp(tmp)
   , _stub(stub) {}
 
-
 LIR_OpNullFreeArrayCheck::LIR_OpNullFreeArrayCheck(LIR_Opr array, LIR_Opr tmp)
   : LIR_Op(lir_null_free_array_check, LIR_OprFact::illegalOpr, nullptr)
   , _array(array)
