@@ -105,8 +105,8 @@ public class FlagVMProcess {
         cmds.add("-XX:+WhiteBoxAPI");
         // TestFramework and scenario flags might have an influence on the later used Test VM flags. Add them as well.
         cmds.addAll(additionalFlags);
-        cmds.add(FlagVM.class.getCanonicalName());
-        cmds.add(testClass.getCanonicalName());
+        cmds.add(FlagVM.class.getName());
+        cmds.add(testClass.getName());
     }
 
     private void start() {

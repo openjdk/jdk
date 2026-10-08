@@ -1693,10 +1693,18 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
-    shld(vtemp, vtemp, Klass::SECONDARY_SUPERS_TABLE_MASK - bit);
+    int shift = Klass::SECONDARY_SUPERS_TABLE_MASK - bit;
+    shld(vtemp, vtemp, shift);
     cnt(vtemp, T8B, vtemp);
-    addv(vtemp, T8B, vtemp);
-    fmovd(r_array_index, vtemp);
+    // If the left shift is so great that all bytes below the most
+    // significant are zero, don't add across all byte lanes, just use
+    // the top byte.
+    if (BitsPerLong - shift <= BitsPerByte) {
+      umov(r_array_index, vtemp, B, BytesPerLong - 1);
+    } else {
+      addv(vtemp, T8B, vtemp);
+      umov(r_array_index, vtemp, B, 0);
+    }
   } else {
     mov(r_array_index, (u1)1);
   }
@@ -5666,12 +5674,6 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   }
 }
 
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register value_field_layout_info) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
-}
-
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
   ldr(offset, Address(value_klass, ValueKlass::adr_members_offset()));
   ldrw(offset, Address(offset, ValueKlass::payload_offset_offset()));
@@ -5800,21 +5802,6 @@ void MacroAssembler::verify_tlab() {
     ldp(rscratch2, rscratch1, Address(post(sp, 16)));
   }
 #endif
-}
-
-void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
-  assert_different_registers(holder_klass, index, layout_info);
-  ValueFieldLayoutInfo array[2];
-  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
-  if (is_power_of_2(size)) {
-    lsl(index, index, log2i_exact(size)); // Scale index by power of 2
-  } else {
-    mov(layout_info, size);
-    mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
-  }
-  ldr(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
-  add(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
-  lea(layout_info, Address(layout_info, index));
 }
 
 // Writes to stack successive pages until offset reached to check for

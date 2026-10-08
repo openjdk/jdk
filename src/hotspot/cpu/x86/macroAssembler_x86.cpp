@@ -3627,7 +3627,12 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 #endif
   regs += RegSet::range(r8, r11);
   if (UseAPX) {
+#ifdef _WINDOWS
+    // On Windows, r30 and r31 are nonvolatile per the x64 ABI.
+    regs += RegSet::range(r16, r29);
+#else
     regs += RegSet::range(r16, as_Register(Register::number_of_registers - 1));
+#endif
   }
   return regs;
 }
@@ -3809,28 +3814,6 @@ void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int
   }
 
   bind(done);
-}
-
-void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
-  movptr(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
-#ifdef ASSERT
-  {
-    Label done;
-    cmpptr(layout_info, 0);
-    jcc(Assembler::notEqual, done);
-    stop("value_field_layout_info_array is null");
-    bind(done);
-  }
-#endif
-
-  ValueFieldLayoutInfo array[2];
-  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
-  if (is_power_of_2(size)) {
-    shll(index, log2i_exact(size)); // Scale index by power of 2
-  } else {
-    imull(index, index, size); // Scale the index to be the entry index * array_element_size
-  }
-  lea(layout_info, Address(layout_info, index, Address::times_1, Array<ValueFieldLayoutInfo>::base_offset_in_bytes()));
 }
 
 // Look up the method for a megamorphic invokeinterface call.
@@ -5636,12 +5619,6 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Ad
   } else {
     bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
-}
-
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register value_field_layout_info) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
@@ -10347,41 +10324,53 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
 
 void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {
-  Label done;
-  cvttss2sil(dst, src);
-  // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
-  cmpl(dst, 0x80000000); // float_sign_flip
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movflt(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttss2sisl(dst, src);
+  } else {
+    Label done;
+    cvttss2sil(dst, src);
+    // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
+    cmpl(dst, 0x80000000); // float_sign_flip
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movflt(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::convert_d2i(Register dst, XMMRegister src) {
-  Label done;
-  cvttsd2sil(dst, src);
-  // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
-  cmpl(dst, 0x80000000); // float_sign_flip
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movdbl(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttsd2sisl(dst, src);
+  } else {
+    Label done;
+    cvttsd2sil(dst, src);
+    // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
+    cmpl(dst, 0x80000000); // float_sign_flip
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movdbl(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
-  Label done;
-  cvttss2siq(dst, src);
-  cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movflt(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttss2sisq(dst, src);
+  } else {
+    Label done;
+    cvttss2siq(dst, src);
+    cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movflt(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, Register rcx) {
@@ -10459,15 +10448,19 @@ void MacroAssembler::round_double(Register dst, XMMRegister src, Register rtmp, 
 }
 
 void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
-  Label done;
-  cvttsd2siq(dst, src);
-  cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
-  jccb(Assembler::notEqual, done);
-  subptr(rsp, 8);
-  movdbl(Address(rsp, 0), src);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
-  pop(dst);
-  bind(done);
+  if (VM_Version::supports_avx10_2()) {
+    evcvttsd2sisq(dst, src);
+  } else {
+    Label done;
+    cvttsd2siq(dst, src);
+    cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+    jccb(Assembler::notEqual, done);
+    subptr(rsp, 8);
+    movdbl(Address(rsp, 0), src);
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
+    pop(dst);
+    bind(done);
+  }
 }
 
 void MacroAssembler::cache_wb(Address line)

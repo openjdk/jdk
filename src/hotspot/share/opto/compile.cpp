@@ -589,6 +589,12 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without locks coarsening         **");
     tty->print_cr("*********************************************************");
   }
+  if ((do_stringopts() != OptimizeStringConcat) && PrintOpto) {
+    // Recompiling without string concatenation optimizations
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without StringOpts               **");
+    tty->print_cr("*********************************************************");
+  }
   if (env()->break_at_compile()) {
     // Open the debugger when compiling this method.
     tty->print("### Breaking when compiling: ");
@@ -2083,6 +2089,26 @@ bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, 
 }
 
 void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
+#ifdef ASSERT
+  {
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(C->root());
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* n = wq.at(i);
+      if (n->is_Phi()) {
+        assert(!n->as_Phi()->can_push_value_types_down(&igvn), "should have been processed by igvn");
+      }
+      for (uint j = 0; j < n->req(); j++) {
+        Node* in = n->in(j);
+        if (in != nullptr) {
+          wq.push(in);
+        }
+      }
+    }
+  }
+#endif
+
   // Make sure that the return value does not keep an otherwise unused allocation alive
   if (tf()->returns_value_type_as_fields()) {
     Node* ret = nullptr;
@@ -2731,6 +2757,9 @@ void Compile::inline_string_calls(bool parse_time) {
     ResourceMark rm;
     print_method(PHASE_BEFORE_STRINGOPTS, 3);
     PhaseStringOpts pso(initial_gvn());
+    if (C->failing()) {
+      return;
+    }
     print_method(PHASE_AFTER_STRINGOPTS, 3);
   }
 
@@ -4487,7 +4516,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
 
   case Op_Proj: {
-    if (OptimizeStringConcat || IncrementalInline) {
+    if (C->do_stringopts() || IncrementalInline) {
       ProjNode* proj = n->as_Proj();
       if (proj->_is_io_use) {
         assert(proj->_con == TypeFunc::I_O || proj->_con == TypeFunc::Memory, "");

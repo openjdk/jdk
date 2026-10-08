@@ -2127,17 +2127,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     return;
   }
 
-  if (n->is_Vector()) {
-    // Found with tier1-3. Not investigated yet.
-    // The observed issue was with AndVNode::Identity and
-    // VectorStoreMaskNode::Identity (see JDK-8370863).
-    //
-    // Found with:
-    //   compiler/vectorapi/VectorStoreMaskIdentityTest.java
-    //   -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
-    return;
-  }
-
   Node* i = apply_identity(n);
   // If we cannot find any other Identity, we are happy.
   if (i == n) {
@@ -2348,42 +2337,47 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
         }
         bool recurse = false;
         // Remove from hash table
-        _table.hash_delete( dead );
+        _table.hash_delete(dead);
         // Smash all inputs to 'dead', isolating him completely
         for (uint i = 0; i < dead->req(); i++) {
-          Node *in = dead->in(i);
-          if (in != nullptr && in != C->top()) {  // Points to something?
-            int nrep = dead->replace_edge(in, nullptr, this);  // Kill edges
-            assert((nrep > 0), "sanity");
-            if (in->outcnt() == 0) { // Made input go dead?
-              stack.push(in, PROCESS_INPUTS); // Recursively remove
-              recurse = true;
-            } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
-              add_users_to_worklist(in);
-            } else if (in->outcnt() <= 2 && dead->is_Phi()) {
-              if (in->Opcode() == Op_Region) {
-                _worklist.push(in);
-              } else if (in->is_Store()) {
-                DUIterator_Fast imax, i = in->fast_outs(imax);
+          Node* in = dead->in(i);
+          if (in == nullptr) {
+            continue;
+          }
+          int nrep = dead->replace_edge(in, nullptr, this); // Kill edges
+          assert((nrep > 0), "sanity");
+          if (in == C->top()) {
+            continue;
+          }
+          if (in->outcnt() == 0) {
+            // Made input go dead?
+            stack.push(in, PROCESS_INPUTS); // Recursively remove
+            recurse = true;
+          } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
+            add_users_to_worklist(in);
+          } else if (in->outcnt() <= 2 && dead->is_Phi()) {
+            if (in->Opcode() == Op_Region) {
+              _worklist.push(in);
+            } else if (in->is_Store()) {
+              DUIterator_Fast imax, i = in->fast_outs(imax);
+              _worklist.push(in->fast_out(i));
+              i++;
+              if (in->outcnt() == 2) {
                 _worklist.push(in->fast_out(i));
                 i++;
-                if (in->outcnt() == 2) {
-                  _worklist.push(in->fast_out(i));
-                  i++;
-                }
-                assert(!(i < imax), "sanity");
               }
-            } else if (in->should_process_when_disconnect_output(dead)) {
-              _worklist.push(in);
+              assert(!(i < imax), "sanity");
             }
-            if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
-                in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
-              // A Load that directly follows an InitializeNode is
-              // going away. The Stores that follow are candidates
-              // again to be captured by the InitializeNode.
-              add_users_to_worklist_if(_worklist, in, [](Node* n) { return n->is_Store(); });
-            }
-          } // if (in != nullptr && in != C->top())
+          } else if (in->should_process_when_disconnect_output(dead)) {
+            _worklist.push(in);
+          }
+          if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
+              in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
+            // A Load that directly follows an InitializeNode is
+            // going away. The Stores that follow are candidates
+            // again to be captured by the InitializeNode.
+            add_users_to_worklist_if(_worklist, in, [](Node* n) { return n->is_Store(); });
+          }
         } // for (uint i = 0; i < dead->req(); i++)
         if (recurse) {
           continue;
@@ -2539,7 +2533,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  uint use_op = use->Opcode();
+  int use_op = use->Opcode();
   if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
     for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
@@ -2656,14 +2650,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     auto is_boundary = [](Node* n){ return !n->is_ValueType(); };
     use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
   }
-  // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
+  // If changed Cast input, notify down for nodes that do "uncast".
   // Patterns:
   // ConstraintCast+ -> Sub
   // ConstraintCast+ -> Phi
   // ConstraintCast+ -> Xor
+  // ConstraintCast+ -> VectorUnbox
   if (use->is_ConstraintCast()) {
     auto push_the_uses_to_worklist = [&](Node* n){
-      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
+      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI ||
+          n->Opcode() == Op_XorL || n->Opcode() == Op_VectorUnbox) {
         worklist.push(n);
       }
     };
@@ -2878,6 +2874,52 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorMaskToLong; });
   }
 
+  // Walk through a VectorMaskCast chain so a change of the inner mask still
+  // notifies:
+  // (VectorMaskCast+ x) => x
+  // (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => (x)
+  if (use_op == Op_VectorMaskCast) {
+    auto push_the_uses_to_worklist = [&](Node* n) {
+      if (n->Opcode() == Op_VectorStoreMask || n->Opcode() == Op_VectorMaskCast) {
+        worklist.push(n);
+      }
+    };
+    auto is_boundary = [](Node* n) { return n->Opcode() != Op_VectorMaskCast; };
+    use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
+  }
+
+  // Nested-operation optimizations in AndVNode::Identity and OrVNode::Identity,
+  // e.g. (a & b) & a => a & b.
+  if (use_op == Op_AndV || use_op == Op_OrV ||
+      use_op == Op_AndVMask || use_op == Op_OrVMask) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op;
+    });
+  }
+
+  // All-zeros / all-ones optimizations in AndVNode::Identity and
+  // OrVNode::Identity, e.g. src & all-ones => src.
+  if (use_op == Op_Replicate || use_op == Op_MaskAll) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndV || u->Opcode() == Op_OrV ||
+             u->Opcode() == Op_AndVMask || u->Opcode() == Op_OrVMask;
+    });
+  }
+
+  // f(f(x)) => x for f = Reverse / ReverseBytes
+  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op;
+    });
+  }
+
+  // Vector shift by zero, see ShiftVNode::Identity
+  if (use_op == Op_LShiftCntV || use_op == Op_RShiftCntV) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_ShiftV();
+    });
+  }
+
   // From CastX2PNode::Ideal
   // CastX2P(AddX(x, y))
   // CastX2P(SubX(x, y))
@@ -2918,6 +2960,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_SubI || use_op == Op_SubL) {
     const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
+  }
+  // (Phi (ValueType ValueType)) is transformed into (ValueType (Phi ) (Phi )...)
+  // and is applied if there are EncodeP/DecodeN or casts between a Phi and InlineType nodes
+  if (use->is_Phi() || use->is_EncodeP() || use->is_DecodeN() || use->is_ConstraintCast()) {
+    auto is_boundary = [](Node* n){ return !n->is_EncodeP() && !n->is_DecodeN() && !n->is_ConstraintCast(); };
+    auto push_phi_to_worklist = [&worklist](Node* n){
+      if (n->is_Phi()) {
+        worklist.push(n);
+      }
+    };
+    use->visit_uses(push_phi_to_worklist, is_boundary);
   }
 }
 
