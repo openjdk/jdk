@@ -978,18 +978,11 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
-      oop resolved = ShenandoahForwarding::get_forwardee(obj);
-      if (resolved->is_self_forwarded()) {
-        return;
-      }
-
-      if (resolved == obj) {
+      oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+      if (resolved == nullptr) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
-
       if (resolved != obj) {
-        // Evacuation may have failed and given us a self-forwarded object
-        shenandoah_assert_not_in_cset_except(p, resolved, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(resolved, p, obj);
       }
     }
@@ -1203,7 +1196,7 @@ private:
   // This closure runs when thread is stopped for handshake, which means
   // we can use non-concurrent closure here, as long as it only updates
   // locations modified by the thread itself, i.e. stack locations.
-  ShenandoahNonConcUpdateRefsClosure _cl;
+  ShenandoahUpdateRefsClosure<false> _cl;
 public:
   ShenandoahUpdateThreadHandshakeClosure();
   void do_thread(Thread* thread) override;

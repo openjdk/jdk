@@ -127,15 +127,14 @@ class OopMapBlock {
 
 struct JvmtiCachedClassFileData;
 
-class ValueFieldLayoutInfo : public MetaspaceObj {
+class ValueFieldInfo : public MetaspaceObj {
   friend class VMStructs;
 
   ValueKlass* _klass;
   LayoutKind _kind;
-  int _null_marker_offset; // null marker offset for this field, relative to the beginning of the current container
 
  public:
-  ValueFieldLayoutInfo(): _klass(nullptr), _kind(LayoutKind::UNKNOWN), _null_marker_offset(-1)  {}
+  ValueFieldInfo(): _klass(nullptr), _kind(LayoutKind::UNKNOWN)  {}
 
   ValueKlass* klass() const { return _klass; }
   void set_klass(ValueKlass* k) { _klass = k; }
@@ -146,17 +145,10 @@ class ValueFieldLayoutInfo : public MetaspaceObj {
   }
   void set_kind(LayoutKind lk) { _kind = lk; }
 
-  int null_marker_offset() const {
-    assert(_null_marker_offset != -1, "Not set");
-    return _null_marker_offset;
-  }
-  void set_null_marker_offset(int o) { _null_marker_offset = o; }
-
   void metaspace_pointers_do(MetaspaceClosure* it);
-  MetaspaceObj::Type type() const { return ValueFieldLayoutInfoType; }
+  MetaspaceObj::Type type() const { return ValueFieldInfoType; }
 
-  static ByteSize klass_offset() { return byte_offset_of(ValueFieldLayoutInfo, _klass); }
-  static ByteSize null_marker_offset_offset() { return byte_offset_of(ValueFieldLayoutInfo, _null_marker_offset); }
+  static ByteSize klass_offset() { return byte_offset_of(ValueFieldInfo, _klass); }
 
   // Print
   void print() const;
@@ -314,7 +306,7 @@ class InstanceKlass: public Klass {
   Array<u1>*          _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
 
-  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
+  Array<ValueFieldInfo>* _value_field_info_array;
   Array<u2>* _loadable_descriptors;
   Array<int>* _acmp_maps_array; // Metadata copy of the acmp_maps oop used in value classes.
                                 // When loading a value klass from the CDS/AOT archive
@@ -465,7 +457,7 @@ class InstanceKlass: public Klass {
   bool field_is_null_free_value_type(int index) const;
   bool is_class_in_loadable_descriptors_attribute(Symbol* name) const;
 
-  int field_null_marker_offset(int index) const { return value_field_layout_info(index).null_marker_offset(); }
+  int field_null_marker_offset(int index) const;
 
   // Number of Java declared fields
   int java_fields_count() const;
@@ -980,7 +972,7 @@ public:
   JFR_ONLY(DEFINE_KLASS_TRACE_ID_OFFSET;)
   static ByteSize init_thread_offset() { return byte_offset_of(InstanceKlass, _init_thread); }
 
-  static ByteSize value_field_layout_info_array_offset() { return byte_offset_of(InstanceKlass, _value_field_layout_info_array); }
+  static ByteSize value_field_info_array_offset() { return byte_offset_of(InstanceKlass, _value_field_info_array); }
   static ByteSize adr_value_klass_members_offset() { return byte_offset_of(InstanceKlass, _adr_value_klass_members); }
 
   // subclass/subinterface checks
@@ -1073,17 +1065,17 @@ public:
   // Sub-klasses can place their fields after this address.
   inline address end_of_instance_klass() const;
 
-  void set_value_field_layout_info_array(Array<ValueFieldLayoutInfo>* array) { _value_field_layout_info_array = array; }
-  Array<ValueFieldLayoutInfo>* value_field_layout_info_array() const { return _value_field_layout_info_array; }
+  void set_value_field_info_array(Array<ValueFieldInfo>* array) { _value_field_info_array = array; }
+  Array<ValueFieldInfo>* value_field_info_array() const { return _value_field_info_array; }
 
-  ValueFieldLayoutInfo value_field_layout_info(int index) const {
-    assert(_value_field_layout_info_array != nullptr, "Array not created");
-    return _value_field_layout_info_array->at(index);
+  ValueFieldInfo value_field_info(int index) const {
+    assert(_value_field_info_array != nullptr, "Array not created");
+    return _value_field_info_array->at(index);
   }
 
-  ValueFieldLayoutInfo* value_field_layout_info_adr(int index) {
-    assert(_value_field_layout_info_array != nullptr, "Array not created");
-    return _value_field_layout_info_array->adr_at(index);
+  ValueFieldInfo* value_field_info_adr(int index) {
+    assert(_value_field_info_array != nullptr, "Array not created");
+    return _value_field_info_array->adr_at(index);
   }
 
   inline ValueKlass* get_value_type_field_klass(int idx) const ;

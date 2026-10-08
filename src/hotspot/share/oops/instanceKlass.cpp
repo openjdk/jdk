@@ -156,16 +156,16 @@
 
 #endif //  ndef DTRACE_ENABLED
 
-void ValueFieldLayoutInfo::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ValueFieldLayoutInfo): %p", this);
+void ValueFieldInfo::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(ValueFieldInfo): %p", this);
   it->push(&_klass);
 }
 
-void ValueFieldLayoutInfo::print() const {
+void ValueFieldInfo::print() const {
   print_on(tty);
 }
 
-void ValueFieldLayoutInfo::print_on(outputStream* st) const {
+void ValueFieldInfo::print_on(outputStream* st) const {
   st->print_cr("_klass: " PTR_FORMAT, p2i(_klass));
   if (_klass != nullptr) {
     StreamIndentor si(st);
@@ -175,9 +175,6 @@ void ValueFieldLayoutInfo::print_on(outputStream* st) const {
 
   st->print("_layout: ");
   LayoutKindHelper::print_on(_kind, st);
-  st->cr();
-
-  st->print("_null_marker_offset: %d", _null_marker_offset);
 }
 
 // A value class is considered naturally atomic if its layout,
@@ -234,6 +231,17 @@ bool InstanceKlass::is_class_in_loadable_descriptors_attribute(Symbol* name) con
     if (class_name == name) return true;
   }
   return false;
+}
+
+int InstanceKlass::field_null_marker_offset(int index) const {
+  const FieldInfo field = this->field(index);
+  if (!field.field_flags().has_null_marker()) {
+    return -1;
+  }
+
+  const ValueKlass* const vk = value_field_info(index).klass();
+  const int nm_offset = vk->null_marker_offset_in_payload();
+  return field_offset(index) + nm_offset;
 }
 
 static inline bool is_stack_chunk_class(const Symbol* class_name,
@@ -606,7 +614,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, mark
   _reference_type(reference_type),
   _acmp_maps_offset(0),
   _init_thread(nullptr),
-  _value_field_layout_info_array(nullptr),
+  _value_field_info_array(nullptr),
   _loadable_descriptors(nullptr),
   _acmp_maps_array(nullptr),
   _adr_value_klass_members(nullptr)
@@ -774,10 +782,10 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_fields_status(nullptr);
 
-  if (value_field_layout_info_array() != nullptr) {
-    MetadataFactory::free_array<ValueFieldLayoutInfo>(loader_data, value_field_layout_info_array());
+  if (value_field_info_array() != nullptr) {
+    MetadataFactory::free_array<ValueFieldInfo>(loader_data, value_field_info_array());
   }
-  set_value_field_layout_info_array(nullptr);
+  set_value_field_info_array(nullptr);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
@@ -2277,10 +2285,10 @@ bool InstanceKlass::find_local_flat_field_containing_offset(int offset, fieldDes
     }
 
     const int offset_in_flat_field = offset - fs.offset();
-    const ValueFieldLayoutInfo layout_info = value_field_layout_info(fs.index());
-    const int field_size = layout_info.klass()->layout_size_in_bytes(layout_info.kind());
+    const ValueFieldInfo vfi = value_field_info(fs.index());
+    const int field_size = vfi.klass()->layout_size_in_bytes(vfi.kind());
 
-    assert(LayoutKindHelper::is_flat(layout_info.kind()), "Must be flat");
+    assert(LayoutKindHelper::is_flat(vfi.kind()), "Must be flat");
 
     if (offset_in_flat_field < field_size) {
       fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
@@ -3083,7 +3091,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_loadable_descriptors);
   it->push(&_acmp_maps_array, MetaspaceClosure::_writable);
   it->push(&_record_components);
-  it->push(&_value_field_layout_info_array, MetaspaceClosure::_writable);
+  it->push(&_value_field_info_array, MetaspaceClosure::_writable);
 
   if (CDSConfig::is_dumping_full_module_graph() && !defined_by_other_loaders()) {
     it->push(&_package_entry);

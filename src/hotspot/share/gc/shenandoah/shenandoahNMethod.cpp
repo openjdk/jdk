@@ -113,7 +113,7 @@ void ShenandoahNMethod::parse(nmethod* nm, GrowableArray<oop*>& oops, bool& has_
           oop* addr = r->oop_addr();
           shenandoah_assert_correct(addr, value);
           shenandoah_assert_not_in_cset_except(addr, value, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
-          shenandoah_assert_not_forwarded(addr, value);
+          shenandoah_assert_not_forwarded_except(addr, value, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
           // Non-null immediate oop found. null oops can safely be
           // ignored since the method will be re-registered if they
           // are later patched to be non-null.

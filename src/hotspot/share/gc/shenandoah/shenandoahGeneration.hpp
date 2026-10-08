@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
@@ -178,4 +178,4 @@ public:
   void confirm_heuristics_mode();
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP

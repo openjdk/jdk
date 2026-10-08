@@ -204,9 +204,8 @@ public:
 // ========= Update References
 //
 
-class ShenandoahUpdateRefsSuperClosure : public ShenandoahSuperClosure {};
-
-class ShenandoahNonConcUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
+template <bool CONCURRENT>
+class ShenandoahUpdateRefsClosure : public ShenandoahSuperClosure {
 private:
   template<class T>
   inline void work(T* p);
@@ -215,17 +214,6 @@ public:
   virtual void do_oop(narrowOop* p) { work(p); }
   virtual void do_oop(oop* p)       { work(p); }
 };
-
-class ShenandoahConcUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
-private:
-  template<class T>
-  inline void work(T* p);
-
-public:
-  virtual void do_oop(narrowOop* p) { work(p); }
-  virtual void do_oop(oop* p)       { work(p); }
-};
-
 
 class ShenandoahFlushSATB : public ThreadClosure {
 private:

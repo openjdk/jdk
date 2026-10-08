@@ -123,6 +123,7 @@ public:
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
   [[noreturn]] static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
+  static void writing_error(oop exception_oop);
 
   static void make_method_handle_intrinsics_shareable() NOT_CDS_RETURN;
   static void write_method_handle_intrinsics() NOT_CDS_RETURN;

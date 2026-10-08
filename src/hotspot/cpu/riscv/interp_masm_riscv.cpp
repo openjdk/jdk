@@ -1886,12 +1886,12 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
   load_klass(tmp1, x10);
   payload_address(x10, x10, tmp1);
 
-  Register layout_info = field_offset;
+  Register vfi = field_offset;
   load_unsigned_short(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())));
   ld(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())));
-  value_field_layout_info(tmp2, tmp1, layout_info);
+  value_field_info(tmp2, tmp1, vfi);
 
-  flat_field_copy(IN_HEAP, x10, obj, layout_info);
+  flat_field_copy(IN_HEAP, x10, obj, vfi);
   j(done);
 
   bind(slow_path);

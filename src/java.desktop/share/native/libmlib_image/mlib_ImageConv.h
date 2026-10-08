@@ -39,18 +39,6 @@ if (k != akernel) mlib_free(k); \
 return status
 #endif /* FREE_AND_RETURN_STATUS */
 
-mlib_status mlib_convMxNext_s32(mlib_image       *dst,
-                                const mlib_image *src,
-                                const mlib_s32   *kernel,
-                                mlib_s32         m,
-                                mlib_s32         n,
-                                mlib_s32         dx_l,
-                                mlib_s32         dx_r,
-                                mlib_s32         dy_t,
-                                mlib_s32         dy_b,
-                                mlib_s32         scale,
-                                mlib_s32         cmask);
-
 mlib_status mlib_convMxNnw_d64(mlib_image       *dst,
                                const mlib_image *src,
                                const mlib_d64   *ker,
@@ -124,64 +112,6 @@ mlib_status mlib_convMxNnw_u8(mlib_image       *dst,
                               mlib_s32         dn,
                               mlib_s32         scale,
                               mlib_s32         cmask);
-
-mlib_status mlib_convMxNext_u8(mlib_image       *dst,
-                               const mlib_image *src,
-                               const mlib_s32   *kern,
-                               mlib_s32         m,
-                               mlib_s32         n,
-                               mlib_s32         dx_l,
-                               mlib_s32         dx_r,
-                               mlib_s32         dy_t,
-                               mlib_s32         dy_b,
-                               mlib_s32         scale,
-                               mlib_s32         cmask);
-
-mlib_status mlib_convMxNext_s16(mlib_image *dst,
-                                const mlib_image *src,
-                                const mlib_s32 *kernel,
-                                mlib_s32 m,
-                                mlib_s32 n,
-                                mlib_s32 dx_l,
-                                mlib_s32 dx_r,
-                                mlib_s32 dy_t,
-                                mlib_s32 dy_b,
-                                mlib_s32 scale,
-                                mlib_s32 cmask);
-
-mlib_status mlib_convMxNext_u16(mlib_image       *dst,
-                                const mlib_image *src,
-                                const mlib_s32   *kernel,
-                                mlib_s32         m,
-                                mlib_s32         n,
-                                mlib_s32         dx_l,
-                                mlib_s32         dx_r,
-                                mlib_s32         dy_t,
-                                mlib_s32         dy_b,
-                                mlib_s32         scale,
-                                mlib_s32         cmask);
-
-mlib_status mlib_convMxNext_f32(mlib_image       *dst,
-                                const mlib_image *src,
-                                const mlib_d64   *kernel,
-                                mlib_s32         m,
-                                mlib_s32         n,
-                                mlib_s32         dx_l,
-                                mlib_s32         dx_r,
-                                mlib_s32         dy_t,
-                                mlib_s32         dy_b,
-                                mlib_s32         cmask);
-
-mlib_status mlib_convMxNext_d64(mlib_image       *dst,
-                                const mlib_image *src,
-                                const mlib_d64   *kernel,
-                                mlib_s32         m,
-                                mlib_s32         n,
-                                mlib_s32         dx_l,
-                                mlib_s32         dx_r,
-                                mlib_s32         dy_t,
-                                mlib_s32         dy_b,
-                                mlib_s32         cmask);
 
 #ifdef __cplusplus
 }
