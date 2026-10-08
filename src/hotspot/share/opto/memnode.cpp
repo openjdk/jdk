@@ -2806,8 +2806,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
   const Type *t2 = phase->type( adr );
   if (t2 == Type::TOP)  return Type::TOP;
   const TypePtr *tp = t2->is_ptr();
-  if (TypePtr::above_centerline(tp->ptr()) ||
-      tp->ptr() == TypePtr::Null)  return Type::TOP;
+  if (TypePtr::is_top(tp->ptr()) || tp->ptr() == TypePtr::Null)  return Type::TOP;
 
   // Return a more precise klass, if possible
   const TypeInstPtr *tinst = tp->isa_instptr();
@@ -3044,7 +3043,7 @@ const Type* LoadRangeNode::Value(PhaseGVN* phase) const {
   const Type *t2 = phase->type( adr );
   if( t2 == Type::TOP ) return Type::TOP;
   const TypePtr *tp = t2->is_ptr();
-  if (TypePtr::above_centerline(tp->ptr()))  return Type::TOP;
+  if (TypePtr::is_top(tp->ptr()))  return Type::TOP;
   const TypeAryPtr *tap = tp->isa_aryptr();
   if( !tap ) return _type;
   return tap->size();

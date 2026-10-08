@@ -55,7 +55,6 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
   if( t == TypePtr::NULL_PTR ) return TypeInt::ZERO;
   const TypePtr *tp = t->isa_ptr();
   if(tp != nullptr) {
-    if( tp->ptr() == TypePtr::AnyNull ) return Type::TOP;
     if( tp->ptr() == TypePtr::Constant) return TypeInt::ONE;
     if (tp->ptr() == TypePtr::NotNull)  return TypeInt::ONE;
     return TypeInt::BOOL;

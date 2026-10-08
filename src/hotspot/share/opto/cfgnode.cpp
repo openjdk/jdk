@@ -1411,7 +1411,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
 #endif //ASSERT
 
   // In rare cases, during an IGVN call to `PhiNode::Value`, `_type` and `t` have incompatible opinion on speculative type,
-  // resulting into a too small intersection (such as AnyNull), which is removed in cleanup_speculative.
+  // resulting into a too small intersection (such as TopPTR), which is removed in cleanup_speculative.
   // From that `ft` has no speculative type (ft->speculative() == nullptr).
   // After the end of the current `PhiNode::Value` call, `ft` (that is returned) is being store into `_type`
   // (see PhaseIterGVN::transform_old -> raise_bottom_type -> set_type).
