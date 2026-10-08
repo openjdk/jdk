@@ -1126,9 +1126,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       // objects. Allocate the buffers here with a runtime call.
       OopMap* map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
 
-      frame_complete = __ offset();
-
       __ get_PC(Z_R1_scratch);
+      frame_complete = __ offset();
       // TODO: use blob-relative offset, matching the pattern in the rest of
       // sharedRuntime_s390.cpp ("offset() - start_off")
       oop_maps->add_gc_map((int)(__ offset() - (start - masm->code()->insts_begin())), map);
