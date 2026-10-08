@@ -32,7 +32,6 @@ package compiler.igvn;
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -Xbatch
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test
- *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:VerifyIterativeGVN=1110
  *                   ${test.main.class}
  * @run main ${test.main.class}
