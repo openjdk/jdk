@@ -1123,7 +1123,7 @@ public:
 
   void do_object(oop p) {
     shenandoah_assert_marked(nullptr, p);
-    if (!p->is_forwarded()) {
+    if (!ShenandoahForwarding::is_forwarded(p)) {
       _heap->evacuate_object(p, _thread);
     }
   }
@@ -1236,13 +1236,9 @@ public:
   ShenandoahSelfForwardClosure() : _self_forwarded(false) {}
 
   void do_object(oop obj) override {
-    markWord m = obj->mark();
-    if (!m.is_forwarded()) {
-      oop fwd = ShenandoahForwarding::try_forward_to_self(obj, m);
-      if (fwd == nullptr) {
-        // We won the CAS to self-forward the object
-        _self_forwarded = true;
-      }
+    oop resolved = ShenandoahForwarding::try_forward_to(obj, obj);
+    if (resolved == obj) {
+      _self_forwarded = true;
     }
   }
 
@@ -1370,17 +1366,7 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   if (has_self_forwarded_objects() && r->has_self_forwards()) {
     // We don't want GC threads to evacuate objects in regions that have evacuation failures. We'd
     // rather have them concentrate on regions that still have a chance of being completely evacuated.
-    markWord old_mark = p->mark();
-    if (old_mark.is_forwarded()) {
-      return ShenandoahForwarding::get_forwardee(p);
-    }
-    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
-    if (winner == nullptr) {
-      // we installed the self-forwarding pointer.
-      return p;
-    }
-    // another thread installed a (possibly self-forwarded, possibly forwarded elsewhere) pointer
-    return winner;
+    return ShenandoahForwarding::try_forward_to(p, p);
   }
 
   assert(!r->is_humongous(), "never evacuate humongous objects");
@@ -1419,20 +1405,14 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // the object as "already handled, do not try to evacuate". The CAS
     // may fail if another thread concurrently installed a real forwardee
     // (they succeeded where we failed) or self-forwarded first.
-    markWord old_mark = p->mark();
-    if (old_mark.is_forwarded()) {
-      return ShenandoahForwarding::get_forwardee(p);
-    }
-    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
-    if (winner == nullptr) {
-      // We own the self-forwarding. Flag the region so other threads will not
+    oop fwd = ShenandoahForwarding::try_forward_to(p, p);
+    if (fwd == p) {
+      // Now self-forwarded. Flag the region so other threads will not
       // try to evacuate objects from here.
       set_has_self_forwarded_objects(true);
       from_region->set_has_self_forwards();
-      log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), from_region->index());
-      return p;
     }
-    return winner;
+    return fwd;
   }
 
   if (ShenandoahEvacTracking) {
@@ -1454,7 +1434,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   // Try to install the new forwarding pointer.
-  oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
+  oop result = ShenandoahForwarding::try_forward_to(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(nullptr, copy_val);

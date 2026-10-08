@@ -749,7 +749,7 @@ public:
     delete _scc;
     if (ShenandoahEnableCardStats) {
       for (uint i = 0; i < ParallelGCThreads; i++) {
-        delete _card_stats[i];
+        delete[] _card_stats[i];
       }
       FREE_C_HEAP_ARRAY(_card_stats);
       _card_stats = nullptr;

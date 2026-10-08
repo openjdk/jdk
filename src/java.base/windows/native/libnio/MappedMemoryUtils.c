@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ void JNICALL MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
      */
     retry = 0;
     do {
-        result = FlushViewOfFile(a, (DWORD)len);
+        result = FlushViewOfFile(a, (SIZE_T)len);
         if ((result != 0) || (GetLastError() != ERROR_LOCK_VIOLATION))
             break;
         retry++;

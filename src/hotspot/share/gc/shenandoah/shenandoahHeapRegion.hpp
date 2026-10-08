@@ -544,7 +544,7 @@ public:
   // installs a self-forward mark on an object in this region. Tested and cleared
   // when the region is partially recycled in final-update-refs.
   bool has_self_forwards() const { return _has_self_forwards.is_set(); }
-  void set_has_self_forwards()   { _has_self_forwards.set(); }
+  void set_has_self_forwards()   { _has_self_forwards.try_set(); }
   void clear_has_self_forwards() { _has_self_forwards.unset(); }
 
 private:

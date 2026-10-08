@@ -568,11 +568,8 @@ JRT_ENTRY(int, Runtime1::substitutability_check(JavaThread* current, oopDesc* le
   args.push_oop(Handle(THREAD, left));
   args.push_oop(Handle(THREAD, right));
   JavaValue result(T_BOOLEAN);
-  JavaCalls::call_static(&result,
-                         vmClasses::ValueObjectMethods_klass(),
-                         vmSymbols::isSubstitutable_name(),
-                         vmSymbols::object_object_boolean_signature(),
-                         &args, CHECK_0);
+  methodHandle method(current, Universe::is_substitutable_method());
+  JavaCalls::call(&result, method, &args, CHECK_0);
   return result.get_jboolean() ? 1 : 0;
 JRT_END
 
