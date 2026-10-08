@@ -290,9 +290,9 @@ public final class IntegerPolynomial448 extends IntegerPolynomial {
         c4 += d2 + dd1;
         c5 += d3 + dd2;
         c6 += d4 + dd3;
-        c7 += d4 + dd4;
-        c8 += d5 + dd5;
-        c9 += d6 + dd6;
+        c7 += d5 + dd4;
+        c8 += d6 + dd5;
+        c9 += d7 + dd6;
         c10 = dd7;
 
         // Row 3 - multiply by aa3
@@ -515,10 +515,10 @@ public final class IntegerPolynomial448 extends IntegerPolynomial {
         r[1] = c1 + c9 + c13;
         r[2] = c2 + c10 + c14;
         r[3] = c3 + c11 + c15;
-        r[4] = c4 + c12 + c8;
-        r[5] = c5 + c13 + c9;;
-        r[6] = c6 + c14 + c10;
-        r[7] = c7 + c15 + c11;
+        r[4] = c4 + c8 + (c12 << 1);
+        r[5] = c5 + c9 + (c13 << 1);
+        r[6] = c6 + c10 + (c14 << 1);
+        r[7] = c7 + c11 + (c15 << 1);
 
         reduce(r);
     }
@@ -645,7 +645,7 @@ public final class IntegerPolynomial448 extends IntegerPolynomial {
         c4 += d0;
         c5 = dd0;
 
-        // Row 5 - multiply by aa4
+        // Row 5 - multiply by aa5
         d0 = aa5 * bb0;
         dd0 = Math.multiplyHigh(aa5, bb0) << shift1 | (d0 >>> shift2);
         d0 &= LIMB_MASK;
@@ -653,17 +653,17 @@ public final class IntegerPolynomial448 extends IntegerPolynomial {
         c5 += d0;
         c6 = dd0;
 
-        // Row 6 - multiply by aa4
-        d0 = aa4 * bb0;
-        dd0 = Math.multiplyHigh(aa4, bb0) << shift1 | (d0 >>> shift2);
+        // Row 6 - multiply by aa6
+        d0 = aa6 * bb0;
+        dd0 = Math.multiplyHigh(aa6, bb0) << shift1 | (d0 >>> shift2);
         d0 &= LIMB_MASK;
 
         c6 += d0;
         c7 = dd0;
 
-        // Row 7 - multiply by aa4
-        d0 = aa4 * bb0;
-        dd0 = Math.multiplyHigh(aa4, bb0) << shift1 | (d0 >>> shift2);
+        // Row 7 - multiply by aa7
+        d0 = aa7 * bb0;
+        dd0 = Math.multiplyHigh(aa7, bb0) << shift1 | (d0 >>> shift2);
         d0 &= LIMB_MASK;
 
         c7 += d0;
@@ -671,11 +671,10 @@ public final class IntegerPolynomial448 extends IntegerPolynomial {
 
         // Perform reduction from high limb
         a[0] = c0 + c8;
-        a[4] = c4 + c8;
-
         a[1] = c1;
         a[2] = c2;
         a[3] = c3;
+        a[4] = c4 + c8;
         a[5] = c5;
         a[6] = c6;
         a[7] = c7;
@@ -805,15 +804,15 @@ public final class IntegerPolynomial448 extends IntegerPolynomial {
         d4 &= LIMB_MASK;
 
         d5 = aa2 * aa5;
-        dd5 = Math.multiplyHigh(aa0, aa5) << shift1 | (d5 >>> shift2);
+        dd5 = Math.multiplyHigh(aa2, aa5) << shift1 | (d5 >>> shift2);
         d5 &= LIMB_MASK;
 
         d6 = aa2 * aa6;
-        dd6 = Math.multiplyHigh(aa0, aa6) << shift1 | (d6 >>> shift2);
+        dd6 = Math.multiplyHigh(aa2, aa6) << shift1 | (d6 >>> shift2);
         d6 &= LIMB_MASK;
 
         d7 = aa2 * aa7;
-        dd7 = Math.multiplyHigh(aa0, aa7) << shift1 | (d7 >>> shift2);
+        dd7 = Math.multiplyHigh(aa2, aa7) << shift1 | (d7 >>> shift2);
         d7 &= LIMB_MASK;
 
         c4 += d2;
@@ -919,10 +918,10 @@ public final class IntegerPolynomial448 extends IntegerPolynomial {
         r[1] = c1 + c9 + c13;
         r[2] = c2 + c10 + c14;
         r[3] = c3 + c11 + c15;
-        r[4] = c4 + c12 + c8;
-        r[5] = c5 + c13 + c9;;
-        r[6] = c6 + c14 + c10;
-        r[7] = c7 + c15 + c11;
+        r[4] = c4 + c8 + (c12 << 1);
+        r[5] = c5 + c9 + (c13 << 1);
+        r[6] = c6 + c10 + (c14 << 1);
+        r[7] = c7 + c11 + (c15 << 1);
 
         reduce(r);
     }
