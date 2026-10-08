@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_RISCV_FOREIGN_GLOBALS_RISCV_HPP
-#define CPU_RISCV_FOREIGN_GLOBALS_RISCV_HPP
+#ifndef CPU_RISCV_FOREIGNGLOBALS_RISCV_HPP
+#define CPU_RISCV_FOREIGNGLOBALS_RISCV_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "utilities/growableArray.hpp"
@@ -49,4 +49,4 @@ struct ABIDescriptor {
   bool is_volatile_reg(FloatRegister reg) const;
 };
 
-#endif // CPU_RISCV_FOREIGN_GLOBALS_RISCV_HPP
+#endif // CPU_RISCV_FOREIGNGLOBALS_RISCV_HPP

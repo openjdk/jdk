@@ -164,9 +164,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   //     will return new instance via the same reg
   void read_flat_field(Register entry, Register obj);
 
-  void write_flat_field(Register entry, Register field_offset,
-                        Register tmp1, Register tmp2,
-                        Register obj);
+  void write_flat_field(Register entry, Register tmp1, Register tmp2, Register obj);
 
   // load cpool->resolved_references(index);
   void load_resolved_reference_at_index(Register result, Register index, Register tmp = r5);
