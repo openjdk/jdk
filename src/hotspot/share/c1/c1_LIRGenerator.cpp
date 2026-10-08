@@ -2024,6 +2024,12 @@ void LIRGenerator::check_flat_array(LIR_Opr array, CodeStub* slow_path) {
   __ check_flat_array(array, tmp, slow_path);
 }
 
+void LIRGenerator::check_flat_array_new(LIR_Opr array, BlockBegin* taken, BlockBegin* not_taken) {
+  LIR_Opr tmp = new_register(T_METADATA);
+  __ check_flat_array_new(array, tmp, *taken->label()); // Takes care of the conditional jump to the slow path.
+  __ jump(not_taken);
+}
+
 void LIRGenerator::check_null_free_array(LIRItem& array, LIRItem& value, CodeEmitInfo* info) {
   LabelObj* L_end = new LabelObj();
   LIR_Opr tmp = new_register(T_METADATA);
@@ -2150,30 +2156,72 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
       access_flat_array(false, array, index, value);
     }
   } else {
-    StoreFlattenedArrayStub* slow_path = nullptr;
+    if (UseNewCode) {
+      if (needs_flat_array_store_check(x)) {
+        LateControlFlowDiamond lcfd(this, x, x->printable_bci(), x->state_before(),
+                                    [&](BlockBegin* taken, BlockBegin* not_taken) { check_flat_array_new(array.result(), taken, not_taken); });
+        {
+          LateControlFlowDiamond::NotTakenBlock not_taken(lcfd);
 
-    if (needs_flat_array_store_check(x)) {
-      // Check if we indeed have a flat array
-      index.load_item();
-      slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, x->state_before()));
-      check_flat_array(array.result(), slow_path);
-    }
+          LIRItem array(x->array(), this);
+          LIRItem value(x->value(), this);
+          LIRItem index(x->index(), this);
 
-    if (needs_null_free_array_store_check(x)) {
-      CodeEmitInfo* info = new CodeEmitInfo(range_check_info);
-      check_null_free_array(array, value, info);
-    }
+          store_array_helper(x, array, value, index, range_check_info, null_check_info);
+        } {
+          LateControlFlowDiamond::TakenBlock taken(lcfd);
 
-    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
-    if (x->check_boolean()) {
-      decorators |= C1_MASK_BOOLEAN;
-    }
+          LIRItem array(x->array(), this);
+          LIRItem value(x->value(), this);
+          LIRItem index(x->index(), this);
+          array.load_item();
+          value.load_item();
+          index.load_item();
 
-    access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
-    if (slow_path != nullptr) {
-      __ branch_destination(slow_path->continuation());
+          StoreFlattenedArrayStub* slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, lcfd.state_before()));
+          __ jump(slow_path);
+          __ branch_destination(slow_path->continuation());
+        }
+      } else {
+        store_array_helper(x, array, value, index, range_check_info, null_check_info);
+      }
+    } else {
+      // Old implementation
+      StoreFlattenedArrayStub* slow_path = nullptr;
+      if (needs_flat_array_store_check(x)) {
+        // Check if we indeed have a flat array
+        index.load_item();
+        slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, x->state_before()));
+        check_flat_array(array.result(), slow_path);
+      }
+
+      store_array_helper(x, array, value, index, range_check_info, null_check_info);
+      if (slow_path != nullptr) {
+        __ branch_destination(slow_path->continuation());
+      }
     }
   }
+}
+
+void LIRGenerator::store_array_helper(StoreIndexed* x, LIRItem& array, LIRItem& value, LIRItem& index,
+                                      CodeEmitInfo* range_check_info, CodeEmitInfo* null_check_info) {
+  array.load_item();
+
+  if (needs_null_free_array_store_check(x)) {
+    CodeEmitInfo* info = new CodeEmitInfo(range_check_info);
+    value.load_item();
+    check_null_free_array(array, value, info);
+  } else {
+    value.load_for_store(x->elt_type());
+  }
+
+  DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+  if (x->check_boolean()) {
+    decorators |= C1_MASK_BOOLEAN;
+  }
+
+  index.load_item();
+  access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
 }
 
 void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,

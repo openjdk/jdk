@@ -347,6 +347,11 @@ LIR_OpFlattenedArrayCheck::LIR_OpFlattenedArrayCheck(LIR_Opr array, LIR_Opr tmp,
   , _tmp(tmp)
   , _stub(stub) {}
 
+LIR_OpFlattenedArrayCheckNew::LIR_OpFlattenedArrayCheckNew(LIR_Opr array, LIR_Opr tmp, Label& slow_path)
+  : LIR_Op(lir_flat_array_check_new, LIR_OprFact::illegalOpr, nullptr)
+  , _array(array)
+  , _tmp(tmp)
+  , _slow_path(slow_path) {}
 
 LIR_OpNullFreeArrayCheck::LIR_OpNullFreeArrayCheck(LIR_Opr array, LIR_Opr tmp)
   : LIR_Op(lir_null_free_array_check, LIR_OprFact::illegalOpr, nullptr)
@@ -861,6 +866,18 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
+// LIR_OpFlattenedArrayCheckNew
+    case lir_flat_array_check_new: {
+      assert(op->as_OpFlattenedArrayCheckNew() != nullptr, "must be");
+      LIR_OpFlattenedArrayCheckNew* opFlattenedArrayCheck = (LIR_OpFlattenedArrayCheckNew*)op;
+
+      if (opFlattenedArrayCheck->_array->is_valid()) do_input(opFlattenedArrayCheck->_array);
+      if (opFlattenedArrayCheck->_tmp->is_valid())   do_temp(opFlattenedArrayCheck->_tmp);
+
+
+      break;
+    }
+
 // LIR_OpNullFreeArrayCheck
     case lir_null_free_array_check: {
       assert(op->as_OpNullFreeArrayCheck() != nullptr, "must be");
@@ -1152,6 +1169,10 @@ void LIR_OpFlattenedArrayCheck::emit_code(LIR_Assembler* masm) {
   if (stub() != nullptr) {
     masm->append_code_stub(stub());
   }
+}
+
+void LIR_OpFlattenedArrayCheckNew::emit_code(LIR_Assembler* masm) {
+  masm->emit_opFlattenedArrayCheckNew(this);
 }
 
 void LIR_OpNullFreeArrayCheck::emit_code(LIR_Assembler* masm) {
@@ -1619,6 +1640,11 @@ void LIR_List::null_check(LIR_Opr opr, CodeEmitInfo* info, bool deoptimize_on_nu
 
 void LIR_List::check_flat_array(LIR_Opr array, LIR_Opr tmp, CodeStub* stub) {
   LIR_OpFlattenedArrayCheck* c = new LIR_OpFlattenedArrayCheck(array, tmp, stub);
+  append(c);
+}
+
+void LIR_List::check_flat_array_new(LIR_Opr array, LIR_Opr tmp, Label& slow_path) {
+  LIR_OpFlattenedArrayCheckNew* c = new LIR_OpFlattenedArrayCheckNew(array, tmp, slow_path);
   append(c);
 }
 
@@ -2161,6 +2187,12 @@ void LIR_OpFlattenedArrayCheck::print_instr(outputStream* out) const {
   if (stub() != nullptr) {
     out->print("[label:" INTPTR_FORMAT "]", p2i(stub()->entry()));
   }
+}
+
+void LIR_OpFlattenedArrayCheckNew::print_instr(outputStream* out) const {
+  array()->print(out);                   out->print(" ");
+  tmp()->print(out);                     out->print(" ");
+  out->print("[label:" INTPTR_FORMAT "]", p2i(&slow_path()));
 }
 
 void LIR_OpNullFreeArrayCheck::print_instr(outputStream* out) const {
