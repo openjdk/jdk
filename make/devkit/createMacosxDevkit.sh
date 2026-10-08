@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@
 # and choose "Open With -> Archive Utility", or possible typing
 # "open Xcode_9.2.xip" in a terminal.
 # erik.joelsson@oracle.com
+
+set -e
+set -o pipefail
 
 USAGE="$0 <Xcode.app>"
 
@@ -111,6 +114,38 @@ rsync -rlH $INCLUDE_ARGS $EXCLUDE_ARGS "$XCODE_APP/." $DEVKIT_ROOT/Xcode
 
 ################################################################################
 
+echo "Adding Metal toolchain..."
+METAL_EXPORT_PATH="$(mktemp -d "${BUILD_DIR}/metal-for-Xcode${XCODE_VERSION}.export.XXXXXX")"
+
+DEVELOPER_DIR="${XCODE_APP}" xcodebuild -downloadComponent MetalToolchain -exportPath "${METAL_EXPORT_PATH}"
+
+METAL_EXPORT_BUNDLES=("${METAL_EXPORT_PATH}"/MetalToolchain-*.exportedBundle)
+if [[ ${#METAL_EXPORT_BUNDLES[@]} != 1 || ! -d "${METAL_EXPORT_BUNDLES[0]}" ]]; then
+    echo "Expected exactly one exportBundle directory in ${METAL_EXPORT_PATH}"
+    exit 1
+fi
+
+METAL_DMG_DIR="${METAL_EXPORT_BUNDLES[0]}/Restore"
+METAL_DMGS=("${METAL_DMG_DIR}"/*.dmg)
+if [[ ${#METAL_DMGS[@]} != 1 || ! -f "${METAL_DMGS[0]}" ]]; then
+    echo "Expected exactly one dmg file in ${METAL_DMG_DIR}"
+    exit 1
+fi
+METAL_DMG="${METAL_DMGS[0]}"
+
+echo "Mounting Metal dmg (${METAL_DMG})..."
+(
+    METAL_MOUNTPOINT="$(mktemp -d "$BUILD_DIR/metal-for-Xcode${XCODE_VERSION}.mountpoint.XXXXXX")"
+
+    trap 'hdiutil detach "${METAL_MOUNTPOINT}" >/dev/null 2>&1 || true' EXIT
+    hdiutil attach -readonly -noautoopen -mountpoint "${METAL_MOUNTPOINT}" "${METAL_DMG}"
+
+    echo "Copying Metal.xctoolchain..."
+    rsync -rlH "${METAL_MOUNTPOINT}/Metal.xctoolchain/." "${DEVKIT_ROOT}/Metal.xctoolchain"
+)
+
+################################################################################
+
 echo-info() {
     echo "$1" >> $DEVKIT_ROOT/devkit.info
 }
@@ -119,7 +154,7 @@ echo "Generating devkit.info..."
 rm -f $DEVKIT_ROOT/devkit.info
 echo-info "# This file describes to configure how to interpret the contents of this devkit"
 echo-info "DEVKIT_NAME=\"Xcode $XCODE_VERSION (devkit)\""
-echo-info "DEVKIT_TOOLCHAIN_PATH=\"\$DEVKIT_ROOT/Xcode/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:\$DEVKIT_ROOT/Xcode/Contents/Developer/usr/bin\""
+echo-info "DEVKIT_TOOLCHAIN_PATH=\"\$DEVKIT_ROOT/Metal.xctoolchain/usr/bin:\$DEVKIT_ROOT/Xcode/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:\$DEVKIT_ROOT/Xcode/Contents/Developer/usr/bin\""
 echo-info "DEVKIT_SYSROOT=\"\$DEVKIT_ROOT/Xcode/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/$SDK_VERSION.sdk\""
 echo-info "DEVKIT_EXTRA_PATH=\"\$DEVKIT_TOOLCHAIN_PATH\""
 
@@ -133,7 +168,7 @@ cp $0 $DEVKIT_ROOT/
 # Create bundle
 
 echo "Creating bundle..."
-GZIP=$(command -v pigz)
+GZIP=$(command -v pigz || true)
 if [ -z "$GZIP" ]; then
     GZIP="gzip"
 fi
