@@ -143,11 +143,9 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
 
   if (has_work) {
     QuickSort::sort(_candidates, _candidates_count, compare_uncommit_priority);
-    return true;
-  } else {
-    // No regions that match our target at all.
-    return false;
   }
+
+  return has_work;
 }
 
 void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until) {
@@ -178,8 +176,8 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     }
 
     // Try to claim progress, gracefully waiting. This allows allocators to proceed
-    // taking the heap lock and start using the region. We are not in a hurry to uncommit,
-    // otherwise, we will just trip through uncommit-commit wastefully.
+    // taking the heap lock and start using the region. We are not in a hurry to uncommit.
+    // Otherwise we will just trip through uncommit-commit wastefully.
     int delay_ms = 1;
     size_t used_after = _heap->used();
     if (used_after > used_before) {
