@@ -552,18 +552,18 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size) {
   // when mmap'ing archived heap data in, so pre-touching is wasted.
   FlagSetting fs(AlwaysPreTouch, false);
 
-  size_t commits = 0;
+  size_t num_newly_activated_regions = 0;
   // Attempt to allocate towards the end of the heap.
   HeapWord* start_addr = reserved.end() - align_up(word_size, G1HeapRegion::GrainWords);
   MemRegion range = MemRegion(start_addr, word_size);
   HeapWord* last_address = range.last();
-  if (!_hrm.allocate_containing_regions(range, &commits, workers())) {
+  if (!_hrm.allocate_containing_regions(range, &num_newly_activated_regions, workers())) {
     return nullptr;
   }
   increase_used(word_size * HeapWordSize);
-  if (commits != 0) {
+  if (num_newly_activated_regions != 0) {
     log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: %zuB",
-                              G1HeapRegion::GrainWords * HeapWordSize * commits);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_newly_activated_regions);
   }
 
   // Mark each G1 region touched by the range as old, add it to
@@ -607,22 +607,22 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
-  uint max_shrink_count = 0;
+  uint max_num_regions_to_shrink = 0;
   if (capacity() > MinHeapSize) {
     size_t max_shrink_bytes = capacity() - MinHeapSize;
-    max_shrink_count = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
+    max_num_regions_to_shrink = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
   }
 
-  uint shrink_count = 0;
+  uint num_shrunk_regions = 0;
   // Free, empty and uncommit regions with CDS archive content.
   auto dealloc_archive_region = [&] (G1HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
     _old_set.remove(r);
     r->set_free();
     r->set_top(r->bottom());
-    if (shrink_count < max_shrink_count) {
+    if (num_shrunk_regions < max_num_regions_to_shrink) {
       _hrm.shrink_at(r->hrm_index(), 1);
-      shrink_count++;
+      num_shrunk_regions++;
     } else {
       _hrm.insert_into_free_list(r);
     }
@@ -630,11 +630,11 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
 
   iterate_regions_in_range(range, dealloc_archive_region);
 
-  if (shrink_count != 0) {
+  if (num_shrunk_regions != 0) {
     log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB (%u Regions)",
-                              G1HeapRegion::GrainWords * HeapWordSize * shrink_count, shrink_count);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_shrunk_regions, num_shrunk_regions);
     // Explicit uncommit.
-    uncommit_regions(shrink_count);
+    uncommit_regions(num_shrunk_regions);
   }
   decrease_used(size_used);
 }
@@ -2512,8 +2512,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   _refinement_epoch++;
 }
 
-uint G1CollectedHeap::uncommit_regions(uint region_limit) {
-  return _hrm.uncommit_inactive_regions(region_limit);
+uint G1CollectedHeap::uncommit_regions(uint max_num_regions_to_uncommit) {
+  return _hrm.uncommit_inactive_regions(max_num_regions_to_uncommit);
 }
 
 bool G1CollectedHeap::has_uncommittable_regions() {
