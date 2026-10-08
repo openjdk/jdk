@@ -231,7 +231,15 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
     frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
     return fr;
   }
+
+#ifdef ASSERT
   // Last_java_pc is not set if we come here from C2 runtime stubs.
+  address return_pc = (address)((frame::z_common_abi*)jfa->last_Java_sp())->return_pc;
+  CodeBlob* cb = CodeCache::find_blob(return_pc);
+  assert(cb != nullptr, "The return address must be a CodeBlob");
+  assert(cb->is_runtime_stub(), "The return address must be a runtime stub");
+#endif
+
   frame fr(jfa->last_Java_sp());
   return fr;
 }
