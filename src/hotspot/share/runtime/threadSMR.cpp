@@ -926,8 +926,14 @@ bool ThreadsSMRSupport::delete_notify() {
 // A non-null thread_to_delete means that we were called from remove_thread()
 // which should force an attempt to reclaim any retired ThreadsList.
 void ThreadsSMRSupport::free_list(ThreadsList* threads, JavaThread* thread_to_delete) {
-  static const uint    max_retire_cnt_before_reclaim = 16;
-  static const size_t  max_retire_mem_before_reclaim = 4*M;
+  // Tests have shown that the latency sweet spot occurs when batching
+  // reclamation attempts for 16 retired ThreadsLists. A ThreadsList
+  // containing 32K threads occupies about 256K. Setting the memory
+  // threshold to 4M will thereby also allow a batch of 16 such lists,
+  // but may trigger an earlier reclamation attempt when individual
+  // ThreadsList instances are larger.
+  static const uint   max_retire_cnt_before_reclaim = 16;
+  static const size_t max_retire_mem_before_reclaim = 4 * M;
 
   assert_locked_or_safepoint(Threads_lock);
 
@@ -1146,9 +1152,13 @@ void ThreadsSMRSupport::wait_until_not_protected(JavaThread *thread) {
       // Will not make a safepoint check because this JavaThread
       // is not on the current ThreadsList.
       MutexLocker ml(Threads_lock);
-      // If the _to_delete_list is empty, it basically means that there is no
-      // ThreadsList that protects the thread. Thus it's safe to delete, and
-      // therefore we can return early.
+      // ThreadsSMRSupport::remove_thread() has removed the thread
+      // from the current ThreadsList. But an older retired
+      // ThreadsList may still contain the thread. In that case, that
+      // ThreadsList will remain on the _to_delete_list as long as
+      // it's protected by a hazard pointer or a nested handle. Thus,
+      // if the _to_delete_list is empty, there is no ThreadsList
+      // protecting the thread, hence we return early.
       if (_to_delete_list == nullptr) {
         assert(!get_java_thread_list()->includes(thread),
                "Thread should not be on the current ThreadsList");
