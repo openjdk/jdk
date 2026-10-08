@@ -121,11 +121,17 @@
 
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
+  void remove_frame(int frame_size_in_bytes, bool needs_stack_repair);
 
   void load_parameter(int offset_in_words, Register reg);
 
   void save_live_registers_no_oop_map(bool save_fpu_registers);
   void restore_live_registers_except_rax(bool restore_fpu_registers);
   void restore_live_registers(bool restore_fpu_registers);
+
+  // Randomized profile capture
+  void step_random(Register state, Register temp);
+  void save_profile_rng();
+  void restore_profile_rng();
 
 #endif // CPU_X86_C1_MACROASSEMBLER_X86_HPP

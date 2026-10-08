@@ -54,6 +54,7 @@
   static LIR_Opr R4_metadata_opr;
   static LIR_Opr R5_metadata_opr;
 
+  static LIR_Opr profile_rng_opr;
 
   static LIR_Opr LR_opr;
   static LIR_Opr LR_oop_opr;
@@ -95,7 +96,11 @@
   }
 
   static int adjust_reg_range(int range) {
-    return range;
+    int result = range - (ProfileCaptureRatio > 1);
+    return align_down(result, 2);  // ouch
+    // This is painful because on 32-bit systems, C1 groups registers
+    // in pairs. We're already very short of registers, so to lose two
+    // is Very Bad.
   }
 
   static int nof_caller_save_cpu_regs() {
@@ -104,6 +109,10 @@
 
   static int last_cpu_reg() {
     return pd_last_cpu_reg;
+  }
+
+  static int last_fpu_reg() {
+    return pd_last_fpu_reg;
   }
 
 #endif // CPU_ARM_C1_FRAMEMAP_ARM_HPP

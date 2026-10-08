@@ -137,5 +137,6 @@
 
   static int nof_caller_save_cpu_regs() { return pd_nof_caller_save_cpu_regs_frame_map; }
   static int last_cpu_reg()             { return pd_last_cpu_reg; }
+  static int last_fpu_reg()             { return pd_last_fpu_reg; }
 
 #endif // CPU_S390_C1_FRAMEMAP_S390_HPP
