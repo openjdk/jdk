@@ -42,7 +42,7 @@ import static compiler.lib.template_framework.Template.*;
  *          random init values, boundary limits, and zero/one-iteration edge cases.
  * @requires vm.compiler2.enabled
  * @library /test/lib /
- * @run driver/timeout=600 ${test.main.class} default
+ * @run driver ${test.main.class} default
  */
 
 /*
@@ -55,7 +55,7 @@ import static compiler.lib.template_framework.Template.*;
  *          narrow back to int -> deopt -> recompile cycle.
  * @requires vm.compiler2.enabled & vm.debug
  * @library /test/lib /
- * @run driver/timeout=600 ${test.main.class} stress
+ * @run driver ${test.main.class} stress
  */
 public class TestIntCountedLoopLongLimitTemplated {
 
@@ -81,11 +81,7 @@ public class TestIntCountedLoopLongLimitTemplated {
         }
     }
 
-    // Comparison operator != is excluded: with a long limit outside int range, int i can never equal it, so the loop
-    // runs until MAX_ITERATIONS is triggered; in which case, the test would not be meaningful since it only tests the
-    // guard. For limits within int range, != behaves like < or > and is already covered.
-    //
-    // In total, 24 generated tests per run: 4 ops x 2 swaps x 3 strides.
+    // In total, 28 generated tests per run: 4 ops x 2 swaps x 3 strides + 2 NE directions x 2 swaps.
     enum CmpOp {
         LT("<", ">", true),
         LE("<=", ">=", true),
@@ -128,6 +124,11 @@ public class TestIntCountedLoopLongLimitTemplated {
             }
         }
 
+        for (boolean swap : new boolean[]{false, true}) {
+            tests.add(generateNeLoopTest(swap, 1)); // counting up
+            tests.add(generateNeLoopTest(swap, -1)); // counting down
+        }
+
         return TestFrameworkClass.render(
                 "compiler.loopopts.templated", "IntCountedLoopLongLimit",
                 Set.of("java.util.Arrays",
@@ -154,7 +155,8 @@ public class TestIntCountedLoopLongLimitTemplated {
                     let("run", run),
                     generateTestMethod(test, cmp, actualStride, false),
                     generateTestMethod(ref, cmp, actualStride, true),
-                    generateRunMethod(op, run, test, ref));
+                    generateRunMethod(run, test, ref,
+                        op.countingUp ? generateRunBodyCountingUp() : generateRunBodyCountingDown()));
         });
         return template.asToken();
     }
@@ -188,7 +190,7 @@ public class TestIntCountedLoopLongLimitTemplated {
         return template.asToken();
     }
 
-    private static TemplateToken generateRunMethod(CmpOp op, String run, String test, String ref) {
+    private static TemplateToken generateRunMethod(String run, String test, String ref, TemplateToken runBody) {
         var template = Template.make(() -> scope(
                 let("run", run),
                 let("test", test),
@@ -200,9 +202,7 @@ public class TestIntCountedLoopLongLimitTemplated {
                     int init;
                     long limit;
                 """,
-                op.countingUp
-                        ? generateRunBodyCountingUp()
-                        : generateRunBodyCountingDown(),
+                runBody,
                 """
                     long[] actual = #test(init, limit);
                     long[] expected = #ref(init, limit);
@@ -211,6 +211,91 @@ public class TestIntCountedLoopLongLimitTemplated {
                             "expected " + Arrays.toString(expected) + " but got " + Arrays.toString(actual));
                     }
                 }
+                """));
+        return template.asToken();
+    }
+
+    // != is tested separately here with stride +/-1 and int-range limits only: C2 converts != to </> for unit strides,
+    // and with a long limit outside int range, int i can never equal it (the loop hits MAX_ITERATIONS instead).
+    private static TemplateToken generateNeLoopTest(boolean swap, int stride) {
+        if (stride != 1 && stride != -1) {
+            throw new IllegalArgumentException("NE exit check conversion only applies to +/-1");
+        }
+        String cmp = swap ? "limit != (long) i" : "(long) i != limit";
+        boolean countingUp = stride > 0;
+
+        var template = Template.make(() -> {
+            String test = $("test");
+            String ref = $("ref");
+            String run = $("run");
+            return scope(
+                    let("cmp", cmp),
+                    let("stride", stride),
+                    let("test", test),
+                    let("ref", ref),
+                    let("run", run),
+                    generateTestMethod(test, cmp, stride, false),
+                    generateTestMethod(ref, cmp, stride, true),
+                    generateRunMethod(run, test, ref,
+                        countingUp ? generateRunBodyNeCountingUp() : generateRunBodyNeCountingDown()));
+        });
+        return template.asToken();
+    }
+
+    private static TemplateToken generateRunBodyNeCountingUp() {
+        var template = Template.make(() -> scope(
+                """
+                    switch (G.uniformInts(0, 4).next()) {
+                        case 0 -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = (long) init + G.uniformInts(0, 999).next();
+                        }
+                        case 1 -> {
+                            init = Integer.MAX_VALUE - G.uniformInts(1, 999).next();
+                            limit = (long) Integer.MAX_VALUE;
+                        }
+                        case 2 -> {
+                            init = Integer.MIN_VALUE;
+                            limit = (long) Integer.MIN_VALUE + G.uniformInts(0, 999).next();
+                        }
+                        case 3 -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = init;
+                        }
+                        default -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = (long) init + 1;
+                        }
+                    }
+                """));
+        return template.asToken();
+    }
+
+    private static TemplateToken generateRunBodyNeCountingDown() {
+        var template = Template.make(() -> scope(
+                """
+                    switch (G.uniformInts(0, 4).next()) {
+                        case 0 -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = (long) init - G.uniformInts(0, 999).next();
+                        }
+                        case 1 -> {
+                            init = Integer.MIN_VALUE + G.uniformInts(1, 999).next();
+                            limit = (long) Integer.MIN_VALUE;
+                        }
+                        case 2 -> {
+                            init = Integer.MAX_VALUE;
+                            limit = (long) Integer.MAX_VALUE - G.uniformInts(0, 999).next();
+                        }
+                        case 3 -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = init;
+                        }
+                        default -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = (long) init - 1;
+                        }
+                    }
                 """));
         return template.asToken();
     }

@@ -48,11 +48,11 @@ import static compiler.lib.generators.Generators.*;
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-BackgroundCompilation
- *                   compiler.loopopts.TestIntCountedLoopLongLimitDeopt
+ *                   ${test.main.class}
  */
 public class TestIntCountedLoopLongLimitDeopt {
 
-    private static final Generator<Long> SMALL_UNIFORMS = G.uniformLongs(0, 1024 * 1024 - 1);
+    private static final Generator<Long> SMALL_INT_RANGE_LONGS = G.uniformLongs(0, 1024 * 1024 - 1);
     private static final int LARGE_STRIDE = Integer.MAX_VALUE / 1024 / 1024;
 
     public static void main(String[] args) throws Exception {
@@ -162,7 +162,7 @@ public class TestIntCountedLoopLongLimitDeopt {
     }
 
     private static void testDeoptimizations() throws Exception {
-        long compileArg = (SMALL_UNIFORMS.next() + 1) * LARGE_STRIDE; // compile with a known "good" value that doesn't trap
+        long compileArg = (SMALL_INT_RANGE_LONGS.next() + 1) * LARGE_STRIDE; // compile with a known "good" value that doesn't trap
         int init = G.uniformInts(0, 10).next();
 
         Method testCountedLoopWithOverflow = TestIntCountedLoopLongLimitDeopt.class.getDeclaredMethod("testCountedLoopWithOverflow", int.class, long.class);
