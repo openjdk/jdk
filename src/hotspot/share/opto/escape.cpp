@@ -2889,6 +2889,11 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
       // their initialization values, if present. This is needed because there
       // may not exist an explicit connection in the connection graph between
       // these two (as there is no explicit initialization store in the IR).
+      // Note that, for flat arrays, marking the initialization value as
+      // escaping is a conservative over-approximation and may result in an
+      // unnecessary constructor barrier. If necessary, this could be addressed
+      // by propagating the escape state directly to the fields of the
+      // initialization value.
       AllocateArrayNode* alloc = ptn->ideal_node()->as_AllocateArray();
       Node* init = alloc->in(AllocateNode::InitValue);
       if (init != nullptr) {
