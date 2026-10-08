@@ -3295,7 +3295,7 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     return true;
   }
 
-  if (CDSConfig::is_preserving_verification_constraints()) {
+  if (CDSConfig::is_preserving_verification_constraints() && !defined_by_other_loaders()) {
     return true;
   }
 

@@ -141,6 +141,13 @@ public:
   static bool is_dumping_preimage_static_archive()           NOT_CDS_RETURN_(false);
   static bool is_dumping_final_static_archive()              NOT_CDS_RETURN_(false);
 
+  // New names:
+  static bool is_dumping_aot_configuration() { return is_dumping_preimage_static_archive(); }
+  static bool is_dumping_aot_cache()         { return is_dumping_final_static_archive(); }
+
+  // Iterative training
+  static bool is_redumping_aot_configuration() { return is_dumping_aot_configuration() && is_using_archive(); }
+
   // dynamic_archive
   static bool is_dumping_dynamic_archive()                   { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }
   static void enable_dumping_dynamic_archive(const char* output_path) NOT_CDS_RETURN;
@@ -178,6 +185,7 @@ public:
 
   static bool are_vm_options_incompatible_with_dumping_heap() NOT_CDS_JAVA_HEAP_RETURN_(true);
   static void log_reasons_for_not_dumping_heap();
+  static bool can_allocate_scratch_oops()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static void disable_heap_dumping()                         { CDS_ONLY(_disable_heap_dumping = true); }
   static bool is_dumping_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);
@@ -205,7 +213,7 @@ public:
 
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:
-  //    - The VM thread (e.g., inside VM_PopulateDumpSharedSpace)
+  //    - A VMOp_PopulateDumpSharedSpace operation in the VMThread, or
   //    - The thread that performs prepatory steps before switching to the VM thread
   // Since these two threads never execute concurrently, we can avoid using locks in these CDS
   // function. For safety, these functions should assert with CDSConfig::current_thread_is_vm_or_dumper().
@@ -215,8 +223,9 @@ public:
     ~DumperThreadMark();
   };
 
-  static bool current_thread_is_dumper() NOT_CDS_RETURN_(false);
-  static bool current_thread_is_vm_or_dumper() NOT_CDS_RETURN_(false);
+  static bool in_dumper_thread() NOT_CDS_RETURN_(false);
+  static bool in_aot_safepoint() NOT_CDS_RETURN_(false);
+  static bool in_dumper_thread_or_aot_safepoint() { return in_dumper_thread() || in_aot_safepoint(); }
 };
 
 #endif // SHARE_CDS_CDSCONFIG_HPP

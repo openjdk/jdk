@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,28 @@
  * @run driver JavacBench AOT
  */
 
+/*
+ * @test id=aot-retrain
+ * @requires vm.cds.supports.aot.class.linking
+ * @summary Run JavacBenchApp with AOT cache, with retraining
+ * @requires vm.cds
+ * @library /test/lib /test/setup_aot
+ * @run driver JavacBench AOT-Retrain
+ */
+
+/*
+ * @test id=aot-retrain2
+ * @requires vm.cds.supports.aot.class.linking
+ * @summary Run JavacBenchApp with AOT cache, with retraining
+ * @requires vm.cds
+ * @library /test/lib /test/setup_aot
+ * @run driver JavacBench AOT-Retrain2
+ */
+
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
+// Note: JavacBenchApp.java is in ${JDK_REPO}/test/setup_aot
 public class JavacBench {
     static String mainClass = JavacBenchApp.class.getName();
     static String appJar;

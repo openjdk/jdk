@@ -264,10 +264,6 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       add_cached_instance_class(nest_host);
     }
 
-    if (CDSConfig::is_dumping_final_static_archive() && ik->defined_by_other_loaders()) {
-      // The following are not appliable to unregistered classes
-      return;
-    }
     ConstantPoolCache* cpCache = ik->constants()->cache();
     if (cpCache != nullptr) {
       // Resolved{Field,Indy,Method}Entries in cpCache are not walked by MetaspaceClosure,
@@ -275,11 +271,13 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       // discover the anonymous classes that are reachable only from the archivable entries.
       cpCache->record_classes_in_archivable_entries();
     }
-    scan_oops_in_instance_class(ik);
-    if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {
-      bool succeed = AOTClassLinker::try_add_candidate(ik);
-      guarantee(succeed, "All cached hidden classes must be aot-linkable");
-      add_aot_inited_class(ik);
+    if (!ik->defined_by_other_loaders()) {
+      scan_oops_in_instance_class(ik);
+      if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {
+        bool succeed = AOTClassLinker::try_add_candidate(ik);
+        guarantee(succeed, "All cached hidden classes must be aot-linkable");
+        add_aot_inited_class(ik);
+      }
     }
   }
 }
