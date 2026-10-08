@@ -3374,11 +3374,6 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_info) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, value_field_info);
-}
-
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
   ld(offset, in_bytes(ValueKlass::adr_members_offset()), value_klass);
   lwz(offset, in_bytes(ValueKlass::payload_offset_offset()), offset);
@@ -3389,21 +3384,6 @@ void MacroAssembler::payload_address(Register oop, Register data, Register value
   payload_offset(value_klass, t1);
   add(data, oop, t1);
 }
-
-void MacroAssembler::value_field_info(Register holder_klass, Register index, Register vfi) {
-  assert_different_registers(holder_klass, index, vfi);
-  ValueFieldInfo array[2];
-  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
-  if (is_power_of_2(size)) {
-    sldi(index, index, log2i_exact(size)); // Scale index by power of 2
-  } else {
-    mulld(index, index, size); // Scale the index to be the entry index * array_element_size
-  }
-  ld(vfi, InstanceKlass::value_field_info_array_offset(), holder_klass);
-  addi(vfi, vfi, Array<ValueFieldInfo>::base_offset_in_bytes());
-  add(vfi, vfi, index);
-}
-
 
 // Clear Array
 // For very short arrays. tmp == R0 is allowed.

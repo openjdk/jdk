@@ -2220,10 +2220,9 @@ void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
 }
 
-void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_offset,
-                                                 Register tmp1, Register tmp2,
-                                                 Register obj) {
-  assert_different_registers(entry, field_offset, tmp1, tmp2, obj);
+void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1,
+                                                 Register tmp2, Register obj) {
+  assert_different_registers(entry, tmp1, tmp2, obj);
   Label slow_path, done;
 
   // Load flags and check if field is null-free value type.
@@ -2233,24 +2232,8 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
   // Null check the value being stored (Z_tos holds the value oop).
   null_check(Z_tos);  // FIXME JDK-8341120
 
-  // Advance obj to the exact field address inside the object.
-  z_agr(obj, field_offset);
-
-  // Compute the payload address of the value oop (Z_tos).
-  // load_klass clobbers tmp1; payload_addr overwrites Z_tos in-place using tmp1 as the klass.
-  load_klass(tmp1, Z_tos);
-  payload_addr(Z_tos, Z_tos, tmp1);
-
-  // Load the ValueFieldInfo for this field:
-  //   field_index (u2) from the entry, holder klass pointer from the entry.
-  // Reuse field_offset as the vfi (value_field_info) register from here on.
-  Register vfi = field_offset;
-  load_sized_value(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())), sizeof(u2), false);
-  load_sized_value(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())), sizeof(void*), false);
-  value_field_info(tmp2, tmp1, vfi);
-
-  // Inline byte-copy of the value's payload into the flat field slot.
-  flat_field_copy(IN_HEAP, Z_tos, obj, vfi);
+  z_lgr(tmp1, Z_tos);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::write_null_free_flat_field), obj, tmp1, entry);
   z_bru(done);
 
   bind(slow_path);
