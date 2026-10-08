@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_LINUX_RISCV_HWPROBE_LINUX_HPP
-#define OS_LINUX_RISCV_HWPROBE_LINUX_HPP
+#ifndef OS_CPU_LINUX_RISCV_RISCV_HWPROBE_HPP
+#define OS_CPU_LINUX_RISCV_RISCV_HWPROBE_HPP
 
 #include "memory/allStatic.hpp"
 #include "runtime/vm_version.hpp"
@@ -36,4 +36,4 @@ class RiscvHwprobe: public AllStatic {
   static bool probe_features();
 };
 
-#endif // OS_LINUX_RISCV_HWPROBE_LINUX_HPP
+#endif // OS_CPU_LINUX_RISCV_RISCV_HWPROBE_HPP

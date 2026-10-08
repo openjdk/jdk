@@ -162,14 +162,8 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         assert !isFirstSentence;
         try {
             var docFinder = utils.docFinder();
-            Optional<Documentation> r;
-            if (src == null) {
-                r = docFinder.find((ExecutableElement) dst,
-                        m -> DocFinder.Result.fromOptional(extractFirst(m))).toOptional();
-            } else {
-                r = docFinder.search((ExecutableElement) src,
-                        m -> DocFinder.Result.fromOptional(extractFirst(m))).toOptional();
-            }
+            Optional<Documentation> r = docFinder.searchInherited((ExecutableElement) dst, (ExecutableElement) src,
+                    m -> DocFinder.Result.fromOptional(extractFirst(m))).toOptional();
             return r.map(result -> new Output(result.tag, result.method, result.description, true))
                     .orElseGet(()->new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodFound e) {

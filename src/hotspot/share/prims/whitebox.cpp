@@ -1288,6 +1288,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
 
   mh->clear_is_not_c1_compilable();
   mh->clear_is_not_c2_compilable();
+  mh->clear_is_not_c1_osr_compilable();
   mh->clear_is_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
   if (mcs != nullptr) {
@@ -1563,7 +1564,7 @@ CodeHeap* WhiteBox::get_code_heap(CodeBlobType blob_type) {
 
 struct CodeBlobStub {
   CodeBlobStub(const CodeBlob* blob) :
-      name(os::strdup(blob->name())),
+      name(os::strdup(blob->name(), mtInternal)),
       size(blob->size()),
       blob_type(static_cast<jint>(WhiteBox::get_blob_type(blob))),
       address((jlong) blob),
@@ -1627,7 +1628,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, nullptr);
-  result = env->NewObjectArray(5, clazz, nullptr);
+  result = env->NewObjectArray(6, clazz, nullptr);
   if (result == nullptr) {
     return result;
   }
@@ -1653,6 +1654,10 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jobject entry_point = longBox(thread, env, (jlong) code->entry_point());
   CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 4, entry_point);
+
+  jobject has_scoped_access = booleanBox(thread, env, (jboolean) code->has_scoped_access());
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  env->SetObjectArrayElement(result, 5, has_scoped_access);
 
   return result;
 WB_END
@@ -2672,6 +2677,11 @@ WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
   return os::is_containerized();
 WB_END
 
+// Physical memory of the machine (respecting container limits)
+WB_ENTRY(jlong, WB_PhysicalMemory(JNIEnv* env, jobject o))
+  return static_cast<jlong>(os::physical_memory());
+WB_END
+
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   return static_cast<jlong>(os::Machine::physical_memory());
@@ -3197,6 +3207,7 @@ static JNINativeMethod methods[] = {
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
   {CC"hostAvailableMemory",       CC"()J",            (void*)&WB_HostAvailableMemory },
   {CC"hostCPUs",                  CC"()I",            (void*)&WB_HostCPUs },
+  {CC"physicalMemory",            CC"()J",            (void*)&WB_PhysicalMemory },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },

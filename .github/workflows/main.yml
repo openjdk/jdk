@@ -345,7 +345,7 @@ jobs:
       platform: macos-x64
       runs-on: 'macos-15-intel'
       xcode-toolset-version: '16.4'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      configure-arguments: ${{ github.event.inputs.configure-arguments }} --enable-deprecated-ports
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.macos-x64 == 'true'
