@@ -1093,7 +1093,8 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   branch_optimized(Assembler::bcondAlways, fast_path);
   bind (slow_path);
   push(state);
-  set_last_Java_frame(Z_SP, noreg);
+  get_PC(Z_R1_scratch);
+  set_last_Java_frame(Z_SP, Z_R1_scratch);
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), Z_thread);
   reset_last_Java_frame();
   pop(state);
