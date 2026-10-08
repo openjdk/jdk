@@ -607,24 +607,43 @@ public class HtmlIds {
      * of the heading with additional checks to make it unique within its containing page.
      *
      * @param headingText the text contained by the heading
-     * @param headingIds the set of heading ids already generated for the current page
+     * @param existingIds the set of heading ids already generated for the current page
      * @return a unique id value for the heading
      */
-    public HtmlId forHeading(CharSequence headingText, Set<String> headingIds) {
-        String idValue = headingText.toString()
+    public HtmlId forHeading(CharSequence headingText, Set<String> existingIds) {
+        // TODO use sanitizeWhitespace here to allow unicode letters in heading ids
+        String base = headingText.toString()
                 .toLowerCase(Locale.ROOT)
                 .trim()
                 .replaceAll("[^\\w_-]+", "-");
-        // Make id value unique
-        idValue = idValue + "-heading";
-        if (!headingIds.add(idValue)) {
-            int counter = 1;
-            while (!headingIds.add(idValue + counter)) {
-                counter++;
-            }
-            idValue = idValue + counter;
-        }
-        return HtmlId.of(idValue);
+        var id = base + "-heading";
+        return existingIds.add(id)
+                ? HtmlId.of(id)
+                : withUniqueOrdinal(id, existingIds);
+    }
+
+    /**
+     * Returns an id for a note.
+     *
+     * @param e the element in whose documentation the note appears
+     * @param tagName the tag name of the note
+     * @param inline true if the id is for an inline note
+     * @param existingIds the set of ids already generated
+     * @return a unique id for the note
+     */
+    public HtmlId forNote(Element e, String tagName, boolean inline, Set<String> existingIds) {
+        // Only use element-specific prefix for member elements.
+        var prefix = switch (e) {
+            case ExecutableElement ee -> forMember(ee).getFirst().name();
+            case VariableElement ve   -> forMember(ve).name();
+            default -> inline ? "inline" : "block";
+        };
+        var id = prefix + "-" + tagName;
+        // Multiple block notes are merged into a single description list item,
+        // so ordinal suffixes are usually not needed for block tag ids.
+        return !inline && existingIds.add(id)
+                ? HtmlId.of(id)
+                : withUniqueOrdinal(id, existingIds);
     }
 
     /**
@@ -651,10 +670,45 @@ public class HtmlIds {
             // while utterly unexpected, we shouldn't fail
             id += "unknown-element";
         }
+        return withUniqueOrdinal(id, snippetIds);
+    }
+
+    /**
+     * Returns an HTML id based on a proposed id value that is unique within the
+     * given set of existing ids.
+     *
+     * <p>If the proposed id is not already present in {@code existingIds}, it is
+     * added to the set and returned as-is. Otherwise, an id with a unique ordinal
+     * suffix is added to the set and returned.</p>
+     *
+     * @param id the proposed id
+     * @param existingIds the set of ids already generated
+     * @return a unique id
+     */
+    public HtmlId getUniqueId(String id, Set<String> existingIds) {
+        var base = sanitizeWhitespace(id);
+        return existingIds.add(base)
+                ? HtmlId.of(base)
+                : withUniqueOrdinal(base, existingIds);
+    }
+
+    /*
+     * Returns an HTML id composed of base and an ordinal suffix that is unique within
+     * the given set of id values. The returned id is added to the set of existing ids.
+     */
+    private HtmlId withUniqueOrdinal(String base, Set<String> existingIds) {
         int counter = 1;
-        while (!snippetIds.add(id + counter)) {
+        while (!existingIds.add(base + counter)) {
             counter++;
         }
-        return HtmlId.of(id + counter);
+        return HtmlId.of(base + counter);
+    }
+
+    /*
+     * Replace whitespace and other characters that are not safe for use in ids.
+     */
+    private String sanitizeWhitespace(String string) {
+        return string.trim()
+                .replaceAll("[^\\p{L}\\p{N}_-]+", "-");
     }
 }
