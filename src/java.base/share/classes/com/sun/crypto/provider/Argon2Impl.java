@@ -31,7 +31,6 @@ import java.security.ProviderException;
 import javax.crypto.spec.Argon2ParameterSpec;
 import static javax.crypto.spec.Argon2ParameterSpec.Version;
 import static sun.security.provider.ByteArrayAccess.*;
-import sun.security.util.KeyUtil;
 
 /**
  * This class implements the Password Hashing Algorithm Argon2 as specified
@@ -112,7 +111,8 @@ public final class Argon2Impl {
                     Version.V13, type, msg, nonce, secret, ad);
         } finally {
             // erase sensitive data right after use
-            KeyUtil.clear(msg, secret);
+            Arrays.fill(msg, (byte)0);
+            Arrays.fill(secret, (byte)0);
         }
 
         // 2) Allocate memory m' - stored inside Argon2Instance
@@ -156,6 +156,39 @@ public final class Argon2Impl {
         return h0Plus8Bytes;
     }
 
+    // set of temporary storages for the memory blocks operation
+    private static final class WorkingBuffers {
+
+        final Block rBlock; // for compressG()
+        final Block tmpBlock;    // for compressG()
+        final Block inBlock; // for fillSegment() by Argon2i and Argon2id
+        final Block addressBlock; // for calcAddresses() by Argon2i and Argon2id
+        final long[] v; // for permuteP()
+
+        WorkingBuffers(Type type) {
+            rBlock = new Block();
+            tmpBlock = new Block();
+            if (type != Type.ARGON2D) {
+                inBlock = new Block();
+                addressBlock = new Block();
+            } else {
+                inBlock = null;
+                addressBlock = null;
+            }
+            v = new long[16];
+        }
+
+        void erase() {
+            rBlock.erase();
+            tmpBlock.erase();
+            if (inBlock != null) { // assigned together
+                inBlock.erase();
+                addressBlock.erase();
+            }
+            Arrays.fill(v, 0L);
+        }
+    }
+
     private static final class Argon2Instance {
 
         private static final long INT_MASK = 0x0FFFFFFFFL;
@@ -197,52 +230,54 @@ public final class Argon2Impl {
         }
 
         void fillMemoryBlocks() {
-            for (int pass = 0; pass < passes; pass++) {
-                for (int slice = 0; slice < ARGON2_SLICE_NUM; slice++) {
-                    for (int lane = 0; lane < lanes; lane++) {
-                        fillSegment(new Argon2Position(pass, lane, slice));
+            WorkingBuffers wb = new WorkingBuffers(type);
+            try {
+                for (int pass = 0; pass < passes; pass++) {
+                    for (int slice = 0; slice < ARGON2_SLICE_NUM; slice++) {
+                        for (int lane = 0; lane < lanes; lane++) {
+                            fillSegment(new Argon2Position(pass, lane, slice),
+                                    wb);
+                        }
                     }
                 }
+            } finally {
+                wb.erase();
             }
         }
 
-        private void fillSegment(Argon2Position pos) {
-            Block inBlock = null;
+        private void fillSegment(Argon2Position pos, WorkingBuffers wb) {
             boolean independentAddr =
                 (type == Type.ARGON2ID && (pos.pass == 0) && (pos.slice < 2)
                 || type == Type.ARGON2I);
             if (independentAddr) {
-                inBlock = new Block();
-                inBlock.value[0] = pos.pass;
-                inBlock.value[1] = pos.lane;
-                inBlock.value[2] = pos.slice;
-                inBlock.value[3] = this.blockNum;
-                inBlock.value[4] = this.passes;
-                inBlock.value[5] = this.type.value();
+                wb.inBlock.erase();
+                wb.inBlock.value[0] = pos.pass;
+                wb.inBlock.value[1] = pos.lane;
+                wb.inBlock.value[2] = pos.slice;
+                wb.inBlock.value[3] = this.blockNum;
+                wb.inBlock.value[4] = this.passes;
+                wb.inBlock.value[5] = this.type.value();
             }
             int startingIdx = 0;
-            Block addressBlock = null;
-
             if (pos.pass == 0 && pos.slice == 0) {
                 // adjust startingIdx as the first two blocks are generated
                 // in fillFirstTwoColumns() already
                 startingIdx = 2;
                 if (independentAddr) {
-                    addressBlock = nextAddresses(inBlock);
+                    calcAddresses(wb);
                 }
             }
             int currOfs = pos.slice * this.segLen + startingIdx;
-
-            long pseudoRand;
             for (int i = startingIdx; i < this.segLen; i++, currOfs++) {
                 int prevOfs = (currOfs == 0 ?  this.columns - 1 : currOfs - 1);
 
+                long pseudoRand;
                 if (independentAddr) {
                     // computing the index of the reference block
                     if (i % ARGON2_ADDRESSES_IN_BLOCK == 0) {
-                        addressBlock = nextAddresses(inBlock);
+                        calcAddresses(wb);
                     }
-                    pseudoRand = addressBlock.value[i %
+                    pseudoRand = wb.addressBlock.value[i %
                             ARGON2_ADDRESSES_IN_BLOCK];
                 } else {
                     // Taking pseudo-random value from the previous block
@@ -266,11 +301,11 @@ public final class Argon2Impl {
                 if (pos.pass == 0) {
                     Block currBlock = new Block();
                     // first pass, no xor
-                    compressG(prevBlock, refBlock, currBlock, false);
+                    compressG(prevBlock, refBlock, currBlock, false, wb);
                     blocks[pos.lane][currOfs] = currBlock;
                 } else {
                     Block currBlock = blocks[pos.lane][currOfs];
-                    compressG(prevBlock, refBlock, currBlock, true);
+                    compressG(prevBlock, refBlock, currBlock, true, wb);
                 }
             }
         }
@@ -329,9 +364,9 @@ public final class Argon2Impl {
                 // 8) Compute the output tag
                 return vlHash(outLen, cBytes);
             } finally {
-                // erase all involved block here
+                // erase all involved values here
                 if (cBytes != null) {
-                    KeyUtil.clear(cBytes);
+                    Arrays.fill(cBytes, (byte)0);
                 }
                 for (int i = 0; i < this.lanes; i++) {
                     for (int j = 0; j < this.columns; j++) {
@@ -379,11 +414,6 @@ public final class Argon2Impl {
 
         // Modified Blake MixG function as defined in RFC 9106 figure 19.
         private static void mixGB(long[] v, int a, int b, int c, int d) {
-            Objects.checkIndex(a, v.length);
-            Objects.checkIndex(b, v.length);
-            Objects.checkIndex(c, v.length);
-            Objects.checkIndex(d, v.length);
-
             v[a] = Long.sum(Long.sum(v[a], v[b]),
                     (v[a] & INT_MASK) * (v[b] & INT_MASK)  << 1);
             v[d] = Long.rotateRight(v[d] ^ v[a], 32);
@@ -399,9 +429,8 @@ public final class Argon2Impl {
         }
 
         // Permutation P as defined in RFC 9106 sec 3.6
-        private static void permuteP(Block b, int ofs, int inc) {
+        private static void permuteP(Block b, int ofs, int inc, long[] v) {
             // populate V[0..15] with Block b
-            long[] v = new long[16];
             for (int i = 0, sIdx = ofs; i < v.length; sIdx += inc) {
                 v[i++] = b.value[sIdx];
                 v[i++] = b.value[sIdx + 1];
@@ -424,35 +453,33 @@ public final class Argon2Impl {
 
         // Compression function G as defined in RFC 9106 sec 3.5
         private static void compressG(Block a, Block b, Block dst,
-                boolean xor) {
-            Block blockR = Block.xor(a, b);
-            Block tmp = (xor ? Block.xor(blockR, dst) : (Block) blockR.clone());
+                boolean xor, WorkingBuffers wb) {
+            Block.xor(wb.rBlock, a, b);
 
-            // r.value = 128 longs (8-byte each) which is arranged into an
+            if (xor) {
+                Block.xor(wb.tmpBlock, wb.rBlock, dst);
+            } else {
+                wb.tmpBlock.copy(wb.rBlock);
+            }
+
+            // rBlock: 128 longs (8-byte each) which is arranged into an
             // 8x8 array of elements whose length is 16 bytes
-
             // Apply permutation P on columns of 64-bit words: (0,1,...,15),
             // then (16,17,..31)... finally (112,113,...127)
             for (int i = 0; i < 8; i++) {
-                permuteP(blockR, i << 4, 2);
+                permuteP(wb.rBlock, i << 4, 2, wb.v);
             }
-
-            // Apply permutation P on rows of 64-bit words:
-            // (0,1,16,17,...112,113), then (2,3,18,19,...,114,115) ...,
-            // finally (14,15,30,31,...,126,127)
             for (int i = 0; i < 8; i++) {
-                permuteP(blockR, i << 1, 16);
+                permuteP(wb.rBlock, i << 1, 16, wb.v);
             }
-
-            Block.xor(dst, tmp, blockR);
+            Block.xor(dst, wb.tmpBlock, wb.rBlock);
         }
 
-        private static Block nextAddresses(Block inBlock) {
-            Block addressBlock = new Block();
-            inBlock.value[6]++;
-            compressG(Block.ZERO_BLK, inBlock, addressBlock, false);
-            compressG(Block.ZERO_BLK, addressBlock, addressBlock, false);
-            return addressBlock;
+        private static void calcAddresses(WorkingBuffers wb) {
+            wb.inBlock.value[6]++;
+            compressG(Block.ZERO_BLK, wb.inBlock, wb.addressBlock, false, wb);
+            compressG(Block.ZERO_BLK, wb.addressBlock, wb.addressBlock, false,
+                    wb);
         }
     }
 
@@ -513,7 +540,7 @@ public final class Argon2Impl {
         }
 
         void erase() {
-            KeyUtil.clear(value);
+            Arrays.fill(value, 0L);
         }
 
         // xor this w/ 'other' and store the result in this
@@ -523,13 +550,6 @@ public final class Argon2Impl {
             }
         }
 
-        // return a new block whose value equals to ('src1' xor 'src2')
-        static Block xor(Block src1, Block src2) {
-            Block dst = new Block();
-            xor(dst, src1, src2);
-            return dst;
-        }
-
         // store ('src1' xor 'src2') into 'dst'
         static void xor(Block dst, Block src1, Block src2) {
             for (int i = 0; i < ARGON2_QWORDS_IN_BLOCK; i++) {
@@ -537,11 +557,9 @@ public final class Argon2Impl {
             }
         }
 
-        @Override
-        public Object clone() {
-            return new Block(value.clone());
+        void copy(Block other) {
+            System.arraycopy(other.value, 0, value, 0, value.length);
         }
-
         @Override
         public String toString() {
             StringBuilder result = new StringBuilder();
