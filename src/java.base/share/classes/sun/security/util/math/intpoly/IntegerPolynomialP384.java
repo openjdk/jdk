@@ -132,19 +132,20 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         long carry = limbs[6] >> 54;
 
         limbs[6] -= carry << 54;
-
         limbs[2] += (carry << 18) & LIMB_MASK;
         limbs[3] += carry >> 37;
-
         limbs[1] += (carry << 41) & LIMB_MASK;
         limbs[2] += carry >> 14;
-
         limbs[0] -= (carry << 32) & LIMB_MASK;
         limbs[1] -= carry >> 23;
-
         limbs[0] += carry;
     }
 
+    /**
+     * Reduce from the upper half of limbs to the lower half.
+     *
+     * @param c [in|out] the limbs to be reduced and reduced into
+     */
     private void carryReduceUpper(long[] c) {
         // reduce from position 13
         c[8] += (c[13] << 19) & LIMB_MASK;
@@ -210,56 +211,19 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
         c[0] += (c[7] << 1) & LIMB_MASK;
         c[1] += c[7] >> 54;
 
-        carryReduceLower(c);
+        // Reduce lower limbs
+        reduce(c);
     }
 
-    private void carryReduceLower(long[] c) {
-        long carry, c7;
-
-        // carry from position 5
-        carry = (c[5] + CARRY_ADD) >> BITS_PER_LIMB;
-        c[5] -= carry << BITS_PER_LIMB;
-        c[6] += carry;
-        // carry from position 6
-        carry = (c[6] + CARRY_ADD) >> BITS_PER_LIMB;
-        c[6] -= carry << BITS_PER_LIMB;
-        c7 = carry;
-        // reduce from position 7
-        c[2] += (c7 << 19) & LIMB_MASK;
-        c[3] += c7 >> 36;
-        c[1] += (c7 << 42) & LIMB_MASK;
-        c[2] += c7 >> 13;
-        c[0] -= (c7 << 33) & LIMB_MASK;
-        c[1] -= c7 >> 22;
-        c[0] += (c7 << 1) & LIMB_MASK;
-        c[1] += c7 >> 54;
-        // carry from position 0
-        carry = (c[0] + CARRY_ADD) >> BITS_PER_LIMB;
-        c[0] -= carry << BITS_PER_LIMB;
-        c[1] += carry;
-        // carry from position 1
-        carry = (c[1] + CARRY_ADD) >> BITS_PER_LIMB;
-        c[1] -= carry << BITS_PER_LIMB;
-        c[2] += carry;
-        // carry from position 2
-        carry = (c[2] + CARRY_ADD) >> BITS_PER_LIMB;
-        c[2] -= carry << BITS_PER_LIMB;
-        c[3] += carry;
-        // carry from position 3
-        carry = (c[3] + CARRY_ADD) >> BITS_PER_LIMB;
-        c[3] -= carry << BITS_PER_LIMB;
-        c[4] += carry;
-        // carry from position 4
-        carry = (c[4] + CARRY_ADD) >> BITS_PER_LIMB;
-        c[4] -= carry << BITS_PER_LIMB;
-        c[5] += carry;
-        // carry from position 5
-        carry = (c[5] + CARRY_ADD) >> BITS_PER_LIMB;
-        c[5] -= carry << BITS_PER_LIMB;
-        c[6] += carry;
-    }
-
-    @Override
+    /**
+     * Multiply two limbs using a high/low digit technique that allows for
+     * larger limb sizes.  It is assumed that both limbs have already been
+     * reduced.
+     *
+     * @param a [in] the limb operand to multiply.
+     * @param b [in] the limb operand to multiply.
+     * @param r [out] the product of the limbs operands that is fully reduced.
+     */
     protected void mult(long[] a, long[] b, long[] r) {
         // multiplication result digits for each column
         long[] c = new long[2 * NUM_LIMBS];
@@ -566,38 +530,54 @@ public final class IntegerPolynomialP384 extends IntegerPolynomial {
     }
 
     /**
-     * Carry in all positions and reduce high order limb.
+     * Carry in all lower positions and reduce high order limb.
      *
-     * @param limbs [in|out] the limbs to carry and reduce.
+     * @param c [in|out] the limbs to carry and reduce.
      */
-    protected void reduce(long[] limbs) {
-        carryReduceLower(limbs);
-/*
-        long carry = (limbs[3] + CARRY_ADD) >> BITS_PER_LIMB;
-        limbs[3] -= carry << BITS_PER_LIMB;
-        limbs[4] += carry;
+    protected void reduce(long[] c) {
+        long carry, c7;
 
-        carry = (limbs[4] + CARRY_ADD) >> BITS_PER_LIMB;
-        limbs[4] -= carry << BITS_PER_LIMB;
-
-        limbs[0] += 19 * carry;
-
-        carry = (limbs[0] + CARRY_ADD) >> BITS_PER_LIMB;
-        limbs[0] -= carry << BITS_PER_LIMB;
-        limbs[1] += carry;
-
-        carry = (limbs[1] + CARRY_ADD) >> BITS_PER_LIMB;
-        limbs[1] -= carry << BITS_PER_LIMB;
-        limbs[2] += carry;
-
-        carry = (limbs[2] + CARRY_ADD) >> BITS_PER_LIMB;
-        limbs[2] -= carry << BITS_PER_LIMB;
-        limbs[3] += carry;
-
-        carry = (limbs[3] + CARRY_ADD) >> BITS_PER_LIMB;
-        limbs[3] -= carry << BITS_PER_LIMB;
-        limbs[4] += carry;
-*/
+        // carry from position 5
+        carry = (c[5] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[5] -= carry << BITS_PER_LIMB;
+        c[6] += carry;
+        // carry from position 6
+        carry = (c[6] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[6] -= carry << BITS_PER_LIMB;
+        c7 = carry;
+        // reduce from position 7
+        c[2] += (c7 << 19) & LIMB_MASK;
+        c[3] += c7 >> 36;
+        c[1] += (c7 << 42) & LIMB_MASK;
+        c[2] += c7 >> 13;
+        c[0] -= (c7 << 33) & LIMB_MASK;
+        c[1] -= c7 >> 22;
+        c[0] += (c7 << 1) & LIMB_MASK;
+        c[1] += c7 >> 54;
+        // carry from position 0
+        carry = (c[0] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[0] -= carry << BITS_PER_LIMB;
+        c[1] += carry;
+        // carry from position 1
+        carry = (c[1] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[1] -= carry << BITS_PER_LIMB;
+        c[2] += carry;
+        // carry from position 2
+        carry = (c[2] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[2] -= carry << BITS_PER_LIMB;
+        c[3] += carry;
+        // carry from position 3
+        carry = (c[3] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[3] -= carry << BITS_PER_LIMB;
+        c[4] += carry;
+        // carry from position 4
+        carry = (c[4] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[4] -= carry << BITS_PER_LIMB;
+        c[5] += carry;
+        // carry from position 5
+        carry = (c[5] + CARRY_ADD) >> BITS_PER_LIMB;
+        c[5] -= carry << BITS_PER_LIMB;
+        c[6] += carry;
     }
 
     /**
