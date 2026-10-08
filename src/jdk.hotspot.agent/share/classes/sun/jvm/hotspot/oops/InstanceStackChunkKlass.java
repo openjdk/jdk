@@ -117,7 +117,7 @@ public class InstanceStackChunkKlass extends InstanceKlass {
     long bitsPerWord = wordSize * 8L;
     long slotCount = stackSizeInWords * slotsPerWord;
     // the saved frame pointer below sp can hold an oop, so start where the VM starts
-    long firstSlot = Math.max(0L, sp - metadataWordsAtBottom) * slotsPerWord;
+    long firstSlot = (sp - metadataWordsAtBottom) * slotsPerWord;
     Address base = obj.getHandle();
     for (long w = firstSlot / bitsPerWord; w * bitsPerWord < slotCount; w++) {
       long word = base.getCIntegerAt(bitmapBytes + w * wordSize, wordSize, true);
