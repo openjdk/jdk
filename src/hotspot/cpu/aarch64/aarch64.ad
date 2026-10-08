@@ -1701,6 +1701,34 @@ int MachCallRuntimeNode::ret_addr_offset() const {
 
 //=============================================================================
 
+void MachUncommonTrapNode::emit_impl(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+  address entry_point = OptoRuntime::uncommon_trap_blob()->entry_point();
+  address runtime_call = __ trampoline_call(Address(entry_point, relocInfo::runtime_call_type));
+  if (runtime_call == nullptr) {
+    ciEnv::current()->record_failure("Failed to emit uncommon trap trampoline call");
+    return;
+  }
+
+  __ emit_int32(trap_request());
+}
+
+uint MachUncommonTrapNode::size_impl(PhaseRegAlloc *ra_) const {
+  // BL followed by 32-bit integer constant.
+  //
+  // If target address cannot be directly encoded into the BL,
+  // a trampoline in the stub code will be emitted and used to reach
+  // the uncommon trap blob, similarly to trampolines for static calls
+  // into compiled Java methods. The size of the trampoline is
+  // accounted for separately.
+  return NativeInstruction::instruction_size + sizeof(int32_t);
+}
+
+int MachUncommonTrapNode::ret_addr_offset_impl() const {
+  return NativeInstruction::instruction_size;
+}
+
+//=============================================================================
+
 #ifndef PRODUCT
 void MachBreakpointNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("BREAKPOINT");
@@ -3657,10 +3685,16 @@ encode %{
       }
     }
 
-    __ post_call_nop();
+    int trap_request;
+    bool is_trap = is_uncommon_trap(&trap_request);
+    if (is_trap) {
+      __ emit_int32(trap_request);
+    } else {
+      __ post_call_nop();
+    }
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
-    if (Compile::current()->max_vector_size() > 0 && uncommon_trap_request() == 0) {
+    if (Compile::current()->max_vector_size() > 0 && !is_trap) {
       __ reinitialize_ptrue();
     }
   %}
