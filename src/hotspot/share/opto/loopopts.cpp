@@ -4918,8 +4918,8 @@ private:
     }
   }
 
-  // Peel one iteration of the inner loop and use the state of the safepoint right before the backedge to add parse
-  // predicates.
+  // Peel one iteration of the inner loop and use the state of the safepoint right before the backedge to add Parse
+  // Predicates.
   void try_add_predicates() {
     if (!LoopPeeling) {
       return;
