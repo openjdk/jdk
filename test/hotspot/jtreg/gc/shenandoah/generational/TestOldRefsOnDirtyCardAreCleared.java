@@ -28,7 +28,7 @@
  * @requires vm.gc.Shenandoah
  * @summary The remembered set scan must not inadvertently keep old referents on dirty cards alive.
  * @library /test/lib /
- * @build jdk.test.whitebox.WhiteBox
+ * @build jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *      -Xms512m -Xmx512m
@@ -127,7 +127,7 @@ public final class TestOldRefsOnDirtyCardAreCleared {
             }
         }
 
-        // Step 7. Verify that are strongly reachable referent was not cleared
+        // Step 7. Verify that our strongly reachable referent was not cleared
         if (RETAIN_REF.get() == null) {
             throw new RuntimeException("Strongly reachable referent was cleared: " + RETAIN_REF);
         }
