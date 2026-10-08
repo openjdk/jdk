@@ -722,8 +722,7 @@ ifneq ($(call ApplySpecFilter, $(JDWP_PROTOCOL)), )
       SOURCE_FILES := $(JDWP_PROTOCOL), \
       OUTPUT_DIR := $(DOCS_OUTPUTDIR)/specs/jdwp, \
       REPLACEMENTS := \
-          <style> => <script>const pathtoroot = "../../api/";</script> \
-                     <script src="../../api/script-files/script.js"></script> \
+          <style> => <script src="../../resources/jdk-default.js"></script> \
                      <link rel="stylesheet" href="../../resources/jdk-default.css"/><style> ; \
           <body> => <body>$(SPECS_TOP)$(JDWP_HEADER_BLOCK) ; \
           </body> => $(SPECS_BOTTOM_1)</body>, \
