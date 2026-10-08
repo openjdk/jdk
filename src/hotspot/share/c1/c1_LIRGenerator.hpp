@@ -344,6 +344,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr get_and_load_element_address(LIRItem& array, LIRItem& index);
   static bool needs_flat_array_store_check(StoreIndexed* x);
   void check_flat_array(LIR_Opr array, CodeStub* slow_path);
+  void store_array_helper(StoreIndexed* x, LIRItem& array, LIRItem& value, LIRItem& index,
+                          CodeEmitInfo* range_check_info, CodeEmitInfo* null_check_info);
+  void check_flat_array_new(LIR_Opr array, BlockBegin* taken, BlockBegin* not_taken);
   static bool needs_null_free_array_store_check(StoreIndexed* x);
   void check_null_free_array(LIRItem& array, LIRItem& value,  CodeEmitInfo* info);
   void substitutability_check(IfOp* x, LIRItem& left, LIRItem& right, LIRItem& t_val, LIRItem& f_val);
