@@ -6456,37 +6456,39 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   assert(UseVectorizedMismatchIntrinsic, "sanity");
   assert_different_registers(obja, objb, length, log2_array_indxscale, tmp1, tmp2, t0, t1);
 
-  const Register consumed = t1;
-  const Register cnt = tmp1;
-  const Register idx = tmp2;
+  const Register processed = t1;
+  const Register total = tmp1;
+  const Register taken = tmp2;
+  const Register idx = t0;
   const VectorRegister vrm = v0;
   const VectorRegister vra = v8;
   const VectorRegister vrb = v16;
   Label MISMATCH_FOUND, NO_MISMATCH_FOUND, VEC_LOOP, DONE;
 
-  sll(cnt, length, log2_array_indxscale);
-  mv(consumed, x0);
+  // read arrays as bytes since no guarantees w.r.t. their alignment
+  sll(total, length, log2_array_indxscale);
+  mv(processed, x0);
 
   bind(VEC_LOOP);
-  vsetvli(t0, cnt, Assembler::e8, Assembler::m8);
-  // read arrays as bytes since no guarantees w.r.t. their alignment
+  vsetvli(taken, total, Assembler::e8, Assembler::m8);
   vle8_v(vra, obja);
   vle8_v(vrb, objb);
   vmsne_vv(vrm, vra, vrb);
   vfirst_m(idx, vrm);
   bgez(idx, MISMATCH_FOUND);
-  add(consumed, consumed, t0);
-  sub(cnt, cnt, t0);
-  shadd(obja, consumed, obja, t0, exact_log2(wordSize));
-  shadd(objb, consumed, objb, t0, exact_log2(wordSize));
-  bnez(cnt, VEC_LOOP);
+  add(processed, processed, taken);
+  sub(total, total, taken);
+  const int taken_shift = exact_log2(wordSize);
+  shadd(obja, taken, obja, t0, taken_shift);
+  shadd(objb, taken, objb, t0, taken_shift);
+  bnez(total, VEC_LOOP);
 
   bind(NO_MISMATCH_FOUND);
   mv(result, -1);
   j(DONE);
 
   bind(MISMATCH_FOUND);
-  add(idx, consumed, idx);
+  add(idx, processed, idx);
   srl(result, idx, log2_array_indxscale);
 
   bind(DONE);
