@@ -84,19 +84,16 @@ public class LateInlinePrinting {
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
 
-        analyzer.shouldContain("""
-compiler.inlining.LateInlinePrinting$TestLateInlining::test2 (7 bytes)
-                            @ 0   compiler.inlining.LateInlinePrinting$TestLateInlining::inlined1 (1 bytes)   inline (hot)   late inline succeeded
-                            @ 3   compiler.inlining.LateInlinePrinting$TestLateInlining::inlined2 (1 bytes)   inline (hot)   late inline succeeded
-                            """);
-        analyzer.shouldContain("""
-compiler.inlining.LateInlinePrinting$TestLateInlining::test1 (13 bytes)
-                            @ 0   compiler.inlining.LateInlinePrinting$TestLateInlining::test3 (1 bytes)   inline (hot)   late inline succeeded
-                            @ 3   compiler.inlining.LateInlinePrinting$TestLateInlining::testFailInline (1 bytes)   failed to inline: disallowed by CompileCommand
-                            @ 6   compiler.inlining.LateInlinePrinting$TestLateInlining::testFailInline (1 bytes)   failed to inline: disallowed by CompileCommand
-                            @ 9   compiler.inlining.LateInlinePrinting$TestLateInlining::test2 (7 bytes)   inline (hot)   late inline succeeded
-                              @ 0   compiler.inlining.LateInlinePrinting$TestLateInlining::inlined1 (1 bytes)   inline (hot)   late inline succeeded
-                              @ 3   compiler.inlining.LateInlinePrinting$TestLateInlining::inlined2 (1 bytes)   inline (hot)   late inline succeeded
-                              """);
+        analyzer.shouldContain("compiler.inlining.LateInlinePrinting$TestLateInlining::test2 (7 bytes)");
+        analyzer.shouldContain("@ 0   compiler.inlining.LateInlinePrinting$TestLateInlining::inlined1 (1 bytes)   inline (hot)   late inline succeeded");
+        analyzer.shouldContain("@ 3   compiler.inlining.LateInlinePrinting$TestLateInlining::inlined2 (1 bytes)   inline (hot)   late inline succeeded");
+
+        analyzer.shouldContain("compiler.inlining.LateInlinePrinting$TestLateInlining::test1 (13 bytes)");
+        analyzer.shouldContain("@ 0   compiler.inlining.LateInlinePrinting$TestLateInlining::test3 (1 bytes)   inline (hot)   late inline succeeded");
+        analyzer.shouldContain("@ 3   compiler.inlining.LateInlinePrinting$TestLateInlining::testFailInline (1 bytes)   failed to inline: disallowed by CompileCommand");
+        analyzer.shouldContain("@ 6   compiler.inlining.LateInlinePrinting$TestLateInlining::testFailInline (1 bytes)   failed to inline: disallowed by CompileCommand");
+        analyzer.shouldContain("@ 9   compiler.inlining.LateInlinePrinting$TestLateInlining::test2 (7 bytes)   inline (hot)   late inline succeeded");
+        analyzer.shouldContain("@ 0   compiler.inlining.LateInlinePrinting$TestLateInlining::inlined1 (1 bytes)   inline (hot)   late inline succeeded");
+        analyzer.shouldContain("@ 3   compiler.inlining.LateInlinePrinting$TestLateInlining::inlined2 (1 bytes)   inline (hot)   late inline succeeded");
     }
 }

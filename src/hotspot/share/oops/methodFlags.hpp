@@ -52,12 +52,13 @@ class MethodFlags {
    status(is_not_c2_compilable        , 1 << 8) \
    status(is_not_c1_compilable        , 1 << 9) \
    status(is_not_c2_osr_compilable    , 1 << 10) \
-   status(force_inline                , 1 << 11) /* Annotations but also set/reset at runtime */ \
-   status(dont_inline                 , 1 << 12) \
-   status(has_loops_flag              , 1 << 13) /* Method has loops */ \
-   status(has_loops_flag_init         , 1 << 14) /* The loop flag has been initialized */ \
-   status(on_stack_flag               , 1 << 15) /* RedefineClasses support to keep Metadata from being cleaned */ \
-   status(has_scalarized_args         , 1 << 16) \
+   status(is_not_c1_osr_compilable    , 1 << 11) \
+   status(force_inline                , 1 << 12) /* Annotations but also set/reset at runtime */ \
+   status(dont_inline                 , 1 << 13) \
+   status(has_loops_flag              , 1 << 14) /* Method has loops */ \
+   status(has_loops_flag_init         , 1 << 15) /* The loop flag has been initialized */ \
+   status(on_stack_flag               , 1 << 16) /* RedefineClasses support to keep Metadata from being cleaned */ \
+   status(has_scalarized_args         , 1 << 17) \
    /* end of list */
 
 #define M_STATUS_ENUM_NAME(name, value)    _misc_##name = value,

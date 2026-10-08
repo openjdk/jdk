@@ -259,8 +259,8 @@ public:
 
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed
-  // and not free, and return the number of regions newly committed in num_regions_committed.
-  bool allocate_containing_regions(MemRegion range, size_t* num_regions_committed, WorkerThreads* pretouch_workers);
+  // and not free, and return the number of regions newly activated in num_newly_activated_regions.
+  bool allocate_containing_regions(MemRegion range, size_t* num_newly_activated_regions, WorkerThreads* pretouch_workers);
 
   // Apply blk->do_heap_region() on all committed regions in address order,
   // terminating the iteration early if do_heap_region() returns true.
@@ -269,8 +269,8 @@ public:
 
   void par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClaimer* hrclaimer, const uint start_index) const;
 
-  // Uncommit up to num_regions_to_remove regions that are completely free.
-  // Return the actual number of uncommitted regions.
+  // Deactivate up to num_regions_to_remove regions that are completely free for later uncommit.
+  // Return the actual number of deactivated regions.
   uint shrink_by(uint num_regions_to_remove);
 
   // Remove a number of regions starting at the specified index, which must be available,
@@ -282,7 +282,7 @@ public:
 
   // Uncommit inactive regions. Limit the number of regions to uncommit and return
   // actual number uncommitted.
-  uint uncommit_inactive_regions(uint limit);
+  uint uncommit_inactive_regions(uint max_num_regions_to_uncommit);
 
   void verify();
 

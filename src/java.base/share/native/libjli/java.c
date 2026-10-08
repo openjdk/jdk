@@ -1466,9 +1466,11 @@ SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path) {
     if ((res = JLI_ParseManifest(jar_path, &info)) != 0) {
         JLI_FreeManifest(); // cleanup any manifest structure
         if (res == -1) {
-            JLI_ReportErrorMessage(JAR_ERROR2, jar_path);
+            JLI_ReportErrorMessage(JAR_ERROR_CANNOT_OPEN, jar_path);
+        } else if (res == -2) {
+            JLI_ReportErrorMessage(JAR_ERROR_MANIFEST_MISSING, jar_path);
         } else {
-            JLI_ReportErrorMessage(JAR_ERROR3, jar_path);
+            JLI_ReportErrorMessage(JAR_ERROR_MANIFEST_PARSE, jar_path);
         }
         exit(1);
     }

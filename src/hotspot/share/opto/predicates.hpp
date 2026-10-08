@@ -441,7 +441,7 @@ class TemplateAssertionPredicate : public Predicate {
   TemplateAssertionPredicate clone_and_replace_init(Node* new_control, Node* new_input,
                                                     CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
-  void replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn) const;
+  void replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn, uint last_node_index) const;
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      const PhaseIdealLoop* phase) const;
@@ -1326,11 +1326,14 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
 class UpdateInitForTemplateAssertionPredicates : public PredicateVisitor {
   Node* const _new_init;
   PhaseIdealLoop* const _phase;
+  uint _last_node_index; // only applied to nodes created before Compile::unique() was captured in _last_node_index
 
 public:
-  UpdateInitForTemplateAssertionPredicates(Node* const new_init, PhaseIdealLoop* phase)
+  UpdateInitForTemplateAssertionPredicates(Node* const new_init, PhaseIdealLoop* phase, uint last_node_index)
       : _new_init(new_init),
-        _phase(phase) {}
+        _phase(phase),
+        _last_node_index(last_node_index) {
+    }
   NONCOPYABLE(UpdateInitForTemplateAssertionPredicates);
 
   using PredicateVisitor::visit;

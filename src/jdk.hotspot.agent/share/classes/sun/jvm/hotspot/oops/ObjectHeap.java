@@ -207,7 +207,7 @@ public class ObjectHeap {
       vk = (ValueKlass)k.getElementKlass();
       needNullCheck = LayoutKindHelper.isNullableFlat(k.getLayoutKind());
     } else {
-      var layout = ((InstanceKlass)obj.getKlass()).getValueFieldLayoutInfoArray().at(field.getFieldIndex());
+      var layout = ((InstanceKlass)obj.getKlass()).getValueFieldInfoArray().at(field.getFieldIndex());
       vk = layout.getKlass();
       needNullCheck = field.hasNullMarker();
     }

@@ -11,8 +11,11 @@
     div.columns{display: flex; gap: min(4vw, 1.5em);}
     div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
     ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
       width: 0.8em;
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
@@ -21,9 +24,6 @@
   </style>
   <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css" />
   <style type="text/css">pre, code, tt { color: #1d6ae5; }</style>
-  <!--[if lt IE 9]>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-  <![endif]-->
 </head>
 <body>
 <header id="title-block-header">
@@ -494,8 +494,8 @@ finalized.</p>
 <p>In the meantime, this mode allows test sources to compile and run as
 either value classes or regular identity classes without source-level
 changes.</p>
-<p>When set to any non-empty value, the following options are appended to
-every JTReg invocation:</p>
+<p>When set to any non-empty value, the following options are appended
+to every JTReg invocation:</p>
 <ul>
 <li><code>-cpa:&lt;valueClassPlugin.jar&gt;</code> — appends the plugin
 JAR to the compile-time classpath (only when the JAR is present in the
@@ -511,16 +511,15 @@ access to internal APIs required by the plugin.</li>
 plugin.</li>
 </ul>
 <p>The plugin scans each compilation unit after parsing and converts any
-class annotated with
-<code>@jdk.test.lib.valueclass.AsValueClass</code> into a value class by
-setting the internal <code>VALUE_CLASS</code> modifier flag and clearing
-the <code>IDENTITY_TYPE</code> flag. This transformation only takes
-effect when <code>--enable-preview</code> is active; without it the
-annotation is a no-op and the class compiles as an ordinary identity
-class, so the same test source can exercise both code paths.</p>
+class annotated with <code>@jdk.test.lib.valueclass.AsValueClass</code>
+into a value class by setting the internal <code>VALUE_CLASS</code>
+modifier flag and clearing the <code>IDENTITY_TYPE</code> flag. This
+transformation only takes effect when <code>--enable-preview</code> is
+active; without it the annotation is a no-op and the class compiles as
+an ordinary identity class, so the same test source can exercise both
+code paths.</p>
 <p>Example:</p>
-<pre><code>$ make test TEST=jdk_lang JTREG="VALUE_CLASS_PLUGIN=true"
-</code></pre>
+<pre><code>$ make test TEST=jdk_lang JTREG=&quot;VALUE_CLASS_PLUGIN=true&quot;</code></pre>
 <h4 id="jvmti_stress_agent">JVMTI_STRESS_AGENT</h4>
 <p>Executes JTReg tests with JVM TI stress agent. The stress agent is
 the part of test library and located in

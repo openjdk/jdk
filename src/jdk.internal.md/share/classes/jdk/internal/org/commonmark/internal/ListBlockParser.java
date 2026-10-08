@@ -160,7 +160,7 @@ public class ListBlockParser extends AbstractBlockParser {
         }
     }
 
-    // spec: An ordered list marker is a sequence of 1\u20139 arabic digits (0-9), followed by either a `.` character or a
+    // spec: An ordered list marker is a sequence of 1-9 arabic digits (0-9), followed by either a `.` character or a
     // `)` character.
     private static ListMarkerData parseOrderedList(CharSequence line, int index) {
         int digits = 0;
