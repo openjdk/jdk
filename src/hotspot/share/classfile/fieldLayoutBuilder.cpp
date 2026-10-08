@@ -84,6 +84,12 @@ static LayoutKind field_layout_selection(FieldInfo field_info, Array<ValueFieldL
       return vk->has_null_free_non_atomic_layout() ? LayoutKind::NULL_FREE_NON_ATOMIC_FLAT : LayoutKind::REFERENCE;
     }
   } else {
+    // Null-reset value allocation is best-effort during field class discovery.
+    // Without a reset value, nullable fields must use a reference layout.
+    if (vk->maybe_null_reset_value() == nullptr) {
+      return LayoutKind::REFERENCE;
+    }
+
     // To preserve the consistency between the null-marker and the field content, the NULLABLE_NON_ATOMIC_FLAT
     // can only be used in containers that have atomicity guarantees (can_use_atomic_flat argument set to true)
     if (field_info.access_flags().is_strict() && field_info.access_flags().is_final() && can_use_atomic_flat) {

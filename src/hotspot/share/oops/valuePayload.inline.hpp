@@ -404,7 +404,9 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
         ? cast_to_oop(src.addr() - src_klass->payload_offset())
         : src.container();
 
-    precond(!src_klass->supports_nullable_layouts() || container != src_klass->null_reset_value());
+    if (src_klass->supports_nullable_layouts()) {
+      assert(container != src_klass->maybe_null_reset_value(), "The container must not be the special null-reset object");
+    }
   }
 
   const int src_layout_size_in_bytes = src_klass->layout_size_in_bytes(src.layout_kind());

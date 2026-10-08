@@ -105,18 +105,23 @@ address ValueKlass::calculate_members_address() const {
 }
 
 oop ValueKlass::null_reset_value() const {
-  assert(is_initialized() || is_being_initialized() || is_in_error_state(), "null reset value is set at the beginning of initialization");
+  assert(is_loaded(), "Class must be loaded before accessing its null reset value");
   oop val = java_mirror()->obj_field_acquire(null_reset_value_offset());
   assert(val != nullptr, "Sanity check");
   return val;
 }
 
-void ValueKlass::set_null_reset_value(oop val) {
+oop ValueKlass::maybe_null_reset_value() const {
+  assert(is_loaded(), "Class must be loaded before accessing its null reset value");
+  return java_mirror()->obj_field_acquire(null_reset_value_offset());
+}
+
+void ValueKlass::ensure_null_reset_value(oop val) {
   assert(val != nullptr, "Sanity check");
   assert(oopDesc::is_oop(val), "Sanity check");
   assert(val->is_value_type(), "Sanity check");
   assert(val->klass() == this, "sanity check");
-  java_mirror()->obj_field_put(null_reset_value_offset(), val);
+  HeapAccess<>::oop_atomic_cmpxchg_at(java_mirror(), null_reset_value_offset(), (oop)nullptr, val);
 }
 
 valueOop ValueKlass::allocate_instance(TRAPS) {

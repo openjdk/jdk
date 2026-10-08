@@ -1522,25 +1522,25 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // would complicate the reentrant case (identity is platform thread).
   NoPreemptMark npm(THREAD);
 
-  // Pre-allocating an all-zero value to be used to reset nullable flat storages
+  // It is currently assumed that an instantiated class has a null-reset value, ensure that it exists.
   if (is_value_klass()) {
-      ValueKlass* vk = ValueKlass::cast(this);
-      if (vk->supports_nullable_layouts()) {
-        oop val = vk->allocate_instance(THREAD);
-        if (HAS_PENDING_EXCEPTION) {
-            Handle e(THREAD, PENDING_EXCEPTION);
-            CLEAR_PENDING_EXCEPTION;
-            {
-                EXCEPTION_MARK;
-                add_initialization_error(THREAD, e);
-                // Locks object, set state, and notify all waiting threads
-                set_initialization_state_and_notify(initialization_error, THREAD);
-                CLEAR_PENDING_EXCEPTION;
-            }
-            THROW_OOP(e());
+    ValueKlass* vk = ValueKlass::cast(this);
+    if (vk->supports_nullable_layouts() && vk->maybe_null_reset_value() == nullptr) {
+      oop val = vk->allocate_instance(THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        Handle e(THREAD, PENDING_EXCEPTION);
+        CLEAR_PENDING_EXCEPTION;
+        {
+          EXCEPTION_MARK;
+          add_initialization_error(THREAD, e);
+          // Locks object, set state, and notify all waiting threads
+          set_initialization_state_and_notify(initialization_error, THREAD);
+          CLEAR_PENDING_EXCEPTION;
         }
-        vk->set_null_reset_value(val);
+        THROW_OOP(e());
       }
+      vk->ensure_null_reset_value(val);
+    }
   }
 
   // Step 7

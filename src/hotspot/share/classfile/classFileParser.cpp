@@ -5944,46 +5944,30 @@ void ClassFileParser::clear_class_metadata() {
 ClassFileParser::~ClassFileParser() {
   _class_name->decrement_refcount();
 
-  if (_cp != nullptr) {
-    MetadataFactory::free_metadata(_loader_data, _cp);
-  }
-
-  if (_fieldinfo_stream != nullptr) {
-    MetadataFactory::free_array<u1>(_loader_data, _fieldinfo_stream);
-  }
+  MetadataFactory::free_metadata(_loader_data, _cp);
+  MetadataFactory::free_array<u1>(_loader_data, _fieldinfo_stream);
   MetadataFactory::free_array<u1>(_loader_data, _fieldinfo_search_table);
-
-  if (_fields_status != nullptr) {
-    MetadataFactory::free_array<FieldStatus>(_loader_data, _fields_status);
-  }
-
-  if (_value_field_layout_info_array != nullptr) {
-    MetadataFactory::free_array<ValueFieldLayoutInfo>(_loader_data, _value_field_layout_info_array);
-  }
-
-  if (_methods != nullptr) {
-    // Free methods
-    InstanceKlass::deallocate_methods(_loader_data, _methods);
-  }
+  MetadataFactory::free_array<FieldStatus>(_loader_data, _fields_status);
+  MetadataFactory::free_array<ValueFieldLayoutInfo>(_loader_data, _value_field_layout_info_array);
+  // Free methods
+  InstanceKlass::deallocate_methods(_loader_data, _methods);
 
   // beware of the Universe::empty_blah_array!!
-  if (_inner_classes != nullptr && _inner_classes != Universe::the_empty_short_array()) {
+  if (_inner_classes != Universe::the_empty_short_array()) {
     MetadataFactory::free_array<u2>(_loader_data, _inner_classes);
   }
 
-  if (_nest_members != nullptr && _nest_members != Universe::the_empty_short_array()) {
+  if (_nest_members != Universe::the_empty_short_array()) {
     MetadataFactory::free_array<u2>(_loader_data, _nest_members);
   }
 
-  if (_record_components != nullptr) {
-    InstanceKlass::deallocate_record_components(_loader_data, _record_components);
-  }
+  InstanceKlass::deallocate_record_components(_loader_data, _record_components);
 
-  if (_permitted_subclasses != nullptr && _permitted_subclasses != Universe::the_empty_short_array()) {
+  if (_permitted_subclasses != Universe::the_empty_short_array()) {
     MetadataFactory::free_array<u2>(_loader_data, _permitted_subclasses);
   }
 
-  if (_loadable_descriptors != nullptr && _loadable_descriptors != Universe::the_empty_short_array()) {
+  if (_loadable_descriptors != Universe::the_empty_short_array()) {
     MetadataFactory::free_array<u2>(_loader_data, _loadable_descriptors);
   }
 
@@ -6421,7 +6405,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   // If it turned out that we didn't flatten any of the fields, we deallocate
   // the array of ValueFieldLayoutInfo since it isn't needed, and so it isn't
   // transferred to the allocated InstanceKlass.
-  if (_value_field_layout_info_array != nullptr && !(_layout_info->_has_flat_fields || _has_null_restricted_static_fields)) {
+  if (!(_layout_info->_has_flat_fields || _has_null_restricted_static_fields)) {
     MetadataFactory::free_array<ValueFieldLayoutInfo>(_loader_data, _value_field_layout_info_array);
     _value_field_layout_info_array = nullptr;
   }
@@ -6441,7 +6425,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   if (_has_strict_static_fields) {
     bool found_one = false;
     for (int i = 0; i < _temp_field_info->length(); i++) {
-      FieldInfo& fi = *_temp_field_info->adr_at(i);
+      FieldInfo& fi = _temp_field_info->at(i);
       if (fi.access_flags().is_strict() && fi.access_flags().is_static()) {
         found_one = true;
         if (fi.initializer_index() != 0) {
@@ -6454,6 +6438,63 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
     }
     assert(found_one == _has_strict_static_fields,
            "correct prediction = %d", (int)_has_strict_static_fields);
+  }
+}
+
+void ClassFileParser::log_field_class_lookup(Symbol* name, InstanceKlass* klass, bool preload, bool ignore_null_restricted, TRAPS) {
+  LogTarget(Warning, class, preload) lt;
+  // Info enabled implies Warning enabled, so checking Warning covers both.
+  if (lt.is_enabled()) {
+    ResourceMark rm(THREAD);
+    const char* field_class_name = name->as_C_string();
+    const char* container_class_name = _class_name->as_C_string();
+    const bool is_value_klass = klass != nullptr && klass->is_value_klass();
+
+    if (preload) {
+      if (klass == nullptr) {
+        assert(HAS_PENDING_EXCEPTION, "Failed preload must have an exception");
+        log_info(class, preload)("Preloading of class %s during loading of class %s "
+                                 "(cause: field type in LoadableDescriptors attribute) failed : %s",
+                                 field_class_name, container_class_name,
+                                 PENDING_EXCEPTION->klass()->name()->as_C_string());
+        if (ignore_null_restricted) {
+          log_warning(class, preload)("After preloading of class %s during loading of class %s failed,"
+                                      "field was annotated with @NullRestricted but class is unknown, "
+                                      "the annotation is ignored",
+                                      field_class_name, container_class_name);
+        }
+      } else if (is_value_klass) {
+        log_info(class, preload)("Preloading of class %s during loading of class %s "
+                                 "(cause: field type in LoadableDescriptors attribute) succeeded",
+                                 field_class_name, container_class_name);
+      } else {
+        log_info(class, preload)("Preloading of class %s during loading of class %s "
+                                 "(cause: field type in LoadableDescriptors attribute) but loaded class is not a value class",
+                                 field_class_name, container_class_name);
+        if (ignore_null_restricted) {
+          log_warning(class, preload)("After preloading of class %s during loading of class %s "
+                                      "field was annotated with @NullRestricted but loaded class is not a value class, "
+                                      "the annotation is ignored",
+                                      field_class_name, container_class_name);
+        }
+      }
+    } else if (is_value_klass) {
+      log_info(class, preload)("During loading of class %s , class %s found in local system dictionary"
+                               "(field type not in LoadableDescriptors attribute)",
+                               container_class_name, field_class_name);
+    } else if (ignore_null_restricted) {
+      if (klass == nullptr) {
+        log_warning(class, preload)("During loading of class %s, class %s is unknown, "
+                                    "but a field of this type was annotated with @NullRestricted, "
+                                    "the annotation is ignored",
+                                    container_class_name, field_class_name);
+      } else {
+        log_warning(class, preload)("During loading of class %s, class %s was found in the local system dictionary "
+                                    "and is not a concrete value class, but a field of this type was annotated with "
+                                    "@NullRestricted, the annotation is ignored",
+                                    container_class_name, field_class_name);
+      }
+    }
   }
 }
 
@@ -6476,89 +6517,64 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
     FieldInfo& fieldinfo = _temp_field_info->at(i);
     if (fieldinfo.access_flags().is_static() && !fieldinfo.field_flags().is_null_free_value_type()) continue;
     Symbol* sig = fieldinfo.signature(cp);
-    if (Signature::has_envelope(sig)) {
-      TempNewSymbol name = Signature::strip_envelope(sig);
-      if (name == _class_name) {
-        if (fieldinfo.field_flags().is_null_free_value_type() && !is_concrete_value_class()) {
-          fieldinfo.field_flags_addr()->update_null_free_value_type(false);
-        } else {
-          // Dummy setting to trigger the allocation of the value_field_layout_info array -
-          // the real pointer will be set later in ::fill_instance_klass, once the ValueKlass has been allocated.
-          set_value_field_layout_info_klass(fieldinfo.index(), nullptr, CHECK);
-        }
-        continue;
-      }
-      if (PreloadClasses && is_class_in_loadable_descriptors_attribute(sig)) {
-        ResourceMark rm(THREAD);
-        log_info(class, preload)("Preloading of class %s during loading of class %s. "
-                                 "Cause: field type in LoadableDescriptors attribute",
-                                 name->as_C_string(), _class_name->as_C_string());
-        oop loader = loader_data()->class_loader();
-        InstanceKlass* klass = SystemDictionary::resolve_super_or_fail(_class_name, name,
-                                                                       Handle(THREAD, loader),
-                                                                       false, THREAD);
+    if (!Signature::has_envelope(sig)) continue;
 
-        assert((klass == nullptr) == HAS_PENDING_EXCEPTION, "Must be the same");
-
-        if (klass != nullptr) {
-          if (klass->is_value_klass()) {
-            set_value_field_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
-            log_info(class, preload)("Preloading of class %s during loading of class %s "
-                                     "(cause: field type in LoadableDescriptors attribute) succeeded",
-                                     name->as_C_string(), _class_name->as_C_string());
-          } else {
-            // Non value classes are allowed by the current spec, but it could be an indication of an issue so let's log this
-            log_info(class, preload)("Preloading of class %s during loading of class %s "
-                                     "(cause: field type in LoadableDescriptors attribute) but loaded class is not a value class",
-                                     name->as_C_string(), _class_name->as_C_string());
-            if (fieldinfo.field_flags().is_null_free_value_type()) {
-              log_warning(class, preload)("After preloading of class %s during loading of class %s "
-                                          "field was annotated with @NullRestricted but loaded class is not a value class, "
-                                          "the annotation is ignored",
-                                          name->as_C_string(), _class_name->as_C_string());
-              fieldinfo.field_flags_addr()->update_null_free_value_type(false);
-            }
-          }
-        } else {
-          log_info(class, preload)("Preloading of class %s during loading of class %s "
-                                   "(cause: field type in LoadableDescriptors attribute) failed : %s",
-                                   name->as_C_string(), _class_name->as_C_string(),
-                                   PENDING_EXCEPTION->klass()->name()->as_C_string());
-          if (fieldinfo.field_flags().is_null_free_value_type()) {
-            log_warning(class, preload)("After preloading of class %s during loading of class %s failed,"
-                                        "field was annotated with @NullRestricted but class is unknown, "
-                                        "the annotation is ignored",
-                                        name->as_C_string(), _class_name->as_C_string());
-            fieldinfo.field_flags_addr()->update_null_free_value_type(false);
-          }
-
-          // Loads triggered by the LoadableDescriptors attribute are speculative, failures must not
-          // impact loading of current class.
-          CLEAR_PENDING_EXCEPTION;
-        }
+    TempNewSymbol name = Signature::strip_envelope(sig);
+    if (name == _class_name) {
+      if (fieldinfo.field_flags().is_null_free_value_type() && !is_concrete_value_class()) {
+        fieldinfo.field_flags_addr()->update_null_free_value_type(false);
       } else {
-        oop loader = loader_data()->class_loader();
-        InstanceKlass* klass = SystemDictionary::find_instance_klass(THREAD, name, Handle(THREAD, loader));
-        if (klass != nullptr && klass->is_value_klass()) {
-          set_value_field_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
-          ResourceMark rm(THREAD);
-          log_info(class, preload)("During loading of class %s , class %s found in local system dictionary"
-                                   "(field type not in LoadableDescriptors attribute)",
-                                   _class_name->as_C_string(), name->as_C_string());
-        } else if (fieldinfo.field_flags().is_null_free_value_type()) {
-          ResourceMark rm(THREAD);
-          if (klass == nullptr) {
-            log_warning(class, preload)("During loading of class %s, class %s is unknown, "
-                                        "but a field of this type was annotated with @NullRestricted, "
-                                        "the annotation is ignored",
-                                        _class_name->as_C_string(), name->as_C_string());
-          } else {
-            log_warning(class, preload)("During loading of class %s, class %s was found in the local system dictionary "
-                                        "and is not a concrete value class, but a field of this type was annotated with "
-                                        "@NullRestricted, the annotation is ignored",
-                                        _class_name->as_C_string(), name->as_C_string());
-          }
-          fieldinfo.field_flags_addr()->update_null_free_value_type(false);
+        // Dummy setting to trigger the allocation of the value_field_layout_info array -
+        // the real pointer will be set later in ::fill_instance_klass, once the ValueKlass has been allocated.
+        set_value_field_layout_info_klass(fieldinfo.index(), nullptr, CHECK);
+      }
+      continue;
+    }
+
+    const bool preload = PreloadClasses && is_class_in_loadable_descriptors_attribute(sig);
+    Handle loader(THREAD, loader_data()->class_loader());
+    InstanceKlass* klass = nullptr;
+
+    if (preload) {
+      ResourceMark rm(THREAD);
+      log_info(class, preload)("Preloading of class %s during loading of class %s. "
+                               "Cause: field type in LoadableDescriptors attribute",
+                               name->as_C_string(), _class_name->as_C_string());
+      klass = SystemDictionary::resolve_super_or_fail(_class_name, name,
+                                                      loader, false, THREAD);
+      assert((klass == nullptr) == HAS_PENDING_EXCEPTION, "Must be the same");
+    } else {
+      klass = SystemDictionary::find_instance_klass(THREAD, name, loader);
+    }
+
+    const bool is_value_klass = klass != nullptr && klass->is_value_klass();
+    const bool ignore_null_restricted = !is_value_klass && fieldinfo.field_flags().is_null_free_value_type();
+
+    if (is_value_klass) {
+      set_value_field_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
+    }
+
+    // Report before clearing the exception as we use it when logging.
+    log_field_class_lookup(name, klass, preload, ignore_null_restricted, THREAD);
+
+    // Apply the lookup result.
+    if (preload && klass == nullptr) {
+      CLEAR_PENDING_EXCEPTION;
+    }
+    if (ignore_null_restricted) {
+      fieldinfo.field_flags_addr()->update_null_free_value_type(false);
+    }
+
+    if (is_value_klass) {
+      ValueKlass* vk = ValueKlass::cast(klass);
+
+      // Attempt to install the null-reset value before this class can be used in a nullable flat field.
+      if (vk->supports_nullable_layouts() && vk->maybe_null_reset_value() == nullptr) {
+        oop val = vk->allocate_instance(THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION;
+        } else {
+          vk->ensure_null_reset_value(val);
         }
       }
     }

@@ -414,7 +414,8 @@ class ValueKlass: public InstanceKlass {
   }
 
   oop null_reset_value() const;
-  void set_null_reset_value(oop val);
+  oop maybe_null_reset_value() const;
+  void ensure_null_reset_value(oop val);
 
   void deallocate_contents(ClassLoaderData* loader_data);
   static void cleanup(ValueKlass* ik) ;

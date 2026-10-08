@@ -247,6 +247,8 @@ class ClassFileParser {
   void post_process_parsed_stream(const ClassFileStream* const stream,
                                   ConstantPool* cp,
                                   TRAPS);
+
+  void log_field_class_lookup(Symbol* name, InstanceKlass* klass, bool preload, bool ignore_null_restricted, TRAPS);
   void fetch_field_classes(ConstantPool* cp, TRAPS);
 
   void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH,
