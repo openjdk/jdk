@@ -104,7 +104,6 @@ void VM_Version::common_initialize() {
 
   setup_cpu_available_features();
 
-
   if (UseRVA20U64) {
     useRVA20U64Profile();
   }
