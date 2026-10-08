@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @build jdk.test.lib.process.ProcessTools jdk.test.lib.JDKToolFinder
  *        jdk.test.lib.process.OutputAnalyzer
  * @run junit ${test.main.class}
+ * @run junit/othervm -Djava.awt.headless=true ${test.main.class}
  */
 public class MiscTests {
 
@@ -122,7 +123,10 @@ public class MiscTests {
             noManifest.closeEntry();
         }
         // run "java -jar" against that JAR file and expect the launch to fail
-        final OutputAnalyzer oa = ProcessTools.executeTestJava("-jar", jarFile.toString());
+        final OutputAnalyzer oa = ProcessTools.executeTestJava(
+                // force the error message from the launcher to be in English
+                "-Duser.language=en", "-Duser.country=US",
+                "-jar", jarFile.toString());
         oa.shouldNotHaveExitValue(0); // expected to fail with non-zero exit code
         // verify it failed for the right reason
         oa.shouldContain("Error: No manifest in JAR file");
