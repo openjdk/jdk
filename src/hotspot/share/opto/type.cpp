@@ -2764,9 +2764,9 @@ const TypePVectMask* TypePVectMask::make(const BasicType elem_bt, uint length) {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypePtr *TypePtr::NULL_PTR;
-const TypePtr *TypePtr::NOTNULL;
-const TypePtr *TypePtr::BOTTOM;
+const TypePtr* TypePtr::NULL_PTR;
+const TypePtr* TypePtr::NOTNULL;
+const TypePtr* TypePtr::BOTTOM;
 
 // Meet over the PTR enum
 const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
