@@ -25,7 +25,7 @@
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
