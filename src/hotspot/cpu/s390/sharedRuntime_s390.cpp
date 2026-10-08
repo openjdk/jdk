@@ -1128,7 +1128,9 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
       frame_complete = __ offset();
 
-      __ set_last_Java_frame(/*sp=*/Z_SP, /*pc=*/noreg);
+      __ get_PC(Z_R1_scratch);
+      oop_maps->add_gc_map((int)(__ offset() - (start - masm->code()->insts_begin())), map);
+      __ set_last_Java_frame(/*sp=*/Z_SP, /*pc=*/Z_R1_scratch);
 
       __ z_lgr(Z_ARG1, Z_thread);
       __ z_lgr(Z_ARG2, Z_method);
@@ -1137,7 +1139,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
       // TODO: use blob-relative offset, matching the pattern in the rest of
       // sharedRuntime_s390.cpp ("offset() - start_off")
-      oop_maps->add_gc_map((int)(__ offset() - (start - masm->code()->insts_begin())), map);
+
       __ reset_last_Java_frame();
 
       RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
