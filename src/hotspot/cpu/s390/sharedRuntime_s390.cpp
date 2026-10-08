@@ -1129,6 +1129,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       frame_complete = __ offset();
 
       __ get_PC(Z_R1_scratch);
+      // TODO: use blob-relative offset, matching the pattern in the rest of
+      // sharedRuntime_s390.cpp ("offset() - start_off")
       oop_maps->add_gc_map((int)(__ offset() - (start - masm->code()->insts_begin())), map);
       __ set_last_Java_frame(/*sp=*/Z_SP, /*pc=*/Z_R1_scratch);
 
@@ -1137,8 +1139,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       __ load_const_optimized(Z_ARG3, (intptr_t)alloc_value_receiver);
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::allocate_value_types), Z_ARG1, Z_ARG2, Z_ARG3);
 
-      // TODO: use blob-relative offset, matching the pattern in the rest of
-      // sharedRuntime_s390.cpp ("offset() - start_off")
 
       __ reset_last_Java_frame();
 

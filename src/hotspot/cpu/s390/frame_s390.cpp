@@ -231,7 +231,7 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
     frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
     return fr;
   }
-  // Last_java_pc is not set if we come here from compiled code.
+  // Last_java_pc is not set if we come here from C2 runtime stubs.
   frame fr(jfa->last_Java_sp());
   return fr;
 }
