@@ -31,7 +31,8 @@
 #include "oops/method.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/integerCast.hpp"
@@ -2182,6 +2183,51 @@ public:
 
 class ciMethodData;
 
+class StripedMutex : public CHeapObj<mtSynchronizer> {
+  const uint32_t _num_stripes;
+  const uint32_t _stripe_mask; // _num_stripes - 1
+  char*          _stripes_base;
+  PaddedMutex*   _stripes;
+
+  inline static uintptr_t hash(const uintptr_t key) {
+    return key ^ (key >> 20) ^ (key >> 9);
+  }
+
+public:
+  StripedMutex()
+    : _num_stripes(round_down_power_of_2((uint32_t) MAX2(os::processor_count(), 1)))
+    , _stripe_mask(_num_stripes - 1)
+    , _stripes_base(AllocateHeap((_num_stripes * sizeof(PaddedMutex)) + DEFAULT_CACHE_LINE_SIZE, mtSynchronizer))
+    ,  _stripes(reinterpret_cast<PaddedMutex*> (_stripes_base)) {
+    // To create an array of cache aligned PaddedMutexes, we allocate one more cache line than needed and align the base address.
+    if (!is_aligned(_stripes, DEFAULT_CACHE_LINE_SIZE)) {
+      _stripes = align_up(_stripes, DEFAULT_CACHE_LINE_SIZE);
+    }
+    assert(is_aligned(_stripes, DEFAULT_CACHE_LINE_SIZE));
+
+    // Use placement new to construct our Mutexes.
+    for (size_t i = 0; i < _num_stripes; i++) {
+      // These locks could be acquired while we are holding DumpTimeTable_lock/nosafepoint
+      ::new(&_stripes[i]) PaddedMutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
+    }
+  }
+
+  ~StripedMutex() {
+    for (size_t i = 0; i < _num_stripes; i++) {
+      _stripes[i].~PaddedMutex();
+    }
+    FreeHeap(_stripes_base);
+  }
+
+  template <typename T>
+  Mutex* get(T* key) {
+    const uintptr_t h = StripedMutex::hash((uintptr_t) key);
+    const uint32_t index = static_cast<uint32_t>(h) & _stripe_mask;
+    return &_stripes[index];
+  }
+};
+
+
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class ProfileData;
@@ -2200,7 +2246,8 @@ class MethodData : public Metadata {
   // Cached hint for bci_to_dp and bci_to_data
   int _hint_di;
 
-  Mutex* volatile _extra_data_lock;
+  inline static StripedMutex* get_striped_mutex();
+  static StripedMutex* volatile _striped_mutex;
 
   MethodData(const methodHandle& method);
 public:

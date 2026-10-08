@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,20 @@ inline void RetData::release_set_bci(uint row, int bci) {
   // 'release' when setting the bci acts as a valid flag for other
   // threads wrt bci_count and bci_displacement.
   release_set_int_at(bci0_offset + row * ret_row_cell_count, bci);
+}
+
+inline StripedMutex* MethodData::get_striped_mutex() {
+  StripedMutex* sm = AtomicAccess::load_acquire(&_striped_mutex);
+  if (sm == nullptr) {
+    sm = new StripedMutex;
+    StripedMutex* old = AtomicAccess::cmpxchg(&_striped_mutex, (StripedMutex*) nullptr, sm);
+    if (old != nullptr) {
+      // Another thread created the striped mutex before us. Use that one instead.
+      delete sm;
+      return old;
+    }
+  }
+  return sm;
 }
 
 inline uint MethodData::arg_modified(int a) {
