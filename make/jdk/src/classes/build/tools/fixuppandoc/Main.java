@@ -281,12 +281,11 @@ public class Main {
                     break;
 
                 case "head":
-                    out.write(buffer.toString());
-                    buffer.setLength(0);
                     if (navbar != null) {
+                        out.write(buffer.toString());
+                        buffer.setLength(0);
                         String pathToRoot = "../".repeat(navbar.subdirs + 1);
-                        out.write("\n    <script>const pathtoroot = \"" + pathToRoot + "api/\";</script>");
-                        out.write("\n    <script src=\"" + pathToRoot + "api/script-files/script.js\"></script>");
+                        out.write("\n  <script src=\"" + pathToRoot + "resources/jdk-default.js\"></script>");
                     }
                     break;
 

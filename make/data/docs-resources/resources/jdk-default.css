@@ -96,6 +96,10 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\
     <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
     <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
+    main a[href] {
+        text-decoration: underline var(--underline-thickness);
+        text-underline-offset: 0.14em;
+    }
 }
 
 @supports (-webkit-hyphens:none) {
@@ -366,8 +370,8 @@ a.anchor-link.visible {
     opacity: 100%;
 }
 a.anchor-link > img {
-    width: 0.76em;
-    height: 0.76em;
+    width: 0.8em;
+    height: 0.8em;
 }
 /*
  * Styles for theme picker
