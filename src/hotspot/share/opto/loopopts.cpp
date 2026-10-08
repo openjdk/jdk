@@ -2770,14 +2770,14 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   }
 
   // Step 1: Clone the loop body.  Make the old->new mapping.
-  clone_region_of_loop_body(loop->_body, old_new, &cm);
+  clone_nodes_from_loop_body(loop->_body, old_new, &cm);
 
   IdealLoopTree* outer_loop = (head->is_strip_mined() && mode != IgnoreStripMined) ? get_loop(head->as_CountedLoop()->outer_loop()) : loop;
 
   // Step 2: Fix the edges in the new body.  If the old input is outside the
   // loop use it.  If the old input is INside the loop, use the corresponding
   // new node instead.
-  fix_region_of_loop_body_edges(loop->_body, loop, old_new, dd, outer_loop->_parent, false);
+  fix_nodes_from_loop_body_edges(loop->_body, loop, old_new, dd, outer_loop->_parent, false);
 
   Node_List extra_data_nodes; // data nodes in the outer strip mined loop
   clone_outer_loop(head, mode, loop, outer_loop, dd, old_new, extra_data_nodes);
@@ -2971,8 +2971,8 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
   }
 }
 
-void PhaseIdealLoop::fix_region_of_loop_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
-                                                   IdealLoopTree* parent, bool partial) {
+void PhaseIdealLoop::fix_nodes_from_loop_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
+                                                    IdealLoopTree* parent, bool partial) {
   for(uint i = 0; i < body.size(); i++ ) {
     Node *old = body.at(i);
     Node *nnn = old_new[old->_idx];
@@ -3008,7 +3008,7 @@ void PhaseIdealLoop::fix_region_of_loop_body_edges(const Node_List &body, IdealL
   }
 }
 
-void PhaseIdealLoop::clone_region_of_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm) {
+void PhaseIdealLoop::clone_nodes_from_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm) {
   for (uint i = 0; i < body.size(); i++) {
     Node* old = body.at(i);
     Node* nnn = old->clone();
@@ -4509,7 +4509,7 @@ public:
 
     simplify_path_merges();
 
-    try_add_predicates();
+    try_add_parse_predicates();
 
     _phase->C->print_method(PHASE_AFTER_DUPLICATE_LOOP_BACKEDGE, 4, _outer_head);
     _phase->C->set_major_progress();
@@ -4532,6 +4532,7 @@ private:
 
 #ifdef ASSERT
   bool find_first_region_from_backedge() {
+    ResourceMark rm;
     LoopNode* head = _loop->_head->as_Loop();
 
     Node* c = head->in(LoopNode::LoopBackControl);
@@ -4710,7 +4711,7 @@ private:
     LoopNode* head = _loop->_head->as_Loop();
     int dd = _phase->dom_depth(_phase->idom(_path_merge_region));
     // clone shared_stmt
-    _phase->clone_region_of_loop_body(_nodes_to_clone, _old_new, nullptr);
+    _phase->clone_nodes_from_loop_body(_nodes_to_clone, _old_new, nullptr);
 
     _path_merge_region_clone = _old_new[_path_merge_region->_idx];
     _path_merge_region_clone->set_req(_selected_path_index, _phase->C->top());
@@ -4722,7 +4723,7 @@ private:
     _phase->igvn().replace_input_of(head, LoopNode::EntryControl, _outer_head);
     _phase->set_idom(head, _outer_head, dd);
 
-    _phase->fix_region_of_loop_body_edges(_nodes_to_clone, _loop, _old_new, dd, _loop->_parent, true);
+    _phase->fix_nodes_from_loop_body_edges(_nodes_to_clone, _loop, _old_new, dd, _loop->_parent, true);
 
     // Make one of the shared_stmt copies only reachable from stmt1, the
     // other only from stmt2..stmtn.
@@ -4867,43 +4868,6 @@ private:
         _loop->_body.yank(u);
         --i;
         --imax;
-        // If removing the Phi create a chain of MergeMem nodes, transform the chain
-        if (u->bottom_type() == Type::MEMORY && in->is_MergeMem()) {
-          assert(u->adr_type() == TypePtr::BOTTOM, "bottom mem only");
-          MergeMemNode* in_mm = in->as_MergeMem();
-          Node* base = in_mm->base_memory();
-          assert(!base->is_MergeMem(), "chain of MergeMem nodes should have been transformed before loop opts");
-          for (DUIterator_Fast jmax, j = in->fast_outs(jmax); j < jmax; j++) {
-            Node* uu = in->fast_out(j);
-            if (uu->is_MergeMem()) {
-              MergeMemNode* use_mm = uu->as_MergeMem();
-              if (use_mm->base_memory() == in) {
-                for (MergeMemStream mms(in_mm); mms.next_non_empty(); ) {
-                  if (mms.alias_idx() == Compile::AliasIdxBot) {
-                    continue;
-                  }
-                  if (use_mm->memory_at(mms.alias_idx()) == in) {
-                    use_mm->set_memory_at(mms.alias_idx(), in_mm->memory_at(mms.alias_idx()));
-                  }
-                }
-                use_mm->set_base_memory(base);
-                --j;
-                --jmax;
-              } else {
-                uint cnt = 0;
-                for (MergeMemStream mms(use_mm); mms.next_non_empty(); ) {
-                  if (mms.memory() == in) {
-                    mms.set_memory(in_mm->memory_at(mms.alias_idx()));
-                    cnt++;
-                  }
-                }
-                --j;
-                jmax -= cnt;
-              }
-              assert(uu->find_edge(in) == -1, "no more use of the MergeMem");
-            }
-          }
-        }
       }
     }
     _phase->replace_node_and_forward_ctrl(_path_merge_region, _path_merge_region->in(_selected_path_index));
@@ -4920,7 +4884,7 @@ private:
 
   // Peel one iteration of the inner loop and use the state of the safepoint right before the backedge to add Parse
   // Predicates.
-  void try_add_predicates() {
+  void try_add_parse_predicates() {
     if (!LoopPeeling) {
       return;
     }
