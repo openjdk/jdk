@@ -3025,7 +3025,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         __ j(rewrite_value);
         __ bind(is_flat);
         pop_and_check_object(x17);
-        __ write_flat_field(cache, off, index, flags, x17);
+        __ write_flat_field(cache, index, flags, x17);
         __ bind(rewrite_value);
         if (rc == may_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc, x9, true, byte_no);
@@ -3285,9 +3285,8 @@ void TemplateTable::fast_storefield(TosState state) {
         __ bind(is_flat);
         __ load_field_entry(x14, x13);
         // Re-shuffle registers because of VM calls calling convention
-        __ mv(x9, x11);
         __ mv(x17, x12);
-        __ write_flat_field(x14, x9, x16, x18, x17);
+        __ write_flat_field(x14, x16, x18, x17);
         __ bind(done);
       }
       break;
