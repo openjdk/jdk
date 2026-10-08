@@ -3435,15 +3435,17 @@ void SharedRuntime::generate_deopt_blob() {
   // call `last_Java_frame()'.  however we can't block and no gc will
   // occur so we don't need an oopmap. the value of the pc in the
   // frame is not particularly important.  it just needs to identify the blob.
-  __ get_PC(Z_R1_scratch);
-  int oop_map_offs = __ offset();
-  // Set an oopmap for the call site this describes all our saved volatile registers
-  oop_maps->add_gc_map(oop_map_offs, map);
+  Label frame_pc;
+  __ z_larl(Z_R1_scratch, frame_pc);
   __ set_last_Java_frame(/*sp*/Z_SP, Z_R1_scratch);
 
   // With EscapeAnalysis turned on, this call may safepoint
   // despite it's marked as "leaf call"!
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), Z_thread, exec_mode_reg);
+  __ bind(frame_pc);
+  int oop_map_offs = __ offset();
+  // Set an oopmap for the call site this describes all our saved volatile registers
+  oop_maps->add_gc_map(oop_map_offs, map);
 
   __ reset_last_Java_frame();
   // save the return value.
