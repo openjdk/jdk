@@ -4159,6 +4159,10 @@ const char* InstanceKlass::init_state_name() const {
   return state_names[init_state()];
 }
 
+const char* InstanceKlass::state2name(ClassState s) {
+  return state_names[s];
+}
+
 void InstanceKlass::print_class_flags(outputStream* st) const {
   AccessFlags flags(compute_modifier_flags());
   if (flags.is_public    ()) st->print("public ");
@@ -4773,8 +4777,9 @@ void JNIid::verify(InstanceKlass* holder) {
 
 void InstanceKlass::set_init_state(ClassState state) {
 #ifdef ASSERT
+  // TODO enable: assert(state <= initialization_error, "only store known states");
   bool good_state = in_aot_cache() ? (_init_state <= state)
-                                               : (_init_state < state);
+                                   : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");

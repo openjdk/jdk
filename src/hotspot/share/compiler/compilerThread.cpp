@@ -40,7 +40,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _compiler = nullptr;
   _arena_stat = nullptr;
   _timeout = nullptr;
-
+  _is_aot_thread = false;
 #ifndef PRODUCT
   _ideal_graph_printer = nullptr;
 #endif
