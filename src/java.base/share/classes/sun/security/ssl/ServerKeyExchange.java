@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,15 @@ final class ServerKeyExchange {
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.SERVER_KEY_EXCHANGE.id);
 
+            // If the Certificate consumer is still registered, the server
+            // omitted the required Certificate message before sending
+            // ServerKeyExchange.
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected ServerKeyExchange handshake message.");
+            }
+
             // Any receipt/consumption of the CertificateRequest before
             // ServerKeyExchange is a state machine violation.  We may not
             // know for sure if an early CR message is a violation though until
@@ -131,4 +140,3 @@ final class ServerKeyExchange {
         }
     }
 }
-
