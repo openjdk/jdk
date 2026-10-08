@@ -1655,23 +1655,31 @@ void TemplateTable::convert() {
     break;
   case Bytecodes::_f2i:
   {
-    Label L;
-    __ cvttss2sil(rax, xmm0);
-    __ cmpl(rax, 0x80000000); // NaN or overflow/underflow?
-    __ jcc(Assembler::notEqual, L);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::f2i), 1);
-    __ bind(L);
+    if (VM_Version::supports_avx10_2()) {
+      __ evcvttss2sisl(rax, xmm0);
+    } else {
+      Label L;
+      __ cvttss2sil(rax, xmm0);
+      __ cmpl(rax, 0x80000000); // NaN or overflow/underflow?
+      __ jcc(Assembler::notEqual, L);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::f2i), 1);
+      __ bind(L);
+    }
   }
     break;
   case Bytecodes::_f2l:
   {
-    Label L;
-    __ cvttss2siq(rax, xmm0);
-    // NaN or overflow/underflow?
-    __ cmp64(rax, ExternalAddress((address) &is_nan), rscratch1);
-    __ jcc(Assembler::notEqual, L);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::f2l), 1);
-    __ bind(L);
+    if (VM_Version::supports_avx10_2()) {
+      __ evcvttss2sisq(rax, xmm0);
+    } else {
+      Label L;
+      __ cvttss2siq(rax, xmm0);
+      // NaN or overflow/underflow?
+      __ cmp64(rax, ExternalAddress((address) &is_nan), rscratch1);
+      __ jcc(Assembler::notEqual, L);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::f2l), 1);
+      __ bind(L);
+    }
   }
     break;
   case Bytecodes::_f2d:
@@ -1679,23 +1687,31 @@ void TemplateTable::convert() {
     break;
   case Bytecodes::_d2i:
   {
-    Label L;
-    __ cvttsd2sil(rax, xmm0);
-    __ cmpl(rax, 0x80000000); // NaN or overflow/underflow?
-    __ jcc(Assembler::notEqual, L);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::d2i), 1);
-    __ bind(L);
+    if (VM_Version::supports_avx10_2()) {
+      __ evcvttsd2sisl(rax, xmm0);
+    } else {
+      Label L;
+      __ cvttsd2sil(rax, xmm0);
+      __ cmpl(rax, 0x80000000); // NaN or overflow/underflow?
+      __ jcc(Assembler::notEqual, L);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::d2i), 1);
+      __ bind(L);
+    }
   }
     break;
   case Bytecodes::_d2l:
   {
-    Label L;
-    __ cvttsd2siq(rax, xmm0);
-    // NaN or overflow/underflow?
-    __ cmp64(rax, ExternalAddress((address) &is_nan), rscratch1);
-    __ jcc(Assembler::notEqual, L);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::d2l), 1);
-    __ bind(L);
+    if (VM_Version::supports_avx10_2()) {
+      __ evcvttsd2sisq(rax, xmm0);
+    } else {
+      Label L;
+      __ cvttsd2siq(rax, xmm0);
+      // NaN or overflow/underflow?
+      __ cmp64(rax, ExternalAddress((address) &is_nan), rscratch1);
+      __ jcc(Assembler::notEqual, L);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::d2l), 1);
+      __ bind(L);
+    }
   }
     break;
   case Bytecodes::_d2f:
@@ -2996,7 +3012,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
         __ jmp(rewrite_value);
         __ bind(is_flat);
         pop_and_check_object(rscratch2);
-        __ write_flat_field(rcx, r8, rscratch1, rscratch2, rbx, rax);
+        __ write_flat_field(rcx, r8, rscratch1, rscratch2, rax);
         __ bind(rewrite_value);
         if (rc == may_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc, rbx, true, byte_no);
@@ -3233,7 +3249,7 @@ void TemplateTable::fast_storefield_helper(Address field, Register rax, Register
       __ bind(is_flat);
       __ load_field_entry(r8, r9);
       __ movptr(rscratch2, rcx);  // re-shuffle registers because of VM call calling convention
-      __ write_flat_field(r8, rscratch1, r9, rscratch2, rbx, rax);
+      __ write_flat_field(r8, rscratch1, r9, rscratch2, rax);
       __ bind(done);
     }
     break;

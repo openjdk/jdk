@@ -93,7 +93,7 @@ LIR_Opr LIRGenerator::atomicLockOpr() {
   return LIR_OprFact::illegalOpr;
 }
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:     opr = FrameMap::Int_result_opr;    break;
@@ -109,7 +109,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
 }
 
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   return new_register(T_INT);
 }
 
@@ -1302,6 +1302,7 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
   if (value->is_double_cpu()) {
     assert(address->index()->is_illegal(), "should have a constant displacement");
     LIR_Address* store_addr = nullptr;
@@ -1314,9 +1315,10 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
       store_addr = address;
     }
     __ volatile_store_mem_reg(value, store_addr, info);
-    return;
+  } else {
+    __ store(value, address, info, lir_patch_none);
   }
-  __ store(value, address, info, lir_patch_none);
+  __ membar();
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,

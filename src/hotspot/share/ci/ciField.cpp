@@ -240,7 +240,7 @@ ciField::ciField(ciField* declared_field, ciField* subfield) {
 
   _signature = subfield->_signature;
   _type = subfield->_type;
-  _is_constant = (declared_field->is_strict() && declared_field->is_final()) || declared_field->is_constant();
+  _is_constant = declared_field->is_constant();
   _known_to_link_with_put = subfield->_known_to_link_with_put;
   _known_to_link_with_get = subfield->_known_to_link_with_get;
   _constant_value = ciConstant();
@@ -269,7 +269,7 @@ ciField::ciField(ciField* declared_field) {
   _signature = ciSymbols::bool_signature();
   _type = ciType::make(T_BOOLEAN);
 
-  _is_constant = (declared_field->is_strict() && declared_field->is_final()) || declared_field->is_constant();
+  _is_constant = declared_field->is_constant();
   _known_to_link_with_put = nullptr;
   _known_to_link_with_get = nullptr;
   _constant_value = ciConstant();
@@ -299,9 +299,6 @@ static bool trust_final_nonstatic_fields(ciInstanceKlass* holder) {
   // can't be serialized, so there is no hacking of finals going on with them.
   if (holder->is_hidden())
     return true;
-  // Trust final fields in value type buffers
-  if (holder->is_value_klass())
-    return true;
   // Trust final fields in records
   if (holder->is_record())
     return true;
@@ -318,8 +315,8 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   _is_flat = fd->is_flat();
   _is_null_free = fd->is_null_free_value_type();
   if (fd->has_null_marker()) {
-    ValueFieldLayoutInfo* li = field_holder->value_field_layout_info_adr(fd->index());
-    _null_marker_offset = li->null_marker_offset();
+    ValueKlass* vk = fd->flat_field_klass();
+    _null_marker_offset = _offset + vk->null_marker_offset_in_payload();
   } else {
     _null_marker_offset = -1;
   }
@@ -337,10 +334,10 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // java.lang.System.out, and java.lang.System.err.
       _is_constant = !fd->is_mutable_static_final();
     } else {
-      // An instance field can be constant if it's a final static field or if
-      // it's a final non-static field of a trusted class (classes in
-      // java.lang.invoke and sun.invoke packages and subpackages).
-      _is_constant = is_stable_field || trust_final_nonstatic_fields(_holder);
+      // A final field should generally be constant, but reflection is allowed to subvert this
+      // expection, so we only consider a final field constant if either it is strict, or it is one
+      // of some special cases where we want constant folding
+      _is_constant = is_strict() || is_stable_field || trust_final_nonstatic_fields(_holder);
     }
   } else {
     // For CallSite objects treat the target field as a compile time constant.
