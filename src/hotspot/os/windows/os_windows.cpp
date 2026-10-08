@@ -3547,7 +3547,7 @@ os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, char* addr
     log_trace(os)("VirtualAlloc2 placeholder of size (%zu) returned " PTR_FORMAT ".", bytes, p2i(res));
     return PlaceholderRegion(res, bytes);
   } else {
-    log_warning(os)("VirtualAlloc2 placeholder reservation of size (%zu) at " PTR_FORMAT ": error %lu.", bytes, p2i(addr), GetLastError());
+    log_info(os)("VirtualAlloc2 placeholder reservation of size (%zu) failed at " PTR_FORMAT ": error %lu.", bytes, p2i(addr), GetLastError());
     return PlaceholderRegion();
   }
 }
