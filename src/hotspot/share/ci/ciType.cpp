@@ -33,7 +33,7 @@ ciType* ciType::_basic_types[T_CONFLICT+1];
 
 // ciType
 //
-// This class represents a Java reference, inline type or primitive type.
+// This class represents a Java reference, value type or primitive type.
 
 // ------------------------------------------------------------------
 // ciType::ciType
@@ -146,10 +146,10 @@ ciWrapper::ciWrapper(ciType* type, int properties)
       _type(type),
       _properties(properties) {
   assert(!type->is_wrapper(), "Thou shall not double wrap!");
-  assert(type->is_inlinetype()
+  assert(type->is_value_klass()
              // An abstract value type is an instance_klass
              || (type->is_instance_klass() && !type->as_instance_klass()->flags().is_identity())
-             // An unloaded inline type is an instance_klass (see ciEnv::get_klass_by_name_impl())
+             // An unloaded value type is an instance_klass (see ciEnv::get_klass_by_name_impl())
              || (type->is_instance_klass() && !type->is_loaded()),
-         "should only be used for inline types");
+         "should only be used for value types");
 }

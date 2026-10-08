@@ -97,7 +97,7 @@ class StubGenerator: public StubCodeGenerator {
     int save_nonvolatile_registers_size = __ save_nonvolatile_registers_size(true, SuperwordUseVSX);
 
     // some sanity checks
-    STATIC_ASSERT(StackAlignmentInBytes == 16);
+    static_assert(StackAlignmentInBytes == 16);
     assert((sizeof(frame::native_abi_minframe) % 16) == 0,    "unaligned");
     assert((sizeof(frame::native_abi_reg_args) % 16) == 0,    "unaligned");
     assert((save_nonvolatile_registers_size % 16) == 0,       "unaligned");
@@ -132,7 +132,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mr(r_entryframe_fp, R1_SP);
 
       // calculate frame size
-      STATIC_ASSERT(Interpreter::logStackElementSize == 3);
+      static_assert(Interpreter::logStackElementSize == 3);
 
       // space for arguments aligned up: ((arg_count + 1) * 8) &~ 15
       __ addi(r_frame_size, r_arg_argument_count, 1);
@@ -340,15 +340,15 @@ class StubGenerator: public StubCodeGenerator {
 
       // case T_OBJECT:
       __ bind(ret_is_object);
-      if (InlineTypeReturnedAsFields) {
+      if (ValueTypeReturnedAsFields) {
         // Check for scalarized return value
         __ cmpdi(CR0, R3_RET, 0);
         __ beq(CR0, ret_is_long);
         // Load pack handler address
-        __ untested("call stub InlineTypeReturnedAsFields"); // TODO: check return registers usage
+        __ untested("call stub ValueTypeReturnedAsFields"); // TODO: check return registers usage
         __ andi(R12_scratch2, R3_RET, -2);
-        __ ld(R12_scratch2, InlineKlass::adr_members_offset(), R12_scratch2);
-        __ ld(R12_scratch2, InlineKlass::pack_handler_jobject_offset(), R12_scratch2);
+        __ ld(R12_scratch2, ValueKlass::adr_members_offset(), R12_scratch2);
+        __ ld(R12_scratch2, ValueKlass::pack_handler_jobject_offset(), R12_scratch2);
         __ mtctr(R12_scratch2);
         __ bctr(); // tail call
       } // else fall through
@@ -604,13 +604,13 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vTmp10 = VR10;
     VectorRegister vSwappedH = VR11;
     VectorRegister vTmp12 = VR12;
-    VectorRegister loadOrder = VR13;
-    VectorRegister vHigh = VR14;
-    VectorRegister vLow = VR15;
-    VectorRegister vState = VR16;
-    VectorRegister vPerm = VR17;
-    VectorRegister vCombinedResult = VR18;
-    VectorRegister vConstC2 = VR19;
+    VectorRegister vState = VR13;
+    VectorRegister vCombinedResult = VR14;
+    VectorRegister vConstC2 = VR15;
+    VectorRegister vp = VR16; // permute vector for byte vector accesses on P8 LE
+
+    // vp must be computed before any byte vector access. Clobbers R0.
+    __ compute_vp_for_byte_vector_unaligned(vp, vTmp12);
 
     __ li(temp1, 0xc2);
     __ sldi(temp1, temp1, 56);
@@ -638,14 +638,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ clrldi(blocks, blocks, 32);
     __ mtctr(blocks);
-    __ lvsl(loadOrder, temp1);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb(vTmp12, 0xf);
-    __ vxor(loadOrder, loadOrder, vTmp12);
-#define LE_swap_bytes(x) __ vec_perm(x, x, x, loadOrder)
-#else
-#define LE_swap_bytes(x)
-#endif
 
     // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
     //
@@ -666,43 +658,22 @@ class StubGenerator: public StubCodeGenerator {
     // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
     // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
     //
-    Label L_aligned_loop, L_store, L_unaligned_loop, L_initialize_unaligned_loop;
-    __ andi(temp1, data, 15);
-    __ cmpwi(CR0, temp1, 0);
-    __ bne(CR0, L_initialize_unaligned_loop);
 
-    __ bind(L_aligned_loop);
-      __ lvx(vH, temp1, data);
-      LE_swap_bytes(vH);
+    Label L_loop;
+    __ align(32);
+    __ bind(L_loop);
+      __ load_byte_vector_unaligned(vH, 0, data, temp1, vp);
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
+                        vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
       __ addi(data, data, 16);
-    __ bdnz(L_aligned_loop);
-    __ b(L_store);
+    __ bdnz(L_loop);
 
-    __ bind(L_initialize_unaligned_loop);
-    __ li(temp1, 0);
-    __ lvsl(vPerm, temp1, data);
-    __ lvx(vHigh, temp1, data);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb(vTmp12, -1);
-    __ vxor(vPerm, vPerm, vTmp12);
-#endif
-    __ bind(L_unaligned_loop);
-      __ addi(data, data, 16);
-      __ lvx(vLow, temp1, data);
-      __ vec_perm(vH, vHigh, vLow, vPerm);
-      computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
-      __ vmr(vHigh, vLow);
-    __ bdnz(L_unaligned_loop);
-
-    __ bind(L_store);
     __ stxvd2x(vState->to_vsr(), state);
     __ blr();
 
     return start;
   }
+
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
   // The code is implemented(ported from sparc) as we believe it benefits JVM98, however
@@ -2622,10 +2593,10 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpd(CR5, src_klass, dst_klass);          // if (src->klass() != dst->klass()) return -1;
     __ bne(CR5, L_failed);
 
-    // Check for flat inline type array -> return -1
+    // Check for flat value type array -> return -1
     __ test_flat_array_oop(src, temp, L_failed);
 
-    // Check for null-free (non-flat) inline type array -> handle as object array
+    // Check for null-free (non-flat) value type array -> handle as object array
     __ test_null_free_array_oop(src, temp, L_objArray);
 
     __ cmpwi(CR6, lh, Klass::_lh_neutral_value); // if (!src->is_Array()) return -1;
@@ -3748,6 +3719,252 @@ class StubGenerator: public StubCodeGenerator {
     return stub_address;
   }
 
+  address generate_updateBytesAdler32() {
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ function_entry();
+
+    const uint32_t BASE = 65521;
+    const uint32_t NMAX = 5552;
+
+    Label L_nmax;
+    Label L_nmax_loop;
+    Label L_by16;
+    Label L_by16_loop;
+    Label L_by1;
+    Label L_by1_loop;
+    Label L_do_mod;
+    Label L_combine;
+
+    Register adler = R3_ARG1;
+    Register buf   = R4_ARG2;
+    Register len   = R5_ARG3;
+
+    Register s1    = R6;
+    Register s2    = R7;
+    Register base  = R8;
+    Register nmax  = R9;
+    Register count = R10;
+    Register tmp0  = R11;
+    Register tmp1  = R12;
+    Register magic = R2;
+
+    VectorRegister vdata    = VR0;
+    VectorRegister vones    = VR1;
+    VectorRegister vweights = VR2;
+    VectorRegister vacc1    = VR3;
+    VectorRegister vacc2    = VR4;
+    VectorRegister vp       = VR5;
+
+    __ load_const_optimized(base, BASE);
+    __ load_const_optimized(nmax, NMAX);
+
+    // magic number to compute division by BASE in combination with right shift by 15
+    __ load_const_optimized(magic, (uint32_t)0x80078071, R0);
+
+    // load tables
+    __ compute_vp_for_byte_vector_unaligned(vp, vacc1);
+
+    // load adler ones
+    // {1, <*16 times>}
+    __ vspltisb(vones, 1);
+
+    // load adler weights
+    // {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
+    __ li(R0, 0);
+    __ lvsl(vweights, R0);
+    __ vspltisb(vacc1, 15);
+    __ vxor(vweights, vweights, vacc1);
+    __ vaddubm(vweights, vweights, vones);
+
+    // split Adler
+    __ clrldi(s1, adler, 48);      // low 16 bits
+    __ srwi(s2, adler, 16);        // high 16 bits
+
+    // len == 0 ?
+    __ cmpwi(CR0, len, 0);
+    __ beq(CR0, L_combine);
+
+    // len < 16 ?
+    __ cmpwi(CR0, len, 16);
+    __ blt(CR0, L_by1);
+
+    // len >= NMAX ?
+    __ load_const_optimized(count, (int)(NMAX / 16));
+    __ bind(L_nmax);
+
+    __ cmpw(CR0, len, nmax);
+    __ blt(CR0, L_by16);
+
+    __ mtctr(count);
+    __ align(32);
+    __ bind(L_nmax_loop);
+
+    generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1, vdata,
+                                      vones, vweights, vacc1, vacc2, vp);
+
+    __ bdnz(L_nmax_loop);
+
+    // s1 = s1 % BASE
+    __ mulhwu(tmp0, s1, magic);
+    __ srwi(tmp1, tmp0, 15);
+    __ mullw(tmp1, tmp1, base);
+    __ subf(s1, tmp1, s1);
+
+    // s2 = s2 % BASE
+    __ mulhwu(tmp0, s2, magic);
+    __ srwi(tmp1, tmp0, 15);
+    __ mullw(tmp1, tmp1, base);
+    __ subf(s2, tmp1, s2);
+
+    __ subf(len, nmax, len);
+
+    __ cmpw(CR0, len, nmax);
+    __ bge(CR0, L_nmax);
+
+    // remaining 16 byte chunks
+    __ bind(L_by16);
+
+    __ cmpwi(CR0, len, 16);
+    __ blt(CR0, L_by1);
+
+    __ align(32);
+    __ bind(L_by16_loop);
+
+    generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1, vdata,
+                                      vones, vweights, vacc1, vacc2, vp);
+
+    __ addi(len, len, -16);
+
+    __ cmpwi(CR0, len, 16);
+    __ bge(CR0, L_by16_loop);
+
+    // handles remaining bytes when len < 16
+    __ bind(L_by1);
+
+    __ cmpwi(CR0, len, 0);
+    __ beq(CR0, L_do_mod);
+    __ mtctr(len);
+    __ align(32);
+    __ bind(L_by1_loop);
+
+    __ lbz(tmp0, 0, buf);
+    __ addi(buf, buf, 1);
+    __ add(s1, s1, tmp0);
+    __ add(s2, s2, s1);
+
+    __ bdnz(L_by1_loop);
+
+    // final reduction
+    __ bind(L_do_mod);
+
+    // s1 = s1 % base
+    __ mulhwu(tmp0, s1, magic);
+    __ srwi(tmp1, tmp0, 15);
+    __ mullw(tmp1, tmp1, base);
+    __ subf(s1, tmp1, s1);
+
+    // s2 = s2 % base
+    __ mulhwu(tmp0, s2, magic);
+    __ srwi(tmp1, tmp0, 15);
+    __ mullw(tmp1, tmp1, base);
+    __ subf(s2, tmp1, s2);
+
+    // combine
+    __ bind(L_combine);
+
+    __ slwi(tmp0, s2, 16);
+    __ orr(adler, s1, tmp0);
+    __ blr();
+    return start;
+  }
+
+  void generate_updateBytesAdler32_accum(Register s1, Register s2, Register buf,
+                                         Register tmp0, Register tmp1, VectorRegister vdata,
+                                         VectorRegister vones, VectorRegister vweights,
+                                         VectorRegister vacc1, VectorRegister vacc2, VectorRegister vp) {
+
+    // load 16 input bytes
+    __ load_byte_vector_unaligned(vdata, 0, buf, tmp0, vp);
+
+    // compute the weighted sum
+
+    // accumulator cleared to zero
+    __ vspltisb(vacc2, 0);
+
+    // (i/p bytes) vdata =  {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
+    // (weights) vweights = {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
+    // (accum) vacc2 =      {0, (x16 times) }
+    // L0 : b0*16 + b1*15 + b2*14 + b3*13 + 0
+    // L1 : b4*12 + b5*11 + b6*10 + b7*9 + 0
+    // L2 : b8*8 + b9*7 + b10*6 + b11*5 + 0
+    // L3 : b12*4 + b13*3 + b14*2 + b15*1 + 0
+    // vacc2 = {L0, L1, L2, L3}
+    __ vmsumubm(vacc2, vdata, vweights, vacc2);
+
+    // reduce 4 lanes into 1 scalar
+    // 1. vacc1 = rotate vacc2 by 8 bytes
+    //    vacc1 = {L2, L3, L0, L1}
+    // 2. add lanes together; vacc2 = vacc2 + vacc1
+    //    vacc2 = {L0+L2, L1+L3, L2+L0, L3+L1}
+    __ vsldoi(vacc1, vacc2, vacc2, 8);
+    __ vadduwm(vacc2, vacc2, vacc1);
+
+    // rotate by 4 bytes and
+    // add all 4 lanes equal total
+    __ vsldoi(vacc1, vacc2, vacc2, 4);
+    __ vadduwm(vacc2, vacc2, vacc1);
+
+    // extract scalar from lane 0
+    // tmp0 = weighted_sum
+    __ mfvsrwz(tmp0, vacc2.to_vsr());
+
+    // s2 += s1*16 + weighted_sum
+    __ slwi(tmp1, s1, 4);
+    __ add(tmp0, tmp0, tmp1);
+    __ add(s2, s2, tmp0);
+
+    // compute the byte sum
+
+    // accumulator cleared to zero
+    __ vspltisb(vacc1, 0);
+
+    // (i/p bytes) vdata = {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
+    // (ones) vones      = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+    // (accum) vacc1     = {0, <*16 times>}
+    // L0 = b0 + b1 + b2 + b3 + 0
+    // L1 = b4 + b5 + b6 + b7 + 0
+    // L2 = b8 + b9 + b10 + b11 + 0
+    // L3 = b12 + b13 + b14 + b15 + 0
+    // vacc1 = {L0, L1, L2, L3}
+    __ vmsumubm(vacc1, vdata, vones, vacc1);
+
+    // reduce 4 lanes into 1 scalar
+    // 1. vacc2 = rotate vacc1 by 8 bytes
+    //    vacc2 = {L2, L3, L0, L1}
+    // 2. add lanes together; vacc1 = vacc1 + vacc2
+    //    vacc1 = {L0+L2, L1+L3, L2+L0, L3+L1}
+    __ vsldoi(vacc2, vacc1, vacc1, 8);
+    __ vadduwm(vacc1, vacc1, vacc2);
+
+    // rotate by 4 bytes and
+    // add all 4 lanes equal total
+    __ vsldoi(vacc2, vacc1, vacc1, 4);
+    __ vadduwm(vacc1, vacc1, vacc2);
+
+    // extract scalar from lane 0
+    // tmp0 = byte_sum
+    __ mfvsrwz(tmp0, vacc1.to_vsr());
+
+    // s1 = s1 + byte_sum
+    __ add(s1, s1, tmp0);
+
+    // advance the buffer pointer
+    __ addi(buf, buf, 16);
+  }
+
 #ifdef VM_LITTLE_ENDIAN
 // The following Base64 decode intrinsic is based on an algorithm outlined
 // in here:
@@ -4761,7 +4978,7 @@ void generate_lookup_secondary_supers_table_stub() {
     }
 
     if (return_barrier) {
-      assert(!InlineTypeReturnedAsFields, "unsupported");
+      assert(!ValueTypeReturnedAsFields, "unsupported");
       __ mr(nvtmp, R3_RET); __ fmr(nvftmp, F1_RET); // preserve possible return value from a method returning to the return barrier
       DEBUG_ONLY(__ ld_ptr(tmp1, _abi0(callers_sp), R1_SP);)
       __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
@@ -4806,7 +5023,7 @@ void generate_lookup_secondary_supers_table_stub() {
     __ mr(R1_SP, R3_RET); // R3_RET contains the SP of the thawed top frame
 
     if (return_barrier) {
-      assert(!InlineTypeReturnedAsFields, "unsupported");
+      assert(!ValueTypeReturnedAsFields, "unsupported");
       // we're now in the caller of the frame that returned to the barrier
       __ mr(R3_RET, nvtmp); __ fmr(F1_RET, nvftmp); // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
     } else {
@@ -4978,7 +5195,7 @@ void generate_lookup_secondary_supers_table_stub() {
     // Generates all stubs and initializes the entry points
 
     // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
+    StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
 
     // nmethod entry barriers for concurrent class unloading
     StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
@@ -5044,6 +5261,9 @@ void generate_lookup_secondary_supers_table_stub() {
     if (UseSHA512Intrinsics) {
       StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(StubId::stubgen_sha512_implCompress_id);
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubId::stubgen_sha512_implCompressMB_id);
+    }
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
 #ifdef VM_LITTLE_ENDIAN

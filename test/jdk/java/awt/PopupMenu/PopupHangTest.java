@@ -24,6 +24,7 @@
  * @test
  * @bug 4145193
  * @summary Mouse event activates multiple pull-down menus when testing Oracle app
+ * @requires (os.family != "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PopupHangTest

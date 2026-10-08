@@ -26,14 +26,14 @@
 #define SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/inlineKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class BarrierSetRuntime: public AllStatic {
 public:
   // Template interpreter...
-  static void value_copy(address src, address dst, InlineLayoutInfo* layout_info);
-  static void value_copy_is_dest_uninitialized(address src, address dst, InlineLayoutInfo* layout_info);
+  static void value_copy(address src, address dst, ValueFieldInfo* vfi);
+  static void value_copy_is_dest_uninitialized(address src, address dst, ValueFieldInfo* vfi);
 };
 
 #endif // SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP

@@ -351,7 +351,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return slot;
 }
 
-// InlineTypeReturnedAsFields is disabled, so we need to only care about the single return value
+// ValueTypeReturnedAsFields is disabled, so we need to only care about the single return value
 // in this calling convention.
 const uint SharedRuntime::java_return_convention_max_int = 1;
 const uint SharedRuntime::java_return_convention_max_float = 1;
@@ -707,7 +707,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   gen_i2c_adapter(masm, comp_args_on_stack, sig, regs);
 
   entry_address[AdapterBlob::C2I_Unverified] = __ pc();
-  entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified_Value] = __ pc();
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
@@ -721,8 +721,8 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
 
   entry_address[AdapterBlob::C2I] = __ pc();
-  entry_address[AdapterBlob::C2I_Inline] = __ pc();
-  entry_address[AdapterBlob::C2I_Inline_RO] = __ pc();
+  entry_address[AdapterBlob::C2I_Value] = __ pc();
+  entry_address[AdapterBlob::C2I_Value_RO] = __ pc();
 
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
   gen_c2i_adapter(masm, comp_args_on_stack, sig, regs, skip_fixup);
@@ -1943,13 +1943,13 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
 #endif // INCLUDE_JFR
 
-BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
   Unimplemented();
   return nullptr;
 }
 
 // Call here from the interpreter or compiled code to store returned
-// values to a newly allocated inline type instance.
+// values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;
