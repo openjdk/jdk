@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8370344
+ * @bug 8370344 8387577
  * @requires os.family != "windows"
  * @requires vm.flavor != "zero"
  * @requires vm.hasJFR
