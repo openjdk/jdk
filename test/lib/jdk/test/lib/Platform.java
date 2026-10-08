@@ -128,7 +128,7 @@ public class Platform {
     }
 
     public static boolean isBSD() {
-        return osName.toLowerCase().endsWith("bsd");
+        return osName.toLowerCase(ROOT).endsWith("bsd");
     }
 
     private static boolean isOs(String osname) {
