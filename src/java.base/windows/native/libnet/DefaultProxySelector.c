@@ -66,6 +66,7 @@ Java_sun_net_spi_DefaultProxySelector_init(JNIEnv *env, jclass clazz) {
 
     if (!initJavaClass(env)) {
         WinHttpCloseHandle(session);
+        session = NULL;
         return JNI_FALSE;
     }
 
