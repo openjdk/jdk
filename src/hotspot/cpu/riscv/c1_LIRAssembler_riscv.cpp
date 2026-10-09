@@ -2183,7 +2183,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
     default:
       ShouldNotReachHere();
   }
-  __ membar(MacroAssembler::AnyAny);
+  // No trailing barrier: xadd/xchg are emitted as amoadd/amoswap.aqrl
+  // (atomic_addal/atomic_xchgal), which are already fully ordered.
 }
 
 int LIR_Assembler::array_element_size(BasicType type) const {
@@ -2224,25 +2225,40 @@ address LIR_Assembler::int_constant(jlong n) {
   }
 }
 
+// MO_SEQ_CST compare-and-set. cmpxchg below emits acquire (on the load) and
+// release (on the store), i.e. an acq_rel operation.
+//
+// With Zacas the sequence is a single amocas.{w|d}.aqrl, which is the RVWMO
+// seq_cst RMW mapping (fully ordered on its own), so the trailing fence is
+// redundant and is dropped - matching C2 (cas_membar_elidable() in riscv.ad).
+//
+// Without Zacas it is an lr.{w|d}.aq / sc.{w|d}.rl loop, which is only acq_rel;
+// the trailing fence rw,rw is kept to complete MO_SEQ_CST, exactly as before.
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
   __ cmpxchg(addr, cmpval, newval, Assembler::int32, Assembler::aq /* acquire */,
              Assembler::rl /* release */, t0, true /* result as bool */);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  __ membar(MacroAssembler::AnyAny);
+  if (!UseZacas) {
+    __ membar(MacroAssembler::AnyAny);
+  }
 }
 
 void LIR_Assembler::caswu(Register addr, Register newval, Register cmpval) {
   __ cmpxchg(addr, cmpval, newval, Assembler::uint32, Assembler::aq /* acquire */,
              Assembler::rl /* release */, t0, true /* result as bool */);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  __ membar(MacroAssembler::AnyAny);
+  if (!UseZacas) {
+    __ membar(MacroAssembler::AnyAny);
+  }
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
   __ cmpxchg(addr, cmpval, newval, Assembler::int64, Assembler::aq /* acquire */,
              Assembler::rl /* release */, t0, true /* result as bool */);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  __ membar(MacroAssembler::AnyAny);
+  if (!UseZacas) {
+    __ membar(MacroAssembler::AnyAny);
+  }
 }
 
 void LIR_Assembler::deoptimize_trap(CodeEmitInfo *info) {
