@@ -29,17 +29,24 @@ package gc.z;
  * @summary A max heap size large enough to overflow the ZGC address offset
  *          request must be rejected with an error message, not crash the VM
  * @requires vm.gc.Z
- * @requires vm.flagless
  * @library /test/lib
  * @run driver gc.z.TestZHugeMaxHeapSize
  */
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import jdk.test.lib.process.ProcessTools;
 
 public class TestZHugeMaxHeapSize {
 
-    private static void test(String option) throws Exception {
-        ProcessTools.executeLimitedTestJava("-XX:+UseZGC", option, "-version")
+    private static void test(String... options) throws Exception {
+        List<String> args = new ArrayList<>();
+        args.add("-XX:+UseZGC");
+        args.addAll(Arrays.asList(options));
+        args.add("-version");
+        ProcessTools.executeTestJava(args)
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .shouldHaveExitValue(1)
@@ -52,7 +59,9 @@ public class TestZHugeMaxHeapSize {
         test("-XX:MaxHeapSize=1152921504606846976");
         // Value found by the flag fuzzer
         test("-XX:MaxHeapSize=17232779273145073716");
-        // MinHeapSize larger than the default max heap size raises MaxHeapSize
-        test("-XX:MinHeapSize=17232779273145073716");
+        // MinHeapSize as large as MaxHeapSize. MaxHeapSize is set as well so that
+        // a smaller -Xmx passed down by the test environment is overridden.
+        test("-XX:MinHeapSize=17232779273145073716",
+             "-XX:MaxHeapSize=17232779273145073716");
     }
 }
