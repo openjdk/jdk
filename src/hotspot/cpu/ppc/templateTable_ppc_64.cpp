@@ -3238,7 +3238,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
       __ bind(is_flat);
       pop_and_check_object(Rclass_or_obj);
-      __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, Roffset, R17_tos);
+      __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, R17_tos);
       __ bind(rewrite_value);
       if (rc == may_rewrite) {
         patch_bytecode(Bytecodes::_fast_vputfield, Rbc, Rscratch, true, byte_no);
@@ -3322,7 +3322,7 @@ void TemplateTable::fast_storefield(TosState state) {
       do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
       __ b(done);
       __ bind(is_flat);
-      __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, Roffset, R17_tos);
+      __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, R17_tos);
       __ bind(done);
       break;
     }

@@ -208,13 +208,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   return r;
 }
 
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
-}
-
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
   LIR_Opr reg = new_register(addr->type());
   __ load(addr, reg);

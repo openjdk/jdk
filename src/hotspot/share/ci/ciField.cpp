@@ -369,6 +369,9 @@ ciConstant ciField::constant_value() {
   if (FoldStableValues && is_stable() && _constant_value.is_null_or_zero()) {
     return ciConstant();
   }
+  if (CURRENT_ENV->is_aot_compile()) { // Restrict only when we generate AOT code
+    return ciConstant();
+  }
   return _constant_value;
 }
 
@@ -380,6 +383,9 @@ ciConstant ciField::constant_value_of(ciObject* object) {
   assert(object->is_instance(), "must be instance");
   ciConstant field_value = object->as_instance()->field_value(this);
   if (FoldStableValues && is_stable() && field_value.is_null_or_zero()) {
+    return ciConstant();
+  }
+  if (CURRENT_ENV->is_aot_compile()) { // Restrict only when we generate AOT code
     return ciConstant();
   }
   return field_value;

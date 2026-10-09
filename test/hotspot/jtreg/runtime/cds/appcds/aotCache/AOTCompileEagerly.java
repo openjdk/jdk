@@ -83,7 +83,7 @@ public class AOTCompileEagerly {
         System.out.println("Production Run with AOTCache and eager compilation explicitly ON");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
-            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+AOTCompileEagerly",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod-eager-on");
@@ -93,7 +93,7 @@ public class AOTCompileEagerly {
         System.out.println("Production Run with AOTCache and eager compilation explicitly OFF");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
-            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:-AOTCompileEagerly",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod-eager-off");

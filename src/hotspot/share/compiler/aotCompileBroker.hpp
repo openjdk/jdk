@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,17 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP
-#define SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP
+#ifndef SHARE_COMPILER_AOTCOMPILEBROKER_HPP
+#define SHARE_COMPILER_AOTCOMPILEBROKER_HPP
 
-#include "memory/allocation.hpp"
-#include "oops/valueKlass.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/exceptions.hpp"
 
-class BarrierSetRuntime: public AllStatic {
+class ArchiveBuilder;
+
+class AOTCompileBroker : AllStatic  {
 public:
-  // Template interpreter...
-  static void value_copy(address src, address dst, ValueFieldInfo* vfi);
-  static void value_copy_is_dest_uninitialized(address src, address dst, ValueFieldInfo* vfi);
+  static void compile_aot_code(ArchiveBuilder* builder, TRAPS) NOT_CDS_RETURN;
 };
 
-#endif // SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP
+#endif // SHARE_COMPILER_AOTCOMPILEBROKER_HPP

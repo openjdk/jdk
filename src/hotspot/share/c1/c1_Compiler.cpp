@@ -30,6 +30,8 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueType.hpp"
+#include "code/aotCodeCache.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -64,15 +66,32 @@ bool Compiler::init_c1_runtime() {
 
 
 void Compiler::initialize() {
-  // Buffer blob must be allocated per C1 compiler thread at startup
-  BufferBlob* buffer_blob = init_buffer_blob();
-
+  CompilerThread* thread = CompilerThread::current();
+  bool is_aot_comp_thread = thread->is_aot_thread();
+  // AOT code loading does not use scratch buffer but it needs
+  // to wait when normal C1 compiler thread initializes runtime.
+  // Except when C1 JIT compilation is disabled and we need to
+  // initialize runtime by AOT thread.
+  if (is_aot_comp_thread && CompilationPolicy::c1_count() > 0) {
+    wait_for_initialization();
+    return;
+  }
+  // Buffer blob must be allocated per C1 compiler thread at startup.
+  BufferBlob* buffer_blob = is_aot_comp_thread ? nullptr : init_buffer_blob(thread);
   if (should_perform_init()) {
+    if (is_aot_comp_thread) {
+      buffer_blob = init_buffer_blob(thread); // for runtime initialization
+    }
     if (buffer_blob == nullptr || !init_c1_runtime()) {
       // When we come here we are in state 'initializing'; entire C1 compilation
       // can be shut down.
       set_state(failed);
     } else {
+      // AOT code loading does not use scratch buffer.
+      if (is_aot_comp_thread) {
+        CompilerThread::current()->set_buffer_blob(nullptr);
+        BufferBlob::free(buffer_blob);
+      }
       set_state(initialized);
     }
   }
@@ -82,15 +101,15 @@ uint Compiler::code_buffer_size() {
   return Compilation::desired_max_code_buffer_size + Compilation::desired_max_constant_size;
 }
 
-BufferBlob* Compiler::init_buffer_blob() {
+BufferBlob* Compiler::init_buffer_blob(CompilerThread* thread) {
   // Allocate buffer blob once at startup since allocation for each
   // compilation seems to be too expensive (at least on Intel win32).
-  assert (CompilerThread::current()->get_buffer_blob() == nullptr, "Should initialize only once");
+  assert (thread->get_buffer_blob() == nullptr, "Should initialize only once");
 
   // Setup CodeBuffer.
   BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size());
   if (buffer_blob != nullptr) {
-    CompilerThread::current()->set_buffer_blob(buffer_blob);
+    thread->set_buffer_blob(buffer_blob);
   }
 
   return buffer_blob;
@@ -252,6 +271,15 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 }
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool install_code, DirectiveSet* directive) {
+  CompileTask* task = env->task();
+  if (task->is_aot_load()) {
+    assert(install_code, "AOT code loading requires install_code");
+    assert(!task->is_aot_preload(), "Pre-loading AOT code is not implemented for C1 code");
+    AOTCodeCache::load_nmethod(env, method, entry_bci, this);
+    // We want to go quickly through AOT code load requests
+    // instead of spending time on normal compilation.
+    return;
+  }
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
   assert(buffer_blob != nullptr, "Must exist");
   // invoke compilation
