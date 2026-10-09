@@ -3715,7 +3715,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
   }
 
   Label frame_pc;
-  __ z_larl(Z_R1_scratch, calls_return_pc);
+  __ z_larl(Z_R1_scratch, frame_pc);
 
   // The following is basically a call_VM. However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
@@ -4221,7 +4221,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), Z_thread);
   address calls_return_pc = __ pc();
-  assert(calls_return_pc ==  last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
+  assert(calls_return_pc == __ last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
   __ bind(frame_pc);
   __ reset_last_Java_frame();
 
@@ -4260,7 +4260,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), Z_thread);
   address calls_return_pc = __ pc();
-  assert(calls_return_pc ==  last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
+  assert(calls_return_pc == __ last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
   __ bind(frame_pc);
 
   __ reset_last_Java_frame();
