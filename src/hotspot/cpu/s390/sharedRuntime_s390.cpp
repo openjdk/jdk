@@ -3442,8 +3442,8 @@ void SharedRuntime::generate_deopt_blob() {
   // With EscapeAnalysis turned on, this call may safepoint
   // despite it's marked as "leaf call"!
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), Z_thread, exec_mode_reg);
-  __ bind(frame_pc);
   int oop_map_offs = __ offset();
+  __ bind(frame_pc);
   // Set an oopmap for the call site this describes all our saved volatile registers
   oop_maps->add_gc_map(oop_map_offs, map);
 
