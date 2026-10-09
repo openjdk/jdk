@@ -2805,8 +2805,18 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
         // Flat array must have an exact type
         bool is_null_free = !LayoutKindHelper::is_nullable_flat(layout);
         bool is_atomic = LayoutKindHelper::is_atomic_flat(layout);
-        Node* new_base = cast_to_flat_array_exact(base, value_klass, is_null_free, is_atomic);
-        if (!new_base->is_top()) {
+        ciObjArrayKlass* array_klass = get_flat_array_klass_exact(value_klass, is_null_free, is_atomic);
+        if (!array_klass->is_loaded()) {
+          uncommon_trap(Deoptimization::Reason_unloaded,
+                        Deoptimization::Action_reinterpret,
+                        array_klass, "Flat array class meta-data unavailable");
+          return true;
+        } else {
+          Node* new_base = cast_to_flat_array(base, array_klass, true);
+          if (new_base->is_top()) {
+            uncommon_trap(Deoptimization::Reason_intrinsic,
+                          Deoptimization::Action_none);
+          }
           replace_in_map(base, new_base);
           base = new_base;
           ptr = basic_plus_adr(base, ConvL2X(offset));
@@ -2815,10 +2825,6 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
             // TODO 8388444 This should be a CheckCastPP, can we add a test?
             ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
           }
-        } else {
-          uncommon_trap(Deoptimization::Reason_unloaded,
-                      Deoptimization::Action_maybe_recompile);
-          return true;
         }
       } else {
         uncommon_trap(Deoptimization::Reason_intrinsic,
