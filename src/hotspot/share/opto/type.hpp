@@ -386,7 +386,7 @@ public:
   // TRUE if type is a singleton
   virtual bool singleton(void) const;
 
-  // TRUE if type is therefore vacuous, ie. it is not inhabited, ie. concretization is empty
+  // TRUE if type is therefore vacuous, i.e. it is not inhabited, i.e. concretization is empty
   virtual bool empty(void) const;
 
   // Return a hash for this type.  The hash function is public so ConNode
