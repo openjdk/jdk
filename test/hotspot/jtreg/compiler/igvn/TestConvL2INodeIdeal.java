@@ -47,7 +47,7 @@ public class TestConvL2INodeIdeal {
 
     static void test() {
         for (int i = 0; i < 2; i++) {
-            iFld = (int) (iFld & i - 5L >>> 32);
+            iFld = (int) (iFld & ((i - 5L) >>> 32));
         }
     }
 }
