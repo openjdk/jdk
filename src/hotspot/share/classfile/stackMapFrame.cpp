@@ -79,11 +79,35 @@ void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
   }
 }
 
-StackMapFrame* StackMapFrame::frame_in_exception_handler(u1 flags) {
+StackMapFrame* StackMapFrame::frame_in_exception_handler(bool is_init, VerificationType type, u1 flags) {
   Thread* thr = _verifier->thread();
   VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, 1);
+  VerificationType* locals = _locals;
+
+  // JVMS §4.10.1.9 invokespecial <init>: Swap uninitializedThis and uninitialized(Offset) in locals array with top
+  // There is no need to copy the locals array if uninitialized/uninitializedThis are not present, share the old locals
+  // array.
+  if (is_init) {
+    bool found = false;
+    VerificationType* new_locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, _max_locals);
+    for (int32_t i = 0; i < _max_locals; i++) {
+      if (type.is_uninitialized() && local_at(i) == type) {
+        found = true;
+        new_locals[i] = VerificationType::top_type();
+      } else {
+        new_locals[i] = _locals[i];
+      }
+    }
+    // Throw away the array if no substitution was needed
+    if (!found) {
+      FREE_RESOURCE_ARRAY_IN_THREAD(thr, new_locals, _max_locals);
+    } else {
+      locals = new_locals;
+    }
+  }
+
   StackMapFrame* frame = new StackMapFrame(_offset, flags, _locals_size, 0,
-                                           _max_locals, _max_stack, _locals, stack,
+                                           _max_locals, _max_stack, locals, stack,
                                            _assert_unset_fields, _verifier);
   return frame;
 }

@@ -818,11 +818,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
     bool this_uninit = false;  // Set to true when invokespecial <init> initialized 'this'
     bool verified_exc_handlers = false;
+    VerificationType type;
 
     // Merge with the next instruction
     {
-      VerificationType type, type2;
-      VerificationType atype;
+      VerificationType type2, atype;
 
       LogTarget(Debug, verification) lt;
       if (lt.is_enabled()) {
@@ -857,7 +857,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
       if (Bytecodes::is_store_into_local(opcode) && bci >= ex_min && bci < ex_max) {
         if (was_recursively_verified()) return;
         verify_exception_handler_targets(
-          bci, this_uninit, &current_frame, &stackmap_table, CHECK_VERIFY(this));
+          bci, this_uninit, false, type, &current_frame, &stackmap_table, CHECK_VERIFY(this));
         verified_exc_handlers = true;
       }
 
@@ -1855,7 +1855,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
     if (!verified_exc_handlers && bci >= ex_min && bci < ex_max) {
       if (was_recursively_verified()) return;
       verify_exception_handler_targets(
-        bci, this_uninit, &current_frame, &stackmap_table, CHECK_VERIFY(this));
+        bci, this_uninit, false, type, &current_frame, &stackmap_table, CHECK_VERIFY(this));
     }
   } // end while
 
@@ -2011,20 +2011,29 @@ u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, int bci,
 // before calling this method to make sure a prior class load did not cause the
 // current class to get verified.
 void ClassVerifier::verify_exception_handler_targets(int bci, bool this_uninit,
+                                                     bool is_init,
+                                                     VerificationType type,
                                                      StackMapFrame* current_frame,
                                                      StackMapTable* stackmap_table, TRAPS) {
   constantPoolHandle cp (THREAD, _method->constants());
   ExceptionTable exhandlers(_method());
   int exlength = exhandlers.length();
+  u1 flags = current_frame->flags();
+  if (this_uninit) {  flags |= FLAG_THIS_UNINIT; }
+  StackMapFrame* new_frame = nullptr;
+
   for(int i = 0; i < exlength; i++) {
     u2 start_pc = exhandlers.start_pc(i);
     u2 end_pc = exhandlers.end_pc(i);
     u2 handler_pc = exhandlers.handler_pc(i);
     int catch_type_index = exhandlers.catch_type_index(i);
     if(bci >= start_pc && bci < end_pc) {
-      u1 flags = current_frame->flags();
-      if (this_uninit) {  flags |= FLAG_THIS_UNINIT; }
-      StackMapFrame* new_frame = current_frame->frame_in_exception_handler(flags);
+      if (new_frame == nullptr) {
+        new_frame = current_frame->frame_in_exception_handler(is_init, type, flags);
+      }
+      // Clear stack for each iteration
+      new_frame->clear_stack();
+      new_frame->set_stack_size(0);
       if (catch_type_index != 0) {
         if (was_recursively_verified()) return;
         // We know that this index refers to a subclass of Throwable
@@ -2523,8 +2532,8 @@ void ClassVerifier::verify_invoke_init(
       // incoming stackmap (before initialize_object() changes them to outgoing
       // state).
       if (was_recursively_verified()) return;
-      verify_exception_handler_targets(bci, true, current_frame,
-                                       stackmap_table, CHECK_VERIFY(this));
+      verify_exception_handler_targets(bci, true /* this_uninit */, true /* is_init */, type,
+                                       current_frame, stackmap_table, CHECK_VERIFY(this));
     } // in_try_block
 
     // At this point, all unset fields were satisfied, a delegated constructor handled
@@ -2594,8 +2603,8 @@ void ClassVerifier::verify_invoke_init(
     // state).
     if (in_try_block) {
       if (was_recursively_verified()) return;
-      verify_exception_handler_targets(bci, *this_uninit, current_frame,
-                                       stackmap_table, CHECK_VERIFY(this));
+      verify_exception_handler_targets(bci, *this_uninit, true /* is_init */, type,
+                                       current_frame, stackmap_table, CHECK_VERIFY(this));
     }
     current_frame->initialize_object(type, new_class_type);
   } else {
