@@ -984,7 +984,7 @@ address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
   // result in f10
 
   address entry_point = __ pc();
-  __ lh(c_rarg0, Address(esp)); // the stub expects a sign-extended short
+  __ lh(c_rarg0, Address(esp)); // Load and sign-extend the low 16 bits of the argument
   __ andi(sp, x19_sender_sp, -16); // Restore caller's SP
   // The stub is a leaf which returns through 'ra', so it returns straight
   // back to our caller: this is a tail call.

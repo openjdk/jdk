@@ -6852,8 +6852,11 @@ void MacroAssembler::flt16_to_flt(FloatRegister dst, Register src) {
   // construct a NaN in 32 bits from the NaN in 16 bits,
   // we need the payloads of non-canonical NaNs to be preserved.
   mv(t1, 0x7f800000);
-  // sign-bit was already set via sign-extension if necessary.
-  slli(t0, src, 13);
+  // The upper 16 bits of a short argument are unspecified. Sign-extend the
+  // low 16 bits before shifting so that the float sign bit comes from the
+  // float16 sign bit.
+  sext(t0, src, 16);
+  slli(t0, t0, 13);
   orr(t1, t0, t1);
   fmv_w_x(dst, t1);
 
