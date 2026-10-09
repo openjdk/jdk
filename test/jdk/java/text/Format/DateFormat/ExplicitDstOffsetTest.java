@@ -33,6 +33,7 @@
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.FieldSource;
 
 import java.text.DateFormatSymbols;
@@ -53,8 +54,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ExplicitDstOffsetTest {
 
     private static final String AMERICA_VANCOUVER = "America/Vancouver";
+    private static final String EUROPE_DUBLIN = "Europe/Dublin";
     private static final TimeZone JDK_AMERICA_VANCOUVER =
             TimeZone.getTimeZone(AMERICA_VANCOUVER);
+    private static final TimeZone JDK_EUROPE_DUBLIN =
+            TimeZone.getTimeZone(EUROPE_DUBLIN);
 
     // Fixed raw offset (that mimics daylight savings for America/Vancouver)
     // but in actuality has no daylight savings rules and is named "America/Vancouver".
@@ -158,19 +162,72 @@ public class ExplicitDstOffsetTest {
             // Formats to -> 2026-04-05 00:00:00 Irish Standard Time
             // -------------
             // Modern standard offset: +00:00
-            Date.from(Instant.parse("2026-12-05T00:00:00Z"))
+            Date.from(Instant.parse("2026-12-05T00:00:00Z")),
             // Formats to -> 2026-12-05 00:00:00 Greenwich Mean Time
+            //--------------
+            // Test dates at the dst/std transition period
+            // Dublin transitions on 10/25 at 2:00 AM
+            // During daylight
+            Date.from(Instant.parse("2026-10-25T00:30:00Z")),
+            // Formats to 2026-10-25 01:30:00 Irish Standard Time
+            // During standard
+            Date.from(Instant.parse("2026-10-25T01:30:00Z"))
     );
 
-    // Europe/Dublin uses explicit dstOffset. Instead of deriving whether daylight/standard is in effect
-    // from the parsed text name, allow the Calendar to resolve the actual value based on the dates offset.
+    // Europe/Dublin uses explicit dstOffset. For such cases, the zone should be used to derive the offset
+    // at the given date. When the date is during a transition period, then the matched name can be used
+    // as a tiebreaker. This contrasts from normal parsing, which prefers using the matched name to determine
+    // the offset.
     @ParameterizedTest
     @FieldSource("EXPLICIT_DST_OFFSET_DATES")
-    void dstOffsetRoundTripParsing(Date before) throws ParseException {
+    void dstOffsetRoundTripParsingTest(Date before) throws ParseException {
         var format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzzz", Locale.US);
-        format.setTimeZone(TimeZone.getTimeZone("Europe/Dublin"));
+        format.setTimeZone(JDK_EUROPE_DUBLIN);
         String text = format.format(before);
         Date after = format.parse(text);
         assertEquals(before, after, "explicit dstOffset zone did not round trip correctly");
+    }
+
+    // These instants are formatted/parsed under Europe/Dublin
+    private static final List<Arguments> EXPLICIT_DST_OFFSET_CONFLICTING_PATTERN_DATES = List.of(
+            // Even though the text is in a transition period, which indicates the name should be
+            // used to dictate std time, the explicit numeric offset should take precedence and produce the
+            // resultant date in dst.
+            Arguments.of("yyyy-MM-dd HH:mm:ss zzzz XXX",
+                    "2026-10-25 01:30:00 Greenwich Mean Time +01:00",
+                    Date.from(Instant.parse("2026-10-25T00:30:00Z"))),
+            // Same as above, but in the other direction
+            Arguments.of("yyyy-MM-dd HH:mm:ss XXX zzzz",
+                    "2026-10-25 01:30:00 +01:00 Greenwich Mean Time",
+                    Date.from(Instant.parse("2026-10-25T01:30:00Z")))
+    );
+
+    // Ensure that the new explicit dstOffset behavior during ambiguous transition period does not conflict
+    // with a subsequent time zone pattern and vice versa. Latest should always win.
+    @ParameterizedTest
+    @FieldSource("EXPLICIT_DST_OFFSET_CONFLICTING_PATTERN_DATES")
+    void dstOffsetConflictingZonesTest(String pattern, String text, Date date) throws ParseException {
+        var format = new SimpleDateFormat(pattern, Locale.US);
+        format.setTimeZone(JDK_EUROPE_DUBLIN);
+        var parsed = format.parse(text);
+        assertEquals(date, parsed, "Pattern precedence incorrect for explicit dstOffset");
+    }
+
+    // Ensure that explicit dstOffset is taken into account even on century changes.
+    @Test
+    void dstOffsetCenturyTest() throws ParseException {
+        var format = new SimpleDateFormat("yy-MM-dd HH:mm:ss zzzz", Locale.US);
+        format.setTimeZone(JDK_EUROPE_DUBLIN);
+        format.set2DigitYearStart(Date.from(Instant.parse("2026-10-28T00:00:00Z")));
+        var before = Date.from(Instant.parse("2126-10-27T00:30:00Z"));
+        var formatted = format.format(before);
+        // Formats as -> 26-10-27 01:30:00 Irish Standard Time
+        // When we parse it, 2026/10/27 is before the century start, so 100 years is incremented.
+        // This moves the new date to 2126-10-27 01:30:00 Irish Standard Time. This lands
+        // on a transition date, and we need to use the Irish Standard Time naming to determine
+        // the appropriate offset. Otherwise, the calendar would default to the standard time,
+        // and the date produced would be "2126-10-27T01:30:00Z"
+        assertEquals(before, format.parse(formatted),
+                "explicit dstOffset not taken into account for next century");
     }
 }
