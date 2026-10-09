@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,12 @@
 package compiler.lib.template_framework;
 
 /**
- * This exception is thrown when something goes wrong during Template
- * rendering, or in the use of any of its static methods.
- * It most likely indicates a wrong use of the Templates.
+ * This exception is thrown when there is an internal error in the Template
+ * Framework.
  */
 @SuppressWarnings("serial")
-public class RendererException extends RuntimeException {
-    RendererException(String message) {
-        super(message);
+public class InternalTemplateFrameworkException extends RuntimeException {
+    public InternalTemplateFrameworkException(String message) {
+        super("Internal exception in Template Framework, please file a bug:" + System.lineSeparator() + message);
     }
 }
