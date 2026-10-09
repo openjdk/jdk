@@ -5897,12 +5897,14 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @return method handle which incorporates the specified argument folding logic
      * @throws NullPointerException if either argument is null
      * @throws IllegalArgumentException if any of the following conditions holds:
-     *          (1) {@code combiner}'s return type is non-{@code void} and not the same as the argument type at position
-     *              {@code pos} of the target signature;
-     *          (2) the {@code N} argument types at position {@code pos} of the target signature (skipping one matching
-     *              the {@code combiner}'s return type) are not identical with the argument types of {@code combiner};
-     *          (3) {@code pos} is negative or greater than the target's arity minus the combiner's arity,
-     *              minus one more if the combiner's return type is non-{@code void}.
+     *          <ol>
+     *          <li>{@code combiner}'s return type is non-{@code void} and not the same as the argument type at position
+     *              {@code pos} of the target signature;</li>
+     *          <li>the {@code N} argument types at position {@code pos} of the target signature (skipping one matching
+     *              the {@code combiner}'s return type) are not identical with the argument types of {@code combiner};</li>
+     *          <li>{@code pos} is negative or greater than the target's arity, or there are not sufficient arguments
+     *              after {@code pos} in {@code target} to match {@code combiner}.</li>
+     *          </ol>
      *
      * @see #foldArguments(MethodHandle, MethodHandle)
      * @since 9
