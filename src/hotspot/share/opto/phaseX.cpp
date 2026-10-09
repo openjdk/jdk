@@ -2743,6 +2743,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
              u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
     });
   }
+  // If changed AndL inputs, check ConvL2I users for
+  // "ConvL2I(AndL(x, 0xFFFFFFFF))" => "ConvL2I(x)" optimization in ConvL2INode::Ideal.
+  if (use_op == Op_AndL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_ConvL2I;
+    });
+  }
   // Check for redundant conversion patterns:
   // ConvD2L->ConvL2D->ConvD2L
   // ConvF2I->ConvI2F->ConvF2I
