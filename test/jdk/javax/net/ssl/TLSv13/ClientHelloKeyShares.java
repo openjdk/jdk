@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,23 @@
 
 /*
  * @test
- * @bug 8247630 8314323
+ * @bug 8247630 8314323 8371736
  * @summary Use two key share entries
- * @run main/othervm ClientHelloKeyShares 4588 29
- * @run main/othervm -Djdk.tls.namedGroups=secp384r1,secp521r1,x448,ffdhe2048 ClientHelloKeyShares 24 30
- * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,x25519 ClientHelloKeyShares 29
- * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,secp256r1 ClientHelloKeyShares 23
- * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,ffdhe2048,ffdhe3072,ffdhe4096 ClientHelloKeyShares 256
- * @run main/othervm -Djdk.tls.namedGroups=sect163k1,ffdhe2048,x25519,secp256r1 ClientHelloKeyShares 256 29
- * @run main/othervm -Djdk.tls.namedGroups=secp256r1,secp384r1,ffdhe2048,x25519 ClientHelloKeyShares 23 256
- * @run main/othervm -Djdk.tls.namedGroups=X25519MLKEM768 ClientHelloKeyShares 4588
- * @run main/othervm -Djdk.tls.namedGroups=x25519,X25519MLKEM768 ClientHelloKeyShares 29 4588
- * @run main/othervm -Djdk.tls.namedGroups=SecP256r1MLKEM768,x25519 ClientHelloKeyShares 4587 29
- * @run main/othervm -Djdk.tls.namedGroups=SecP384r1MLKEM1024,secp256r1 ClientHelloKeyShares 4589 23
- * @run main/othervm -Djdk.tls.namedGroups=X25519MLKEM768,SecP256r1MLKEM768,X25519,secp256r1 ClientHelloKeyShares 4588 29
+ * @run main/othervm ClientHelloKeyShares 4588 1216 29 32
+ * @run main/othervm -Djdk.tls.namedGroups=secp384r1,secp521r1,x448,ffdhe2048 ClientHelloKeyShares 24 97 30 56
+ * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,x25519 ClientHelloKeyShares 29 32
+ * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,secp256r1 ClientHelloKeyShares 23 65
+ * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,ffdhe2048,ffdhe3072,ffdhe4096 ClientHelloKeyShares 256 256
+ * @run main/othervm -Djdk.tls.namedGroups=sect163k1,ffdhe2048,x25519,secp256r1 ClientHelloKeyShares 256 256 29 32
+ * @run main/othervm -Djdk.tls.namedGroups=secp256r1,secp384r1,ffdhe2048,x25519 ClientHelloKeyShares 23 65 256 256
+ * @run main/othervm -Djdk.tls.namedGroups=X25519MLKEM768 ClientHelloKeyShares 4588 1216
+ * @run main/othervm -Djdk.tls.namedGroups=x25519,X25519MLKEM768 ClientHelloKeyShares 29 32 4588 1216
+ * @run main/othervm -Djdk.tls.namedGroups=SecP256r1MLKEM768,x25519 ClientHelloKeyShares 4587 1249 29 32
+ * @run main/othervm -Djdk.tls.namedGroups=SecP384r1MLKEM1024,secp256r1 ClientHelloKeyShares 4589 1665 23 65
+ * @run main/othervm -Djdk.tls.namedGroups=X25519MLKEM768,SecP256r1MLKEM768,X25519,secp256r1 ClientHelloKeyShares 4588 1216 29 32
+ * @run main/othervm -Djdk.tls.namedGroups=MLKEM512,x25519 ClientHelloKeyShares 512 800 29 32
+ * @run main/othervm -Djdk.tls.namedGroups=MLKEM768,x25519 ClientHelloKeyShares 513 1184 29 32
+ * @run main/othervm -Djdk.tls.namedGroups=MLKEM1024,x25519 ClientHelloKeyShares 514 1568 29 32
 */
 
 import javax.net.ssl.*;
@@ -73,8 +76,8 @@ public class ClientHelloKeyShares {
             System.setProperty("javax.net.debug", "ssl,handshake");
         }
 
-        // Arguments to this test are an abitrary number of integer
-        // values which will be the expected NamedGroup IDs in the key_share
+        // Arguments to this test are an arbitrary number of integer values
+        // which will be the expected NamedGroup IDs and lengths in the key_share
         // extension.  Expected named group assertions may also be affected
         // by setting the jdk.tls.namedGroups System property.
         List<Integer> expectedKeyShares = new ArrayList<>();
@@ -143,10 +146,10 @@ public class ClientHelloKeyShares {
 
     /**
      * Tests the ClientHello for the presence of the key shares in the supplied
-     * List of key share identifiers.
+     * List of key share IDs/lengths.
      *
      * @param data the ByteBuffer containing the ClientHello bytes
-     * @param keyShareTypes a List containing the expected key shares
+     * @param expectedKeyShares a list of expected key share IDs/lengths
      *
      * @throws RuntimeException if there is a deviation between what is expected
      * and what is supplied.  It will also throw this exception if other
@@ -242,6 +245,7 @@ public class ClientHelloKeyShares {
                     while (ksListLen > 0) {
                         chKeyShares.add(Short.toUnsignedInt(data.getShort()));
                         int ksLen = Short.toUnsignedInt(data.getShort());
+                        chKeyShares.add(ksLen);
                         data.position(data.position() + ksLen);
                         ksListLen -= (4 + ksLen);
                     }
@@ -259,8 +263,8 @@ public class ClientHelloKeyShares {
                     "supported_versions and/or supported_groups extensions");
         }
 
-        // The key share types we expected in the test should match exactly what
-        // was asserted in the client hello
+        // The key share types/lengths we expected in the test should match
+        // exactly what was asserted in the client hello
         if (!expectedKeyShares.equals(chKeyShares)) {
             StringBuilder sb = new StringBuilder(
                     "Expected and Actual key_share lists differ: ");
@@ -275,7 +279,8 @@ public class ClientHelloKeyShares {
         // of the same named groups asserted in the supported_groups extension.
         // (RFC 8446, 4.2.8)
         int prevChNg = -1;
-        for (int ng : chKeyShares) {
+        for (int i = 0; i < chKeyShares.size(); i += 2) {
+            int ng = chKeyShares.get(i);
             int chNgPos = supGrpList.indexOf(ng);
             if (chNgPos <= prevChNg) {
                 throw new RuntimeException("Order of precedence violation " +

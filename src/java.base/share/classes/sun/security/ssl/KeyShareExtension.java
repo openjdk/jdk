@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.text.MessageFormat;
 import java.util.*;
@@ -739,11 +738,8 @@ final class KeyShareExtension {
         if (cred instanceof NamedGroupCredentials namedGroupCred) {
             if (namedGroupCred instanceof KEMKeyExchange.KEMCredentials
                     kemCred) {
-                AlgorithmParameterSpec paramSpec = kemCred.getNamedGroup().
-                        keAlgParamSpec;
-                String algName = (paramSpec instanceof NamedParameterSpec nps) ?
-                        nps.getName() : null;
-                return algName != null && constraints.permits(
+                String algName = kemCred.getNamedGroup().name;
+                return constraints.permits(
                         EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                         algName,
                         null);
