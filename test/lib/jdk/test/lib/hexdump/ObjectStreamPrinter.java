@@ -879,6 +879,12 @@ public class ObjectStreamPrinter implements HexPrinter.Formatter {
         }
     }
 
+    static HexPrinter getHexPrinter(OutputStream os) {
+        return HexPrinter.simple()
+                         .dest(os instanceof PrintStream ps ? ps : new PrintStream(os))
+                         .formatter(ObjectStreamPrinter.formatter(), "; ", 100);
+    }
+
     // ===== programmatic entry points =====
 
     /**
@@ -889,12 +895,7 @@ public class ObjectStreamPrinter implements HexPrinter.Formatter {
      * @param o the output destination
      */
     public static void print(InputStream i, OutputStream o) {
-        PrintStream printStream = o instanceof PrintStream ps ? ps : new PrintStream(o);
-        DataInputStream dataInput = i instanceof DataInputStream dis ? dis : new DataInputStream(i);
-        HexPrinter p = HexPrinter.simple()
-                                 .dest(printStream)
-                                 .formatter(ObjectStreamPrinter.formatter(), "; ", 100);
-        p.format(i);
+        getHexPrinter(o).format(i);
     }
 
     /**
@@ -915,11 +916,7 @@ public class ObjectStreamPrinter implements HexPrinter.Formatter {
      * @param o the output destination
      */
     public static void print(byte[] ba, OutputStream o) {
-        PrintStream printStream = o instanceof PrintStream ps ? ps : new PrintStream(o);
-        HexPrinter p = HexPrinter.simple()
-                                 .dest(printStream)
-                                 .formatter(ObjectStreamPrinter.formatter(), "; ", 100);
-        p.format(ba);
+        getHexPrinter(o).format(ba);
     }
 
     /**
@@ -945,22 +942,17 @@ public class ObjectStreamPrinter implements HexPrinter.Formatter {
             System.exit(1);
         }
 
-        ObjectStreamPrinter fmt = ObjectStreamPrinter.formatter();
-
         for (String file : args) {
-            boolean stdin = "-".equals(file);
+            boolean useStdin = "-".equals(file);
 
             if (args.length > 1) {
-                System.out.printf(">>> %s%n", stdin ? "(stdin)" : file);
+                System.out.printf("%n>>> %s%n%n", useStdin ? "(stdin)" : file);
             }
 
             // NOTE: if stdin is used, this closes stdin after processing. Maybe this
             // is ok since this is main() and we exit afterward.
-            try (InputStream is = stdin ? System.in : Files.newInputStream(Path.of(file))) {
-                HexPrinter p = HexPrinter.simple()
-                        .dest(System.out)
-                        .formatter(ObjectStreamPrinter.formatter(), "; ", 100);
-                p.format(is);
+            try (InputStream is = useStdin ? System.in : Files.newInputStream(Path.of(file))) {
+                getHexPrinter(System.out).format(is);
             } catch (EOFException eof) {
                 System.out.println();
             } catch (IOException ioe) {
