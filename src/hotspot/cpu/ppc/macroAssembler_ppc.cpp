@@ -202,36 +202,39 @@ address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr
 }
 
 #ifdef _LP64
-// Patch compressed oops or klass constants.
-// Assembler sequence is
-// 1) compressed oops:
-//    lis  rx = const.hi
-//    ori rx = rx | const.lo
-// 2) compressed klass:
-//    lis  rx = const.hi
-//    clrldi rx = rx & 0xFFFFffff // clearMS32b, optional
-//    ori rx = rx | const.lo
-// Clrldi will be passed by.
+bool MacroAssembler::compressed_oop_constants_fit_in_31_bits() {
+  const uintptr_t heap_base = (uintptr_t)CompressedOops::base();
+  const uintptr_t heap_end = (uintptr_t)CompressedOops::end();
+  assert(heap_end > heap_base, "compressed oop range must not be empty");
+  const uintptr_t heap_range = heap_end - heap_base;
+  const jlong max_encoded_oop = (jlong)((heap_range - 1) >> CompressedOops::shift());
+  return Assembler::is_uimm(max_encoded_oop, 31);
+}
+
+static address narrow_oop_lis_addr(address ori_addr, address lower_bound) {
+  const int ori = *(int *)ori_addr;
+  const int dst_reg_num = Assembler::inv_rta_field(ori);
+  assert(Assembler::is_ori(ori) && Assembler::inv_rs_field(ori) == dst_reg_num,
+         "must be ori reading and writing dst");
+
+  const address lis_addr = ori_addr - BytesPerInstWord;
+  assert(lis_addr >= lower_bound, "lis instruction must be in code blob");
+  const int lis = *(int *)lis_addr;
+  assert(Assembler::is_lis(lis) && Assembler::inv_rs_field(lis) == dst_reg_num,
+         "must be lis writing dst");
+  return lis_addr;
+}
+
+// Patch compressed oop constants.
+// The relocation points to the ori of an adjacent lis/ori pair.
+//
+//   lis  rx = const.hi
+//   ori  rx = rx | const.lo
 address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop data) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
-  const int inst2 = *(int *)inst2_addr;
-
-  // The relocation points to the second instruction, the ori,
-  // and the ori reads and writes the same register dst.
-  const int dst = inv_rta_field(inst2);
-  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be ori reading and writing dst");
-  // Now, find the preceding addis which writes to dst.
-  int inst1 = 0;
-  address inst1_addr = inst2_addr - BytesPerInstWord;
-  bool inst1_found = false;
-  while (inst1_addr >= bound) {
-    inst1 = *(int *)inst1_addr;
-    if (is_lis(inst1) && inv_rs_field(inst1) == dst) { inst1_found = true; break; }
-    inst1_addr -= BytesPerInstWord;
-  }
-  assert(inst1_found, "inst is not lis");
+  const address inst1_addr = narrow_oop_lis_addr(inst2_addr, bound);
 
   uint32_t data_value = CompressedOops::narrow_oop_value(data);
   int xc = (data_value >> 16) & 0xffff;
@@ -247,23 +250,7 @@ narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
-  const int inst2 = *(int *)inst2_addr;
-
-  // The relocation points to the second instruction, the ori,
-  // and the ori reads and writes the same register dst.
-  const int dst = inv_rta_field(inst2);
-  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be ori reading and writing dst");
-  // Now, find the preceding lis which writes to dst.
-  int inst1 = 0;
-  address inst1_addr = inst2_addr - BytesPerInstWord;
-  bool inst1_found = false;
-
-  while (inst1_addr >= bound) {
-    inst1 = *(int *) inst1_addr;
-    if (is_lis(inst1) && inv_rs_field(inst1) == dst) { inst1_found = true; break;}
-    inst1_addr -= BytesPerInstWord;
-  }
-  assert(inst1_found, "inst is not lis");
+  const address inst1_addr = narrow_oop_lis_addr(inst2_addr, bound);
 
   uint xl = ((unsigned int) (get_imm(inst2_addr, 0) & 0xffff));
   uint xh = (((get_imm(inst1_addr, 0)) & 0xffff) << 16);
