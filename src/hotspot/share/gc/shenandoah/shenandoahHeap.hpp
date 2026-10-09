@@ -874,13 +874,6 @@ public:
 
   size_t trash_humongous_region_at(ShenandoahHeapRegion *r) const;
 
-  static inline void increase_object_age(oop obj, uint additional_age);
-
-  // Return the object's age, or a sentinel value when the age can't
-  // necessarily be determined because of concurrent locking by the
-  // mutator
-  static inline uint get_object_age(oop obj);
-
   void log_heap_status(const char *msg) const;
 
 private:

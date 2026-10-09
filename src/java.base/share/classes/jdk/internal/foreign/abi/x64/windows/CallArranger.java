@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,10 @@ public class CallArranger {
         new VMStorage[] { rax },
         new VMStorage[] { xmm0 },
         0,
-        new VMStorage[] { rax, r10, r11 },
+        new VMStorage[] { rax, r10, r11,
+                          // APX EGPRs r16-r29 are caller-saved as per Windows x64 ABI.
+                          r16, r17, r18, r19, r20, r21, r22, r23,
+                          r24, r25, r26, r27, r28, r29},
         new VMStorage[] { xmm4, xmm5,
                           xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
                           xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31 },

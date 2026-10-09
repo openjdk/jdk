@@ -114,12 +114,19 @@ void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) 
   address stub = static_stub->addr();
   assert(stub != nullptr, "stub not found");
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
+
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
   method_holder->set_data(0);
-  NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
-  jump->set_jump_destination((address)-1);
+
+  // See comment about AOT in set_to_interpreted().
+  address next_instr = method_holder->next_instruction_address();
+  if (nativeInstruction_at(next_instr)->is_general_jump()) {
+    nativeGeneralJump_at(next_instr)->set_jump_destination((address)-1);
+  } else {
+    nativeJump_at(next_instr)->set_jump_destination((address)-1);
+  }
 }
 
 //-----------------------------------------------------------------------------

@@ -1937,7 +1937,7 @@ void MethodData::remove_unshareable_info() {
 }
 
 void MethodData::restore_unshareable_info(TRAPS) {
-  //_extra_data_lock = new Mutex(Mutex::nosafepoint, "MDOExtraData_lock");
+  // Do nothing. _extra_data_lock is created lazily.
 }
 #endif // INCLUDE_CDS
 

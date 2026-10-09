@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_STUBDECLARATIONS_HPP
-#define CPU_S390_STUBDECLARATIONS_HPP
+#ifndef CPU_S390_STUBDECLARATIONS_S390_HPP
+#define CPU_S390_STUBDECLARATIONS_S390_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -69,4 +69,4 @@
   do_arch_blob(final, 20000)                                            \
 
 
-#endif // CPU_S390_STUBDECLARATIONS_HPP
+#endif // CPU_S390_STUBDECLARATIONS_S390_HPP

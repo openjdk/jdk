@@ -27,7 +27,6 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionBounds.inline.hpp"
@@ -438,7 +437,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
   if (in_collection_set()) {
     st->print("|CS");
   } else if (is_collection_set_candidate()) {
-    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
+    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set_candidates();
     st->print("|%s", candidates->get_short_type_str(this));
   } else {
     st->print("|  ");

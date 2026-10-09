@@ -475,14 +475,14 @@ void TemplateTable::fast_aldc(LdcType type) {
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.).
   __ get_cache_index_at_bcp(index, 1, index_size);  // Load index.
-  __ load_resolved_reference_at_index(Z_tos, index);
+  __ load_resolved_reference_at_index(Z_tos, index, Z_R1_scratch);
   __ z_ltgr(Z_tos, Z_tos);
   __ z_bre(L_do_resolve);
 
   // Convert null sentinel to null.
   __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
   __ z_lg(Z_R1_scratch, Address(Z_R1_scratch));
-  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
+  __ resolve_oop_handle(Z_R1_scratch, Z_tmp_2, Z_R0_scratch);
   __ z_cgr(Z_tos, Z_R1_scratch);
   __ z_brne(L_resolved);
   __ clear_reg(Z_tos);
@@ -2580,7 +2580,7 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   if (is_static) {
     __ load_sized_value(obj, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
     __ load_sized_value(obj, Address(obj, in_bytes(Klass::java_mirror_offset())), sizeof(void*), false);
-    __ resolve_oop_handle(obj, Z_R0_scratch, Z_R1_scratch);
+    __ resolve_oop_handle(obj, Z_R1_scratch, Z_R0_scratch);
   }
 }
 
@@ -2619,7 +2619,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // Push the appendix as a trailing parameter.
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
-  __ load_resolved_reference_at_index(appendix, index);
+  __ load_resolved_reference_at_index(appendix, index, Z_ARG2);
   __ verify_oop(appendix);
   __ push_ptr(appendix);  // Push appendix (MethodType, CallSite, etc.).
   __ bind(L_no_push);
@@ -2656,7 +2656,7 @@ void TemplateTable::load_resolved_method_entry_handle(Register cache,
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
   Register appendix = method;
-  __ load_resolved_reference_at_index(appendix, ref_index);
+  __ load_resolved_reference_at_index(appendix, ref_index, flags);
   __ verify_oop(appendix);
   __ push_ptr(appendix);  // Push appendix (MethodType, CallSite, etc.).
   __ bind(L_no_push);
@@ -3385,7 +3385,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
           Register flat_entry = tos_state;
           Register flat_index = oopStore_tmp2; // Z_R1_scratch (index scratch, discarded after load)
           __ load_field_entry(flat_entry, flat_index);
-          __ write_flat_field(flat_entry, off, flat_index, oopStore_tmp3, oopStore_tmp1);
+          __ write_flat_field(flat_entry, flat_index, oopStore_tmp3, oopStore_tmp1);
         }__ bind(rewrite_value);
         if (do_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc_reg, patch_tmp, true, byte_no);
@@ -3573,9 +3573,9 @@ void TemplateTable::fast_storefield(TosState state) {
           Register flat_entry = Z_ARG4;  // R5  — safe for call_VM arg_3 slot
           Register flat_index = Z_ARG3;  // R4  — discarded after load_field_entry
           __ load_field_entry(flat_entry, flat_index);
-          // entry=R5, field_offset=off=R11, tmp1=Z_ARG2=R3, tmp2=flat_index=Z_ARG3=R4, obj=Z_tmp_1=R10
-          // All five are distinct; obj(R10) != Z_tos(R2) so flat_field_copy is safe.
-          __ write_flat_field(flat_entry, off, Z_ARG2, flat_index, obj);
+          // entry=R5, tmp1=Z_ARG2=R3, tmp2=flat_index=Z_ARG3=R4, obj=Z_tmp_1=R10
+          // All four are distinct; obj(R10) != Z_tos(R2) so implementation is safe.
+          __ write_flat_field(flat_entry, Z_ARG2, flat_index, obj);
         }
         __ bind(done);
       }

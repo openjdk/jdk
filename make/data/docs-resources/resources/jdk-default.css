@@ -69,8 +69,8 @@
 :root[data-theme="theme-dark"] {
     color-scheme: dark;
     --body-text-color: #e8e8e8;
-    --body-background-color: #1f2124;
-    --navbar-background-color: #395A6F;
+    --body-background-color: #202226;
+    --navbar-background-color: #406074;
     --navbar-text-color: #ffffff;
     --even-row-color: #34383D;
     --odd-row-color: #222528;
