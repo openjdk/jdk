@@ -1265,6 +1265,12 @@ public:
 
   void cmpoop(Register obj1, Register obj2);
 
+  typedef void (MacroAssembler::*reg_or_const_op)(Register, Register, RegisterOrConstant);
+  template <typename AtomicOp, typename ExclusiveLd, typename ExclusiveSt>
+  void atomic_group_op(reg_or_const_op op, reg_or_const_op iop, AtomicOp aop,
+                       enum operand_size sz, ExclusiveLd loadOp,
+                       ExclusiveSt storeOp, Register prev,
+                       RegisterOrConstant incr, Register addr);
   void atomic_add(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addw(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addh(Register prev, RegisterOrConstant incr, Register addr);
@@ -1274,6 +1280,10 @@ public:
   void atomic_addalh(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addalb(Register prev, RegisterOrConstant incr, Register addr);
 
+  template <typename AtomicOp, typename ExclusiveLd, typename ExclusiveSt>
+  void atomic_group_xchg(AtomicOp aop, enum operand_size sz, ExclusiveLd loadOp,
+                         ExclusiveSt storeOp, Register prev, Register newv,
+                         Register addr);
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);
   void atomic_xchgh(Register prev, Register newv, Register addr);
