@@ -32,8 +32,6 @@ import nsk.share.jdwp.*;
 /**
  * Test for JDWP command: StackFrame.PopFrames.
  *
- * See popframes002.README for description of test execution.
- *
  * This class represents debugger part of the test.
  * Test is executed by invoking method runIt().
  * JDWP command is tested in the method testCommand().
