@@ -29,7 +29,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=240
  *      -agentlib:BreakpointMetaspaceOOM
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -184,7 +184,7 @@ public class BreakpointMetaspaceOOM {
             Asserts.assertFalse(wb.isMethodCompiled(targetMethod), "a method with a live breakpoint was compiled");
             Asserts.assertEquals(CALLS, breakpointHits(), "breakpoint hit count did not match the number of calls");
         } else {
-            Asserts.fail("SetBreakpoint returned an unexpected JVMTI error code");
+            Asserts.fail("SetBreakpoint returned an unexpected JVMTI error code. rc=" + rc);
         }
     }
 }
