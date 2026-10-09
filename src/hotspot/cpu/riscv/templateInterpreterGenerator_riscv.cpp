@@ -928,8 +928,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   // If we need a safepoint check, generate full interpreter entry.
   __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
 
-  // We don't generate local frame and don't align stack because
-  // we call stub code and there is no safepoint on this path.
+  // No frame is needed because there is no safepoint on this path.
 
   // Load parameters
   const Register crc = c_rarg0;  // crc
@@ -982,7 +981,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   const Register crc = c_rarg0;  // crc
   const Register buf = c_rarg1;  // source java byte array address
   const Register len = c_rarg2;  // length
-  const Register off = len;      // offset (never overlaps with 'len')
+  const Register off = len;     // reused for length after computing the buffer address
 
   // Arguments are reversed on java expression stack
   // Calculate address of start element
