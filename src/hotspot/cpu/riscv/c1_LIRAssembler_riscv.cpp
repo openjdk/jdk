@@ -770,11 +770,10 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   assert(src->is_address(), "should not call otherwise");
   assert(dest->is_register(), "should not call otherwise");
 
-  LIR_Address* addr = src->as_address_ptr();
   LIR_Address* from_addr = src->as_address_ptr();
 
-  if (addr->base()->type() == T_OBJECT) {
-    __ verify_oop(addr->base()->as_pointer_register());
+  if (from_addr->base()->type() == T_OBJECT) {
+    __ verify_oop(from_addr->base()->as_pointer_register());
   }
 
   if (patch_code != lir_patch_none) {
@@ -782,11 +781,13 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     return;
   }
 
+  Address addr = as_Address(from_addr);
+
   if (is_volatile) {
     assert(!wide, "wide volatile loads are unsupported");
-    load_volatile(from_addr, dest, type, info);
+    load_volatile(addr, dest, type, info);
   } else {
-    load_unordered(from_addr, dest, type, wide, info);
+    load_unordered(addr, dest, type, wide, info);
   }
 
   if (is_reference_type(type)) {
@@ -798,24 +799,24 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   }
 }
 
-void LIR_Assembler::load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info) {
+void LIR_Assembler::load_unordered(Address addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info) {
   if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
   }
 
   switch (type) {
     case T_FLOAT:
-      __ flw(dest->as_float_reg(), as_Address(from_addr));
+      __ flw(dest->as_float_reg(), addr);
       break;
     case T_DOUBLE:
-      __ fld(dest->as_double_reg(), as_Address(from_addr));
+      __ fld(dest->as_double_reg(), addr);
       break;
     case T_ARRAY:     // fall through
     case T_OBJECT:
       if (UseCompressedOops && !wide) {
-        __ lwu(dest->as_register(), as_Address(from_addr));
+        __ lwu(dest->as_register(), addr);
       } else {
-        __ ld(dest->as_register(), as_Address(from_addr));
+        __ ld(dest->as_register(), addr);
       }
       break;
     case T_METADATA:
@@ -824,28 +825,28 @@ void LIR_Assembler::load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicTy
       // compressed klass ptrs: T_METADATA can be a compressed klass
       // ptr or a 64 bit method pointer.
       ShouldNotReachHere();
-      __ ld(dest->as_register(), as_Address(from_addr));
+      __ ld(dest->as_register(), addr);
       break;
     case T_ADDRESS:
-      __ ld(dest->as_register(), as_Address(from_addr));
+      __ ld(dest->as_register(), addr);
       break;
     case T_INT:
-      __ lw(dest->as_register(), as_Address(from_addr));
+      __ lw(dest->as_register(), addr);
       break;
     case T_LONG:
-      __ ld(dest->as_register_lo(), as_Address_lo(from_addr));
+      __ ld(dest->as_register_lo(), addr);
       break;
     case T_BYTE:
-      __ lb(dest->as_register(), as_Address(from_addr));
+      __ lb(dest->as_register(), addr);
       break;
     case T_BOOLEAN:
-      __ lbu(dest->as_register(), as_Address(from_addr));
+      __ lbu(dest->as_register(), addr);
       break;
     case T_CHAR:
-      __ lhu(dest->as_register(), as_Address(from_addr));
+      __ lhu(dest->as_register(), addr);
       break;
     case T_SHORT:
-      __ lh(dest->as_register(), as_Address(from_addr));
+      __ lh(dest->as_register(), addr);
       break;
     default:
       ShouldNotReachHere();
@@ -1947,22 +1948,20 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   __ post_call_nop();
 }
 
-void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
+void LIR_Assembler::load_volatile(Address addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
   if (UseZalasr) {
-    load_acquire(from_addr, dest, type, info);
+    load_acquire(addr, dest, type, info);
   } else {
-    load_unordered(from_addr, dest, type, /* wide */ false, info);
+    load_unordered(addr, dest, type, /* wide */ false, info);
     membar_acquire();
   }
 }
 
-void LIR_Assembler::load_acquire(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
+void LIR_Assembler::load_acquire(Address addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
   assert(UseZalasr, "should only be called when UseZalasr is enabled");
   // RCsc loads preserve StoreLoad ordering with C1 and C2's RCsc stores across compilation tiers.
   // Zalasr accesses only support the 0(base) addressing mode, so materialize
-  // the effective address first. as_Address() may clobber t0, hence the
-  // address is computed into t1.
-  Address addr = as_Address(from_addr);
+  // the effective address into t1 before the load.
   assert(addr.getMode() == Address::base_plus_offset, "unsupported addressing mode");
   Register base = addr.base();
   if (addr.offset() != 0) {
@@ -1970,8 +1969,7 @@ void LIR_Assembler::load_acquire(LIR_Address* from_addr, LIR_Opr dest, BasicType
     base = t1;
   }
 
-  // Zalasr cannot target a floating-point register; stage the value through
-  // t0, which is free again now that the address has been materialized.
+  // Zalasr cannot target a floating-point register; stage the value through t0.
   Register dest_reg = t0;
   if (!is_floating_point_type(type)) {
     dest_reg = (dest->is_single_cpu() ? dest->as_register() : dest->as_register_lo());
