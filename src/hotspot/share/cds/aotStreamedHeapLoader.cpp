@@ -41,7 +41,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
