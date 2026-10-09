@@ -2806,11 +2806,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
 
   // If changed Mul inputs, check Add/Sub for common-factor reassociation.
   // e.g., (a * b) + (a * c) -> a * (b + c).
+  // Additionally, check for nested Mul reassociation.
+  // e.g. (x * c1) * c2 -> x * (c1 * c2)
   if (use_op == Op_MulI || use_op == Op_MulL) {
     const int add_op = (use_op == Op_MulI) ? Op_AddI : Op_AddL;
     const int sub_op = (use_op == Op_MulI) ? Op_SubI : Op_SubL;
     add_users_to_worklist_if(worklist, use, [&](Node* u) {
-      return u->Opcode() == add_op || u->Opcode() == sub_op;
+      return u->Opcode() == add_op || u->Opcode() == sub_op || u->Opcode() == use_op;
     });
   }
 
