@@ -25,8 +25,9 @@ package compiler.c2.igvn;
 
 /*
  * @test
- * @bug 8393645 8393641 8393586
- * @summary Missing notification patterns for AddNode::Ideal_collapse_variable_times_con.
+ * @bug 8393645 8393610 8393640
+ * @summary Missing notification pattern for AddNode::Ideal_collapse_variable_times_con:
+ *          ((x << c1) + (x << c2)) + x -> c * x
  * @library /test/lib /
  * @run main/othervm -XX:-TieredCompilation -Xbatch
  *                   -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
@@ -42,6 +43,7 @@ package compiler.c2.igvn;
  * @run main ${test.main.class}
  */
 
+// Test was intermittent, reproduces better with -XX:RepeatCompilation=50
 public class TestMissingVariableTimesConIdealization {
     static short sFld;
     static int iFld;
@@ -55,14 +57,17 @@ public class TestMissingVariableTimesConIdealization {
         test2I();
     }
 
+    // ((x << 2) + (x << 1)) + x -> 7 * x
     static void test1I() {
         iFld = iFld - Byte.valueOf((byte) -6) * iFld;
     }
 
+    // ((x << 2) + (x << 1)) + x -> 7 * x
     static void test1L() {
         lFld = lFld - Byte.valueOf((byte) -6) * lFld;
     }
 
+    // ((x << 14) + (x << 2)) + x -> 16389 * x
     // Only reproduced with --enable-preview.
     static int test2I() {
         return sFld + Short.valueOf((short) 16388) * sFld;

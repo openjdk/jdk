@@ -2476,6 +2476,20 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
              u->in(2) == use;
     });
   }
+  // AddNode::Ideal_collapse_variable_times_con optimizes 3-hop pattern:
+  // e.g. ((x << c1) + (x << c2)) + x -> c * x
+  // pattern: n -> use=shift -> add1 -> add2
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
+    const int add_op = (use_op == Op_LShiftI) ? Op_AddI : Op_AddL;
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* add1 = use->fast_out(i);
+      if (add1->Opcode() == add_op) {
+        add_users_to_worklist_if(worklist, add1, [&](Node* add2) {
+          return add2->Opcode() == add_op;
+        });
+      }
+    }
+  }
   // If changed ExpandBits inputs, check CompressBits users for
   // compress(expand(x, m), m) optimization.
   if (use_op == Op_ExpandBits) {
