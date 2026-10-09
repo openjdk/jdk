@@ -2630,6 +2630,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_OrI || use_op == Op_OrL) {
     add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == use->Opcode(); });
   }
+  // MulNode::Ideal idealizes (x | c1) & c2 -> (x & c2) | (c1 & c2)
+  if (use_op == Op_OrI || use_op == Op_OrL) {
+    const int and_op = use_op == Op_OrI ? Op_AndI : Op_AndL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == and_op; });
+  }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
     add_users_to_worklist0(proj, worklist);
   };
