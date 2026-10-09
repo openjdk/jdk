@@ -3714,12 +3714,8 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
     __ z_lgr(Z_R6, Z_R14);
   }
 
-  // We must save a PC from within the stub as return PC
-  // C code doesn't store the LR where we expect the PC,
-  // so we would run into trouble upon stack walking.
-  __ get_PC(Z_R1_scratch);
-
-  unsigned int frame_complete  = __ offset();
+  Label frame_pc;
+  __ z_larl(Z_R1_scratch, calls_return_pc);
 
   // The following is basically a call_VM. However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
@@ -3735,7 +3731,8 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
   // will allow deoptimization at this safepoint to find all possible
   // debug-info recordings, as well as let GC find all oops.
 
-  oop_maps->add_gc_map((int)(frame_complete-start_off), map);
+  oop_maps->add_gc_map((int)(__ offset()-start_off), map);
+  __ bind(frame_pc);
 
   Label noException;
 
