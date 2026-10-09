@@ -1,11 +1,10 @@
 /*
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,19 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, a notice that is now available elsewhere in this distribution
- * accompanied the original version of this file, and, per its terms,
- * should not be removed.
- */
+#ifndef SHARE_COMPILER_AOTCOMPILEBROKER_HPP
+#define SHARE_COMPILER_AOTCOMPILEBROKER_HPP
 
-package jdk.internal.org.commonmark.internal.inline;
+#include "memory/allStatic.hpp"
+#include "utilities/exceptions.hpp"
 
-public interface InlineContentParser {
+class ArchiveBuilder;
 
-    ParsedInline tryParse(InlineParserState inlineParserState);
-}
+class AOTCompileBroker : AllStatic  {
+public:
+  static void compile_aot_code(ArchiveBuilder* builder, TRAPS) NOT_CDS_RETURN;
+};
+
+#endif // SHARE_COMPILER_AOTCOMPILEBROKER_HPP

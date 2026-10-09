@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_CONSTANT_POOL;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_DIMENSION;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_ID;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_NAME;
+import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_DEFAULT_VALUE;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_SIMPLE_TYPE;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_SUPER_TYPE;
 import static jdk.jfr.internal.MetadataDescriptor.ATTRIBUTE_TYPE_ID;
@@ -229,7 +230,7 @@ final class MetadataReader {
             Type t = types.get(id);
             for (Element fieldElement : typeElement.elements(ELEMENT_SETTING)) {
                 String name = fieldElement.attribute(ATTRIBUTE_NAME);
-                String defaultValue = fieldElement.attribute(ATTRIBUTE_NAME);
+                String defaultValue = fieldElement.attribute(ATTRIBUTE_DEFAULT_VALUE);
                 Type settingType = getType(ATTRIBUTE_TYPE_ID, fieldElement);
                 PlatformEventType eventType = (PlatformEventType) t;
                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, name, defaultValue, new ArrayList<>(2)));

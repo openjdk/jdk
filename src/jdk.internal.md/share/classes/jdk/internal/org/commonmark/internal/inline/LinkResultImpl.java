@@ -33,24 +33,46 @@
 package jdk.internal.org.commonmark.internal.inline;
 
 import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.parser.beta.LinkResult;
 import jdk.internal.org.commonmark.parser.beta.Position;
 
-public abstract class ParsedInline {
-
-    protected ParsedInline() {
+public class LinkResultImpl implements LinkResult {
+    @Override
+    public LinkResult includeMarker() {
+        includeMarker = true;
+        return this;
     }
 
-    public static ParsedInline none() {
-        return null;
+    public enum Type {
+        WRAP,
+        REPLACE
     }
 
-    public static ParsedInline of(Node node, Position position) {
-        if (node == null) {
-            throw new NullPointerException("node must not be null");
-        }
-        if (position == null) {
-            throw new NullPointerException("position must not be null");
-        }
-        return new ParsedInlineImpl(node, position);
+    private final Type type;
+    private final Node node;
+    private final Position position;
+
+    private boolean includeMarker = false;
+
+    public LinkResultImpl(Type type, Node node, Position position) {
+        this.type = type;
+        this.node = node;
+        this.position = position;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public Node getNode() {
+        return node;
+    }
+
+    public Position getPosition() {
+        return position;
+    }
+
+    public boolean isIncludeMarker() {
+        return includeMarker;
     }
 }

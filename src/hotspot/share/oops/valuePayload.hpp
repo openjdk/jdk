@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_VALUEPAYLOAD_HPP
-#define SHARE_VM_OOPS_VALUEPAYLOAD_HPP
+#ifndef SHARE_OOPS_VALUEPAYLOAD_HPP
+#define SHARE_OOPS_VALUEPAYLOAD_HPP
 
 #include "oops/instanceKlass.hpp"
 #include "oops/layoutKind.hpp"
@@ -45,29 +45,16 @@ class ValuePayload {
 private:
   template <typename OopOrHandle> class StorageImpl {
   private:
-    union {
-      struct {
-        OopOrHandle _container;
-        ptrdiff_t _offset;
-      };
-      address _absolute_addr;
-    };
+    OopOrHandle _container;
+    ptrdiff_t _offset;
     ValueKlass* _klass;
     LayoutKind _layout_kind;
-    bool _uses_absolute_addr;
 
   public:
-    inline StorageImpl();
     inline StorageImpl(OopOrHandle container,
                        ptrdiff_t offset,
                        ValueKlass* klass,
                        LayoutKind layout_kind);
-    inline StorageImpl(address absolute_addr,
-                       ValueKlass* klass,
-                       LayoutKind layout_kind);
-    inline ~StorageImpl();
-    inline StorageImpl(const StorageImpl& other);
-    inline StorageImpl& operator=(const StorageImpl& other);
 
     inline OopOrHandle& container();
     inline OopOrHandle container() const;
@@ -75,14 +62,9 @@ private:
     inline ptrdiff_t& offset();
     inline ptrdiff_t offset() const;
 
-    inline address& absolute_addr();
-    inline address absolute_addr() const;
-
     inline ValueKlass* klass() const;
 
     inline LayoutKind layout_kind() const;
-
-    inline bool uses_absolute_addr() const;
   };
 
   using Storage = StorageImpl<oop>;
@@ -92,18 +74,12 @@ private:
 protected:
   static constexpr ptrdiff_t BAD_OFFSET = -1;
 
-  ValuePayload() = default;
   ValuePayload(const ValuePayload&) = default;
   ValuePayload& operator=(const ValuePayload&) = default;
 
   // Constructed from parts container and offset
   inline ValuePayload(oop container,
                       ptrdiff_t offset,
-                      ValueKlass* klass,
-                      LayoutKind layout_kind);
-
-  // Constructed from parts absolute_addr
-  inline ValuePayload(address absolute_addr,
                       ValueKlass* klass,
                       LayoutKind layout_kind);
 
@@ -117,8 +93,6 @@ protected:
 
   inline bool has_null_marker() const;
   inline bool is_payload_null() const;
-
-  inline bool uses_absolute_addr() const;
 
   inline oop& container();
   inline oop container() const;
@@ -144,10 +118,6 @@ public:
   class OopHandle;
 
   static inline size_t copy_size_in_bytes(const ValuePayload& src, const ValuePayload& dst);
-
-  [[nodiscard]] static inline ValuePayload construct_from_parts(address absolute_addr,
-                                                                ValueKlass* klass,
-                                                                LayoutKind layout_kind);
 };
 
 class BufferedValuePayload : public ValuePayload {
@@ -160,7 +130,6 @@ private:
                               LayoutKind layout_kind);
 
 public:
-  BufferedValuePayload() = default;
   BufferedValuePayload(const BufferedValuePayload&) = default;
   BufferedValuePayload& operator=(const BufferedValuePayload&) = default;
 
@@ -189,7 +158,6 @@ private:
   inline valueOop allocate_instance(TRAPS);
 
 public:
-  FlatValuePayload() = default;
   FlatValuePayload(const FlatValuePayload&) = default;
   FlatValuePayload& operator=(const FlatValuePayload&) = default;
 
@@ -226,7 +194,7 @@ private:
 
   inline FlatFieldPayload(instanceOop container,
                           ptrdiff_t offset,
-                          ValueFieldLayoutInfo* layout_info);
+                          ValueFieldInfo* value_field_info);
 
   inline void assert_post_construction_invariants(instanceOop container,
                                                   ResolvedFieldEntry* resolved_field_entry) const NOT_DEBUG_RETURN;
@@ -234,8 +202,6 @@ private:
                                                   fieldDescriptor* field_descriptor) const NOT_DEBUG_RETURN;
 
 public:
-  FlatFieldPayload() = default;
-
   inline FlatFieldPayload(instanceOop container,
                           fieldDescriptor* field_descriptor);
 
@@ -266,7 +232,6 @@ private:
                           int element_size);
 
 public:
-  FlatArrayPayload() = default;
   FlatArrayPayload(const FlatArrayPayload&) = default;
   FlatArrayPayload& operator=(const FlatArrayPayload&) = default;
 
@@ -307,7 +272,6 @@ protected:
   inline oop container() const;
 
 public:
-  Handle() = default;
   Handle(const Handle&) = default;
   Handle& operator=(const Handle&) = default;
 
@@ -328,7 +292,6 @@ protected:
   inline oop container() const;
 
 public:
-  OopHandle() = default;
   OopHandle(const OopHandle&) = default;
   OopHandle& operator=(const OopHandle&) = default;
 
@@ -413,4 +376,4 @@ public:
   inline flatArrayOop container() const;
 };
 
-#endif // SHARE_VM_OOPS_VALUEPAYLOAD_HPP
+#endif // SHARE_OOPS_VALUEPAYLOAD_HPP

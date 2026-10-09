@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ Java_sun_net_spi_DefaultProxySelector_init(JNIEnv *env, jclass clazz) {
     }
 
     if (!initJavaClass(env)) {
+        WinHttpCloseHandle(session);
+        session = NULL;
         return JNI_FALSE;
     }
 
@@ -330,20 +332,24 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
                     jhost = (*env)->NewString(env, current->host, (jsize)wcslen(current->host));
                     if (jhost == NULL || (*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
+                        goto noproxy;
                     }
                     isa = (*env)->CallStaticObjectMethod(env, isaddr_class,
                                                          isaddr_createUnresolvedID, jhost,
                                                          current->port);
                     if (isa == NULL || (*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
+                        goto noproxy;
                     }
                     proxy = (*env)->NewObject(env, proxy_class, proxy_ctrID, type_proxy, isa);
                     if (proxy == NULL || (*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
+                        goto noproxy;
                     }
                     (*env)->SetObjectArrayElement(env, proxy_array, index, proxy);
                     if ((*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
+                        goto noproxy;
                     }
                     index++;
                 }

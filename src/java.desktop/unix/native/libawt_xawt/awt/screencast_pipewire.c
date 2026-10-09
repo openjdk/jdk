@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,9 +316,11 @@ static void onStreamProcess(void *userdata) {
     spaBuffer = pwBuffer->buffer;
     if (!spaBuffer
         || spaBuffer->n_datas < 1
-        || spaBuffer->datas[0].data == NULL) {
+        || spaBuffer->datas[0].data == NULL
+        || spaBuffer->datas[0].chunk == NULL) {
         DEBUG_SCREEN_PREFIX(screen, "!!! no data, n_datas %d\n",
-                            spaBuffer->n_datas);
+                            spaBuffer ? (int) spaBuffer->n_datas : -1);
+        fp_pw_stream_queue_buffer(data->stream, pwBuffer);
         return;
     }
 

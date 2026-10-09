@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, NTT DATA
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,38 +20,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-package sun.jvm.hotspot.oops;
 
-import sun.jvm.hotspot.debugger.Address;
-import sun.jvm.hotspot.runtime.VM;
-import sun.jvm.hotspot.runtime.VMObject;
-import sun.jvm.hotspot.types.Type;
-import sun.jvm.hotspot.types.TypeDataBase;
-import sun.jvm.hotspot.types.WrongTypeException;
+#ifndef CPU_S390_GC_Z_ZGLOBALS_S390_HPP
+#define CPU_S390_GC_Z_ZGLOBALS_S390_HPP
 
+#include "globalDefinitions_s390.hpp"
 
-public class ValueFieldLayoutInfo extends VMObject {
+const size_t ZPlatformCacheLineSize    = DEFAULT_CACHE_LINE_SIZE;
 
-    private static MetadataField klassField;
+#endif // CPU_S390_GC_Z_ZGLOBALS_S390_HPP
 
-    static {
-        VM.registerVMInitializedObserver((_, _) -> initialize(VM.getVM().getTypeDataBase()));
-    }
-
-    private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-        Type type = db.lookupType("ValueFieldLayoutInfo");
-
-        klassField = new MetadataField(type.getAddressField("_klass"), 0);
-    }
-
-    public ValueFieldLayoutInfo(Address addr) {
-        super(addr);
-    }
-
-    public ValueKlass getKlass() {
-        return (ValueKlass)klassField.getValue(this);
-    }
-
-}
