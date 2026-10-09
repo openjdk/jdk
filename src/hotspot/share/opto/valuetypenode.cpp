@@ -502,6 +502,18 @@ void ValueTypeNode::store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomic
   StoreFlatNode::store(kit, base, ptr, this, null_free, decorators);
 }
 
+static bool trap_if_array_klass_not_loaded(GraphKit* kit, ciObjArrayKlass* array_klass, int stack_adj = 0) {
+  if (!array_klass->is_loaded()) {
+    PreserveJVMState pjvms(kit);
+    kit->inc_sp(stack_adj);
+    kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                       Deoptimization::Action_reinterpret,
+                       array_klass, "Flat array class meta-data unavailable");
+    return true;
+  }
+  return false;
+}
+
 void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
   PhaseGVN& gvn = kit->gvn();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY | MO_UNORDERED;
@@ -533,12 +545,7 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
     ciObjArrayKlass* array_klass = kit->get_flat_array_klass_exact(vk, false, true);
-    if (!array_klass->is_loaded()) {
-      PreserveJVMState pjvms(kit);
-      kit->uncommon_trap(Deoptimization::Reason_unloaded,
-                         Deoptimization::Action_reinterpret,
-                         array_klass, "Flat array class meta-data unavailable");
-    } else {
+    if (!trap_if_array_klass_not_loaded(kit, array_klass)) {
       Node* cast = kit->cast_to_flat_array(base, array_klass, true);
       if (!cast->is_top()) {
         Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
@@ -565,12 +572,7 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       ciObjArrayKlass* array_klass = kit->get_flat_array_klass_exact(vk, true, true);
-      if (!array_klass->is_loaded()) {
-        PreserveJVMState pjvms(kit);
-        kit->uncommon_trap(Deoptimization::Reason_unloaded,
-                           Deoptimization::Action_reinterpret,
-                           array_klass, "Flat array class meta-data unavailable");
-      } else {
+      if (!trap_if_array_klass_not_loaded(kit, array_klass)) {
         Node* cast = kit->cast_to_flat_array(base, array_klass, true);
         if (!cast->is_top()) {
           Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
@@ -589,12 +591,7 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       ciObjArrayKlass* array_klass = kit->get_flat_array_klass_exact(vk, true, false);
-      if (!array_klass->is_loaded()) {
-        PreserveJVMState pjvms(kit);
-        kit->uncommon_trap(Deoptimization::Reason_unloaded,
-                           Deoptimization::Action_reinterpret,
-                           array_klass, "Flat array class meta-data unavailable");
-      } else {
+      if (!trap_if_array_klass_not_loaded(kit, array_klass)) {
         Node* cast = kit->cast_to_flat_array(base, array_klass, true);
         if (!cast->is_top()) {
           Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
@@ -1657,13 +1654,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
     ciObjArrayKlass* array_klass = kit->get_flat_array_klass_exact(vk, false, true);
-    if (!array_klass->is_loaded()) {
-      PreserveJVMState pjvms(kit);
-      kit->inc_sp(2);
-      kit->uncommon_trap(Deoptimization::Reason_unloaded,
-                         Deoptimization::Action_reinterpret,
-                         array_klass, "Flat array class meta-data unavailable");
-    } else {
+    if (!trap_if_array_klass_not_loaded(kit, array_klass, 2)) {
       Node* cast = kit->cast_to_flat_array(base, array_klass, true);
       if (!cast->is_top()) {
         Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
@@ -1690,13 +1681,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       ciObjArrayKlass* array_klass = kit->get_flat_array_klass_exact(vk, true, true);
-      if (!array_klass->is_loaded()) {
-        PreserveJVMState pjvms(kit);
-        kit->inc_sp(2);
-        kit->uncommon_trap(Deoptimization::Reason_unloaded,
-                           Deoptimization::Action_reinterpret,
-                           array_klass, "Flat array class meta-data unavailable");
-      } else {
+      if (!trap_if_array_klass_not_loaded(kit, array_klass, 2)) {
         Node* cast = kit->cast_to_flat_array(base, array_klass, true);
         if (!cast->is_top()) {
           Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
@@ -1715,13 +1700,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       ciObjArrayKlass* array_klass = kit->get_flat_array_klass_exact(vk, true, false);
-      if (!array_klass->is_loaded()) {
-        PreserveJVMState pjvms(kit);
-        kit->inc_sp(2);
-        kit->uncommon_trap(Deoptimization::Reason_unloaded,
-                           Deoptimization::Action_reinterpret,
-                           array_klass, "Flat array class meta-data unavailable");
-      } else {
+      if (!trap_if_array_klass_not_loaded(kit, array_klass, 2)) {
         Node* cast = kit->cast_to_flat_array(base, array_klass, true);
         if (!cast->is_top()) {
           Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
