@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,70 @@
  * questions.
  */
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.Chronology;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.HijrahDate;
 import java.util.Locale;
 
 public class HijrahConfigCheck {
-    private static final String CALTYPE = "islamic-test";
+    private static final String VALID_CALTYPE = "islamic-valid";
+    private static final String INVALID_CALTYPE = "islamic-invalid";
+    private static final String VARIANT_CALTYPE = "islamic-variant";
 
     public static void main(String... args) {
         // Availability test
         if (Chronology.getAvailableChronologies().stream()
-                .filter(c -> c.getCalendarType().equals(CALTYPE))
+                .filter(c -> c.getCalendarType().equals(VALID_CALTYPE))
                 .count() != 1) {
-            throw new RuntimeException(CALTYPE + " chronology was not found, or " +
+            throw new RuntimeException(VALID_CALTYPE + " chronology was not found, or " +
                     "appeared more than once in Chronology.getAvailableChronologies()");
         }
 
         // Instantiation tests
-        Chronology c1 = Chronology.of(CALTYPE);
-        Chronology c2 = Chronology.ofLocale(Locale.forLanguageTag("und-u-ca-" + CALTYPE ));
+        Chronology c1 = Chronology.of(VALID_CALTYPE);
+        Chronology c2 = Chronology.ofLocale(Locale.forLanguageTag("und-u-ca-" + VALID_CALTYPE));
         if (!c1.equals(c2)) {
-            throw new RuntimeException(CALTYPE + " chronologies differ. c1: " + c1 +
+            throw new RuntimeException(VALID_CALTYPE + " chronologies differ. c1: " + c1 +
                                         ", c2: " + c2);
         }
 
         // Date test
-        // 2020-01-10 is AH 1000-01-10 in islamic-test config
+        // 2020-01-10 is AH 1000-01-10 in islamic-valid config
         LocalDateTime iso = LocalDateTime.of(LocalDate.of(2020, 1, 10), LocalTime.MIN);
         ChronoLocalDateTime hijrah = c1.date(1000, 1, 10).atTime(LocalTime.MIN);
         if (!iso.toInstant(ZoneOffset.UTC).equals(hijrah.toInstant(ZoneOffset.UTC))) {
             throw new RuntimeException("test Hijrah date is incorrect. LocalDate: " +
                     iso + ", test date: " + hijrah);
         }
+
+        // Invalid configuration test
+        try {
+            Chronology.of(INVALID_CALTYPE).date(1448, 1, 1);
+            throw new RuntimeException("Invalid Hijrah configuration did not throw an exception");
+        } catch (DateTimeException ex) {
+            Throwable cause = ex.getCause();
+            if (!(cause instanceof IllegalArgumentException) ||
+                    !"Invalid month length in year: 1448, month: 1, length: 28".equals(cause.getMessage())) {
+                throw new RuntimeException("Unexpected exception for invalid Hijrah configuration", ex);
+            }
+        }
+
+        // Variant configuration test
+        // Year 1300 month 1 in the variant config has 29 days,
+        // so day 30 is clamped to 29.
+        HijrahChronology variantChronology = (HijrahChronology) Chronology.of(VARIANT_CALTYPE);
+        HijrahDate hijrahDateWithVariant = HijrahDate.of(1300, 1, 30).withVariant(variantChronology);
+        HijrahDate expected = variantChronology.date(1300,1,29);
+        if (!hijrahDateWithVariant.equals(expected)) {
+            throw new RuntimeException("Variant Hijrah configuration did not produce expected date. " +
+                    "Expected: " + expected + ", but got: " + hijrahDateWithVariant);
+        }
+
     }
 }

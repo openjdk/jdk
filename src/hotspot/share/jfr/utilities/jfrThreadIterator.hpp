@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_JFR_UTILITIES_JFRTHREADITERATOR_HPP
-#define SHARE_VM_JFR_UTILITIES_JFRTHREADITERATOR_HPP
+#ifndef SHARE_JFR_UTILITIES_JFRTHREADITERATOR_HPP
+#define SHARE_JFR_UTILITIES_JFRTHREADITERATOR_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/javaThread.hpp"
@@ -75,4 +75,4 @@ class JfrNonJavaThreadIteratorAdapter {
 typedef JfrThreadIterator<JfrJavaThreadIteratorAdapter, StackObj> JfrJavaThreadIterator;
 typedef JfrThreadIterator<JfrNonJavaThreadIteratorAdapter, StackObj> JfrNonJavaThreadIterator;
 
-#endif // SHARE_VM_JFR_UTILITIES_JFRTHREADITERATOR_HPP
+#endif // SHARE_JFR_UTILITIES_JFRTHREADITERATOR_HPP

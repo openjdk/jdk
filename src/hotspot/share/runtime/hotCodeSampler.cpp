@@ -29,7 +29,13 @@
 #include "runtime/hotCodeSampler.hpp"
 #include "runtime/javaThread.inline.hpp"
 
-void ThreadSampler::sample_all_java_threads() {
+#if INCLUDE_JFR
+#include "jfr/utilities/jfrTryLock.hpp"
+
+using SuspendedThreadTaskTryLock = JfrMutexTryLock;
+#endif
+
+bool ThreadSampler::sample_all_java_threads() {
   // Collect samples for each JavaThread
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     if (jt->is_hidden_from_external_view() ||
@@ -39,24 +45,33 @@ void ThreadSampler::sample_all_java_threads() {
     }
 
     GetPCTask task(jt);
-    task.run();
+    {
+#if INCLUDE_JFR
+      SuspendedThreadTaskTryLock try_lock(SuspendedThreadTask_lock);
+      if (!try_lock.acquired()) {
+        log_debug(hotcode)("Suspend lock held by JFR sampler; stopping this sampling round, will retry after %u seconds", HotCodeIntervalSeconds);
+        return false;
+      }
+#endif
+      task.run();
+    }
+
     address pc = task.pc();
     if (pc == nullptr) {
       continue;
     }
 
-    if (CodeCache::contains(pc)) {
-      nmethod* nm = CodeCache::find_blob(pc)->as_nmethod_or_null();
-      if (nm != nullptr) {
-        bool created = false;
-        int *count = _samples.put_if_absent(nm, 0, &created);
-        (*count)++;
-        if (created) {
-          _samples.maybe_grow();
-        }
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb != nullptr && cb->is_nmethod()) {
+      bool created = false;
+      int *count = _samples.put_if_absent(cb->as_nmethod(), 0, &created);
+      (*count)++;
+      if (created) {
+        _samples.maybe_grow();
       }
     }
   }
+  return true;
 }
 
 Candidates::Candidates(ThreadSampler& sampler)

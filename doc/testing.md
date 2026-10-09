@@ -353,11 +353,33 @@ For more fine-grained control, you can pass arbitrary filters to JCov using
 `--with-jcov-filters`, and you can specify a specific JDK to instrument
 using `--with-jcov-input-jdk`.
 
+The resulting coverage is written into
+`build/$BUILD/test-results/jcov-output/result.xml`.
+
 The JCov report is stored in `build/$BUILD/test-results/jcov-output/report`.
 
 Please note that running with JCov reporting can be very memory intensive.
 
-#### JCOV_DIFF_CHANGESET
+##### JCov scales
+
+JCov scales make it possible to record which tests cover each part of the
+instrumented code. To collect coverage with scales, set `JCOV_SCALES=true`,
+for example:
+
+    $ make jcov-test TEST=jdk_lang TEST_OPTS="JCOV_SCALES=true"
+
+The resulting coverage data contains the association between covered code and
+the tests that covered it. A corresponding `testlist.txt` file, which contains
+the test names, is generated in the same directory.
+
+The JCov report displays the names of the tests that cover each class.
+
+Collecting coverage scales forces jtreg tests to be run in `othervm` mode,
+which takes longer than ordinary JCov collection. The coverage data is also
+larger because it includes scale information, and the generated report is
+larger because it includes test names.
+
+##### JCOV_DIFF_CHANGESET
 
 While collecting code coverage with JCov, it is also possible to find coverage
 for only recently changed code. JCOV_DIFF_CHANGESET specifies a source
@@ -402,6 +424,42 @@ such implementation class, named Virtual, is currently part of the JDK build in
 the `test/jtreg_test_thread_factory/` directory. This class gets compiled
 during the test image build. The implementation of the Virtual class creates a
 new virtual thread for executing each test class.
+
+#### VALUE_CLASS_PLUGIN
+
+Enables the `ValueClassPlugin` javac plugin when compiling and running JTReg
+tests. This is a **temporary mode** intended for use while value classes
+(JEP 401) are a preview feature. The long-term plan is to replace classes
+annotated with `@jdk.test.lib.valueclass.AsValueClass` with plain
+`value class` declarations once value classes are finalized.
+
+In the meantime, this mode allows test sources to compile and run as either
+value classes or regular identity classes without source-level changes.
+
+When set to any non-empty value, the following options are appended to every
+JTReg invocation:
+
+* `-cpa:<valueClassPlugin.jar>` — appends the plugin JAR to the compile-time
+  classpath (only when the JAR is present in the test image under
+  `jtreg_value_class_plugin/valueClassPlugin.jar`).
+* `-vmoption:--enable-preview` — enables JVM preview features at runtime.
+* `-javacoption:-XDaccessInternalAPI` — grants the compiler access to internal
+  APIs required by the plugin.
+* `-javacoption:--source <version> --enable-preview` — enables preview language
+  features at compile time.
+* `-javacoption:-Xplugin:ValueClassPlugin` — activates the plugin.
+
+The plugin scans each compilation unit after parsing and converts any class
+annotated with `@jdk.test.lib.valueclass.AsValueClass` into a value class by
+setting the internal `VALUE_CLASS` modifier flag and clearing the
+`IDENTITY_TYPE` flag. This transformation only takes effect when
+`--enable-preview` is active; without it the annotation is a no-op and the
+class compiles as an ordinary identity class, so the same test source can
+exercise both code paths.
+
+Example:
+
+    $ make test TEST=jdk_lang JTREG="VALUE_CLASS_PLUGIN=true"
 
 #### JVMTI_STRESS_AGENT
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   if test "x$OPENJDK_TARGET_OS" = xwindows; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS kernel32.lib user32.lib gdi32.lib winspool.lib \
         comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib powrprof.lib uuid.lib \
-        ws2_32.lib winmm.lib version.lib psapi.lib"
+        ws2_32.lib winmm.lib version.lib"
   fi
   LIB_SETUP_JVM_LIBS(BUILD)
   LIB_SETUP_JVM_LIBS(TARGET)

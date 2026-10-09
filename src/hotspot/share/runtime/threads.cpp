@@ -35,6 +35,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/compileTask.hpp"
@@ -377,6 +378,11 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::jdk_internal_misc_UnsafeConstants(), CHECK);
   jdk_internal_misc_UnsafeConstants::set_unsafe_constants();
 
+  // Initialize Value type support - this also initializes Unsafe.
+  if (Arguments::is_valhalla_enabled()) {
+    initialize_class(vmSymbols::java_lang_runtime_ValueObjectMethods(), CHECK);
+  }
+
   // The VM preresolves methods to these classes. Make sure that they get initialized
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
   initialize_class(vmSymbols::java_lang_ref_Finalizer(), CHECK);
@@ -414,6 +420,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK);
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
+  initialize_class(vmSymbols::java_lang_IdentityException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
   initialize_class(vmSymbols::java_lang_InternalError(), CHECK);
 }
@@ -666,7 +673,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // is initially computed. See Abstract_VM_Version::vm_info_string().
   // This update must happen before we initialize the java classes, but
   // after any initialization logic that might modify the flags.
-  Arguments::update_vm_info_property(VM_Version::vm_info_string());
+  const char* vm_info_str = VM_Version::vm_info_string();
+  Arguments::update_vm_info_property(vm_info_str);
+  FREE_C_HEAP_ARRAY(vm_info_str);
 
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
@@ -783,9 +792,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::init_non_javabase_classes(THREAD);
   }
-#ifndef PRODUCT
-  HeapShared::initialize_test_class_from_archive(THREAD);
-#endif
 
   JFR_ONLY(Jfr::on_create_vm_2();)
 
@@ -813,6 +819,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     // startup with the proper message that CodeCache size is too small.
     initialize_class(vmSymbols::jdk_internal_vm_Continuation(), CHECK_JNI_ERR);
   }
+
+  // Pre-load AOT compiled methods
+  AOTCodeCache::preload_code(CHECK_JNI_ERR);
 
   if (NativeHeapTrimmer::enabled()) {
     NativeHeapTrimmer::initialize();
@@ -1040,6 +1049,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_20) return JNI_TRUE;
   if (version == JNI_VERSION_21) return JNI_TRUE;
   if (version == JNI_VERSION_24) return JNI_TRUE;
+  if (version == JNI_VERSION_28) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -1328,10 +1338,14 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   char buf[32];
   st->print_raw_cr(os::local_time_string(buf, sizeof(buf)));
 
+  const char* vm_info_str = VM_Version::vm_info_string();
   st->print_cr("Full thread dump %s (%s %s)",
                VM_Version::vm_name(),
                VM_Version::vm_release(),
-               VM_Version::vm_info_string());
+               vm_info_str);
+  FREE_C_HEAP_ARRAY(vm_info_str);
+
+
   JDK_Version::current().to_string(buf, sizeof(buf));
   const char* runtime_name = JDK_Version::runtime_name() != nullptr ?
                              JDK_Version::runtime_name() : "";
@@ -1364,7 +1378,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     p->print_on(st, print_extended_info);
     if (print_stacks) {
       if (internal_format) {
-        p->trace_stack();
+        p->trace_stack_on(st);
       } else {
         p->print_stack_on(st);
         if (p->is_vthread_mounted()) {

@@ -165,6 +165,109 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address *table) {
 // to perform additional, template interpreter specific tasks before actually
 // calling their MacroAssembler counterparts.
 
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address entry_point,
+                                        Register arg_1, bool check_exceptions) {
+  if (!Continuations::enabled()) {
+    call_VM(oop_result, entry_point, arg_1, check_exceptions);
+    return;
+  }
+  call_VM_preemptable(oop_result, entry_point, arg_1, noreg /* arg_2 */, check_exceptions);
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address entry_point,
+                                        Register arg_1, Register arg_2, bool check_exceptions) {
+  if (!Continuations::enabled()) {
+    call_VM(oop_result, entry_point, arg_1, arg_2, check_exceptions);
+    return;
+  }
+
+  Label resume_pc, not_preempted;
+  Register tmp = Z_R1_scratch;
+  assert(InterpreterRuntime::is_preemptable_call(entry_point), "VM call not preemptable, should use call_VM()");
+  assert_different_registers(arg_1, tmp);
+  assert_different_registers(arg_2, tmp);
+
+#ifdef ASSERT
+  {
+    NearLabel L1;
+    asm_assert_mem8_is_zero(in_bytes(JavaThread::preempt_alternate_return_offset()), Z_thread,
+                           "Should not have alternate return address set", 100);
+    // We check this counter in patch_return_pc_with_preempt_stub() during freeze.
+    z_asi(Address(Z_thread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()), 1);
+    z_lt(tmp, Address(Z_thread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    z_brh(L1);
+    stop("call_VM_preemptable_helper: should be > 0");
+    bind(L1);
+  }
+#endif // ASSERT
+
+  lgr_if_needed(Z_ARG2, arg_1);
+  assert(arg_2 != Z_ARG2, "smashed argument");
+
+  if (arg_2 != noreg) {
+    lgr_if_needed(Z_ARG3, arg_2);
+  }
+
+  // Force freeze slow path.
+  push_cont_fastpath();
+  // Make VM call. In case of preemption set last_pc to the one we want to resume to.
+  // Note: call_VM_base will use resume_pc label to set last_Java_pc.
+  call_VM(noreg, entry_point, false /*check_exceptions*/, &resume_pc /* last_java_pc */);
+  pop_cont_fastpath();
+
+
+#ifdef ASSERT
+  {
+    NearLabel L;
+    z_asi(Address(Z_thread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()), -1);
+    z_lt(tmp, Address(Z_thread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    z_brnl(L);
+    stop("call_VM_preemptable_helper: should be >= 0");
+    bind(L);
+  }
+#endif // ASSERT
+
+  // Check if preempted.
+  z_ltg(tmp, Address(Z_thread, JavaThread::preempt_alternate_return_offset()));
+  z_brz(not_preempted);
+
+  // Preempted. Frames are already frozen on heap.
+  z_mvghi(Address(Z_thread, JavaThread::preempt_alternate_return_offset()), 0);
+  z_br(tmp);  // branch to handler in Z_R1_scratch
+
+  bind(resume_pc); // Location to resume execution
+  restore_after_resume();
+
+  bind(not_preempted);
+
+  if (check_exceptions) {
+    NearLabel ok;
+    load_and_test_long(tmp, Address(Z_thread, Thread::pending_exception_offset()));
+    z_bre(ok);
+    load_const_optimized(tmp, StubRoutines::forward_exception_entry());
+    z_br(tmp);
+    bind(ok);
+  }
+
+  // get oop result if there is one and reset the value in the thread
+  if (oop_result->is_valid()) {
+    get_vm_result_oop(oop_result);
+  }
+}
+
+void InterpreterMacroAssembler::restore_after_resume() {
+  if (!Continuations::enabled()) return;
+  load_const_optimized(Z_R1, Interpreter::cont_resume_interpreter_adapter());
+  call(Z_R1);
+#ifdef ASSERT
+  NearLabel ok;
+  z_cg(Z_fp, _z_common_abi(callers_sp), Z_SP);
+  z_bre(ok);
+  stop(FILE_AND_LINE ": FP is expected in Z_fp");
+  bind(ok);
+#endif // ASSERT
+}
+
 void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point) {
   bool allow_relocation = true; // Fenerally valid variant. Assume code is relocated.
   // interpreter specific
@@ -193,20 +296,20 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result, Register last_
   save_esp();
   // super call
   MacroAssembler::call_VM_base(oop_result, last_java_sp,
-                               entry_point, allow_relocation, check_exceptions);
+                               entry_point, allow_relocation, check_exceptions, nullptr);
   restore_bcp();
 }
 
 void InterpreterMacroAssembler::call_VM_base(Register oop_result, Register last_java_sp,
                                              address entry_point, bool allow_relocation,
-                                             bool check_exceptions) {
+                                             bool check_exceptions, Label* last_java_pc) {
   // interpreter specific
 
   save_bcp();
   save_esp();
   // super call
   MacroAssembler::call_VM_base(oop_result, last_java_sp,
-                               entry_point, allow_relocation, check_exceptions);
+                               entry_point, allow_relocation, check_exceptions, last_java_pc);
   restore_bcp();
 }
 
@@ -398,7 +501,7 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
 }
 
 // Load object from cpool->resolved_references(index).
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index) {
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Register tmp) {
   assert_different_registers(result, index);
   get_constant_pool(result);
 
@@ -406,22 +509,21 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   //  - from field index to resolved_references() index and
   //  - from word index to byte offset.
   // Since this is a java object, it is potentially compressed.
-  Register tmp = index;  // reuse
   z_sllg(index, index, LogBytesPerHeapOop); // Offset into resolved references array.
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
-  resolve_oop_handle(result, Z_R0_scratch, Z_R1_scratch); // Load resolved references array itself.
+  resolve_oop_handle(result, tmp, Z_R0_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
   z_sllg(Z_R0, Z_R0, LogBytesPerHeapOop);
-  compare64_and_branch(tmp, Z_R0, Assembler::bcondLow, index_ok);
-  stop("resolved reference index out of bounds", 0x09256);
+  compare64_and_branch(index, Z_R0, Assembler::bcondLow, index_ok);
+  stop("resolved reference index out of bounds", 0x56);
   bind(index_ok);
 #endif
   z_agr(result, index);    // Address of indexed array element.
-  load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), tmp, noreg);
+  load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), tmp, Z_R0_scratch);
 }
 
 // load cpool->resolved_klass_at(index)
@@ -440,9 +542,12 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
                                                   Register Rsuper_klass,
                                                   Register Rtmp1,
                                                   Register Rtmp2,
-                                                  Label &ok_is_subtype) {
+                                                  Label &ok_is_subtype,
+                                                  bool profile) {
   // Profile the not-null value's klass.
-  profile_typecheck(Rtmp1, Rsub_klass, Rtmp2);
+  if (profile) {
+    profile_typecheck(Rtmp1, Rsub_klass, Rtmp2);
+  }
 
   // Do the check.
   check_klass_subtype(Rsub_klass, Rsuper_klass, Rtmp1, Rtmp2, ok_is_subtype);
@@ -697,7 +802,7 @@ void InterpreterMacroAssembler::get_monitors(Register reg) {
   bind(ok);
 #endif // ASSERT
   mem2reg_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
-  z_slag(reg, reg, Interpreter::logStackElementSize);
+  z_slag(reg, reg, Interpreter::logStackElementSize); // sign preserved
   z_agr(reg, Z_fp);
 }
 
@@ -951,6 +1056,7 @@ void InterpreterMacroAssembler::narrow(Register result, Register ret_type) {
 
 // remove activation
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
@@ -968,7 +1074,31 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
                                                   bool install_monitor_exception,
                                                   bool notify_jvmti) {
   BLOCK_COMMENT("remove_activation {");
+
+#ifdef ASSERT
+  {
+    asm_assert_mem8_is_zero(in_bytes(JavaThread::preempt_alternate_return_offset()), Z_thread,
+                          "remove_activation: should not have alternate return address set", 101);
+  }
+#endif // ASSERT
+
   unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  NearLabel fast_path;
+  Label slow_path;
+  safepoint_poll(slow_path, Z_R0_scratch, true /* at_return */, false /* in_nmethod */);
+  branch_optimized(Assembler::bcondAlways, fast_path);
+  bind (slow_path);
+  push(state);
+  set_last_Java_frame(Z_SP, noreg);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), Z_thread);
+  reset_last_Java_frame();
+  pop(state);
+  align(32);
+  bind(fast_path);
 
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, notify_jvmti ? NotifyJVMTI : SkipNotifyJVMTI);
@@ -1000,9 +1130,14 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     bind(no_reserved_zone_enabling);
   }
 
+  if (state == atos && ValueTypeReturnedAsFields) {
+    stop("implement function InterpreterMacroAssembler::remove_activation");
+  }
+
   verify_oop(Z_tos, state);
 
   pop_interpreter_frame(return_pc, Z_ARG2, Z_ARG3);
+  pop_cont_fastpath();
   BLOCK_COMMENT("} remove_activation");
 }
 
@@ -1023,9 +1158,9 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   z_bru(done);
 
   bind(slow_case);
-  call_VM(noreg,
-          CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-          monitor);
+  call_VM_preemptable(noreg,
+                      CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+                      monitor);
   bind(done);
 }
 
@@ -1206,20 +1341,52 @@ void InterpreterMacroAssembler::profile_taken_branch(Register mdp, Register bump
   }
 }
 
-// Kills Z_R1_scratch.
-void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp) {
+void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp, bool acmp) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    // We are taking a branch. Increment the not taken count.
-    increment_mdp_data_at(mdp, in_bytes(BranchData::not_taken_offset()), Z_R1_scratch);
+    // We are not taking a branch. Increment the not taken count.
+    increment_mdp_data_at(mdp, in_bytes(BranchData::not_taken_offset()));
 
-    // The method data pointer needs to be updated to correspond to
-    // the next bytecode.
-    update_mdp_by_constant(mdp, in_bytes(BranchData::branch_data_size()));
+    // The method data pointer needs to be updated.
+    int mdp_delta = in_bytes(BranchData::branch_data_size());
+    if (acmp) {
+      mdp_delta = in_bytes(ACmpData::acmp_data_size());
+    }
+    update_mdp_by_constant(mdp, mdp_delta);
+
+    bind(profile_continue);
+  }
+}
+
+void InterpreterMacroAssembler::profile_acmp(Register mdp,
+                                             Register left,
+                                             Register right,
+                                             Register tmp) {
+  if (ProfileInterpreter) {
+    assert_different_registers(mdp, left, right, tmp);
+    Label profile_continue;
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(mdp, profile_continue);
+
+    profile_obj_type(left, Address(mdp, in_bytes(ACmpData::left_offset())), tmp);
+
+    Label left_not_value_type;
+    test_oop_is_not_value_type(left, tmp, left_not_value_type);
+    set_mdp_flag_at(mdp, ACmpData::left_value_type_byte_constant());
+    bind(left_not_value_type);
+
+    profile_obj_type(right, Address(mdp, in_bytes(ACmpData::right_offset())), tmp);
+
+    Label right_not_value_type;
+    test_oop_is_not_value_type(right, tmp, right_not_value_type);
+    set_mdp_flag_at(mdp, ACmpData::right_value_type_byte_constant());
+    bind(right_not_value_type);
+
     bind(profile_continue);
   }
 }
@@ -1267,131 +1434,12 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     test_method_data_pointer(mdp, profile_continue);
 
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp, reg2);
+    profile_receiver_type(receiver, mdp, 0, reg2);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
     bind(profile_continue);
   }
-}
-
-// This routine creates a state machine for updating the multi-row
-// type profile at a virtual call site (or other type-sensitive bytecode).
-// The machine visits each row (of receiver/count) until the receiver type
-// is found, or until it runs out of rows. At the same time, it remembers
-// the location of the first empty row. (An empty row records null for its
-// receiver, and can be allocated for a newly-observed receiver type.)
-// Because there are two degrees of freedom in the state, a simple linear
-// search will not work; it must be a decision tree. Hence this helper
-// function is recursive, to generate the required tree structured code.
-// It's the interpreter, so we are trading off code space for speed.
-// See below for example code.
-void InterpreterMacroAssembler::record_klass_in_profile_helper(
-                                        Register receiver, Register mdp,
-                                        Register reg2, int start_row,
-                                        Label& done) {
-  if (TypeProfileWidth == 0) {
-    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-    return;
-  }
-
-  int last_row = VirtualCallData::row_limit() - 1;
-  assert(start_row <= last_row, "must be work left to do");
-  // Test this row for both the receiver and for null.
-  // Take any of three different outcomes:
-  //   1. found receiver => increment count and goto done
-  //   2. found null => keep looking for case 1, maybe allocate this cell
-  //   3. found something else => keep looking for cases 1 and 2
-  // Case 3 is handled by a recursive call.
-  for (int row = start_row; row <= last_row; row++) {
-    NearLabel next_test;
-    bool test_for_null_also = (row == start_row);
-
-    // See if the receiver is receiver[n].
-    int recvr_offset = in_bytes(VirtualCallData::receiver_offset(row));
-    test_mdp_data_at(mdp, recvr_offset, receiver,
-                     (test_for_null_also ? reg2 : noreg),
-                     next_test);
-    // (Reg2 now contains the receiver from the CallData.)
-
-    // The receiver is receiver[n]. Increment count[n].
-    int count_offset = in_bytes(VirtualCallData::receiver_count_offset(row));
-    increment_mdp_data_at(mdp, count_offset);
-    z_bru(done);
-    bind(next_test);
-
-    if (test_for_null_also) {
-      Label found_null;
-      // Failed the equality check on receiver[n]... Test for null.
-      z_ltgr(reg2, reg2);
-      if (start_row == last_row) {
-        // The only thing left to do is handle the null case.
-        z_brz(found_null);
-        // Receiver did not match any saved receiver and there is no empty row for it.
-        // Increment total counter to indicate polymorphic case.
-        increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-        z_bru(done);
-        bind(found_null);
-        break;
-      }
-      // Since null is rare, make it be the branch-taken case.
-      z_brz(found_null);
-
-      // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done);
-
-      // Found a null. Keep searching for a matching receiver,
-      // but remember that this is an empty (unused) slot.
-      bind(found_null);
-    }
-  }
-
-  // In the fall-through case, we found no matching receiver, but we
-  // observed the receiver[start_row] is null.
-
-  // Fill in the receiver field and increment the count.
-  int recvr_offset = in_bytes(VirtualCallData::receiver_offset(start_row));
-  set_mdp_data_at(mdp, recvr_offset, receiver);
-  int count_offset = in_bytes(VirtualCallData::receiver_count_offset(start_row));
-  load_const_optimized(reg2, DataLayout::counter_increment);
-  set_mdp_data_at(mdp, count_offset, reg2);
-  if (start_row > 0) {
-    z_bru(done);
-  }
-}
-
-// Example state machine code for three profile rows:
-//   // main copy of decision tree, rooted at row[1]
-//   if (row[0].rec == rec) { row[0].incr(); goto done; }
-//   if (row[0].rec != nullptr) {
-//     // inner copy of decision tree, rooted at row[1]
-//     if (row[1].rec == rec) { row[1].incr(); goto done; }
-//     if (row[1].rec != nullptr) {
-//       // degenerate decision tree, rooted at row[2]
-//       if (row[2].rec == rec) { row[2].incr(); goto done; }
-//       if (row[2].rec != nullptr) { count.incr(); goto done; } // overflow
-//       row[2].init(rec); goto done;
-//     } else {
-//       // remember row[1] is empty
-//       if (row[2].rec == rec) { row[2].incr(); goto done; }
-//       row[1].init(rec); goto done;
-//     }
-//   } else {
-//     // remember row[0] is empty
-//     if (row[1].rec == rec) { row[1].incr(); goto done; }
-//     if (row[2].rec == rec) { row[2].incr(); goto done; }
-//     row[0].init(rec); goto done;
-//   }
-//   done:
-
-void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register mdp, Register reg2) {
-  assert(ProfileInterpreter, "must be profiling");
-  Label done;
-
-  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done);
-
-  bind (done);
 }
 
 void InterpreterMacroAssembler::profile_ret(Register return_bci, Register mdp) {
@@ -1462,7 +1510,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp, reg2);
+      profile_receiver_type(klass, mdp, 0, reg2);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 
@@ -1577,6 +1625,88 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, Address mdo_addr,
   bind(do_nothing);
 }
 
+template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Register array,
+                                                                              Register tmp1,
+                                                                              Register tmp2) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+    assert_different_registers(array, tmp1, tmp2);
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(tmp1, profile_continue);
+
+    profile_obj_type(array, Address(tmp1, in_bytes(ArrayData::array_offset())), tmp2);
+
+    Label not_flat;
+    test_non_flat_array_oop(array, tmp2, not_flat);
+    set_mdp_flag_at(tmp1, ArrayData::flat_array_byte_constant());
+    bind(not_flat);
+
+    Label not_null_free;
+    test_non_null_free_array_oop(array, tmp2, not_null_free);
+    set_mdp_flag_at(tmp1, ArrayData::null_free_array_byte_constant());
+    bind(not_null_free);
+
+    bind(profile_continue);
+  }
+}
+
+template void InterpreterMacroAssembler::profile_array_type<ArrayLoadData>(Register array,
+                                                                           Register tmp1,
+                                                                           Register tmp2);
+template void InterpreterMacroAssembler::profile_array_type<ArrayStoreData>(Register array,
+                                                                            Register tmp1,
+                                                                            Register tmp2);
+
+void InterpreterMacroAssembler::profile_element_type(Register element,
+                                                     Register tmp1,
+                                                     Register tmp2) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+    assert_different_registers(element, tmp1, tmp2);
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(tmp1, profile_continue);
+
+    profile_obj_type(element, Address(tmp1, in_bytes(ArrayLoadData::element_offset())), tmp2);
+
+    // The method data pointer needs to be updated.
+    update_mdp_by_constant(tmp1, in_bytes(ArrayLoadData::array_load_data_size()));
+
+    bind(profile_continue);
+  }
+}
+
+void InterpreterMacroAssembler::profile_multiple_element_types(Register element,
+                                                               Register tmp1,
+                                                               Register tmp2,
+                                                               Register tmp3) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+    assert_different_registers(element, tmp1, tmp2, tmp3);
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(tmp1, profile_continue);
+
+    Label done, update;
+    compareU64_and_branch(element, (intptr_t)0, Assembler::bcondNotEqual, update);
+    set_mdp_flag_at(tmp1, BitData::null_seen_byte_constant());
+    z_bru(done);
+
+    bind(update);
+    load_klass(tmp2, element);
+
+    profile_receiver_type(tmp2, tmp1, 0, tmp3);
+
+    bind(done);
+
+    // The method data pointer needs to be updated.
+    update_mdp_by_constant(tmp1, in_bytes(ArrayStoreData::array_store_data_size()));
+
+    bind(profile_continue);
+  }
+}
+
 void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual) {
   if (!ProfileInterpreter) {
     return;
@@ -1638,7 +1768,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
         // argument. Tmp is the number of cells left in the
         // CallTypeData/VirtualCallTypeData to reach its end. Non null
         // if there's a return to profile.
-        assert(ReturnTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
+        assert(SingleTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
         z_sllg(tmp, tmp, exact_log2(DataLayout::cell_size));
         z_agr(mdp, tmp);
       }
@@ -1687,7 +1817,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       bind(do_profile);
     }
 
-    Address mdo_ret_addr(mdp, -in_bytes(ReturnTypeEntry::size()));
+    Address mdo_ret_addr(mdp, -in_bytes(SingleTypeEntry::size()));
     profile_obj_type(ret, mdo_ret_addr, tmp);
 
     bind(profile_continue);
@@ -2078,4 +2208,36 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
   load_const_optimized(Z_ARG3, 0xb00b1);
   z_stg(Z_ARG3, _z_parent_ijava_frame_abi(return_pc), Z_SP);
 #endif
+}
+
+//-------------------------------------
+//  Valhalla value type support
+//-------------------------------------
+
+void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
+  assert_different_registers(entry, obj);
+  assert_different_registers(entry, Z_ARG2);
+  call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
+}
+
+void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1,
+                                                 Register tmp2, Register obj) {
+  assert_different_registers(entry, tmp1, tmp2, obj);
+  Label slow_path, done;
+
+  // Load flags and check if field is null-free value type.
+  load_sized_value(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::flags_offset())), sizeof(u1), false);
+  test_field_is_not_null_free_value_type(tmp1, slow_path);
+
+  // Null check the value being stored (Z_tos holds the value oop).
+  null_check(Z_tos);  // FIXME JDK-8341120
+
+  z_lgr(tmp1, Z_tos);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::write_null_free_flat_field), obj, tmp1, entry);
+  z_bru(done);
+
+  bind(slow_path);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::write_flat_field), obj, Z_tos, entry);
+
+  bind(done);
 }

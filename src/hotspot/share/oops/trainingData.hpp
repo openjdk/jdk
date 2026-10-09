@@ -532,12 +532,79 @@ class CompileTrainingData : public TrainingData {
 
   MethodTrainingData* _method;
   const short _level;
+  const bool _is_osr;
   const int _compile_id;
 
+  // Size of nmethod's inlineable instructions during training
+  int _inline_instructions_size;
+
   // classes that should be initialized before this JIT task runs
-  DepList<KlassTrainingData*> _init_deps;
+  DepList<KlassTrainingData*> _init_deps;  // set by JIT in TR, read by APH and PR
   // Number of uninitialized classes left, when it's 0, all deps are satisfied
-  volatile int _init_deps_left;
+  volatile int _init_deps_left;  // set to deps length at AOT dump, counted down in PR
+
+  // The deps list and counter are crucial to gating the readiness of any nmethod
+  // in which clinit (class initialization) barriers have been optimized away.
+  // That is the difference between AP4 "preload" code (which has clinit barriers)
+  // and A4 code (which runs much faster, because it doesn't have them).
+  // The CTD::_init_deps list is built by a JIT task in the training run (TR),
+  // is consulted by the AOT compiler in the assembly phase (APH), and eventually
+  // is used again in the production run (PR) to ensure that the nmethod (for
+  // this CTD) gets loaded only after all its dependency classes have been
+  // initialized.  The _init_deps_left down-counter counts the number of remaining
+  // not-yet-initialized classes on the deps-list; when it reaches zero, the
+  // nmethod can be loaded (from its AOTCodeEntry) by the ac1 or ac2 loader task.
+  //
+  // Like other metadata, the CTD is built in the TR and used in both APH and PR.
+  // Events from the TR JIT task are posted via ciObjectFactory::notice_new_object
+  // which calls notice_jit_observation, to add classes to the deps-list for the
+  // CTD associated with the TR JIT task.  An AOT compiler task later recapitulates
+  // the TR JIT task, calling ciEnv::compute_init_state_for_aot_compile to read the
+  // deps-list of the same CTD.  As the AOT cache is dumped, the classes on each CTD
+  // deps-list are polled by compute_init_deps_left, so each _init_deps_left
+  // down-counter is initialized to the number of classes on the deps-list.
+  //
+  // After each clinit, CompilationPolicy::replay_training_at_init and then
+  // KlassTrainingData::notice_fully_initialized poll each CTD that depends on the
+  // newly-initialized class.  This is fast because the KTDs have an inverse
+  // list (comp_deps) that indexes back to CTDs that refer to them as init deps.
+  // The two functions cooperate to serialize the CTD polling activity.
+  // The first enqueues the class on the TrainingReplayQueue, while the second
+  // runs inside the unique TrainingReplayThread.
+  //
+  // The poll decrements the down-counter, and when it reaches zero, invokes
+  // the CompilationPolicy method maybe_compile_early on that CTD's method.
+  // The compilation policy rechecks each candidate method for suitability, and
+  // enqueues a CompileTask to handle the load from the AOTCodeEntry for the CTD
+  // which is ready.  CompilationPolicy handles AOT loading as well, as part of its
+  // responsibility for the full lifecycle of compiled code.
+  //
+  // The effect is as if the PR quickly fast-forwards the JIT activity from the TR,
+  // replaying each "virtual JIT" task (i.e., AOT load) as soon as the clinit events
+  // occur, which each loaded method depends on.  (Thus the term "replay training".)
+  // In addition, AP4 "preload" code, is queued for loading at startup, since it
+  // does not need to wait for any down counter or clinit event.  This helps the
+  // class initializations get done sooner, compared with interpreter-based
+  // initialization.
+  //
+  // Note that AOTCodeEntries and their CTDs do not poll clinit deps-lists for
+  // loading.  Rather, the class clinit events push notifications to CTDs, leading
+  // to queueing of load requests.  By the time the load request is vetted and
+  // queued, the nmethod code is known to be ready to use.  There are some late
+  // load-time checks (such as verify_c2_state and read_klass), which are of
+  // relatively minor importance, although they can prevent loading.  At worst, the
+  // JVM will call in the JIT to cover for an unloadable method.
+  //
+  // A few special classes, like MethodType, are initialized within the AOT cache.
+  // These are present on the clinit deps-lists of many CTDs, but they will never be
+  // initialized in the PR.  They contribute to the down-counter state via a special
+  // pass at startup called replay_training_at_init_for_preloaded_classes.  This
+  // pass finds such pre-initialized classes and calls replay_training_at_init for
+  // them, since they will never have a normal clinit.  In effect, their class
+  // initialization actions, including CTD down-counts, are fast-forwarded at
+  // startup.  See has_aot_initialized_mirror, which recognizes such classes.
+  // Whether a class is AOT-initialized or not, if it has CTDs depending on it, it
+  // polls them exactly once, gated by the latch has_init_deps_processed.
 
 public:
   // ciRecords is a generic meachanism to memoize CI responses to arbitary queries. For each function we're interested in we record
@@ -648,9 +715,10 @@ private:
   CompileTrainingData();
   CompileTrainingData(MethodTrainingData* mtd,
                       int level,
+                      bool is_osr,
                       int compile_id)
       : TrainingData(),  // empty key
-        _method(mtd), _level(level), _compile_id(compile_id), _init_deps_left(0) { }
+        _method(mtd), _level(level), _is_osr(is_osr), _compile_id(compile_id), _inline_instructions_size(0), _init_deps_left(0) { }
 public:
   ciRecords& ci_records() { return _ci_records; }
   static CompileTrainingData* make(CompileTask* task) NOT_CDS_RETURN_(nullptr);
@@ -660,8 +728,11 @@ public:
   MethodTrainingData* method() const { return _method; }
 
   int level() const { return _level; }
-
+  bool is_osr() const { return _is_osr; }
   int compile_id() const { return _compile_id; }
+
+  int inline_instructions_size() const { return _inline_instructions_size; }
+  void set_inline_instructions_size(int size) { _inline_instructions_size = size; }
 
   int init_dep_count() const {
     TrainingDataLocker::assert_locked();
@@ -719,8 +790,8 @@ public:
 
   void verify(bool verify_dep_counter);
 
-  static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, int compile_id) {
-    return TrainingData::allocate<CompileTrainingData>(mtd, level, compile_id);
+  static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, bool is_osr, int compile_id) {
+    return TrainingData::allocate<CompileTrainingData>(mtd, level, is_osr, compile_id);
   }
 };
 
@@ -790,6 +861,15 @@ class MethodTrainingData : public TrainingData {
       return _last_toplevel_compiles[level - 1];
     }
     return nullptr;
+  }
+
+  CompileTrainingData* compile_data_for_aot_code(int level) const {
+    CompileTrainingData* ctd = last_toplevel_compile(level);
+    if (ctd == nullptr && level == CompLevel_limited_profile) {
+      // We compile CompLevel_limited_profile AOT code for CompLevel_full_profile
+      ctd = _last_toplevel_compiles[CompLevel_full_profile - 1];
+    }
+    return ctd;
   }
 
   void notice_compilation(int level, bool inlined = false) {

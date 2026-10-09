@@ -219,7 +219,6 @@ public class FlowTest extends AbstractRandomTest {
             thread3 = new Thread(this::clientReader, "clientReader");
             publisher = new SubmissionPublisher<>(exec, Flow.defaultBufferSize(),
                     this::handlePublisherException);
-            SSLFlowDelegate.Monitor.add(this::monitor);
         }
 
         public void start() {
@@ -311,11 +310,6 @@ public class FlowTest extends AbstractRandomTest {
         }
 
         private final AtomicInteger loopCount = new AtomicInteger();
-
-        public String monitor() {
-            return "serverLoopback: loopcount = " + loopCount.get()
-                    + " clientRead: count = " + readCount.get();
-        }
 
         // thread2
         private void serverLoopback() {

@@ -308,6 +308,13 @@ public class Raster {
         if (bandOffsets == null) {
             throw new NullPointerException("bandOffsets is null");
         }
+        for (int i = 0; i < bandOffsets.length; i++) {
+            int off = bandOffsets[i];
+            if ((off > pixelStride) || (off > scanlineStride)) {
+                throw new IllegalArgumentException("Band offset " + off + " is too large for stride");
+            }
+        }
+
         lsz = (long)w * pixelStride;
         if (lsz > scanlineStride) {
             throw new IllegalArgumentException("w * pixelStride is too large");
@@ -803,6 +810,21 @@ public class Raster {
         if (dataBuffer == null) {
             throw new NullPointerException("DataBuffer cannot be null");
         }
+        if (pixelStride < 0) {
+            throw new IllegalArgumentException("pixelStride is < 0");
+        }
+        if (scanlineStride < 0) {
+            throw new IllegalArgumentException("scanlineStride is < 0");
+        }
+        if (bandOffsets == null) {
+            throw new NullPointerException("bandOffsets is null");
+        }
+        for (int i = 0; i < bandOffsets.length; i++) {
+            int off = bandOffsets[i];
+            if ((off > pixelStride) || (off > scanlineStride)) {
+                throw new IllegalArgumentException("Band offset " + off + " is too large for stride");
+            }
+        }
 
         if (location == null) {
             location = new Point(0, 0);
@@ -912,6 +934,14 @@ public class Raster {
         if (bandOffsets.length != bands) {
             throw new IllegalArgumentException(
                                    "bankIndices.length != bandOffsets.length");
+        }
+
+        int numBanks = dataBuffer.getNumBanks();
+        for (int i = 0; i < bands; i++) {
+            if (bankIndices[i] >= numBanks) {
+                throw new ArrayIndexOutOfBoundsException("Bank[" + i + "] == " + bankIndices[i] +
+                         " and there are only " + numBanks + " banks.");
+            }
         }
 
         if (location == null) {

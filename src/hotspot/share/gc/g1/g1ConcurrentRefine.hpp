@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1ConcurrentRefineThreadsNeeded.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -154,7 +155,7 @@ class G1ConcurrentRefineSweepState {
   void snapshot_heap_inner();
 
 public:
-  G1ConcurrentRefineSweepState(uint max_reserved_regions);
+  G1ConcurrentRefineSweepState(uint max_num_regions);
   ~G1ConcurrentRefineSweepState();
 
   bool swap_global_card_table();
@@ -212,7 +213,7 @@ public:
 //
 class G1ConcurrentRefine : public CHeapObj<mtGC> {
   G1Policy* _policy;
-  volatile uint _num_threads_wanted;
+  Atomic<uint> _num_threads_wanted;
   size_t _pending_cards_target;
   Ticks _last_adjust;
   Ticks _last_deactivate;
@@ -306,7 +307,7 @@ public:
   // obtaining the heap lock.
   bool heap_was_locked() const { return _heap_was_locked; }
 
-  uint num_threads_wanted() const { return _num_threads_wanted; }
+  uint num_threads_wanted() const { return _num_threads_wanted.load_relaxed(); }
   uint max_num_threads() const { return _thread_control.max_num_threads(); }
 
   // Iterate over all concurrent refinement threads applying the given closure.

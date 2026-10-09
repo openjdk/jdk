@@ -141,23 +141,18 @@ class WindowsNativeDispatcher {
         throws WindowsException;
 
     /**
-     * Marks a file as a sparse file.
-     *
      * DeviceIoControl(
-     *   FSCTL_SET_SPARSE
+     *   HANDLE hDevice,
+     *   DWORD dwIoControlCode,
+     *   NULL,
+     *   0,
+     *   LPVOID lpOutBuffer,
+     *   DWORD nOutBufferSize,
+     *   LPDWORD lpBytesReturned,
+     *   NULL
      * )
      */
-    static native void DeviceIoControlSetSparse(long handle)
-        throws WindowsException;
-
-    /**
-     * Retrieves the reparse point data associated with the file or directory.
-     *
-     * DeviceIoControl(
-     *   FSCTL_GET_REPARSE_POINT
-     * )
-     */
-    static native void DeviceIoControlGetReparsePoint(long handle,
+    static native int DeviceIoControl(long handle, int dwIoControlCode,
         long bufferAddress, int bufferSize) throws WindowsException;
 
     /**

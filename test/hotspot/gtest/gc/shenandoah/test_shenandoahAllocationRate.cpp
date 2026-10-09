@@ -26,6 +26,9 @@
 #include "gc/shared/gc_globals.hpp"
 
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
+#include "gc/shenandoah/shenandoahStripedCounter.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "threadHelper.inline.hpp"
 
 class ShenandoahMockClock {
 public:
@@ -118,6 +121,131 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike)
   EXPECT_DOUBLE_EQ(consumption.momentary_rate(), 2048);
   EXPECT_EQ(consumption.momentary_consumption(), 204800UL);
   EXPECT_EQ(consumption.accelerated_consumption(), 0UL);
+}
+
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_single_dominant_allocator) {
+  // Single mutator: one stripe allocates, other stripes stay empty.
+  ShenandoahStripedCounter stripes;
+  if (stripes.num_stripes() == 1) {
+    // Regression requires multiple stripes.
+    return;
+  }
+
+  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+  // Multiple epochs prove the allocation-path trigger re-fires without force_update().
+  constexpr size_t alloc_size = 64;
+  constexpr size_t epochs = 4;
+  for (size_t allocated = 0; allocated < MINIMUM_SAMPLE_SIZE * epochs; allocated += alloc_size) {
+    allocate(rate, alloc_size);
+  }
+
+  // Old one-shot trigger left the average at zero until force_update().
+  EXPECT_GT(rate.weighted_average(), 0.0);
+}
+
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_rearms_when_floor_lowered) {
+  // Lowering the floor must re-arm a stripe that crossed the old share.
+  constexpr size_t high_floor = 1 * M;
+  constexpr size_t low_floor = 1024;
+  constexpr size_t alloc_size = 64;
+
+  ShenandoahAllocRate<ShenandoahMockClock> rate(high_floor, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+
+  // Accumulate below the high floor, but above the later lowered share.
+  constexpr size_t phase1_bytes = high_floor / 4;
+  for (size_t allocated = 0; allocated < phase1_bytes; allocated += alloc_size) {
+    allocate(rate, alloc_size);
+  }
+  EXPECT_DOUBLE_EQ(rate.weighted_average(), 0.0);  // nothing drained yet
+
+  // A GC lowers the floor.
+  rate.set_minimum_sample_size(low_floor);
+
+  // New crossings under the lowered floor must sample without force_update().
+  for (size_t allocated = 0; allocated < low_floor * 16; allocated += alloc_size) {
+    allocate(rate, alloc_size);
+  }
+
+  EXPECT_GT(rate.weighted_average(), 0.0);
+}
+
+// Concurrent multi-threaded sampling. Many threads drive allocated() past the aggregate floor at
+// the same time, so distinct JavaThreads spread across stripes and stay hot simultaneously. This is
+// the regime the sampling guard is written for: contended try_lock (multiple threads cross their
+// per-stripe share at once, only one wins the lock), multi-stripe sum() aggregation (the floor is
+// reached by several occupied stripes, not one), and the drain-race clause (one thread's add()
+// captures a stripe value that another thread drains before the first takes the lock).
+class ConcurrentAllocators {
+public:
+  static constexpr int kThreads = 8;
+  static constexpr size_t kPerThreadEpochs = 500;
+  static constexpr size_t kAllocSize = 64;
+  // Every thread allocates this many bytes; the grand total spans many minimum-sample-size epochs.
+  static constexpr size_t kPerThreadBytes = MINIMUM_SAMPLE_SIZE * kPerThreadEpochs;
+};
+
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_concurrent_allocators) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+
+  auto worker = [&](Thread*, int) {
+    for (size_t allocated = 0; allocated < ConcurrentAllocators::kPerThreadBytes;
+         allocated += ConcurrentAllocators::kAllocSize) {
+      rate.allocated(ConcurrentAllocators::kAllocSize);
+    }
+  };
+  TestThreadGroup<decltype(worker)> ttg(worker, ConcurrentAllocators::kThreads);
+  ttg.doit();
+  ttg.join();
+
+  // No force_update() was called: every sample came from the contended allocation path. Across
+  // thousands of epochs driven by all threads, sampling must have fired and drained repeatedly.
+  EXPECT_GT(rate.weighted_average(), 0.0);
+}
+
+// Concurrent skew: a few threads hold their stripes just below the per-stripe share and keep them
+// hot (spinning at the barrier), while a heavy thread pushes the aggregate over the floor. The
+// sample can then only be taken because sum() aggregates the heavy stripe with the held stripes --
+// exercising the multi-stripe floor crossing, not a single dominant stripe.
+class ConcurrentSkew {
+public:
+  static constexpr int kHolderThreads = 6;
+  static constexpr size_t kHeavyEpochs = 300;
+  static constexpr size_t kAllocSize = 64;
+};
+
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_concurrent_skew) {
+  ShenandoahStripedCounter stripes;
+  if (stripes.num_stripes() == 1) {
+    // A multi-stripe aggregate crossing is only meaningful with more than one stripe.
+    return;
+  }
+
+  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+
+  // Each holder adds just under the per-stripe share once, then stays live for the whole run, so
+  // several stripes remain simultaneously occupied below their individual share. Their adds never
+  // cross a share alone, but they contend on the counter and feed sum().
+  Atomic<bool> stop(false);
+  const size_t per_stripe_share = MINIMUM_SAMPLE_SIZE / stripes.num_stripes();
+  const size_t holder_target = per_stripe_share > 2 ? per_stripe_share - 1 : 1;
+  auto holder = [&](Thread*, int) {
+    rate.allocated(holder_target);
+    while (!stop.load_relaxed()) { /* keep the thread (and its stripe) live */ }
+  };
+  TestThreadGroup<decltype(holder)> holders(holder, ConcurrentSkew::kHolderThreads);
+  holders.doit();
+
+  // Heavy stream on the main thread's own stripe. Its crossings, added to the held stripes, take
+  // sum() over the floor; the re-armed trigger must sample every epoch off the allocation path.
+  const size_t heavy_bytes = MINIMUM_SAMPLE_SIZE * ConcurrentSkew::kHeavyEpochs;
+  for (size_t allocated = 0; allocated < heavy_bytes; allocated += ConcurrentSkew::kAllocSize) {
+    allocate(rate, ConcurrentSkew::kAllocSize);
+  }
+
+  stop.store_relaxed(true);
+  holders.join();
+
+  EXPECT_GT(rate.weighted_average(), 0.0);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdb.thread.thread002;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -51,7 +52,7 @@ public class thread002a {
         try {
             lock.setLock();
             for (int i = 0; i < numThreads ; i++) {
-                holder[i] = new MyThread(lock, "MyThread#" + i);
+                holder[i] = new MyThread(lock, "MyThread#" + i).getThread();
                 synchronized (waitnotify) {
                     holder[i].start();
                     waitnotify.wait();
@@ -99,17 +100,25 @@ class Lock {
     }
 }
 
-class MyThread extends Thread {
+class MyThread extends ThreadWrapper {
 
     Lock lock;
     String name;
 
     MyThread (Lock l, String name) {
+        super(name);
         this.lock = l;
         this.name = name;
     }
 
+    // Each tested thread calls this once at startup. The debugger sets a
+    // breakpoint here: receiving the event is what makes a virtual thread
+    // visible to jdb with the default debug agent behavior, so the test
+    // does not need the -trackallthreads option.
+    static void threadStarted() {}
+
     public void run() {
+        threadStarted();
         synchronized (thread002a.waitnotify) {
             thread002a.waitnotify.notifyAll();
         }

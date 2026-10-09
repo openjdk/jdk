@@ -290,12 +290,6 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_at
     THROW_NEW_DEBUGGER_EXCEPTION(msg);
   }
 
-#ifdef __aarch64__
-  if (pac_enabled(ph)) {
-    printf("WARNING: PAC is enabled. Stack traces might be incomplete.\n");
-  }
-#endif
-
   env->SetLongField(this_obj, p_ps_prochandle_ID, (jlong)(intptr_t)ph);
   fillThreadsAndLoadObjects(env, this_obj, ph);
 }
@@ -320,12 +314,6 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_at
   if ( (ph = Pgrab_core(execName_cstr, coreName_cstr)) == NULL) {
     THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file. For more information, export LIBSAPROC_DEBUG=1 and try again.");
   }
-
-#ifdef __aarch64__
-  if (pac_enabled(ph)) {
-    printf("WARNING: PAC is enabled. Stack traces might be incomplete.\n");
-  }
-#endif
 
   env->SetLongField(this_obj, p_ps_prochandle_ID, (jlong)(intptr_t)ph);
   fillThreadsAndLoadObjects(env, this_obj, ph);

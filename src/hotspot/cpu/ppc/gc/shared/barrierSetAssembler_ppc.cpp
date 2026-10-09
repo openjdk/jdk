@@ -55,6 +55,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     if (UseCompressedOops && in_heap) {
       Register co = tmp1;
       if (val == noreg) {
+        assert(!not_null, "inconsistent access");
         __ li(co, 0);
       } else {
         co = not_null ? __ encode_heap_oop_not_null(tmp1, val) : __ encode_heap_oop(tmp1, val);
@@ -62,6 +63,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
       __ stw(co, ind_or_offs, base, tmp2);
     } else {
       if (val == noreg) {
+        assert(!not_null, "inconsistent access");
         val = tmp1;
         __ li(val, 0);
       }

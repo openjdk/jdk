@@ -248,7 +248,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, bool is_virtual, int frame
           // The first stage of async deflation does not affect any field
           // used by this comparison so the ObjectMonitor* is usable here.
           if (mark.has_monitor()) {
-            ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner(), mark);
+            ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner());
             if (// if the monitor is null we must be in the process of locking
                 mon == nullptr ||
                 // we have marked ourself as pending on this monitor
@@ -318,13 +318,9 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
 static bool is_in_expression_stack(const frame& fr, const intptr_t* const addr) {
   assert(addr != nullptr, "invariant");
 
-  // Ensure to be 'inside' the expression stack (i.e., addr >= sp for Intel).
+  // Ensure to be 'inside' the expression stack (i.e., addr >= sp).
   // In case of exceptions, the expression stack is invalid and the sp
   // will be reset to express this condition.
-  if (frame::interpreter_frame_expression_stack_direction() > 0) {
-    return addr <= fr.interpreter_frame_tos_address();
-  }
-
   return addr >= fr.interpreter_frame_tos_address();
 }
 
@@ -579,8 +575,11 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
     }
     const char* name = method()->name()->as_C_string();
     size_t name_len = strlen(name);
+    if (name_len >= prefixed_name_len) {
+      break; // the name can't be the unprefixed version of prefixed_name
+    }
     size_t prefix_len = prefixed_name_len - name_len;
-    if (prefix_len <= 0 || strcmp(name, prefixed_name + prefix_len) != 0) {
+    if (strcmp(name, prefixed_name + prefix_len) != 0) {
       break; // prefixed name isn't prefixed version of method name, can't be a wrapper
     }
     for (; prefix_index >= 0; --prefix_index) {
@@ -650,7 +649,7 @@ void entryVFrame::print(outputStream* output) {
 static void print_stack_values(outputStream* output, const char* title, StackValueCollection* values) {
   if (values->is_empty()) return;
   output->print_cr("\t%s:", title);
-  values->print();
+  values->print_on(output);
 }
 
 
@@ -660,8 +659,8 @@ void javaVFrame::print(outputStream* output) {
   HandleMark hm(current_thread);
 
   vframe::print(output);
-  output->print("\t");
-  method()->print_value();
+  output->print_raw("\t");
+  method()->print_value_on(output);
   output->cr();
   output->print_cr("\tbci:    %d", bci());
 
@@ -673,25 +672,25 @@ void javaVFrame::print(outputStream* output) {
   output->print_cr("\tmonitor list:");
   for (int index = (list->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = list->at(index);
-    output->print("\t  obj\t");
+    output->print("\t  obj ");
     if (monitor->owner_is_scalar_replaced()) {
       Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
-      output->print("( is scalar replaced %s)", k->external_name());
+      output->print("(is scalar replaced %s)", k->external_name());
     } else if (monitor->owner() == nullptr) {
-      output->print("( null )");
+      output->print("(null)");
     } else {
-      monitor->owner()->print_value();
+      monitor->owner()->print_value_on(output);
       output->print("(owner=" INTPTR_FORMAT ")", p2i(monitor->owner()));
     }
     if (monitor->eliminated()) {
       if(is_compiled_frame()) {
-        output->print(" ( lock is eliminated in compiled frame )");
+        output->print(" (lock is eliminated in compiled frame)");
       } else {
-        output->print(" ( lock is eliminated, frame not compiled )");
+        output->print(" (lock is eliminated, frame not compiled)");
       }
     }
     output->cr();
-    output->print("\t  ");
+    output->print_raw("\t");
     monitor->lock()->print_on(output, monitor->owner());
     output->cr();
   }
@@ -726,14 +725,14 @@ void javaVFrame::print_value(outputStream* output) const {
   }
 }
 
-void javaVFrame::print_activation(int index, outputStream* output) const {
+void javaVFrame::print_activation(outputStream* output, int index) const {
   // frame number and method
   output->print("%2d - ", index);
-  ((vframe*)this)->print_value();
+  ((vframe*)this)->print_value(output);
   output->cr();
 
   if (WizardMode) {
-    ((vframe*)this)->print();
+    ((vframe*)this)->print(output);
     output->cr();
   }
 }

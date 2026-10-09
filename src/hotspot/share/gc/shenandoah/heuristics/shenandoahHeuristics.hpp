@@ -57,6 +57,7 @@
   } while (0)
 
 class ShenandoahCollectionSet;
+class ShenandoahHeap;
 class ShenandoahHeapRegion;
 
 /*
@@ -192,11 +193,12 @@ protected:
                                                      RegionData* data, size_t data_size,
                                                      size_t free) = 0;
 
+  // Called when immediate garbage threshold is reached.
+  virtual void prepare_for_abbreviated_cycle() {}
+
   virtual void adjust_penalty(intx step);
 
   inline void accept_trigger() {
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
     _start_gc_is_pending = true;
   }
 
@@ -254,7 +256,7 @@ public:
 
   virtual void record_success_concurrent();
 
-  virtual void record_degenerated();
+  virtual void record_degenerated(bool is_generational_global);
 
   virtual void record_success_full();
 

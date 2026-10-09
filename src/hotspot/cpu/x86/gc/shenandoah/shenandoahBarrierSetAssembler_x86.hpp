@@ -33,7 +33,7 @@
 
 #ifdef COMPILER1
 class LIR_Assembler;
-class ShenandoahPreBarrierStub;
+class ShenandoahKeepaliveBarrierStub;
 class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
 #endif
@@ -50,7 +50,7 @@ private:
                     Register pre_val,
                     Register tmp);
 
-  void card_barrier(MacroAssembler* masm, Register obj);
+  void card_barrier(MacroAssembler* masm, Register obj, Register tmp);
 
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register addr, Register count,
@@ -71,12 +71,21 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
   virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath);
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error);
+
+  // Jumps hotpatching
+  static address parse_jump_address(address pc);
+  static void insert_patchable_nop(address pc);
+  static bool is_patchable_nop(address pc);
+  static void insert_patchable_jump(address pc, address target_pc);
+  static bool is_patchable_jump(address pc, address target_pc);
 
 #ifdef COMPILER1
-  void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
-  void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
-  void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
+  void keepalive_barrier_c1_stub(LIR_Assembler* ce, ShenandoahKeepaliveBarrierStub* stub);
+  void keepalive_barrier_c1_runtime_stub(StubAssembler* sasm);
+
+  void load_reference_barrier_c1_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
+  void load_reference_barrier_c1_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
 #endif
 
 #ifdef COMPILER2

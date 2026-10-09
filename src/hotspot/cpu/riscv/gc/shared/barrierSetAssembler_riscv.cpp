@@ -24,6 +24,7 @@
  */
 
 #include "classfile/classLoaderData.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -84,22 +85,35 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
                                    Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
+  bool is_not_null = (decorators & IS_NOT_NULL) != 0;
+
   switch (type) {
     case T_OBJECT: // fall through
     case T_ARRAY: {
-      val = val == noreg ? zr : val;
       if (in_heap) {
-        if (UseCompressedOops) {
-          assert(!dst.uses(val), "not enough registers");
-          if (val != zr) {
-            __ encode_heap_oop(val);
+        if (val == noreg) {
+          assert(!is_not_null, "inconsistent access");
+          if (UseCompressedOops) {
+            __ sw(zr, dst);
+          } else {
+            __ sd(zr, dst);
           }
-          __ sw(val, dst);
         } else {
-          __ sd(val, dst);
+          if (UseCompressedOops) {
+            assert(!dst.uses(val), "not enough registers");
+            if (is_not_null) {
+              __ encode_heap_oop_not_null(val);
+            } else {
+              __ encode_heap_oop(val);
+            }
+            __ sw(val, dst);
+          } else {
+            __ sd(val, dst);
+          }
         }
       } else {
         assert(in_native, "why else?");
+        assert(val != noreg, "not supported");
         __ sd(val, dst);
       }
       break;
@@ -175,7 +189,7 @@ void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::tag_mask == 3);
+  static_assert(JNIHandles::tag_mask == 3);
   __ andi(obj, obj, ~JNIHandles::tag_mask);
   __ ld(obj, Address(obj, 0));             // *obj
 }
@@ -273,8 +287,10 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
           // Because processors will not start the second load until the first comes back.
           // This means you can't overlap the two loads,
           // which is stronger than needed for ordering (stronger than TSO).
-          __ srli(ra, t0, 32);
-          __ orr(t1, t1, ra);
+          // XOR the guard into the epoch address twice. This preserves the
+          // address while making it dependent on the guard load.
+          __ xorr(t1, t1, t0);
+          __ xorr(t1, t1, t0);
         }
         // Read the global epoch value.
         __ lwu(t1, t1);
@@ -292,9 +308,9 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
   Label& barrier_target = slow_path == nullptr ? skip_barrier : *slow_path;
   if (slow_path == nullptr) {
-    __ beq(t0, t1, barrier_target, true /* is_far */);
+    __ beq(t0, t1, barrier_target, /* is_far */ true);
   } else {
-    __ bne(t0, t1, barrier_target, true /* is_far */);
+    __ bne(t0, t1, barrier_target, /* is_far */ true);
   }
 
   if (slow_path == nullptr) {
@@ -343,17 +359,27 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 }
 
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
-  __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andr(tmp1, obj, tmp2);
-  __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ andr(tmp1, obj, tmp2);
+    __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+  } else
+#endif
+  {
+    __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andr(tmp1, obj, tmp2);
+    __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
 
   // Compare tmp1 and tmp2.
   __ bne(tmp1, tmp2, error);
 
   // Make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj, tmp1); // get klass
-  __ beqz(obj, error);           // if klass is null it is broken
+  __ load_narrow_klass(tmp1, obj); // get klass
+  __ beqz(tmp1, error);           // if klass is null it is broken
 }
 
 void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,

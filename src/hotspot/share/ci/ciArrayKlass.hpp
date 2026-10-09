@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_CI_CIARRAYKLASS_HPP
 
 #include "ci/ciKlass.hpp"
+#include "oops/arrayKlass.hpp"
 
 // ciArrayKlass
 //
@@ -48,14 +49,27 @@ protected:
 
 public:
   jint dimension() { return _dimension; }
-  ciType* element_type();       // JLS calls this the "component type"
-  ciType* base_element_type();  // JLS calls this the "element type"
+  ciType* element_type();       // JLS calls this the "component type", (T[] for T[][])
+  ciType* base_element_type();  // JLS calls this the "element type", (T for T[][])
   bool is_leaf_type();          // No subtypes of this array type.
+
+  bool is_refined() const { return !is_type_array_klass() && properties().is_valid(); }
 
   // What kind of vmObject is this?
   bool is_array_klass() const { return true; }
 
-  static ciArrayKlass* make(ciType* element_type);
+  // The one-level type of the array elements.
+  virtual ciKlass* element_klass() { return nullptr; }
+
+  static ciArrayKlass* make(ciType* klass, bool null_free = false, bool atomic = false, bool refined_type = false);
+
+  int array_header_in_bytes();
+  ciInstance* component_mirror_instance() const;
+
+  bool is_elem_null_free() const;
+  bool is_elem_atomic() const;
+
+  ArrayProperties properties() const;
 };
 
 #endif // SHARE_CI_CIARRAYKLASS_HPP

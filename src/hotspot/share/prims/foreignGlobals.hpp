@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_PRIMS_FOREIGN_GLOBALS
-#define SHARE_PRIMS_FOREIGN_GLOBALS
+#ifndef SHARE_PRIMS_FOREIGNGLOBALS_HPP
+#define SHARE_PRIMS_FOREIGNGLOBALS_HPP
 
 #include "code/vmreg.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -68,7 +68,7 @@ struct CallRegs {
 class ForeignGlobals {
 private:
   template<typename T>
-  static void parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int));
+  static void parse_register_array(refArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int));
 
 public:
   static bool is_foreign_linker_supported();
@@ -150,4 +150,4 @@ private:
   void pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const;
 };
 
-#endif // SHARE_PRIMS_FOREIGN_GLOBALS
+#endif // SHARE_PRIMS_FOREIGNGLOBALS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,16 @@ package java.lang;
  * </pre>
  * then it must be the case that {@code r.equals(copy)}.
  *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Record} is
+ *          an abstract {@linkplain Class#isValue value class}.
+ *          Subclasses of {@code Record} can be either identity classes
+ *          or {@linkplain Class#isValue value classes}.
+ *          See The Java Language Specification {@jls value-objects-8.1.1.5 Value Classes}.
+ *      </div>
+ * </div>
+ *
  * @apiNote
  * A record class that {@code implements} {@link java.io.Serializable} is said
  * to be a <i>serializable record</i>. Serializable records are serialized and
@@ -87,7 +97,8 @@ package java.lang;
  * @jls 8.10 Record Classes
  * @since 16
  */
-public abstract class Record {
+// See doc/value-class-preview.md for an overview of value class generation
+public abstract /*value*/ class Record {
     /**
      * Constructor for record classes to call.
      */

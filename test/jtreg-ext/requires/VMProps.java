@@ -328,6 +328,8 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
         vmOptFinalFlag(map, "CriticalJNINatives");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "StressIncrementalInlining");
+        vmOptFinalFlag(map, "TieredCompilation");
         vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseAdaptiveSizePolicy");
         vmOptFinalFlag(map, "UseCompressedOops");
@@ -354,6 +356,8 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected void vmOptFinalIntxFlags(SafeMap map) {
         vmOptFinalIntxFlag(map, "MaxVectorSize");
+        vmOptFinalIntxFlag(map, "PerMethodSpecTrapLimit");
+        vmOptFinalIntxFlag(map, "PerMethodTrapLimit");
     }
 
     /**
@@ -399,14 +403,24 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + (noJvmtiAdded && WB.isCDSIncluded());
     }
 
+    // Returns a platform-aware path for the specified archive file.
+    private Path archivePath(String archiveName) {
+        String archiveSubdir = (Platform.isWindows() ? "bin" : "lib");
+        return Paths.get(System.getProperty("java.home"), archiveSubdir, "server", archiveName);
+    }
+
+    // Returns true if a CDS archive file with specified name exists.
+    private boolean archivePathExists(String archiveName) {
+        return  Files.exists(archivePath(archiveName));
+    }
+
     /**
      * Check for CDS default archive existence.
      *
      * @return true if CDS default archive classes.jsa exists in the JDK to be tested.
      */
     protected String vmCDSDefaultArchiveAvailable() {
-        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes.jsa");
-        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
+        return "" + ("true".equals(vmCDS()) && archivePathExists("classes.jsa"));
     }
 
     /**
@@ -415,8 +429,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS archive classes_nocoops.jsa exists in the JDK to be tested.
      */
     protected String vmCDSNocoopsArchiveAvailable() {
-        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes_nocoops.jsa");
-        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
+        return "" + ("true".equals(vmCDS()) && archivePathExists("classes_nocoops.jsa"));
     }
 
     /**
@@ -425,8 +438,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS archive classes_nocoh.jsa exists in the JDK to be tested.
      */
     protected String vmCDSNocohArchiveAvailable() {
-        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes_nocoh.jsa");
-        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
+        return "" + ("true".equals(vmCDS()) && archivePathExists("classes_nocoh.jsa"));
     }
 
     /**
@@ -475,8 +487,9 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDSSupportsAOTCodeCaching() {
       if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
+          !"true".equals(isPreviewEnabled()) &&
           !"zero".equals(vmFlavor()) &&
-          (Platform.isX64() || Platform.isAArch64())) {
+          (Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64())) {
         return "true";
       } else {
         return "false";

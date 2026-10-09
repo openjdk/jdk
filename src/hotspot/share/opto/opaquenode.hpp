@@ -258,6 +258,19 @@ class OpaqueInitializedAssertionPredicateNode : public Node {
   NOT_PRODUCT(void dump_spec(outputStream* st) const);
 };
 
+// The node is used during late inlining to limit type propagation between cleanup phases.
+// It avoids type paradoxes caused by divergence between recorded type and IR shapes
+// during successive late inlining attempts.
+class OpaqueParseNode : public TypeNode {
+ public:
+  OpaqueParseNode(Compile* C, Node* n, const Type* t) : TypeNode(t, 2) {
+    init_req(1, n);
+    C->record_for_igvn(this);
+  }
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
 //------------------------------ProfileBooleanNode-------------------------------
 // A node represents value profile for a boolean during parsing.
 // Once parsing is over, the node goes away (during IGVN).

@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static java.lang.classfile.ClassFile.PREVIEW_MINOR_VERSION;
 import static java.util.Objects.requireNonNull;
 
 public final class DirectClassBuilder
@@ -44,9 +45,10 @@ public final class DirectClassBuilder
     /** The value of default class access flags */
     static final int DEFAULT_CLASS_FLAGS = ClassFile.ACC_PUBLIC | ClassFile.ACC_SUPER;
     static final Util.Writable[] EMPTY_WRITABLE_ARRAY = {};
+    static final WritableField[] EMPTY_WRITABLE_FIELD_ARRAY = {};
     static final ClassEntry[] EMPTY_CLASS_ENTRY_ARRAY = {};
     final ClassEntry thisClassEntry;
-    private Util.Writable[] fields = EMPTY_WRITABLE_ARRAY;
+    private WritableField[] fields = EMPTY_WRITABLE_FIELD_ARRAY;
     private Util.Writable[] methods = EMPTY_WRITABLE_ARRAY;
     private int fieldsCount = 0;
     private int methodsCount = 0;
@@ -129,7 +131,7 @@ public final class DirectClassBuilder
 
     // internal / for use by elements
 
-    ClassBuilder withField(Util.Writable field) {
+    ClassBuilder withField(WritableField field) {
         if (fieldsCount >= fields.length) {
             int newCapacity = fieldsCount + 8;
             this.fields = Arrays.copyOf(fields, newCapacity);
@@ -194,6 +196,13 @@ public final class DirectClassBuilder
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation
         Util.writeList(tail, fields, fieldsCount);
+        WritableField.UnsetField[] strictInstanceFields;
+        if (minorVersion == PREVIEW_MINOR_VERSION && majorVersion >= Util.VALUE_OBJECTS_MAJOR) {
+            strictInstanceFields = WritableField.filterStrictInstanceFields(constantPool, fields, fieldsCount);
+        } else {
+            strictInstanceFields = WritableField.UnsetField.EMPTY_ARRAY;
+        }
+        tail.setStrictInstanceFields(strictInstanceFields);
         Util.writeList(tail, methods, methodsCount);
         int attributesOffset = tail.size();
         attributes.writeTo(tail);

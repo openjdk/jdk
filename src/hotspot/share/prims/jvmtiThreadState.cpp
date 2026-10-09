@@ -409,7 +409,8 @@ int JvmtiThreadState::cur_stack_depth() {
   guarantee(get_thread()->is_handshake_safe_for(current),
             "must be current thread or direct handshake");
 
-  if (!is_interp_only_mode() || _cur_stack_depth == UNKNOWN_STACK_DEPTH) {
+  if (!is_interp_only_mode() || _cur_stack_depth == UNKNOWN_STACK_DEPTH
+      || is_pending_step_for_earlyret() || is_pending_step_for_popframe()) {
     _cur_stack_depth = count_frames();
   } else {
 #ifdef ASSERT
@@ -474,7 +475,7 @@ void JvmtiThreadState::process_pending_step_for_popframe() {
 void JvmtiThreadState::update_for_pop_top_frame() {
   // remove any frame pop notification request for the top frame
   // in any environment
-  int popframe_number = cur_stack_depth();
+  int popframe_number = count_frames();
   {
     JvmtiEnvThreadStateIterator it(this);
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {

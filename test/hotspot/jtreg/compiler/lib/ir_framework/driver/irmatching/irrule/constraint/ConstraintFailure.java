@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.LeafMatchResult;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @see Constraint
  */
-public interface ConstraintFailure extends MatchResult {
+public interface ConstraintFailure extends LeafMatchResult {
     @Override
     default boolean fail() {
         return true;

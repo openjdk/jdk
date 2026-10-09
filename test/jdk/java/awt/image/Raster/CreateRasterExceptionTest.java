@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8255800 8369129 8376297
+ * @bug 8255800 8369129 8376297 8386671
  * @summary verify Raster + SampleModel creation vs spec.
  */
 
@@ -931,9 +931,10 @@ public class CreateRasterExceptionTest {
             /* @throws ArrayIndexOutOfBoundsException if any element of {@code bankIndices}
              *         is greater or equal to the number of bands in {@code dataBuffer}
              */
+            DataBuffer dBuffer2Bands = new DataBufferByte(15, 2);
             int[] indices = new int[] { 0, 1, 2 };
             int[] offsets = new int[] { 0, 0, 0 };
-            Raster.createBandedRaster(dBuffer, 1, 1, 1,
+            Raster.createBandedRaster(dBuffer2Bands, 1, 1, 1,
                                       indices, offsets, null);
             noException();
         } catch (ArrayIndexOutOfBoundsException t) {
@@ -1198,6 +1199,21 @@ public class CreateRasterExceptionTest {
                    "Got expected exception for bad databuffer type");
             System.out.println(t);
         }
+
+        try {
+             /* @throws IllegalArgumentException if any element of {@code bandOffsets} is greater
+             *  than {@code pixelStride} or the {@code scanlineStride}
+             */
+            int[] offsets = new int[] {2};
+            Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                                  1, 1, 1, 1, offsets, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for element too large");
+            System.out.println(t);
+        }
+
     }
 
      /* createInterleavedRaster(DataBuffer dBuffer,
@@ -1344,7 +1360,7 @@ public class CreateRasterExceptionTest {
              /* @throws IllegalArgumentException if any element of {@code bandOffsets} is greater
              *  than {@code pixelStride} or the {@code scanlineStride}
              */
-            int[] offsets = new int[] { 0, 1, 2};
+            int[] offsets = new int[] {2};
             Raster.createInterleavedRaster(dBuffer,
                                   1, 1, 1, 1, offsets, null);
             noException();

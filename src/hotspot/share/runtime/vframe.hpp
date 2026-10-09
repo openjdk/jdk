@@ -147,7 +147,7 @@ class javaVFrame: public vframe {
   // printing operations
   void print(outputStream* output = tty);
   void print_value(outputStream* output = tty) const;
-  void print_activation(int index, outputStream* output = tty) const;
+  void print_activation(outputStream* output, int index) const;
 #endif
   friend class vframe;
 };

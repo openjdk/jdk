@@ -195,7 +195,16 @@ inline void ShenandoahHeapRegion::save_top_before_promote() {
 inline void ShenandoahHeapRegion::restore_top_before_promote() {
   _top = _top_before_promoted;
   _top_before_promoted = nullptr;
- }
+}
 
+inline void ShenandoahHeapRegion::record_pin(size_t value) {
+  _critical_pins.add_then_fetch(value, memory_order_relaxed);
+}
+
+inline void ShenandoahHeapRegion::record_unpin(size_t value) {
+  assert(pin_count() >= value, "Region %zu should have non-zero pins after this: %zu >= %zu",
+         index(), pin_count(), value);
+  _critical_pins.sub_then_fetch(value, memory_order_relaxed);
+}
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

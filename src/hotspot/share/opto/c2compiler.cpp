@@ -23,6 +23,8 @@
  */
 
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmIntrinsics.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -31,6 +33,7 @@
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -58,6 +61,9 @@ const char* C2Compiler::retry_no_reduce_allocation_merges() {
 }
 const char* C2Compiler::retry_no_superword() {
   return "retry without SuperWord";
+}
+const char* C2Compiler::retry_no_stringopts() {
+  return "retry without StringOpts";
 }
 
 void compiler_stubs_init(bool in_compiler_thread);
@@ -122,8 +128,15 @@ void C2Compiler::initialize() {
 
 void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
-
   CompilationMemoryStatisticMark cmsm(directive);
+  CompileTask* task = env->task();
+  if (task->is_aot_load()) {
+    assert(install_code, "AOT code loading requires install_code");
+    AOTCodeCache::load_nmethod(env, target, entry_bci, this);
+    // We want to go quickly through AOT code load requests
+    // instead of spending time on normal compilation.
+    return;
+  }
 
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
@@ -132,6 +145,9 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
+  bool do_stringopts = OptimizeStringConcat;
+  bool for_aot_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
+  assert(!for_aot_preload || (ClassInitBarrierMode > 0), "sanity");
 
   while (!env->failing()) {
     ResourceMark rm;
@@ -143,6 +159,8 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     eliminate_boxing,
                     do_locks_coarsening,
                     do_superword,
+                    do_stringopts,
+                    for_aot_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
 
@@ -184,6 +202,12 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
         env->report_failure(C.failure_reason());
         continue;  // retry
       }
+      if (C.failure_reason_is(retry_no_stringopts())) {
+        assert(do_stringopts, "must make progress");
+        do_stringopts = false;
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
       if (C.has_boxed_value()) {
         // Recompile without boxing elimination regardless failure reason.
         assert(eliminate_boxing, "must make progress");
@@ -207,6 +231,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
       }
       if (do_locks_coarsening) {
         do_locks_coarsening = false;
+        continue;  // retry
+      }
+      if (do_stringopts) {
+        do_stringopts = false;
         continue;  // retry
       }
     }
@@ -667,6 +695,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_getLong:
   case vmIntrinsics::_getFloat:
   case vmIntrinsics::_getDouble:
+  case vmIntrinsics::_getFlatValue:
   case vmIntrinsics::_putReference:
   case vmIntrinsics::_putBoolean:
   case vmIntrinsics::_putByte:
@@ -676,6 +705,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_putLong:
   case vmIntrinsics::_putFloat:
   case vmIntrinsics::_putDouble:
+  case vmIntrinsics::_putFlatValue:
   case vmIntrinsics::_getReferenceVolatile:
   case vmIntrinsics::_getBooleanVolatile:
   case vmIntrinsics::_getByteVolatile:
@@ -742,6 +772,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
+  case vmIntrinsics::_arrayInstanceBaseOffset:
+  case vmIntrinsics::_arrayInstanceIndexScale:
+  case vmIntrinsics::_arrayLayout:
+  case vmIntrinsics::_getFieldMap:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
@@ -760,6 +794,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_allocateInstance:
   case vmIntrinsics::_allocateUninitializedArray:
   case vmIntrinsics::_newArray:
+  case vmIntrinsics::_newNullRestrictedNonAtomicArray:
+  case vmIntrinsics::_newNullRestrictedAtomicArray:
+  case vmIntrinsics::_newNullableAtomicArray:
+  case vmIntrinsics::_isFlatArray:
+  case vmIntrinsics::_isNullRestrictedArray:
+  case vmIntrinsics::_isAtomicArray:
   case vmIntrinsics::_getLength:
   case vmIntrinsics::_copyOf:
   case vmIntrinsics::_copyOfRange:
@@ -833,6 +873,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_getObjectSize:
+  case vmIntrinsics::_addInt128TLo:
+  case vmIntrinsics::_addInt128THi:
+  case vmIntrinsics::_subInt128TLo:
+  case vmIntrinsics::_subInt128THi:
     break;
   case vmIntrinsics::_VectorCompressExpand:
   case vmIntrinsics::_VectorUnaryOp:
@@ -846,6 +890,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorSelectFromTwoVectorOp:
   case vmIntrinsics::_VectorGatherOp:
   case vmIntrinsics::_VectorScatterOp:
+  case vmIntrinsics::_VectorSlice:
   case vmIntrinsics::_VectorReductionCoerced:
   case vmIntrinsics::_VectorTest:
   case vmIntrinsics::_VectorBlend:

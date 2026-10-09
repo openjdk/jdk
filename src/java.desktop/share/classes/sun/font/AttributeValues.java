@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Objects;
 
 public final class AttributeValues implements Cloneable {
     private int defined;
@@ -309,11 +310,9 @@ public final class AttributeValues implements Cloneable {
         return merge(map, MASK_ALL);
     }
 
-    public AttributeValues merge(Map<? extends Attribute, ?>map,
-                                 int mask) {
-        if (map instanceof AttributeMap &&
-            ((AttributeMap) map).getValues() != null) {
-            merge(((AttributeMap)map).getValues(), mask);
+    public AttributeValues merge(Map<? extends Attribute, ?> map, int mask) {
+        if (map instanceof AttributeMap am && am.getValues() != null) {
+            merge(am.getValues(), mask);
         } else if (map != null && !map.isEmpty()) {
             for (Map.Entry<? extends Attribute, ?> e: map.entrySet()) {
                 try {
@@ -393,15 +392,10 @@ public final class AttributeValues implements Cloneable {
                 Object val = e.getValue();
                 if (key.equals(DEFINED_KEY)) {
                     result.defineAll(((Integer)val).intValue());
-                } else {
-                    try {
-                        EAttribute ea =
-                            EAttribute.forAttribute((Attribute)key);
-                        if (ea != null) {
-                            result.set(ea, val);
-                        }
-                    }
-                    catch (ClassCastException ex) {
+                } else if (key instanceof Attribute attr) {
+                    EAttribute ea = EAttribute.forAttribute(attr);
+                    if (ea != null) {
+                        result.set(ea, val);
                     }
                 }
             }
@@ -436,24 +430,15 @@ public final class AttributeValues implements Cloneable {
         return defined << 8 ^ nondefault;
     }
 
-    public boolean equals(Object rhs) {
-        try {
-            return equals((AttributeValues)rhs);
-        }
-        catch (ClassCastException e) {
-        }
-        return false;
-    }
-
-    public boolean equals(AttributeValues rhs) {
+    public boolean equals(Object o) {
         // test in order of most likely to differ and easiest to compare
         // also assumes we're generally calling this only if family,
         // size, weight, posture are the same
-
-        if (rhs == null) return false;
-        if (rhs == this) return true;
-
-        return defined == rhs.defined
+        if (o == this) {
+            return true;
+        }
+        return o instanceof AttributeValues rhs
+            && defined == rhs.defined
             && nondefault == rhs.nondefault
             && underline == rhs.underline
             && strikethrough == rhs.strikethrough
@@ -465,19 +450,19 @@ public final class AttributeValues implements Cloneable {
             && runDirection == rhs.runDirection
             && bidiEmbedding == rhs.bidiEmbedding
             && swapColors == rhs.swapColors
-            && equals(transform, rhs.transform)
-            && equals(foreground, rhs.foreground)
-            && equals(background, rhs.background)
-            && equals(numericShaping, rhs.numericShaping)
-            && equals(justification, rhs.justification)
-            && equals(charReplacement, rhs.charReplacement)
+            && Objects.equals(transform, rhs.transform)
+            && Objects.equals(foreground, rhs.foreground)
+            && Objects.equals(background, rhs.background)
+            && Objects.equals(numericShaping, rhs.numericShaping)
+            && Objects.equals(justification, rhs.justification)
+            && Objects.equals(charReplacement, rhs.charReplacement)
             && size == rhs.size
             && weight == rhs.weight
             && posture == rhs.posture
-            && equals(family, rhs.family)
-            && equals(font, rhs.font)
+            && Objects.equals(family, rhs.family)
+            && Objects.equals(font, rhs.font)
             && imUnderline == rhs.imUnderline
-            && equals(imHighlight, rhs.imHighlight);
+            && Objects.equals(imHighlight, rhs.imHighlight);
     }
 
     public AttributeValues clone() {
@@ -549,10 +534,6 @@ public final class AttributeValues implements Cloneable {
 
     // internal utilities
 
-    private static boolean equals(Object lhs, Object rhs) {
-        return lhs == null ? rhs == null : lhs.equals(rhs);
-    }
-
     private void update(EAttribute a) {
         defined |= a.mask;
         if (i_validate(a)) {
@@ -599,26 +580,26 @@ public final class AttributeValues implements Cloneable {
 
     private boolean i_equals(EAttribute a, AttributeValues src) {
         switch (a) {
-        case EFAMILY: return equals(family, src.family);
+        case EFAMILY: return Objects.equals(family, src.family);
         case EWEIGHT: return weight == src.weight;
         case EWIDTH: return width == src.width;
         case EPOSTURE: return posture == src.posture;
         case ESIZE: return size == src.size;
-        case ETRANSFORM: return equals(transform, src.transform);
+        case ETRANSFORM: return Objects.equals(transform, src.transform);
         case ESUPERSCRIPT: return superscript == src.superscript;
-        case EFONT: return equals(font, src.font);
-        case ECHAR_REPLACEMENT: return equals(charReplacement, src.charReplacement);
-        case EFOREGROUND: return equals(foreground, src.foreground);
-        case EBACKGROUND: return equals(background, src.background);
+        case EFONT: return Objects.equals(font, src.font);
+        case ECHAR_REPLACEMENT: return Objects.equals(charReplacement, src.charReplacement);
+        case EFOREGROUND: return Objects.equals(foreground, src.foreground);
+        case EBACKGROUND: return Objects.equals(background, src.background);
         case EUNDERLINE: return underline == src.underline;
         case ESTRIKETHROUGH: return strikethrough == src.strikethrough;
         case ERUN_DIRECTION: return runDirection == src.runDirection;
         case EBIDI_EMBEDDING: return bidiEmbedding == src.bidiEmbedding;
         case EJUSTIFICATION: return justification == src.justification;
-        case EINPUT_METHOD_HIGHLIGHT: return equals(imHighlight, src.imHighlight);
+        case EINPUT_METHOD_HIGHLIGHT: return Objects.equals(imHighlight, src.imHighlight);
         case EINPUT_METHOD_UNDERLINE: return imUnderline == src.imUnderline;
         case ESWAP_COLORS: return swapColors == src.swapColors;
-        case ENUMERIC_SHAPING: return equals(numericShaping, src.numericShaping);
+        case ENUMERIC_SHAPING: return Objects.equals(numericShaping, src.numericShaping);
         case EKERNING: return kerning == src.kerning;
         case ELIGATURES: return ligatures == src.ligatures;
         case ETRACKING: return tracking == src.tracking;
@@ -634,8 +615,7 @@ public final class AttributeValues implements Cloneable {
         case EPOSTURE: posture = ((Number)o).floatValue(); break;
         case ESIZE: size = ((Number)o).floatValue(); break;
         case ETRANSFORM: {
-            if (o instanceof TransformAttribute) {
-                TransformAttribute ta = (TransformAttribute)o;
+            if (o instanceof TransformAttribute ta) {
                 if (ta.isIdentity()) {
                     transform = null;
                 } else {
@@ -663,8 +643,7 @@ public final class AttributeValues implements Cloneable {
         case EBIDI_EMBEDDING: bidiEmbedding = (byte)((Integer)o).intValue(); break;
         case EJUSTIFICATION: justification = ((Number)o).floatValue(); break;
         case EINPUT_METHOD_HIGHLIGHT: {
-            if (o instanceof Annotation) {
-                Annotation at = (Annotation)o;
+            if (o instanceof Annotation at) {
                 imHighlight = (InputMethodHighlight)at.getValue();
             } else {
                 imHighlight = (InputMethodHighlight)o;
@@ -759,9 +738,8 @@ public final class AttributeValues implements Cloneable {
     // Plan to remove these.
     public static float getJustification(Map<?, ?> map) {
         if (map != null) {
-            if (map instanceof AttributeMap &&
-                ((AttributeMap) map).getValues() != null) {
-                return ((AttributeMap)map).getValues().justification;
+            if (map instanceof AttributeMap am && am.getValues() != null) {
+                return am.getValues().justification;
             }
             Object obj = map.get(TextAttribute.JUSTIFICATION);
             if (obj instanceof Number number) {
@@ -773,9 +751,8 @@ public final class AttributeValues implements Cloneable {
 
     public static NumericShaper getNumericShaping(Map<?, ?> map) {
         if (map != null) {
-            if (map instanceof AttributeMap &&
-                ((AttributeMap) map).getValues() != null) {
-                return ((AttributeMap)map).getValues().numericShaping;
+            if (map instanceof AttributeMap am && am.getValues() != null) {
+                return am.getValues().numericShaping;
             }
             Object obj = map.get(TextAttribute.NUMERIC_SHAPING);
             if (obj instanceof NumericShaper shaper) {
@@ -792,8 +769,8 @@ public final class AttributeValues implements Cloneable {
     public AttributeValues applyIMHighlight() {
         if (imHighlight != null) {
             InputMethodHighlight hl = null;
-            if (imHighlight instanceof InputMethodHighlight) {
-                hl = (InputMethodHighlight)imHighlight;
+            if (imHighlight instanceof InputMethodHighlight imh) {
+                hl = imh;
             } else {
                 hl = (InputMethodHighlight)((Annotation)imHighlight).getValue();
             }
@@ -816,9 +793,8 @@ public final class AttributeValues implements Cloneable {
     public static AffineTransform getBaselineTransform(Map<?, ?> map) {
         if (map != null) {
             AttributeValues av = null;
-            if (map instanceof AttributeMap &&
-                ((AttributeMap) map).getValues() != null) {
-                av = ((AttributeMap)map).getValues();
+            if (map instanceof AttributeMap am && am.getValues() != null) {
+                av = am.getValues();
             } else if (map.get(TextAttribute.TRANSFORM) != null) {
                 av = AttributeValues.fromMap((Map<Attribute, ?>)map); // yuck
             }
@@ -833,9 +809,8 @@ public final class AttributeValues implements Cloneable {
     public static AffineTransform getCharTransform(Map<?, ?> map) {
         if (map != null) {
             AttributeValues av = null;
-            if (map instanceof AttributeMap &&
-                ((AttributeMap) map).getValues() != null) {
-                av = ((AttributeMap)map).getValues();
+            if (map instanceof AttributeMap am && am.getValues() != null) {
+                av = am.getValues();
             } else if (map.get(TextAttribute.TRANSFORM) != null) {
                 av = AttributeValues.fromMap((Map<Attribute, ?>)map); // yuck
             }
@@ -850,9 +825,8 @@ public final class AttributeValues implements Cloneable {
     public static float getTracking(Map<?, ?> map) {
         if (map != null) {
             AttributeValues av = null;
-            if (map instanceof AttributeMap &&
-                    ((AttributeMap) map).getValues() != null) {
-                av = ((AttributeMap)map).getValues();
+            if (map instanceof AttributeMap am && am.getValues() != null) {
+                av = am.getValues();
             } else if (map.get(TextAttribute.TRACKING) != null) {
                 av = AttributeValues.fromMap((Map<Attribute, ?>)map);
             }

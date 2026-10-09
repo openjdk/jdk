@@ -229,7 +229,6 @@ public class AppImageFileTest {
                     null,
                     null,
                     List.of(),
-                    List.of(),
                     null,
                     Optional.empty(),
                     new ApplicationLaunchers(

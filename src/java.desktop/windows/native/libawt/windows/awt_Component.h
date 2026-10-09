@@ -309,7 +309,7 @@ public:
         DASSERT(GetHWnd());
         // SetWindowLong() error handling as recommended by Win32 API doc.
         ::SetLastError(0);
-        DWORD ret = ::SetWindowLong(GetHWnd(), GWL_STYLE, style);
+        [[maybe_unused]] DWORD ret = ::SetWindowLong(GetHWnd(), GWL_STYLE, style);
         DASSERT(ret != 0 || ::GetLastError() == 0);
     }
     INLINE virtual LONG GetStyleEx() {
@@ -320,7 +320,7 @@ public:
         DASSERT(GetHWnd());
         // SetWindowLong() error handling as recommended by Win32 API doc.
         ::SetLastError(0);
-        DWORD ret = ::SetWindowLong(GetHWnd(), GWL_EXSTYLE, style);
+        [[maybe_unused]] DWORD ret = ::SetWindowLong(GetHWnd(), GWL_EXSTYLE, style);
         DASSERT(ret != 0 || ::GetLastError() == 0);
     }
 
@@ -780,7 +780,6 @@ private:
     AwtPen*  m_penForeground;
     AwtBrush* m_brushBackground;
 
-    WNDPROC  m_DefWindowProc;
     // counter for messages being processed by this component
     UINT     m_MessagesProcessing;
 

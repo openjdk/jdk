@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,8 @@ final class Query extends Command {
         p.println("              WHERE B.when = 'Before GC' AND A.when = 'After GC'");
         p.println("              GROUP BY gcId");
         p.println("              ORDER BY gcId\" recording.jfr");
+        p.println();
+        p.println(" To see more queries and their output: $ jfr view --verbose all-views recording.jfr");
         p.println();
         p.println("************************************ WARNING ******************************************");
         p.println("The query command is only available in debug builds and is targeted towards OpenJDK");

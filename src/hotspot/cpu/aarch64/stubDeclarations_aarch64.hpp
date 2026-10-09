@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_STUBDECLARATIONS_HPP
-#define CPU_AARCH64_STUBDECLARATIONS_HPP
+#ifndef CPU_AARCH64_STUBDECLARATIONS_AARCH64_HPP
+#define CPU_AARCH64_STUBDECLARATIONS_AARCH64_HPP
 
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
@@ -57,7 +57,7 @@
                                        do_arch_entry,                   \
                                        do_arch_entry_init,              \
                                        do_arch_entry_array)             \
-  do_arch_blob(compiler, 70000)                                         \
+  do_arch_blob(compiler, 75000)                                         \
   do_stub(compiler, vector_iota_indices)                                \
   do_arch_entry_array(aarch64, compiler, vector_iota_indices,           \
                       vector_iota_indices, vector_iota_indices,         \
@@ -192,4 +192,4 @@
                 atomic_cmpxchg_8_seq_cst_impl)                          \
 
 
-#endif // CPU_AARCH64_STUBDECLARATIONS_HPP
+#endif // CPU_AARCH64_STUBDECLARATIONS_AARCH64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -782,13 +782,13 @@ public class CompletionSuggestionTest extends KullaTesting {
             throw new IllegalStateException(ex);
         }
 
-        try {
-            Field availableSources = getAnalysis().getClass().getDeclaredField("availableSources");
-            availableSources.setAccessible(true);
-            availableSources.set(getAnalysis(), Arrays.asList(srcZip));
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
-            throw new IllegalStateException(ex);
-        }
+        setJDKSourcesOverride(List.of(srcZip));
+    }
+
+    @Override
+    public void tearDown() {
+        setJDKSourcesOverride(null);
+        super.tearDown();
     }
 
     private void dontReadParameterNamesFromClassFile() throws Exception {
@@ -951,6 +951,17 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("String s() { return \"\"; } import java.ut| ", true, "util.");
         assertCompletion("class S { public int length() { return 0; } } new S().len|", true, "length()");
         assertSignature("void f() { } f(|", "void f()");
+    }
+
+    private static void setJDKSourcesOverride(List<Path> paths) throws IllegalStateException {
+        try {
+            //to ensure test stability, don't use JDK's src.zip:
+            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("jdkSourcesOverride");
+            availableSources.setAccessible(true);
+            availableSources.set(null, paths);
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     static {

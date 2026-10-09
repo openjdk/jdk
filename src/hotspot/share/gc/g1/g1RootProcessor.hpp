@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public:
   // Apply correct closures from pss to the strongly and weakly reachable roots in the system
   // in a single pass.
   // Record and report timing measurements for sub phases using worker_id.
-  void evacuate_roots(G1ParScanThreadState* pss, uint worker_id);
+  void evacuate_roots(G1ParScanThreadState* pss);
 
   // Apply oops, clds and blobs to all strongly reachable roots in the system
   void process_strong_roots(OopClosure* oops,

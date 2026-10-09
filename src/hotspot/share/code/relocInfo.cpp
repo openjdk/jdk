@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,12 +179,12 @@ RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
 }
 
 RelocIterator::RelocIterator(CodeBlob* cb) {
-  initialize_misc();
   if (cb->is_nmethod()) {
-    _code = cb->as_nmethod();
-  } else {
-    _code = nullptr;
+    initialize(cb->as_nmethod(), nullptr, nullptr);
+    return;
   }
+  initialize_misc();
+  _code = nullptr;
   _current = cb->relocation_begin() - 1;
   _end     = cb->relocation_end();
   _addr    = cb->content_begin();
@@ -279,7 +279,7 @@ Relocation* RelocIterator::reloc() {
 // Verify all the destructors are trivial, so we don't need to worry about
 // destroying old contents of a RelocationHolder being assigned or destroyed.
 #define VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(Reloc) \
-  static_assert(std::is_trivially_destructible<Reloc>::value, "must be");
+  static_assert(std::is_trivially_destructible<Reloc>::value);
 
 #define VERIFY_TRIVIALLY_DESTRUCTIBLE(name) \
   VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(PASTE_TOKENS(name, _Relocation));
@@ -569,6 +569,31 @@ void section_word_Relocation::unpack_data() {
   _target  = address_from_scaled_offset(offset, base);
 }
 
+void patchable_barrier_Relocation::pack_data_to(CodeSection* dest) {
+  short* p = (short*) dest->locs_end();
+  *p++ = relocInfo::data0_from_int(_target_offset);
+  *p++ = relocInfo::data1_from_int(_target_offset);
+  *p++ = checked_cast<short>(_metadata);
+  dest->set_locs_end((relocInfo*)p);
+}
+
+void patchable_barrier_Relocation::unpack_data() {
+  assert(datalen() == 3, "Should be int+short fields");
+  short* d = data();
+  _target_offset = relocInfo::jint_from_data(&d[0]);
+  _metadata = checked_cast<uint16_t>(d[2]);
+}
+
+void patchable_barrier_Relocation::set_target_offset(int32_t target_offset) {
+  assert(!is_target_offset_resolved(), "Should be");
+  assert(datalen() == 3, "Should be int+short fields");
+  short* d = data();
+  d[0] = relocInfo::data0_from_int(target_offset);
+  d[1] = relocInfo::data1_from_int(target_offset);
+  _target_offset = target_offset;
+  assert(is_target_offset_resolved(), "Should be");
+}
+
 //// miscellaneous methods
 oop* oop_Relocation::oop_addr() {
   int n = _oop_index;
@@ -794,11 +819,11 @@ void internal_word_Relocation::fix_relocation_after_move(const CodeBuffer* src, 
   set_value(target);
 }
 
-void internal_word_Relocation::fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr) {
+void internal_word_Relocation::fix_relocation_after_aot_load(address current_base_addr, int delta) {
   address target = _target;
   if (target == nullptr) {
     target = this->target();
-    target = current_base_addr + (target - orig_base_addr);
+    target = current_base_addr + delta;
   }
   set_value(target);
 }
@@ -864,8 +889,8 @@ void RelocIterator::print_current_on(outputStream* st) {
         raw_oop   = *oop_addr;
         oop_value = r->oop_value();
       }
-      st->print(" | [oop_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT "]",
-                 p2i(oop_addr), p2i(raw_oop));
+      st->print(" | [oop_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT " index=%d]",
+                 p2i(oop_addr), p2i(raw_oop), r->oop_index());
       // Do not print the oop by default--we want this routine to
       // work even during GC or other inconvenient times.
       if (WizardMode && oop_value != nullptr) {
@@ -887,8 +912,8 @@ void RelocIterator::print_current_on(outputStream* st) {
         raw_metadata   = *metadata_addr;
         metadata_value = r->metadata_value();
       }
-      st->print(" | [metadata_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT "]",
-                 p2i(metadata_addr), p2i(raw_metadata));
+      st->print(" | [metadata_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT " index=%d]",
+                 p2i(metadata_addr), p2i(raw_metadata), r->metadata_index());
       if (metadata_value != nullptr) {
         st->print("metadata_value=" INTPTR_FORMAT ": ", p2i(metadata_value));
         metadata_value->print_value_on(st);
@@ -922,16 +947,13 @@ void RelocIterator::print_current_on(outputStream* st) {
       st->print(" | [destination=" INTPTR_FORMAT "]", p2i(dest));
       if (StubRoutines::contains(dest)) {
         StubCodeDesc* desc = StubCodeDesc::desc_for(dest);
-        if (desc == nullptr) {
-          desc = StubCodeDesc::desc_for(dest + frame::pc_return_offset);
-        }
         if (desc != nullptr) {
           st->print(" Stub::%s", desc->name());
         }
       } else {
         CodeBlob* cb = CodeCache::find_blob(dest);
         if (cb != nullptr) {
-          st->print(" %s", cb->name());
+          st->print(" Blob::%s", cb->name());
         } else {
           ResourceMark rm;
           const int buflen = 1024;

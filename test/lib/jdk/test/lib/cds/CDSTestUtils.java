@@ -703,7 +703,7 @@ public class CDSTestUtils {
 
     static String getCrashMessage(String stdOut) {
         int start = stdOut.indexOf("# A fatal error has been detected by the Java Runtime Environment:");
-        int end = stdOut.indexOf(".log", start) + 4;
+        int end = stdOut.indexOf("# JRE version", start);
         return stdOut.substring(start, end);
     }
 

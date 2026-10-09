@@ -90,18 +90,11 @@ void DWMResetCompositionEnabled() {
 }
 
 /**
- * Returns true if dwm composition is enabled, false if it is not applicable
- * (if the OS is not Vista) or dwm composition is disabled.
+ * Returns true if DWM composition is enabled, false if DWM composition is disabled.
  */
 BOOL DWMIsCompositionEnabled() {
-    // cheaper to check than whether it's vista or not
     if (dwmIsCompositionEnabled != DWM_COMP_UNDEFINED) {
         return (BOOL)dwmIsCompositionEnabled;
-    }
-
-    if (!IS_WINVISTA) {
-        dwmIsCompositionEnabled = FALSE;
-        return FALSE;
     }
 
     BOOL bRes = FALSE;
@@ -337,13 +330,3 @@ Java_sun_awt_Win32GraphicsEnvironment_getYResolution(JNIEnv *env, jobject wge)
     CATCH_BAD_ALLOC_RET(0);
 }
 
-/*
- * Class:     sun_awt_Win32GraphicsEnvironment
- * Method:    isVistaOS
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_sun_awt_Win32GraphicsEnvironment_isVistaOS
-  (JNIEnv *env, jclass wgeclass)
-{
-    return IS_WINVISTA;
-}

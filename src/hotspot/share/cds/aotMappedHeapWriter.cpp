@@ -43,6 +43,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -97,7 +98,7 @@ void AOTMappedHeapWriter::init() {
     _native_pointers = new GrowableArrayCHeap<NativePointerInfo, mtClassShared>(2048);
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
 
-    guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
+    G1GC_ONLY(guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");)
 
     if (CDSConfig::old_cds_flags_used()) {
       // With the old CDS workflow, we can guatantee determninistic output: given
@@ -274,12 +275,13 @@ void AOTMappedHeapWriter::ensure_buffer_space(size_t min_bytes) {
 
 objArrayOop AOTMappedHeapWriter::allocate_root_segment(size_t offset, int element_count) {
   HeapWord* mem = offset_to_buffered_address<HeapWord *>(offset);
-  memset(mem, 0, objArrayOopDesc::object_size(element_count));
+  memset(mem, 0, refArrayOopDesc::object_size(element_count));
 
   // The initialization code is copied from MemAllocator::finish and ObjArrayAllocator::initialize.
   if (UseCompactObjectHeaders) {
     oopDesc::release_set_mark(mem, Universe::objectArrayKlass()->prototype_header());
   } else {
+    assert(!Arguments::is_valhalla_enabled() || Universe::objectArrayKlass()->prototype_header() == markWord::prototype(), "should be the same");
     oopDesc::set_mark(mem, markWord::prototype());
     oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
   }
@@ -310,7 +312,7 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
          "Pre-condition: Roots start at aligned boundary: %zu", _buffer_used);
 
   int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - arrayOopDesc::header_size_in_bytes()) / heapOopSize);
-  assert(objArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
+  assert(refArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
          "Should match exactly");
 
   HeapRootSegments segments(_buffer_used,
@@ -429,13 +431,13 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
 }
 
 size_t AOTMappedHeapWriter::filler_array_byte_size(int length) {
-  size_t byte_size = objArrayOopDesc::object_size(length) * HeapWordSize;
+  size_t byte_size = refArrayOopDesc::object_size(length) * HeapWordSize;
   return byte_size;
 }
 
 int AOTMappedHeapWriter::filler_array_length(size_t fill_bytes) {
   assert(is_object_aligned(fill_bytes), "must be");
-  size_t elemSize = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
+  size_t elemSize = heapOopSize;
 
   int initial_length = to_array_length(fill_bytes / elemSize);
   for (int length = initial_length; length >= 0; length --) {
@@ -457,6 +459,7 @@ HeapWord* AOTMappedHeapWriter::init_filler_array_at_buffer_top(int array_length,
   if (UseCompactObjectHeaders) {
     oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
   } else {
+    assert(!Arguments::is_valhalla_enabled() || Universe::objectArrayKlass()->prototype_header() == markWord::prototype(), "should be the same");
     oopDesc::set_mark(mem, markWord::prototype());
     cast_to_oop(mem)->set_narrow_klass(nk);
   }
@@ -621,6 +624,7 @@ void AOTMappedHeapWriter::set_requested_address_range(AOTMappedHeapInfo* info) {
         AOTMetaspace::unrecoverable_writing_error();
       }
       _requested_bottom = align_down(heap_end - heap_region_byte_size, alignment);
+#if INCLUDE_G1GC
     } else if (UseG1GC) {
       // For G1, pick the range at the top of the current heap. If the exact same heap sizes
       // are used in the production run, it's likely that we can map the archived objects
@@ -630,6 +634,7 @@ void AOTMappedHeapWriter::set_requested_address_range(AOTMappedHeapInfo* info) {
       _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
       _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
       assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
+#endif
     } else {
       _requested_bottom = align_up(CompressedOops::begin(), MIN_GC_REGION_ALIGNMENT);
     }
@@ -722,36 +727,26 @@ template <typename T> void AOTMappedHeapWriter::mark_oop_pointer(T* buffered_add
   oopmap->set_bit(idx);
 }
 
-void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop src_obj,  Klass* src_klass) {
+void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass) {
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 
-  oop fake_oop = cast_to_oop(buffered_addr);
-  if (UseCompactObjectHeaders) {
-    fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk));
-  } else {
-    fake_oop->set_narrow_klass(nk);
-  }
+  markWord mw = Arguments::is_valhalla_enabled() ? src_klass->prototype_header() : markWord::prototype();
+  oopDesc* fake_oop = (oopDesc*)buffered_addr;
 
-  if (src_obj == nullptr) {
-    return;
-  }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (!src_obj->fast_no_hash_check()) {
+  if (src_obj != nullptr && !src_obj->is_value_type() && src_obj->has_identity_hash()) {
     intptr_t src_hash = src_obj->identity_hash();
-    if (UseCompactObjectHeaders) {
-      fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
-    } else {
-      fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
-    }
-    assert(fake_oop->mark().is_unlocked(), "sanity");
-
-    DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());
-    assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
+    mw = mw.copy_set_hash(src_hash);
   }
-  // Strip age bits.
-  fake_oop->set_mark(fake_oop->mark().set_age(0));
+
+  if (UseCompactObjectHeaders) {
+    fake_oop->set_mark(mw.set_narrow_klass(nk));
+  } else {
+    fake_oop->set_mark(mw);
+    fake_oop->set_narrow_klass(nk);
+  }
 }
 
 class AOTMappedHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
@@ -793,7 +788,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 // Update all oop fields embedded in the buffered objects
 void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
                                                       AOTMappedHeapInfo* heap_info) {
-  size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
+  size_t oopmap_unit = heapOopSize;
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size   / oopmap_unit);
 
@@ -820,7 +815,7 @@ void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClass
     address buffered_obj = offset_to_buffered_address<address>(seg_offset);
     int length = _heap_root_segments.size_in_elems(seg_idx);
 
-    size_t elem_size = UseCompressedOops ? sizeof(narrowOop) : sizeof(oop);
+    size_t elem_size = heapOopSize;
 
     for (int i = 0; i < length; i++) {
       // There is no source object; these are native oops - load, translate and
@@ -840,7 +835,7 @@ void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClass
   compute_ptrmap(heap_info);
 
   size_t total_bytes = (size_t)_buffer->length();
-  log_bitmap_usage("oopmap", heap_info->oopmap(), total_bytes / (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop)));
+  log_bitmap_usage("oopmap", heap_info->oopmap(), total_bytes / heapOopSize);
   log_bitmap_usage("ptrmap", heap_info->ptrmap(), total_bytes / sizeof(address));
 }
 

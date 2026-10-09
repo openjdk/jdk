@@ -43,7 +43,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @library /test/lib /test/jdk/java/lang/invoke/common /
  * @build test.java.lang.invoke.lib.InstructionHelper
  *
- * @run main/othervm ${test.main.class}
+ * @run driver ${test.main.class}
  */
 public class TestDebugDuringExceptionCatching {
 

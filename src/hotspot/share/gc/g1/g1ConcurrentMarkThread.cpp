@@ -77,7 +77,7 @@ double G1ConcurrentMarkThread::mmu_delay_end(G1Policy* policy, bool remark) {
 void G1ConcurrentMarkThread::delay_to_keep_mmu(bool remark) {
   G1Policy* policy = G1CollectedHeap::heap()->policy();
 
-  if (policy->use_adaptive_young_list_length()) {
+  if (policy->use_adaptive_num_young_regions()) {
     double delay_end_sec = mmu_delay_end(policy, remark);
     // Wait for timeout or thread termination request.
     MonitorLocker ml(G1CGC_lock, Monitor::_no_safepoint_check_flag);
@@ -120,10 +120,10 @@ void G1ConcurrentMarkThread::run_service() {
 
     concurrent_cycle_start();
 
-    if (_state == FullCycleMarking) {
+    if (state() == FullCycleMarking) {
       concurrent_mark_cycle_do();
     } else {
-      assert(_state == UndoCycleResetForNextCycle, "Must do undo mark but is %d", _state);
+      assert(state() == UndoCycleResetForNextCycle, "Must do undo mark but is %d", state());
       concurrent_undo_cycle_do();
     }
 

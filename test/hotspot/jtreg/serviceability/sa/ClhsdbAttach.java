@@ -58,7 +58,7 @@ public class ClhsdbAttach {
                     "detach",
                     "universe",
                     "reattach",
-                    "longConstant markWord::locked_value");
+                    "longConstant markWord::fast_locked_value");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("where", List.of(
@@ -67,8 +67,8 @@ public class ClhsdbAttach {
                     "MaxJavaStackTraceDepth = "));
             expStrMap.put("universe", List.of(
                     "Command not valid until attached to a VM"));
-            expStrMap.put("longConstant markWord::locked_value", List.of(
-                    "longConstant markWord::locked_value"));
+            expStrMap.put("longConstant markWord::fast_locked_value", List.of(
+                    "longConstant markWord::fast_locked_value"));
 
             test.run(-1, cmds, expStrMap, null);
         } catch (SkippedException se) {

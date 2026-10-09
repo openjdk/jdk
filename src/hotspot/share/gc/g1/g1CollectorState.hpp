@@ -59,7 +59,7 @@ class G1CollectorState {
   // has been in progress when the request came in.
   //
   // This flag remembers that there is an unfullfilled request.
-  volatile bool _initiate_conc_mark_if_possible;
+  bool _initiate_conc_mark_if_possible;
 
 public:
   G1CollectorState() :

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,9 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   void update_averages(bool is_survivor_overflow,
                        size_t survived,
                        size_t promoted);
+
+  void sample_promoted_bytes(size_t promoted);
+  void sample_promoted_bytes_permit_zero(size_t promoted);
 
   // Decay the supplemental growth additive.
   void decay_supplemental_growth(uint num_minor_gcs);

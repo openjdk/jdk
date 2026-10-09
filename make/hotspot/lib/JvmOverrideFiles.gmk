@@ -33,10 +33,6 @@ ifeq ($(INCLUDE), true)
 
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBJVM_vmStructs.cpp_CXXFLAGS := -fno-var-tracking-assignments
-  ifeq ($(DEBUG_LEVEL), release)
-    # Need extra inlining to collapse shared marking code into the hot marking loop
-    BUILD_LIBJVM_shenandoahMark.cpp_CXXFLAGS := --param inline-unit-growth=1000
-  endif
   # disable lto in g1ParScanThreadState because of special inlining/flattening used there
   ifeq ($(call check-jvm-feature, link-time-opt), true)
     BUILD_LIBJVM_g1ParScanThreadState.cpp_CXXFLAGS := -fno-lto

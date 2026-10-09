@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
  * @bug     4904067 7129185
  * @summary Unit test for Collections.checkedSet
  * @author  Josh Bloch
- * @run testng CheckedSetBash
  * @key randomness
+ * @library /test/lib
+ * @run testng CheckedSetBash
  */
 
+import jdk.test.lib.valueclass.VClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -176,5 +178,22 @@ public class CheckedSetBash {
              (Supplier) () -> Collections.checkedNavigableSet(new TreeSet().descendingSet(), Integer.class)},
         };
         return Arrays.asList(params);
+    }
+
+    @Test
+    public static void testValueCheckedSet() {
+        Set<VClass> s = Collections.checkedSet(new HashSet<>(), VClass.class);
+        s.add(new VClass(1, new int[] { 1 }));
+        s.add(new VClass(2, new int[] { 2 }));
+        if (!s.contains(new VClass(1, new int[] { 1 })))
+            fail("value checkedSet lookup failed");
+        Set<VClass> copy = Collections.checkedSet(new HashSet<>(), VClass.class);
+        copy.addAll(Arrays.asList(s.toArray(new VClass[0])));
+        if (!s.equals(copy))
+            fail("value checkedSet addAll failed");
+        try {
+            ((Set) s).add("not a Tuple");
+            fail("value checkedSet accepted wrong type");
+        } catch (ClassCastException expected) { }
     }
 }

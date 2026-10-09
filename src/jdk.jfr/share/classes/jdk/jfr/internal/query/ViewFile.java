@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,19 +96,19 @@ final class ViewFile {
         List<ViewConfiguration> views = new ArrayList<>();
         try (Tokenizer tokenizer = new Tokenizer(text, '[', ']', ';')) {
             while (tokenizer.hasNext()) {
-                while (tokenizer.accept(";")) {
+                while (tokenizer.accept(';')) {
                     tokenizer.skipLine();
                 }
-                if (tokenizer.accept("[")) {
+                if (tokenizer.accept('[')) {
                     String fullName = tokenizer.next();
-                    tokenizer.expect("]");
+                    tokenizer.expect(']');
                     views.add(createView(fullName));
                 }
                 if (views.isEmpty()) {
                     throw new ParseException("Expected view file to begin with a section", tokenizer.getPosition());
                 }
                 String key = tokenizer.next();
-                tokenizer.expect("=");
+                tokenizer.expect('=');
                 String value = tokenizer.next();
                 views.getLast().properties().put(key, value);
             }

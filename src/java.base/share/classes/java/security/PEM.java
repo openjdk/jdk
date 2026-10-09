@@ -25,13 +25,12 @@
 
 package java.security;
 
-import jdk.internal.javac.PreviewFeature;
-
 import jdk.internal.ref.CleanerFactory;
 import sun.security.util.KeyUtil;
 import sun.security.util.Pem;
 
 import java.io.InputStream;
+import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
@@ -71,9 +70,8 @@ import java.util.Objects;
  * @see PEMDecoder
  * @see PEMEncoder
  *
- * @since 26
+ * @since 28
  */
-@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEM implements BinaryEncodable {
 
     private final String type;
@@ -132,8 +130,6 @@ public final class PEM implements BinaryEncodable {
      * @throws IllegalArgumentException if {@code type} contains PEM
      *         encapsulation syntax
      * @throws NullPointerException if any parameter is {@code null}
-     *
-     * @since 27
      */
     public PEM(String type, byte[] base64Content, byte[] leadingData) {
         this(type, base64Content);
@@ -152,8 +148,6 @@ public final class PEM implements BinaryEncodable {
      * @throws IllegalArgumentException if {@code type} contains PEM
      *         encapsulation syntax
      * @throws NullPointerException if any parameter is {@code null}
-     *
-     * @since 27
      */
     public PEM(String type, byte[] base64Content) {
         Objects.requireNonNull(type, "type cannot be null");
@@ -197,11 +191,13 @@ public final class PEM implements BinaryEncodable {
      * Returns the Base64-encoded content.
      *
      * @return a newly-allocated byte array containing the Base64 content
-     *
-     * @since 27
      */
     public byte[] content() {
-        return content.clone();
+        try {
+            return content.clone();
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -212,7 +208,11 @@ public final class PEM implements BinaryEncodable {
      * @throws IllegalArgumentException if decoding fails
      */
     public byte[] decode() {
-        return Base64.getMimeDecoder().decode(content);
+        try {
+            return Base64.getMimeDecoder().decode(content);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -223,15 +223,23 @@ public final class PEM implements BinaryEncodable {
      */
     @Override
     public String toString() {
-        return new String(Pem.pemEncoded(type, content),
-            StandardCharsets.ISO_8859_1);
+        try {
+            return new String(Pem.pemEncoded(type, content),
+                StandardCharsets.ISO_8859_1);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /*
      * Returns the PEM string representation as a byte array.
      */
     byte[] toTextualByteArray() {
-        return Pem.pemEncoded(type, content);
+        try {
+            return Pem.pemEncoded(type, content);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     // Clear internal content
