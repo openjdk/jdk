@@ -94,10 +94,12 @@ public class LingeredAppWithValueObject extends LingeredApp {
 
         valObjArray = new ValueObj[] {
           new ValueObj((byte)1, (byte)10, (byte)20),
+          null,
           new ValueObj((byte)2, (byte)30, (byte)40)
         };
         nonFlattenedValObjArray = new NonFlattenedValueObj[] {
           new NonFlattenedValueObj(100, new Object()),
+          null,
           new NonFlattenedValueObj(200, new Object())
         };
     }

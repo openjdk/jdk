@@ -107,7 +107,8 @@ public class ClhsdbInspectWithValueObject {
                     "recA: 10",
                     "recB: 20",
                   "nullField: null",
-                "1:",
+                "1: null",
+                "2:",
                   "a: 2",
                   "rec:",
                     "recA: 30",
@@ -118,7 +119,8 @@ public class ClhsdbInspectWithValueObject {
                 "0:",
                   "a: 100",
                   "obj: Oop for java/lang/Object",
-                "1:",
+                "1: null",
+                "2:",
                   "a: 200",
                   "obj: Oop for java/lang/Object"
               )
