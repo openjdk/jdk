@@ -7038,7 +7038,8 @@ void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
 
   // dst = (src1 > src2) - (src1 < src2)
   assert_different_registers(tmp, dst);
-  assert_different_registers(tmp, src1, src2);
+  assert_different_registers(tmp, src1);
+  assert_different_registers(tmp, src2);
 
   if (is_signed) {
     slt(tmp, src2, src1);
