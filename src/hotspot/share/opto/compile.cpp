@@ -3013,7 +3013,9 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
     if (failing())  return;
 
     inline_incrementally_cleanup(igvn);
-    if (failing())  return;
+    if (failing()) {
+      return;
+    }
   }
   DEBUG_ONLY( _modified_nodes = modified_nodes; )
   set_strength_reduction(false);
