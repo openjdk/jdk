@@ -251,6 +251,7 @@
         <xsl:apply-templates select="issuessection/intro"/>
       </section>
     </xsl:if>
+    <hr class="thick"/>
     <section id="ChangeHistory">
       <xsl:apply-templates select="changehistory"/>
     </section>
@@ -1790,7 +1791,6 @@ typedef struct {
 </xsl:template>
 
 <xsl:template match="changehistory">
-    <hr class="thick"/>
     <h2>Change History</h2>
     Last update: <xsl:value-of select="@update"/><br/>
     Version: <xsl:call-template name="lastchangeversion"/>
