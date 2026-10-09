@@ -2784,11 +2784,25 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
   return 0;
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()) + 7 /* Big Endian */);
-  // Armed page has poll_bit set.
-  z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
-  z_brnaz(slow_path);
+void MacroAssembler::safepoint_poll(Label& slow_path, Register tmp_reg, bool at_return, bool in_nmethod) {
+  const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()));
+
+  if (at_return) {
+    if (in_nmethod) {
+      z_clg(Z_SP, poll_byte_addr);
+      branch_optimized(Assembler::bcondHigh, slow_path);
+    } else {
+      Register fp = tmp_reg;
+      z_lg(fp, _z_abi(callers_sp), Z_SP);
+      z_clg(fp, poll_byte_addr);
+      branch_optimized(Assembler::bcondHigh, slow_path);
+    }
+  } else {
+    assert(!in_nmethod, "should use load_from_polling_page");
+    z_lg(tmp_reg, poll_byte_addr);
+    z_tmll(tmp_reg, SafepointMechanism::poll_bit());
+    branch_optimized(Assembler::bcondNotAllZero, slow_path);
+  }
 }
 
 // Don't rely on register locking, always use Z_R1 as scratch register instead.
@@ -4286,28 +4300,6 @@ void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
   z_brnaz(is_flat_array);
 }
 
-void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
-  assert_different_registers(holder_klass, index, layout_info);
-  z_lg(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
-#ifdef ASSERT
-  {
-    Label done;
-    z_ltgr(layout_info, layout_info);
-    z_brne(done);
-    stop("value_field_layout_info_array is null");
-    bind(done);
-  }
-#endif
-  ValueFieldLayoutInfo array[2];
-  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
-  if (is_power_of_2(size)) {
-    z_sllg(index, index, log2i_exact(size)); // Scale index by power of 2
-  } else {
-    z_msgfi(index, size); // Scale the index to be the entry index * array_element_size
-  }
-  z_lay(layout_info, Address(layout_info, index, Array<ValueFieldLayoutInfo>::base_offset_in_bytes()));
-}
-
 // Compare klass ptr in memory against klass ptr in register.
 //
 // Rop1            - klass in register, always uncompressed.
@@ -4549,12 +4541,6 @@ void MacroAssembler::store_heap_oop(Register Roop, const Address &a,
                                     Register tmp1, Register tmp2, Register tmp3,
                                     DecoratorSet decorators) {
   access_store_at(T_OBJECT, IN_HEAP | decorators, a, Roop, tmp1, tmp2, tmp3);
-}
-
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register value_field_layout_info) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {

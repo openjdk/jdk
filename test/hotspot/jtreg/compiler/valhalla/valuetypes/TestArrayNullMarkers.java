@@ -40,11 +40,12 @@ import jdk.test.whitebox.WhiteBox;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=no-flattening
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -55,11 +56,12 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:-UseNullableAtomicValueFlattening -XX:-UseNullFreeAtomicValueFlattening -XX:-UseNullFreeNonAtomicValueFlattening
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=nAVF
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -70,11 +72,12 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:-UseNullableAtomicValueFlattening -XX:-UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=AVF
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -85,11 +88,12 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:-UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:-UseNullFreeNonAtomicValueFlattening
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=AVF-nAVF
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -100,11 +104,12 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:-UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=NVF
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -115,11 +120,12 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:+UseNullableAtomicValueFlattening -XX:-UseNullFreeAtomicValueFlattening -XX:-UseNullFreeNonAtomicValueFlattening
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=NVF-nAVF
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -130,11 +136,12 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:+UseNullableAtomicValueFlattening -XX:-UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=NVF-AVF
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -145,11 +152,12 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:-UseNullFreeNonAtomicValueFlattening
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=all-flattening
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -160,11 +168,12 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=all-flattening-di
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -176,11 +185,12 @@ import jdk.test.whitebox.WhiteBox;
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
  *                               -XX:CompileCommand=dontinline,*::test* -XX:CompileCommand=dontinline,*::check*
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 /*
  * @test id=all-flattening-restrict-profiling
+ * @key stress
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
  * @enablePreview
@@ -192,7 +202,7 @@ import jdk.test.whitebox.WhiteBox;
  *                               -XX:+UnlockExperimentalVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                               -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
  *                               -XX:+IgnoreUnrecognizedVMOptions -XX:-MonomorphicArrayCheck -XX:-UseArrayLoadStoreProfile
- *                               compiler.valhalla.valuetypes.TestArrayNullMarkers
+ *                               ${test.main.class}
  */
 
 public class TestArrayNullMarkers {
@@ -209,7 +219,7 @@ public class TestArrayNullMarkers {
     // The main is huge by-design (it has been made that way to make sure that C2 sees all the type info from the array factories)
     // but its size causes compilation failures with tier 3 C1 because of it runs out of virtual registers in linear scan, which
     // triggers a test failure when AbortVMOnCompilationFailure is set.
-    // Because this method will bail out from C1 compilation anyway, let's exclude it to prevent noise when running valhalla-comp-stress.
+    // Because this method will bail out from C1 compilation anyway, let's exclude it to prevent noise during stress testing.
     static {
         if (AbortVMOnCompilationFailure) {
             Class<?> c = TestArrayNullMarkers.class;
@@ -1431,4 +1441,3 @@ public class TestArrayNullMarkers {
         testScalarReplacement8(CANARY1, true);
     }
 }
-

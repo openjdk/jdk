@@ -138,6 +138,8 @@ DebugInformationRecorder::DebugInformationRecorder(OopRecorder* oop_recorder)
   _all_chunks    = new GrowableArray<DIR_Chunk*>(300);
   _next_chunk = _next_chunk_limit = nullptr;
 
+  _has_vectors = false;
+
   add_new_pc_offset(PcDesc::lower_offset_limit);  // sentinel record
 
   DEBUG_ONLY(_recording_state = rs_null);

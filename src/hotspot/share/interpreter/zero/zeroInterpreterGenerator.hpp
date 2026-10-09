@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
-#define SHARE_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
+#ifndef SHARE_INTERPRETER_ZERO_ZEROINTERPRETERGENERATOR_HPP
+#define SHARE_INTERPRETER_ZERO_ZEROINTERPRETERGENERATOR_HPP
 
 // This file contains the platform-independent parts
 // of the Zero interpreter generator.
@@ -69,4 +69,4 @@ class ZeroInterpreterGenerator: public AbstractInterpreterGenerator {
   }
 };
 
-#endif // SHARE_INTERPRETER_CPPINTERPRETERGENERATOR_HPP
+#endif // SHARE_INTERPRETER_ZERO_ZEROINTERPRETERGENERATOR_HPP
