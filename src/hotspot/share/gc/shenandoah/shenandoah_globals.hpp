@@ -444,12 +444,6 @@
           "progress, Shenandoah will raise out of memory errors. Note "     \
           "that progress is determined by ShenandoahCriticalFreeThreshold") \
                                                                             \
-  product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
-          "Should internally-caused GC requests invoke concurrent cycles, " \
-          "should they do the stop-the-world (Degenerated / Full GC)? "     \
-          "Many heuristics automatically enable this. This option is "      \
-          "similar to global ExplicitGCInvokesConcurrent.")                 \
-                                                                            \
   product(bool, ShenandoahHumongousMoves, true, DIAGNOSTIC,                 \
           "Allow moving humongous regions. This makes GC more resistant "   \
           "to external fragmentation that may otherwise fail other "        \
