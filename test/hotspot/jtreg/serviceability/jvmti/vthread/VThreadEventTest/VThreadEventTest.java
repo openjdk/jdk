@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8312174
+ * @bug 8312174 8330166
  * @summary missing JVMTI events from vthreads parked during JVMTI attach
  * @requires vm.continuations
  * @requires vm.jvmti

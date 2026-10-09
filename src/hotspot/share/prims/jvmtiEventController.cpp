@@ -870,6 +870,8 @@ JvmtiEventControllerPrivate::set_extension_event_callback(JvmtiEnvBase *env,
   }
   env->env_event_enable()->_event_callback_enabled.set_bits(enabled_bits);
 
+  // Setting an extension event callback also enables or disables the event.
+  env->env_event_enable()->set_user_enabled(event_type, enabling);
   recompute_enabled();
 }
 

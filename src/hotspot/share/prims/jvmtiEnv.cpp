@@ -3695,6 +3695,7 @@ JvmtiEnv::GetExtensionEvents(jint* extension_count_ptr, jvmtiExtensionEventInfo*
 // callback - null is a valid value, must be checked
 jvmtiError
 JvmtiEnv::SetExtensionEventCallback(jint extension_event_index, jvmtiExtensionEvent callback) {
+  MountUnmountDisabler disabler;
   return JvmtiExtensions::set_event_callback(this, extension_event_index, callback);
 } /* end SetExtensionEventCallback */
 

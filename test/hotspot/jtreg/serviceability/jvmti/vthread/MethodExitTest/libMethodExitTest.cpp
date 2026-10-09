@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,6 +547,12 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
            TranslateError(err), err);
     return JNI_ERR;
   }
+  // These events are enabled per thread in breakpoint_hit2().
+  check_jvmti_error(set_event_notification_mode(jvmti, JVMTI_DISABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, nullptr),
+                   "Disable VirtualThreadMount");
+  check_jvmti_error(set_event_notification_mode(jvmti, JVMTI_DISABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, nullptr),
+                   "Disable VirtualThreadUnmount");
+
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_breakpoint_events = 1;
   caps.can_generate_frame_pop_events = 1;

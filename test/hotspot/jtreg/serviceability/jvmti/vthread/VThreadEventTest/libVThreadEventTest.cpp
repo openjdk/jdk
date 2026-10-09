@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,12 +154,6 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, nullptr);
   check_jvmti_error(err, "SetEventNotificationMode for VirtualThreadEnd");
-
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, nullptr);
-  check_jvmti_error(err, "SetEventNotificationMode for VirtualThreadMount");
-
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, nullptr);
-  check_jvmti_error(err, "SetEventNotificationMode for VirtualThreadUnmount");
 
   LOG("vthread events enabled\n");
 
