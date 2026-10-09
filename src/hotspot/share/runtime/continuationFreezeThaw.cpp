@@ -3095,15 +3095,14 @@ void ThawBase::finish_thaw(frame& f) {
   }
   assert(chunk->is_empty() == (chunk->max_thawing_size() == 0), "");
 
-  // A frame popped by JVMTI PopFrame returned through the barrier into this
-  // frame, which was still frozen. The interpreter's popframe entry took the
-  // deoptimized caller path, preserved the arguments and left the reexecution
-  // to a deoptimization that never happens. The frozen caller was copied
-  // without the callee's arguments, so put the preserved arguments back on its
-  // expression stack and resume at the invoke instead of after it, like
-  // vframeArrayElement::unpack_on_stack does for a deoptimized caller.
+  // A frame popped by JVMTI PopFrame returned into the continuation return
+  // barrier, its caller here was still frozen. The interpreter's popframe entry
+  // preserved the arguments and set the deopt reexecution bit as for a
+  // deoptimized caller. A compiled caller was deoptimized by PopFrame and
+  // unpack_on_stack puts the arguments back. An interpreted caller was copied
+  // without them, so put them back on its expression stack and resume at the
+  // invoke, like vframeArrayElement::unpack_on_stack does.
   if (JvmtiExport::can_pop_frame() && _thread->popframe_forcing_deopt_reexecution()) {
-    assert(f.is_interpreted_frame(), "popframe reexecution into a frozen compiled caller is not handled");
     if (f.is_interpreted_frame()) {
       int words = in_words(_thread->popframe_preserved_args_size_in_words());
       if (words > 0) {
@@ -3112,11 +3111,13 @@ void ThawBase::finish_thaw(frame& f) {
         int top_element = f.interpreter_frame_expression_stack_size() - 1;
         intptr_t* base = f.interpreter_frame_expression_stack_at(top_element);
         Copy::conjoint_jbytes(_thread->popframe_preserved_args(), base, words * wordSize);
+        _thread->popframe_free_preserved_args();
       }
       f = frame(f.sp(), f.unextended_sp(), f.fp(), Interpreter::deopt_entry(vtos, 0));
+      _thread->clear_popframe_condition();
+    } else {
+      assert(f.is_deoptimized_frame(), "popframe reexecution into a frozen compiled caller that was not deoptimized");
     }
-    _thread->popframe_free_preserved_args();
-    _thread->clear_popframe_condition();
   }
   if (!is_aligned(f.sp(), frame::frame_alignment)) {
     assert(f.is_interpreted_frame(), "");
