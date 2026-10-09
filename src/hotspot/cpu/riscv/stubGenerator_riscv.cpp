@@ -2971,34 +2971,33 @@ class StubGenerator: public StubCodeGenerator {
   //   keylen < 52 -> AES-128, keylen == 52 -> AES-192, keylen > 52 -> AES-256.
   static const int AES_192_KEYLEN_INTS = 52;
 
-  // Load round keys into v4..v18, right-aligned by key size:
-  //   AES-256: rk[0..14] = v4..v18;  AES-192: rk[2..14] = v6..v18;  AES-128: rk[4..14] = v8..v18
-  // Requires VL=4/e32/m1 to be set by the caller. Advances key; clobbers t2.
-  void aes_load_round_keys(Register key, Register keylen) {
+  // Load round keys into rk[], right-aligned by key size:
+  //   AES-256: rk[0..14];  AES-192: rk[2..14];  AES-128: rk[4..14]
+  // Advances key; clobbers t2.
+  void aes_load_round_keys(Register key, Register keylen, VectorRegister rk[]) {
     Label L_load192, L_load128;
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ mv(t2, AES_192_KEYLEN_INTS);
     __ bltu(keylen, t2, L_load128);
     __ beq(keylen, t2, L_load192);
-    __ vle32_v(v4, key);
-    __ vrev8_v(v4, v4);
+    __ vle32_v(rk[0], key);
+    __ vrev8_v(rk[0], rk[0]);
     __ addi(key, key, 16);
-    __ vle32_v(v5, key);
-    __ vrev8_v(v5, v5);
+    __ vle32_v(rk[1], key);
+    __ vrev8_v(rk[1], rk[1]);
     __ addi(key, key, 16);
     __ bind(L_load192);
-    __ vle32_v(v6, key);
-    __ vrev8_v(v6, v6);
+    __ vle32_v(rk[2], key);
+    __ vrev8_v(rk[2], rk[2]);
     __ addi(key, key, 16);
-    __ vle32_v(v7, key);
-    __ vrev8_v(v7, v7);
+    __ vle32_v(rk[3], key);
+    __ vrev8_v(rk[3], rk[3]);
     __ addi(key, key, 16);
     __ bind(L_load128);
-    { VectorRegister ck[] = {v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18};
-      for (int i = 0; i < 11; i++) {
-        __ vle32_v(ck[i], key);
-        __ vrev8_v(ck[i], ck[i]);
-        __ addi(key, key, 16);
-      }
+    for (int i = 4; i < 15; i++) {
+      __ vle32_v(rk[i], key);
+      __ vrev8_v(rk[i], rk[i]);
+      __ addi(key, key, 16);
     }
   }
 
@@ -3110,10 +3109,11 @@ class StubGenerator: public StubCodeGenerator {
   // Output:
   //   c_rarg0   - the number of bytes processed
   //
-  address generate_electronicCodeBook_encryptAESCrypt() {
+  address generate_electronicCodeBook_AESCrypt(bool is_encrypt) {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
 
-    StubId stub_id = StubId::stubgen_electronicCodeBook_encryptAESCrypt_id;
+    StubId stub_id = is_encrypt ? StubId::stubgen_electronicCodeBook_encryptAESCrypt_id
+                                : StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
     int entry_count = StubInfo::entry_count(stub_id);
     assert(entry_count == 1, "sanity check");
     address start = load_archive_data(stub_id);
@@ -3136,59 +3136,12 @@ class StubGenerator: public StubCodeGenerator {
 
     __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    aes_load_round_keys(key, keylen);
-
     VectorRegister rk[] = {
       v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18
     };
 
-    ecb_loop(from, to, len, keylen, rk, true);
-
-    __ mv(c_rarg0, saved_len);
-    __ leave();
-    __ ret();
-
-    // record the stub entry and end
-    store_archive_data(stub_id, start, __ pc());
-
-    return start;
-  }
-
-  address generate_electronicCodeBook_decryptAESCrypt() {
-    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
-
-    StubId stub_id = StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
-    int entry_count = StubInfo::entry_count(stub_id);
-    assert(entry_count == 1, "sanity check");
-    address start = load_archive_data(stub_id);
-    if (start != nullptr) {
-      return start;
-    }
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, stub_id);
-
-    const Register from        = c_rarg0;
-    const Register to          = c_rarg1;
-    const Register key         = c_rarg2;
-    const Register len         = c_rarg3;
-    const Register keylen      = x28;
-    const Register saved_len   = x29;
-
-    start = __ pc();
-    __ enter();
-    __ mv(saved_len, len);
-
-    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    aes_load_round_keys(key, keylen);
-
-    VectorRegister rk[] = {
-      v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18
-    };
-
-    ecb_loop(from, to, len, keylen, rk, false);
+    aes_load_round_keys(key, keylen, rk);
+    ecb_loop(from, to, len, keylen, rk, is_encrypt);
 
     __ mv(c_rarg0, saved_len);
     __ leave();
@@ -8236,8 +8189,8 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
-      StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt();
-      StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt();
+      StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_AESCrypt(true);
+      StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_AESCrypt(false);
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
     }
