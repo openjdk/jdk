@@ -30,7 +30,6 @@
 # The easiest way to accomplish this is to right click the file in Finder
 # and choose "Open With -> Archive Utility", or possible typing
 # "open Xcode_9.2.xip" in a terminal.
-# erik.joelsson@oracle.com
 
 set -e
 set -o pipefail
