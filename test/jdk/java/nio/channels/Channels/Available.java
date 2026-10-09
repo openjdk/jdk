@@ -69,8 +69,6 @@ class Available {
                 Integer.MAX_VALUE - 1L,
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE + 1L
-                // Values stressing `Long.MAX_VALUE` boundaries cause failures
-                // on certain OS & file system configurations; omitting them.
         };
         for (long pos : positions) {
             if (pos >= 0) {
