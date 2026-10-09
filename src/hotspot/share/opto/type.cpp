@@ -2771,7 +2771,7 @@ const TypePtr* TypePtr::BOTTOM;
 // Meet over the PTR enum
 const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
   //              TopPTR,    Constant, Null,   NotNull, BotPTR,
-  { /* Top     */ TopPTR,    Constant, Null,   NotNull, BotPTR,},
+  { /* TopPTR  */ TopPTR,    Constant, Null,   NotNull, BotPTR,},
   { /* Constant*/ Constant,  Constant, BotPTR, NotNull, BotPTR,},
   { /* Null    */ Null,      BotPTR,   Null,   BotPTR,  BotPTR,},
   { /* NotNull */ NotNull,   NotNull,  BotPTR, NotNull, BotPTR,},
@@ -2780,7 +2780,7 @@ const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
 // Join over the PTR enum
 const TypePtr::PTR TypePtr::ptr_join[TypePtr::lastPTR][TypePtr::lastPTR] = {
   //              TopPTR,    Constant, Null,   NotNull,  BotPTR,
-  { /* Top     */ TopPTR,    TopPTR,   TopPTR, TopPTR,   TopPTR,  },
+  { /* TopPTR  */ TopPTR,    TopPTR,   TopPTR, TopPTR,   TopPTR,  },
   { /* Constant*/ TopPTR,    Constant, TopPTR, Constant, Constant,},
   { /* Null    */ TopPTR,    TopPTR,   Null,   TopPTR,   Null,    },
   { /* NotNull */ TopPTR,    Constant, TopPTR, NotNull,  NotNull, },
@@ -3241,7 +3241,7 @@ TypePtr::FlatInArray TypePtr::compute_flat_in_array_if_unknown(ciInstanceKlass* 
 
 //------------------------------dump2------------------------------------------
 const char* const TypePtr::ptr_msg[TypePtr::lastPTR] = {
-  "TopPTR","Constant","null","NotNull","BotPTR"
+  "TopPTR", "Constant", "null", "NotNull", "BotPTR"
 };
 
 #ifndef PRODUCT
@@ -4505,7 +4505,9 @@ const Type* TypeInstPtr::xmeet_helper(const Type* t) const {
     int depth = meet_inline_depth(tp->inline_depth());
     switch (tp->ptr()) {
     case Null:
-      if (ptr == Null) return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
+      if (ptr == Null) {
+        return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
+      }
       // else fall through to TopPTR
     case TopPTR: {
       return make(ptr, klass(), _interfaces, klass_is_exact(),

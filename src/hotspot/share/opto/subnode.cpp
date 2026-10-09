@@ -1004,8 +1004,9 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
   const TypePtr *r1 = t2->is_ptr();
 
   // Undefined inputs makes for an undefined result
-  if (TypePtr::is_top(r0->_ptr) || TypePtr::is_top(r1->_ptr))
+  if (TypePtr::is_top(r0->_ptr) || TypePtr::is_top(r1->_ptr)) {
     return Type::TOP;
+  }
 
   if (r0 == r1 && r0->singleton()) {
     // Equal pointer constants (klasses, nulls, etc.)
