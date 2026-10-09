@@ -2083,7 +2083,9 @@ void LIR_Assembler::store_volatile(Address addr, LIR_Opr src, BasicType type, Co
   if (UseZalasr) {
     store_release(addr, src, type, info);
   } else {
+    membar_release();
     store_unordered(addr, src, type, /* wide */ false, info);
+    membar();
   }
 }
 
