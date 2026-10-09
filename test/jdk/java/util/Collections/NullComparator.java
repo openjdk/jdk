@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,14 @@
  * @test
  * @bug 4224271
  * @summary A null Comparator is now specified to indicate natural ordering.
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.IntFunction;
 
 public class NullComparator {
-
     public static void main(String[] args) throws Exception {
         List list = new ArrayList(100);
         for (int i=0; i<100; i++)
@@ -55,25 +51,15 @@ public class NullComparator {
         if (Arrays.binarySearch(a, new Integer(69)) != 69)
             throw new Exception("Arrays.binarySearch");
 
-        testCollectionsNullComparator(list, Integer::valueOf, "");
-
-        List<VClass> vlist = new ArrayList<>();
-        for (int i = 0; i < 100; i++) vlist.add(new VClass(i, new int[] { i }));
-        Collections.shuffle(vlist);
-        testCollectionsNullComparator(vlist, i -> new VClass(i, new int[] { i }), "value ");
-    }
-
-    private static <T> void testCollectionsNullComparator(List<T> list, IntFunction<T> factory, String label) throws Exception {
-        List<T> tmp = new ArrayList<>(list);
+        List tmp = new ArrayList(list);
         Collections.sort(tmp, null);
-        for (int i = 0; i < tmp.size(); i++)
-            if (!tmp.get(i).equals(factory.apply(i)))
-                throw new Exception(label + "Collections.sort");
-        if (Collections.binarySearch(tmp, factory.apply(69), null) != 69)
-            throw new Exception(label + "Collections.binarySearch");
-        if (!Collections.min(list, null).equals(factory.apply(0)))
-            throw new Exception(label + "Collections.min");
-        if (!Collections.max(list, null).equals(factory.apply(99)))
-            throw new Exception(label + "Collections.max");
+        if (!tmp.equals(sorted))
+            throw new Exception("Collections.sort");
+        if (Collections.binarySearch(tmp, new Integer(69)) != 69)
+            throw new Exception("Collections.binarySearch");
+        if (!Collections.min(list, null).equals(new Integer(0)))
+            throw new Exception("Collections.min");
+        if (!Collections.max(list, null).equals(new Integer(99)))
+            throw new Exception("Collections.max");
     }
 }

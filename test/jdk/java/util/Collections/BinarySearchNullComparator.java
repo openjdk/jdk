@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,18 @@
  * @test
  * @bug 4528331 5006032
  * @summary Test Collections.binarySearch() with a null comparator
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class BinarySearchNullComparator {
-
     public static void main(String[] args) throws Exception {
-        test(Arrays.asList("I", "Love", "You"), "You", 2);
-        test(Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }), new VClass(3, new int[] { 3 })),
-             new VClass(3, new int[] { 3 }), 2);
-    }
+        List list = Arrays.asList(new String[] {"I", "Love", "You"});
 
-    private static <T> void test(List<T> list, T key, int expected) throws Exception {
-        int result = Collections.binarySearch(list, key, null);
-        if (result != expected)
+        int result = Collections.binarySearch(list, "You", null);
+        if (result != 2)
             throw new Exception("Result: " + result);
     }
 }

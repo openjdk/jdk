@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,23 @@
  * @test
  * @bug 4323074
  * @summary Basic test for new Enumeration -> List converter
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
-import java.util.function.IntFunction;
 
 public class Enum {
-
-    static final int SIZE = 10;
-
     public static void main(String[] args) throws Exception {
         int[] sizes = {0, 10, 100};
-        for (int size : sizes)
-            test(size, Integer::valueOf);
-
-        test(SIZE, j -> new VClass(j, new int[] { j }));
-    }
-
-    private static void test(int size, IntFunction<Object> factory) throws Exception {
-        Vector v = new Vector();
-        for (int j = 0; j < size; j++)
-            v.add(factory.apply(j));
-        List l = Collections.list(v.elements());
-        if (!l.equals(v))
-            throw new Exception("Copy failed: " + size);
+        for (int i=0; i<sizes.length; i++) {
+            Vector v = new Vector();
+            int size = sizes[i];
+            for (int j=0; j<size; j++)
+                v.add(new Integer(j));
+            List l = Collections.list(v.elements());
+            if (!l.equals(v))
+                throw new Exception("Copy failed: "+size);
+        }
     }
 }

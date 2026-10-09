@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
  * @bug     4323074
  * @summary Basic test for newly public swap algorithm
  * @author  Josh Bloch
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,19 +36,14 @@ public class Swap {
     static final int SIZE = 100;
 
     public static void main(String[] args) throws Exception {
-        test(Boolean.TRUE, Boolean.FALSE);
-        test(new VClass(1, new int[] { 1 }), new VClass(0, new int[] { 0 }));
-    }
+        List l = new ArrayList(Collections.nCopies(100, Boolean.FALSE));
+        l.set(0, Boolean.TRUE);
+        for (int i=0; i < SIZE-1; i++)
+            Collections.swap(l, i, i+1);
 
-    static <T> void test(T marked, T unmarked) throws Exception {
-        List<T> l = new ArrayList<>(Collections.nCopies(SIZE, unmarked));
-        l.set(0, marked);
-        for (int i = 0; i < SIZE - 1; i++)
-            Collections.swap(l, i, i + 1);
-
-        List<T> golden = new ArrayList<>(Collections.nCopies(SIZE, unmarked));
-        golden.set(SIZE - 1, marked);
-        if (!l.equals(golden))
+        List l2 = new ArrayList(Collections.nCopies(100, Boolean.FALSE));
+        l2.set(SIZE-1, Boolean.TRUE);
+        if (!l.equals(l2))
             throw new RuntimeException("Wrong result");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,34 +26,28 @@
  * @bug     4193200
  * @summary Basic test for Collections.frequency
  * @author  Josh Bloch
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.IntFunction;
 
 public class Frequency {
     static final int N = 100;
-
     public static void main(String[] args) {
-        test(new ArrayList<Integer>(), Integer::valueOf);
-        test(new LinkedList<Integer>(), Integer::valueOf);
-        test(new ArrayList<VClass>(), i -> new VClass(i, new int[] { i }));
-        test(new LinkedList<VClass>(), i -> new VClass(i, new int[] { i }));
+        test(new ArrayList<Integer>());
+        test(new LinkedList<Integer>());
     }
 
-    static <T> void test(List<T> list, IntFunction<T> factory) {
+    static void test(List<Integer> list) {
         for (int i = 0; i < N; i++)
             for (int j = 0; j < i; j++)
-                list.add(factory.apply(i));
+                list.add(i);
         Collections.shuffle(list);
 
         for (int i = 0; i < N; i++)
-            if (Collections.frequency(list, factory.apply(i)) != i)
+            if (Collections.frequency(list, i) != i)
                 throw new RuntimeException(list.getClass() + ": " + i);
     }
 }

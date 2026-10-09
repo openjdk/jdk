@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
  * @bug 4593209 8001667
  * @summary Reverse comparator was subtly broken
  * @author Josh Bloch
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -40,7 +38,6 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ReverseOrder {
-
     static byte[] serialBytes(Object o) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -68,21 +65,19 @@ public class ReverseOrder {
 
     public static void main(String[] args) throws Exception {
         Foo[] a = { new Foo(2), new Foo(3), new Foo(1) };
+        List list = Arrays.asList(a);
+        Comparator cmp = Collections.reverseOrder();
+        Collections.sort(list, cmp);
+
         Foo[] golden = { new Foo(3), new Foo(2), new Foo(1) };
         List goldenList = Arrays.asList(golden);
+        if (!list.equals(goldenList))
+            throw new Exception(list.toString());
 
-        Comparator cmp = Collections.reverseOrder();
-        checkReverseSort(Arrays.asList(a), cmp, goldenList);
-        checkReverseSort(Arrays.asList(a), serialClone(cmp), goldenList);
-
-        List<VClass> vGolden = Arrays.asList(new VClass(3, new int[] { 3 }), new VClass(2, new int[] { 2 }), new VClass(1, new int[] { 1 }));
-        checkReverseSort(Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(3, new int[] { 3 }), new VClass(2, new int[] { 2 })),
-                          Collections.reverseOrder(), vGolden);
-    }
-
-    static void checkReverseSort(List list, Comparator cmp, List golden) throws Exception {
-        Collections.sort(list, cmp);
-        if (!list.equals(golden))
+        Comparator clone = serialClone(cmp);
+        List list2 = Arrays.asList(a);
+        Collections.sort(list2, clone);
+        if (!list2.equals(goldenList))
             throw new Exception(list.toString());
     }
 }

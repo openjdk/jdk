@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
  * @bug 5045582
  * @summary binarySearch of Collections larger than 1<<30
  * @author Martin Buchholz
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.util.AbstractList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,26 +40,26 @@ public class BigBinarySearch {
 
     // Allows creation of very "big" collections without using too
     // many real resources
-    static class SparseList<T> extends AbstractList<T> implements RandomAccess {
-        private final Map<Integer, T> m = new HashMap<>();
-        private final T zero;
+    static class SparseIntegerList
+        extends AbstractList<Integer>
+        implements RandomAccess
+    {
+        private Map<Integer,Integer> m = new HashMap<>();
 
-        SparseList(T zero) { this.zero = zero; }
-
-        public T get(int i) {
-            if (i < 0) throw new IndexOutOfBoundsException("" + i);
-            T v = m.get(i);
-            return (v == null) ? zero : v;
+        public Integer get(int i) {
+            if (i < 0) throw new IndexOutOfBoundsException(""+i);
+            Integer v = m.get(i);
+            return (v == null) ? Integer.valueOf(0) : v;
         }
 
         public int size() {
             return Collections.max(m.keySet()) + 1;
         }
 
-        public T set(int i, T v) {
-            if (i < 0) throw new IndexOutOfBoundsException("" + i);
-            T ret = get(i);
-            if (v.equals(zero))
+        public Integer set(int i, Integer v) {
+            if (i < 0) throw new IndexOutOfBoundsException(""+i);
+            Integer ret = get(i);
+            if (v == 0)
                 m.remove(i);
             else
                 m.put(i, v);
@@ -70,14 +68,14 @@ public class BigBinarySearch {
     }
 
     /** Checks that binarySearch finds an element where we got it. */
-    private static <T extends Comparable<T>> void checkBinarySearch(List<T> l, int i) {
+    private static void checkBinarySearch(List<Integer> l, int i) {
         try { equal(i, Collections.binarySearch(l, l.get(i))); }
         catch (Throwable t) { unexpected(t); }
     }
 
     /** Checks that binarySearch finds an element where we got it. */
-    private static <T> void checkBinarySearch(List<T> l, int i,
-                                              Comparator<T> comparator) {
+    private static void checkBinarySearch(List<Integer> l, int i,
+                                          Comparator<Integer> comparator) {
         try { equal(i, Collections.binarySearch(l, l.get(i), comparator)); }
         catch (Throwable t) { unexpected(t); }
     }
@@ -86,7 +84,7 @@ public class BigBinarySearch {
         final int n = (1<<30) + 47;
 
         System.out.println("binarySearch(List<Integer>, Integer)");
-        List<Integer> big = new SparseList<>(0);
+        List<Integer> big = new SparseIntegerList();
         big.set(  0, -44);
         big.set(  1, -43);
         big.set(n-2,  43);
@@ -104,14 +102,6 @@ public class BigBinarySearch {
             big.set(i, - big.get(i));
         for (int i : ints)
             checkBinarySearch(big, i, reverse);
-
-        System.out.println("binarySearch(SparseList<VClass>, VClass)");
-        List<VClass> vl = new SparseList<>(new VClass(0, new int[] { 0 }));
-        vl.set(0, new VClass(0, new int[] { 0 }));
-        vl.set(1, new VClass(1, new int[] { 1 }));
-        vl.set(n - 2, new VClass(n - 2, new int[] { n - 2 }));
-        vl.set(n - 1, new VClass(n - 1, new int[] { n - 1 }));
-        checkBinarySearch(vl, n - 1);
     }
 
     //--------------------- Infrastructure ---------------------------

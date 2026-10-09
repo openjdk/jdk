@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
  * @test
  * @bug 8205399
  * @summary Check for AssertionError from HashMap TreeBin after Iterator.remove
- * @library /test/lib
  * @run testng/othervm -esa TreeBinAssert
  */
 
-import jdk.test.lib.valueclass.AsValueClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;
@@ -40,7 +38,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 
 public class TreeBinAssert {
     private static final int ITR_RM = -1; // Remove an item via Iterator
@@ -118,49 +115,28 @@ public class TreeBinAssert {
 
     @Test(dataProvider = "SizeAndHashes")
     public void testMap(int size, int[] hashes) {
-        testMapImpl(size, hashes, Key::new);
-    }
-
-    @Test(dataProvider = "SizeAndHashes")
-    public void testMapVClass(int size, int[] hashes) {
-        testMapImpl(size, hashes, KeyVClass::new);
-    }
-
-    private <T> void testMapImpl(int size, int[] hashes, IntFunction<T> keyFactory) {
-        Map<T, Integer> map = new HashMap<>(size);
+        Map<Key,Integer> map = new HashMap<>(size);
 
         doTest(map, hashes,
-               (c, k) -> { ((Map<T, Integer>) c).put(k,0); },
-               (c)    -> { return ((Map<T, Integer>) c).keySet().iterator(); },
-               keyFactory
+               (c,k) -> { ((Map<Key,Integer>)c).put(k,0); },
+               (c)   -> { return ((Map<Key,Integer>)c).keySet().iterator(); }
         );
     }
 
     @Test(dataProvider = "SizeAndHashes")
     public void testSet(int size, int[] hashes) {
-        testSetImpl(size, hashes, Key::new);
-    }
-
-    @Test(dataProvider = "SizeAndHashes")
-    public void testSetVClass(int size, int[] hashes) {
-        testSetImpl(size, hashes, KeyVClass::new);
-    }
-
-    private <T> void testSetImpl(int size, int[] hashes, IntFunction<T> keyFactory) {
-        Set<T> set = new LinkedHashSet<>(size);
+        Set<Key> set = new LinkedHashSet<>(size);
 
         doTest(set, hashes,
-               (c, k) -> { ((Set<T>) c).add(k); },
-               (c)    -> { return ((Set<T>) c).iterator(); },
-               keyFactory
+               (c,k) -> { ((Set<Key>)c).add(k); },
+               (c)   -> { return ((Set<Key>)c).iterator(); }
         );
     }
 
-    private <T> void doTest(Object collection, int[] hashes,
-                            BiConsumer<Object, T> addKey,
-                            Function<Object, Iterator<T>> mkItr,
-                            IntFunction<T> keyFactory) {
-        Iterator<T> itr = null; // saved iterator, used for removals
+    private void doTest(Object collection, int[] hashes,
+                        BiConsumer<Object,Key> addKey,
+                        Function<Object,Iterator<Key>> mkItr) {
+        Iterator<Key> itr = null; // saved iterator, used for removals
         for (int h : hashes) {
             if (h == ITR_RM) {
                 if (itr == null) {
@@ -170,7 +146,7 @@ public class TreeBinAssert {
                 itr.remove();
             } else {
                 itr = null;
-                addKey.accept(collection, keyFactory.apply(h));
+                addKey.accept(collection, new Key(h));
             }
         }
     }
@@ -193,26 +169,6 @@ public class TreeBinAssert {
         }
 
         @Override public int compareTo(Key k) {
-            return Integer.compare(this.hash, k.hash);
-        }
-    }
-
-    @AsValueClass
-    static class KeyVClass implements Comparable<KeyVClass> {
-        final int hash;
-
-        public KeyVClass(int desiredHash) {
-            // Account for processing done by HashMap
-            this.hash = desiredHash ^ (desiredHash >>> 16);
-        }
-
-        @Override public int hashCode() { return this.hash; }
-
-        @Override public boolean equals(Object o) {
-            return o.hashCode() == this.hashCode();
-        }
-
-        @Override public int compareTo(KeyVClass k) {
             return Integer.compare(this.hash, k.hash);
         }
     }

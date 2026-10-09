@@ -73,8 +73,10 @@ public class PutNullKey {
         }
     }
 
+    // Not Comparable, so colliding keys in a tree bin are ordered by
+    // HashMap.TreeNode.tieBreakOrder, which uses System.identityHashCode.
     @AsValueClass
-    public static class CollidingHashValue implements Comparable<CollidingHashValue> {
+    public static class CollidingHashValue {
 
         private final int value;
 
@@ -92,11 +94,6 @@ public class PutNullKey {
         public boolean equals(Object o) {
             return o instanceof CollidingHashValue t && value == t.value;
         }
-
-        @Override
-        public int compareTo(CollidingHashValue o) {
-            return Integer.compare(value, o.value);
-        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -110,7 +107,20 @@ public class PutNullKey {
                 .mapToObj(function)
                 .forEach(e -> { m.put(e, e); });
 
+        for (int i = 0; i < SIZE; i++) {
+            Object key = function.apply(i);
+            if (!key.equals(m.get(key)))
+                throw new RuntimeException("Missing key " + i);
+        }
+
         // kaboom?
         m.put(null, null);
+
+        for (int i = 0; i < SIZE; i++) {
+            if (m.remove(function.apply(i)) == null)
+                throw new RuntimeException("Failed to remove key " + i);
+        }
+        if (m.size() != 1 || !m.containsKey(null))
+            throw new RuntimeException("Unexpected map contents: " + m);
     }
 }

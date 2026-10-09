@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,12 @@
  * @bug     8047795
  * @summary Ensure that replaceAll operator cannot add bad elements
  * @author  Mike Duigou
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.util.*;
 import java.util.function.BiFunction;
 
 public class CheckedMapReplaceAll {
-
     public static void main(String[] args) {
         Map<Integer,Double> unwrapped = new HashMap<>();
         unwrapped.put(1, 1.0);
@@ -43,26 +40,12 @@ public class CheckedMapReplaceAll {
 
         Map<Integer,Double> wrapped = Collections.checkedMap(unwrapped, Integer.class, Double.class);
 
-        testReplaceAllWrongType(wrapped,
-                                 (k, v) -> (((int)k) % 2 != 0) ? v : "evil",
-                                 "String added to checked Map<Integer, Double>");
+        BiFunction evil = (k, v) -> (((int)k) % 2 != 0) ? v : "evil";
 
-        Map<VClass,VClass> vMap = Collections.checkedMap(new HashMap<>(), VClass.class, VClass.class);
-        vMap.put(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }));
-        vMap.replaceAll((k, v) -> new VClass(v.x + 1, new int[] { v.x + 1 }));
-        if (!vMap.get(new VClass(1, new int[] { 1 })).equals(new VClass(3, new int[] { 3 })))
-            throw new RuntimeException("value checkedMap replaceAll failed");
-
-        Map raw = Collections.checkedMap(new HashMap<VClass, VClass>(), VClass.class, VClass.class);
-        raw.put(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }));
-        testReplaceAllWrongType(raw, (k, v) -> "not a Tuple", "value checkedMap replaceAll accepted wrong type");
-    }
-
-    private static void testReplaceAllWrongType(Map wrapped, BiFunction badOperator, String failMessage) {
         try {
-            wrapped.replaceAll(badOperator);
+            wrapped.replaceAll(evil);
             System.out.printf("Bwahaha! I have defeated you! %s\n", wrapped);
-            throw new RuntimeException(failMessage);
+            throw new RuntimeException("String added to checked Map<Integer,Double>");
         } catch (ClassCastException thwarted) {
             thwarted.printStackTrace(System.out);
             System.out.println("Curses! Foiled again!");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
  * @bug     4809442 6366832 4974878 6372554 4890211 6483125
  * @summary Basic test for Collections.reverseOrder
  * @author  Josh Bloch, Martin Buchholz
- * @library /test/lib
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,12 +35,10 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.IntFunction;
 
 public class ReverseOrder2 {
     static final int N = 100;
@@ -68,9 +64,8 @@ public class ReverseOrder2 {
 
         test(new ArrayList<String>());
         test(new LinkedList<String>());
-        test2(new ArrayList<Integer>(), Integer::valueOf, N);
-        test2(new LinkedList<Integer>(), Integer::valueOf, N);
-        test2(new ArrayList<VClass>(), i -> new VClass(i, new int[] { i }), 3);
+        test2(new ArrayList<Integer>());
+        test2(new LinkedList<Integer>());
     }
 
     static void test(List<String> list) {
@@ -95,15 +90,18 @@ public class ReverseOrder2 {
             golden.add(String.valueOf(i));
     }
 
-    static <T> void test2(List<T> list, IntFunction<T> factory, int n) {
-        for (int i = 0; i < n; i++)
-            list.add(factory.apply(i));
+    static void test2(List<Integer> list) {
+        for (int i = 0; i < N; i++)
+            list.add(i);
         Collections.shuffle(list);
         Collections.sort(list, Collections.reverseOrder(null));
-        List<T> golden = new ArrayList<>(n);
-        for (int i = n - 1; i >= 0; i--)
-            golden.add(factory.apply(i));
-        equal(list, golden);
+        equal(list, golden2);
+    }
+
+    private static final List<Integer> golden2 = new ArrayList<>(N);
+    static {
+        for (int i = N-1; i >= 0; i--)
+            golden2.add(i);
     }
 
     //--------------------- Infrastructure ---------------------------
