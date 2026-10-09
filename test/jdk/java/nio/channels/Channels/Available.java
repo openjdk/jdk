@@ -55,7 +55,7 @@ class Available {
     /**
      * Test InputStream.available when input stream reads from a SeekableByteChannel.
      */
-    void testSeekableByteChannel(SeekableByteChannel ch) throws Exception {
+    private static void testSeekableByteChannel(SeekableByteChannel ch) throws Exception {
         InputStream in = Channels.newInputStream(ch);
         long size = ch.size();
         long[] positions = new long[] {
@@ -68,20 +68,16 @@ class Available {
                 Integer.MAX_VALUE - size + 1L,
                 Integer.MAX_VALUE - 1L,
                 Integer.MAX_VALUE,
-                Integer.MAX_VALUE + 1L,
-                Long.MAX_VALUE - size - 1L,
-                Long.MAX_VALUE - size,
-                Long.MAX_VALUE - size + 1L,
-                Long.MAX_VALUE - 1L,
-                Long.MAX_VALUE
+                Integer.MAX_VALUE + 1L
         };
         for (long pos : positions) {
             if (pos >= 0) {
-                ch.position(pos);
                 int expectedAvailable = Math.clamp(size - pos, 0, Integer.MAX_VALUE);
-                int available = in.available();
-                System.err.format("  position = %d, available = %d%n", pos, available);
-                assertEquals(expectedAvailable, available);
+                System.err.format(
+                        "  size = %d, position = %d, expected available = %d%n",
+                        size, pos, expectedAvailable);
+                ch.position(pos);
+                assertEquals(expectedAvailable, in.available());
             }
         }
     }

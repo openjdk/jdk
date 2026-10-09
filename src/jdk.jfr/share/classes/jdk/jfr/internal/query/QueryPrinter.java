@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,13 +245,13 @@ public final class QueryPrinter {
                  column      ::= "COLUMN" text ("," text)*
                  format      ::= "FORMAT" formatter ("," formatter)*
                  formatter   ::= property (";" property)*
-                 select      ::= "SELECT" "*" | expression ("," expression)*
+                 select      ::= "SELECT" ("*" | expression ("," expression)*)
                  expression  ::= (aggregator | field) [alias]
                  aggregator  ::= function "(" (field | "*") ")"
                  alias       ::= "AS" symbol
                  from        ::= "FROM" source ("," source)*
                  source      ::= type [alias]
-                 where       ::= condition ("AND" condition)*
+                 where       ::= "WHERE" condition ("AND" condition)*
                  condition   ::= field "=" text
                  groupBy     ::= "GROUP BY" field ("," field)*
                  orderBy     ::= "ORDER BY" orderField ("," orderField)*
@@ -263,10 +263,14 @@ public final class QueryPrinter {
                  - symbol, alphabetic characters
                  - type, the event type name, for example SystemGC. To avoid ambiguity,
                    the name may be qualified, for example jdk.SystemGC
-                 - field, the event field name, for example stackTrace.
+                 - field, an event field name or a dot-separated name to a nested
+                   field, for example, stackTrace or stackTrace.topFrame.method.type.
                    To avoid ambiguity, the name may be qualified, for example
                    jdk.SystemGC.stackTrace. A type alias declared in a FROM clause
-                   can be used instead of the type, for example S.eventThread
+                   can be used instead of the type, for example S.eventThread.
+                   To select the same field from a subset of event types, put
+                   the event types or aliases in brackets and separate them by '|',
+                   for example, [A|B].duration.
                  - function, determines how fields are aggregated when using GROUP BY.
                    Aggregate functions are:
                     AVG: The numeric average
@@ -289,14 +293,19 @@ public final class QueryPrinter {
                  - property, any of the following:
                     none No formatting for the column
                     cell-height:<integer> Maximum height of a table cell
-                    missing:whitespace Replace missing values (N/A) with blank space
+                    missing:<text> Replaces missing values (N/A) with the specified text,
+                     for example "null-bootstrap". Use missing:whitespace to replace with
+                     blank space.
                     normalized Normalize values between 0 and 1.0 for the column
                     truncate-beginning if value can't fit a table cell, remove the first characters
                     truncate-end if value can't fit a table cell, remove the last characters
 
                  If no value exist, or a numeric value can't be aggregated, the result is 'N/A',
-                 unless missing:whitespace is used. The top frame of a stack trace can be referred'
-                 to as stackTrace.topFrame. When multiple event types are specified in a FROM clause,
+                 unless missing:<text> is used. The top frame of a stack trace can be referred
+                 to as stackTrace.topFrame, the name of an event type as eventType.name, and
+                 its label as eventType.label.
+
+                 When multiple event types are specified in a FROM clause,
                  the union of the event types are used (not the cartesian product)
 
                  To see all available events, use the query '"SHOW EVENTS"'. To see all fields for

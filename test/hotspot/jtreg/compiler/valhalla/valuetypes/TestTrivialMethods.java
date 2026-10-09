@@ -27,6 +27,7 @@
  * @summary Verify that trivial accessor methods operating on a value type
  *          field are C2 compiled to enable scalarization of the arg/return value.
  * @requires vm.compiler2.enabled
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @library /test/lib /compiler/whitebox /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -39,8 +40,8 @@
  *                   -XX:+ValueTypePassFieldsAsArgs -XX:+ValueTypeReturnedAsFields
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-StressCallingConvention
  *                   -XX:CompileCommand=dontinline,*::getter* -XX:CompileCommand=dontinline,*::setter*
- *                   -XX:CompileCommand=dontinline,*::constantGetter* -XX:+PreloadClasses
- *                   compiler.valhalla.valuetypes.TestTrivialMethods
+ *                   -XX:CompileCommand=dontinline,*::constantGetter*
+ *                   ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;

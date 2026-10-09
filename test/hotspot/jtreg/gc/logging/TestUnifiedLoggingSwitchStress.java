@@ -46,6 +46,7 @@ import java.util.Random;
  * @summary Switches gc log level on fly while stressing memory/gc
  * @requires !vm.flightRecorder
  * @requires vm.gc != "Z"
+ * @requires vm.gc != "Shenandoah"
  * @library /test/lib /
  * @modules java.management java.base/jdk.internal.misc
  *

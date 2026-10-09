@@ -38,3 +38,7 @@ British Columbia Standard Time:001:America/Vancouver:
 # tz2026c: Alberta
 # https://techcommunity.microsoft.com/blog/dstblog/interim-guidance-for-alberta-time-zone-changes-2026/4545015
 Alberta Standard Time:001:America/Edmonton:
+
+# tz2026e: Manitoba
+# https://techcommunity.microsoft.com/blog/dstblog/interim-guidance-for-manitoba-permanent-dst-2026/4562488
+Manitoba Standard Time:001:America/Winnipeg:

@@ -315,8 +315,8 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   _is_flat = fd->is_flat();
   _is_null_free = fd->is_null_free_value_type();
   if (fd->has_null_marker()) {
-    ValueFieldLayoutInfo* li = field_holder->value_field_layout_info_adr(fd->index());
-    _null_marker_offset = li->null_marker_offset();
+    ValueKlass* vk = fd->flat_field_klass();
+    _null_marker_offset = _offset + vk->null_marker_offset_in_payload();
   } else {
     _null_marker_offset = -1;
   }
@@ -369,6 +369,9 @@ ciConstant ciField::constant_value() {
   if (FoldStableValues && is_stable() && _constant_value.is_null_or_zero()) {
     return ciConstant();
   }
+  if (CURRENT_ENV->is_aot_compile()) { // Restrict only when we generate AOT code
+    return ciConstant();
+  }
   return _constant_value;
 }
 
@@ -380,6 +383,9 @@ ciConstant ciField::constant_value_of(ciObject* object) {
   assert(object->is_instance(), "must be instance");
   ciConstant field_value = object->as_instance()->field_value(this);
   if (FoldStableValues && is_stable() && field_value.is_null_or_zero()) {
+    return ciConstant();
+  }
+  if (CURRENT_ENV->is_aot_compile()) { // Restrict only when we generate AOT code
     return ciConstant();
   }
   return field_value;
