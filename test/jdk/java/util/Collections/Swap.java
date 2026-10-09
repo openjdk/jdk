@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug     4323074
  * @summary Basic test for newly public swap algorithm
  * @author  Josh Bloch
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,5 +47,11 @@ public class Swap {
         l2.set(SIZE-1, Boolean.TRUE);
         if (!l.equals(l2))
             throw new RuntimeException("Wrong result");
+
+        List<VClass> vl = new ArrayList<>(Collections.nCopies(SIZE, new VClass(0, new int[] { 0 })));
+        vl.set(0, new VClass(1, new int[] { 1 }));
+        for (int i = 0; i < SIZE - 1; i++) Collections.swap(vl, i, i + 1);
+        if (!vl.get(SIZE - 1).equals(new VClass(1, new int[] { 1 })))
+            throw new RuntimeException("value swap failed");
     }
 }

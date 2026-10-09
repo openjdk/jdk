@@ -41,6 +41,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -995,7 +996,7 @@ void AOTStreamedHeapLoader::initialize() {
   // We can't retire a TLAB until the filler klass is set; set it to the archived object klass.
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 
-  objArrayOop roots = oopFactory::new_objectArray(_num_roots, CHECK);
+  refArrayOop roots = oopFactory::new_objectArray(_num_roots, CHECK);
   _roots = OopHandle(Universe::vm_global(), roots);
 
   _object_index_to_buffer_offset_table = (size_t*)(((address)_heap_region->mapped_base()) + forwarding_offset);
@@ -1051,7 +1052,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
   {
     MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
 
-    oop root = objArrayOop(_roots.resolve())->obj_at(root_index);
+    oop root = oop_cast<refArrayOop>(_roots.resolve())->obj_at(root_index);
 
     if (root != nullptr) {
       // The root has already been materialized
@@ -1070,7 +1071,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
 }
 
 oop AOTStreamedHeapLoader::get_root(int index) {
-  oop result = objArrayOop(_roots.resolve())->obj_at(index);
+  oop result = oop_cast<refArrayOop>(_roots.resolve())->obj_at(index);
   if (result == nullptr) {
     // Materialize root
     result = materialize_root(index);

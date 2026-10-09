@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,60 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1NMethodClosure.hpp"
+#include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
+G1NMethodClosure::G1NMethodClosure(OopClosure* oc, bool strong, G1ParScanThreadState* par_scan_state) :
+  _oc(oc, par_scan_state),
+  _marking_oc(par_scan_state->worker_id()),
+  _strong(strong) { }
+
 template <typename T>
 void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
+  T old_oop_or_narrowoop = RawAccess<>::oop_load(p);
+
   _work->do_oop(p);
   T oop_or_narrowoop = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(oop_or_narrowoop)) {
+  // If the oop moved, we need to update the code root set at the new location. If it did not
+  // change, it is either in the existing code root set, or an earlier evacuation round already
+  // enqueued it for deferred update.
+  //
+  // We defer actual update to the code roots to later. This can, in presence of optional
+  // collections, ultimately result in duplicates in the per-thread code root set update list.
+  // We consider this negligible, given that optional collection is rare and typically does
+  // not cover many regions/nmethods.
+  if (oop_or_narrowoop != old_oop_or_narrowoop) {
+    // If the oop moved, it must not have been null.
+    assert(!CompressedOops::is_null(oop_or_narrowoop), "must be");
     oop o = CompressedOops::decode_not_null(oop_or_narrowoop);
+    assert(!_g1h->is_in_cset(o), "must be");
+
     G1HeapRegion* hr = _g1h->heap_region_containing(o);
-    assert(!_g1h->is_in_cset(o) || hr->rem_set()->code_roots_list_contains(_nm), "if o still in collection set then evacuation failed and nm must already be in the remset");
-    hr->add_code_root(_nm);
+    _affected_regions.append_if_missing(hr);
+  } else {
+    // We could be tempted to verify that for a non-null oop, the _nm is already in the target code root
+    // set or in one of the deferred code root set update lists. It would not be sufficient to verify the
+    // current thread's list, because across evacuation rounds (i.e. initial/multiple optional) different
+    // threads may have worked on a given oop from an nmethod.
+    // This is rather expensive, not only requiring looking at all threads' lists, but also making sure
+    // that there are no memory ordering issues when doing that. So we skip it.
+  }
+}
+
+G1NMethodClosure::HeapRegionGatheringOopClosure::HeapRegionGatheringOopClosure(OopClosure* oc, G1ParScanThreadState* par_scan_state) :
+  _g1h(G1CollectedHeap::heap()),
+  _work(oc),
+  _par_scan_state(par_scan_state),
+  _nm(nullptr),
+  _affected_regions(5) {
+}
+
+void G1NMethodClosure::HeapRegionGatheringOopClosure::add_to_remsets() {
+  while (!_affected_regions.is_empty()) {
+    _par_scan_state->remember_nmethod_into_region(_affected_regions.pop(), _nm);
   }
 }
 
@@ -74,10 +114,12 @@ void G1NMethodClosure::MarkingOopClosure::do_oop(narrowOop* o) {
 }
 
 void G1NMethodClosure::do_evacuation_and_fixup(nmethod* nm) {
-  _oc.set_nm(nm);
+  _oc.set_nmethod(nm);
 
   // Evacuate objects pointed to by the nmethod
   nm->oops_do(&_oc);
+
+  _oc.add_to_remsets();
 
   if (_strong) {
     // CodeCache unloading support

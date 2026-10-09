@@ -25,7 +25,7 @@
  * @test
  * @bug      7025314 8023700 7198273 8025633 8026567 8081854 8196027 8182765
  *           8196200 8196202 8223378 8258659 8261976 8320458 8329537 8350638
- *           8342705 8371021 8373526 8384065
+ *           8342705 8371021 8373526 8384065 8376208
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
@@ -72,7 +72,20 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#overview">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    </ul>""");
+                    </ul>""",
+                """
+                    <div id="theme-panel">
+                    <div class="panel-heading">Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name\
+                    ="theme" value="theme-light"><span>Light</span></label><label for="theme-dark"><\
+                    input type="radio" id="theme-dark" disabled name="theme" value="theme-dark"><spa\
+                    n>Dark</span></label><label for="theme-os"><input type="radio" id="theme-os" dis\
+                    abled name="theme" value="theme-os"><span>System Setting</span></label></div>
+                    <div><label for="underline-links"><input type="checkbox" id="underline-links" di\
+                    sabled onclick><span>Underline links in text</span></label></div>
+                    <button id="theme-panel-close-button"></button></div>
+                    <script type="text/javascript">initTheme();
+                    </script>""");
 
         checkOutput("pkg/package-summary.html", true,
                 """

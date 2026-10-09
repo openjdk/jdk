@@ -97,7 +97,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     ld(xlocals, Address(fp, frame::interpreter_frame_locals_offset * wordSize));
-    shadd(xlocals, xlocals, fp, t0, LogBytesPerWord);
+    shift_left_add(xlocals, xlocals, fp, LogBytesPerWord);
   }
 
   void restore_constant_pool_cache() {
@@ -107,7 +107,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_sp_after_call() {
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-    shadd(t0, t0, fp, t0, LogBytesPerWord);
+    shift_left_add(t0, t0, fp, LogBytesPerWord);
 #ifdef ASSERT
     bnez(t0, L);
     stop("SP is null");
@@ -120,7 +120,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #ifdef ASSERT
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-    shadd(t0, t0, fp, t0, LogBytesPerWord);
+    shift_left_add(t0, t0, fp, LogBytesPerWord);
     beq(sp, t0, L);
     stop(msg);
     bind(L);
@@ -161,6 +161,17 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_index_at_bcp(Register index, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_method_counters(Register method, Register mcs, Label& skip);
 
+  // Allocate instance in "obj" and read in the content of the value field
+  // NOTES:
+  //   - input holder object via "obj", which must be x10,
+  //     will return new instance via the same reg
+  //   - assumes holder_klass and valueKlass field klass have both been resolved
+  void read_flat_field(Register entry, Register obj);
+
+  void write_flat_field(Register entry, Register field_offset,
+                        Register tmp1, Register tmp2,
+                        Register obj);
+
   // Load cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Register tmp = x15);
 
@@ -183,7 +194,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void empty_expression_stack() {
     ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    shadd(esp, t0, fp, t0, LogBytesPerWord);
+    shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
     // null last_sp until next java call
     sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   }
@@ -198,7 +209,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass.
-  void gen_subtype_check( Register sub_klass, Label &ok_is_subtype );
+  void gen_subtype_check( Register sub_klass, Label &ok_is_subtype, bool profile = true);
 
   // Dispatching
   void dispatch_prolog(TosState state, int step = 0);
@@ -271,7 +282,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void narrow(Register result);
 
   void profile_taken_branch(Register mdp);
-  void profile_not_taken_branch(Register mdp);
+  void profile_not_taken_branch(Register mdp, bool acmp = false);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp);
@@ -282,6 +293,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_switch_default(Register mdp);
   void profile_switch_case(Register index_in_scratch, Register mdp,
                            Register temp);
+  template <class ArrayData> void profile_array_type(Register mdp, Register array, Register tmp);
+  void profile_multiple_element_types(Register mdp, Register element, Register tmp, Register tmp2);
+  void profile_element_type(Register mdp, Register element, Register tmp);
+  void profile_acmp(Register mdp, Register left, Register right, Register tmp);
 
   void profile_obj_type(Register obj, const Address& mdo_addr, Register tmp);
   void profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual);

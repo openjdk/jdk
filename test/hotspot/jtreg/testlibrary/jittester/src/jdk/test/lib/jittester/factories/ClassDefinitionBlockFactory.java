@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,8 @@ class ClassDefinitionBlockFactory extends Factory<ClassDefinitionBlock> {
     @Override
     public ClassDefinitionBlock produce() throws ProductionFailedException {
         ArrayList<IRNode> content = new ArrayList<>();
+        int identityValueClassBalance = Math.max(0, Math.min(100,
+                ProductionParams.identityValueClassBalance.value()));
         int limit = (int) Math.ceil(PseudoRandom.random() * classesLimit);
         if (limit > 0) {
             long classCompl = complexityLimit / limit;
@@ -75,9 +77,17 @@ class ClassDefinitionBlockFactory extends Factory<ClassDefinitionBlock> {
             for (int i = 0; i < limit; i++) {
                 try {
                     Rule<IRNode> rule = new Rule<>("class");
-                    rule.add("basic_class", builder.setName(prefix + "_Class_" + i)
-                            .setMemberFunctionsLimit(memberFunctionsLimit)
-                            .getKlassFactory());
+                    int identityClassWeight = 100 - identityValueClassBalance;
+                    if (identityClassWeight > 0) {
+                        rule.add("identity_class", builder.setName(prefix + "_Class_" + i)
+                                .setMemberFunctionsLimit(memberFunctionsLimit)
+                                .getKlassFactory(), identityClassWeight);
+                    }
+                    if (identityValueClassBalance > 0) {
+                        rule.add("value_class", builder.setName(prefix + "_Value_Class_" + i)
+                                .setMemberFunctionsLimit(memberFunctionsLimit)
+                                .getValueKlassFactory(), identityValueClassBalance);
+                    }
                     if (!ProductionParams.disableInterfaces.value()) {
                         rule.add("interface", builder.setName(prefix + "_Interface_" + i)
                                 .setMemberFunctionsLimit((int) (memberFunctionsLimit * 0.2))

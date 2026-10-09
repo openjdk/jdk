@@ -541,21 +541,34 @@ public class VectorAlgorithmsImpl {
             int next = REVERSE_POWERS_OF_31_STEP_4[0]; // 31^L
             var vcoef = IntVector.fromArray(SPECIES_I, REVERSE_POWERS_OF_31_STEP_4, 1); // W
             var vresult = IntVector.zero(SPECIES_I);
+            final boolean isLE = java.nio.ByteOrder.nativeOrder() == java.nio.ByteOrder.LITTLE_ENDIAN;
             int i;
             for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
                 var vb = ByteVector.fromArray(SPECIES_B, a, i);
                 // Add 128 to each byte.
                 var vs = vb.lanewise(VectorOperators.XOR, (byte)0x80)
                            .reinterpretAsShorts();
-                // Each short lane contains 2 bytes, crunch them.
-                var vi = vs.and((short)0xff) // lower byte
-                           .mul((short)31)
-                           .add(vs.lanewise(VectorOperators.LSHR, 8)) // upper byte
-                           .reinterpretAsInts();
-                // Each int contains 2 shorts, crunch them.
-                var v  = vi.and(0xffff) // lower short
-                           .mul(31 * 31)
-                           .add(vi.lanewise(VectorOperators.LSHR, 16)); // upper short
+                // Each short lane contains 2 bytes.
+                // Extract them in logical byte order (b0, b1), independent of platform endianness.
+                ShortVector firstByte = isLE ? vs.and((short)0xff)                          // b0
+                                             : vs.lanewise(VectorOperators.LSHR, 8);        // b0 on BE
+                ShortVector secondByte = isLE ? vs.lanewise(VectorOperators.LSHR, 8)        // b1
+                                              : vs.and((short)0xff);                        // b1 on BE
+                // Combine each byte pair into a pairwise hash value.
+                var vi = firstByte.mul((short)31)
+                                  .add(secondByte)
+                                  .reinterpretAsInts();
+                // Each int lane contains two pairswise hash chunks:
+                // p0 = b0 * 31 + b1
+                // p1 = b2 * 31 + b3
+                // Extract them in logical order, independent of platform endianness.
+                IntVector pair0 = isLE ? vi.and(0xffff)                                    // p0
+                                       : vi.lanewise(VectorOperators.LSHR, 16);            // p0 on BE
+                IntVector pair1 = isLE ? vi.lanewise(VectorOperators.LSHR, 16)             // p1
+                                       : vi.and(0xffff);                                   // p1 on BE
+                // Crunch the pairwise results into one value.
+                var v = pair0.mul(31 * 31)
+                             .add(pair1);
                 // Add the correction for the 128 additions above.
                 v = v.add(-128 * (31*31*31 + 31*31 + 31 + 1));
                 // Every element of v now contains a crunched int-package of 4 bytes.

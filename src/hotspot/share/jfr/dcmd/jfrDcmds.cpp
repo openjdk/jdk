@@ -23,6 +23,7 @@
  */
 
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/jfr.hpp"
@@ -38,6 +39,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -113,9 +115,8 @@ static void handle_pending_exception(outputStream* output, bool startup, oop thr
 }
 
 static void print_message(outputStream* output, oop content, TRAPS) {
-  objArrayOop lines = objArrayOop(content);
-  assert(lines != nullptr, "invariant");
-  assert(lines->is_array(), "must be array");
+  assert(content != nullptr, "invariant");
+  refArrayOop lines = oop_cast<refArrayOop>(content);
   const int length = lines->length();
   for (int i = 0; i < length; ++i) {
     const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
@@ -129,9 +130,8 @@ static void print_message(outputStream* output, oop content, TRAPS) {
 
 static void log(oop content, TRAPS) {
   LogMessage(jfr,startup) msg;
-  objArrayOop lines = objArrayOop(content);
-  assert(lines != nullptr, "invariant");
-  assert(lines->is_array(), "must be array");
+  assert(content != nullptr, "invariant");
+  refArrayOop lines = oop_cast<refArrayOop>(content);
   const int length = lines->length();
   for (int i = 0; i < length; ++i) {
     const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
@@ -163,19 +163,21 @@ static void handle_dcmd_result(outputStream* output,
   assert(!HAS_PENDING_EXCEPTION, "invariant");
 
   if (startup) {
-    if (log_is_enabled(Warning, jfr, startup))  {
-      // if warning is set, assume user hasn't configured log level
-      // Log to Info and reset to Warning. This way user can disable
-      // default output by setting -Xlog:jfr+startup=error/off
+    // jfr+startup message requires info level to print to stdout,
+    // so updating log level of jfr+startup to Info temporally if needs,
+    // and would restore it to Warning.
+    // The user can disable default output by setting -Xlog:jfr+startup=error/off.
+    bool is_warn_level = log_is_enabled(Warning, jfr, startup) && !log_is_enabled(Info, jfr, startup);
+    if (is_warn_level) {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(jfr, startup));
-      log(result, THREAD);
+    }
+    log(result, THREAD);
+    if (is_warn_level) {
       LogConfiguration::configure_stdout(LogLevel::Warning, true, LOG_TAGS(jfr, startup));
-    } else {
-      log(result, THREAD);
     }
   } else {
-      // Print output for jcmd or MXBean
-      print_message(output, result, THREAD);
+    // Print output for jcmd or MXBean
+    print_message(output, result, THREAD);
   }
 }
 
@@ -353,9 +355,9 @@ GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
     assert(array->length() == _num_arguments, "invariant");
     return array;
   }
-  objArrayOop arguments = objArrayOop(result.get_oop());
-  assert(arguments != nullptr, "invariant");
-  assert(arguments->is_array(), "must be array");
+  oop oop_args = result.get_oop();
+  assert(oop_args != nullptr, "invariant");
+  refArrayOop arguments = oop_cast<refArrayOop>(oop_args);
   const int num_arguments = arguments->length();
   assert(num_arguments == _num_arguments, "invariant");
   prepare_dcmd_string_arena(thread);
@@ -486,8 +488,9 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
     out->print_cr("                      The option redact-argument is best-effort and applies only to");
     out->print_cr("                      command-line arguments in the jdk.JVMInformation event and to");
     out->print_cr("                      the java.command system property in the jdk.InitialSystemProperty");
-    out->print_cr("                      event. Other events, such as jdk.ProcessStart (child processes),");
-    out->print_cr("                      are not redacted.");
+    out->print_cr("                      event, and to matching command-line argument text in the values");
+    out->print_cr("                      of jdk.InitialEnvironmentVariable events. Other events, such as");
+    out->print_cr("                      jdk.ProcessStart (child processes), are not redacted.");
     out->print_cr("");
     out->print_cr("                      If the redact-argument option is not specified, the following");
     out->print_cr("                      filters are used by default:");

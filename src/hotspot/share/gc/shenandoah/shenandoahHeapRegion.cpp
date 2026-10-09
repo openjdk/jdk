@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
@@ -40,14 +39,11 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/safepoint.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 size_t ShenandoahHeapRegion::RegionCount = 0;
@@ -428,6 +424,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   }
 
   st->print("|%s", shenandoah_affiliation_code(affiliation()));
+  st->print("|A %2d", age());
 
 #define SHR_PTR_FORMAT "%12" PRIxPTR
 
@@ -821,15 +818,6 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
   _state.release_store(to);
 }
 
-void ShenandoahHeapRegion::record_pin() {
-  _critical_pins.add_then_fetch((size_t)1);
-}
-
-void ShenandoahHeapRegion::record_unpin() {
-  assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
-  _critical_pins.sub_then_fetch((size_t)1);
-}
-
 size_t ShenandoahHeapRegion::pin_count() const {
   return _critical_pins.load_relaxed();
 }
@@ -846,16 +834,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
                   p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark.load_relaxed()), p2i(ctx->top_bitmap(this)));
   }
 
-#ifdef ASSERT
-  {
-    size_t idx = this->index();
-    HeapWord* top_bitmap = ctx->top_bitmap(this);
-
-    assert(ctx->is_bitmap_range_within_region_clear(top_bitmap, _end),
-           "Region %zu, bitmap should be clear between top_bitmap: " PTR_FORMAT " and end: " PTR_FORMAT, idx,
-           p2i(top_bitmap), p2i(_end));
-  }
-#endif
+  shenandoah_assert_clear_above_top(this);
 
   if (region_affiliation == new_affiliation) {
     return;

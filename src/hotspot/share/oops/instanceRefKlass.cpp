@@ -62,7 +62,7 @@ static ReferenceType determine_reference_type(const ClassFileParser& parser) {
 }
 
 InstanceRefKlass::InstanceRefKlass(const ClassFileParser& parser)
-  : InstanceKlass(parser, Kind, determine_reference_type(parser)) {}
+  : InstanceKlass(parser, Kind, markWord::prototype(), determine_reference_type(parser)) {}
 
 void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   // Clear the nonstatic oop-map entries corresponding to referent

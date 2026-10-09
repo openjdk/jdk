@@ -32,6 +32,14 @@
 
 package jdk.internal.org.commonmark.node;
 
+/**
+ * An image, e.g.:
+ * <pre>
+ * ![foo](/url "title")
+ * </pre>
+ *
+ * @see <a href="https://spec.commonmark.org/0.31.2/#images">CommonMark Spec</a>
+ */
 public class Image extends Node {
 
     private String destination;

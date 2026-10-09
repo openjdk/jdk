@@ -27,14 +27,12 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import jdk.test.whitebox.WhiteBox;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /*
  * @test
@@ -237,11 +235,11 @@ public class TestIRMatching {
         runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array", 1, cmp, "Constant"),
                  BadFailOnConstraint.create(CheckCastArray.class, "array", 2, 1,cmp, "Constant", "MyClass"),
                  BadFailOnConstraint.create(CheckCastArray.class, "array", 2, 2,cmp, "Constant", "ir_framework/tests/MyClass"),
-                 GoodFailOnConstraint.create(CheckCastArray.class, "array", 3),
-                 Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
-                     GoodFailOnConstraint.create(CheckCastArray.class, "arrayCopy", 1)
-                     : BadFailOnConstraint.create(CheckCastArray.class, "arrayCopy", 1, "checkcast_arraycopy")
+                 GoodFailOnConstraint.create(CheckCastArray.class, "array", 3)
         );
+        runCheck(Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
+                     GoodFailOnConstraint.create(CheckCastArrayCopy.class, "arrayCopy", 1)
+                     : BadFailOnConstraint.create(CheckCastArrayCopy.class, "arrayCopy", 1, "checkcast_arraycopy"));
 
         try {
             runWithArgumentsFail(CompilationOutputOfFails.class);
@@ -432,6 +430,38 @@ public class TestIRMatching {
             addException(new RuntimeException("Should not find ids for \"" + methodName + "\"" + System.lineSeparator()));
         }
     }
+
+    // IR rules can also be defined in inner classes. In this case, the ourwe class is not allowed to also define
+    // IR rules (results in a format violation).
+    static class CountComparisons {
+        int iFld;
+
+        @Test
+        @IR(counts = {IRNode.STORE, "= 1",
+                IRNode.STORE, "=1",
+                IRNode.STORE, " = 1",
+                IRNode.STORE, "  =  1",
+                IRNode.STORE, ">= 1",
+                IRNode.STORE, ">=1",
+                IRNode.STORE, " >= 1",
+                IRNode.STORE, "  >=  1",
+                IRNode.STORE, "<= 1",
+                IRNode.STORE, "<=1",
+                IRNode.STORE, " <= 1",
+                IRNode.STORE, "  <=  1",
+                IRNode.STORE, "> 0",
+                IRNode.STORE, ">0",
+                IRNode.STORE, " > 0",
+                IRNode.STORE, "  >  0",
+                IRNode.STORE, "< 2",
+                IRNode.STORE, "<2",
+                IRNode.STORE, " < 2",
+                IRNode.STORE, "  <  2",
+        })
+        public void countComparison() {
+            iFld = 3;
+        }
+    }
 }
 
 class AndOr1 {
@@ -467,16 +497,16 @@ class MultipleFailOnGood {
 
     @Test
     @IR(failOn = {IRNode.STORE, IRNode.CALL})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "20"}, failOn = {IRNode.ALLOC})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "< 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "!= 20"}, failOn = {IRNode.ALLOC})
+    @IR(applyIf = {"TLABRefillWasteFraction", ">= 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
     public void good2() {
         forceInline();
     }
 
     @Test
     @IR(failOn = {IRNode.STORE_OF_CLASS, "Test", IRNode.CALL})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "20"}, failOn = {IRNode.ALLOC})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "< 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "!= 20"}, failOn = {IRNode.ALLOC})
+    @IR(applyIf = {"TLABRefillWasteFraction", ">= 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
     public void good3() {
         forceInline();
     }
@@ -636,36 +666,6 @@ class FlagComparisons {
     public void testMatchNoneIf50() {}
 }
 
-class CountComparisons {
-    int iFld;
-
-    @Test
-    @IR(counts = {IRNode.STORE, "= 1",
-                  IRNode.STORE, "=1",
-                  IRNode.STORE, " = 1",
-                  IRNode.STORE, "  =  1",
-                  IRNode.STORE, ">= 1",
-                  IRNode.STORE, ">=1",
-                  IRNode.STORE, " >= 1",
-                  IRNode.STORE, "  >=  1",
-                  IRNode.STORE, "<= 1",
-                  IRNode.STORE, "<=1",
-                  IRNode.STORE, " <= 1",
-                  IRNode.STORE, "  <=  1",
-                  IRNode.STORE, "> 0",
-                  IRNode.STORE, ">0",
-                  IRNode.STORE, " > 0",
-                  IRNode.STORE, "  >  0",
-                  IRNode.STORE, "< 2",
-                  IRNode.STORE, "<2",
-                  IRNode.STORE, " < 2",
-                  IRNode.STORE, "  <  2",
-    })
-    public void countComparison() {
-        iFld = 3;
-    }
-}
-
 class GoodCount {
     boolean flag;
     char cFld;
@@ -763,8 +763,17 @@ class GoodCount {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_OF_FIELD, "myClassEmpty", "1", IRNode.STORE_OF_CLASS, "GoodCount", "1",
-                  IRNode.STORE_OF_CLASS, "/GoodCount", "1", IRNode.STORE_OF_CLASS, "MyClassEmpty", "0"},
+    @IR(counts = {
+            IRNode.STORE_OF_FIELD, "myClassEmpty", "1",
+            IRNode.STORE_OF_CLASS, "oodCount", "0",
+            IRNode.STORE_OF_CLASS, "GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "ir_framework/tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/ir_framework/tests/GoodCount", "0",
+            IRNode.STORE_OF_CLASS, "MyClassEmpty", "0"
+        },
         failOn = {IRNode.STORE_OF_CLASS, "MyClassEmpty"})
     public void good6() {
         myClassEmpty = new MyClassEmpty();
@@ -1308,6 +1317,10 @@ class CheckCastArray {
         array(oArr);
         array(mArr);
     }
+}
+
+class CheckCastArrayCopy {
+    MyClass[] mArr = new MyClass[10];
 
     @Test
     @IR(failOn = IRNode.CHECKCAST_ARRAYCOPY) // fails

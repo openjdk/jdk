@@ -555,9 +555,10 @@ class UnixNativeDispatcher {
     /**
      * Capabilities
      */
-    private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
-    private static final int SUPPORTS_XATTR         = 1 << 3;
-    private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
+    private static final int SUPPORTS_OPENAT            = 1 << 1;  // syscalls
+    private static final int SUPPORTS_FCHMODAT_NOFOLLOW = 1 << 2;
+    private static final int SUPPORTS_XATTR             = 1 << 3;
+    private static final int SUPPORTS_BIRTHTIME         = 1 << 16; // other features
     private static final int capabilities;
 
     /**
@@ -585,9 +586,8 @@ class UnixNativeDispatcher {
      * Supports fchmodat with AT_SYMLINK_NOFOLLOW flag
      */
     static boolean fchmodatNoFollowSupported() {
-        return fchmodatNoFollowSupported0();
+        return (capabilities & SUPPORTS_FCHMODAT_NOFOLLOW) != 0;
     }
-    private static native boolean fchmodatNoFollowSupported0();
 
     private static native int init();
     static {

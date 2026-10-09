@@ -75,6 +75,7 @@ public class PerfMapTest {
 
         // Sanity check the file contents
         boolean sawCallStub = false;
+        boolean sawVtableStub = false;
         try {
             for (String entry : Files.readAllLines(path)) {
                 Matcher m = LINE_PATTERN.matcher(entry);
@@ -82,12 +83,17 @@ public class PerfMapTest {
                 if (m.group(3).contains("StubRoutines call_stub")) {
                     sawCallStub = true;
                 }
+                if (m.group(3).contains("vtable stub [")) {
+                    sawVtableStub = true;
+                }
             }
         } catch (IOException e) {
             Assert.fail(e.toString());
         }
         Assert.assertTrue(sawCallStub,
                           "Expected StubRoutines call_stub entry in " + path);
+        Assert.assertTrue(sawVtableStub,
+                          "Expected vtable stub entry in " + path);
     }
 
     @Test

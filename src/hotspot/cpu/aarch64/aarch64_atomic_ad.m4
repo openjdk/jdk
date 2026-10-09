@@ -32,6 +32,11 @@
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
+// CompareAndSwapX, GetAndSetX, and GetAndAddX represent sequentially
+// consistent operations. C2 emits a trailing MemBarAcquire for
+// these nodes, so their AArch64 implementation always needs acquire semantics.
+// Non-acquiring match rules would consequently be unreachable.
+
 // This section is generated from aarch64_atomic_ad.m4
 
 dnl Return Arg1 with two spaces before it. We need this because m4
@@ -45,7 +50,8 @@ dnl
 define(`CAE_INSN1',
 `
 instruct compareAndExchange$1$7(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
-ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
+ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       INDENT(predicate(!needs_acquiring_load_exclusive(n));))
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
   ins_cost(`'ifelse($7,Acq,,2*)VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -54,8 +60,7 @@ ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::$4, /*acquire*/ ifelse($7,Acq,true,false), /*release*/ true,
-               /*weak*/ false, $res$$Register);
+               Assembler::$4, ifelse($7,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
     __ $6($res$$Register, $res$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -65,10 +70,10 @@ define(`CAE_INSN2',
 instruct compareAndExchange$1$6(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
 ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
        $1$6,NAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
-       $1,P,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
-       $1,N,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
+       $1,P,INDENT(predicate(!needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
+       $1,N,INDENT(predicate(!needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
        $6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
-       `dnl')
+       INDENT(predicate(!needs_acquiring_load_exclusive(n));))
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
   ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -77,8 +82,7 @@ ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::$4, /*acquire*/ ifelse($6,Acq,true,false), /*release*/ true,
-               /*weak*/ false, $res$$Register);
+               Assembler::$4, ifelse($6,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -104,7 +108,8 @@ dnl
 define(`CAS_INSN1',
 `
 instruct ifelse($7,Weak,'weakCompare`,'compare`)AndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
-ifelse($6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
+ifelse($6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       INDENT(predicate(!needs_acquiring_load_exclusive(n));))
   match(Set res ($7CompareAndSwap$1 mem (Binary oldval newval)));
   ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(KILL cr);
@@ -113,9 +118,7 @@ ifelse($6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::$4, /*acquire*/ ifelse($6,Acq,true,false), /*release*/ true,
-               /*weak*/ ifelse($7,Weak,true,false), noreg);
+    __ ifelse($7,Weak,cmpxchg_weak,cmpxchg)($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::$4, ifelse($6,Acq,memory_order_seq_cst,memory_order_release));
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -126,10 +129,10 @@ define(`CAS_INSN2',
 instruct ifelse($7,Weak,'weakCompare`,'compare`)AndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
 ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
        $1$6,NAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
-       $1,P,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
-       $1,N,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
+       $1,P,INDENT(predicate(!needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
+       $1,N,INDENT(predicate(!needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
        $6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
-       `dnl')
+       INDENT(predicate(!needs_acquiring_load_exclusive(n));))
   match(Set res ($7CompareAndSwap$1 mem (Binary oldval newval)));
   ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(KILL cr);
@@ -138,20 +141,11 @@ ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::$4, /*acquire*/ ifelse($6,Acq,true,false), /*release*/ true,
-               /*weak*/ ifelse($7,Weak,true,false), noreg);
+    __ ifelse($7,Weak,cmpxchg_weak,cmpxchg)($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::$4, ifelse($6,Acq,memory_order_seq_cst,memory_order_release));
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-dnl
-CAS_INSN1(B,    I,  byte,       byte,       b,  ,           )
-CAS_INSN1(S,    I,  short,      halfword,   s,  ,           )
-CAS_INSN2(I,    I,  int,        word,       w,  ,           )
-CAS_INSN2(L,    L,  long,       xword,      ,   ,           )
-CAS_INSN2(N,    N,  narrow oop, word,       w,  ,           )
-CAS_INSN2(P,    P,  ptr,        xword,      ,   ,           )
 dnl
 CAS_INSN1(B,    I,  byte,       byte,       b,  Acq,        )
 CAS_INSN1(S,    I,  short,      halfword,   s,  Acq,        )
@@ -215,13 +209,6 @@ ifelse($1$4,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
   ins_pipe(pipe_serial);
 %}')dnl
 dnl
-GAS_INSN1(B, I, b,    , sxtbw)
-GAS_INSN1(S, I, h,    , sxthw)
-GAS_INSN2(I, I, w,    )
-GAS_INSN2(L, L,  ,    )
-GAS_INSN2(N, N, w,    )
-GAS_INSN2(P, P,  ,    )
-dnl
 GAS_INSN1(B, I, b, Acq, sxtbw)
 GAS_INSN1(S, I, h, Acq, sxthw)
 GAS_INSN2(I, I, w, Acq)
@@ -265,39 +252,23 @@ ifelse($5$6,AcqNoRes,INDENT(predicate(n->as_LoadStore()->result_not_used() && ne
 %}')dnl
 dnl
 dnl
-GAA_INSN1(B, I, IorL2I,  b,    , sxtbw,      )
 GAA_INSN1(B, I, IorL2I,  b, Acq, sxtbw,      )
-GAA_INSN2(B, I, IorL2I,  b, ,    NoRes,      )
 GAA_INSN2(B, I, IorL2I,  b, Acq, NoRes,      )
-GAA_INSN1(B, I, I8,      b,    , sxtbw, Const)
 GAA_INSN1(B, I, I8,      b, Acq, sxtbw, Const)
-GAA_INSN2(B, I, I8,      b, ,    NoRes, Const)
 GAA_INSN2(B, I, I8,      b, Acq, NoRes, Const)
 dnl
-GAA_INSN1(S, I, IorL2I,  h,    , sxthw,      )
 GAA_INSN1(S, I, IorL2I,  h, Acq, sxthw,      )
-GAA_INSN2(S, I, IorL2I,  h,    , NoRes,      )
 GAA_INSN2(S, I, IorL2I,  h, Acq, NoRes,      )
-GAA_INSN1(S, I, SAddSub, h,    , sxthw, Const)
 GAA_INSN1(S, I, SAddSub, h, Acq, sxthw, Const)
-GAA_INSN2(S, I, SAddSub, h,    , NoRes, Const)
 GAA_INSN2(S, I, SAddSub, h, Acq, NoRes, Const)
 dnl
-GAA_INSN2(I, I, IorL2I,  w,    ,      ,      )
 GAA_INSN2(I, I, IorL2I,  w, Acq,      ,      )
-GAA_INSN2(I, I, IorL2I,  w,    , NoRes,      )
 GAA_INSN2(I, I, IorL2I,  w, Acq, NoRes,      )
-GAA_INSN2(I, I, IAddSub, w,    ,      , Const)
 GAA_INSN2(I, I, IAddSub, w, Acq,      , Const)
-GAA_INSN2(I, I, IAddSub, w,    , NoRes, Const)
 GAA_INSN2(I, I, IAddSub, w, Acq, NoRes, Const)
 dnl
-GAA_INSN2(L, L, L,        ,    ,      ,      )
 GAA_INSN2(L, L, L,        , Acq,      ,      )
-GAA_INSN2(L, L, L,        ,    , NoRes,      )
 GAA_INSN2(L, L, L,        , Acq, NoRes,      )
-GAA_INSN2(L, L, LAddSub,  ,    ,      , Const)
 GAA_INSN2(L, L, LAddSub,  , Acq,      , Const)
-GAA_INSN2(L, L, LAddSub,  ,    , NoRes, Const)
 GAA_INSN2(L, L, LAddSub,  , Acq, NoRes, Const)
 dnl
