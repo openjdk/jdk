@@ -428,7 +428,7 @@
           "not available, next recovery step would be triggered.")          \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, ShenandoahFullGCThreshold, 3, EXPERIMENTAL,                \
+  product(uintx, ShenandoahFullGCThreshold, 2, EXPERIMENTAL,                \
           "How many consecutive concurrent GCs a thread will wait for "     \
           "before going to a Full GC.")                                     \
                                                                             \
