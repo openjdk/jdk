@@ -1803,12 +1803,12 @@ Value GraphBuilder::make_constant(ciConstant field_value, ciField* field) {
   }
 }
 
-void GraphBuilder::copy_inline_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before, ciField* enclosing_field) {
+void GraphBuilder::copy_value_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before, ciField* enclosing_field) {
   for (int i = 0; i < vk->nof_declared_nonstatic_fields(); i++) {
     ciField* field = vk->declared_nonstatic_field_at(i);
     int offset = field->offset_in_bytes() - vk->payload_offset();
     if (field->is_flat()) {
-      copy_inline_content(field->type()->as_value_klass(), src, src_off + offset, dest, dest_off + offset, state_before, enclosing_field);
+      copy_value_content(field->type()->as_value_klass(), src, src_off + offset, dest, dest_off + offset, state_before, enclosing_field);
       if (!field->is_null_free()) {
         // Nullable, copy the null marker using Unsafe because null markers are not real fields
         int null_marker_offset = field->null_marker_offset() - vk->payload_offset();
@@ -1839,7 +1839,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
                               (!field->is_flat() && PatchALot);
 
   ValueStack* state_before = nullptr;
-  if (!holder->is_initialized() || needs_patching) {
+  if (!holder->is_initialized() || needs_patching || compilation()->env()->is_aot_compile()) {
     // save state before instruction for debug info when
     // deoptimization happens during patching
     state_before = copy_state_before();
@@ -2052,7 +2052,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
                 NewInstance* buffer = new NewInstance(value_klass, state_before, false, true);
                 _memory->new_instance(buffer);
                 apush(append_split(buffer));
-                copy_inline_content(value_klass, pending_field_access()->obj(),
+                copy_value_content(value_klass, pending_field_access()->obj(),
                                     pending_field_access()->offset() + field->offset_in_bytes() - field->holder()->as_value_klass()->payload_offset(),
                                     buffer, value_klass->payload_offset(), state_before);
                 set_pending_field_access(nullptr);
@@ -2072,7 +2072,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
                   // Needs an explicit null check because below code does not perform any actual load if there are no fields
                   null_check(obj);
                 }
-                copy_inline_content(value_klass, obj, field->offset_in_bytes(), buffer, value_klass->payload_offset(), state_before);
+                copy_value_content(value_klass, obj, field->offset_in_bytes(), buffer, value_klass->payload_offset(), state_before);
 
                 Instruction* result = buffer;
                 if (!field->is_null_free()) {
@@ -2131,19 +2131,23 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
           append(new StoreField(obj, offset, field, val, false, state_before, needs_patching));
         } else if (field->is_null_free()) {
           assert(!value_klass->is_empty(), "should have been handled");
-          copy_inline_content(value_klass, val, value_klass->payload_offset(), obj, offset, state_before, field);
+          copy_value_content(value_klass, val, value_klass->payload_offset(), obj, offset, state_before, field);
         } else {
           if (!value_klass->is_initialized()) {
             // null_reset_value is not available, bailout for now
             bailout("store to an uninitialized nullable non-atomic flat field");
             return;
           }
+          if (value_klass->is_empty()) {
+            // Needs an explicit null check because the code below does not emit a store that performs an implicit null check for empty classes.
+            null_check(obj);
+          }
 
           // Store the subfields when field is a nullable non-atomic field
           Value object_null = append(new Constant(objectNull));
           Value null_reset_value = append(new Constant(new ObjectConstant(value_klass->get_null_reset_value().as_object())));
           Value src = append(new IfOp(val, Instruction::neq, object_null, val, null_reset_value, state_before, false));
-          copy_inline_content(value_klass, src, value_klass->payload_offset(), obj, offset, state_before);
+          copy_value_content(value_klass, src, value_klass->payload_offset(), obj, offset, state_before);
 
           // Store the null marker
           Value int_one = append(new Constant(new IntConstant(1)));
@@ -2426,7 +2430,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       callee_holder->is_loaded()) { // the effect of symbolic reference resolution
 
     // callee is known => check if we have static binding
-    if ((code == Bytecodes::_invokestatic && klass->is_initialized()) || // invokestatic involves an initialization barrier on declaring class
+    if ((code == Bytecodes::_invokestatic && klass->is_initialized() &&
+        !compilation()->env()->is_aot_compile()) || // invokestatic involves an initialization barrier on declaring class
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
@@ -4195,6 +4200,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
   if (!callee->holder()->is_linked())      INLINE_BAILOUT("callee's klass not linked yet");
   if (bc == Bytecodes::_invokestatic &&
       !callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
+  if (bc == Bytecodes::_invokestatic &&
+      compilation()->env()->is_aot_compile()) INLINE_BAILOUT("AOT compilation");
   if (!callee->has_balanced_monitors())    INLINE_BAILOUT("callee's monitors do not match");
 
   // Proper inlining of methods with jsrs requires a little more work.

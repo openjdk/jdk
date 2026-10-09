@@ -848,7 +848,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   char* thread_name = nullptr;
   if (log_is_enabled(Debug, os, thread, timer)) {
     ResourceMark rm(this);
-    thread_name = os::strdup(name());
+    thread_name = os::strdup(name(), mtInternal);
   }
 
   if (log_is_enabled(Info, os, thread)) {
@@ -1345,8 +1345,9 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   // print guess for valid stack memory region (assume 4K pages); helps lock debugging
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
   if (thread_oop != nullptr) {
-    if (is_vthread_mounted()) {
-      st->print_cr("   Carrying virtual thread #" INT64_FORMAT, java_lang_Thread::thread_id(vthread()));
+    oop vthread_oop = vthread();
+    if (java_lang_VirtualThread::is_instance(vthread_oop)) {
+      st->print_cr("   Carrying virtual thread #" INT64_FORMAT, java_lang_Thread::thread_id(vthread_oop));
     } else {
       st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
     }
@@ -2028,7 +2029,7 @@ void JavaThread::pretouch_stack() {
 
 // Deferred OopHandle release support.
 
-class OopHandleList : public CHeapObj<mtInternal> {
+class OopHandleList : public CHeapObj<mtThread> {
   static const int _count = 4;
   OopHandle _handles[_count];
   OopHandleList* _next;

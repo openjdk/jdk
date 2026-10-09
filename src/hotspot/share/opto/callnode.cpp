@@ -735,6 +735,18 @@ void CallNode::dump_spec(outputStream *st) const {
   if (jvms() != nullptr)  jvms()->dump_spec(st);
 }
 
+ciKlass* AllocateNode::allocation_klass() const {
+  const Node* const klass_node = in(KlassNode);
+  if (klass_node == nullptr) {
+    return nullptr;
+  }
+  const TypeKlassPtr* const klass_ptr = klass_node->bottom_type()->isa_klassptr();
+  if (klass_ptr == nullptr || !klass_ptr->klass_is_exact()) {
+    return nullptr;
+  }
+  return klass_ptr->exact_klass();
+}
+
 void AllocateNode::dump_spec(outputStream* st) const {
   st->print(" ");
   if (tf() != nullptr) {
@@ -743,20 +755,16 @@ void AllocateNode::dump_spec(outputStream* st) const {
   if (_cnt != COUNT_UNKNOWN) {
     st->print(" C=%f", _cnt);
   }
-  const Node* const klass_node = in(KlassNode);
-  if (klass_node != nullptr) {
-    const TypeKlassPtr* const klass_ptr = klass_node->bottom_type()->isa_klassptr();
-
-    if (klass_ptr != nullptr && klass_ptr->klass_is_exact()) {
-      st->print(" allocationKlass:");
-      klass_ptr->exact_klass()->print_name_on(st);
-    }
+  ciKlass* alloc_klass = allocation_klass();
+  if (alloc_klass != nullptr) {
+    st->print(" allocationKlass:");
+    alloc_klass->print_name_on(st);
   }
   if (jvms() != nullptr) {
     jvms()->dump_spec(st);
   }
 }
-#endif
+#endif // !PRODUCT
 
 const Type *CallNode::bottom_type() const { return tf()->range_cc(); }
 const Type* CallNode::Value(PhaseGVN* phase) const {
@@ -880,38 +888,17 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
     // are not passed as arguments according to Escape Analysis.
     return false;
   }
-  if (t_oop->is_ptr_to_boxed_value()) {
+  if (t_oop->is_ptr_to_boxed_value() && is_CallStaticJava()) {
     ciKlass* boxing_klass = t_oop->is_instptr()->instance_klass();
-    if (is_CallStaticJava() && as_CallStaticJava()->is_boxing_method()) {
+    if (as_CallStaticJava()->is_boxing_method()) {
       // Skip unrelated boxing methods.
       Node* proj = proj_out_or_null(TypeFunc::Parms);
       if ((proj == nullptr) || (phase->type(proj)->is_instptr()->instance_klass() != boxing_klass)) {
         return false;
       }
     }
-    if (is_CallJava() && as_CallJava()->method() != nullptr) {
-      ciMethod* meth = as_CallJava()->method();
-      if (meth->is_getter()) {
-        return false;
-      }
-      // May modify (by reflection) if an boxing object is passed
-      // as argument or returned.
-      Node* proj = returns_pointer() ? proj_out_or_null(TypeFunc::Parms) : nullptr;
-      if (proj != nullptr) {
-        const TypeInstPtr* inst_t = phase->type(proj)->isa_instptr();
-        if ((inst_t != nullptr) && (!inst_t->klass_is_exact() ||
-                                   (inst_t->instance_klass() == boxing_klass))) {
-          return true;
-        }
-      }
-      const TypeTuple* d = tf()->domain_cc();
-      for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
-        const TypeInstPtr* inst_t = d->field_at(i)->isa_instptr();
-        if ((inst_t != nullptr) && (!inst_t->klass_is_exact() ||
-                                 (inst_t->instance_klass() == boxing_klass))) {
-          return true;
-        }
-      }
+    ciMethod* meth = as_CallStaticJava()->method();
+    if (meth != nullptr && meth->is_getter()) {
       return false;
     }
   }
@@ -1469,7 +1456,7 @@ Node* CallStaticJavaNode::replace_identity_hash_code(PhaseIterGVN* igvn) {
   }
   Node* new_mem = kit.reset_memory();
   assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
-  return TupleNode::make(tf()->range_cc(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
+  return TupleNode::make(tf()->range_cc(), adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 // Try to replace a runtime call to the substitutability test by either a simple pointer comparison
@@ -1516,7 +1503,7 @@ Node* CallStaticJavaNode::replace_is_substitutable(PhaseIterGVN* igvn) {
   }
   Node* new_mem = kit.reset_memory();
   assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
-  return TupleNode::make(tf()->range_cc(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
+  return TupleNode::make(tf()->range_cc(), adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 #ifndef PRODUCT
@@ -1685,7 +1672,7 @@ bool CallLeafPureNode::is_dead() const {
 TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
   // Transparently propagate input state but parameters
   TupleNode* tuple = TupleNode::make(
-      tf()->range_cc(),
+      tf()->range_cc(), nullptr,
       in(TypeFunc::Control),
       in(TypeFunc::I_O),
       in(TypeFunc::Memory),
@@ -1899,15 +1886,15 @@ void SafePointNode::grow_stack(JVMState* jvms, uint grow_by) {
   jvms->set_endoff(endoff + grow_by);
 }
 
-void SafePointNode::push_monitor(const FastLockNode *lock) {
+void SafePointNode::push_monitor(BoxLockNode* box, Node* obj) {
   // Add a LockNode, which points to both the original BoxLockNode (the
   // stack space for the monitor) and the Object being locked.
   const int MonitorEdges = 2;
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   assert(req() == jvms()->endoff(), "correct sizing");
   int nextmon = jvms()->scloff();
-  ins_req(nextmon,   lock->box_node());
-  ins_req(nextmon+1, lock->obj_node());
+  ins_req(nextmon, box);
+  ins_req(nextmon+1, obj);
   jvms()->set_scloff(nextmon + MonitorEdges);
   jvms()->set_endoff(req());
 }
@@ -1927,13 +1914,13 @@ void SafePointNode::pop_monitor() {
   assert(jvms()->nof_monitors() == num_before_pop-1, "");
 }
 
-Node *SafePointNode::peek_monitor_box() const {
+BoxLockNode* SafePointNode::peek_monitor_box() const {
   int mon = jvms()->nof_monitors() - 1;
   assert(mon >= 0, "must have a monitor");
   return monitor_box(jvms(), mon);
 }
 
-Node *SafePointNode::peek_monitor_obj() const {
+Node* SafePointNode::peek_monitor_obj() const {
   int mon = jvms()->nof_monitors() - 1;
   assert(mon >= 0, "must have a monitor");
   return monitor_obj(jvms(), mon);
@@ -2286,17 +2273,8 @@ uint LockNode::size_of() const { return sizeof(*this); }
 // Locking and unlocking have a canonical form in ideal that looks
 // roughly like this:
 //
-//              <obj>
-//                | \\------+
-//                |  \       \
-//                | BoxLock   \
-//                |  |   |     \
-//                |  |    \     \
-//                |  |   FastLock
-//                |  |   /
-//                |  |  /
-//                |  |  |
-//
+//             obj  BoxLock
+//               \   /
 //               Lock
 //                |
 //            Proj #0
@@ -2533,8 +2511,7 @@ void AbstractLockNode::dump_compact_spec(outputStream* st) const {
 #endif
 
 //=============================================================================
-Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-
+Node* LockNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // perform any generic optimizations first (returns 'this' or null)
   Node *result = SafePointNode::Ideal(phase, can_reshape);
   if (result != nullptr)  return result;
@@ -2714,7 +2691,7 @@ bool LockNode::is_nested_lock_region(Compile * c) {
     // Loop over monitors
     for (int idx = 0; idx < num_mon; idx++) {
       Node* obj_node = sfn->monitor_obj(jvms, idx);
-      BoxLockNode* box_node = sfn->monitor_box(jvms, idx)->as_BoxLock();
+      BoxLockNode* box_node = sfn->monitor_box(jvms, idx);
       if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
         box->set_nested();
         return true;
@@ -2980,7 +2957,7 @@ TupleNode* PowDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, N
   Compile* C = phase->C;
   C->remove_macro_node(this);
   TupleNode* tuple = TupleNode::make(
-      tf()->range_cc(),
+      tf()->range_cc(), nullptr,
       control,
       in(TypeFunc::I_O),
       in(TypeFunc::Memory),

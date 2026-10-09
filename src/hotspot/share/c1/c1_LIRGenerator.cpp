@@ -36,6 +36,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "ci/ciValueKlass.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -657,18 +658,19 @@ void LIRGenerator::print_if_not_loaded(const NewInstance* new_instance) {
 }
 #endif
 
-void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_inline, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
-  if (allow_inline) {
+void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_value, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
+  if (allow_value) {
     assert(!is_unresolved && klass->is_loaded(), "value type klass should be resolved");
     __ metadata2reg(klass->constant_encoding(), klass_reg);
   } else {
     klass2reg_with_patching(klass_reg, klass, info, is_unresolved);
   }
   // If klass is not loaded we do not know if the klass has finalizers or is an unexpected value klass
-  if (UseFastNewInstance && klass->is_loaded() && (allow_inline || !klass->is_value_klass())
+  if (UseFastNewInstance && klass->is_loaded() && (allow_value || !klass->is_value_klass())
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
 
-    StubId stub_id = klass->is_initialized() ? StubId::c1_fast_new_instance_id : StubId::c1_fast_new_instance_init_check_id;
+    bool known_initialized = klass->is_initialized() && !compilation()->env()->is_aot_compile();
+    StubId stub_id = known_initialized ? StubId::c1_fast_new_instance_id : StubId::c1_fast_new_instance_init_check_id;
 
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, stub_id);
 
@@ -677,7 +679,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
     assert(klass->size_helper() > 0, "illegal instance size");
     const int instance_size = align_object_size(klass->size_helper());
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
-                       oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
+                       oopDesc::header_size(), instance_size, klass_reg, !known_initialized, slow_path);
   } else {
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, StubId::c1_new_instance_id);
     __ jump(slow_path);
@@ -1085,7 +1087,7 @@ LIR_Opr LIRGenerator::rlock_result(Value x, BasicType type) {
   switch (type) {
   case T_BYTE:
   case T_BOOLEAN:
-    reg = rlock_byte(type);
+    reg = rlock_byte();
     break;
   default:
     reg = rlock(x);
@@ -1201,7 +1203,7 @@ void LIRGenerator::do_Return(Return* x) {
   if (x->type()->is_void()) {
     __ return_op(LIR_OprFact::illegalOpr);
   } else {
-    LIR_Opr reg = result_register_for(x->type(), /*callee=*/true);
+    LIR_Opr reg = result_register_for(x->type());
     LIRItem result(x->result(), this);
 
     result.load_item_force(reg);
@@ -2500,7 +2502,11 @@ void LIRGenerator::do_Throw(Throw* x) {
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    increment_counter(Runtime1::throw_count_address(), T_INT);
+    BasicTypeList signature;
+    LIR_OprList* args = new LIR_OprList();
+    call_runtime(&signature, args,
+                 CAST_FROM_FN_PTR(address, Runtime1::increment_throw_count),
+                 voidType, nullptr);
   }
 #endif
 
@@ -2744,7 +2750,7 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   assert(lo_key <= (lo_key + (len - 1)), "integer overflow");
   LIR_Opr value = tag.result();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
@@ -2802,7 +2808,7 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
   LIR_Opr value = tag.result();
   int len = x->length();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
@@ -3849,13 +3855,18 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   int offset = -1;
   LIR_Opr counter_holder;
   if (level == CompLevel_limited_profile) {
-    MethodCounters* counters_adr = method->ensure_method_counters();
+    ciMetadata* counters_adr = method->ensure_method_counters();
     if (counters_adr == nullptr) {
       bailout("method counters allocation failed");
       return;
     }
-    counter_holder = new_pointer_register();
-    __ move(LIR_OprFact::intptrConst(counters_adr), counter_holder);
+    if (AOTCodeCache::is_dumping_code()) {
+      counter_holder = new_register(T_METADATA);
+      __ metadata2reg(counters_adr->constant_encoding(), counter_holder);
+    } else {
+      counter_holder = new_pointer_register();
+      __ move(LIR_OprFact::intptrConst(counters_adr->constant_encoding()), counter_holder);
+    }
     offset = in_bytes(backedge ? MethodCounters::backedge_counter_offset() :
                                  MethodCounters::invocation_counter_offset());
   } else if (level == CompLevel_full_profile) {
@@ -4140,7 +4151,7 @@ void LIRGenerator::do_MemBar(MemBar* x) {
 }
 
 LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info) {
-  LIR_Opr value_fixed = rlock_byte(T_BYTE);
+  LIR_Opr value_fixed = rlock_byte();
   if (two_operand_lir_form) {
     __ move(value, value_fixed);
     __ logical_and(value_fixed, LIR_OprFact::intConst(1), value_fixed);

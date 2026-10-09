@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,72 +21,110 @@
  * questions.
  */
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.spi.ToolProvider;
+
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import org.junit.jupiter.api.Test;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /*
  * @test
- * @bug 8154212 8154470
- * @summary Miscellaneous tests, Exceptions
- * @modules jdk.compiler
- *          jdk.zipfs
- * @compile -XDignore.symbol.file MiscTests.java
- * @run main MiscTests
+ * @bug 8154212 8154470 8392966
+ * @summary Miscellaneous tests for java launcher
+ * @library /test/lib
+ * @build jdk.test.lib.process.ProcessTools jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.process.OutputAnalyzer
+ * @run junit ${test.main.class}
  */
+public class MiscTests {
 
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-public class MiscTests extends TestHelper {
+    private static final ToolProvider JAVAC = ToolProvider.findFirst("javac")
+            .orElseThrow(() -> new RuntimeException("javac not found"));
 
     /**
-     * Test with class path set on the command line via -Djava.class.path
+     * Launch "java" with class path set on the command line via -Djava.class.path
+     * and verify that the launcher correctly launches the main application
      */
-    static void testWithClassPathSetViaProperty() throws IOException {
+    @Test
+    void testWithClassPathSetViaProperty() throws Exception {
         final String mainClass = "Foo";
+        // create the .java file
+        final Path sourceFile = Path.of(mainClass + ".java");
+        final String content = """
+                public class Foo {
+                    public static void main(String... args) {}
+                }
+                """;
+        Files.writeString(sourceFile, content);
+        // compile it
+        final int compilationExitVal = JAVAC.run(System.out, System.err, sourceFile.toString());
+        assertEquals(0, compilationExitVal, "compilation of " + sourceFile + " failed");
+        final Path compiledFile = sourceFile.toAbsolutePath().getParent()
+                .resolve(mainClass + ".class");
+        assertTrue(Files.isRegularFile(compiledFile), "missing or not a regular" +
+                " file " + compiledFile);
+        // directory into which the .class was compiled to
+        final Path classPathDir = compiledFile.getParent();
+        // launch "java" with the classpath system property
+        final List<String> javaCmdArgs = List.of(
+                "-Djava.class.path=" + classPathDir,
+                mainClass
+        );
+        final OutputAnalyzer oa = ProcessTools.executeTestJava(javaCmdArgs);
+        oa.reportDiagnosticSummary();
+        oa.shouldHaveExitValue(0);
+    }
 
-        File source = new File(mainClass + ".java");
-
-        List<String> scratch = new ArrayList<>();
-        scratch.add("public class Foo {");
-        scratch.add("public static void main(String... args) {");
-        scratch.add("}");
-        scratch.add("}");
-        createFile(source, scratch);
-
-        compile(mainClass + ".java");
-
-        String dir = new File(mainClass + ".class").getAbsoluteFile().getParent();
-        TestResult tr = doExec(javaCmd, "-Djava.class.path=" + dir, mainClass);
-        for (String s : tr.testOutput) {
-            System.out.println(s);
+    /**
+     * Verify that the "_JAVA_LAUNCHER_DEBUG" can be configured to enable
+     * debug logging for the "java" and "javac" launchers
+     */
+    @Test
+    void testJavaLauncherDebugEnvVar() throws Exception {
+        for (String cmd : new String[]{"java", "javac"}) {
+            final String toolLocation = JDKToolFinder.getJDKTool(cmd);
+            System.err.println("running test against " + toolLocation);
+            final ProcessBuilder pb = new ProcessBuilder(List.of(toolLocation, "-version"));
+            pb.environment().put("_JAVA_LAUNCHER_DEBUG", "true");
+            final OutputAnalyzer oa = ProcessTools.executeCommand(pb);
+            oa.reportDiagnosticSummary();
+            oa.shouldHaveExitValue(0);
+            final String javargs = cmd.equals("javac") ? "on" : "off";
+            final String progname = cmd.equals("javac") ? "javac" : "java";
+            assertTrue(oa.matches("\\s*debug:on$"), "missing debug:on in output");
+            assertTrue(oa.matches("\\s*javargs:" + javargs + "$"), "missing javargs in output");
+            assertTrue(oa.matches("\\s*program name:" + progname + "$"),
+                    "missing program name in output");
         }
     }
 
-    static void testJLDEnv() {
-        final Map<String, String> envToSet = new HashMap<>();
-        envToSet.put("_JAVA_LAUNCHER_DEBUG", "true");
-        for (String cmd : new String[] { javaCmd, javacCmd }) {
-            TestResult tr = doExec(envToSet, cmd, "-version");
-            tr.checkPositive();
-            String javargs = cmd.equals(javacCmd) ? "on" : "off";
-            String progname = cmd.equals(javacCmd) ? "javac" : "java";
-            if (!tr.isOK()
-                || !tr.matches("\\s*debug:on$")
-                || !tr.matches("\\s*javargs:" + javargs + "$")
-                || !tr.matches("\\s*program name:" + progname + "$")) {
-                System.out.println(tr);
-            }
+    /**
+     * Verify that when a JAR file with no META-INF/MANIFEST.MF file is launched
+     * using "java -jar" then the launch fails
+     */
+    @Test
+    void testExecutableJARNoManifest() throws Exception {
+        final Path jarFile = Files.createTempFile(Path.of("."), "8392966-", ".jar");
+        // create a JAR file without any manifest
+        try (JarOutputStream noManifest = new JarOutputStream(Files.newOutputStream(jarFile))) {
+            final JarEntry entry = new JarEntry("foo.txt");
+            noManifest.putNextEntry(entry);
+            noManifest.write("bar".getBytes(US_ASCII));
+            noManifest.closeEntry();
         }
-    }
-
-    public static void main(String... args) throws IOException {
-        testWithClassPathSetViaProperty();
-        testJLDEnv();
-        if (testExitValue != 0) {
-            throw new Error(testExitValue + " tests failed");
-        }
+        // run "java -jar" against that JAR file and expect the launch to fail
+        final OutputAnalyzer oa = ProcessTools.executeTestJava("-jar", jarFile.toString());
+        oa.shouldNotHaveExitValue(0); // expected to fail with non-zero exit code
+        // verify it failed for the right reason
+        oa.shouldContain("Error: No manifest in JAR file");
     }
 }

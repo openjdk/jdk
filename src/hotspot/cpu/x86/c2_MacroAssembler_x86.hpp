@@ -29,7 +29,7 @@
 
 public:
   // C2 compiled method's prolog code.
-  void verified_entry(Compile* C, int sp_inc = 0);
+  void verified_entry(Compile* C, int sp_inc = 0, bool do_stack_bang = true);
 
   void entry_barrier();
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
@@ -39,6 +39,9 @@ public:
   void fast_lock(Register obj, Register box, Register rax_reg,
                  Register t, Register thread);
   void fast_unlock(Register obj, Register reg_rax, Register t, Register thread);
+
+  static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi);
+  static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi);
 
   void verify_int_in_range(uint idx, const TypeInt* t, Register val);
   void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
@@ -580,6 +583,10 @@ public:
                                        Address src2, bool merge, int vlen_enc);
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void vector_slice_evex(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp, int origin, int vlen_enc);
+
+  void vector_slice_avx(XMMRegister dst, XMMRegister src1, XMMRegister src2, int origin, int vlen_enc);
 
   void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 

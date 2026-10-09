@@ -61,7 +61,7 @@
 FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, LayoutKind lk)
     : ObjArrayKlass(1, element_klass, name, Kind, props),
       _layout_kind(lk) {
-  assert(element_klass->is_value_klass(), "Expected Inline");
+  assert(element_klass->is_value_klass(), "Expected value klass");
   assert(lk != LayoutKind::NULLABLE_NON_ATOMIC_FLAT, "Layout not supported by arrays yet (needs frozen arrays)");
   assert(LayoutKindHelper::is_flat(lk), "Must be a flat layout");
 
@@ -256,8 +256,7 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
 
         if (fsk->layout_kind() == fdk->layout_kind()) {
           // Because source and destination have the same layout, we do not have
-          // to worry about null checks and atomicity problems and can call the
-          // Access API directly.
+          // to worry about null checks and atomicity problems.
           int index_delta;
           if (needs_backwards_copy(sa, src_pos, da, dst_pos, length)) {
             index_delta = -1;
@@ -268,7 +267,7 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
           }
 
           for (int i = 0; i < length; i++) {
-            HeapAccess<>::value_copy(src_payload, dst_payload);
+            src_payload.copy_to(dst_payload);
             src_payload.advance_index(index_delta);
             dst_payload.advance_index(index_delta);
           }
@@ -428,10 +427,14 @@ void FlatArrayKlass::oop_print_elements_on(flatArrayOop fa, outputStream* st) {
   int print_len = MIN2(fa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
     int off = (address) fa->value_at_addr(index, layout_helper()) - cast_from_oop<address>(fa);
-    st->print_cr(" - Index %3d offset %3d: ", index, off);
-    oop obj = cast_to_oop((address)fa->value_at_addr(index, layout_helper()) - vk->payload_offset());
-    FieldPrinter print_field(st, obj);
-    vk->do_nonstatic_fields(&print_field);
+    st->print_cr(" - Index %3d offset %3d:", index, off);
+    if (!fa->is_null_free_array() && fa->obj_at_is_null(index)) {
+      st->print_cr("   - (null)");
+    } else {
+      ValuePayloadContext vpc{vk, fa->value_offset_as_int(index, layout_helper())};
+      FieldPrinter print_field(st, fa, /* indent */ 1, &vpc);
+      vk->do_nonstatic_fields(&print_field);
+    }
     st->cr();
   }
   int remaining = fa->length() - print_len;

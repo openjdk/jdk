@@ -1201,13 +1201,8 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     bc = Bytecodes::_invokestatic;
     methodHandle attached_method(THREAD, extract_attached_method(vfst));
     assert(attached_method.not_null(), "must have attached method");
-    vmClasses::ValueObjectMethods_klass()->initialize(CHECK_NH);
     LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, false, CHECK_NH);
-#ifdef ASSERT
-    Symbol* subst_method_name = vmSymbols::isSubstitutable_name();
-    Method* is_subst = vmClasses::ValueObjectMethods_klass()->find_method(subst_method_name, vmSymbols::object_object_boolean_signature());
-    assert(callinfo.selected_method() == is_subst, "must be isSubstitutable method");
-#endif
+    assert(callinfo.selected_method() == Universe::is_substitutable_method(), "must be isSubstitutable method");
     return receiver;
   }
 
@@ -2800,6 +2795,10 @@ CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
   }
 }
 
+int CompiledEntrySignature::max_stack_slots_cc() {
+  return UseShenandoahGC ? 64 : 128;
+}
+
 // Returns all super methods (transitive) in classes and interfaces that are overridden by the current method.
 GrowableArray<Method*>* CompiledEntrySignature::get_supers() {
   if (_supers != nullptr) {
@@ -2975,8 +2974,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
 
     // Limit the scalarized stack argument area to ensure that generated entry
     // points fit into nmethod's uint16_t *_entry_offset fields.
-    const int max_stack_slots = UseShenandoahGC ? 64 : 128;
-    if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots) {
+    if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots_cc()) {
       return; // Success
     }
 
@@ -2984,7 +2982,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     // receiver would help. If so, use the receiver-as-oop convention for the
     // method body but keep scalarizing the other arguments. This also preserves
     // the convention used by calls through super methods.
-    if (_has_value_recv && _args_on_stack_cc_ro <= max_stack_slots && _num_value_args > 1) {
+    if (_has_value_recv && _args_on_stack_cc_ro <= max_stack_slots_cc() && _num_value_args > 1) {
       _sig_cc = _sig_cc_ro;
       _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
       assert(_args_on_stack_cc == _args_on_stack_cc_ro, "calling conventions must match");
@@ -3024,7 +3022,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
   bool has_scalarized_arguments = false;
   bool long_prev = false;
   int long_prev_offset = -1;
-  bool skipping_inline_recv = false;
+  bool skipping_value_recv = false;
   bool receiver_handled = false;
 
   fingerprint->iterate_args([&] (const AdapterFingerPrint::Element& arg) {
@@ -3044,7 +3042,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
       }
       assert(long_prev_offset != 0, "no buffer argument here");
       SigEntry::add_entry(_sig_cc, bt_to_add, nullptr, long_prev_offset);
-      if (!skipping_inline_recv) {
+      if (!skipping_value_recv) {
         SigEntry::add_entry(_sig_cc_ro, bt_to_add, nullptr, long_prev_offset);
       }
     }
@@ -3055,10 +3053,10 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
           assert(ValueTypePassFieldsAsArgs, "unexpected end of value type");
           value_object_count--;
           SigEntry::add_entry(_sig_cc, T_VOID, nullptr, offset);
-          if (!skipping_inline_recv) {
+          if (!skipping_value_recv) {
             SigEntry::add_entry(_sig_cc_ro, T_VOID, nullptr, offset);
           } else if (value_object_count == 0) {
-            skipping_inline_recv = false;
+            skipping_value_recv = false;
           }
           assert(value_object_count >= 0, "invalid value object count");
         } else {
@@ -3072,7 +3070,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
           SigEntry::add_entry(_sig, bt);
         }
         SigEntry::add_entry(_sig_cc, bt, nullptr, offset);
-        if (!skipping_inline_recv) {
+        if (!skipping_value_recv) {
           SigEntry::add_entry(_sig_cc_ro, bt, nullptr, offset);
         }
         break;
@@ -3089,7 +3087,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
         assert(value_object_count > 0, "must be value object field");
         assert(offset != 0 || (bt == T_OBJECT && prev_bt == T_METADATA), "buffer input expected here");
         SigEntry::add_entry(_sig_cc, bt, nullptr, offset, offset == -1, offset == 0);
-        if (!skipping_inline_recv) {
+        if (!skipping_value_recv) {
           SigEntry::add_entry(_sig_cc_ro, bt, nullptr, offset, offset == -1, offset == 0);
         }
         break;
@@ -3099,10 +3097,10 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
           SigEntry::add_entry(_sig, T_OBJECT);
         }
         SigEntry::add_entry(_sig_cc, T_METADATA, nullptr, offset);
-        if (!skipping_inline_recv) {
+        if (!skipping_value_recv) {
           if (!receiver_handled && _has_value_recv && value_object_count == 0) {
             SigEntry::add_entry(_sig_cc_ro, T_OBJECT);
-            skipping_inline_recv = true;
+            skipping_value_recv = true;
             receiver_handled = true;
           } else {
             SigEntry::add_entry(_sig_cc_ro, T_METADATA, nullptr, offset);
@@ -3128,10 +3126,10 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
 
 #ifdef ASSERT
   if (_has_value_recv) {
-    // In RO signatures, inline receivers must be represented as a single T_OBJECT
+    // In RO signatures, value receivers must be represented as a single T_OBJECT
     assert(_sig_cc_ro->length() >= 1, "sig_cc_ro must include receiver");
     assert(_sig_cc_ro->at(0)._bt == T_OBJECT,
-           "sig_cc_ro must represent inline receiver as T_OBJECT");
+           "sig_cc_ro must represent value receiver as T_OBJECT");
     assert(_sig_cc_ro->length() <= _sig_cc->length(),
            "sig_cc_ro must not be longer than sig_cc");
   }
@@ -3249,7 +3247,7 @@ void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   const char* name = AdapterHandlerLibrary::name(handler);
   const uint32_t id = AdapterHandlerLibrary::id(handler);
 
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
+  CodeBlob* blob = AOTCodeCache::load_adapter(id, name);
   if (blob != nullptr) {
     handler->set_adapter_blob(blob->as_adapter_blob());
   }
@@ -3363,7 +3361,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler);
     const uint32_t id = AdapterHandlerLibrary::id(handler);
-    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
+    bool success = AOTCodeCache::store_adapter(*adapter_blob, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
 #endif // ZERO

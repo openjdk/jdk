@@ -809,7 +809,7 @@ class CompileReplay : public StackObj {
     }
     replay_state = this;
     CompileBroker::compile_method(methodHandle(THREAD, method), entry_bci, comp_level,
-                                  0, CompileTask::Reason_Replay, THREAD);
+                                  0, nullptr, CompileTask::Reason_Replay, THREAD);
     replay_state = nullptr;
   }
 
@@ -1083,7 +1083,7 @@ class CompileReplay : public StackObj {
       case T_ARRAY:
       case T_OBJECT:
         if (fd->is_null_free_value_type() && fd->is_flat()) {
-          ValueKlass* vk = ValueKlass::cast(fd->field_holder()->get_value_type_field_klass(fd->index()));
+          ValueKlass* vk = fd->flat_field_klass();
           int field_offset = fd->offset() - vk->payload_offset();
           oop obj = cast_to_oop(cast_from_oop<address>(_vt) + field_offset);
           ValueTypeFieldInitializer init_fields(obj, _replay);

@@ -72,7 +72,7 @@ union chunkstamp_t {
     uint16_t phase_id;
   };
 };
-STATIC_ASSERT(sizeof(chunkstamp_t) == sizeof(chunkstamp_t::raw));
+static_assert(sizeof(chunkstamp_t) == sizeof(chunkstamp_t::raw));
 
 ArenaCounterTable::ArenaCounterTable() {
   memset(_v, 0, sizeof(_v));

@@ -26,9 +26,10 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @compile TestFieldNullability.java
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseFieldFlattening
- *                   runtime.valhalla.valuetypes.TestFieldNullability
+ *                   ${test.main.class}
  */
 
 package runtime.valhalla.valuetypes;

@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -233,13 +234,30 @@ void CodeCache::initialize_heaps() {
   assert(heap_available(CodeBlobType::MethodNonProfiled), "MethodNonProfiled heap is always available for segmented code heap");
 
   uint64_t compiler_buffer_size_uint64 = 0;
-  COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c1_count() * Compiler::code_buffer_size());
-  COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
+  // Take into account AOT C1 threads in case C1 JIT compilation is disabled,
+  // the space is needed for, at least, one buffer to initialize C1 runtime.
+  int c1_count = MAX2(CompilationPolicy::c1_count(), (CompilationPolicy::ac1_count() > 0 ? 1 : 0));
+  int c2_count = CompilationPolicy::c2_count();
+  COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)c1_count * Compiler::code_buffer_size());
+  COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)c2_count * C2Compiler::initial_code_buffer_size());
   if (compiler_buffer_size_uint64 > (uint64_t)CODE_CACHE_SIZE_LIMIT) {
     err_msg msg("CICompilerCount is too large (%" PRIdPTR "): compiler buffer size exceeds the CodeCache size limit", CICompilerCount);
     vm_exit_during_initialization(msg);
   }
   size_t compiler_buffer_size = integer_cast_permit_tautology<size_t>(compiler_buffer_size_uint64);
+
+  // During AOT assembly phase more compiler threads are used
+  // and C2 temp buffer is bigger.
+  // But due to rounding issue the total code cache size could be smaller
+  // than during production run. We can not use AOT code in such case
+  // because branch and call instructions will be incorrect.
+  //
+  // Increase code cache size to guarantee that total size
+  // will be bigger during assembly phase.
+  if (AOTCodeCache::maybe_dumping_code()) {
+    cache_size += align_up(compiler_buffer_size, min_size);
+    cache_size = MIN2(cache_size, CODE_CACHE_SIZE_LIMIT);
+  }
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
@@ -594,6 +612,27 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
   return (CodeBlob*)heap->next(cb);
 }
 
+static int report_code_heap_full_event(CodeBlobType code_blob_type) {
+  CodeHeap* heap = CodeCache::get_code_heap(code_blob_type);
+  assert(heap != nullptr, "heap is null");
+  int full_count = heap->report_full();
+  EventCodeCacheFull event;
+  if (event.should_commit()) {
+    event.set_codeBlobType((u1)code_blob_type);
+    event.set_startAddress((u8)heap->low_boundary());
+    event.set_commitedTopAddress((u8)heap->high());
+    event.set_reservedTopAddress((u8)heap->high_boundary());
+    event.set_entryCount(heap->blob_count());
+    event.set_methodCount(heap->nmethod_count());
+    event.set_adaptorCount(heap->adapter_count());
+    event.set_unallocatedCapacity(heap->unallocated_capacity());
+    event.set_fullCount(full_count);
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
+  }
+  return full_count;
+}
+
 /**
  * Do not seize the CodeCache lock here--if the caller has not
  * already done so, we are going to lose bigtime, since the code
@@ -639,9 +678,6 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
             type = CodeBlobType::MethodNonProfiled;
           }
           break;
-        case CodeBlobType::MethodHot:
-          type = CodeBlobType::MethodNonProfiled;
-          break;
         default:
           break;
         }
@@ -656,6 +692,8 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       if (handle_alloc_failure) {
         MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
         CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      } else if (orig_code_blob_type == CodeBlobType::MethodHot) {
+        report_code_heap_full_event(orig_code_blob_type);
       }
       return nullptr;
     } else {
@@ -1328,11 +1366,12 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
         // Determine if dependency is already checked. table->put(...) returns
         // 'true' if the dependency is added (i.e., was not in the hashtable).
         if (table->put(*current_sig, 1)) {
-          if (deps.check_dependency() != nullptr) {
+          Klass* witness = deps.check_dependency();
+          if (witness != nullptr) {
             // Dependency checking failed. Print out information about the failed
             // dependency and finally fail with an assert. We can fail here, since
             // dependency checking is never done in a product build.
-            tty->print_cr("Failed dependency:");
+            deps.print_dependency(tty, witness, true);
             changes.print();
             nm->print();
             nm->print_dependencies_on(tty);
@@ -1358,6 +1397,13 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassD
   NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
     InstanceKlass* d = str.klass();
+    {
+      LogStreamHandle(Trace, dependencies) log;
+      if (log.is_enabled()) {
+        log.print("Processing context ");
+        d->name()->print_value_on(&log);
+      }
+    }
     d->mark_dependent_nmethods(deopt_scope, changes);
   }
 
@@ -1533,11 +1579,7 @@ void CodeCache::verify() {
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
-  // Get nmethod heap for the given CodeBlobType and build CodeCacheFull event
-  CodeHeap* heap = get_code_heap(code_blob_type);
-  assert(heap != nullptr, "heap is null");
-
-  int full_count = heap->report_full();
+  int full_count = report_code_heap_full_event(code_blob_type);
 
   if ((full_count == 1) || print) {
     // Not yet reported for this heap, report
@@ -1580,21 +1622,6 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
         CompileBroker::print_heapinfo(tty, "all", 4096); // details, may be a lot!
       }
     }
-  }
-
-  EventCodeCacheFull event;
-  if (event.should_commit()) {
-    event.set_codeBlobType((u1)code_blob_type);
-    event.set_startAddress((u8)heap->low_boundary());
-    event.set_commitedTopAddress((u8)heap->high());
-    event.set_reservedTopAddress((u8)heap->high_boundary());
-    event.set_entryCount(heap->blob_count());
-    event.set_methodCount(heap->nmethod_count());
-    event.set_adaptorCount(heap->adapter_count());
-    event.set_unallocatedCapacity(heap->unallocated_capacity());
-    event.set_fullCount(heap->full_count());
-    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
-    event.commit();
   }
 }
 PRAGMA_DIAG_POP
@@ -1654,20 +1681,16 @@ void CodeCache::print_internals() {
 
   int i = 0;
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
-    if ((_nmethod_heaps->length() >= 1) && Verbose) {
-      tty->print_cr("-- %s --", (*heap)->name());
-    }
+    int heap_total = 0;
+    tty->print_cr("-- %s --", (*heap)->name());
     FOR_ALL_BLOBS(cb, *heap) {
       total++;
+      heap_total++;
       if (cb->is_nmethod()) {
         nmethod* nm = (nmethod*)cb;
 
-        if (Verbose && nm->method() != nullptr) {
-          ResourceMark rm;
-          char *method_name = nm->method()->name_and_sig_as_C_string();
-          tty->print("%s", method_name);
-          if(nm->is_not_entrant()) { tty->print_cr(" not-entrant"); }
-        }
+        tty->print("%4d: ", heap_total);
+        CompileTask::print(tty, nm, (nm->is_not_entrant() ? "non-entrant" : ""), true, true);
 
         nmethodCount++;
 

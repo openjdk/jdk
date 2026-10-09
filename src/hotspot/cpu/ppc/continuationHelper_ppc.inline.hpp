@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,4 +195,4 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f
   return f.fp();
 }
 
-#endif // CPU_PPC_CONTINUATIONFRAMEHELPERS_PPC_INLINE_HPP
+#endif // CPU_PPC_CONTINUATIONHELPER_PPC_INLINE_HPP

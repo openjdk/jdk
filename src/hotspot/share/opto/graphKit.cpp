@@ -1974,6 +1974,9 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
   }
 
   ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, false);
+  if (!array_klass->is_loaded()) {
+    return top();
+  }
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
   arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
@@ -1982,6 +1985,9 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
 Node* GraphKit::cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
   assert(is_null_free || is_atomic, "nullable arrays must be atomic");
   ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+  if (!array_klass->is_loaded()) {
+    return top();
+  }
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
   assert(arytype->klass_is_exact(), "inconsistency");
   assert(arytype->is_flat(), "inconsistency");
@@ -2390,7 +2396,11 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
   while (wl.size() > 0) {
-    _gvn.transform(wl.pop());
+    Node* old_mem = wl.pop();
+    Node* new_mem = _gvn.transform(old_mem);
+    if (old_mem != new_mem) {
+      C->gvn_replace_by(old_mem, new_mem);
+    }
   }
 
   if (callprojs->fallthrough_catchproj != nullptr && !final_ctl->is_top() && do_replaced_nodes) {
@@ -2500,6 +2510,15 @@ Node* GraphKit::uncommon_trap(int trap_request,
     tty->print_cr("Uncommon trap %s at bci:%d",
                   Deoptimization::format_trap_request(buf, sizeof(buf),
                                                       trap_request), bci());
+  }
+
+  if (PreloadReduceTraps && C->for_aot_preload() && (action != Deoptimization::Action_none)) {
+    ResourceMark rm;
+    ciMethod* cim = C->method();
+    log_debug(aot, codecache, deoptimization)("Uncommon trap in AOT preload code: reason=%s action=%s method=%s::%s bci=%d, %s",
+                  Deoptimization::trap_reason_name(reason), Deoptimization::trap_action_name(action),
+                  cim->holder()->name()->as_klass_external_name(), cim->name()->as_klass_external_name(),
+                  bci(), comment);
   }
 
   CompileLog* log = C->log();
@@ -3405,6 +3424,32 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
   return false;
 }
 
+void GraphKit::guard_klass_is_initialized(Node* klass) {
+  assert(C->do_clinit_barriers(), "should be called only for clinit barriers");
+  if (ClassInitBarrierMode == 0) {
+    return;
+  }
+  precond(ClassInitBarrierMode == 1); // catch new value
+  int init_state_off = in_bytes(InstanceKlass::init_state_offset());
+  Node* adr = basic_plus_adr(top(), klass, init_state_off);
+  Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
+                                    adr->bottom_type()->is_ptr(), TypeInt::BYTE,
+                                    T_BYTE, MemNode::acquire);
+  init_state = _gvn.transform(init_state);
+
+  Node* initialized_state = makecon(TypeInt::make(InstanceKlass::fully_initialized));
+
+  Node* chk = _gvn.transform(new CmpINode(initialized_state, init_state));
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+
+  { // uncommon trap on slow path
+    BuildCutout unless(this, tst, PROB_MAX);
+    // Do not deoptimize this nmethod. Go to Interpreter to initialize class.
+    uncommon_trap(Deoptimization::Reason_uninitialized, Deoptimization::Action_none);
+  }
+  C->set_has_clinit_barriers(true);
+}
+
 void GraphKit::guard_klass_being_initialized(Node* klass) {
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
   Node* adr = off_heap_plus_addr(klass, init_state_off);
@@ -3443,9 +3488,14 @@ void GraphKit::guard_init_thread(Node* klass) {
 }
 
 void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
+  if (C->do_clinit_barriers()) {
+    Node* klass = makecon(TypeKlassPtr::make(ik, Type::trust_interfaces));
+    guard_klass_is_initialized(klass);
+    return;
+  }
   if (ik->is_being_initialized()) {
     if (C->needs_clinit_barrier(ik, context)) {
-      Node* klass = makecon(TypeKlassPtr::make(ik));
+      Node* klass = makecon(TypeKlassPtr::make(ik, Type::trust_interfaces));
       guard_klass_being_initialized(klass);
       guard_init_thread(klass);
       insert_mem_bar(Op_MemBarCPUOrder);
@@ -3453,6 +3503,10 @@ void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
   } else if (ik->is_initialized()) {
     return; // no barrier needed
   } else {
+    if (C->env()->task()->is_aot_compile()) {
+      ResourceMark rm;
+      log_debug(aot, compilation)("Emitting uncommon trap (clinit barrier) in AOT code for %s", ik->name()->as_klass_external_name());
+    }
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
                   nullptr);
@@ -4110,31 +4164,27 @@ Node* GraphKit::insert_reachability_fence(Node* referent) {
 
 //------------------------------shared_lock------------------------------------
 // Emit locking code.
-FastLockNode* GraphKit::shared_lock(Node* obj) {
+BoxLockNode* GraphKit::shared_lock(Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if (stopped())                // Dead monitor?
-    return nullptr;
+  if (stopped()) { return nullptr; } // Dead monitor?
 
   assert(dead_locals_are_killed(), "should kill locals before sync. point");
 
   // Box the stack location
-  Node* box = new BoxLockNode(next_monitor());
-  // Check for bailout after new BoxLockNode
-  if (failing()) { return nullptr; }
-  box = _gvn.transform(box);
+  BoxLockNode* box = new BoxLockNode(next_monitor());
+  if (failing()) { return nullptr; } // check for bailout after new BoxLockNode
+  box = _gvn.transform(box)->as_BoxLock();
   Node* mem = reset_memory();
-
-  FastLockNode * flock = _gvn.transform(new FastLockNode(nullptr, obj, box) )->as_FastLock();
 
   // Add monitor to debug info for the slow path.  If we block inside the
   // slow path and de-opt, we need the monitor hanging around
-  map()->push_monitor( flock );
+  map()->push_monitor(box, obj);
 
-  const TypeFunc *tf = LockNode::lock_type();
-  LockNode *lock = new LockNode(C, tf);
+  const TypeFunc* tf = LockNode::lock_type();
+  LockNode* lock = new LockNode(C, tf);
 
   lock->init_req( TypeFunc::Control, control() );
   lock->init_req( TypeFunc::Memory , mem );
@@ -4144,12 +4194,12 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
 
   lock->init_req(TypeFunc::Parms + 0, obj);
   lock->init_req(TypeFunc::Parms + 1, box);
-  lock->init_req(TypeFunc::Parms + 2, flock);
+
   add_safepoint_edges(lock);
 
-  lock = _gvn.transform( lock )->as_Lock();
+  lock = _gvn.transform(lock)->as_Lock();
 
-  // lock has no side-effects, sets few values
+  // lock has no side effects, sets few values
   set_predefined_output_for_runtime_call(lock, mem, TypeRawPtr::BOTTOM);
 
   insert_mem_bar(Op_MemBarAcquireLock);
@@ -4165,14 +4215,13 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
     increment_counter(lock->counter()->addr());
   }
 #endif
-
-  return flock;
+  return box;
 }
 
 
 //------------------------------shared_unlock----------------------------------
 // Emit unlocking code.
-void GraphKit::shared_unlock(Node* box, Node* obj) {
+void GraphKit::shared_unlock(BoxLockNode* box, Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
