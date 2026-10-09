@@ -1576,9 +1576,13 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (xk && ik->equals(canonical_holder)) {
         assert(tj == TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, Type::Offset(offset), instance_id,
                                        TypePtr::MaybeFlat), "exact type should be canonical type");
+      } else if (is_known_inst) {
+        assert(xk, "Known instance should be exact type");
+        // Keep the type for known instances
+        tj = to = TypeInstPtr::make(to->ptr(), to->instance_klass(), true, nullptr, Type::Offset(offset), instance_id,
+                                    TypePtr::MaybeFlat);
       } else {
-        assert(xk || !is_known_inst, "Known instance should be exact type");
-        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, Type::Offset(offset), instance_id,
+        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, false, nullptr, Type::Offset(offset), instance_id,
                                     TypePtr::MaybeFlat);
       }
     }
@@ -1762,13 +1766,15 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
            Type::str(adr_type), Type::str(flat), Type::str(flatten_alias_type(flat)));
     assert(flat != TypePtr::BOTTOM, "cannot alias-analyze an untyped ptr: adr_type = %s",
            Type::str(adr_type));
-    if (flat->isa_instptr()) {
-      const TypeOopPtr* foop = flat->is_oopptr();
-      // Scalarizable allocations have exact klass always.
-      bool exact = !foop->klass_is_exact() || foop->is_known_instance();
-      const TypePtr* xoop = foop->cast_to_exactness(exact)->is_ptr();
-      assert(foop == flatten_alias_type(xoop), "exactness must not affect alias type: foop = %s; xoop = %s",
-             Type::str(foop), Type::str(xoop));
+    if (const TypeInstPtr* finst = flat->isa_instptr(); finst != nullptr) {
+      bool check_exact = !finst->klass_is_exact();
+      // Try casting the type to the other exactness if possible
+      if ((check_exact && finst->instance_klass()->is_loaded() && !finst->instance_klass()->is_abstract()) ||
+          (!check_exact && !finst->is_known_instance())) {
+        const TypePtr* xinst = finst->cast_to_exactness(check_exact)->is_ptr();
+        assert(finst == flatten_alias_type(xinst), "exactness must not affect alias type: finst = %s; xinst = %s",
+               Type::str(finst), Type::str(xinst));
+      }
     }
   }
 #endif
