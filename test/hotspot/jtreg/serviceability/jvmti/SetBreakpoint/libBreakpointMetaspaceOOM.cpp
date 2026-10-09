@@ -21,9 +21,7 @@
  * questions.
  */
 
-#include <string.h>
-#include <stdio.h>
-
+#include <atomic>
 #include "jvmti.h"
 #include "jvmti_common.hpp"
 
@@ -31,7 +29,7 @@ extern "C" {
 
 static jvmtiEnv* jvmti = nullptr;
 static jmethodID target = nullptr;
-static volatile int hits = 0;
+static std::atomic<int> hits{0};
 
 static void JNICALL
 Breakpoint(jvmtiEnv* env, JNIEnv* jni, jthread thread, jmethodID method, jlocation location) {
