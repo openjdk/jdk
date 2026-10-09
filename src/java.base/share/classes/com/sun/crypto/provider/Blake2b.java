@@ -68,7 +68,7 @@ final class Blake2b {
     private final byte[] key; // optional
 
     // internal buffers and counter, etc.
-    private final byte[] b; // message block
+    private final byte[] m; // message block
     private final long[] h; // state vector
     private final long[] t; // offset counter, 0:low word, 1:high word
     private final int outLen;
@@ -97,7 +97,7 @@ final class Blake2b {
 
         // no need to clone key as this class is not publicly available
         this.key = ((key == null || key.length == 0) ? NULL_KEY : key);
-        this.b = new byte[128];
+        this.m = new byte[128];
         this.h = IV.clone();
         if (this.key == NULL_KEY) {
             this.h[0] ^= (0x01010000L ^ outLen);
@@ -105,7 +105,7 @@ final class Blake2b {
         } else {
             // need to process the key at the next update/doFinal call
             this.h[0] ^= (0x01010000L ^ (this.key.length << 8) ^ outLen);
-            System.arraycopy(this.key, 0, this.b, 0, this.key.length);
+            System.arraycopy(this.key, 0, this.m, 0, this.key.length);
             this.c = 128;
         }
         this.t = new long[2];
@@ -134,7 +134,7 @@ final class Blake2b {
                 processBlock(false);  // compress (not last)
                 c = 0;
             }
-            int n = bais.read(b, c, b.length - c);
+            int n = bais.read(m, c, m.length - c);
             c += n;
         }
     }
@@ -149,7 +149,7 @@ final class Blake2b {
         Objects.checkFromToIndex(outOfs, outOfs + outLen, out.length);
         try {
             if (c < 128) { // fill up with zeros
-                Arrays.fill(b, c, 128, (byte)0);
+                Arrays.fill(m, c, 128, (byte)0);
             }
             processBlock(true); // final block
 
@@ -159,9 +159,9 @@ final class Blake2b {
             // special handling if outLen isn't multiple of 8 bytes
             if (lastChunk > 0) {
                 int allButLast = outLen - lastChunk;
-                // use b as temp output buffer
-                l2bLittle8(h[allButLast >>> 3], b, 0);
-                System.arraycopy(b, 0, out, outOfs + allButLast, lastChunk);
+                // use m as temp output buffer
+                l2bLittle8(h[allButLast >>> 3], m, 0);
+                System.arraycopy(m, 0, out, outOfs + allButLast, lastChunk);
             }
             return outLen;
         } finally {
@@ -170,25 +170,25 @@ final class Blake2b {
         }
     }
 
-    // process 128-byte message block 'b'
+    // process 128-byte message block 'm'
     private void processBlock(boolean isLast) {
         int processed = isLast? c : 128;
         t[0] += processed;         // add counter
         if (t[0] < processed) {    // carry overflow, inc high word
             t[1]++;
         }
-        compressF(b, h, t, isLast);
+        compressF(h, m, t, isLast);
     }
 
     // reset fields to post-constructor
     private void reset() {
-        Arrays.fill(b, (byte)0);
+        Arrays.fill(m, (byte)0);
         System.arraycopy(IV, 0, h, 0, IV.length);
         Arrays.fill(t, 0L);
         if (key != NULL_KEY) {
             // process the key at the next update/doFinal call
             h[0] ^= (0x01010000L ^ (key.length << 8) ^ outLen);
-            System.arraycopy(key, 0, b, 0, key.length);
+            System.arraycopy(key, 0, m, 0, key.length);
             c = 128;
         } else {
             h[0] ^= (0x01010000L ^ outLen);
@@ -200,12 +200,6 @@ final class Blake2b {
     // mixes x and y, storing the outputs into v[a], v[b], v[c], and v[d]
     private static void mixG(long[] v, int a, int b, int c, int d,
            long x, long y) {
-       // assert a, b, c, d < 16
-       Objects.checkIndex(a, v.length);
-       Objects.checkIndex(b, v.length);
-       Objects.checkIndex(c, v.length);
-       Objects.checkIndex(d, v.length);
-
        v[a] = v[a] + v[b] + x;
        v[d] = Long.rotateRight(v[d] ^ v[a], 32);
        v[c] = v[c] + v[d];
@@ -217,9 +211,9 @@ final class Blake2b {
     }
 
     // RFC 7693 sec 3.2 Compress function F:
-    // processes the message block 'b', state 'h', and offset counter 't' and
+    // processes the message block 'm', state 'h', and offset counter 't' and
     // final block indicator flag 'last' into new state and stores into 'h'
-    private static void compressF(byte[] b, long[] h, long[] t, boolean last) {
+    private static void compressF(long[] h, byte[] m, long[] t, boolean last) {
         // prep localV
         long[] localV = Arrays.copyOf(h, 16);
         System.arraycopy(IV, 0, localV, h.length, 8);
@@ -230,22 +224,30 @@ final class Blake2b {
         }
 
         // convert the message block from byte[] to long[] in Little Endian
-        long[] m = new long[16];
-        b2lLittle(b, 0, m, 0, 128);
+        long[] mLong = new long[16];
+        b2lLittle(m, 0, mLong, 0, 128);
         try {
             for (int i = 0; i < 12; i++) {     // twelve rounds
-                mixG(localV, 0, 4,  8, 12, m[SIGMA[i][ 0]], m[SIGMA[i][ 1]]);
-                mixG(localV, 1, 5,  9, 13, m[SIGMA[i][ 2]], m[SIGMA[i][ 3]]);
-                mixG(localV, 2, 6, 10, 14, m[SIGMA[i][ 4]], m[SIGMA[i][ 5]]);
-                mixG(localV, 3, 7, 11, 15, m[SIGMA[i][ 6]], m[SIGMA[i][ 7]]);
-                mixG(localV, 0, 5, 10, 15, m[SIGMA[i][ 8]], m[SIGMA[i][ 9]]);
-                mixG(localV, 1, 6, 11, 12, m[SIGMA[i][10]], m[SIGMA[i][11]]);
-                mixG(localV, 2, 7,  8, 13, m[SIGMA[i][12]], m[SIGMA[i][13]]);
-                mixG(localV, 3, 4,  9, 14, m[SIGMA[i][14]], m[SIGMA[i][15]]);
+                mixG(localV, 0, 4,  8, 12, mLong[SIGMA[i][ 0]],
+                        mLong[SIGMA[i][ 1]]);
+                mixG(localV, 1, 5,  9, 13, mLong[SIGMA[i][ 2]],
+                        mLong[SIGMA[i][ 3]]);
+                mixG(localV, 2, 6, 10, 14, mLong[SIGMA[i][ 4]],
+                        mLong[SIGMA[i][ 5]]);
+                mixG(localV, 3, 7, 11, 15, mLong[SIGMA[i][ 6]],
+                        mLong[SIGMA[i][ 7]]);
+                mixG(localV, 0, 5, 10, 15, mLong[SIGMA[i][ 8]],
+                        mLong[SIGMA[i][ 9]]);
+                mixG(localV, 1, 6, 11, 12, mLong[SIGMA[i][10]],
+                        mLong[SIGMA[i][11]]);
+                mixG(localV, 2, 7,  8, 13, mLong[SIGMA[i][12]],
+                        mLong[SIGMA[i][13]]);
+                mixG(localV, 3, 4,  9, 14, mLong[SIGMA[i][14]],
+                        mLong[SIGMA[i][15]]);
             }
         } finally {
-            // cleans up 'm' when not needed as its content contains user input
-            Arrays.fill(m, 0L);
+            // clean up 'mLong' when not needed
+            Arrays.fill(mLong, 0L);
         }
 
         // store result into 'h'

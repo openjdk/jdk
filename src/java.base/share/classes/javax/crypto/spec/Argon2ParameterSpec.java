@@ -184,14 +184,6 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
             return i;
         }
 
-        // return the ceiling of log2 value
-        private static int ceilingOfLog2(int n) {
-            if (n < 1) {
-                throw new IllegalArgumentException("Input must be positive");
-            }
-            return 32 - Integer.numberOfLeadingZeros(n - 1);
-        }
-
         private Builder() {
         }
 
@@ -417,7 +409,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      * @throws IllegalStateException if {@code destroy()} has been called
      */
     public byte[] password() {
-        if (passwd == null) {
+        if (destroyed) {
             throw new IllegalStateException("password has been cleared");
         }
         return passwd.clone();

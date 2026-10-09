@@ -41,8 +41,7 @@ import javax.crypto.spec.Argon2ParameterSpec;
 import jdk.internal.ref.CleanerFactory;
 
 /**
- * This class represents a secret key derived using Argon2 whose toString()
- * method outputs Argon2 encoded hash.
+ * This class represents a secret key derived using Argon2.
  *
  * @since 28
  */
@@ -120,36 +119,38 @@ public final class Argon2DerivedKey implements SecretKey {
     }
 
     @Override
-    public synchronized boolean equals(Object obj) {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
-        }
-
-        if (destroyed) {
-            throw new IllegalStateException("key destroyed");
         }
 
         if (!(obj instanceof SecretKey that)) {
             return false;
         }
+
+        if (isDestroyed() || that.isDestroyed()) {
+            throw new IllegalStateException("key destroyed");
+        }
+
         if (!(algo.equalsIgnoreCase(that.getAlgorithm()))) {
             return false;
         }
+
+        byte[] thisKey = this.getEncoded();
         try {
             byte[] thatKey = that.getEncoded();
-            boolean ret = MessageDigest.isEqual(this.key, thatKey);
-            if (thatKey != null) {
-                Arrays.fill(thatKey, (byte)0);
+            try {
+                return MessageDigest.isEqual(thisKey, thatKey);
+            } finally {
+                if (thatKey != null) {
+                    Arrays.fill(thatKey, (byte)0);
+                }
             }
-            return ret;
-        } catch (RuntimeException re) {
-            // if cannot compare for any reason
-            return false;
         } finally {
-            // prevent this from being cleaned for the above block
+            // thisKey can't be null
+            Arrays.fill(thisKey, (byte)0);
             Reference.reachabilityFence(this);
         }
-
     }
 
     @Override

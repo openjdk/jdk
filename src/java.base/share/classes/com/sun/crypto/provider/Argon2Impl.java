@@ -116,11 +116,18 @@ public final class Argon2Impl {
         }
 
         // 2) Allocate memory m' - stored inside Argon2Instance
-        Argon2Instance instance = new Argon2Instance(type, lanes, memory,
-                iterations);
-        instance.fillFirstTwoColumns(h0Plus8Bytes);
-        instance.fillMemoryBlocks();
-        return instance.getFinalTag(tagLen);
+        Argon2Instance instance = null;
+        try {
+            instance = new Argon2Instance(type, lanes, memory, iterations);
+            instance.fillFirstTwoColumns(h0Plus8Bytes);
+            instance.fillMemoryBlocks();
+            return instance.getFinalTag(tagLen);
+        } finally {
+            Arrays.fill(h0Plus8Bytes, (byte)0);
+            if (instance != null) {
+                instance.eraseBlocks();
+            }
+        }
     }
 
     private static byte[] initialHash(int lanes, int tagLen, int memory,
@@ -165,7 +172,7 @@ public final class Argon2Impl {
         final Block addressBlock; // for calcAddresses() by Argon2i and Argon2id
         final long[] v; // for permuteP()
 
-        WorkingBuffers(Type type) {
+        private WorkingBuffers(Type type) {
             rBlock = new Block();
             tmpBlock = new Block();
             if (type != Type.ARGON2D) {
@@ -178,7 +185,7 @@ public final class Argon2Impl {
             v = new long[16];
         }
 
-        void erase() {
+        private void erase() {
             rBlock.erase();
             tmpBlock.erase();
             if (inBlock != null) { // assigned together
@@ -201,7 +208,7 @@ public final class Argon2Impl {
         private final int blockNum;
         private final Block[][] blocks;
 
-        Argon2Instance(Type type, int lanes, int memory, int passes) {
+        private Argon2Instance(Type type, int lanes, int memory, int passes) {
             this.type = type;
             this.lanes = lanes;
             this.segLen = memory / (lanes * ARGON2_SLICE_NUM);
@@ -211,13 +218,14 @@ public final class Argon2Impl {
             this.blocks = new Block[lanes][columns];
         }
 
-        void fillFirstTwoColumns(byte[] h0Plus8Bytes) {
+        private void fillFirstTwoColumns(byte[] h0Plus8Bytes) {
             // 3) Compute B[i][0] for i = [0...p-1]
             // B[i][0] = hash^(1024)(H_0 || LE32(0) || LE32(i))
             // no need to set LE32(0) as that should be the value
             for (int k = 0; k < lanes; k++) {
                 i2bLittle4(k, h0Plus8Bytes, 68);
-                blocks[k][0] = new Block(vlHash(ARGON2_BLOCK_SIZE, h0Plus8Bytes));
+                blocks[k][0] = new Block(vlHash(ARGON2_BLOCK_SIZE,
+                        h0Plus8Bytes));
             }
 
             // 4) Compute B[i][1] for i = [0...p-1]
@@ -225,11 +233,12 @@ public final class Argon2Impl {
             i2bLittle4(1, h0Plus8Bytes, ARGON2_PREHASH_DIGEST_LENGTH);
             for (int k = 0; k < lanes; k++) {
                 i2bLittle4(k, h0Plus8Bytes, 68);
-                blocks[k][1] = new Block(vlHash(ARGON2_BLOCK_SIZE, h0Plus8Bytes));
+                blocks[k][1] = new Block(vlHash(ARGON2_BLOCK_SIZE,
+                        h0Plus8Bytes));
             }
         }
 
-        void fillMemoryBlocks() {
+        private void fillMemoryBlocks() {
             WorkingBuffers wb = new WorkingBuffers(type);
             try {
                 for (int pass = 0; pass < passes; pass++) {
@@ -350,7 +359,7 @@ public final class Argon2Impl {
             return (startPosition + zz) % this.columns;
         }
 
-        byte[] getFinalTag(int outLen) {
+        private byte[] getFinalTag(int outLen) {
             // 7) Compute the final block C, i.e. xor of the last column
             Block c = blocks[0][this.columns - 1];
             byte[] cBytes = null;
@@ -368,9 +377,14 @@ public final class Argon2Impl {
                 if (cBytes != null) {
                     Arrays.fill(cBytes, (byte)0);
                 }
-                for (int i = 0; i < this.lanes; i++) {
-                    for (int j = 0; j < this.columns; j++) {
-                        blocks[i][j].erase();
+            }
+        }
+
+        private void eraseBlocks() {
+            for (Block[] lane : blocks) {
+                for (Block block : lane) {
+                    if (block != null) {
+                        block.erase();
                     }
                 }
             }
@@ -490,7 +504,7 @@ public final class Argon2Impl {
         final int slice; // [0...3]
         int index; // [0...segLen-1]
 
-        Argon2Position(int pass, int lane, int slice) {
+        private Argon2Position(int pass, int lane, int slice) {
             this.pass = pass;
             this.lane = lane;
             this.slice = slice;
@@ -504,26 +518,15 @@ public final class Argon2Impl {
     }
 
     private static class Block {
-        static final Block ZERO_BLK = new Block();
+        private static final Block ZERO_BLK = new Block();
 
-        final long[] value;
+        private final long[] value;
 
         private Block() {
             value = new long[ARGON2_QWORDS_IN_BLOCK];
         }
 
-        Block(long[] value) {
-            Objects.requireNonNull(value, "Input array should not be null");
-            if (value.length != ARGON2_QWORDS_IN_BLOCK) {
-                throw new ProviderException("Wrong input array size: " +
-                        value.length);
-            }
-            // 'value' is either created internally through vlHash() or
-            // already cloned before calling
-            this.value = value;
-        }
-
-        Block(byte[] bytes) {
+        private Block(byte[] bytes) {
             Objects.requireNonNull(bytes, "Input array should not be null");
             if (bytes.length != ARGON2_BLOCK_SIZE) {
                 throw new ProviderException("Wrong input array size: " +
@@ -533,33 +536,34 @@ public final class Argon2Impl {
             b2lLittle(bytes, 0, value, 0, ARGON2_BLOCK_SIZE);
         }
 
-        byte[] getBytes() {
+        private byte[] getBytes() {
             byte[] out = new byte[ARGON2_BLOCK_SIZE];
             l2bLittle(value, 0, out, 0, ARGON2_BLOCK_SIZE);
             return out;
         }
 
-        void erase() {
+        private void erase() {
             Arrays.fill(value, 0L);
         }
 
         // xor this w/ 'other' and store the result in this
-        void xor(Block other) {
+        private void xor(Block other) {
             for (int i = 0; i < ARGON2_QWORDS_IN_BLOCK; i++) {
                 value[i] = value[i] ^ other.value[i];
             }
         }
 
         // store ('src1' xor 'src2') into 'dst'
-        static void xor(Block dst, Block src1, Block src2) {
+        private static void xor(Block dst, Block src1, Block src2) {
             for (int i = 0; i < ARGON2_QWORDS_IN_BLOCK; i++) {
                 dst.value[i] = src1.value[i] ^ src2.value[i];
             }
         }
 
-        void copy(Block other) {
+        private void copy(Block other) {
             System.arraycopy(other.value, 0, value, 0, value.length);
         }
+
         @Override
         public String toString() {
             StringBuilder result = new StringBuilder();

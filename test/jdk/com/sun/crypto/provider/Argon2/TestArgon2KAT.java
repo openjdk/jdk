@@ -29,13 +29,11 @@ import javax.crypto.KDF;
 import javax.crypto.SecretKey;
 import static javax.crypto.spec.Argon2ParameterSpec.Builder;
 import com.sun.crypto.provider.Argon2Impl;
-import sun.security.util.Argon2Util;
-import static sun.security.util.Argon2Util.Argon2Info;
 
 /**
  * @test
  * @bug 8253914
- * @modules java.base/sun.security.util:+open java.base/com.sun.crypto.provider:+open
+ * @modules java.base/com.sun.crypto.provider:+open
  * @summary Test the Argon2id KDF impl with test values from RFC 9106
  *     and self generated ones.
  */
@@ -103,7 +101,7 @@ public class TestArgon2KAT {
     private static void runPHC(String expected, byte[] passwd)
             throws Exception {
         System.out.println("test against: " + expected);
-        Argon2Info info = Argon2Util.decodeHash(expected);
+        Argon2Util.Argon2Info info = Argon2Util.decodeHash(expected);
 
         String algo = info.algo().toUpperCase(Locale.ENGLISH);
         if (!algo.equals("ARGON2ID")) {

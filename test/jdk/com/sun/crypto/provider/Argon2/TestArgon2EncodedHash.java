@@ -24,13 +24,11 @@ import java.util.Locale;
 import javax.crypto.KDF;
 import javax.crypto.spec.Argon2ParameterSpec;
 import com.sun.crypto.provider.Argon2Impl;
-import sun.security.util.Argon2Util;
-import static sun.security.util.Argon2Util.Argon2Info;
 
 /**
  * @test
  * @bug 8253914
- * @modules java.base/sun.security.util:+open java.base/com.sun.crypto.provider:+open
+ * @modules java.base/com.sun.crypto.provider:+open
  * @summary Test the Argon2 encoded hash parsing
  */
 public class TestArgon2EncodedHash {
@@ -38,7 +36,7 @@ public class TestArgon2EncodedHash {
     static class TestVector {
         final String encodedStr;
         final byte[] msg;
-        Argon2Info info;
+        Argon2Util.Argon2Info info;
 
         TestVector(String encodedStr, String inStr) {
             this.encodedStr = encodedStr;
