@@ -910,7 +910,10 @@ class MacroAssembler: public Assembler {
   void increment_mem64(Register base, RegisterOrConstant ind_or_offs, int val, Register tmp);
 
   // Bytecode profiling (tmp2 = noreg is allowed, but then recv is killed)
+  void profile_receiver_type_helper(Register recv, Register mdp, Label& L_found_recv, int mdp_offset,
+                                    int base, uint row_limit, Register tmp1, Register tmp2);
   void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1, Register tmp2);
+  void profile_array_type_at_load(Register recv, Register mdp, int mdp_offset, Register scratch);
 
   // Emitters for CRC32 calculation.
   // A note on invertCRC:
