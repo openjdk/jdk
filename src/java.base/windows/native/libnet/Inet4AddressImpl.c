@@ -23,6 +23,7 @@
  * questions.
  */
 #include <malloc.h>
+#include <winternl.h>
 
 #include "net_util.h"
 
