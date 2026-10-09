@@ -3697,10 +3697,11 @@ void MacroAssembler::atomic_group_op(reg_or_const_op op, reg_or_const_op iop,
                                      ExclusiveLd loadOp, ExclusiveSt storeOp,
                                      Register prev, RegisterOrConstant incr, Register addr) {
   if (UseLSE) {
-    prev = prev->is_valid() ? prev : zr;
+    prev = prev->is_valid() ? prev : rscratch1;
     if (incr.is_register()) {
       (this->*aop)(sz, incr.as_register(), prev, addr);
     } else {
+      assert_different_registers(addr, rscratch2);
       mov(rscratch2, incr.as_constant());
       (this->*aop)(sz, rscratch2, prev, addr);
     }
@@ -3747,7 +3748,7 @@ void MacroAssembler::atomic_group_xchg(AtomicOp aop, enum operand_size sz,
                                        Register prev, Register newv,
                                        Register addr) {
   if (UseLSE) {
-    prev = prev->is_valid() ? prev : zr;
+    prev = prev->is_valid() ? prev : rscratch1;
     (this->*aop)(sz, newv, prev, addr);
     return;
   }
