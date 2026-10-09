@@ -3691,32 +3691,45 @@ static bool different(Register a, RegisterOrConstant b, Register c) {
     return a != b.as_register() && a != c && b.as_register() != c;
 }
 
-#define ATOMIC_OP(NAME, LDXR, OP, IOP, AOP, STXR, sz)                   \
+typedef void (MacroAssembler::*reg_or_const_op)(Register, Register, RegisterOrConstant);
+
+template<typename AtomicOp, typename ExclusiveLd, typename ExclusiveSt>
+void MacroAssembler::atomic_group_op(reg_or_const_op op, reg_or_const_op iop,
+                                     AtomicOp aop, enum operand_size sz,
+                                     ExclusiveLd loadOp, ExclusiveSt storeOp,
+                                     Register prev, RegisterOrConstant incr, Register addr) {
+  if (UseLSE) {
+    prev = prev->is_valid() ? prev : zr;
+    if (incr.is_register()) {
+      (this->*aop)(sz, incr.as_register(), prev, addr);
+    } else {
+      mov(rscratch2, incr.as_constant());
+      (this->*aop)(sz, rscratch2, prev, addr);
+    }
+    return;
+  }
+  Register result = rscratch2;
+  if (prev->is_valid())
+    result = different(prev, incr, addr) ? prev : rscratch2;
+
+  Label retry_load;
+  prfm(Address(addr), PSTL1STRM);
+  bind(retry_load);
+  (this->*loadOp)(result, addr);
+  (this->*op)(rscratch1, result, incr);
+  (this->*storeOp)(rscratch2, rscratch1, addr);
+  cbnzw(rscratch2, retry_load);
+  if (prev->is_valid() && prev != result) {
+    (this->*iop)(rscratch1, result, incr);
+  }
+}
+
+#define ATOMIC_OP(NAME, LDXR, OP, IOP, AOP, STXR, sz)             \
 void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Register addr) { \
-  if (UseLSE) {                                                         \
-    prev = prev->is_valid() ? prev : zr;                                \
-    if (incr.is_register()) {                                           \
-      AOP(sz, incr.as_register(), prev, addr);                          \
-    } else {                                                            \
-      mov(rscratch2, incr.as_constant());                               \
-      AOP(sz, rscratch2, prev, addr);                                   \
-    }                                                                   \
-    return;                                                             \
-  }                                                                     \
-  Register result = rscratch2;                                          \
-  if (prev->is_valid())                                                 \
-    result = different(prev, incr, addr) ? prev : rscratch2;            \
-                                                                        \
-  Label retry_load;                                                     \
-  prfm(Address(addr), PSTL1STRM);                                       \
-  bind(retry_load);                                                     \
-  LDXR(result, addr);                                                   \
-  OP(rscratch1, result, incr);                                          \
-  STXR(rscratch2, rscratch1, addr);                                     \
-  cbnzw(rscratch2, retry_load);                                         \
-  if (prev->is_valid() && prev != result) {                             \
-    IOP(prev, rscratch1, incr);                                         \
-  }                                                                     \
+  atomic_group_op(&MacroAssembler::OP, &MacroAssembler::IOP, \
+                  &MacroAssembler::AOP,                                 \
+                  sz, &MacroAssembler::LDXR, &MacroAssembler::STXR,     \
+                  prev, incr, addr);                                    \
 }
 
 ATOMIC_OP(add, ldxr, add, sub, ldadd, stxr, Assembler::xword)
