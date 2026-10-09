@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class TestAnchorNames extends JavadocTester {
         // Test some section markers and links to these markers
         checkOutput("pkg1/RegClass.html", true,
                 """
-                    <span class="skip-nav" id="skip-navbar-top">""",
+                    <main role="main" id="skip-navbar-top">""",
                 """
                     <a href="#skip-navbar-top" title="Skip navigation links">""",
                 """
