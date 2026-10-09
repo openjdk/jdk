@@ -25,10 +25,11 @@ package gc.z;
 
 /**
  * @test
- * @bug 8382070
+ * @bug 8382070 8394091
  * @summary A max heap size large enough to overflow the ZGC address offset
  *          request must be rejected with an error message, not crash the VM
  * @requires vm.gc.Z
+ * @requires vm.flagless
  * @library /test/lib
  * @run driver gc.z.TestZHugeMaxHeapSize
  */
@@ -38,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestZHugeMaxHeapSize {
 
     private static void test(String option) throws Exception {
-        ProcessTools.executeTestJava("-XX:+UseZGC", option, "-version")
+        ProcessTools.executeLimitedTestJava("-XX:+UseZGC", option, "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .shouldHaveExitValue(1)
