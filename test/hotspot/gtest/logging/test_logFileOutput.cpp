@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "jvm.h"
 #include "logTestUtils.inline.hpp"
+#include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
@@ -31,6 +32,33 @@
 #include "utilities/ostream.hpp"
 
 static const char* name = prepend_prefix_temp_dir("file=", "testlog.pid%p.%t.log");
+
+TEST_VM(LogFileOutput, matches_name) {
+  ResourceMark rm;
+  char file_name[JVM_MAXPATHLEN];
+  int ret = jio_snprintf(file_name, sizeof(file_name), "%s%s",
+                         LogFileOutput::Prefix, prepend_temp_dir("log-matches-name"));
+  ASSERT_GT(ret, 0);
+  ASSERT_LT(static_cast<size_t>(ret), sizeof(file_name));
+  ASSERT_FALSE(file_exists(file_name + strlen(LogFileOutput::Prefix)));
+
+  // Exact names must match even when the file does not exist.
+  LogFileOutput fo(file_name);
+  const LogOutput* output = &fo;
+  EXPECT_TRUE(output->matches_name(file_name));
+  EXPECT_FALSE(output->matches_name("file="));
+  EXPECT_FALSE(output->matches_name(""));
+  EXPECT_FALSE(output->matches_name("stdout"));
+  EXPECT_FALSE(output->matches_name("stderr"));
+  EXPECT_FALSE(output->matches_name("invalidtype=123"));
+
+  EXPECT_TRUE(LogConfiguration::StdoutLog->matches_name("stdout"));
+  EXPECT_FALSE(LogConfiguration::StdoutLog->matches_name("stderr"));
+  EXPECT_FALSE(LogConfiguration::StdoutLog->matches_name(file_name));
+  EXPECT_TRUE(LogConfiguration::StderrLog->matches_name("stderr"));
+  EXPECT_FALSE(LogConfiguration::StderrLog->matches_name("stdout"));
+  EXPECT_FALSE(LogConfiguration::StderrLog->matches_name(file_name));
+}
 
 // Test parsing a bunch of valid file output options
 TEST_VM(LogFileOutput, parse_valid) {

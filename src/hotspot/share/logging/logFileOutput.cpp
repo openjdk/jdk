@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,19 @@ LogFileOutput::LogFileOutput(const char* name)
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
+}
+
+bool LogFileOutput::matches_name(const char* name) const {
+  if (LogOutput::matches_name(name)) {
+    return true;
+  }
+  if (strncmp(name, Prefix, strlen(Prefix)) != 0) {
+    return false;
+  }
+  char* file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
+  bool same = os::same_files(_file_name, file_name);
+  os::free(file_name);
+  return same;
 }
 
 const char* LogFileOutput::cur_log_file_name() {
@@ -372,7 +385,7 @@ void LogFileOutput::rotate() {
 
 char* LogFileOutput::make_file_name(const char* file_name,
                                     const char* pid_string,
-                                    const char* timestamp_string) {
+                                    const char* timestamp_string) const {
   char hostname_string[HostnameBufferSize];
   char* result = nullptr;
 
