@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,21 +63,6 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * Constructs a {@code SimpleTaglet}.
      *
-     * @param tagName   the name of this tag
-     * @param header    the header to output
-     * @param locations the possible locations that this tag can appear in
-     *                  The string can contain 'p' for package, 't' for type,
-     *                  'm' for method, 'c' for constructor and 'f' for field.
-     *                  See {@link #getLocations(String) getLocations} for the
-     *                  complete list.
-     */
-    SimpleTaglet(HtmlConfiguration config, String tagName, String header, String locations) {
-        this(config, tagName, header, getLocations(locations), isEnabled(locations));
-    }
-
-    /**
-     * Constructs a {@code SimpleTaglet}.
-     *
      * @param tagKind   the kind of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
@@ -126,6 +111,39 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
+     * Constructs a {@code SimpleTaglet} to represent a custom tag. The returned taglet
+     * overrides block tag output to render multiple block tags as individual {@code <dd>}
+     * elements instead of as a comma-separated list.
+     *
+     * @param config    the configuration
+     * @param tagName   the name of this tag
+     * @param header    the header to output
+     * @param locations the possible locations that this tag can appear in
+     *                  The string can contain 'p' for package, 't' for type,
+     *                  'm' for method, 'c' for constructor and 'f' for field.
+     *                  See {@link #getLocations(String) getLocations} for the
+     *                  complete list.
+     */
+    public static SimpleTaglet createCustomTaglet(HtmlConfiguration config, String tagName,
+                                                  String header, String locations) {
+        return new SimpleTaglet(config, tagName, header, getLocations(locations), isEnabled(locations)) {
+            @Override
+            protected Content simpleBlockTagOutput(Element element, List<? extends DocTree> simpleTags, String header) {
+                var ch = utils.getCommentHelper(element);
+                var context = tagletWriter.context;
+                var htmlWriter = tagletWriter.htmlWriter;
+
+                ContentBuilder output = new ContentBuilder(HtmlTree.DT(RawHtml.of(header)));
+                for (DocTree simpleTag : simpleTags) {
+                    output.add(HtmlTree.DD(htmlWriter.commentTagsToContent(element, ch.getBody(simpleTag),
+                            context.within(simpleTag))));
+                }
+                return output;
+            }
+        };
+    }
+
+    /**
      * Constructs a {@code SimpleTaglet} that will look for tags on enclosing type elements
      * if there are no relevant tags on a nested (member) type element.
      *
@@ -134,7 +152,8 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * @param locations the possible locations that this tag can appear in
      * @param enabled   whether this tag is enabled
      */
-    static SimpleTaglet createWithDefaultForNested(HtmlConfiguration config, DocTree.Kind tagKind, String header, Set<Taglet.Location> locations, boolean enabled) {
+    static SimpleTaglet createWithDefaultForNested(HtmlConfiguration config, DocTree.Kind tagKind, String header,
+                                                   Set<Taglet.Location> locations, boolean enabled) {
         return new SimpleTaglet(config, tagKind, header, locations, enabled) {
             @Override
             protected List<? extends BlockTagTree> getDefaultBlockTags(Element e, Predicate<? super BlockTagTree> accepts) {
@@ -243,7 +262,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      *
      * @return the output
      */
-    private Content simpleBlockTagOutput(Element element,
+    protected Content simpleBlockTagOutput(Element element,
                                         List<? extends DocTree> simpleTags,
                                         String header) {
         var ch = utils.getCommentHelper(element);
