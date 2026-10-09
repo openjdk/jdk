@@ -383,19 +383,19 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         // get and add, add and get - positive immediate encodable with 12-bit shift
         {
             UNSAFE.putShort(base, offset, (short)0x0123);
-            short o = UNSAFE.getAndAddShort(base, offset, (short)0xF000);
+            short o = UNSAFE.getAndAddShort(base, offset, (short)0x1000);
             assertEquals(o, (short)0x0123, "getAndAdd short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)((short)0x0123 + (short)0xF000), "getAndAdd short");
+            assertEquals(x, (short)((short)0x0123 + (short)0x1000), "getAndAdd short");
         }
 
         // get and add, add and get - negative immediate encodable with 12-bit shift
         {
             UNSAFE.putShort(base, offset, (short)0x0123);
-            short o = UNSAFE.getAndAddShort(base, offset, (short)-(short)0xF000);
+            short o = UNSAFE.getAndAddShort(base, offset, (short)0xF000);
             assertEquals(o, (short)0x0123, "getAndAdd short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)((short)0x0123 - (short)0xF000), "getAndAdd short");
+            assertEquals(x, (short)((short)0x0123 + (short)0xF000), "getAndAdd short");
         }
     }
 
