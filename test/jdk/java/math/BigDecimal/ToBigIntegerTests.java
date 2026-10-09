@@ -113,7 +113,7 @@ public class ToBigIntegerTests {
         TbiTestCase.of(BigDecimal.valueOf(  12, 3), BigInteger.valueOf(0)),
         TbiTestCase.of(BigDecimal.valueOf( 123, 3), BigInteger.valueOf(0)),
         TbiTestCase.of(BigDecimal.valueOf(1234, 3), BigInteger.valueOf(1)),
-        
+
         // More fractional values
         TbiTestCase.of("-0.5", BigInteger.ZERO),
         TbiTestCase.of( "0.5", BigInteger.ZERO),
@@ -189,7 +189,7 @@ public class ToBigIntegerTests {
         TbiTestCase.of(BigDecimal.valueOf(  12, 3), null),
         TbiTestCase.of(BigDecimal.valueOf( 123, 3), null),
         TbiTestCase.of(BigDecimal.valueOf(1234, 3), null),
-        
+
         // More fractional values
         TbiTestCase.of("-0.9999", null),
         TbiTestCase.of( "0.9999", null),
