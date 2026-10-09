@@ -4220,8 +4220,8 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   __ set_last_Java_frame(Z_SP, Z_R1_scratch);
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), Z_thread);
-  address calls_return_pc = __pc();
-  assert(calls_return_pc ==  last_calls_return_pc(), "No instruction emitted after  call_VM_leaf");
+  address calls_return_pc = __ pc();
+  assert(calls_return_pc ==  last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
   __ bind(frame_pc);
   __ reset_last_Java_frame();
 
@@ -4259,8 +4259,8 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
   __ set_last_Java_frame(Z_SP, Z_R1_scratch);
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), Z_thread);
-  address calls_return_pc = __pc();
-  assert(calls_return_pc ==  last_calls_return_pc(), "No instruction emitted after  call_VM_leaf");
+  address calls_return_pc = __ pc();
+  assert(calls_return_pc ==  last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
   __ bind(frame_pc);
 
   __ reset_last_Java_frame();
