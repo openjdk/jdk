@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -730,9 +730,9 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             ResourceMark rm;
             Method* method = nm->method();
             if (nm->is_in_use() || nm->is_not_entrant()) {
-              blob_name = os::strdup(method->name_and_sig_as_C_string());
+              blob_name = os::strdup(method->name_and_sig_as_C_string(), mtCode);
             } else {
-              blob_name = os::strdup(cb->name());
+              blob_name = os::strdup(cb->name(), mtCode);
             }
             nm_size    = nm->total_size();
             compile_id = nm->compile_id();
@@ -765,7 +765,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                 break;
             }
           } else {
-            blob_name  = os::strdup(cb->name());
+            blob_name  = os::strdup(cb->name(), mtCode);
           }
 
           //------------------------------------------
@@ -1261,7 +1261,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
       for (unsigned int i = 0; i != tsbStopper; i = TopSizeArray[i].index) {
         printed_topSizeBlocks++;
         if (TopSizeArray[i].blob_name == nullptr) {
-          TopSizeArray[i].blob_name = os::strdup("unnamed blob or blob name unavailable");
+          TopSizeArray[i].blob_name = os::strdup("unnamed blob or blob name unavailable", mtCode);
         }
         // heap->find_start() is safe. Only works on _segmap.
         // Returns nullptr or void*. Returned CodeBlob may be uninitialized.

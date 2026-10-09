@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ import jdk.test.lib.Asserts;
  * @run main/othervm jdk.jfr.api.metadata.eventtype.TestGetAnnotationElements
  */
 public class TestGetAnnotationElements {
-
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Throwable {
         Class<?>[] jfrAnnotations = {
@@ -83,11 +82,11 @@ public class TestGetAnnotationElements {
         };
 
         for (Class<?> clz : jfrAnnotations) {
-            Class<? extends Annotation> annptationClass = (Class<? extends Annotation>) clz;
-            System.out.println("AnnotationElement: " + annptationClass);
-            Map<String, Object> values = createValueMapForAnnotation(annptationClass);
-            List<Annotation> persistableAnnotation = createPersistableAnnotationList(annptationClass);
-            AnnotationElement ae = new AnnotationElement(annptationClass, values);
+            Class<? extends Annotation> annotationClass = (Class<? extends Annotation>) clz;
+            System.out.println("AnnotationElement: " + annotationClass);
+            Map<String, Object> values = createDefaultMap(annotationClass);
+            List<Annotation> persistableAnnotation = createPersistableAnnotationList(annotationClass);
+            AnnotationElement ae = new AnnotationElement(annotationClass, values);
             List<AnnotationElement> aes = ae.getAnnotationElements();
             Asserts.assertEquals(persistableAnnotation.size(), aes.size());
         }
@@ -131,12 +130,22 @@ public class TestGetAnnotationElements {
         Asserts.fail("Class " + clz + " not found in the annotation elements");
     }
 
-    private static Map<String, Object> createValueMapForAnnotation(Class<?> clz) {
+    private static Map<String, Object> createDefaultMap(Class<?> annotationClass) throws Exception {
         Map<String, Object> map = new HashMap<>();
-        for (Method method : clz.getDeclaredMethods()) {
+        for (Method method : annotationClass.getDeclaredMethods()) {
             int modifiers = method.getModifiers();
             if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
-                map.put(method.getName(), "value");
+                Class<?> type = method.getReturnType();
+                String name = method.getName();
+                if (type == String.class) {
+                    map.put(name, "text");
+                } else if (type == boolean.class) {
+                    map.put(name, true);
+                } else if (type == String[].class) {
+                    map.put(name, new String[] { "text" });
+                } else {
+                    throw new Exception("Test error. No default value for type " + type.getName());
+                }
             }
         }
         return map;

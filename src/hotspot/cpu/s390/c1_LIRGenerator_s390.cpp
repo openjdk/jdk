@@ -78,7 +78,7 @@ LIR_Opr LIRGenerator::syncLockOpr()     { return new_register(T_INT); }
 LIR_Opr LIRGenerator::syncTempOpr()     { return FrameMap::Z_R13_opr; }
 LIR_Opr LIRGenerator::getThreadTemp()   { return LIR_OprFact::illegalOpr; }
 
-LIR_Opr LIRGenerator::result_register_for (ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for (ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:    opr = FrameMap::Z_R2_opr;        break;
@@ -95,7 +95,7 @@ LIR_Opr LIRGenerator::result_register_for (ValueType* type, bool callee) {
   return opr;
 }
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   return new_register(T_INT);
 }
 
@@ -203,13 +203,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
     ShouldNotReachHere();
   }
   return r;
-}
-
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
 }
 
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
@@ -1055,7 +1048,9 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
   __ store(value, address, info);
+  __ membar();
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,

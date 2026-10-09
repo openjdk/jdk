@@ -56,14 +56,21 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   ciKlass(k)
 {
   assert(get_Klass()->is_instance_klass(), "wrong type");
-  assert(get_instanceKlass()->is_loaded(), "must be at least loaded");
+
   InstanceKlass* ik = get_instanceKlass();
+
+#ifdef ASSERT
+  if (!ik->is_loaded()) {
+    ResourceMark rm;
+    assert(false, "must be at least loaded: %s", ik->name()->as_C_string());
+  }
+#endif // ASSERT
 
   AccessFlags access_flags = ik->access_flags();
   _flags = ciFlags(access_flags);
   _has_finalizer = ik->has_finalizer();
   _has_subklass = flags().is_final() ? subklass_false : subklass_unknown;
-  _init_state = ik->init_state();
+  _init_state = compute_init_state(ik);
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _has_nonstatic_concrete_methods = ik->has_nonstatic_concrete_methods();
   _is_hidden = ik->is_hidden();
@@ -147,9 +154,26 @@ InstanceKlass::ClassState ciInstanceKlass::compute_init_state() {
     // Return cached init state of shared klass
     ciEnv* env = CURRENT_ENV;
     assert(env->task() != nullptr, "only calls from compilation are expected here");
-    return env->get_cached_init_state(ident());
+    if (env->is_aot_compile()) {
+      GUARDED_VM_ENTRY( return env->compute_init_state_for_aot_compile(get_instanceKlass()); )
+    } else {
+      return env->get_cached_init_state(ident());
+    }
   }
   return _init_state;
+}
+
+InstanceKlass::ClassState ciInstanceKlass::compute_init_state(InstanceKlass* ik) {
+  ASSERT_IN_VM;
+#if INCLUDE_CDS
+  ciEnv* env = CURRENT_ENV;
+  if (env != nullptr && env->is_aot_compile()) {
+    return env->compute_init_state_for_aot_compile(ik);
+  } else
+#endif
+  {
+    return ik->init_state();
+  }
 }
 
 // ------------------------------------------------------------------
@@ -593,7 +617,7 @@ void ciInstanceKlass::compute_nonstatic_fields_impl(const GrowableArray<ciField*
 
     fieldDescriptor& fd = fs.field_descriptor();
     if (fd.is_flat()) {
-      ValueKlass* k = this_klass->get_value_type_field_klass(fd.index());
+      ValueKlass* k = fd.flat_field_klass();
       ciValueKlass* vk = CURRENT_ENV->get_klass(k)->as_value_klass();
       field_num += vk->nof_nonstatic_fields();
       field_num += fd.has_null_marker() ? 1 : 0;
@@ -630,7 +654,7 @@ void ciInstanceKlass::compute_nonstatic_fields_impl(const GrowableArray<ciField*
 
     if (fd.is_flat()) {
       // Flat fields are embedded
-      Klass* k = get_instanceKlass()->get_value_type_field_klass(fd.index());
+      Klass* k = fd.flat_field_klass();
       ciValueKlass* vk = CURRENT_ENV->get_klass(k)->as_value_klass();
       // Iterate over fields of the flat value type and copy them to 'this'
       for (int i = 0; i < vk->nof_nonstatic_fields(); ++i) {

@@ -220,9 +220,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   //   - input holder object via "obj", which must be rax,
   //     will return new instance via the same reg
   void read_flat_field(Register entry, Register obj);
-  void write_flat_field(Register entry,
-                        Register tmp1, Register tmp2,
-                        Register obj, Register off, Register value);
+  void write_flat_field(Register entry, Register tmp1, Register tmp2,
+                        Register obj, Register value);
 
   // Object locking
   void lock_object  (Register lock_reg);

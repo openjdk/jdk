@@ -288,7 +288,7 @@ private:
 class G1CMRootMemRegions {
   // The set of root MemRegions.
   MemRegion* _root_regions;
-  uint const _max_regions;
+  uint const _max_num_regions;
 
   Atomic<uint> _num_regions;  // Actual number of root regions.
   Atomic<uint> _num_claimed_regions; // Number of root regions currently claimed.
@@ -297,7 +297,7 @@ class G1CMRootMemRegions {
   uint num_claimed_regions() const { return _num_claimed_regions.load_relaxed(); }
 
 public:
-  G1CMRootMemRegions(uint const max_regions);
+  G1CMRootMemRegions(uint const max_num_regions);
   ~G1CMRootMemRegions();
 
   void add(HeapWord* start, HeapWord* end);

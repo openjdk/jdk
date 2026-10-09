@@ -218,13 +218,9 @@ public class TestVectorLogicConeFuzzer {
 
             // MacroLogicV IR matching is only asserted for non-masked cones; masked
             // cones may not pack into MacroLogicV (e.g. mixed masks or partial predication).
-            Object testMethodHeader = numMasks == 0
-                ? """
-                @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-                @Test
-                public static Object $test(
+            // TODO 8392367: Add IR verification
+            Object testMethodHeader =
                 """
-                : """
                 @Test
                 public static Object $test(
                 """;

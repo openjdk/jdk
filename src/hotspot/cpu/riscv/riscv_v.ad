@@ -3029,7 +3029,7 @@ instruct replicate_imm5(vReg dst, immI5 con) %{
   format %{ "replicate_imm5 $dst, $con" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length_in_bytes(this));
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vmv_v_i(as_VectorRegister($dst$$reg), $con$$constant);
   %}
   ins_pipe(pipe_slow);

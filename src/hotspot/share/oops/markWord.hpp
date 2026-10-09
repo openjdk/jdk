@@ -206,7 +206,7 @@ class markWord {
   }
 
   // lock accessors (note that these assume lock_shift == 0)
-  STATIC_ASSERT(lock_shift == 0);
+  static_assert(lock_shift == 0);
 
   bool is_lock_neutral() const {
     return (mask_bits(value(), lock_mask_in_place) == lock_neutral_value);

@@ -78,7 +78,7 @@ LIR_Opr LIRGenerator::syncTempOpr()     { return FrameMap::r0_opr; }
 LIR_Opr LIRGenerator::getThreadTemp()   { return LIR_OprFact::illegalOpr; }
 
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:     opr = FrameMap::r0_opr;          break;
@@ -96,7 +96,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
 }
 
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   LIR_Opr reg = new_register(T_INT);
   set_vreg_flag(reg, LIRGenerator::byte_reg);
   return reg;
@@ -233,15 +233,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
     ShouldNotReachHere();
   }
   return r;
-}
-
-
-
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
 }
 
 

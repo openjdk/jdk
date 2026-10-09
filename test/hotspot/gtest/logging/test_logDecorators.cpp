@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ TEST(LogDecorators, from_and_to_abbr) {
     ASSERT_EQ(decorator, decorator2);
 
     // Test case insensitivity
-    char* abbr_cpy = os::strdup(abbr);
+    char* abbr_cpy = os::strdup(abbr, mtTest);
     abbr_cpy[0] = toupper(abbr_cpy[0]);
     decorator2 = LogDecorators::from_string(abbr_cpy);
     os::free(abbr_cpy);
