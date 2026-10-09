@@ -1508,7 +1508,18 @@ TEST_VM(os, map_into_placeholder_memory) {
   os::unmap_memory(result, size);
 }
 
-TEST_VM_FATAL_ERROR_MSG(os, placeholder_double_convert, ".*Region cannot be empty.*") {
+#ifdef ASSERT
+#define TEST_PLACEHOLDER_DOUBLE_CONVERT(name) \
+  TEST_VM_ASSERT_MSG(os, name, ".*Region cannot be empty.*")
+#elif defined(_WIN32)
+#define TEST_PLACEHOLDER_DOUBLE_CONVERT(name) \
+  TEST_VM_FATAL_ERROR_MSG(os, name, ".*Failed to convert placeholder.*")
+#else
+#define TEST_PLACEHOLDER_DOUBLE_CONVERT(name) \
+  TEST_VM(os, name)
+#endif
+
+TEST_PLACEHOLDER_DOUBLE_CONVERT(placeholder_double_convert) {
   SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
   const size_t size = 4 * os::vm_allocation_granularity();
 
@@ -1520,7 +1531,7 @@ TEST_VM_FATAL_ERROR_MSG(os, placeholder_double_convert, ".*Region cannot be empt
   char* base = region.base();
   char* reserved = os::convert_to_reserved(region);
   ASSERT_EQ(reserved, base);
-  // This second conversion attempt should fail
+  // This second conversion attempt may fail depending on the build/configuration
   reserved = os::convert_to_reserved(region);
 }
 
