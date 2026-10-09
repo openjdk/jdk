@@ -221,7 +221,7 @@ public class Bind {
                 usa = (UnixDomainSocketAddress) server.getLocalAddress();
                 if (usa.getPath().toString().isEmpty())
                     throw new RuntimeException("expected non zero address length");
-                System.out.println("Null server address: " + server.getLocalAddress());
+                System.out.println("Empty server address: " + server.getLocalAddress());
             } finally {
                 if (usa != null) {
                     Files.deleteIfExists(usa.getPath());
