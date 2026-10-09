@@ -59,16 +59,29 @@ public class FlatArray extends ObjArray {
   }
 
   @Override
-  protected void iterateFieldsInternal(OopVisitor visitor, int length) {
+  public OopHandle getOopHandleAt(long index) {
+    // FlatArray contains value object, it means array contents are payload.
+    // Thus we need to create oop handle from oop of value object.
+    return getObjAt(index).getHandle();
+  }
+
+  private OopField getOopField(int index) {
     int shift = Klass.layoutHelperLog2ElementSize(getKlass().getLayoutHelper());
     long baseOffset = baseOffsetInBytes(BasicType.T_FLAT_ELEMENT);
-    int elementSize = 1 << shift; // from FlatArrayKlass::oop_oop_iterate_elements_specialized_bounded() (addr_incr)
+    long elementSize = 1 << shift; // from FlatArrayKlass::oop_oop_iterate_elements_specialized_bounded() (addr_incr)
+    long offset = baseOffset + (elementSize * (long)index);
+    return new OopField(new IndexableFieldIdentifier(index), offset, false);
+  }
 
-    long offset = baseOffset;
+  @Override
+  public Oop getObjAt(long index) {
+    return getHeap().newFlattenedOop(this, getOopField((int)index));
+  }
+
+  @Override
+  protected void iterateFieldsInternal(OopVisitor visitor, int length) {
     for (int index = 0; index < length; index++) {
-      OopField field = new OopField(new IndexableFieldIdentifier(index), offset, false);
-      visitor.doOop(field, false);
-      offset += elementSize;
+      visitor.doOop(getOopField(index), false);
     }
   }
 }
