@@ -2235,30 +2235,21 @@ address LIR_Assembler::int_constant(jlong n) {
 // Without Zacas it is an lr.{w|d}.aq / sc.{w|d}.rl loop, which is only acq_rel;
 // the trailing fence rw,rw is kept to complete MO_SEQ_CST, exactly as before.
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::int32, Assembler::aq /* acquire */,
+  __ cmpxchg(addr, cmpval, newval, Assembler::int32, Assembler::aqrl /* acquire */,
              Assembler::rl /* release */, t0, true /* result as bool */);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  if (!UseZacas) {
-    __ membar(MacroAssembler::AnyAny);
-  }
 }
 
 void LIR_Assembler::caswu(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::uint32, Assembler::aq /* acquire */,
+  __ cmpxchg(addr, cmpval, newval, Assembler::uint32, Assembler::aqrl /* acquire */,
              Assembler::rl /* release */, t0, true /* result as bool */);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  if (!UseZacas) {
-    __ membar(MacroAssembler::AnyAny);
-  }
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::int64, Assembler::aq /* acquire */,
+  __ cmpxchg(addr, cmpval, newval, Assembler::int64, Assembler::aqrl /* acquire */,
              Assembler::rl /* release */, t0, true /* result as bool */);
   __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  if (!UseZacas) {
-    __ membar(MacroAssembler::AnyAny);
-  }
 }
 
 void LIR_Assembler::deoptimize_trap(CodeEmitInfo *info) {
