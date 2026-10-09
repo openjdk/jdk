@@ -175,13 +175,10 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
   G1ConcurrentMark* _cm;
 
   G1EvacFailureRegions* _evac_failure_regions;
-  CHeapBitMap _chunk_bitmap;
-
   uint _num_chunks_per_region;
-  uint _num_evac_failed_regions;
-  // Total chunks over all evacuation failed regions; may exceed uint range.
-  size_t _num_chunks;
   size_t _chunk_size;
+  // One bit per chunk over all evacuation failed regions; may exceed uint range.
+  CHeapBitMap _chunk_bitmap;
 
   class PhaseTimesStat {
     static constexpr G1GCPhaseTimes::GCParPhases phase_name =
@@ -339,18 +336,11 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _evac_failure_regions(evac_failure_regions),
-    _chunk_bitmap(mtGC) {
-
-    _num_evac_failed_regions = _evac_failure_regions->num_evac_failed_regions();
-    _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region_for_scan();
-    _num_chunks = (size_t) _num_chunks_per_region * _num_evac_failed_regions;
-
-    _chunk_size = static_cast<uint>(G1HeapRegion::GrainWords / _num_chunks_per_region);
-
+    _num_chunks_per_region(G1CollectedHeap::get_chunks_per_region_for_scan()),
+    _chunk_size(G1HeapRegion::GrainWords / _num_chunks_per_region),
+    _chunk_bitmap((size_t)_num_chunks_per_region * _evac_failure_regions->num_evac_failed_regions(), mtGC) {
     log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region",
                         _num_chunks_per_region);
-
-    _chunk_bitmap.resize(_num_chunks);
   }
 
   double worker_cost() const override {
@@ -362,10 +352,11 @@ public:
 
   void do_work(uint worker_id) override {
     const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-    const size_t start_chunk_idx = worker_id * _num_chunks / total_workers;
+    const size_t total_chunks = _chunk_bitmap.size();
+    const size_t start_chunk_idx = worker_id * total_chunks / total_workers;
 
-    for (size_t i = 0; i < _num_chunks; i++) {
-      const size_t chunk_idx = (start_chunk_idx + i) % _num_chunks;
+    for (size_t i = 0; i < total_chunks; i++) {
+      const size_t chunk_idx = (start_chunk_idx + i) % total_chunks;
       if (claim_chunk(chunk_idx)) {
         process_chunk(worker_id, chunk_idx);
       }
