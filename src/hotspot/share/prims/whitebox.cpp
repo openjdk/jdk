@@ -701,6 +701,20 @@ WB_END
 
 #if INCLUDE_SHENANDOAHGC
 
+WB_ENTRY(jint, WB_ShenandoahRegionSize(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    return ShenandoahHeapRegion::region_size_bytes_jint();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+WB_END
+
+WB_ENTRY(jint, WB_ShenandoahRegionCount(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    return static_cast<jint>(ShenandoahHeap::heap()->num_regions());
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionCount: Shenandoah GC is not enabled");
+WB_END
+
 WB_ENTRY(void, WB_ShenandoahOldGC(JNIEnv* env, jobject o))
   if (UseShenandoahGC && ShenandoahHeap::heap()->mode()->is_generational()) {
     ShenandoahGenerationalHeap::heap()->wait_for_old_collection();
@@ -2998,8 +3012,10 @@ static JNINativeMethod methods[] = {
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_G1GC
 #if INCLUDE_SHENANDOAHGC
-  {CC"shenandoahOldGC",     CC"()V",                  (void*)&WB_ShenandoahOldGC },
-#endif // INCLUDE_SHENANDOAHGC
+  {CC"shenandoahRegionSize",   CC"()I",                   (void*)&WB_ShenandoahRegionSize  },
+  {CC"shenandoahRegionCount",  CC"()I",                   (void*)&WB_ShenandoahRegionCount },
+  {CC"shenandoahOldGC",        CC"()V",                   (void*)&WB_ShenandoahOldGC },
+#endif
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
   {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},

@@ -352,12 +352,12 @@ void ShenandoahDegenGC::op_reset() {
 void ShenandoahDegenGC::op_mark() {
   assert(!_generation->is_concurrent_mark_in_progress(), "Should be reset");
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_mark);
-  ShenandoahSTWMark mark(_generation, false /*full gc*/);
+  ShenandoahSTWMark mark(_generation, false /*full gc*/, _do_old_gc_bootstrap /*bootstrapping*/);
   mark.mark();
 }
 
 void ShenandoahDegenGC::op_finish_mark() {
-  ShenandoahConcurrentMark mark(_generation);
+  ShenandoahConcurrentMark mark(_generation, _do_old_gc_bootstrap);
   mark.finish_mark();
 }
 

@@ -39,7 +39,7 @@ private:
   TaskTerminator                _terminator;
   bool                          _full_gc;
 public:
- ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc);
+ ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc, bool bootstrapping);
  void mark();
 
 private:

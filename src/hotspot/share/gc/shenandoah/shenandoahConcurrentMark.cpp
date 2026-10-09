@@ -84,8 +84,8 @@ public:
   }
 };
 
-ShenandoahConcurrentMark::ShenandoahConcurrentMark(ShenandoahGeneration* generation) :
-  ShenandoahMark(generation) {}
+ShenandoahConcurrentMark::ShenandoahConcurrentMark(ShenandoahGeneration* generation, bool bootstrapping) :
+  ShenandoahMark(generation, bootstrapping) {}
 
 // Mark concurrent roots during concurrent phases
 template <ShenandoahGenerationType GENERATION>
@@ -124,8 +124,7 @@ template <ShenandoahGenerationType GENERATION>
 void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahObjToScanQueue* old_q = (_old_queue_set == nullptr) ?
-          nullptr : _old_queue_set->queue(worker_id);
+  ShenandoahObjToScanQueue* old_q = (_old_queue_set == nullptr) ? nullptr : _old_queue_set->queue(worker_id);
   ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old_q);
   _root_scanner.roots_do(&cl, worker_id);
 }
@@ -139,7 +138,8 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
 
   switch (_generation->type()) {
     case YOUNG: {
-      ShenandoahMarkConcurrentRootsTask<YOUNG> task(task_queues(), old_task_queues(), rp,
+      auto old_queues = _bootstrapping ? old_task_queues() : nullptr;
+      ShenandoahMarkConcurrentRootsTask<YOUNG> task(task_queues(), old_queues, rp,
                                                     ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
       workers->run_task(&task);
       break;
