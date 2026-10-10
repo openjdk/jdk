@@ -1679,8 +1679,26 @@ FileMapInfo* AOTMetaspace::open_dynamic_archive() {
 // use_requested_addr:
 //  true  = map at FileMapHeader::_requested_base_address
 //  false = map at an alternative address picked by OS.
+//  There are several paths that archive mapping may take:
+//  1. Unified placholder path. The placeholder API is used to reserve space, then map the archive directly into it.
+//      This path is the first choice taken by all platforms when we attempt to map a requested base address.
+//  2. Legacy Windows path. If the Windows version is older than 1803 and does not support VirtualAlloc2/MapViewOfFile3,
+//      a race-prone path is taken. This path reserves memory, releases it,
+//      then attempts to map archive regions into the newly vacated space. This reserve-release-map dance is done
+//      because legacy Windows cannot map into reserved regions.
+//  3. POSIX fallback path. This path is taken when mapping the archive to the requested address is unsuccessful.
+//      As a fallback, this path lets the OS choose an appropriate address and tries to mmap there instead.
+//  4. Windows fallback path. This path is taken when mapping the archive to the requested address is unsuccessful.
+//      It is the same on old and modern Windows. This path allows the OS to choose an appropriate address, reserves it,
+//      and reads the archive file into it instead of trying to map it. Mapping is not attempted because older
+//      Windows versions would need to release the memory first, introducing a race. There is minimal benefit to
+//      mapping on modern Windows since the pointers need to be updated anyway, so it follows the same approach as
+//      legacy Windows to avoid needing yet another code path.
+
 MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo,
                                             bool use_requested_addr) {
+  ReservedSpace prot_zone_rs; // hold onto this for cleanup
+
   if (use_requested_addr && static_mapinfo->requested_base_address() == nullptr) {
     aot_log_info(aot)("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.");
     return MAP_ARCHIVE_MMAP_FAILURE;
@@ -1708,12 +1726,14 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
   ReservedSpace total_space_rs, archive_space_rs, class_space_rs;
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
   size_t prot_zone_size = 0;
+  os::PlaceholderRegion archive_placeholder; // Either this or archive_space_rs is populated depending on whether the placeholder path is taken.
   char* mapped_base_address = reserve_address_space_for_archives(static_mapinfo,
                                                                  dynamic_mapinfo,
                                                                  use_requested_addr,
                                                                  total_space_rs,
                                                                  archive_space_rs,
-                                                                 class_space_rs);
+                                                                 class_space_rs,
+                                                                 archive_placeholder);
   if (mapped_base_address == nullptr) {
     result = MAP_ARCHIVE_MMAP_FAILURE;
     aot_log_debug(aot)("Failed to reserve spaces (use_requested_addr=%u)", (unsigned)use_requested_addr);
@@ -1723,37 +1743,43 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
 
     // Some sanity checks after reserving address spaces for archives
     //  and class space.
-    assert(archive_space_rs.is_reserved(), "Sanity");
+    assert(archive_space_rs.is_reserved() || !archive_placeholder.is_empty(), "Sanity");
 
 #if INCLUDE_CLASS_SPACE
-    assert(archive_space_rs.base() == mapped_base_address &&
-        archive_space_rs.size() > protection_zone_size(),
-        "Archive space must lead and include the protection zone");
     // Class space must closely follow the archive space. Both spaces
     //  must be aligned correctly.
     assert(class_space_rs.is_reserved() && class_space_rs.size() > 0,
            "A class space should have been reserved");
-    assert(class_space_rs.base() >= archive_space_rs.end(),
-           "class space should follow the cds archive space");
-    assert(is_aligned(archive_space_rs.base(),
-                      core_region_alignment()),
-           "Archive space misaligned");
     assert(is_aligned(class_space_rs.base(),
                       Metaspace::reserve_alignment()),
            "class space misaligned");
+
+    if (archive_placeholder.is_empty()) {
+      assert(archive_space_rs.base() == mapped_base_address &&
+          archive_space_rs.size() > protection_zone_size(),
+          "Archive space must lead and include the protection zone");
+      assert(class_space_rs.base() >= archive_space_rs.end(),
+          "class space should follow the cds archive space");
+      assert(is_aligned(archive_space_rs.base(), core_region_alignment()),
+          "Archive space misaligned");
+    }
 #endif // INCLUDE_CLASS_SPACE
 
-    aot_log_info(aot)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes%s",
-                   p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size(),
-                   (prot_zone_size > 0 ? " (includes protection zone)" : ""));
-    aot_log_info(aot)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
-                   p2i(class_space_rs.base()), p2i(class_space_rs.end()), class_space_rs.size());
+    if (archive_placeholder.is_empty()) {
+      aot_log_info(aot)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes%s",
+                     p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size(),
+                     (prot_zone_size > 0 ? " (includes protection zone)" : ""));
+      aot_log_info(aot)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
+                     p2i(class_space_rs.base()), p2i(class_space_rs.end()), class_space_rs.size());
+    }
 
-    if (AOTMetaspace::use_windows_memory_mapping()) {
+    if (archive_placeholder.is_empty() && AOTMetaspace::use_windows_memory_mapping()) {
       // We have now reserved address space for the archives, and will map in
-      //  the archive files into this space.
+      //  the archive files into this space. This is the legacy path for Windows lacking
+      //  VirtualAlloc2 support. On modern Windows, the unified placeholders path handles
+      //  reserving and mapping the archive and avoids the races here.
       //
-      // Special handling for Windows: on Windows we cannot map a file view
+      // Special handling for legacy Windows where we cannot map a file view
       //  into an existing memory mapping. So, we unmap the address range we
       //  just reserved again, which will make it available for mapping the
       //  archives.
@@ -1792,6 +1818,15 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
       }
     }
 
+    // Split off prot zone on the unified placeholder path.
+    if (!archive_placeholder.is_empty() && prot_zone_size > 0) {
+      os::PlaceholderRegionPair split = os::split_memory(archive_placeholder, prot_zone_size);
+      archive_placeholder = split.right;
+      char* prot_base = os::convert_to_reserved(split.left);
+      prot_zone_rs = ReservedSpace(prot_base, prot_zone_size, core_region_alignment(), os::vm_page_size(), false, false);
+      aot_log_info(aot)("Split off prot zone: start" INTPTR_FORMAT " end " INTPTR_FORMAT, p2i(prot_base), p2i(prot_base + prot_zone_size));
+    }
+
     if (prot_zone_size > 0) {
       os::commit_memory(mapped_base_address, prot_zone_size, false); // will later be protected
       // Before mapping the core regions into the newly established address space, we mark
@@ -1801,9 +1836,9 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
       *(mapped_base_address + prot_zone_size - 1) = 'P';
     }
 
-    MapArchiveResult static_result = map_archive(static_mapinfo, mapped_base_address, archive_space_rs);
+    MapArchiveResult static_result = map_archive(static_mapinfo, mapped_base_address, archive_space_rs, archive_placeholder);
     MapArchiveResult dynamic_result = (static_result == MAP_ARCHIVE_SUCCESS) ?
-                                     map_archive(dynamic_mapinfo, mapped_base_address, archive_space_rs) : MAP_ARCHIVE_OTHER_FAILURE;
+                                     map_archive(dynamic_mapinfo, mapped_base_address, archive_space_rs, archive_placeholder) : MAP_ARCHIVE_OTHER_FAILURE;
 
     DEBUG_ONLY(if (ArchiveRelocationMode == 1 && use_requested_addr) {
       // This is for simulating mmap failures at the requested address. In
@@ -1822,6 +1857,10 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
     if (static_result == MAP_ARCHIVE_SUCCESS) {
       if (dynamic_result == MAP_ARCHIVE_SUCCESS) {
         result = MAP_ARCHIVE_SUCCESS;
+        // Unified placeholder path. Convert padding + gap to regular reserved region. Stays reserved until shutdown.
+        if (!archive_placeholder.is_empty()) {
+          os::convert_to_reserved(archive_placeholder);
+        }
       } else if (dynamic_result == MAP_ARCHIVE_OTHER_FAILURE) {
         assert(dynamic_mapinfo != nullptr && !dynamic_mapinfo->is_mapped(), "must have failed");
         // No need to retry mapping the dynamic archive again, as it will never succeed
@@ -1902,6 +1941,14 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
     release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
+    // Release any unconverted placeholders
+    if (!archive_placeholder.is_empty()) {
+      os::release_memory(archive_placeholder);
+    }
+    if (prot_zone_rs.is_reserved()) {
+      MemoryReserver::release(prot_zone_rs);
+      prot_zone_rs = {};
+    }
   }
 
   return result;
@@ -1910,7 +1957,7 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
 
 // This will reserve two address spaces suitable to house Klass structures, one
 //  for the cds archives (static archive and optionally dynamic archive) and
-//  optionally one move for ccs.
+//  optionally one more for ccs.
 //
 // Since both spaces must fall within the compressed class pointer encoding
 //  range, they are allocated close to each other.
@@ -1951,14 +1998,17 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
 // Return:
 //
 // - On success:
-//    - total_space_rs will be reserved as whole for archive_space_rs and
-//      class_space_rs on 64-bit.
-//      On Windows, try reserve archive_space_rs and class_space_rs
+//    - If use_archive_base_addr is true, and placeholders are supported archive_placeholder
+//      will be reserved and large enough to host static and, if needed, dynamic archive.
+//    - archive_placeholder covers the range [Base, A) in the diagram above.
+//    - archive_placeholder.base() and archive_placeholder.size() will be
+//      aligned to CDS reserve granularity.
+//    - On Windows versions older than 1803 (missing VirtualAlloc2),
+//      we try reserving archive_space_rs and class_space_rs
 //      separately first if use_archive_base_addr is true.
-//    - archive_space_rs will be reserved and large enough to host static and
-//      if needed dynamic archive: [Base, A).
-//      archive_space_rs.base and size will be aligned to CDS reserve
-//      granularity.
+//    - If we have already failed to reserve the requested address and
+//      use_archive_base_addr is false, total_space_rs will be reserved
+//      as whole for archive_space_rs and class_space_rs on 64-bit.
 //    - class_space_rs: On 64-bit, class_space_rs will be reserved. Its start
 //      address will be aligned to metaspace reserve alignment, which may differ
 //      from CDS alignment. It will follow the cds archive space, close enough
@@ -1969,7 +2019,8 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
                                                        bool use_archive_base_addr,
                                                        ReservedSpace& total_space_rs,
                                                        ReservedSpace& archive_space_rs,
-                                                       ReservedSpace& class_space_rs) {
+                                                       ReservedSpace& class_space_rs,
+                                                       os::PlaceholderRegion& archive_placeholder) {
 
   address const base_address = (address) (use_archive_base_addr ? static_mapinfo->requested_base_address() : nullptr);
   const size_t archive_space_alignment = core_region_alignment();
@@ -2041,11 +2092,32 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
       archive_space_size + gap_size + class_space_size;
 
   assert(total_range_size > ccs_begin_offset, "must be");
+
+  if (os::placeholders_supported() && use_archive_base_addr && base_address != nullptr) {
+    os::PlaceholderRegion whole_region = os::reserve_placeholder_memory(total_range_size, mtNone, (char*) base_address);
+    if (whole_region.is_empty()) {
+      return nullptr;
+    }
+    os::PlaceholderRegionPair split = os::split_memory(whole_region, ccs_begin_offset);
+    char* class_base = os::convert_to_reserved(split.right);
+
+    class_space_rs   = ReservedSpace(class_base, class_space_size,
+                                     class_space_alignment, os::vm_page_size(),
+                                     false /* exec */, false /* special */);
+    MemTracker::record_virtual_memory_split_reserved(base_address, total_range_size,
+                                                     ccs_begin_offset, mtClassShared, mtClass);
+    // Only the archive space remains a placeholder so we can interatively split and map into it later.
+    archive_placeholder = split.left;
+    aot_log_info(aot)("Placeholders allocated successfully. Archive base: " INTPTR_FORMAT, p2i(archive_placeholder.base()));
+    return archive_placeholder.base();
+  }
+
   if (use_windows_memory_mapping() && use_archive_base_addr) {
     if (base_address != nullptr) {
       // Note: We already checked the base address for validity at dump time.
 
-      // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
+      // On Windows older than 1803 (lacking VirtualAlloc2),
+      // we cannot safely split a reserved memory space into two (see JDK-8255917).
       // Hence, we optimistically reserve archive space and class space side-by-side. We only
       // do this for use_archive_base_addr=true since for use_archive_base_addr=false case
       // caller will not split the combined space for mapping, instead read the archive data
@@ -2069,28 +2141,21 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
     MemTracker::record_virtual_memory_tag(archive_space_rs, mtClassShared);
     MemTracker::record_virtual_memory_tag(class_space_rs, mtClass);
   } else {
-    if (use_archive_base_addr && base_address != nullptr) {
-      total_space_rs = MemoryReserver::reserve((char*) base_address,
-                                               total_range_size,
-                                               base_address_alignment,
-                                               os::vm_page_size(),
-                                               mtNone);
-    } else {
-      // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
-      // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
-      // encoding base since the archived heap objects contain narrow Klass IDs pre-calculated toward the start
-      // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
-      // try allocating in low-address regions.
-      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);
-    }
+    // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
+    // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
+    // encoding base since the archived heap objects contain narrow Klass IDs pre-calculated toward the start
+    // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
+    // try allocating in low-address regions.
+    total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);
 
     if (!total_space_rs.is_reserved()) {
       return nullptr;
     }
 
     // Paranoid checks:
-    assert(!use_archive_base_addr || (address)total_space_rs.base() == base_address,
-           "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
+    assert(!use_archive_base_addr || !os::placeholders_supported(),
+           "We should not be on the relocation path. "
+           "(" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
     assert(is_aligned(total_space_rs.base(), base_address_alignment), "Sanity");
     assert(total_space_rs.size() == total_range_size, "Sanity");
 
@@ -2137,7 +2202,7 @@ void AOTMetaspace::release_reserved_spaces(ReservedSpace& total_space_rs,
 static int archive_regions[]     = { AOTMetaspace::rw, AOTMetaspace::ro };
 static int archive_regions_count = 2;
 
-MapArchiveResult AOTMetaspace::map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs) {
+MapArchiveResult AOTMetaspace::map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs, os::PlaceholderRegion& archive_placeholder) {
   assert(CDSConfig::is_using_archive(), "must be runtime");
   if (mapinfo == nullptr) {
     return MAP_ARCHIVE_SUCCESS; // The dynamic archive has not been specified. No error has happened -- trivially succeeded.
@@ -2151,7 +2216,7 @@ MapArchiveResult AOTMetaspace::map_archive(FileMapInfo* mapinfo, char* mapped_ba
   }
 
   MapArchiveResult result =
-    mapinfo->map_regions(archive_regions, archive_regions_count, mapped_base_address, rs);
+    mapinfo->map_regions(archive_regions, archive_regions_count, mapped_base_address, rs, archive_placeholder);
 
   if (result != MAP_ARCHIVE_SUCCESS) {
     unmap_archive(mapinfo);
