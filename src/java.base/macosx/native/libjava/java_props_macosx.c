@@ -391,9 +391,7 @@ static char * createConvertedException(CFStringRef cf_original) {
  */
 void setUserHome(java_props_t *sprops) {
     if (sprops == NULL) { return; }
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     sprops->user_home = createUTF8CString((CFStringRef)NSHomeDirectory());
-    [pool drain];
 }
 
 /*
