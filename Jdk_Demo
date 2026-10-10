@@ -1,0 +1,155 @@
+
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+
+public class JdkDemo {
+
+    // 1. Basic Java
+    static void basicJava() {
+        System.out.println("\n--- Basic Java ---");
+        String name = "Akhil";
+        int experience = 9;
+
+        System.out.println("Name: " + name);
+        System.out.println("Experience: " + experience);
+    }
+
+    // 2. Collections and duplicates
+    static void collectionsDemo() {
+        System.out.println("\n--- Collections ---");
+
+        List<Integer> numbers =
+                Arrays.asList(1, 2, 3, 2, 4, 3, 5);
+
+        Set<Integer> seen = new HashSet<>();
+        Set<Integer> duplicates = new LinkedHashSet<>();
+
+        for (Integer number : numbers) {
+            if (!seen.add(number)) {
+                duplicates.add(number);
+            }
+        }
+
+        System.out.println("Numbers: " + numbers);
+        System.out.println("Duplicates: " + duplicates);
+    }
+
+    // 3. Java 8 Streams
+    static void streamsDemo() {
+        System.out.println("\n--- Streams ---");
+
+        List<Integer> numbers =
+                Arrays.asList(10, 15, 20, 25, 30, 35);
+
+        List<Integer> result = numbers.stream()
+                .filter(n -> n >= 20)
+                .map(n -> n * 2)
+                .collect(Collectors.toList());
+
+        System.out.println("Result: " + result);
+    }
+
+    // 4. Optional
+    static void optionalDemo() {
+        System.out.println("\n--- Optional ---");
+
+        String value = null;
+
+        String result = Optional.ofNullable(value)
+                .orElse("Default Value");
+
+        System.out.println(result);
+    }
+
+    // 5. Lambda expressions
+    static void lambdaDemo() {
+        System.out.println("\n--- Lambda ---");
+
+        List<String> names =
+                Arrays.asList("Akhil", "Ravi", "John");
+
+        names.forEach(name ->
+                System.out.println("Hello " + name));
+    }
+
+    // 6. Exception handling
+    static void exceptionDemo() {
+        System.out.println("\n--- Exception Handling ---");
+
+        try {
+            int result = 10 / 0;
+            System.out.println(result);
+        } catch (ArithmeticException e) {
+            System.out.println("Cannot divide by zero");
+        } finally {
+            System.out.println("Finally block executed");
+        }
+    }
+
+    // 7. Multithreading
+    static void threadingDemo() throws InterruptedException {
+        System.out.println("\n--- Multithreading ---");
+
+        ExecutorService executor =
+                Executors.newFixedThreadPool(2);
+
+        for (int i = 1; i <= 3; i++) {
+            int taskId = i;
+
+            executor.submit(() ->
+                    System.out.println(
+                            "Task " + taskId + " running on "
+                                    + Thread.currentThread().getName()));
+        }
+
+        executor.shutdown();
+        executor.awaitTermination(5, TimeUnit.SECONDS);
+    }
+
+    // 8. Record (Java 16+)
+    record Employee(int id, String name, double salary) {}
+
+    static void recordDemo() {
+        System.out.println("\n--- Record ---");
+
+        Employee employee =
+                new Employee(101, "Akhil", 95000);
+
+        System.out.println(employee);
+        System.out.println("Name: " + employee.name());
+    }
+
+    // 9. Switch expression (Java 14+)
+    static void switchDemo() {
+        System.out.println("\n--- Switch Expression ---");
+
+        int day = 2;
+
+        String dayName = switch (day) {
+            case 1 -> "Monday";
+            case 2 -> "Tuesday";
+            case 3 -> "Wednesday";
+            default -> "Other day";
+        };
+
+        System.out.println(dayName);
+    }
+
+    // 10. Main method
+    public static void main(String[] args)
+            throws InterruptedException {
+
+        basicJava();
+        collectionsDemo();
+        streamsDemo();
+        optionalDemo();
+        lambdaDemo();
+        exceptionDemo();
+        threadingDemo();
+        recordDemo();
+        switchDemo();
+
+        System.out.println("\nAll demos completed.");
+    }
+}
