@@ -25,23 +25,23 @@
 #ifndef SHARE_GC_G1_G1ALLOCATIONREQUEST_HPP
 #define SHARE_GC_G1_G1ALLOCATIONREQUEST_HPP
 
-#include "gc/g1/g1NUMA.hpp"
-#include "gc/shared/allocationRequest.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class G1AllocationRequest : public AllocationRequest {
+class G1AllocationRequest {
   const size_t _min_word_size;
   const size_t _desired_word_size;
   const uint _node_index;
 
 public:
-  G1AllocationRequest(size_t min_word_size, AllocationRequest request)
-    : AllocationRequest(request),
-      _min_word_size(min_word_size),
-      _desired_word_size(request.word_size()),
-      _node_index(G1NUMA::numa()->index_for_numa_id(request.numa_id())) {}
+  G1AllocationRequest(size_t min_word_size, size_t desired_word_size, uint node_index)
+    : _min_word_size(min_word_size),
+      _desired_word_size(desired_word_size),
+      _node_index(node_index) {
+    assert(desired_word_size != 0, "An allocation should always be requested with this operation.");
+  }
 
-  G1AllocationRequest(AllocationRequest request)
-    : G1AllocationRequest(request.word_size(), request) {}
+  G1AllocationRequest(size_t word_size, uint node_index)
+    : G1AllocationRequest(word_size, word_size, node_index) {}
 
   size_t min_word_size() const { return _min_word_size; }
   size_t desired_word_size() const { return _desired_word_size; }

@@ -423,9 +423,7 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
   assert_heap_not_locked_and_not_at_safepoint();
   assert(!is_humongous(requested_size), "we do not allow humongous TLABs");
 
-  const G1AllocationRequest request(min_size, _numa->is_enabled()
-    ? AllocationRequest::from_allocation(requested_size, os::numa_get_group_id())
-    : AllocationRequest::from_allocation(requested_size));
+  const G1AllocationRequest request(min_size, requested_size, _numa->index_of_current_thread());
 
   // Do not allow a GC because we are allocating a new TLAB to avoid an issue
   // with UseGCOverheadLimit: although this GC would return null if the overhead
@@ -442,9 +440,7 @@ HeapWord* G1CollectedHeap::mem_allocate(size_t word_size) {
     return attempt_allocation_humongous(word_size);
   }
   size_t dummy = 0;
-  const G1AllocationRequest request(_numa->is_enabled()
-    ? AllocationRequest::from_allocation(word_size, os::numa_get_group_id())
-    : AllocationRequest::from_allocation(word_size));
+  const G1AllocationRequest request(word_size, _numa->index_of_current_thread());
   return attempt_allocation(request, &dummy, true /* allow_gc */);
 }
 
@@ -484,8 +480,12 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(G1AllocationRequest request, 
       gc_count_before = total_collections();
     }
 
+    const AllocationRequest alloc_request = _numa->is_enabled()
+      ? AllocationRequest::from_allocation(word_size, _numa->numa_id(request.node_index()))
+      : AllocationRequest::from_allocation(word_size);
+
     bool succeeded;
-    result = do_collection_pause(request, gc_count_before, &succeeded,
+    result = do_collection_pause(alloc_request, gc_count_before, &succeeded,
                                  GCCause::_g1_inc_collection_pause);
     if (succeeded) {
       log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
@@ -784,10 +784,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(AllocationRequest req
   size_t word_size = request.word_size();
 
   if (!is_humongous(word_size)) {
-    assert(!_allocator->has_mutator_alloc_region(_numa->index_for_numa_id(request.numa_id())) ||
+    uint node_index = _numa->index_for_numa_id(request.numa_id());
+    assert(!_allocator->has_mutator_alloc_region(node_index) ||
            !expect_null_mutator_alloc_region,
            "the requested alloc region was unexpectedly found to be non-null");
-    return _allocator->attempt_allocation_locked(request);
+    return _allocator->attempt_allocation_locked(G1AllocationRequest(word_size, node_index));
   } else {
     assert(!request.has_numa_id(), "Humongous allocation must not have a specific NUMA id");
     HeapWord* result = humongous_obj_allocate(word_size);

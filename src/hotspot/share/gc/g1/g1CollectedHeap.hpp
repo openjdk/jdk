@@ -45,6 +45,7 @@
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/g1YoungRegions.hpp"
+#include "gc/shared/allocationRequest.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
