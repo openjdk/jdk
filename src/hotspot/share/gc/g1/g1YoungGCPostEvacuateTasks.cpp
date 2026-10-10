@@ -53,6 +53,7 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/ticks.hpp"
 
 class G1PostEvacuateCollectionSetCleanupTask1::FlushPssTask : public G1AbstractSubTask {
@@ -174,11 +175,10 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
   G1ConcurrentMark* _cm;
 
   G1EvacFailureRegions* _evac_failure_regions;
-  CHeapBitMap _chunk_bitmap;
-
   uint _num_chunks_per_region;
-  uint _num_evac_failed_regions;
   size_t _chunk_size;
+  // One bit per chunk over all evacuation failed regions; may exceed uint range.
+  CHeapBitMap _chunk_bitmap;
 
   class PhaseTimesStat {
     static constexpr G1GCPhaseTimes::GCParPhases phase_name =
@@ -251,15 +251,15 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
     Prefetch::write(obj_addr, PrefetchScanIntervalInBytes);
   }
 
-  bool claim_chunk(uint chunk_idx) {
+  bool claim_chunk(size_t chunk_idx) {
     return _chunk_bitmap.par_set_bit(chunk_idx);
   }
 
-  void process_chunk(uint worker_id, uint chunk_idx) {
+  void process_chunk(uint worker_id, size_t chunk_idx) {
     PhaseTimesStat stat(_g1h->phase_times(), worker_id);
 
     G1CMBitMap* bitmap = _cm->mark_bitmap();
-    const uint region_idx = _evac_failure_regions->get_region_idx(chunk_idx / _num_chunks_per_region);
+    const uint region_idx = _evac_failure_regions->get_region_idx(checked_cast<uint>(chunk_idx / _num_chunks_per_region));
     G1HeapRegion* hr = _g1h->region_at(region_idx);
 
     HeapWord* hr_bottom = hr->bottom();
@@ -336,17 +336,11 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _evac_failure_regions(evac_failure_regions),
-    _chunk_bitmap(mtGC) {
-
-    _num_evac_failed_regions = _evac_failure_regions->num_evac_failed_regions();
-    _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region_for_scan();
-
-    _chunk_size = static_cast<uint>(G1HeapRegion::GrainWords / _num_chunks_per_region);
-
+    _num_chunks_per_region(G1CollectedHeap::get_chunks_per_region_for_scan()),
+    _chunk_size(G1HeapRegion::GrainWords / _num_chunks_per_region),
+    _chunk_bitmap((size_t)_num_chunks_per_region * _evac_failure_regions->num_evac_failed_regions(), mtGC) {
     log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region",
                         _num_chunks_per_region);
-
-    _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_failed_regions);
   }
 
   double worker_cost() const override {
@@ -358,11 +352,14 @@ public:
 
   void do_work(uint worker_id) override {
     const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-    const uint total_chunks = _num_chunks_per_region * _num_evac_failed_regions;
-    const uint start_chunk_idx = (uint)((uint64_t)worker_id * total_chunks / total_workers);
+    const uint64_t total_chunks = _chunk_bitmap.size();
+    const uint64_t chunks_per_worker = total_chunks / total_workers;
+    const uint64_t remaining_chunks = total_chunks % total_workers;
+    const uint64_t start_chunk_idx = worker_id * chunks_per_worker +
+                                     worker_id * remaining_chunks / total_workers;
 
-    for (uint i = 0; i < total_chunks; i++) {
-      const uint chunk_idx = (start_chunk_idx + i) % total_chunks;
+    for (uint64_t i = 0; i < total_chunks; i++) {
+      const size_t chunk_idx = (size_t)((start_chunk_idx + i) % total_chunks);
       if (claim_chunk(chunk_idx)) {
         process_chunk(worker_id, chunk_idx);
       }
