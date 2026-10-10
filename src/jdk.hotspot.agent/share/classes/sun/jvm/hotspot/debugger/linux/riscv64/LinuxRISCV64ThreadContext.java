@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -44,5 +44,18 @@ public class LinuxRISCV64ThreadContext extends RISCV64ThreadContext {
 
   public Address getRegisterAsAddress(int index) {
     return debugger.newAddress(getRegister(index));
+  }
+
+  public static Address getRegFromSignalTrampoline(Address sp, int index) {
+    if (index < 0 || index >= NPRGREG) {
+      throw new IllegalArgumentException("Unsupported register index: " + index);
+    }
+
+    // rt_sigframe starts with siginfo_t (128 bytes), followed by ucontext.
+    // On Linux RV64, uc_mcontext starts at offset 176 in ucontext. Its
+    // sc_regs contains PC followed by x1-x31, just like RISCV64ThreadContext.
+    // See arch/riscv/kernel/signal.c and arch/riscv/include/uapi/asm/ucontext.h
+    // in the Linux kernel.
+    return sp.getAddressAt(128 + 176 + index * 8L);
   }
 }
