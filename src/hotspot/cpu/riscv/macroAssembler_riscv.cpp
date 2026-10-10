@@ -2176,6 +2176,105 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 
 
 #ifdef COMPILER2
+
+// Scalar Zbc (clmul) based CRC32 implementation
+// For more details of the algorithm, please check the paper:
+//   "Fast CRC Computation for Generic Polynomials Using PCLMULQDQ Instruction - Intel"
+//
+// Scalar version of the folding algorithm for hardware with Zbc but no RVV.
+// It uses a single carry-less-multiply stream and leaves the final 16-byte
+// state in tmp1/tmp2 so that the existing update_word_crc32() code can finish
+// the 128b -> 32b reduction exactly like the current vector path does.
+//
+// This routine is CRC32-only: the k1/k2 folding constants below are derived
+// from the gzip/CRC32 reflected polynomial (0xEDB88320). CRC32C (Castagnoli)
+// uses different constants and is handled by a separate path.
+//
+// On exit:
+//  - tmp1/tmp2 hold the two 64-bit halves of the folded 128-bit state,
+//  - len holds the remaining unprocessed tail byte count (< 16),
+//  - table1/table2/table3 are restored to point at CRC sub-tables 1/2/3 so the
+//    caller can immediately drive update_word_crc32() and the by4/by1 tail.
+// Note: table3 is temporarily borrowed to hold the tail byte count across the
+// main loop (table1/table2/table3 are all used as folding scratch), then all
+// three sub-table pointers are rebuilt before returning.
+void MacroAssembler::kernel_crc32_zbc_fold(Register crc, Register buf, Register len,
+                      Register table0, Register table1, Register table2, Register table3,
+                      Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
+  assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5);
+  assert(UseZbc, "scalar Zbc CRC32 folding requires Zbc");
+
+  const Register x = tmp1;
+  const Register y = tmp2;
+  const Register k1 = tmp3;
+  const Register k2 = tmp4;
+  const Register tmp = tmp5;
+
+  Label L_aligned8, L_no_main_loop, L_zbc_loop;
+
+  // ld requires at least 8-byte alignment. kernel_crc32() has already aligned
+  // the buffer to 4 bytes, so at most one 32-bit update is needed here.
+  test_bit(tmp, buf, 2);
+  beqz(tmp, L_aligned8);
+  lwu(tmp, Address(buf));
+  update_word_crc32(crc, tmp, x, y, k1, table0, table1, table2, table3, false);
+  addi(buf, buf, 4);
+  addi(len, len, -4);
+
+  bind(L_aligned8);
+
+  // Process only the 16-byte aligned prefix here and leave any tail to the
+  // existing by4/by1 fallback in kernel_crc32().
+  andi(table3, len, 15);
+  sub(len, len, table3);
+
+  // Constants for the sequential 16-byte folding step. These are the same
+  // reflected-polynomial constants used by the x86 CLMUL implementation's
+  // fold_128bit_crc32() helper (K_160_96), and they also match the last
+  // 16-byte constant pair in the RISC-V / AArch64 carry-less CRC tables in
+  // stubRoutines_{riscv,aarch64}.cpp (the pair {0x751997d0,1} /
+  // {0xccaa009e,0} just before reduce_low). k1 is 33-bit (bit 32 set); k2's
+  // high word is 0 by construction.
+  li(k1, 0x00000001751997d0LL);
+  li(k2, 0x00000000ccaa009eLL);
+
+  ld(x, Address(buf, 0));
+  ld(y, Address(buf, 8));
+  xorr(x, x, crc);
+  addi(buf, buf, 16);
+  addi(len, len, -16);
+
+  mv(tmp, 16);
+  blt(len, tmp, L_no_main_loop);
+
+  bind(L_zbc_loop);
+  clmul(table1, x, k1);
+  clmul(table2, y, k2);
+  xorr(table1, table1, table2);
+  clmulh(table2, x, k1);
+  clmulh(y, y, k2);
+  xorr(y, y, table2);
+
+  ld(table2, Address(buf, 0));
+  xorr(x, table1, table2);
+  ld(table1, Address(buf, 8));
+  xorr(y, y, table1);
+
+  addi(buf, buf, 16);
+  addi(len, len, -16);
+  bge(len, tmp, L_zbc_loop);
+
+  bind(L_no_main_loop);
+
+  // Restore len to the unprocessed tail byte count expected by the caller.
+  mv(len, table3);
+
+  const int64_t single_table_size = 256;
+  add(table1, table0, 1 * single_table_size * sizeof(juint), tmp);
+  add(table2, table0, 2 * single_table_size * sizeof(juint), tmp);
+  add(table3, table2, 1 * single_table_size * sizeof(juint), tmp);
+}
+
 // This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
 // To make it, following steps are taken:
 //  1. in zcrc32.c, modify N to 16 and related code,
@@ -2637,7 +2736,8 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  Label L_vector_entry,
+  Label L_zbc_entry,
+        L_vector_entry,
         L_unroll_loop,
         L_by4_loop_entry, L_by4_loop,
         L_by1_loop, L_exit, L_skip1, L_skip2;
@@ -2686,6 +2786,16 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
                     : MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
     mv(tmp1, tmp_limit);
     bge(len, tmp1, L_vector_entry);
+  }
+
+  // Otherwise fall back to the scalar Zbc path. It amortizes its clmul folding
+  // and 128b->32b reduction over a 16-byte loop, so it only pays off once the
+  // input is large enough; 128 bytes is the smallest size at which it beat the
+  // by-word table loop in our measurements.
+  if (UseZbc) {
+    const int64_t tmp_limit = 128;
+    mv(tmp1, tmp_limit);
+    bge(len, tmp1, L_zbc_entry, /* is_far */ true);
   }
 #endif // COMPILER2
 
@@ -2739,21 +2849,40 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     update_byte_crc32(crc, tmp1, table0);
 
 #ifdef COMPILER2
-  // put vector code here, otherwise "offset is too large" error occurs.
-  if (UseRVV) {
-    // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+  // put Zbc and vector code here, otherwise "offset is too large" error occurs.
+  if (UseZbc || UseRVV) {
+    // only need to jump exit when at least one fast path is enabled, it's a
+    // jump from end of block `L_by1_loop`.
     j(L_exit);
 
-    bind(L_vector_entry);
-    if (UseZvbc) { // carry-less multiplication
-      kernel_crc32_vclmul_fold(crc, buf, len,
-                               table0, table1, table2, table3,
-                               tmp1, tmp2, tmp3, tmp4, tmp6);
-    } else { // plain vector instructions
-      vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
+    if (UseRVV) {
+      // Vector path
+      bind(L_vector_entry);
+      if (UseZvbc) { // carry-less multiplication
+        kernel_crc32_vclmul_fold(crc, buf, len,
+                                 table0, table1, table2, table3,
+                                 tmp1, tmp2, tmp3, tmp4, tmp6);
+      } else { // plain vector instructions
+        vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
+      }
+
+      bgtz(len, L_by4_loop_entry);
+      j(L_exit);
     }
 
-    bgtz(len, L_by4_loop_entry);
+    if (UseZbc) {
+      bind(L_zbc_entry);
+      kernel_crc32_zbc_fold(crc, buf, len,
+                           table0, table1, table2, table3,
+                           tmp1, tmp2, tmp3, tmp4, tmp6);
+      mv(crc, zr);
+      update_word_crc32(crc, tmp1, tmp3, tmp4, tmp6, table0, table1, table2, table3, false);
+      update_word_crc32(crc, tmp1, tmp3, tmp4, tmp6, table0, table1, table2, table3, true);
+      update_word_crc32(crc, tmp2, tmp3, tmp4, tmp6, table0, table1, table2, table3, false);
+      update_word_crc32(crc, tmp2, tmp3, tmp4, tmp6, table0, table1, table2, table3, true);
+      bgtz(len, L_by4_loop_entry, /* is_far */ true);
+      j(L_exit);
+    }
   }
 #endif // COMPILER2
 
