@@ -1166,7 +1166,7 @@ static const Node* rvv_vsetvli_shape_node(const MachNode* node) {
     case vreduce_maxL_rule:
     case vreduce_min_rule:
     case vreduce_minL_rule: {
-      // operand_index accounts for additional input edges, such as storeV's address.
+      // Keep vector sources at Mach operand index 2; operand_index skips storeV's address edges.
       assert(node->num_opnds() >= 3 && node->operand_num_edges(2) == 1, "unexpected vector source operand");
       const Node* src = node->in(node->operand_index(2));
       assert(src->bottom_type()->isa_vect() != nullptr, "expected vector source");
