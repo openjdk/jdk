@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.util;
 
-import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
 
 /**
  * An immutable container for a key and a value, suitable for use
@@ -51,10 +51,9 @@ import jdk.internal.vm.annotation.Stable;
  * @since 9
  */
 @jdk.internal.ValueBased
+@TrustFinalFields
 final class KeyValueHolder<K,V> implements Map.Entry<K,V> {
-    @Stable
     final K key;
-    @Stable
     final V value;
 
     KeyValueHolder(K k, V v) {
