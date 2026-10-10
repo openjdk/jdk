@@ -1909,6 +1909,7 @@ private:
 
   uint nodes_required() const { return _nodes_required; }
 
+public:
   // Given the _currently_  available number of nodes, check  whether there is
   // "room" for an additional request or not, considering the already required
   // number of  nodes.  Return TRUE if  the new request is  exceeding the node
@@ -1921,6 +1922,8 @@ private:
     uint available = C->max_node_limit() - C->live_nodes();
     return available < required + _nodes_required + REQUIRE_MIN;
   }
+
+private:
 
   uint require_nodes(uint require, uint minreq = REQUIRE_MIN) {
     precond(require > 0);
@@ -2048,9 +2051,9 @@ public:
 
   bool try_merge_identical_ifs(Node* n);
 
-  void clone_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm);
+  void clone_nodes_from_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm);
 
-  void fix_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
+  void fix_nodes_from_loop_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
                       IdealLoopTree* parent, bool partial);
 
   void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
@@ -2096,39 +2099,39 @@ public:
   ConNode* zerocon(BasicType bt);
 };
 
+class TruncatedIncrement {
+  bool _is_valid;
+
+  BasicType _bt;
+
+  Node* _incr;
+  Node* _outer_trunc;
+  Node* _inner_trunc;
+  const TypeInteger* _trunc_type;
+
+public:
+  TruncatedIncrement(BasicType bt) :
+    _is_valid(false),
+    _bt(bt),
+    _incr(nullptr),
+    _outer_trunc(nullptr),
+    _inner_trunc(nullptr),
+    _trunc_type(nullptr) {}
+
+  void build(Node* expr);
+
+  bool is_valid() const { return _is_valid; }
+  Node* incr() const { return _incr; }
+
+  Node* outer_trunc() const { return _outer_trunc; } // the outermost truncating node (either the & or the final >>)
+  Node* inner_trunc() const { return _inner_trunc; } // the inner truncating node, if applicable (the << in a <</>> pair)
+  const TypeInteger* trunc_type() const { return _trunc_type; }
+};
+
 class CountedLoopConverter {
   friend class PhaseIdealLoop;
 
   // Match increment with optional truncation
-  class TruncatedIncrement {
-    bool _is_valid;
-
-    BasicType _bt;
-
-    Node* _incr;
-    Node* _outer_trunc;
-    Node* _inner_trunc;
-    const TypeInteger* _trunc_type;
-
-  public:
-    TruncatedIncrement(BasicType bt) :
-      _is_valid(false),
-      _bt(bt),
-      _incr(nullptr),
-      _outer_trunc(nullptr),
-      _inner_trunc(nullptr),
-      _trunc_type(nullptr) {}
-
-    void build(Node* expr);
-
-    bool is_valid() const { return _is_valid; }
-    Node* incr() const { return _incr; }
-
-    Node* outer_trunc() const { return _outer_trunc; } // the outermost truncating node (either the & or the final >>)
-    Node* inner_trunc() const { return _inner_trunc; } // the inner truncating node, if applicable (the << in a <</>> pair)
-    const TypeInteger* trunc_type() const { return _trunc_type; }
-  };
-
   class LoopStructure {
     bool _is_valid;
 
