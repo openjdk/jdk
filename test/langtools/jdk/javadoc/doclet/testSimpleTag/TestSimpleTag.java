@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,26 @@
 
 /*
  * @test
- * @bug 4695326 4750173 4920381 8078320 8071982 8239804
+ * @bug 4695326 4750173 4920381 8078320 8071982 8239804 8393742
  * @summary Test the declaration of simple tags using -tag. Verify that
  * "-tag name" is a shortcut for "-tag name:a:Name:".  Also verity that
  * you can escape the ":" character with a back slash so that it is not
  * considered a separator when parsing the simple tag argument.
- * @library ../../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build javadoc.tester.*
+ * @build toolbox.ToolBox javadoc.tester.*
  * @run main TestSimpleTag
  */
 
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
+
+import java.io.IOException;
+import java.nio.file.Path;
 
 public class TestSimpleTag extends JavadocTester {
+
+    private final ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
         var tester = new TestSimpleTag();
@@ -64,5 +70,82 @@ public class TestSimpleTag extends JavadocTester {
                 """
                     <dt>Parameters:</dt>
                     <dd><code>arg</code> - this is an int argument.</dd>""");
+    }
+
+
+    // Multiple custom tags should be encoded as individual <dd> elements,
+    // while preserving comma-separated list format for other simple tags.
+    @Test
+    public void testMultipleTags(Path base) throws IOException {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src, """
+                package test;
+                /**
+                 * Test class with multiple tags.
+                 *
+                 * @warning
+                 * First warning.
+                 *
+                 * @version 1.0
+                 * @author Duke
+                 * @author Leo
+                 * @author Lisa
+                 * @version 1.0.1
+                 *
+                 * @note This is a note.
+                 *
+                 * @note Second note with multiple paragraphs.
+                 * <p>Second paragraph of second note.</p>
+                 * <p>Third paragraph of second note.</p>
+                 *
+                 * @note Third note.
+                 *
+                 * @warning Another warning.
+                 * <ul>
+                 * <li>First list item.
+                 * <li>Second list item.
+                 * </ul>
+                 */
+                public class MultiTag {
+                }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-author", "-version",
+                "-tag", "warning:a:Warning:",
+                "-tag", "note:a:Note:",
+                "-tag", "author",
+                "-tag", "version",
+                "-sourcepath", src.toString(),
+                "test");
+
+        checkExit(Exit.OK);
+
+        checkOutput("test/MultiTag.html", true, """
+                <dl class="notes">
+                <dt>Warning:</dt>
+                <dd>First warning.</dd>
+                <dd>Another warning.
+                <ul>
+                <li>First list item.
+                <li>Second list item.
+                </ul></dd>
+                """,
+            """
+                <dt>Note:</dt>
+                <dd>This is a note.</dd>
+                <dd>Second note with multiple paragraphs.
+                <p>Second paragraph of second note.</p>
+                <p>Third paragraph of second note.</p></dd>
+                <dd>Third note.</dd>
+                """,
+            """
+                <dt>Author:</dt>
+                <dd>Duke, Leo, Lisa</dd>
+                <dt>Version:</dt>
+                <dd>1.0, 1.0.1</dd>
+                </dl>
+                """);
     }
 }
