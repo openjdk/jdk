@@ -30,6 +30,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/valueKlass.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/sizes.hpp"
 
 /**
  * Array of value types, gives a layout of typeArrayOop, but needs oops iterators
@@ -44,18 +45,19 @@ class FlatArrayKlass : public ObjArrayKlass {
 
  private:
   // Constructor
-  FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, LayoutKind lk);
+  FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, FlatLayout layout);
 
-  LayoutKind _layout_kind;
+  FlatLayout _flat_layout;
 
  public:
 
-  FlatArrayKlass() {} // used by CppVtableCloner<T>::initialize()
+  FlatArrayKlass() : _flat_layout(LayoutKind(0 /* ignored value */)) {} // used by CppVtableCloner<T>::initialize()
 
   ValueKlass* element_klass() const { return ValueKlass::cast(ObjArrayKlass::element_klass()); }
 
-  LayoutKind layout_kind() const  { return _layout_kind; }
-  static ByteSize layout_kind_offset() { return in_ByteSize(offset_of(FlatArrayKlass, _layout_kind)); }
+  FlatLayout flat_layout() const { return _flat_layout; }
+  LayoutKind layout_kind() const { return _flat_layout.layout_kind(); }
+  static ByteSize layout_kind_offset() { return in_ByteSize(offset_of(FlatArrayKlass, _flat_layout)) + FlatLayout::layout_kind_offset(); }
 
   // Casting from Klass*
   static FlatArrayKlass* cast(Klass* k) {
@@ -69,7 +71,7 @@ class FlatArrayKlass : public ObjArrayKlass {
   }
 
   // klass allocation
-  static FlatArrayKlass* allocate_klass(Klass* element_klass, ArrayProperties props, LayoutKind lk, TRAPS);
+  static FlatArrayKlass* allocate_klass(Klass* element_klass, ArrayProperties props, FlatLayout layout, TRAPS);
 
   void initialize(TRAPS) override;
 
@@ -87,7 +89,7 @@ class FlatArrayKlass : public ObjArrayKlass {
 
   void metaspace_pointers_do(MetaspaceClosure* iter) override;
 
-  static jint array_layout_helper(ValueKlass* vklass, LayoutKind lk); // layout helper for values
+  static jint array_layout_helper(ValueKlass* vklass, FlatLayout fl); // layout helper for values
 
   // sizing
   static int header_size()  { return sizeof(FlatArrayKlass) / wordSize; }

@@ -2513,7 +2513,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       }
       if (klass->is_flat_array_klass() && tkls->offset() == in_bytes(FlatArrayKlass::layout_kind_offset())) {
         assert(Opcode() == Op_LoadI, "must load an int from _layout_kind");
-        return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->layout_kind()));
+        return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->flat_layout().layout_kind()));
       }
       // Class encoding and some class's values may change between runs.
       // Force loading them when AOT code is generated.

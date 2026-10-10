@@ -302,8 +302,6 @@ class ValueKlass: public InstanceKlass {
     *null_marker_address(payload) = 0;
   }
 
-  inline bool layout_has_null_marker(LayoutKind lk) const;
-
   inline bool is_layout_supported(LayoutKind lk) const;
 
   inline int layout_alignment(LayoutKind kind) const;

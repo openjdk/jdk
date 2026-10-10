@@ -194,7 +194,7 @@ void fieldDescriptor::print_on(outputStream* st, const ValuePayloadContext* vpc)
     }
     st->print(" ");
   }
-  if (flat) LayoutKindHelper::print_on(layout_kind(), st);
+  if (flat) flat_layout().print_on(st);
 }
 
 void fieldDescriptor::print() const { print_on(tty); }
