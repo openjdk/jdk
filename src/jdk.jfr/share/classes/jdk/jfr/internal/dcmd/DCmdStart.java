@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,7 +557,7 @@ final class DCmdStart extends AbstractDCmd {
                 "NANOTIME", false, true, "0", false),
             new Argument("maxsize",
                 "Maximum amount of bytes to keep (on disk) in (k)B, (M)B or (G)B, e.g. 500M, or 0 for no limit",
-                "MEMORY SIZE", false, true, "250M", false),
+                "MEMORY SIZE", false, true, "0", false),
             new Argument("flush-interval",
                 "Minimum time before flushing buffers, measured in (s)econds, e.g. 4 s, or 0 for flushing when a recording ends",
                 "NANOTIME", false, true, "1s", false),
