@@ -102,53 +102,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   return result;
 }
 
-template <class T>
-inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      // Corner case: when evacuation fails, there are objects in collection
-      // set that are not forwarded, and can still be in cset.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
-      if (resolved == nullptr) {
-        resolved = obj;
-      }
-      shenandoah_assert_not_in_cset_except(p, resolved, cancelled_gc());
-
-      if (resolved != obj) {
-        // Unconditionally store the update: no concurrent updates expected.
-        RawAccess<IS_NOT_NULL>::oop_store(p, resolved);
-      }
-    }
-  }
-}
-
-template <class T>
-inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      // For concurrent update-refs, we cannot reach the state
-      // with non-forwarded objects in cset.
-      shenandoah_assert_forwarded(p, obj);
-      oop resolved = ShenandoahForwarding::forwardee(obj);
-      shenandoah_assert_not_in_cset(p, resolved);
-
-      // We should not be updating the cset regions themselves.
-      shenandoah_assert_not_in_cset_loc_except(p, !is_in(p));
-
-      if (resolved != obj) {
-        // Either we succeed in updating the reference, or something else gets in our way.
-        // We don't care if that is another concurrent GC update, or another mutator update.
-        atomic_update_oop(resolved, p, o);
-      }
-    }
-  }
-}
-
 // Atomic updates of heap location. This is only expected to work with updating the same
 // logical object with its forwardee. The reason why we need stronger-than-relaxed memory
 // ordering has to do with coordination with GC barriers and mutator accesses.
@@ -250,12 +203,16 @@ inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare)
   AtomicAccess::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
 }
 
-inline bool ShenandoahHeap::cancelled_gc() const {
-  return _cancelled_gc.get() != GCCause::_no_gc;
+inline bool ShenandoahHeap::is_stopping() const {
+  return control_thread()->should_terminate();
 }
 
-inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
-  if (sts_active && !cancelled_gc()) {
+inline bool ShenandoahHeap::cancelled_gc() const {
+  return _cancelled_gc.is_set() || is_stopping();
+}
+
+inline bool ShenandoahHeap::check_cancelled_gc_and_yield() {
+  if (!cancelled_gc()) {
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }
@@ -263,21 +220,9 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   return cancelled_gc();
 }
 
-inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
-  return _cancelled_gc.get();
-}
-
 inline void ShenandoahHeap::clear_cancelled_gc() {
-  _cancelled_gc.set(GCCause::_no_gc);
+  _cancelled_gc.unset();
   reset_cancellation_time();
-}
-
-inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
-  const GCCause::Cause cancellation_cause = _cancelled_gc.cmpxchg(GCCause::_no_gc, expected);
-  if (cancellation_cause == expected) {
-    reset_cancellation_time();
-  }
-  return cancellation_cause;
 }
 
 inline void ShenandoahHeap::reset_cancellation_time() {
@@ -487,10 +432,6 @@ inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
   return is_gc_state(WEAK_ROOTS);
 }
 
-inline bool ShenandoahHeap::is_degenerated_gc_in_progress() const {
-  return _degenerated_gc_in_progress.is_set();
-}
-
 inline bool ShenandoahHeap::is_full_gc_in_progress() const {
   return _full_gc_in_progress.is_set();
 }
@@ -500,7 +441,7 @@ inline bool ShenandoahHeap::is_full_gc_move_in_progress() const {
 }
 
 inline bool ShenandoahHeap::is_stw_gc_in_progress() const {
-  return is_full_gc_in_progress() || is_degenerated_gc_in_progress();
+  return is_full_gc_in_progress();
 }
 
 inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
@@ -553,7 +494,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     assert (cs >= tams, "only objects past TAMS here: "   PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(tams));
     assert (cs < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(limit));
     oop obj = cast_to_oop(cs);
-    assert(oopDesc::is_oop(obj), "sanity");
+    assert(ShenandoahForwarding::is_forwarded(obj) || oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
 
     // Compute the next object address and initiate prefetches for it,
@@ -571,7 +512,7 @@ class ShenandoahObjectToOopClosure : public ObjectClosure {
 public:
   ShenandoahObjectToOopClosure(T* cl) : _cl(cl) {}
 
-  void do_object(oop obj) {
+  void do_object(oop obj) override {
     obj->oop_iterate(_cl);
   }
 };
@@ -584,8 +525,21 @@ public:
   ShenandoahObjectToOopBoundedClosure(T* cl, HeapWord* bottom, HeapWord* top) :
     _cl(cl), _bounds(bottom, top) {}
 
-  void do_object(oop obj) {
+  void do_object(oop obj) override {
     obj->oop_iterate(_cl, _bounds);
+  }
+};
+
+template <class T>
+class ShenandoahNonForwardedObjectToOopClosure : public ObjectClosure {
+  T* _cl;
+public:
+  ShenandoahNonForwardedObjectToOopClosure(T* cl) : _cl(cl) {}
+
+  void do_object(oop obj) override {
+    if (obj->is_self_forwarded() || !obj->is_forwarded()) {
+      obj->oop_iterate(_cl);
+    }
   }
 };
 
@@ -599,8 +553,13 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
       marked_object_iterate(region, &objs);
     }
   } else {
-    ShenandoahObjectToOopClosure<T> objs(cl);
-    marked_object_iterate(region, &objs, top);
+    if (region->has_self_forwards()) {
+      ShenandoahNonForwardedObjectToOopClosure<T> objs(cl);
+      marked_object_iterate(region, &objs, top);
+    } else {
+      ShenandoahObjectToOopClosure<T> objs(cl);
+      marked_object_iterate(region, &objs, top);
+    }
   }
 }
 

@@ -188,11 +188,11 @@ void ShenandoahPLAB::retire() {
     _heap->old_generation()->unexpend_promoted(not_promoted);
   }
 
-  // plab->retire() overwrites unused memory between plab->top() and plab->hard_end() with a dummy object to make memory parsable.
-  // We do _not_ need to register this remnant object with the card table because all paths where a PLAB object would
-  // be created are covered by a subsequent phase in the cycle. For the concurrent and degenerated cycles, all PLABs
-  // are retired in preparation for update-references. All objects in these PLABs will be registered by update-card-tables.
-  // For a full GC, the entire remembered set will be rebuilt in the final phase. Note also that an empty TLAB will _not_
-  // create a filler object when it is retired.
+  // plab->retire() overwrites unused memory between plab->top() and plab->hard_end() with a dummy object to make memory
+  // parsable. We do _not_ need to register this remnant object with the card table because all paths where a PLAB
+  // object would be created are covered by a subsequent phase in the cycle. All PLABs are retired in preparation for
+  // update-references. For concurrent cycles, all objects in these PLABs will be registered by update-card-tables.
+  // For a full GC, the entire remembered set will be rebuilt in the final phase. Note also that an empty TLAB will
+  // _not_ create a filler object when it is retired.
   _plab->retire();
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,6 @@ void ShenandoahMmuTracker::fetch_cpu_times(double &gc_time, double &mutator_time
 void ShenandoahMmuTracker::update_utilization(size_t gcid, const char* msg) {
   double current = os::elapsedTime();
   _most_recent_gcid = gcid;
-  _most_recent_is_full = false;
 
   if (gcid == 0) {
     fetch_cpu_times(_most_recent_gc_time, _most_recent_mutator_time);
@@ -140,17 +139,8 @@ void ShenandoahMmuTracker::record_mixed(size_t gcid) {
   update_utilization(gcid, "Mixed Concurrent GC");
 }
 
-void ShenandoahMmuTracker::record_degenerated(size_t gcid, const char* msg) {
-  if ((gcid == _most_recent_gcid) && _most_recent_is_full) {
-    // Do nothing.  This is a redundant recording for the full gc that just completed.
-  } else {
-    update_utilization(gcid, msg);
-  }
-}
-
 void ShenandoahMmuTracker::record_full(size_t gcid) {
   update_utilization(gcid, "Full GC");
-  _most_recent_is_full = true;
 }
 
 void ShenandoahMmuTracker::report() {
