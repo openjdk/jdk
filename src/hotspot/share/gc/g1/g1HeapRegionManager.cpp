@@ -179,7 +179,7 @@ void G1HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pr
 
 void G1HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkerThreads* pretouch_workers) {
   guarantee(num_regions > 0, "Must commit more than zero regions");
-  guarantee(num_regions <= num_inactive_regions(),
+  guarantee(num_regions <= num_non_active_regions(),
             "Cannot commit more than the maximum amount of regions");
 
   _heap_mapper->commit_regions(index, num_regions, pretouch_workers);
@@ -246,7 +246,7 @@ void G1HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
 
 void G1HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
   assert(num_regions > 0, "Need to specify at least one region to deactivate, tried to deactivate zero regions at %u", start);
-  assert(num_committed_regions() >= num_regions, "pre-condition");
+  assert(num_active_regions() >= num_regions, "pre-condition");
 
   // Reset NUMA index to and print state change.
   uint end = start + num_regions;
@@ -321,7 +321,7 @@ uint G1HeapRegionManager::expand_inactive(uint num_regions) {
   do {
     G1HeapRegionRange regions = _committed_map.next_inactive_range(offset);
     if (regions.num_regions() == 0) {
-      // No more unavailable regions.
+      // No more inactive regions.
       break;
     }
 
@@ -403,7 +403,7 @@ void G1HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThrea
 uint G1HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
   uint expand_candidate = UINT_MAX;
 
-  if (num_inactive_regions() >= 1) {
+  if (num_non_active_regions() >= 1) {
     for (uint i = 0; i < max_num_regions(); i++) {
       if (is_available(i)) {
         // Already in use continue
@@ -551,7 +551,7 @@ bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* n
 
 void G1HeapRegionManager::par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClaimer* hrclaimer, const uint start_index) const {
   // Every worker will actually look at all regions, skipping over regions that
-  // are currently not committed.
+  // are currently not active.
   // This also (potentially) iterates over regions newly allocated during GC. This
   // is no problem except for some extra work.
   const uint num_regions = hrclaimer->num_regions();
@@ -579,10 +579,10 @@ void G1HeapRegionManager::par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClai
 }
 
 uint G1HeapRegionManager::shrink_by(uint num_regions_to_remove) {
-  assert(num_committed_regions() > 0, "the region sequence should not be empty");
-  assert(num_committed_regions() <= _next_highest_used_hrm_index, "invariant");
+  assert(num_active_regions() > 0, "the region sequence should not be empty");
+  assert(num_active_regions() <= _next_highest_used_hrm_index, "invariant");
   assert(_next_highest_used_hrm_index > 0, "we should have at least one region committed");
-  assert(num_regions_to_remove < num_committed_regions(), "We should never remove all regions");
+  assert(num_regions_to_remove < num_active_regions(), "We should never remove all regions");
 
   if (num_regions_to_remove == 0) {
     return 0;
@@ -655,28 +655,28 @@ uint G1HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_
 }
 
 void G1HeapRegionManager::verify() {
-  guarantee(num_committed_regions() <= _next_highest_used_hrm_index,
-            "invariant: committed regions: %u _next_highest_used_hrm_index: %u",
-            num_committed_regions(), _next_highest_used_hrm_index);
+  guarantee(num_active_regions() <= _next_highest_used_hrm_index,
+            "invariant: active regions: %u _next_highest_used_hrm_index: %u",
+            num_active_regions(), _next_highest_used_hrm_index);
   guarantee(_next_highest_used_hrm_index <= max_num_regions(),
             "invariant: _next_highest_used_hrm_index: %u max_num_regions: %u",
             _next_highest_used_hrm_index, max_num_regions());
-  guarantee(num_committed_regions() <= max_num_regions(),
-            "invariant: committed regions: %u max_num_regions: %u",
-            num_committed_regions(), max_num_regions());
+  guarantee(num_active_regions() <= max_num_regions(),
+            "invariant: active regions: %u max_num_regions: %u",
+            num_active_regions(), max_num_regions());
 
-  bool prev_committed = true;
-  uint num_committed = 0;
+  bool prev_region_was_active = true;
+  uint num_found_active_regions = 0;
   HeapWord* prev_end = heap_bottom();
   for (uint i = 0; i < _next_highest_used_hrm_index; i++) {
     if (!is_available(i)) {
-      prev_committed = false;
+      prev_region_was_active = false;
       continue;
     }
-    num_committed++;
+    num_found_active_regions++;
     G1HeapRegion* hr = _regions.get_by_index(i);
     guarantee(hr != nullptr, "invariant: i: %u", i);
-    guarantee(!prev_committed || hr->bottom() == prev_end,
+    guarantee(!prev_region_was_active || hr->bottom() == prev_end,
               "invariant i: %u " HR_FORMAT " prev_end: " PTR_FORMAT,
               i, HR_FORMAT_PARAMS(hr), p2i(prev_end));
     guarantee(hr->hrm_index() == i,
@@ -686,14 +686,16 @@ void G1HeapRegionManager::verify() {
     // We cannot check whether the region is part of a particular set: at the time
     // this method may be called, we have only completed allocation of the regions,
     // but not put into a region set.
-    prev_committed = true;
+    prev_region_was_active = true;
     prev_end = hr->end();
   }
   for (uint i = _next_highest_used_hrm_index; i < max_num_regions(); i++) {
     guarantee(_regions.get_by_index(i) == nullptr, "invariant i: %u", i);
   }
 
-  guarantee(num_committed == num_committed_regions(), "Found %u committed regions, but should be %u", num_committed, num_committed_regions());
+  guarantee(num_found_active_regions == num_active_regions(),
+            "Found %u active regions, but should be %u",
+            num_found_active_regions, num_active_regions());
   _free_list.verify();
 }
 

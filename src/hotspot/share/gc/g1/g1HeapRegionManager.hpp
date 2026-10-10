@@ -63,7 +63,7 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 //
 // We keep track of three region counts:
 //
-// * num_committed_regions() is the number of currently committed regions using
+// * num_active_regions() is the number of currently active regions using
 //   the committed map. These may not be contiguous.
 // * _next_highest_used_hrm_index (not exposed outside this class) is the
 //   highest heap region index +1 for which we have G1HeapRegions.
@@ -94,7 +94,7 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
   // Initialize the G1HeapRegions in the range and put them on the free list.
   void initialize_regions(uint start, uint num_regions);
 
-  // Find a contiguous set of empty or uncommitted regions of length num_regions and return
+  // Find a contiguous set of free active, inactive or uncommitted regions of length num_regions and return
   // the index of the first region or G1_NO_HRM_INDEX if the search was unsuccessful.
   // Start and end defines the range to seek in, policy is first-fit.
   uint find_contiguous_in_range(uint start, uint end, uint num_regions);
@@ -187,8 +187,8 @@ public:
   // humongous object that hr is part of.
   inline G1HeapRegion* next_region_in_humongous(G1HeapRegion* hr) const;
 
-  // If addr is within the committed space return its corresponding
-  // G1HeapRegion, otherwise return null.
+  // Return the G1HeapRegion the given addr is in. May return null for regions
+  // that were never committed.
   inline G1HeapRegion* addr_to_region(HeapWord* addr) const;
 
   // Insert the given region into the free region list.
@@ -223,7 +223,7 @@ public:
     return _free_list.num_regions();
   }
 
-  uint num_used_regions() const { return num_committed_regions() - num_free_regions(); }
+  uint num_used_regions() const { return num_active_regions() - num_free_regions(); }
 
   uint num_free_regions(uint node_index) const {
     return _free_list.num_regions_on_node(node_index);
@@ -233,11 +233,11 @@ public:
     return num_free_regions() * G1HeapRegion::GrainBytes;
   }
 
-  // Return the number of regions uncommitted or ready to be uncommitted.
-  uint num_inactive_regions() const { return max_num_regions() - num_committed_regions(); }
+  // Return the number of regions uncommitted or inactive.
+  uint num_non_active_regions() const { return max_num_regions() - num_active_regions(); }
 
   // Return the number of regions currently active and available for use.
-  uint num_committed_regions() const { return _committed_map.num_active_regions(); }
+  uint num_active_regions() const { return _committed_map.num_active_regions(); }
 
   // The number of regions reserved for the heap.
   uint max_num_regions() const { return (uint)_regions.length(); }
@@ -262,7 +262,7 @@ public:
   // and not free, and return the number of regions newly activated in num_newly_activated_regions.
   bool allocate_containing_regions(MemRegion range, size_t* num_newly_activated_regions, WorkerThreads* pretouch_workers);
 
-  // Apply blk->do_heap_region() on all committed regions in address order,
+  // Apply blk->do_heap_region() on all active regions in address order,
   // terminating the iteration early if do_heap_region() returns true.
   void iterate(G1HeapRegionClosure* blk) const;
   void iterate(G1HeapRegionIndexClosure* blk) const;

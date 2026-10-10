@@ -988,11 +988,11 @@ public:
     return num_available_regions() == 0;
   }
 
-  // The number of inactive regions.
-  uint num_inactive_regions() const { return _hrm.num_inactive_regions(); }
+  // The number of not-active regions.
+  uint num_non_active_regions() const { return _hrm.num_non_active_regions(); }
 
-  // The current number of regions in the heap.
-  uint num_committed_regions() const { return _hrm.num_committed_regions(); }
+  // The current number of active regions in the heap.
+  uint num_active_regions() const { return _hrm.num_active_regions(); }
 
   // The max number of regions reserved for the heap.
   uint max_num_regions() const { return _hrm.max_num_regions(); }
@@ -1004,7 +1004,7 @@ public:
   uint num_used_regions() const { return _hrm.num_used_regions(); }
 
   // The number of regions that can be allocated into.
-  uint num_available_regions() const { return num_free_regions() + num_inactive_regions(); }
+  uint num_available_regions() const { return num_free_regions() + num_non_active_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const {
     return _hrm.get_auxiliary_data_memory_usage();
@@ -1161,8 +1161,8 @@ public:
   // Returns the G1HeapRegion that contains addr. addr must not be null.
   inline G1HeapRegion* heap_region_containing(const void* addr) const;
 
-  // Returns the G1HeapRegion that contains addr, or null if that is an uncommitted
-  // region. addr must not be null.
+  // Returns the G1HeapRegion that contains addr, or null if the region is not active.
+  // addr must not be null.
   inline G1HeapRegion* heap_region_containing_or_null(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
