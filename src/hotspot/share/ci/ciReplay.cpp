@@ -934,8 +934,8 @@ class CompileReplay : public StackObj {
   // constant pool is the same length as 'length' and make sure the
   // constant pool tags are in the same state.
   void process_ciInstanceKlass(TRAPS) {
-    InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK);
-    if (k == nullptr) {
+    InstanceKlass* ik = (InstanceKlass*)parse_klass(CHECK);
+    if (ik == nullptr) {
       skip_remaining();
       return;
     }
@@ -943,23 +943,23 @@ class CompileReplay : public StackObj {
     int is_initialized = parse_int("is_initialized");
     int length = parse_int("length");
     if (is_initialized) {
-      k->initialize(THREAD);
+      ik->initialize(THREAD);
       if (HAS_PENDING_EXCEPTION) {
         oop throwable = PENDING_EXCEPTION;
         java_lang_Throwable::print(throwable, tty);
         tty->cr();
         if (ReplayIgnoreInitErrors) {
           CLEAR_PENDING_EXCEPTION;
-          k->set_init_state(InstanceKlass::fully_initialized);
+          ik->set_init_state(InstanceKlass::fully_initialized);
         } else {
           return;
         }
       }
     } else if (is_linked) {
-      k->link_class(CHECK);
+      ik->link_class(CHECK);
     }
-    new_ciInstanceKlass(k);
-    ConstantPool* cp = k->constants();
+    new_ciInstanceKlass(ik);
+    ConstantPool* cp = ik->constants();
     if (length != cp->length()) {
       report_error("constant pool length mismatch: wrong class files?");
       return;
@@ -975,10 +975,30 @@ class CompileReplay : public StackObj {
         case JVM_CONSTANT_UnresolvedClass: {
           if (tag == JVM_CONSTANT_Class) {
             tty->print_cr("Resolving klass %s at %d", cp->klass_name_at(i)->as_utf8(), i);
-            Klass* k = cp->klass_at(i, CHECK);
+            Klass* k = cp->klass_at(i, THREAD);
+            if (HAS_PENDING_EXCEPTION) {
+              java_lang_Throwable::print(PENDING_EXCEPTION, tty);
+              if (ReplayIgnoreInitErrors) {
+                CLEAR_PENDING_EXCEPTION;
+              } else {
+                return;
+              }
+            }
           }
           break;
         }
+
+        case JVM_CONSTANT_Class: {
+          if (tag == JVM_CONSTANT_UnresolvedClass) {
+            Klass* k = cp->resolved_klass_at(i);
+            tty->print_cr("Warning: entry was unresolved in the replay data: %s", k->name()->as_utf8());
+          } else if (tag != JVM_CONSTANT_Class) {
+            report_error("Unexpected tag");
+            return;
+          }
+          break;
+        }
+
         case JVM_CONSTANT_Long:
         case JVM_CONSTANT_Double:
           parsed_two_word = i + 1;
@@ -1004,16 +1024,6 @@ class CompileReplay : public StackObj {
           }
           break;
 
-        case JVM_CONSTANT_Class:
-          if (tag == JVM_CONSTANT_UnresolvedClass) {
-            Klass* k = cp->klass_at(i, CHECK);
-            tty->print_cr("Warning: entry was unresolved in the replay data: %s", k->name()->as_utf8());
-          } else if (tag != JVM_CONSTANT_Class) {
-            report_error("Unexpected tag");
-            return;
-          }
-          break;
-
         case 0:
           if (parsed_two_word == i) continue;
 
@@ -1034,7 +1044,7 @@ class CompileReplay : public StackObj {
 
     void do_field(fieldDescriptor* fd) {
       BasicType bt = fd->field_type();
-      const char* string_value = fd->is_null_free_value_type() ? nullptr : _replay->parse_escaped_string();
+      const char* string_value = _replay->parse_escaped_string();
       switch (bt) {
       case T_BYTE: {
         int value = atoi(string_value);
@@ -1093,6 +1103,7 @@ class CompileReplay : public StackObj {
           bool res = _replay->process_staticfield_reference(string_value, _vt, fd, THREAD);
           assert(res, "should succeed for arrays & objects");
         }
+        break;
       default: {
         fatal("Unhandled type: %s", type2name(bt));
       }
@@ -1248,7 +1259,7 @@ class CompileReplay : public StackObj {
       const char* string_value = parse_escaped_string();
       double value = atof(string_value);
       java_mirror->double_field_put(fd.offset(), value);
-    } else if (fd.is_null_free_value_type()) {
+    } else if (fd.is_null_free_value_type() && fd.is_flat()) {
       Klass* kelem = resolve_klass(field_signature, CHECK);
       ValueKlass* vk = ValueKlass::cast(kelem);
       oop value = vk->allocate_instance(CHECK);
