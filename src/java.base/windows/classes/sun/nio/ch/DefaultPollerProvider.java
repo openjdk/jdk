@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,13 @@ class DefaultPollerProvider extends PollerProvider {
     int defaultReadPollers() {
         int ncpus = Runtime.getRuntime().availableProcessors();
         return Math.max(Integer.highestOneBit(ncpus / 8), 1);
+    }
+
+    @Override
+    int defaultWritePollers() {
+        // No write pollers to ensure at most one AFD_POLL outstanding per socket
+        // (https://github.com/piscisaureus/wepoll/issues/35)
+        return 0;
     }
 
     @Override
