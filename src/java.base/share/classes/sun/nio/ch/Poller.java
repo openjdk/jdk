@@ -483,8 +483,7 @@ public abstract class Poller {
                 } else {
                     // random delay in [50ms, 120ms)
                     int max = ThreadLocalRandom.current().nextInt(50_000_000, 120_000_000);
-                    long delay = (nanos > 0 )? Math.min(nanos, max) : max;
-                    System.err.println("parkNanos = " + delay);
+                    long delay = (nanos > 0) ? Math.min(nanos, max) : max;
                     LockSupport.parkNanos(delay);
                 }
             }
