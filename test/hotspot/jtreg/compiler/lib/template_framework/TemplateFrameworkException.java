@@ -29,8 +29,8 @@ package compiler.lib.template_framework;
  * It most likely indicates a wrong use of the Templates.
  */
 @SuppressWarnings("serial")
-public class RendererException extends RuntimeException {
-    RendererException(String message) {
-        super(message);
+public class TemplateFrameworkException extends RuntimeException {
+    TemplateFrameworkException(String message) {
+        super("Exception in Template Framework:" + System.lineSeparator() + message);
     }
 }
