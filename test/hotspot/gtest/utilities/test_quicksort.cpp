@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "memory/allocation.inline.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/quickSort.hpp"
 #include "unittest.hpp"
 
@@ -117,12 +117,12 @@ TEST(QuickSort, quicksort) {
 
 TEST(QuickSort, random) {
   for (int i = 0; i < 1000; i++) {
-    size_t length = os::random() % 100;
+    size_t length = GtestRandom::random() % 100;
     int* test_array = NEW_C_HEAP_ARRAY(int, length, mtInternal);
     int* expected_array = NEW_C_HEAP_ARRAY(int, length, mtInternal);
     for (size_t j = 0; j < length; j++) {
         // Choose random values, but get a chance of getting duplicates
-        test_array[j] = os::random() % (length * 2);
+        test_array[j] = GtestRandom::random() % (length * 2);
         expected_array[j] = test_array[j];
     }
 
