@@ -45,7 +45,7 @@ public:
   inline uint continuation_tasks(size_t start, size_t length, size_t chunk_size) const;
 
 private:
-  // Limit on pending tasks for one array, including tasks currently claiming.
+  // Limit on pending tasks for one array.
   uint _task_limit;
   // Maximum number of new tasks to create when processing an existing task.
   uint _task_fanout;

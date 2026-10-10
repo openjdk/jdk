@@ -76,8 +76,6 @@ public:
   // Decrements the state's ref-count for the current task.  Callers must not
   // use state after this call; it may have been recycled and reused.
   //
-  // The queue has the same requirements as for start().
-  //
   // stolen indicates whether the state task was obtained from this queue or
   // stolen from some other queue.
   template<typename Queue>
