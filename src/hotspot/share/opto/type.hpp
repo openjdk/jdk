@@ -178,7 +178,6 @@ public:
 
 private:
   typedef struct {
-    TYPES                dual_type;
     BasicType            basic_type;
     const char*          msg;
     bool                 isa_oop;
@@ -387,7 +386,7 @@ public:
   // TRUE if type is a singleton
   virtual bool singleton(void) const;
 
-  // TRUE if type is above the lattice centerline, and is therefore vacuous
+  // TRUE if type is therefore vacuous, i.e. it is not inhabited, i.e. concretization is empty
   virtual bool empty(void) const;
 
   // Return a hash for this type.  The hash function is public so ConNode
@@ -1197,7 +1196,7 @@ protected:
   static const TypeInterfaces* interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
 
 public:
-  enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
+  enum PTR { TopPTR, Constant, Null, NotNull, BotPTR, lastPTR };
 
   enum FlatInArray {
     TopFlat,        // Dedicated top element. Result when joining Flat and NotFlat.
@@ -1213,13 +1212,12 @@ protected:
           int inline_depth = InlineDepthBottom) :
     Type(t), _speculative(speculative), _inline_depth(inline_depth), _offset(offset), _ptr(ptr), _reloc(reloc) {
     assert(t == AnyPtr || (ptr != TopPTR && ptr != Null), "Top and Null must be AnyPtr");
-    assert(ptr != AnyNull, "Nonsensical PTR");
     assert(ptr == TopPTR || offset != Offset::top, "only TopPTR can have top offset");
     assert(static_cast<uint>(ptr) < static_cast<uint>(lastPTR), "out of bounds");
   }
   static const PTR ptr_meet[lastPTR][lastPTR];
-  static const PTR ptr_dual[lastPTR];
-  static const char * const ptr_msg[lastPTR];
+  static const PTR ptr_join[lastPTR][lastPTR];
+  static const char* const ptr_msg[lastPTR];
 
   static const char* const flat_in_array_msg[Uninitialized];
 
@@ -1299,14 +1297,8 @@ public:
   Offset join_offset(int offset) const;
 
   // meet and join over pointer equivalence sets
-  PTR meet_ptr( const PTR in_ptr ) const { return ptr_meet[in_ptr][ptr()]; }
-  PTR dual_ptr()                   const { return ptr_dual[ptr()];      }
-
-  // This is textually confusing unless one recalls that
-  // join(t) == dual()->meet(t->dual())->dual().
-  PTR join_ptr( const PTR in_ptr ) const {
-    return ptr_dual[ ptr_meet[ ptr_dual[in_ptr] ] [ dual_ptr() ] ];
-  }
+  PTR meet_ptr(const PTR in_ptr) const { return ptr_meet[in_ptr][ptr()]; }
+  PTR join_ptr(const PTR in_ptr) const { return ptr_join[in_ptr][ptr()]; }
 
   // Speculative type helper methods.
   virtual const TypePtr* speculative() const { return _speculative; }
@@ -1340,13 +1332,13 @@ public:
   virtual bool is_not_null_free()   const { return false; }
   virtual bool is_atomic()          const { return false; }
 
-  // Tests for relation to centerline of type lattice:
-  static bool above_centerline(PTR ptr) { return (ptr <= AnyNull); }
-  static bool below_centerline(PTR ptr) { return (ptr >= NotNull); }
+  static bool is_top(PTR ptr) { return ptr == TopPTR; }
+  static bool is_uniquely_inhabited(PTR ptr) { return ptr == Null || ptr == Constant; }
+  static bool is_at_most_uniquely_inhabited(PTR ptr) { return is_top(ptr) || is_uniquely_inhabited(ptr); }
   // Convenience common pre-built types.
-  static const TypePtr *NULL_PTR;
-  static const TypePtr *NOTNULL;
-  static const TypePtr *BOTTOM;
+  static const TypePtr* NULL_PTR;
+  static const TypePtr* NOTNULL;
+  static const TypePtr* BOTTOM;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st  ) const;
 #endif
