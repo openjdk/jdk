@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
+#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -204,13 +205,13 @@ void VM_GC_HeapInspection::doit() {
     }
   }
   HeapInspection inspect;
-  WorkerThreads* workers = Universe::heap()->safepoint_workers();
-  if (workers != nullptr) {
-    // The GC provided a WorkerThreads to be used during a safepoint.
-    // Can't run with more threads than provided by the WorkerThreads.
-    const uint capped_parallel_thread_num = MIN2(_parallel_thread_num, workers->max_workers());
-    WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
-    inspect.heap_inspection(_out, workers);
+  if (Universe::heap()->supports_parallel_heap_iteration() && _parallel_thread_num > 1) {
+    // Use the diagnostic worker pool to inspect the heap in parallel. If the
+    // pool isn't available or fewer than two workers are active, then fall
+    // back to serial heap inspection.
+    WorkerThreads* workers = DiagnosticWorkers::workers();
+    const uint active_workers = DiagnosticWorkers::try_and_set_active_workers(_parallel_thread_num);
+    inspect.heap_inspection(_out, active_workers > 1 ? workers : nullptr);
   } else {
     inspect.heap_inspection(_out, nullptr);
   }

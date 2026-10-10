@@ -271,11 +271,6 @@ jint ShenandoahHeap::initialize() {
     _workers->initialize_workers();
   }
 
-  if (ParallelGCThreads > 1) {
-    _safepoint_workers = new ShenandoahWorkerThreads("Safepoint Cleanup Thread", ParallelGCThreads);
-    _safepoint_workers->initialize_workers();
-  }
-
   //
   // Reserve and commit memory for bitmap(s)
   //
@@ -566,7 +561,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _alloc_rate_decay(&_alloc_rate),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),
-  _safepoint_workers(nullptr),
   _heap_region_special(false),
   _num_regions(0),
   _regions(nullptr),
@@ -724,13 +718,6 @@ void ShenandoahHeap::post_initialize() {
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
   // Now, we will let WorkerThreads to initialize gclab when new worker is created.
   _workers->set_initialize_gclab();
-
-  // Note that the safepoint workers may require gclabs if the threads are used to create a heap dump
-  // during a concurrent evacuation phase.
-  if (_safepoint_workers != nullptr) {
-    _safepoint_workers->threads_do(&init_gclabs);
-    _safepoint_workers->set_initialize_gclab();
-  }
 
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
@@ -1566,10 +1553,6 @@ void ShenandoahHeap::labs_make_parsable() {
   }
 
   workers()->threads_do(&cl);
-
-  if (safepoint_workers() != nullptr) {
-    safepoint_workers()->threads_do(&cl);
-  }
 }
 
 void ShenandoahHeap::tlabs_retire(bool resize) {
@@ -1606,10 +1589,6 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
   }
 
   workers()->threads_do(&cl);
-
-  if (safepoint_workers() != nullptr) {
-    safepoint_workers()->threads_do(&cl);
-  }
 }
 
 // Returns size in bytes
@@ -1684,9 +1663,6 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   }
 
   workers()->threads_do(tcl);
-  if (_safepoint_workers != nullptr) {
-    _safepoint_workers->threads_do(tcl);
-  }
 }
 
 void ShenandoahHeap::print_tracing_info() const {
@@ -1833,7 +1809,7 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   ShenandoahScanObjectStack oop_stack;
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
   // Seed the stack with root scan
-  scan_roots_for_iteration(&oop_stack, &oops);
+  scan_roots_for_iteration(&oops, 1);
 
   // Work through the oop stack to traverse heap
   while (! oop_stack.is_empty()) {
@@ -1862,13 +1838,12 @@ bool ShenandoahHeap::prepare_aux_bitmap_for_iteration() {
   return true;
 }
 
-void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_stack, ObjectIterateScanRootClosure* oops) {
+void ShenandoahHeap::scan_roots_for_iteration(ObjectIterateScanRootClosure* oops, uint num_workers) {
   // Process GC roots according to current GC cycle
   // This populates the work stack with initial objects
   // It is important to relinquish the associated locks before diving
   // into heap dumper
-  uint n_workers = safepoint_workers() != nullptr ? safepoint_workers()->active_workers() : 1;
-  ShenandoahHeapIterationRootScanner rp(n_workers);
+  ShenandoahHeapIterationRootScanner rp(num_workers);
   rp.roots_do(oops);
 }
 
@@ -1933,7 +1908,7 @@ public:
     }
 
     ObjectIterateScanRootClosure oops(_aux_bit_map, &_roots_stack);
-    _heap->scan_roots_for_iteration(&_roots_stack, &oops);
+    _heap->scan_roots_for_iteration(&oops, _num_workers);
 
     _init_ready = prepare_worker_queues();
   }

@@ -41,6 +41,7 @@
 #include "compiler/compileTask.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -1466,6 +1467,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   if (Universe::heap() != nullptr) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
+    DiagnosticWorkers::diagnostic_threads_do(&print_closure);
     num_other += print_closure.num_printed();
   }
 

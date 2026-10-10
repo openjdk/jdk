@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zInitialize.hpp"
-#include "gc/z/zRuntimeWorkers.hpp"
 #include "memory/metaspace.hpp"
 #include "services/memoryUsage.hpp"
 
@@ -48,7 +47,6 @@ private:
   ZDriverMajor*     _driver_major;
   ZDirector*        _director;
   ZStat*            _stat;
-  ZRuntimeWorkers   _runtime_workers;
 
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
@@ -101,7 +99,7 @@ public:
   void unregister_nmethod(nmethod* nm) override;
   void verify_nmethod(nmethod* nmethod) override;
 
-  WorkerThreads* safepoint_workers() override;
+  bool supports_parallel_heap_iteration() const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;
 

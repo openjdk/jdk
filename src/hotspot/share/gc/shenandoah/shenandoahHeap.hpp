@@ -270,7 +270,6 @@ public:
 private:
   uint _max_workers;
   ShenandoahWorkerThreads* _workers;
-  ShenandoahWorkerThreads* _safepoint_workers;
 
   virtual void initialize_controller();
 
@@ -279,7 +278,6 @@ public:
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
   WorkerThreads* workers() const;
-  WorkerThreads* safepoint_workers() override;
 
   void gc_threads_do(ThreadClosure* tcl) const override;
 
@@ -620,7 +618,7 @@ private:
                                           ShenandoahAffiliation new_affiliation);
 
   // Heap iteration support
-  void scan_roots_for_iteration(ShenandoahScanObjectStack* oop_stack, ObjectIterateScanRootClosure* oops);
+  void scan_roots_for_iteration(ObjectIterateScanRootClosure* oops, uint num_workers);
   bool prepare_aux_bitmap_for_iteration();
   void reclaim_aux_bitmap_for_iteration();
 
@@ -680,6 +678,7 @@ public:
   void object_iterate(ObjectClosure* cl) override;
   // Parallel heap iteration support
   ParallelObjectIteratorImpl* parallel_object_iterator(uint workers) override;
+  bool supports_parallel_heap_iteration() const override { return true; }
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj) override;

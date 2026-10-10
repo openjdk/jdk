@@ -30,6 +30,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -2254,7 +2255,7 @@ class DumperController : public CHeapObj<mtServiceability> {
 
  public:
    DumperController(uint number) :
-     // _lock and _global_writer_lock are used for synchronization between GC worker threads inside safepoint,
+     // _lock and _global_writer_lock are used for synchronization between diagnostic worker threads inside safepoint,
      // so we lock with _no_safepoint_check_flag.
      // signal_start() acquires _lock when global writer is locked,
      // its rank must be less than _global_writer_lock rank.
@@ -2657,7 +2658,12 @@ void VM_HeapDumper::doit() {
     }
   }
 
-  WorkerThreads* workers = ch->safepoint_workers();
+  WorkerThreads* workers = nullptr;
+  if (ch->supports_parallel_heap_iteration() && _num_dumper_threads > 1) {
+    workers = DiagnosticWorkers::workers();
+    DiagnosticWorkers::try_and_set_active_workers(_num_dumper_threads);
+  }
+
   prepare_parallel_dump(workers);
 
   if (!is_parallel_dump()) {

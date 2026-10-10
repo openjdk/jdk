@@ -31,6 +31,7 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/diagnosticWorkers.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -70,10 +71,6 @@ inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
 
 inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
-}
-
-inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
-  return _safepoint_workers;
 }
 
 inline void ShenandoahHeap::notify_gc_progress() {
@@ -292,7 +289,8 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
 
   PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
   if (gclab == nullptr) {
-    assert(!thread->is_Java_thread() && !thread->is_Worker_thread(),
+    assert(!thread->is_Java_thread() &&
+           (!thread->is_Worker_thread() || DiagnosticWorkers::is_diagnostic_thread(thread)),
            "Performance: thread should have GCLAB: %s", thread->name());
     // No GCLABs in this thread, fallback to shared allocation
     return nullptr;

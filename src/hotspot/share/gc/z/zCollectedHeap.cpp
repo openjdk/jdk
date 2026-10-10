@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,7 @@ ZCollectedHeap::ZCollectedHeap()
     _driver_minor(new ZDriverMinor()),
     _driver_major(new ZDriverMajor()),
     _director(new ZDirector()),
-    _stat(new ZStat()),
-    _runtime_workers() {}
+    _stat(new ZStat()) {}
 
 CollectedHeap::Name ZCollectedHeap::kind() const {
   return CollectedHeap::Z;
@@ -307,8 +306,8 @@ void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }
 
-WorkerThreads* ZCollectedHeap::safepoint_workers() {
-  return _runtime_workers.workers();
+bool ZCollectedHeap::supports_parallel_heap_iteration() const {
+  return true;
 }
 
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
@@ -317,7 +316,6 @@ void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_driver_minor);
   tc->do_thread(_stat);
   _heap.threads_do(tc);
-  _runtime_workers.threads_do(tc);
 }
 
 VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
