@@ -26,6 +26,11 @@ const UNDERLINE_LINKS = "underline-links";
 const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
 const toggleMemberListing = "##REPLACE:doclet.Toggle_member_listing##";
+const selectTheme = "##REPLACE:doclet.theme.select_theme##";
+const lightThemeLabel = "##REPLACE:doclet.theme.light##";
+const darkThemeLabel = "##REPLACE:doclet.theme.dark##";
+const systemThemeLabel = "##REPLACE:doclet.theme.system##";
+const underlineLinksLabel = "##REPLACE:doclet.theme.underline_links##";
 
 const sortLexicalLabel = "##REPLACE:doclet.Sort_lexicographically##";
 const sortSourceLabel  = "##REPLACE:doclet.Sort_by_source_order##";
@@ -248,6 +253,9 @@ function switchCopyLabel(button, span) {
         }, 100);
     }, 1900);
 }
+/*
+ * Sidebar filter input
+ */
 function makeFilterWidget(sidebar, updateToc) {
     if (!sidebar) {
         return null;
@@ -324,33 +332,136 @@ function makeFilterWidget(sidebar, updateToc) {
     return sidebar;
 }
 
-const osDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
-function getTheme() {
-    return [
-        localStorage.getItem(THEME) ?? THEME_LIGHT,
-        localStorage.getItem(UNDERLINE_LINKS)
-    ];
-}
-function setTheme([theme, underlineLinks]) {
-    if (theme === THEME_OS) {
-        theme = osDarkTheme.matches ? THEME_DARK : THEME_LIGHT;
-    }
-    document.documentElement.setAttribute("data-theme", theme);
-    if (underlineLinks) {
-        document.documentElement.setAttribute("data-underline-links", underlineLinks);
-    } else {
-        document.getElementById(UNDERLINE_LINKS).checked = (theme === THEME_DARK);
-    }
-}
+/*
+ * Theme support
+ */
 function initTheme() {
-    setTheme(getTheme());
+    const template = document.createElement("template");
+    template.innerHTML =
+        `<li style="text-transform:none;">
+            <button id="theme-button" aria-label="${selectTheme}" title="${selectTheme}"></button>
+            <div id="theme-panel">
+                <div class="panel-heading">${selectTheme}</div>
+                <div>
+                    <label for="theme-light"><input type="radio" id="theme-light" name="theme" value="theme-light"><span>${lightThemeLabel}</span></label>
+                    <label for="theme-dark"><input type="radio" id="theme-dark" name="theme" value="theme-dark"><span>${darkThemeLabel}</span></label>
+                    <label for="theme-os"><input type="radio" id="theme-os" name="theme" value="theme-os"><span>${systemThemeLabel}</span></label>
+                </div>
+                <div>
+                    <label for="underline-links"><input type="checkbox" id="underline-links"><span>${underlineLinksLabel}</span></label>
+                </div>
+                <button id="theme-panel-close-button"></button>
+            </div>
+        </li>`;
+
+    const themeUI = template.content.firstElementChild;
+    const themeButton = themeUI.querySelector("button#theme-button");
+    const themePanel = themeUI.querySelector("div#theme-panel");
+    var themePanelVisible = false;
+    const osDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
+    let [currentTheme, underlineLinks] = getTheme();
+    setTheme(currentTheme, underlineLinks);
+
+    function getTheme() {
+        return [
+            localStorage.getItem(THEME) ?? THEME_LIGHT,
+            localStorage.getItem(UNDERLINE_LINKS)
+        ];
+    }
+    function setTheme(theme, underlineLinks) {
+        if (theme === THEME_OS) {
+            theme = osDarkTheme.matches ? THEME_DARK : THEME_LIGHT;
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+        if (underlineLinks) {
+            document.documentElement.setAttribute("data-underline-links", underlineLinks);
+        } else {
+            themePanel.querySelector("input#underline-links").checked = (theme === THEME_DARK);
+        }
+    }
+    osDarkTheme.addEventListener("change", e => {
+        if (currentTheme === THEME_OS) {
+            setTheme(currentTheme, underlineLinks);
+        }
+    });
+    themePanel.querySelectorAll("input").forEach(input => {
+        if (input.id === currentTheme) {
+            input.checked = true;
+        } else if (input.id === UNDERLINE_LINKS) {
+            input.checked = (underlineLinks === "on" ||
+                (!underlineLinks && document.documentElement.getAttribute("data-theme") === THEME_DARK));
+            input.addEventListener("change", e => {
+                underlineLinks = e.target.checked ? "on" : "off";
+                localStorage.setItem(UNDERLINE_LINKS, underlineLinks);
+                setTheme(currentTheme, underlineLinks);
+            });
+        }
+        if (input.name === "theme") {
+            input.addEventListener("change", e => {
+                currentTheme = e.target.value;
+                localStorage.setItem(THEME, e.target.value);
+                setTheme(currentTheme, underlineLinks);
+            });
+        }
+    });
+
+    themeButton.addEventListener("click", e => {
+        if (!themePanelVisible) {
+            let {x, y} = themeButton.getBoundingClientRect();
+            let expanded = x < y;
+            themePanel.style.display = "block";
+            if (document.documentElement.clientHeight - themePanel.offsetHeight < y) {
+                themePanel.style.top = "";
+                themePanel.style.bottom = "4px";
+            } else {
+                themePanel.style.top = y + (expanded ? 0 : 36) + "px";
+                themePanel.style.bottom = "";
+            }
+            const desiredLeft = x + (expanded ? 36 : 0);
+            const maxLeft = document.documentElement.clientWidth - themePanel.offsetWidth - 4;
+            themePanel.style.left = Math.max(4, Math.min(desiredLeft, maxLeft)) + "px";
+
+            themeButton.setAttribute("aria-expanded", "true");
+            themePanelVisible = true;
+            e.stopPropagation();
+        }
+    });
+
+    function closeThemePanel() {
+        if (themePanelVisible) {
+            themePanel.style.removeProperty("display");
+            themeButton.setAttribute("aria-expanded", "false");
+            themePanelVisible = false;
+        }
+    }
+    themeUI.querySelector("button#theme-panel-close-button")?.addEventListener("click", e => {
+        closeThemePanel();
+    });
+    themePanel.addEventListener("focusout", e => {
+        if (e.relatedTarget && !themePanel.contains(e.relatedTarget) && !themeButton.contains(e.relatedTarget)) {
+            closeThemePanel();
+        }
+    });
+    document.body.addEventListener("click", (e) => {
+        if (e.target && !themePanel.contains(e.target)) {
+            closeThemePanel();
+        }
+    });
+    document.body.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" || e.key === "Enter") {
+            closeThemePanel();
+        }
+    });
+    document.currentScript.parentElement.appendChild(themeUI);
 }
 
 function setTopMargin() {
     // Dynamically set scroll margin to accomodate for draft header
-    var headerHeight = Math.ceil(document.querySelector("header").offsetHeight);
-    document.querySelector(":root")
-        .style.setProperty("--nav-height", headerHeight + "px");
+    let header = document.querySelector("header");
+    if (header && getComputedStyle(header).position === "sticky") {
+        var headerHeight = Math.ceil(header.offsetHeight);
+        document.querySelector(":root").style.setProperty("--nav-height", headerHeight + "px");
+    }
 }
 
 document.addEventListener("readystatechange", (e) => {
@@ -382,73 +493,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     const mainnav = document.querySelector("div#navbar-top ul.nav-list");
     const toggleButton = document.querySelector("button#navbar-toggle-button");
     const tocMenu = sidebar ? sidebar.cloneNode(true) : null;
-    const themeButton = document.querySelector("button#theme-button");
-    const themePanel = document.querySelector("div#theme-panel");
-    var themePanelVisible = false;
-    themeButton.addEventListener("click", e => {
-        if (!themePanelVisible) {
-            let {x, y} = themeButton.getBoundingClientRect();
-            themePanel.style.display = "block";
-            if (window.innerHeight - themePanel.offsetHeight < y) {
-                themePanel.style.top = "";
-                themePanel.style.bottom = "4px";
-            } else {
-                themePanel.style.top = y + (expanded ? 0 : 36) + "px";
-                themePanel.style.bottom = "";
-            }
-            themePanel.style.left = x + (expanded ? 36 : 0) + "px";
-            themeButton.setAttribute("aria-expanded", "true");
-            themePanelVisible = true;
-            e.stopPropagation();
-        }
-    });
-    function closeThemePanel(e) {
-        if (themePanelVisible && (!e || !themePanel.contains(e.target))) {
-            themePanel.style.removeProperty("display");
-            themeButton.setAttribute("aria-expanded", "false");
-            themePanelVisible = false;
-        }
-    }
-    document.getElementById("theme-panel-close-button").addEventListener("click", e => {
-        closeThemePanel();
-    });
-    var [currentTheme, underlineLinks] = getTheme();
-    osDarkTheme.addEventListener("change", e => {
-        if (currentTheme === THEME_OS) {
-            setTheme([currentTheme, underlineLinks]);
-        }
-    });
-    themePanel.querySelectorAll("input").forEach(input => {
-        input.removeAttribute("disabled");
-        if (input.id === currentTheme) {
-            input.checked = true;
-        } else if (input.id === UNDERLINE_LINKS) {
-            input.checked = (underlineLinks === "on" ||
-                (!underlineLinks && document.documentElement.getAttribute("data-theme") === THEME_DARK));
-            input.addEventListener("change", e => {
-                underlineLinks = e.target.checked ? "on" : "off";
-                localStorage.setItem(UNDERLINE_LINKS, underlineLinks);
-                setTheme([currentTheme, underlineLinks]);
-            });
-        }
-        if (input.name === "theme") {
-            input.addEventListener("change", e => {
-                currentTheme = e.target.value;
-                localStorage.setItem(THEME, e.target.value);
-                setTheme([currentTheme, underlineLinks]);
-            });
-        }
-    });
-    themePanel.addEventListener("focusout", e => {
-        if (e.relatedTarget && !themePanel.contains(e.relatedTarget) && !themeButton.contains(e.relatedTarget)) {
-            closeThemePanel();
-        }
-    });
-    themePanel.addEventListener("keydown", e => {
-        if (e.key === "Escape" || e.key === "Enter") {
-            closeThemePanel();
-        }
-    });
+
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
         document.querySelector("div#navbar-top").appendChild(tocMenu);
@@ -463,7 +508,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
             return;
         }
         if (!isInput(e.target) && keymap.has(e.key)) {
-            closeThemePanel();
             var elem = keymap.get(e.key);
             if (elem === filterInput && !elem.offsetParent) {
                 elem = getVisibleFilterInput(true);
@@ -472,7 +516,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
             elem.select();
             e.preventDefault();
         } else if (e.key === "Escape") {
-            closeThemePanel();
             var filter = getVisibleFilterInput(false);
             if (e.target === filter) {
                 resetInput(filter, e, true);
@@ -486,7 +529,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var windowWidth;
     var bodyHeight;
     function collapse() {
-        closeThemePanel();
         if (expanded) {
             mainnav.removeAttribute("style");
             if (tocMenu) {
@@ -542,7 +584,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             return menuInput;
         }
     }
-    toggleButton.addEventListener("click", (e) => {
+    toggleButton?.addEventListener("click", (e) => {
         if (expanded) {
             collapse();
         } else {
@@ -555,14 +597,14 @@ document.addEventListener("DOMContentLoaded", function(e) {
         });
     }
     document.querySelector("main").addEventListener("click", collapse);
-    document.querySelector("body").addEventListener("click", closeThemePanel);
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute
-            var id = hdr.parentElement.getAttribute("id") || hdr.getAttribute("id")
-                || (hdr.querySelector("a") && hdr.querySelector("a").getAttribute("id"));
+            const id = hdr.id
+                || hdr.querySelector("a")?.id
+                || (hdr.parentElement?.firstElementChild === hdr && hdr.parentElement.id);
             if (id) {
-                var template = document.createElement('template');
+                const template = document.createElement('template');
                 template.innerHTML =" <a href='#" + encodeURI(id) + "' class='anchor-link' aria-label='"
                     + linkToSection + "'><img src='" + pathtoroot + "resource-files/link.svg' alt='"
                     + linkIcon + "' width='16' height='16'></a>";

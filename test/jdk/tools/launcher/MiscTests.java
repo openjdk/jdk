@@ -121,10 +121,18 @@ public class MiscTests {
             noManifest.write("bar".getBytes(US_ASCII));
             noManifest.closeEntry();
         }
-        // run "java -jar" against that JAR file and expect the launch to fail
-        final OutputAnalyzer oa = ProcessTools.executeTestJava("-jar", jarFile.toString());
-        oa.shouldNotHaveExitValue(0); // expected to fail with non-zero exit code
-        // verify it failed for the right reason
-        oa.shouldContain("Error: No manifest in JAR file");
+        // run "java -jar" against that JAR file and expect the launch to fail.
+        // once in headless mode and once headful
+        for (boolean headless : new boolean[]{true, false}) {
+            System.err.println("running with -Djava.awt.headless=" + headless);
+            final OutputAnalyzer oa = ProcessTools.executeTestJava(
+                    "-Djava.awt.headless=" + headless,
+                    // force the error message from the launcher to be in English
+                    "-Duser.language=en", "-Duser.country=US",
+                    "-jar", jarFile.toString());
+            oa.shouldNotHaveExitValue(0); // expected to fail with non-zero exit code
+            // verify it failed for the right reason
+            oa.shouldContain("Error: No manifest in JAR file");
+        }
     }
 }
