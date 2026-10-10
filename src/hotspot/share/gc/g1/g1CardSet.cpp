@@ -686,7 +686,7 @@ void G1CardSet::transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPt
     assert(container_type(source_container) == ContainerHowl, "must be");
     // Need to correct for that the Full remembered set occupies more cards than the
     // AoCS before.
-    _num_occupied.add_then_fetch(_config->max_cards_in_region() - table_entry->_num_occupied.load_relaxed(), memory_order_relaxed);
+    _num_occupied.add_then_fetch((size_t)_config->max_cards_in_region() - table_entry->_num_occupied.load_relaxed(), memory_order_relaxed);
   }
 }
 
@@ -702,7 +702,7 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     G1TransferCard iter(this, card_region);
     iterate_cards_during_transfer(source_container, iter);
   } else {
-    uint diff = _config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
+    size_t diff = (size_t)_config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
 
     // Need to correct for that the Full remembered set occupies more cards than the
     // bitmap before.
@@ -712,12 +712,12 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     diff -= 1;
 
     G1CardSetHowl* howling_array = container_ptr<G1CardSetHowl>(parent_container);
-    howling_array->_num_entries.add_then_fetch(diff, memory_order_relaxed);
+    howling_array->_num_entries.add_then_fetch((uint)diff, memory_order_relaxed);
 
     G1CardSetHashTableValue* table_entry = get_container(card_region);
     assert(table_entry != nullptr, "Table entry not found for transferred cards");
 
-    table_entry->_num_occupied.add_then_fetch(diff, memory_order_relaxed);
+    table_entry->_num_occupied.add_then_fetch((uint)diff, memory_order_relaxed);
 
     _num_occupied.add_then_fetch(diff, memory_order_relaxed);
   }
