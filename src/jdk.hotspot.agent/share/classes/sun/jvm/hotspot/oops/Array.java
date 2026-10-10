@@ -107,13 +107,15 @@ public class Array extends Oop {
   }
 
   public static long baseOffsetInBytes(BasicType type) {
+    VM vm = VM.getVM();
     long typeSizeInBytes = headerSizeInBytes();
-    if (elementTypeShouldBeAligned(type)) {
-      VM vm = VM.getVM();
-      return vm.alignUp(typeSizeInBytes, vm.getVM().getHeapWordSize());
-    } else {
-      return typeSizeInBytes;
+    if (vm.getCommandLineBooleanFlag("AlignArrayElements")) {
+      typeSizeInBytes = vm.alignUp(typeSizeInBytes, vm.getBytesPerWord());
     }
+    if (elementTypeShouldBeAligned(type)) {
+      typeSizeInBytes = Oop.alignObjectOffset(typeSizeInBytes);
+    }
+    return typeSizeInBytes;
   }
 
   public boolean isArray()             { return true; }
