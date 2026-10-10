@@ -1965,12 +1965,15 @@ public class Basic {
             if (Windows.is() && Platform.isAArch64()) {
                 commandOutput = removeWindowsAArch64ExpectedVars(commandOutput);
             }
-            check(commandOutput.equals(Windows.is()
-                    ? "LC_ALL=C,SystemRoot="+systemRoot+","
+            String expectedOutput = Windows.is()
+                    ? "LC_ALL=C,SystemRoot=" + systemRoot + ","
                     : AIX.is()
-                            ? "LC_ALL=C,LIBPATH="+libpath+","
-                            : "LC_ALL=C,"),
-                  "Incorrect handling of envstrings containing NULs");
+                    ? "LC_ALL=C,LIBPATH=" + libpath + ","
+                    : "LC_ALL=C,";
+            check(commandOutput.equals(expectedOutput),
+                  "Incorrect handling of envstrings containing NULs, "+
+                    "got: >'" + commandOutput +
+                    "'<, expected: >'" + expectedOutput + "'<");
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------

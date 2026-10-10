@@ -565,7 +565,9 @@ ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
 }
 
 ObjectMonitor* ObjectMonitorTable::monitor_put_get(ObjectMonitor* monitor, oop obj) {
-  const intptr_t hash = obj->mark().hash();
+  const markWord mark = obj->mark();
+  assert(mark.has_hash(), "must have");
+  const intptr_t hash = mark.hash();
   Table* curr =  _curr.load_acquire();
 
   for (;;) {
@@ -663,8 +665,8 @@ ByteSize ObjectMonitorTable::table_capacity_mask_offset() {
 
 ByteSize ObjectMonitorTable::table_buckets_offset() {
   // Assumptions made from the emitted code about the layout.
-  STATIC_ASSERT(sizeof(Atomic<Entry>) == sizeof(Entry*));
-  STATIC_ASSERT(Atomic<Entry>::value_offset_in_bytes() == 0);
+  static_assert(sizeof(Atomic<Entry>) == sizeof(Entry*));
+  static_assert(Atomic<Entry>::value_offset_in_bytes() == 0);
 
   return byte_offset_of(Table, _buckets);
 }

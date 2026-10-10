@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/oopCast.inline.hpp"
+#include "oops/refArrayOop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/javaCalls.hpp"
 
@@ -196,7 +198,11 @@ Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS
 Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   Handle url_h;
   if (shared_jar_url(shared_path_index) == nullptr) {
+    // The runtime may be in different directory from dumptime so the URL may
+    // be different. To protect against duplicate JARs, find the runtime path.
+    ResourceMark rm;
     const char* path = AOTClassLocationConfig::runtime()->class_location_at(shared_path_index)->path();
+    path = AOTClassLocationConfig::runtime()->get_runtime_path(shared_path_index, path);
     oop result_oop = to_file_URL(path, url_h, CHECK_(url_h));
     atomic_set_shared_jar_url(shared_path_index, result_oop);
   }
@@ -294,41 +300,38 @@ void CDSProtectionDomain::atomic_set_array_index(OopHandle array, int index, oop
   // The important thing here is that all threads pick up the same result.
   // It doesn't matter which racing thread wins, as long as only one
   // result is used by all threads, and all future queries.
-  ((objArrayOop)array.resolve())->replace_if_null(index, o);
+  oop_cast<refArrayOop>(array.resolve())->replace_if_null(index, o);
 }
 
 oop CDSProtectionDomain::shared_protection_domain(int index) {
-  return ((objArrayOop)_shared_protection_domains.resolve())->obj_at(index);
+  return oop_cast<refArrayOop>(_shared_protection_domains.resolve())->obj_at(index);
 }
 
 void CDSProtectionDomain::allocate_shared_protection_domain_array(int size, TRAPS) {
   if (_shared_protection_domains.resolve() == nullptr) {
-    oop spd = oopFactory::new_objArray(
-        vmClasses::ProtectionDomain_klass(), size, CHECK);
+    oop spd = oopFactory::new_refArray(vmClasses::ProtectionDomain_klass(), size, CHECK);
     _shared_protection_domains = OopHandle(Universe::vm_global(), spd);
   }
 }
 
 oop CDSProtectionDomain::shared_jar_url(int index) {
-  return ((objArrayOop)_shared_jar_urls.resolve())->obj_at(index);
+  return oop_cast<refArrayOop>(_shared_jar_urls.resolve())->obj_at(index);
 }
 
 void CDSProtectionDomain::allocate_shared_jar_url_array(int size, TRAPS) {
   if (_shared_jar_urls.resolve() == nullptr) {
-    oop sju = oopFactory::new_objArray(
-        vmClasses::URL_klass(), size, CHECK);
+    oop sju = oopFactory::new_refArray(vmClasses::URL_klass(), size, CHECK);
     _shared_jar_urls = OopHandle(Universe::vm_global(), sju);
   }
 }
 
 oop CDSProtectionDomain::shared_jar_manifest(int index) {
-  return ((objArrayOop)_shared_jar_manifests.resolve())->obj_at(index);
+  return oop_cast<refArrayOop>(_shared_jar_manifests.resolve())->obj_at(index);
 }
 
 void CDSProtectionDomain::allocate_shared_jar_manifest_array(int size, TRAPS) {
   if (_shared_jar_manifests.resolve() == nullptr) {
-    oop sjm = oopFactory::new_objArray(
-        vmClasses::Jar_Manifest_klass(), size, CHECK);
+    oop sjm = oopFactory::new_refArray(vmClasses::Jar_Manifest_klass(), size, CHECK);
     _shared_jar_manifests = OopHandle(Universe::vm_global(), sjm);
   }
 }

@@ -55,6 +55,7 @@ class ParCompactionManager;
 
 class PSPromotionManager {
   friend class PSScavenge;
+  friend class ParallelScavengeRefProcProxyTask;
   friend class ScavengeRootsTask;
 
  private:

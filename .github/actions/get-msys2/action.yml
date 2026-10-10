@@ -35,7 +35,7 @@ runs:
   steps:
     - name: 'Install MSYS2 on x86.x64'
       id: msys2-x64
-      uses: msys2/setup-msys2@v2.31.0
+      uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
@@ -44,7 +44,7 @@ runs:
 
     - name: 'Install MSYS2 on ARM64'
       id: msys2-arm64
-      uses: msys2/setup-msys2@v2.31.0
+      uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal

@@ -108,8 +108,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(I));
-  STATIC_ASSERT(4 == sizeof(D));
+  static_assert(4 == sizeof(I));
+  static_assert(4 == sizeof(D));
 
   D result;
 
@@ -135,8 +135,8 @@ template<>
 template<typename D, typename I>
 inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(I));
-  STATIC_ASSERT(8 == sizeof(D));
+  static_assert(8 == sizeof(I));
+  static_assert(8 == sizeof(D));
 
   D result;
 
@@ -165,7 +165,7 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
@@ -201,7 +201,7 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
@@ -238,7 +238,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(1 == sizeof(T));
+  static_assert(1 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
@@ -286,7 +286,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
@@ -332,7 +332,7 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
@@ -389,7 +389,7 @@ class AtomicAccess::PlatformBitops<4, true> {
 public:
   template<typename T>
   T fetch_then_and(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(4 == sizeof(T));
+    static_assert(4 == sizeof(T));
     T old_value, result;
 
     pre_membar(order);
@@ -411,7 +411,7 @@ public:
 
   template<typename T>
   T fetch_then_or(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(4 == sizeof(T));
+    static_assert(4 == sizeof(T));
     T old_value, result;
 
     pre_membar(order);
@@ -433,7 +433,7 @@ public:
 
   template<typename T>
   T fetch_then_xor(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(4 == sizeof(T));
+    static_assert(4 == sizeof(T));
     T old_value, result;
 
     pre_membar(order);
@@ -455,7 +455,7 @@ public:
 
   template<typename T>
   T and_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(4 == sizeof(T));
+    static_assert(4 == sizeof(T));
     T result;
 
     pre_membar(order);
@@ -476,7 +476,7 @@ public:
 
   template<typename T>
   T or_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(4 == sizeof(T));
+    static_assert(4 == sizeof(T));
     T result;
 
     pre_membar(order);
@@ -497,7 +497,7 @@ public:
 
   template<typename T>
   T xor_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(4 == sizeof(T));
+    static_assert(4 == sizeof(T));
     T result;
 
     pre_membar(order);
@@ -522,7 +522,7 @@ class AtomicAccess::PlatformBitops<8, true> {
 public:
   template<typename T>
   T fetch_then_and(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(8 == sizeof(T));
+    static_assert(8 == sizeof(T));
     T old_value, result;
 
     pre_membar(order);
@@ -544,7 +544,7 @@ public:
 
   template<typename T>
   T fetch_then_or(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(8 == sizeof(T));
+    static_assert(8 == sizeof(T));
     T old_value, result;
 
     pre_membar(order);
@@ -566,7 +566,7 @@ public:
 
   template<typename T>
   T fetch_then_xor(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(8 == sizeof(T));
+    static_assert(8 == sizeof(T));
     T old_value, result;
 
     pre_membar(order);
@@ -588,7 +588,7 @@ public:
 
   template<typename T>
   T and_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(8 == sizeof(T));
+    static_assert(8 == sizeof(T));
     T result;
 
     pre_membar(order);
@@ -609,7 +609,7 @@ public:
 
   template<typename T>
   T or_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(8 == sizeof(T));
+    static_assert(8 == sizeof(T));
     T result;
 
     pre_membar(order);
@@ -630,7 +630,7 @@ public:
 
   template<typename T>
   T xor_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    STATIC_ASSERT(8 == sizeof(T));
+    static_assert(8 == sizeof(T));
     T result;
 
     pre_membar(order);

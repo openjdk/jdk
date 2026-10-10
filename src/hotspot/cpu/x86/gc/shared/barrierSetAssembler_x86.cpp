@@ -22,7 +22,9 @@
  *
  */
 
+#include "asm/macroAssembler.inline.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -348,17 +350,29 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 }
 
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(tmp1, tmp2);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ movptr(tmp2, Address(tmp2));
+    __ andptr(tmp1, tmp2);
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ movptr(tmp2, Address(tmp2));
+  } else
+#endif
+  {
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andptr(tmp1, tmp2);
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmpptr(tmp1, tmp2);
   __ jcc(Assembler::notZero, error);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj, tmp1);  // get klass
-  __ testptr(obj, obj);
+  __ load_narrow_klass(tmp1, obj); // get narrow Klass
+  __ testl(tmp1, tmp1);
   __ jcc(Assembler::zero, error); // if klass is null it is broken
 }
 
@@ -501,8 +515,11 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     caller_saved.insert(OptoReg::as_OptoReg(r27->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r28->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r29->as_VMReg()));
+#ifndef _WINDOWS
+    // On Windows, r30 and r31 are nonvolatile per the x64 ABI.
     caller_saved.insert(OptoReg::as_OptoReg(r30->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r31->as_VMReg()));
+#endif
   }
 
   int gp_spill_size = 0;

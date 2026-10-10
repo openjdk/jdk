@@ -29,7 +29,7 @@
  * @key randomness
  * @summary Test vectorization of rotate byte and short
  * @library /test/lib /
- * @run main/othervm TestRotateByteAndShortVector
+ * @run driver ${test.main.class}
  */
 
 import java.util.Random;

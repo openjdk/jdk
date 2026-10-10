@@ -37,6 +37,14 @@ inline address Method::from_compiled_entry() const {
   return AtomicAccess::load_acquire(&_from_compiled_entry);
 }
 
+inline address Method::from_compiled_value_ro_entry() const {
+  return AtomicAccess::load_acquire(&_from_compiled_value_ro_entry);
+}
+
+inline address Method::from_compiled_value_entry() const {
+  return AtomicAccess::load_acquire(&_from_compiled_value_entry);
+}
+
 inline address Method::from_interpreted_entry() const {
   return AtomicAccess::load_acquire(&_from_interpreted_entry);
 }

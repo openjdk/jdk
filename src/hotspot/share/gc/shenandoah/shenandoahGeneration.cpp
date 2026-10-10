@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -258,17 +260,12 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states :
                             ShenandoahPhaseTimings::degen_gc_final_update_region_states);
-    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
-    parallel_heap_region_iterate(&cl);
-
-    if (is_young()) {
-      // We always need to update the watermark for old regions. If there
-      // are mixed collections pending, we also need to synchronize the
-      // pinned status for old regions. Since we are already visiting every
-      // old region here, go ahead and sync the pin status too.
-      ShenandoahFinalMarkUpdateRegionStateClosure old_cl(nullptr);
-      heap->old_generation()->parallel_heap_region_iterate(&old_cl);
-    }
+    // Update region state for every active region, but only update the liveness data for
+    // the generation we marked. We always need to update the watermark for old regions.
+    // If there are mixed collections pending, we also need to synchronize the pinned status
+    // for old regions.
+    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context(), this);
+    heap->global_generation()->parallel_heap_region_iterate(&cl);
   }
 
   // Tally the census counts and compute the adaptive tenuring threshold
@@ -325,12 +322,16 @@ bool ShenandoahGeneration::is_bitmap_clear() {
   ShenandoahMarkingContext* context = heap->marking_context();
   const size_t num_regions = heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
+    const ShenandoahAffiliation affiliation = heap->region_affiliation(idx);
+    if (!contains(affiliation) || affiliation == FREE) {
+      // Skip regions outside this generation or those that are unaffiliated
+      continue;
+    }
+
     ShenandoahHeapRegion* r = heap->get_region(idx);
-    if (contains(r) && r->is_affiliated()) {
-      if (heap->is_bitmap_slice_committed(r) && (context->top_at_mark_start(r) > r->bottom()) &&
-          !context->is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
-        return false;
-      }
+    if (heap->is_bitmap_slice_committed(r) && (context->top_at_mark_start(r) > r->bottom()) &&
+        !context->is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
+      return false;
     }
   }
   return true;
@@ -350,7 +351,7 @@ ShenandoahMarkingContext* ShenandoahGeneration::complete_marking_context() {
 }
 
 void ShenandoahGeneration::cancel_marking() {
-  log_info(gc)("Cancel marking: %s", name());
+  log_info(gc, phases)("Cancel marking: %s", name());
   if (is_concurrent_mark_in_progress()) {
     set_mark_incomplete();
   }
@@ -388,10 +389,6 @@ void ShenandoahGeneration::post_initialize(ShenandoahHeap* heap) {
   assert(_free_set != nullptr, "bad initialization order");
 }
 
-void ShenandoahGeneration::reserve_task_queues(uint workers) {
-  _task_queues->reserve(workers);
-}
-
 ShenandoahObjToScanQueueSet* ShenandoahGeneration::old_gen_task_queues() const {
   return nullptr;
 }
@@ -401,7 +398,6 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
 
   ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
   uint nworkers = heap->workers()->active_workers();
-  reserve_task_queues(nworkers);
 
   ShenandoahReferenceProcessor* rp = ref_processor();
   ShenandoahRegionChunkIterator work_list(nworkers);

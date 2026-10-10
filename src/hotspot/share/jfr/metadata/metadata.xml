@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -500,11 +500,6 @@
     <Field type="float" contentType="percentage" name="thresholdPercentage" label="Current IHOP Threshold" description="Current IHOP threshold in percent of old generation" />
     <Field type="ulong" contentType="bytes" name="targetOccupancy" label="Target Occupancy" description="Target old generation occupancy to reach at the start of mixed GC" />
     <Field type="ulong" contentType="bytes" name="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy" />
-    <Field type="ulong" contentType="bytes" name="recentMutatorAllocationSize" label="Recent Mutator Allocation Size"
-      description="Mutator allocation during mutator operation in the most recent interval" />
-    <Field type="long" contentType="millis" name="recentMutatorDuration" label="Recent Mutator Duration" description="Time the mutator ran in the most recent interval" />
-    <Field type="double" contentType="bytes-per-second" name="recentAllocationRate" label="Recent Allocation Rate" description="Allocation rate of the mutator in the most recent interval in bytes/second" />
-    <Field type="long" contentType="millis" name="lastMarkingDuration" label="Last Marking Duration" description="Last time from the end of the last concurrent start to the first mixed GC" />
   </Event>
 
   <Event name="G1AdaptiveIHOP" category="Java Virtual Machine, GC, Detailed" label="G1 Adaptive IHOP Statistics" startTime="false"
@@ -514,8 +509,15 @@
     <Field type="float" contentType="percentage" name="thresholdPercentage" label="Threshold" description="Current IHOP threshold in percent of the internal target occupancy" />
     <Field type="ulong" contentType="bytes" name="ihopTargetOccupancy" label="IHOP Target Occupancy" description="Internal target old generation occupancy to reach at the start of mixed GC" />
     <Field type="ulong" contentType="bytes" name="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy" />
+    <Field type="ulong" contentType="bytes" name="nonHumongousAllocation" label="Current Non-Humongous Allocation"
+      description="Current non-humongous allocation accumulated by the concurrent cycle tracker" />
+    <Field type="ulong" contentType="bytes" name="peakExtraHumongousOccupancy" label="Current Peak Extra Humongous Occupancy"
+      description="Current peak increase in humongous occupancy relative to the occupancy at concurrent cycle start" experimental="true" />
     <Field type="ulong" contentType="bytes" name="additionalBufferSize" label="Additional Buffer" description="Additional buffer size" experimental="true" />
-    <Field type="double" contentType="bytes-per-second" name="predictedAllocationRate" label="Predicted Allocation Rate" description="Current predicted allocation rate for the mutator in bytes/second" />
+    <Field type="double" contentType="bytes-per-second" name="predictedNonHumongousAllocation" label="Predicted Non-Humongous Allocation Rate"
+      description="Predicted allocation rate of non-humongous objects into the old generation, in bytes per second" />
+    <Field type="ulong" contentType="bytes" name="predictedPeakExtraHumongousOccupancy" label="Predicted Peak Extra Humongous Occupancy"
+      description="Predicted peak increase in humongous occupancy during a concurrent cycle relative to the occupancy at concurrent cycle start" experimental="true" />
     <Field type="long" contentType="millis" name="predictedMarkingDuration" label="Predicted Marking Duration"
       description="Current predicted time from the end of the last concurrent start to the first mixed GC" />
     <Field type="boolean" name="predictionActive" label="Prediction Active" description="Indicates whether the adaptive IHOP prediction is active" />
@@ -974,7 +976,7 @@
 
   <Event name="ExecutionSample" category="Java Virtual Machine, Profiling" label="Java Execution Sample"
          description="Snapshot of a thread executing Java code. Threads that are not executing Java code, including those waiting or executing native code, are not included."
-    period="everyChunk">
+    thread="true" period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="ThreadState" name="state" label="Thread State" />
@@ -982,7 +984,7 @@
 
   <Event name="NativeMethodSample" category="Java Virtual Machine, Profiling" label="Native Sample"
          description="Snapshot of a thread in native code, executing or waiting. Threads that are executing Java code are not included."
-    period="everyChunk">
+    thread="true" period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="ThreadState" name="state" label="Thread State" />
@@ -990,18 +992,16 @@
 
   <Event name="CPUTimeSample" category="Java Virtual Machine, Profiling" label="CPU Time Sample"
     description="Snapshot of a threads state from the CPU time sampler, both threads executing native and Java code are included. The throttle setting can be either an upper bound for the event emission rate, e.g. 100/s, or the cpu-time period, e.g. 10ms, with s, ms, us and ns supported as time units."
-    throttle="true" thread="false" experimental="true" startTime="false">
+    throttle="true" thread="true" experimental="true" startTime="false">
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
-    <Field type="Thread" name="eventThread" label="Thread" />
     <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
     <Field type="Tickspan" name="samplingPeriod" label="CPU Time Sampling Period"/>
     <Field type="boolean" name="biased" label="Biased" description="The sample is safepoint-biased" />
   </Event>
 
   <Event name="CPUTimeSamplesLost" category="Java Virtual Machine, Profiling" label="CPU Time Samples Lost" description="Records that the CPU time sampler lost samples"
-    thread="false" stackTrace="false" startTime="false" experimental="true">
+    thread="true" stackTrace="false" startTime="false" experimental="true">
     <Field type="int" name="lostSamples" label="Lost Samples" />
-    <Field type="Thread" name="eventThread" label="Thread" />
   </Event>
 
   <Event name="ThreadDump" category="Java Virtual Machine, Runtime" label="Thread Dump" period="everyChunk">

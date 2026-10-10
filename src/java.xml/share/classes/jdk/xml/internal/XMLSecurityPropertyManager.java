@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.xml.internal;
 
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkProperty.State;
 
 /**
  * This class manages security related properties
@@ -159,6 +160,15 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase implem
      */
     public String getValue(Property property) {
         return values[property.ordinal()];
+    }
+
+    /**
+     * {@return the state of the specified property}
+     *
+     * @param property the specified property
+     */
+    public State getState(Property property) {
+        return states[property.ordinal()];
     }
 
     /**

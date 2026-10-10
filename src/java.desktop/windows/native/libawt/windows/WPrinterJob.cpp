@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,45 +53,33 @@ Java_sun_print_PrintServiceLookupProvider_getDefaultPrinterName(JNIEnv *env,
     TRY;
 
     TCHAR cBuffer[250];
-    OSVERSIONINFO osv;
-    PRINTER_INFO_2 *ppi2 = NULL;
-    DWORD dwNeeded = 0;
-    DWORD dwReturned = 0;
     LPTSTR pPrinterName = NULL;
     jstring jPrinterName;
 
-    // What version of Windows are you running?
-    osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&osv);
-
-    // If Windows 2000, XP, Vista
-    if (osv.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-
-       // Retrieve the default string from Win.ini (the registry).
-       // String will be in form "printername,drivername,portname".
-
-       if (GetProfileString(TEXT("windows"), TEXT("device"), TEXT(",,,"),
-                            cBuffer, 250) <= 0) {
-           return NULL;
-       }
-       // Copy printer name into passed-in buffer...
-       int index = 0;
-       int len = lstrlen(cBuffer);
-       while ((index < len) && cBuffer[index] != _T(',')) {
-              index++;
-       }
-       if (index==0) {
-         return NULL;
-       }
-
-       pPrinterName = (LPTSTR)GlobalAlloc(GPTR, (index+1)*sizeof(TCHAR));
-       lstrcpyn(pPrinterName, cBuffer, index+1);
-       jPrinterName = JNU_NewStringPlatform(env, pPrinterName);
-       GlobalFree(pPrinterName);
-       return jPrinterName;
-    } else {
+    // Retrieve the default string from Win.ini (the registry).
+    // String will be in form "printername,drivername,portname".
+    if (GetProfileString(TEXT("windows"), TEXT("device"), TEXT(",,,"),
+                         cBuffer, 250) <= 0) {
         return NULL;
     }
+    // Copy printer name into passed-in buffer...
+    int index = 0;
+    int len = lstrlen(cBuffer);
+    while ((index < len) && cBuffer[index] != _T(',')) {
+        index++;
+    }
+    if (index==0) {
+        return NULL;
+    }
+
+    pPrinterName = (LPTSTR)GlobalAlloc(GPTR, (index+1)*sizeof(TCHAR));
+    if (pPrinterName == NULL) {
+        return NULL;
+    }
+    lstrcpyn(pPrinterName, cBuffer, index+1);
+    jPrinterName = JNU_NewStringPlatform(env, pPrinterName);
+    GlobalFree(pPrinterName);
+    return jPrinterName;
 
     CATCH_BAD_ALLOC_RET(NULL);
 }

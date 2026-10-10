@@ -88,7 +88,7 @@ static bool process_read_data(struct ps_prochandle* ph, uintptr_t addr, char *bu
     errno = 0;
     rslt = ptrace(PTRACE_PEEKDATA, ph->pid, aligned_addr, 0);
     if (errno) {
-      print_debug("ptrace(PTRACE_PEEKDATA, ..) failed for %d bytes @ %lx\n", size, addr);
+      print_warning("ptrace(PTRACE_PEEKDATA, ..) failed for %d bytes @ %lx\n", size, addr);
       return false;
     }
     for (; aligned_addr != addr; aligned_addr++, ptr++);
@@ -104,7 +104,7 @@ static bool process_read_data(struct ps_prochandle* ph, uintptr_t addr, char *bu
     errno = 0;
     rslt = ptrace(PTRACE_PEEKDATA, ph->pid, aligned_addr, 0);
     if (errno) {
-      print_debug("ptrace(PTRACE_PEEKDATA, ..) failed for %d bytes @ %lx\n", size, addr);
+      print_warning("ptrace(PTRACE_PEEKDATA, ..) failed for %d bytes @ %lx\n", size, addr);
       return false;
     }
     *(long *)buf = rslt;
@@ -117,7 +117,7 @@ static bool process_read_data(struct ps_prochandle* ph, uintptr_t addr, char *bu
     errno = 0;
     rslt = ptrace(PTRACE_PEEKDATA, ph->pid, aligned_addr, 0);
     if (errno) {
-      print_debug("ptrace(PTRACE_PEEKDATA, ..) failed for %d bytes @ %lx\n", size, addr);
+      print_warning("ptrace(PTRACE_PEEKDATA, ..) failed for %d bytes @ %lx\n", size, addr);
       return false;
     }
     for (; aligned_addr != end_addr; aligned_addr++)
@@ -150,19 +150,19 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
   iov.iov_base = user;
   iov.iov_len = sizeof(*user);
   if (ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, (void*) &iov) < 0) {
-    print_debug("ptrace(PTRACE_GETREGSET, ...) failed for lwp %d\n", pid);
+    print_warning("ptrace(PTRACE_GETREGSET, ...) failed for lwp %d\n", pid);
     return false;
   }
   return true;
 #elif defined(PTRACE_GETREGS_REQ)
  if (ptrace(PTRACE_GETREGS_REQ, pid, NULL, user) < 0) {
-   print_debug("ptrace(PTRACE_GETREGS, ...) failed for lwp(%d) errno(%d) \"%s\"\n", pid,
+   print_warning("ptrace(PTRACE_GETREGS, ...) failed for lwp(%d) errno(%d) \"%s\"\n", pid,
                errno, strerror(errno));
    return false;
  }
  return true;
 #else
- print_debug("ptrace(PTRACE_GETREGS, ...) not supported\n");
+ print_warning("ptrace(PTRACE_GETREGS, ...) not supported\n");
  return false;
 #endif
 
@@ -171,7 +171,7 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
 static bool ptrace_continue(pid_t pid, int signal) {
   // pass the signal to the process so we don't swallow it
   if (ptrace(PTRACE_CONT, pid, NULL, signal) < 0) {
-    print_debug("ptrace(PTRACE_CONT, ..) failed for %d\n", pid);
+    print_warning("ptrace(PTRACE_CONT, ..) failed for %d\n", pid);
     return false;
   }
   return true;
@@ -472,7 +472,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   }
 
 #ifdef __aarch64__
-  ph->pac_enabled = HWCAP_PACA & getauxval(AT_HWCAP);
+  ph->pac_enabled = (HWCAP_PACA & getauxval(AT_HWCAP)) == HWCAP_PACA;
 #endif
 
   // initialize ps_prochandle

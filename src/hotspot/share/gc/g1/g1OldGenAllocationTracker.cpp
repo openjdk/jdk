@@ -26,36 +26,43 @@
 #include "logging/log.hpp"
 
 G1OldGenAllocationTracker::G1OldGenAllocationTracker() :
-  _last_period_old_gen_bytes(0),
-  _last_period_old_gen_growth(0),
-  _humongous_bytes_after_last_gc(0),
-  _allocated_bytes_since_last_gc(0),
-  _allocated_humongous_bytes_since_last_gc(0) {
+  _humongous_bytes_after_last_pause(0),
+  _allocated_non_humongous_bytes_since_last_pause(0),
+  _allocated_humongous_bytes_since_last_pause(0) {
 }
 
-void G1OldGenAllocationTracker::reset_after_gc(size_t humongous_bytes_after_gc) {
+G1AllocationIntervalStats G1OldGenAllocationTracker::end_allocation_interval(size_t humongous_bytes_after_pause) {
   // Calculate actual increase in old, taking eager reclaim into consideration.
-  size_t last_period_humongous_increase = 0;
-  if (humongous_bytes_after_gc > _humongous_bytes_after_last_gc) {
-    last_period_humongous_increase = humongous_bytes_after_gc - _humongous_bytes_after_last_gc;
-    assert(last_period_humongous_increase <= _allocated_humongous_bytes_since_last_gc,
+  size_t last_interval_humongous_increase = 0;
+  if (humongous_bytes_after_pause > _humongous_bytes_after_last_pause) {
+    last_interval_humongous_increase = humongous_bytes_after_pause - _humongous_bytes_after_last_pause;
+    assert(last_interval_humongous_increase <= _allocated_humongous_bytes_since_last_pause,
            "Increase larger than allocated %zu <= %zu",
-           last_period_humongous_increase, _allocated_humongous_bytes_since_last_gc);
+           last_interval_humongous_increase, _allocated_humongous_bytes_since_last_pause);
   }
-  _last_period_old_gen_growth = _allocated_bytes_since_last_gc + last_period_humongous_increase;
 
-  // Calculate and record needed values.
-  _last_period_old_gen_bytes = _allocated_bytes_since_last_gc + _allocated_humongous_bytes_since_last_gc;
-  _humongous_bytes_after_last_gc = humongous_bytes_after_gc;
+  size_t last_interval_old_gen_growth = _allocated_non_humongous_bytes_since_last_pause +
+                                        last_interval_humongous_increase;
 
-  log_debug(gc, alloc, stats)("Old generation allocation in the last mutator period, "
+  G1AllocationIntervalStats allocation_interval_stats{
+    _allocated_non_humongous_bytes_since_last_pause,
+    _allocated_humongous_bytes_since_last_pause,
+    _humongous_bytes_after_last_pause,
+    humongous_bytes_after_pause
+  };
+
+  _humongous_bytes_after_last_pause = humongous_bytes_after_pause;
+
+  log_debug(gc, alloc, stats)("Old generation allocation in the last allocation interval, "
                               "old gen allocated: %zuB, humongous allocated: %zuB, "
                               "old gen growth: %zuB.",
-                              _allocated_bytes_since_last_gc,
-                              _allocated_humongous_bytes_since_last_gc,
-                              _last_period_old_gen_growth);
+                              _allocated_non_humongous_bytes_since_last_pause,
+                              _allocated_humongous_bytes_since_last_pause,
+                              last_interval_old_gen_growth);
 
-  // Reset for next mutator period.
-  _allocated_bytes_since_last_gc = 0;
-  _allocated_humongous_bytes_since_last_gc = 0;
+  // Reset for the next interval.
+  _allocated_non_humongous_bytes_since_last_pause = 0;
+  _allocated_humongous_bytes_since_last_pause = 0;
+
+  return allocation_interval_stats;
 }

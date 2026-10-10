@@ -71,7 +71,10 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   // Always initialize the mem with primitive array first so GC won't look into the elements in the array.
   // For obj array, the header will be corrected to object array after clearing the memory.
   Klass* filling_klass = _klass;
-  const bool is_ref_type = is_reference_type(element_type);
+
+  // Flat arrays containing oops are not supported and only contain primitives
+  // from here on out.
+  const bool is_ref_type = (element_type != T_FLAT_ELEMENT) && is_reference_type(element_type);
 
   if (is_ref_type) {
     filling_klass = LP64_ONLY(UseCompressedOops ? Universe::intArrayKlass() : Universe::longArrayKlass()) NOT_LP64(Universe::intArrayKlass());

@@ -54,7 +54,6 @@ class       AllocateArrayNode;
 class     AbstractLockNode;
 class       LockNode;
 class       UnlockNode;
-class FastLockNode;
 
 //------------------------------StartNode--------------------------------------
 // The method start node
@@ -76,7 +75,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_reg, uint length ) const;
   virtual const RegMask &in_RegMask(uint) const;
-  virtual Node *match( const ProjNode *proj, const Matcher *m );
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
   virtual uint ideal_reg() const { return 0; }
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
@@ -90,7 +89,6 @@ class StartOSRNode : public StartNode {
 public:
   StartOSRNode( Node *root, const TypeTuple *domain ) : StartNode(root, domain) {}
   virtual int   Opcode() const;
-  static  const TypeTuple *osr_domain();
 };
 
 
@@ -403,11 +401,11 @@ public:
     verify_input(jvms, arg_idx);
     return in(jvms->argoff() + idx);
   }
-  Node* monitor_box(const JVMState* jvms, uint idx) const {
+  BoxLockNode* monitor_box(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     uint mon_box_idx = jvms->monitor_box_offset(idx);
     assert(jvms->is_monitor_box(mon_box_idx), "not a monitor box offset");
-    return in(mon_box_idx);
+    return in(mon_box_idx)->as_BoxLock();
   }
   Node* monitor_obj(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
@@ -433,10 +431,10 @@ public:
   }
   void grow_stack(JVMState* jvms, uint grow_by);
   // Handle monitor stack
-  void push_monitor( const FastLockNode *lock );
-  void pop_monitor ();
-  Node *peek_monitor_box() const;
-  Node *peek_monitor_obj() const;
+  void push_monitor(BoxLockNode* box, Node* obj);
+  void pop_monitor();
+  BoxLockNode* peek_monitor_box() const;
+  Node*        peek_monitor_obj() const;
   // Peek Operand Stacks, JVMS 2.6.2
   Node* peek_operand(uint off = 0) const;
 
@@ -724,7 +722,7 @@ public:
 
 // Simple container for the outgoing projections of a call.  Useful
 // for serious surgery on calls.
-class CallProjections : public StackObj {
+class CallProjections {
 public:
   Node* fallthrough_proj;
   Node* fallthrough_catchproj;
@@ -733,8 +731,26 @@ public:
   Node* catchall_catchproj;
   Node* catchall_memproj;
   Node* catchall_ioproj;
-  Node* resproj;
   Node* exobj;
+  uint nb_resproj;
+  Node* resproj[1]; // at least one projection
+
+  CallProjections(uint nbres) {
+    fallthrough_proj      = nullptr;
+    fallthrough_catchproj = nullptr;
+    fallthrough_memproj   = nullptr;
+    fallthrough_ioproj    = nullptr;
+    catchall_catchproj    = nullptr;
+    catchall_memproj      = nullptr;
+    catchall_ioproj       = nullptr;
+    exobj                 = nullptr;
+    nb_resproj            = nbres;
+    resproj[0]            = nullptr;
+    for (uint i = 1; i < nb_resproj; i++) {
+      resproj[i]          = nullptr;
+    }
+  }
+
 };
 
 class CallGenerator;
@@ -755,7 +771,7 @@ public:
   const char*     _name;        // Printable name, if _method is null
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
-    : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
+    : SafePointNode(tf->domain_cc()->cnt(), jvms, adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
@@ -797,24 +813,25 @@ public:
   virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const;
   // Does this node have a use of n other than in debug information?
   bool                has_non_debug_use(const Node* n);
+  bool                has_debug_use(const Node* n) const;
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
   // or returns null if there is no one.
   Node* result_cast();
   // Does this node returns pointer?
   bool returns_pointer() const {
-    const TypeTuple* r = tf()->range();
-    return (r->cnt() > TypeFunc::Parms &&
+    const TypeTuple* r = tf()->range_sig();
+    return (!tf()->returns_value_type_as_fields() &&
+            r->cnt() > TypeFunc::Parms &&
             r->field_at(TypeFunc::Parms)->isa_ptr());
   }
 
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion
   // and the late inlining support.
-  void extract_projections(CallProjections* projs,
-                           bool separate_io_proj,
-                           bool do_asserts = true,
-                           bool allow_handlers = false) const;
+  CallProjections* extract_projections(bool separate_io_proj,
+                                       bool do_asserts = true,
+                                       bool allow_handlers = false) const;
 
   virtual uint match_edge(uint idx) const;
 
@@ -884,11 +901,27 @@ class CallStaticJavaNode : public CallJavaNode {
   bool _safe_for_fold_compare;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
+
+  bool remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node* ctl, Node* mem, Node* unc_arg);
+  Node* replace_is_substitutable(PhaseIterGVN* igvn);
+  Node* replace_identity_hash_code(PhaseIterGVN* igvn);
+
 public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
     : CallJavaNode(tf, addr, method), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
-    if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
+    if (C->eliminate_boxing() && (method != nullptr) && (method->is_boxing_method() || method->is_unboxing_method())) {
+      init_flags(Flag_is_macro);
+      C->add_macro_node(this);
+    }
+    const TypeTuple *r = tf->range_sig();
+    if (ValueTypeReturnedAsFields &&
+        method != nullptr &&
+        method->is_method_handle_intrinsic() &&
+        r->cnt() > TypeFunc::Parms &&
+        r->field_at(TypeFunc::Parms)->isa_oopptr() &&
+        r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_value_type()) {
+      // Make sure this call is processed by PhaseMacroExpand::expand_mh_intrinsic_return
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
@@ -909,10 +942,15 @@ public:
   bool is_boxing_method() const {
     return is_macro() && (method() != nullptr) && method()->is_boxing_method();
   }
+
+  bool is_unboxing_method() const {
+    return is_macro() && (method() != nullptr) && method()->is_unboxing_method();
+  }
+
   // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
   virtual bool needs_deep_clone_jvms(Compile* C) {
-    return is_boxing_method() || CallNode::needs_deep_clone_jvms(C);
+    return is_boxing_method() || is_unboxing_method() || CallNode::needs_deep_clone_jvms(C);
   }
 
   virtual int         Opcode() const;
@@ -1038,6 +1076,7 @@ public:
     init_class_id(Class_CallLeafNoFP);
   }
   virtual int   Opcode() const;
+  virtual uint match_edge(uint idx) const;
 };
 
 //------------------------------CallLeafVectorNode-------------------------------
@@ -1080,6 +1119,9 @@ public:
     InitialTest,                      // slow-path test (may be constant)
     ALength,                          // array length (or TOP if none)
     ValidLengthTest,
+    ValueType,                        // ValueTypeNode if this is a value type allocation
+    InitValue,                        // Init value for null-free value type arrays
+    RawInitValue,                     // Same as above but as raw machine word
     ParmLimit
   };
 
@@ -1090,6 +1132,9 @@ public:
     fields[InitialTest] = TypeInt::BOOL;
     fields[ALength]     = t;  // length (can be a bad length)
     fields[ValidLengthTest] = TypeInt::BOOL;
+    fields[ValueType] = Type::BOTTOM;
+    fields[InitValue] = TypeInstPtr::NOTNULL;
+    fields[RawInitValue] = TypeX_X;
 
     const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
 
@@ -1110,7 +1155,8 @@ public:
 
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
-               Node *size, Node *klass_node, Node *initial_test);
+               Node *size, Node *klass_node, Node *initial_test,
+               ValueTypeNode* value_type_node = nullptr);
   // Expansion modifies the JVMState, so we need to deep clone it
   virtual bool needs_deep_clone_jvms(Compile* C) { return true; }
   virtual int Opcode() const;
@@ -1177,7 +1223,10 @@ public:
 
   Node* make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem);
 
-  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
+#ifndef PRODUCT
+  ciKlass* allocation_klass() const;
+  virtual void dump_spec(outputStream *st) const;
+#endif // !PRODUCT
 };
 
 //------------------------------AllocateArray---------------------------------
@@ -1187,14 +1236,18 @@ public:
 class AllocateArrayNode : public AllocateNode {
 public:
   AllocateArrayNode(Compile* C, const TypeFunc* atype, Node* ctrl, Node* mem, Node* abio, Node* size, Node* klass_node,
-                    Node* initial_test, Node* count_val, Node* valid_length_test)
+                    Node* initial_test, Node* count_val, Node* valid_length_test,
+                    Node* init_value, Node* raw_init_value)
     : AllocateNode(C, atype, ctrl, mem, abio, size, klass_node,
                    initial_test)
   {
     init_class_id(Class_AllocateArray);
-    set_req(AllocateNode::ALength,        count_val);
+    set_req(AllocateNode::ALength, count_val);
     set_req(AllocateNode::ValidLengthTest, valid_length_test);
+    init_req(AllocateNode::InitValue, init_value);
+    init_req(AllocateNode::RawInitValue, raw_init_value);
   }
+  virtual uint size_of() const { return sizeof(*this); }
   virtual int Opcode() const;
 
   // Dig the length operand out of a array allocation site.
@@ -1256,10 +1309,9 @@ public:
 #endif
   }
   virtual int Opcode() const = 0;
-  Node *   obj_node() const       {return in(TypeFunc::Parms + 0); }
-  Node *   box_node() const       {return in(TypeFunc::Parms + 1); }
-  Node *   fastlock_node() const  {return in(TypeFunc::Parms + 2); }
-  void     set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
+  Node*   obj_node() const       { return in(TypeFunc::Parms + 0); }
+  Node*   box_node() const       { return in(TypeFunc::Parms + 1); }
+  void    set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
 
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
@@ -1296,10 +1348,9 @@ public:
 // High-level lock operation
 //
 // This is a subclass of CallNode because it is a macro node which gets expanded
-// into a code sequence containing a call.  This node takes 3 "parameters":
-//    0  -  object to lock
-//    1 -   a BoxLockNode
-//    2 -   a FastLockNode
+// into a code sequence containing a call.  This node takes two "parameters":
+//    0 - object to lock
+//    1 - a BoxLockNode
 //
 class LockNode : public AbstractLockNode {
   static const TypeFunc* _lock_type_Type;
@@ -1312,12 +1363,12 @@ public:
 
   static void initialize_lock_Type() {
     assert(_lock_type_Type == nullptr, "should be called once");
-    // create input type (domain)
-    const Type **fields = TypeTuple::fields(3);
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
     fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock
-    fields[TypeFunc::Parms+2] = TypeInt::BOOL;         // FastLock
-    const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3,fields);
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
 
     // create result type (range)
     fields = TypeTuple::fields(0);

@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -321,7 +322,7 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
   }
   decrease_unprocessed_old_collection_candidates_live_memory(_evacuated_old_bytes);
   if (_included_old_regions > 0) {
-    log_info(gc)("Old-gen mixed evac (%zu regions, evacuating %zu%s, reclaiming: %zu%s)",
+    log_info(gc, ergo)("Old-gen mixed evac (%zu regions, evacuating %zu%s, reclaiming: %zu%s)",
                  _included_old_regions,
                  byte_size_in_proper_unit(_evacuated_old_bytes), proper_unit_for_byte_size(_evacuated_old_bytes),
                  byte_size_in_proper_unit(_collected_old_bytes), proper_unit_for_byte_size(_collected_old_bytes));
@@ -339,10 +340,10 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
     // if they are all pinned we transition to a state that will allow us to make these uncollected
     // (pinned) regions parsable.
     if (all_candidates_are_pinned()) {
-      log_info(gc)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
+      log_info(gc, ergo)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
       _old_generation->abandon_mixed_evacuations();
     } else {
-      log_info(gc)("No regions selected for mixed collection. "
+      log_info(gc, ergo)("No regions selected for mixed collection. "
                    "Old evacuation budget: " PROPERFMT ", Next candidate: " UINT32_FORMAT ", Last candidate: " UINT32_FORMAT,
                    PROPERFMTARGS(_old_evacuation_reserve),
                    _next_old_collection_candidate, _last_old_collection_candidate);
@@ -382,7 +383,7 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ShenandoahCollectionSet* co
       regions_for_old_expansion = 0;
     }
     if (regions_for_old_expansion > 0) {
-      log_info(gc)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
+      log_info(gc, ergo)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
                    regions_for_old_expansion);
       add_regions_to_old = regions_for_old_expansion;
       size_t budget_supplement = region_size_bytes * regions_for_old_expansion;
@@ -413,11 +414,11 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t live_data = 0;
   RegionData* candidates = _region_data;
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
-    if (!region->is_old()) {
+    if (!heap->is_region_old(i)) {
       continue;
     }
 
+    ShenandoahHeapRegion* region = heap->get_region(i);
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
     if (!region->was_promoted_in_place()) {
@@ -724,13 +725,13 @@ bool ShenandoahOldHeuristics::should_resume_old_cycle() {
   // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
   if (_old_generation->is_concurrent_mark_in_progress()) {
     assert(_old_generation->state() == ShenandoahOldGeneration::MARKING, "Unexpected old gen state: %s", _old_generation->state_name());
-    log_trigger("Resume marking old");
+    log_trigger("Resume Marking");
     return true;
   }
 
   if (_old_generation->is_preparing_for_mark()) {
     assert(_old_generation->state() == ShenandoahOldGeneration::FILLING, "Unexpected old gen state: %s", _old_generation->state_name());
-    log_trigger("Resume preparing to mark old");
+    log_trigger("Resume Prepare Marking");
     return true;
   }
 
@@ -750,7 +751,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const size_t old_gen_capacity = _old_generation->max_capacity();
     const size_t heap_capacity = heap->capacity();
     const double percent = percent_of(old_gen_capacity, heap_capacity);
-    log_trigger("Expansion failure, current size: %zu%s which is %.1f%% of total heap size",
+    log_trigger("Handle Expansion Failure. %zu%s (%.1f%%) old generation",
                  byte_size_in_proper_unit(old_gen_capacity), proper_unit_for_byte_size(old_gen_capacity), percent);
     adjust_old_garbage_threshold();
     return true;
@@ -770,9 +771,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const size_t span_of_old_regions = (last_old_region >= first_old_region)? last_old_region + 1 - first_old_region: 0;
     const size_t fragmented_free = used_regions_size - used;
 
-    log_trigger("Old has become fragmented: "
-                "%zu%s available bytes spread between range spanned from "
-                "%zu to %zu (%zu), density: %.1f%%",
+    log_trigger("Fragmentation. %zu%s available in old, [%zu, %zu] (%zu) regions, density: %.1f%%",
                 byte_size_in_proper_unit(fragmented_free), proper_unit_for_byte_size(fragmented_free),
                 first_old_region, last_old_region, span_of_old_regions, density * 100);
     adjust_old_garbage_threshold();
@@ -800,8 +799,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     } else if (current_usage > trigger_threshold) {
       const size_t live_at_previous_old = _old_generation->get_live_bytes_at_last_mark();
       const double percent_growth = percent_of(current_usage - live_at_previous_old, live_at_previous_old);
-      log_trigger("Old has overgrown, live at end of previous OLD marking: "
-                  "%zu%s, current usage: %zu%s, percent growth: %.1f%%",
+      log_trigger("Occupancy. %zu%s live at old mark end, %zu%s used, %.1f%% growth",
                   byte_size_in_proper_unit(live_at_previous_old), proper_unit_for_byte_size(live_at_previous_old),
                   byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage), percent_growth);
       adjust_old_garbage_threshold();
@@ -844,7 +842,7 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
       } else {
         _old_garbage_threshold = ShenandoahOldGarbageThreshold - adjustment_potential / 3;
       }
-      log_info(gc)("Adjusting old garbage threshold to %lu because Old Generation used regions represents %lu%% of heap",
+      log_info(gc, ergo)("Adjusting old garbage threshold to %lu because Old Generation used regions represents %lu%% of heap",
                    _old_garbage_threshold, percent_used);
     }
   }
@@ -856,10 +854,10 @@ void ShenandoahOldHeuristics::record_success_concurrent() {
   this->ShenandoahHeuristics::record_success_concurrent();
 }
 
-void ShenandoahOldHeuristics::record_degenerated() {
+void ShenandoahOldHeuristics::record_degenerated(bool is_generational_global) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_degenerated();
+  this->ShenandoahHeuristics::record_degenerated(is_generational_global);
 }
 
 void ShenandoahOldHeuristics::record_success_full() {

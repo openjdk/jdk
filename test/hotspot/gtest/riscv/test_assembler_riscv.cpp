@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,7 +48,7 @@ class CmovTester {
       _masm.mv(c_rarg0, c_rarg2);
       _masm.ret();
     }
-    _masm.flush(); // icache invalidate
+    _masm.invalidate_icache();
     int64_t ret = ((zicond_func)entry)(a0, a1, a2, a3);
     ASSERT_EQ(ret, result);
     BufferBlob::free(bb);
@@ -175,7 +175,7 @@ class CmpxchgTester {
       _masm.ret();
       _func = ((cmpxchg_func)entry);
     }
-    _masm.flush(); // icache invalidate
+    _masm.invalidate_icache();
   }
 
   ~CmpxchgTester() {
@@ -594,7 +594,7 @@ class WeakCmpxchgTester {
       _masm.ret();
       _weak = ((weak_cmpxchg_func)entry);
     }
-    _masm.flush(); // icache invalidate
+    _masm.invalidate_icache();
   }
 
   TESTSIZE weak_cmpxchg(intptr_t addr, TESTSIZE expected, TESTSIZE new_value) {

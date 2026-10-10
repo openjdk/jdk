@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 
 public final class DirectFieldBuilder
         extends AbstractDirectBuilder<FieldModel>
-        implements TerminalFieldBuilder, Util.Writable {
+        implements TerminalFieldBuilder, WritableField {
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private int flags;
@@ -83,5 +83,21 @@ public final class DirectFieldBuilder
     public void writeTo(BufWriterImpl buf) {
         buf.writeU2U2U2(flags, buf.cpIndex(name), buf.cpIndex(desc));
         attributes.writeTo(buf);
+    }
+
+    // These values must only be accessed after the field is definitely configured
+    @Override
+    public Utf8Entry fieldName() {
+        return name;
+    }
+
+    @Override
+    public Utf8Entry fieldType() {
+        return desc;
+    }
+
+    @Override
+    public int fieldFlags() {
+        return flags;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
 
 #include "runtime/globals_shared.hpp"
 
+#define DEFAULT_SHARED_BASE_ADDRESS (LP64_ONLY(32*G) \
+                                    NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)))
+
 //
 // Defines all globals flags used by CDS.
 //
@@ -51,8 +54,7 @@
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \
-  product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
-          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
+  product(size_t, SharedBaseAddress, DEFAULT_SHARED_BASE_ADDRESS,           \
           "Address to allocate shared memory region for class data")        \
           range(0, SIZE_MAX)                                                \
                                                                             \
@@ -62,11 +64,6 @@
   product(uint, SharedSymbolTableBucketSize, 4,                             \
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
-                                                                            \
-  develop(ccstr, ArchiveHeapTestClass, nullptr,                             \
-          "For JVM internal testing only. The static field named "          \
-          "\"archivedObjects\" of the specified class is stored in the "    \
-          "CDS archive heap")                                               \
                                                                             \
   develop(ccstr, AOTInitTestClass, nullptr,                                 \
           "For JVM internal testing only. The specified class is stored "   \
@@ -150,10 +147,13 @@
   product(bool, AOTVerifyTrainingData, trueInDebug, DIAGNOSTIC,             \
           "Verify archived training data")                                  \
                                                                             \
-  product(bool, AOTCompileEagerly, false, EXPERIMENTAL,                     \
-          "Compile methods as soon as possible")                            \
+  product(bool, AOTCompileEagerly, false, DIAGNOSTIC,                       \
+          "Compile methods as soon as possible during production run")      \
                                                                             \
   /* AOT Code flags */                                                      \
+                                                                            \
+  product(bool, AOTCodeCaching, false, DIAGNOSTIC,                          \
+          "Enable saving and restoring JIT compiled code in AOT cache")     \
                                                                             \
   product(bool, AOTAdapterCaching, false, DIAGNOSTIC,                       \
           "Enable saving and restoring i2c2i adapters in AOT cache")        \
@@ -161,7 +161,7 @@
   product(bool, AOTStubCaching, false, DIAGNOSTIC,                          \
           "Enable saving and restoring stubs and code blobs in AOT cache")  \
                                                                             \
-  product(uint, AOTCodeMaxSize, 10*M, DIAGNOSTIC,                           \
+  product(uint, AOTCodeMaxSize, 512*M, DIAGNOSTIC,                          \
           "Buffer size in bytes for AOT code caching")                      \
           range(1*M, CODE_CACHE_SIZE_LIMIT)                                 \
                                                                             \

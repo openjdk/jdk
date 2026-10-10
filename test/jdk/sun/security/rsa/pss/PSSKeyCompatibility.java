@@ -44,7 +44,6 @@ import java.util.Arrays;
  * @test
  * @bug 8242335
  * @summary OpenSSL generated compatibility test with RSASSA-PSS Java.
- * @enablePreview
  * @run main PSSKeyCompatibility
  */
 
@@ -76,7 +75,7 @@ public class PSSKeyCompatibility {
 
         try {
             final PEMDecoder decoder = PEMDecoder.of()
-                    .withFactory(Security.getProvider(provider));
+                    .withFactoriesOf(Security.getProvider(provider));
             final PrivateKey priv = decoder.decode(
                     type,
                     PrivateKey.class
@@ -119,7 +118,7 @@ public class PSSKeyCompatibility {
             System.out.println(cert);
 
             final PEMDecoder decoder = PEMDecoder.of()
-                    .withFactory(Security.getProvider(provider));
+                    .withFactoriesOf(Security.getProvider(provider));
             final RSAPublicKey pub = decoder.decode(
                     PEMEncoder.of().encodeToString(
                             new X509EncodedKeySpec(

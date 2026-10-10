@@ -581,7 +581,7 @@ public class X509Factory extends CertificateFactorySpi {
                 } catch (EOFException e) {
                     return null;
                 }
-                return Base64.getDecoder().decode(rec.content());
+                return Base64.getMimeDecoder().decode(rec.content());
             } catch (IllegalArgumentException e) {
                 throw new IOException(e);
             }

@@ -64,6 +64,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedKlass.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -298,6 +299,18 @@ class SystemDictionaryShared::ExclusionCheckCandidates
         return true; // Keep iterating.
       });
     }
+
+    // Value fields need to have their layouts preserved between dumptime and runtime.
+    // To ensure this, the types of the fields must be stored in the archive along with
+    // the field holder.
+    if (k->has_flat_fields() || k->has_null_restricted_static_fields()) {
+      for (AllFieldStream fs(k); !fs.done(); fs.next()) {
+        if (fs.is_flat() || fs.is_null_free_value_type()) {
+          ValueKlass* field_klass = k->get_value_type_field_klass(fs.index());
+          add_candidate(InstanceKlass::cast(field_klass));
+        }
+      }
+    }
   }
 
 public:
@@ -517,6 +530,20 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
     if (excluded) {
       // At least one verification constraint class has been excluded
       return true;
+    }
+  }
+
+  // If any of the null restricted or flat field types are excluded, the current
+  // klass must be excluded as well, otherwise there is no guarantee that the
+  // field layouts will be consistent at runtime.
+  if (k->has_flat_fields() || k->has_null_restricted_static_fields()) {
+    for (AllFieldStream fs(k); !fs.done(); fs.next()) {
+      if (fs.is_flat() || fs.is_null_free_value_type()) {
+        ValueKlass* field_klass = k->get_value_type_field_klass(fs.index());
+        if (is_dependency_excluded(k, InstanceKlass::cast(field_klass), "value field type")) {
+          return true;
+        }
+      }
     }
   }
 
@@ -892,7 +919,7 @@ void SystemDictionaryShared::link_all_exclusion_check_candidates(InstanceKlass* 
 // it can be checked by should_be_excluded_impl().
 bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  assert(CDSConfig::current_thread_is_vm_or_dumper(), "sanity");
+  // This method could be called during AOT compilation from compiler thread.
 
   if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(k)) {
     // We have reached a super type that's already in the base archive. Treat it
@@ -1245,8 +1272,8 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
             log.print(" succeeded]");
         }
       }
-      return true; // for all recorded constraints added successfully.
     }
+    return true; // Recorded constraints, if any, have all been added successfully.
   }
   if (log.is_enabled()) {
     ResourceMark rm(current);
