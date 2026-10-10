@@ -483,24 +483,11 @@ void VM_BaseGetOrSetLocal::check_and_clone_this_value_object() {
   Handle obj_h(_calling_thread, obj);
 
   assert(_type == T_OBJECT, "sanity check");
-  assert(obj != nullptr, "expected non-null oop");
-  assert(obj_h()->is_value(), "expected value oop");
   assert(_index == 0, "expected slot 0 for THIS object");
 
-  ValueKlass* klass = ValueKlass::cast(obj_h()->klass());
-  valueOop obj_copy = klass->allocate_instance(_calling_thread);
+  valueOop obj_copy = JvmtiEnvBase::clone_value_object(_calling_thread, obj_h);
   if (obj_copy == nullptr) {
     _result = JVMTI_ERROR_OUT_OF_MEMORY;
-  } else {
-    valueOop thisObj = valueOop(obj_h());
-    // copy object payload into the object snapshot
-    BufferedValuePayload src(thisObj);
-    BufferedValuePayload dst(obj_copy, klass);
-    src.copy_to(dst);
-
-    // Must ensure the content of the buffered value is visible
-    // before publishing the buffered value oop
-    OrderAccess::storestore();
   }
   _value.l = JNIHandles::make_local(_calling_thread, obj_copy);
 }
