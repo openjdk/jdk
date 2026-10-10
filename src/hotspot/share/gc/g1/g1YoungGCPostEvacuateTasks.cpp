@@ -352,11 +352,11 @@ public:
 
   void do_work(uint worker_id) override {
     const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-    const size_t total_chunks = _chunk_bitmap.size();
-    const size_t start_chunk_idx = worker_id * total_chunks / total_workers;
+    const uint64_t total_chunks = _chunk_bitmap.size();
+    const uint64_t start_chunk_idx = worker_id * total_chunks / total_workers;
 
-    for (size_t i = 0; i < total_chunks; i++) {
-      const size_t chunk_idx = (start_chunk_idx + i) % total_chunks;
+    for (uint64_t i = 0; i < total_chunks; i++) {
+      const size_t chunk_idx = (size_t)((start_chunk_idx + i) % total_chunks);
       if (claim_chunk(chunk_idx)) {
         process_chunk(worker_id, chunk_idx);
       }
