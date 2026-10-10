@@ -41,6 +41,8 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.Date;
@@ -1303,20 +1305,7 @@ public class SimpleDateFormat extends DateFormat {
                 int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
                 int dstOffset = calendar.get(Calendar.DST_OFFSET) + zoneOffset;
 
-                ZoneOffset explicitDstOffset = null;
-                // Check if an explicit metazone DST offset exists.
-                // Only check against instances of ZoneInfo, since the standard JDK timezones
-                // are guaranteed to extend this internal type.
-                if (tz instanceof ZoneInfo zi) {
-                    explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
-                    if (explicitDstOffset != null) {
-                        // The time zone ID has an explicit dst offset. Ensure that
-                        // our current TimeZone is canonical.
-                        if (!ZoneInfo.hasCanonicalRule(zi)) {
-                            explicitDstOffset = null;
-                        }
-                    }
-                }
+                ZoneOffset explicitDstOffset = getExplicitDstOffset(tz);
                 boolean daylight = explicitDstOffset != null ?
                     dstOffset == explicitDstOffset.getTotalSeconds() * 1_000 :
                     dstOffset != zoneOffset;
@@ -1528,6 +1517,7 @@ public class SimpleDateFormat extends DateFormat {
         int textLength = text.length();
 
         boolean[] ambiguousYear = {false};
+        int[] matchedName = {0};
 
         CalendarBuilder calb = new CalendarBuilder();
 
@@ -1599,7 +1589,7 @@ public class SimpleDateFormat extends DateFormat {
                     }
                 }
                 start = subParse(text, start, tag, count, obeyCount,
-                                 ambiguousYear, pos,
+                                 ambiguousYear, matchedName, pos,
                                  useFollowingMinusSignAsDelimiter, calb);
                 if (start < 0) {
                     pos.index = oldStart;
@@ -1616,12 +1606,15 @@ public class SimpleDateFormat extends DateFormat {
 
         Date parsedDate;
         try {
-            parsedDate = calb.establish(calendar).getTime();
+            parsedDate = resolveExplicitDstOffset(
+                    calb, matchedName, calb.establish(calendar).getTime());
+
             // If the year value is ambiguous,
             // then the two-digit year == the default start year
             if (ambiguousYear[0]) {
                 if (parsedDate.before(defaultCenturyStart)) {
-                    parsedDate = calb.addYear(100).establish(calendar).getTime();
+                    parsedDate = resolveExplicitDstOffset(calb,
+                            matchedName, calb.addYear(100).establish(calendar).getTime());
                 }
             }
         }
@@ -1788,7 +1781,7 @@ public class SimpleDateFormat extends DateFormat {
      * find time zone 'text' matched zoneStrings and set to internal
      * calendar.
      */
-    private int subParseZoneString(String text, int start, CalendarBuilder calb) {
+    private int subParseZoneString(String text, int start, CalendarBuilder calb, int[] matchedName) {
         boolean useSameName = false; // true if standard and daylight time use the same abbreviation.
         TimeZone currentTimeZone = getTimeZone();
 
@@ -1840,15 +1833,30 @@ public class SimpleDateFormat extends DateFormat {
             if (!tz.equals(currentTimeZone)) {
                 setTimeZone(tz);
             }
-            // If the time zone matched uses the same name
-            // (abbreviation) for both standard and daylight time,
-            // let the time zone in the Calendar decide which one.
-            //
-            // Also if tz.getDSTSaving() returns 0 for DST, use tz to
-            // determine the local time. (6645292)
-            int dstAmount = (nameIndex >= 3) ? tz.getDSTSavings() : 0;
-            if (!(useSameName || (nameIndex >= 3 && dstAmount == 0))) {
-                calb.clear(Calendar.ZONE_OFFSET).set(Calendar.DST_OFFSET, dstAmount);
+            matchedName[0] = 0;
+            ZoneOffset explicitDstOffset = getExplicitDstOffset(tz);
+            // If we have an explicit dstOffset, let the zone rules determine
+            // the eventual offset instead of the parsed zone name from the text.
+            // Note that we retain the matched name to handle the transition period.
+            if (explicitDstOffset == null) {
+                // If the time zone matched uses the same name
+                // (abbreviation) for both standard and daylight time,
+                // let the time zone in the Calendar decide which one.
+                //
+                // Also if tz.getDSTSaving() returns 0 for DST, use tz to
+                // determine the local time. (6645292)
+                int dstAmount = (nameIndex >= 3) ? tz.getDSTSavings() : 0;
+                if (!(useSameName || (nameIndex >= 3 && dstAmount == 0))) {
+                    calb.clear(Calendar.ZONE_OFFSET).set(Calendar.DST_OFFSET, dstAmount);
+                }
+            } else {
+                // If the names are identical, they cannot be used to help resolve
+                // the correct offset during the transition period. (Practically, this
+                // will likely never happen for an explicit dstOffset CLDR zone).
+                if (!useSameName) {
+                    matchedName[0] = nameIndex < 3 ? 1 : 2;
+                    calb.clear(Calendar.ZONE_OFFSET).clear(Calendar.DST_OFFSET);
+                }
             }
             return (start + zoneNames[nameIndex].length());
         }
@@ -1941,6 +1949,9 @@ public class SimpleDateFormat extends DateFormat {
      * and we should use the count to know when to stop parsing.
      * @param ambiguousYear return parameter; upon return, if ambiguousYear[0]
      * is true, then a two-digit year was parsed and may need to be readjusted.
+     * @param matchedName return parameter; upon return, if matchedName[0]
+     * is 0, then either the names were identical or no name was matched. If
+     * 1, then a standard name was matched, and if 2, then a daylight name was matched.
      * @param origPos origPos.errorIndex is used to return an error index
      * at which a parse error occurred, if matching failure occurs.
      * @return the new start position if matching succeeded; -1 indicating
@@ -1948,7 +1959,7 @@ public class SimpleDateFormat extends DateFormat {
      * an error index is set to origPos.errorIndex.
      */
     private int subParse(String text, int start, int patternCharIndex, int count,
-                         boolean obeyCount, boolean[] ambiguousYear,
+                         boolean obeyCount, boolean[] ambiguousYear, int[] matchedName,
                          ParsePosition origPos,
                          boolean useFollowingMinusSignAsDelimiter, CalendarBuilder calb) {
         Number number;
@@ -2233,7 +2244,7 @@ public class SimpleDateFormat extends DateFormat {
                             } else {
                                 // Try parsing the text as a time zone
                                 // name or abbreviation.
-                                int i = subParseZoneString(text, pos.index, calb);
+                                int i = subParseZoneString(text, pos.index, calb, matchedName);
                                 if (i > 0) {
                                     return i;
                                 }
@@ -2549,6 +2560,59 @@ public class SimpleDateFormat extends DateFormat {
             map.putAll(m);
         }
         return map;
+    }
+
+    /**
+     * Obtains the dstOffset for a time zone if it exists, otherwise null.
+     */
+    private ZoneOffset getExplicitDstOffset(TimeZone tz) {
+        ZoneOffset explicitDstOffset = null;
+        // Check if an explicit metazone DST offset exists.
+        // Only check against instances of ZoneInfo, since the standard JDK timezones
+        // are guaranteed to extend this internal type.
+        if (tz instanceof ZoneInfo zi) {
+            explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tz.getID());
+            if (explicitDstOffset != null) {
+                // The time zone ID has an explicit dst offset. Ensure that
+                // our current TimeZone is canonical.
+                if (!ZoneInfo.hasCanonicalRule(zi)) {
+                    explicitDstOffset = null;
+                }
+            }
+        }
+        return explicitDstOffset;
+    }
+
+    /**
+     * Apply the explicit dst offset if the zone is applicable and is needed to resolve
+     * an ambiguous date during a transition period. This method does nothing to the passed date
+     * if none of the preconditions are relevant, which occurs for the majority of cases.
+     */
+    private Date resolveExplicitDstOffset(CalendarBuilder calb, int[] matchedName, Date parsedDate) {
+        // For explicit dstOffset cases, we need to use the name in the text
+        // to determine which offset to use during transition periods.
+        var tz = calendar.getTimeZone();
+        ZoneOffset explicitDstOffset;
+        if (!calb.isSet(Calendar.ZONE_OFFSET) && matchedName[0] != 0
+                && (explicitDstOffset = getExplicitDstOffset(tz)) != null) {
+            var ldt = LocalDateTime.ofInstant(parsedDate.toInstant(), tz.toZoneId());
+            var offs = tz.toZoneId().getRules().getValidOffsets(ldt);
+            // If size is 2, then we have multiple offsets at the date, implying
+            // a transition period. Pick the offset that aligns with the matched name.
+            if (offs.size() == 2 && offs.contains(explicitDstOffset)) {
+                if (matchedName[0] == 1) {
+                    // standard
+                    var stdOffset = explicitDstOffset.equals(offs.get(0)) ?
+                            offs.get(1) : offs.get(0);
+                    parsedDate = Date.from(Instant.from(ldt.atOffset(stdOffset)));
+                } else if (matchedName[0] == 2) {
+                    // daylight
+                    parsedDate = Date.from(Instant.from(ldt.atOffset(explicitDstOffset)));
+                }
+                calendar.setTime(parsedDate);
+            }
+        }
+        return parsedDate;
     }
 
     /**
