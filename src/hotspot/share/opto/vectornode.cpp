@@ -210,9 +210,11 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_ReverseBytesL:
     return (bt == T_LONG ? Op_ReverseBytesV : 0);
   case Op_CompressBits:
-    return (bt == T_INT || bt == T_LONG ? Op_CompressBitsV : 0);
+    return (bt == T_BYTE || bt == T_SHORT ||
+            bt == T_INT  || bt == T_LONG ? Op_CompressBitsV : 0);
   case Op_ExpandBits:
-    return (bt == T_INT || bt == T_LONG ? Op_ExpandBitsV : 0);
+    return (bt == T_BYTE || bt == T_SHORT ||
+            bt == T_INT  || bt == T_LONG ? Op_ExpandBitsV : 0);
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:

@@ -2139,6 +2139,22 @@ relativeError));
 #end[intOrLong]
     }
 
+    static $type$ compress($type$ a, $type$ b) {
+#if[intOrLong]
+        return $Wideboxtype$.compress(a, b);
+#else[intOrLong]
+        return ($type$) Integer.compress(a & ((1 << $Boxtype$.SIZE) - 1), b & ((1 << $Boxtype$.SIZE) - 1));
+#end[intOrLong]
+    }
+
+    static $type$ expand($type$ a, $type$ b) {
+#if[intOrLong]
+        return $Wideboxtype$.expand(a, b);
+#else[intOrLong]
+        return ($type$) Integer.expand(a & ((1 << $Boxtype$.SIZE) - 1), b & ((1 << $Boxtype$.SIZE) - 1));
+#end[intOrLong]
+    }
+
     static $type$ REVERSE_scalar($type$ a) {
 #if[intOrLong]
         return $Wideboxtype$.reverse(a);
