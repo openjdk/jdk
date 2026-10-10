@@ -833,6 +833,12 @@ public class TestFramework {
                 System.out.println("Scenario #" + scenario.getIndex() + scenarioFlagsString + ":");
                 additionalFlags.addAll(scenarioFlags);
             }
+            String seedOption = "-D" + Utils.SEED_PROPERTY_NAME + "=";
+            if (Stream.concat(Arrays.stream(Utils.getTestJavaOpts()), additionalFlags.stream())
+                      .noneMatch(flag -> flag.startsWith(seedOption))) {
+                // Use the driver seed in both child VMs unless explicitly overridden.
+                additionalFlags.add(seedOption + Utils.SEED);
+            }
             String frameworkAndScenarioFlags = additionalFlags.isEmpty() ?
                     "" : " - [" + String.join(", ", additionalFlags) + "]";
 
