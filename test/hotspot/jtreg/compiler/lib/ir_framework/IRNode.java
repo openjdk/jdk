@@ -1915,6 +1915,11 @@ public class IRNode {
         trapNodes(SHORT_RUNNING_LOOP_TRAP, "short_running_loop");
     }
 
+    public static final String LOOP_LIMIT_CHECK_TRAP = PREFIX + "LOOP_LIMIT_CHECK_TRAP" + POSTFIX;
+    static {
+        trapNodes(LOOP_LIMIT_CHECK_TRAP, "loop_limit_check");
+    }
+
     public static final String REINTERPRET_S2HF = PREFIX + "REINTERPRET_S2HF" + POSTFIX;
     static {
         beforeMatchingNameRegex(REINTERPRET_S2HF, "ReinterpretS2HF");
