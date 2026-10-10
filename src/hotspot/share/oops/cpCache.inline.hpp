@@ -27,7 +27,7 @@
 
 #include "oops/cpCache.hpp"
 
-#include "oops/oopCast.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"

@@ -46,7 +46,6 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/valueKlass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
