@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2021, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 
 /*
  * @test TestInvalidCompileCommand
- * @bug 8263206 8263353
+ * @bug 8263206 8263353 8382623
  * @summary Regression tests of -XX:CompileCommand
  * @library /test/lib
  * @requires vm.flagless
@@ -41,6 +41,10 @@ public class TestInvalidCompileCommand {
     private static final String[][] ARGUMENTS = {
         {
             "-XX:CompileCommand=unknown",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=*::test",
             "-version"
         },
         {
@@ -64,6 +68,10 @@ public class TestInvalidCompileCommand {
     private static final String[][] OUTPUTS = {
         {
             "Unrecognized option 'unknown'"
+        },
+        {
+            "Option name should be alphanumeric",
+            "Line: '*::test'"
         },
         {
             "Missing type 'double' before option 'CompileThresholdScaling'"
