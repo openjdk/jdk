@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.function.Function;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -55,6 +56,7 @@ import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -92,6 +94,11 @@ class ExpressionToTypeInfo {
         this.enhancedTypesAccessible = enhancedTypesAccessible;
         this.syms = Symtab.instance(at.context);
         this.types = Types.instance(at.context);
+    }
+
+    public static record BindingInfo(String bindingName, String declareTypeName, String fullTypeName, String displayTypeName) {
+        BindingInfo(String name, String type) { this(name, type, type, type); }
+        boolean hasEnhancedType() {return !declareTypeName.equals(fullTypeName); }
     }
 
     public static class ExpressionInfo {
@@ -276,6 +283,37 @@ class ExpressionToTypeInfo {
         }
     }
 
+    public static java.util.List<BindingInfo> enhancedLocalVariableDeclInferBindings(String code, JShell state, boolean onlyAccessible) {
+        if (code == null || code.isEmpty()) {
+            return null;
+        }
+        try {
+            OuterWrap codeWrap = state.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
+            return state.taskFactory.analyze(codeWrap, at -> {
+                CompilationUnitTree cu = at.firstCuTree();
+                if (at.hasErrors() || cu == null) {
+                    return null;
+                }
+                Tree firstStatement = TreeDissector.createByFirstClass(at).firstStatement();
+                if (firstStatement instanceof JCTree.JCEnhancedVariableDeclaration enhancedVariableDecl) {
+                    java.util.List<BindingInfo> ret = new ArrayList<BindingInfo>();
+                    Eval.gatherBindings(enhancedVariableDecl.pattern, jcBindingPattern -> {
+                        BindingInfo bindingInfo =
+                                new ExpressionToTypeInfo(at, cu, state, true, false)
+                                        .bindingPatternToInfo(jcBindingPattern);
+                        if (bindingInfo != null) {
+                           ret.add(bindingInfo);
+                        }
+                    });
+                    return ret;
+                }
+                return null;
+            });
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
     /**List (in a stable order) all NewClassTree instances under {@code from} that should be
      * converted to member classes
      *
@@ -375,6 +413,40 @@ class ExpressionToTypeInfo {
         }
 
         return accessible.reverse();
+    }
+
+    private BindingInfo bindingPatternToInfo(JCTree.JCBindingPattern bindingPattern) {
+        String name = bindingPattern.var.getName().toString();
+        Type type = bindingPattern.var.sym != null ? bindingPattern.var.sym.type : bindingPattern.var.type;
+        if (name.isEmpty() || type == null) {
+            return null;
+        }
+        String declareTypeName;
+        String fullTypeName;
+        String displayTypeName;
+        switch (type.getKind()) {
+            case VOID:
+            case NONE:
+            case ERROR:
+            case OTHER:
+                return null;
+            case NULL:
+                declareTypeName = fullTypeName = displayTypeName = OBJECT_TYPE_NAME;
+                break;
+            default:
+                List<Type> accessibleTypes = findAccessibleSupertypes(type);
+                Type accessibleType = accessibleTypes.size() == 1
+                        ? accessibleTypes.head
+                        : types.makeIntersectionType(accessibleTypes);
+                declareTypeName =
+                        varTypeName(accessibleType, (full, pkg) -> full, false, AnonymousTypeKind.DECLARE);
+                fullTypeName =
+                        varTypeName(type, (full, pkg) -> full, true, AnonymousTypeKind.DECLARE);
+                displayTypeName =
+                        varTypeName(type, true, AnonymousTypeKind.DISPLAY);
+                break;
+        }
+        return new BindingInfo(name, declareTypeName, fullTypeName, displayTypeName);
     }
 
     private ExpressionInfo treeToInfo(TreePath tp) {

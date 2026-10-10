@@ -85,8 +85,12 @@ public abstract class DeclarationSnippet extends PersistentSnippet {
         return bodyReferences;
     }
 
+    final String staticImportLine(String memberName) {
+        return "import static " + classFullName() + "." + memberName + ";  ";
+    }
+
     @Override
     String importLine(JShell state) {
-        return "import static " + classFullName() + "." + name() + ";  ";
+        return staticImportLine(name());
     }
 }
