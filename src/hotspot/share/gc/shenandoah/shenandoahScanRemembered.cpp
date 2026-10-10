@@ -779,11 +779,10 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 }
 
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
-                                                           ShenandoahObjToScanQueueSet* old_queue_set,
                                                            ShenandoahReferenceProcessor* rp,
                                                            ShenandoahRegionChunkIterator* work_list, bool is_concurrent) :
   WorkerTask("Scan Remembered Set"),
-  _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
+  _queue_set(queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
   bool old_bitmap_stable = ShenandoahHeap::heap()->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
 }
@@ -805,23 +804,21 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::Work, worker_id);
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahObjToScanQueue* old = _old_queue_set == nullptr ? nullptr : _old_queue_set->queue(worker_id);
-  ShenandoahRedirtyCardsMarkClosure cl(q, _rp, old);
+  ShenandoahRedirtyCardsMarkClosure cl(q, _rp);
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
 
   // set up thread local closure for shen ref processor
   _rp->set_mark_closure(worker_id, &cl);
-  struct ShenandoahRegionChunk assignment;
+  ShenandoahRegionChunk assignment;
   while (_work_list->next(&assignment)) {
     ShenandoahHeapRegion* region = assignment._r;
     log_debug(gc, remset)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
                           "%zu at offset %zu, size: %zu",
                           worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
     if (region->is_old()) {
-      size_t cluster_size =
-        CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-      size_t clusters = assignment._chunk_size / cluster_size;
+      const size_t cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+      const size_t clusters = assignment._chunk_size / cluster_size;
       assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignments must align on cluster boundaries");
       HeapWord* end_of_range = region->bottom() + assignment._chunk_offset + assignment._chunk_size;
 
@@ -831,16 +828,6 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
       }
       scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, worker_id);
     }
-#ifdef ENABLE_REMEMBERED_SET_CANCELLATION
-    // This check is currently disabled to avoid crashes that occur
-    // when we try to cancel remembered set scanning; it should be re-enabled
-    // after the issues are fixed, as it would allow more prompt cancellation and
-    // transition to degenerated / full GCs. Note that work that has been assigned/
-    // claimed above must be completed before we return here upon cancellation.
-    if (heap->check_cancelled_gc_and_yield(_is_concurrent)) {
-      return;
-    }
-#endif
   }
 }
 
