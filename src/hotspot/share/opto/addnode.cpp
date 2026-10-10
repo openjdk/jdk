@@ -127,11 +127,12 @@ static bool commute(PhaseGVN* phase, Node* add) {
   return false;
 }
 
-//------------------------------Idealize---------------------------------------
-// If we get here, we assume we are associative!
-Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  const Type *t1 = phase->type(in(1));
-  const Type *t2 = phase->type(in(2));
+// If we get here, we assume '+' is
+// - associative: (a + b) + c = a + (b + c)
+// - commutative: a + b = b + a
+Node* AddNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
   bool con_left  = t1->singleton();
   bool con_right = t2->singleton();
 
@@ -296,28 +297,62 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       // Check for dead cycle: d = (a-b)+(c-d)
       assert( in1->in(2) != this && in2->in(2) != this,
               "dead loop in AddINode::Ideal" );
-      Node* sub = SubNode::make(nullptr, nullptr, bt);
-      Node* sub_in1;
+      if (can_reshape == false) {
+        phase->record_for_igvn(this);
+        return nullptr;
+      }
       PhaseIterGVN* igvn = phase->is_IterGVN();
+      assert(igvn != nullptr, "should be IGVN now");
+
+      // This transformation can create 3 nodes out of the current one. It also lays a good structure
+      // for the same rule to apply again. Even if termination is guaranteed, in some cases, we can
+      // create an exponential amount of nodes before simplifying them. Let's try to avoid that by
+      // reusing existing nodes as much as possible.
+      auto find_add_sub_or_make_it = [&](Node* lhs, Node* rhs, bool is_sub, bool& fresh) -> Node* {
+        int desired_opcode = is_sub ? Op_Sub(bt) : Op_Add(bt);
+        for (DUIterator_Fast imax, i = lhs->fast_outs(imax); i < imax; i++) {
+          Node* candidate = lhs->fast_out(i);
+          if (candidate->Opcode() == desired_opcode
+              && candidate->in(1) == lhs
+              && candidate->in(2) == rhs
+          ) {
+            fresh = false;
+            return candidate;
+          }
+        }
+        fresh = true;
+        return is_sub ? static_cast<Node*>(SubNode::make(lhs, rhs, bt)) : AddNode::make(lhs, rhs, bt);
+      };
+
       // During IGVN, if both inputs of the new AddNode are a tree of SubNodes, this same transformation will be applied
       // to every node of the tree. Calling transform() causes the transformation to be applied recursively, once per
       // tree node whether some subtrees are identical or not. Pushing to the IGVN worklist instead, causes the transform
       // to be applied once per unique subtrees (because all uses of a subtree are updated with the result of the
       // transformation). In case of a large tree, this can make a difference in compilation time.
-      if (igvn != nullptr) {
-        sub_in1 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(1), in2->in(1), bt));
+      auto transform = [&](Node* node) -> Node* {
+        phase->ensure_type_or_null(node);
+        if (phase->type_or_null(node) == nullptr) {
+          return igvn->register_new_node_with_optimizer(node);
+        }
+        return node;
+      };
+
+      bool fresh;
+      Node* sub_in1 = find_add_sub_or_make_it(in1->in(1), in2->in(1), false, fresh /*ignored*/);
+      sub_in1 = transform(sub_in1);
+      Node* sub_in2 = find_add_sub_or_make_it(in1->in(2), in2->in(2), false,  fresh /*ignored*/);
+      sub_in2 = transform(sub_in2);
+      Node* sub = find_add_sub_or_make_it(sub_in1, sub_in2, true, fresh);
+      if (fresh) {
+        return sub;
       } else {
-        sub_in1 = phase->transform(AddNode::make(in1->in(1), in2->in(1), bt));
+        // Let's cheat with IGVN to be able to return an old node.
+        sub = transform(sub);
+        const TypeTuple* t = bt == T_INT ? TypeTuple::INT_UNARY_TUPLE : TypeTuple::LONG_UNARY_TUPLE;
+        Node* tuple = TupleNode::make(t, nullptr, sub);
+        tuple = igvn->register_new_node_with_optimizer(tuple);
+        return new ProjNode(tuple, 0);
       }
-      Node* sub_in2;
-      if (igvn != nullptr) {
-        sub_in2 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(2), in2->in(2), bt));
-      } else {
-        sub_in2 = phase->transform(AddNode::make(in1->in(2), in2->in(2), bt));
-      }
-      sub->init_req(1, sub_in1);
-      sub->init_req(2, sub_in2);
-      return sub;
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
     if (op2 == Op_Add(bt) && in1->in(2) == in2->in(1)) {
@@ -343,7 +378,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     return AddNode::make(phase->transform(SubNode::make(in1, in2->in(2), bt)), in2->in(1), bt);
   }
 
-  // Associative
+  // Distributivity of * over + (also uses commutativity of *)
   if (op1 == Op_Mul(bt) && op2 == Op_Mul(bt)) {
     Node* add_in1 = nullptr;
     Node* add_in2 = nullptr;

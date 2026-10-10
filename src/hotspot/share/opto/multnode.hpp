@@ -306,6 +306,9 @@ public:
     return tn;
   }
 
+  [[nodiscard]] bool is_CFG() const override {
+    return _tf->cnt() > TypeFunc::Control && _tf->field_at(TypeFunc::Control) == Type::CONTROL;
+  }
   int            Opcode()      const override;
   const Type*    bottom_type() const override { return _tf; }
   const TypePtr* adr_type()    const override { return _adr_type; }
