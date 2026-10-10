@@ -117,7 +117,7 @@ public class HeapDumpParallelTest {
             test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, false);
 
             // Expect parallel dump
-            test(heapDumpFile, "-gz=9 -overwrite -parallel=2", false);
+            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + Math.max(Runtime.getRuntime().availableProcessors(), 2), false);
         } finally {
             theApp.stopApp();
         }
