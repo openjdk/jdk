@@ -1711,7 +1711,7 @@ void PSParallelCompact::verify_regions_after_compaction() {
     // [new_top_region, old_top_region) must be empty.
     for (cur_region = new_top_region; cur_region < old_top_region; ++cur_region) {
       const RegionData* const c = sd.region(cur_region);
-      assert(c->available(), "region %zu not empty: destination_count=%u",
+      assert(c->available() && c->is_init(), "region %zu not empty: destination_count=%u",
              cur_region, c->destination_count());
     }
   }
@@ -1728,7 +1728,7 @@ void PSParallelCompact::verify_regions_after_compaction() {
 
     for (size_t cur_region = beg_region; cur_region < end_region; ++cur_region) {
       const RegionData* const c = sd.region(cur_region);
-      assert(c->available(), "region %zu not empty: destination_count=%u",
+      assert(c->available() && c->is_init(), "region %zu not empty: destination_count=%u",
              cur_region, c->destination_count());
     }
   }

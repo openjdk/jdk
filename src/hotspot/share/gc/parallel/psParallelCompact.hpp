@@ -125,7 +125,7 @@ public:
     // During compaction as regions are emptied, the destination_count is
     // decremented atomically. When it reaches 0, the region has no remaining
     // destination dependencies.
-    uint destination_count() const { return state_dcount(state()); }
+    uint destination_count() const { return state_dest_count(state()); }
 
     // Whether this region has no remaining destination dependencies or has been completed.
     bool available() const { return destination_count() == 0; }
@@ -160,6 +160,7 @@ public:
     inline bool mark_shadow_filled();
     // Special case: see PSParallelCompact::fill_and_update_shadow_region.
     inline void shadow_to_normal();
+    bool is_init() const { return state_status(state()) == status_init; }
     bool is_normal() const { return state_status(state()) == status_normal; }
     bool is_shadow() const { return state_status(state()) == status_shadow; }
 
@@ -175,39 +176,39 @@ public:
 
     // Layout of _state:
     //
-    //    31-5     4-2      1-0
-    // +--------+--------+--------+
-    //   unused   status   dcount
-    // +--------+--------+--------+
-    // |        |        |        |
-    // |        |        |* 1-0 dcount: destination regions still to be copied
-    //                                  from this source region (0-2)
+    //    31-5      4-2       1-0
+    // +--------+---------+----------+
+    //   unused   status   dest_count
+    // +--------+---------+----------+
+    // |        |         |          |
+    // |        |         |* 1-0 dest_count: destination regions still to be copied
+    // |        |         |                  from this source region (0-2)
     // |        |* 2-4 status: compaction path progress, see StateBits
     // |* 5-31 unused
     //
     // Complete status routes:
     //   1. Normal fill, initially or later available:
-    //     status_unused -> status_normal -> status_completed
-    //     The first transition happens during initial task setup or when dcount reaches 0.
+    //     status_init -> status_normal -> status_completed
+    //     The first transition happens during initial task setup or when dest_count reaches 0.
     //
-    //   2. Shadow selected, but no shadow region is available when dcount reaches 0:
-    //     status_unused -> status_shadow -> status_normal -> status_completed
-    //     status_shadow with dcount 0 can fall back to normal filling.
+    //   2. Shadow selected, but no shadow region is available when dest_count reaches 0:
+    //     status_init -> status_shadow -> status_normal -> status_completed
+    //     status_shadow with dest_count 0 can fall back to normal filling.
     //
-    //   3. Shadow fill completes before dcount reaches 0:
-    //     status_unused -> status_shadow -> status_filled_shadow -> status_completed
-    //     The last transition happens when dcount reaches 0 and the filled shadow is copied back.
+    //   3. Shadow fill completes before dest_count reaches 0:
+    //     status_init -> status_shadow -> status_filled_shadow -> status_completed
+    //     The last transition happens when dest_count reaches 0 and the filled shadow is copied back.
     //
-    //   4. Dcount reaches 0 before shadow fill completes:
-    //     status_unused -> status_shadow -> status_completed
+    //   4. Dest_count reaches 0 before shadow fill completes:
+    //     status_init -> status_shadow -> status_completed
     //     The last transition happens when shadow fill completes and is copied back immediately.
     enum StateBits : state_t {
       max_destination_count = 2,
-      dcount_mask = 0x3,
+      dest_count_mask = 0x3,
       status_shift = 2,
       status_mask = 0x7 << status_shift,
 
-      status_unused = 0 << status_shift,
+      status_init = 0 << status_shift,
       status_normal = 1 << status_shift,
       status_shadow = 2 << status_shift,
       status_filled_shadow = 3 << status_shift,
@@ -216,10 +217,10 @@ public:
 
     // The destination count occupies the low status_shift bits, so decrementing the whole
     // word in decrement_destination_count() decrements the count alone.
-    static_assert(dcount_mask == ((1U << status_shift) - 1),
-                  "dcount field width must equal status_shift");
-    static_assert(max_destination_count <= dcount_mask,
-                  "max_destination_count must fit in the dcount field");
+    static_assert(dest_count_mask == ((1U << status_shift) - 1),
+                  "dest_count field width must equal status_shift");
+    static_assert(max_destination_count <= dest_count_mask,
+                  "max_destination_count must fit in the dest_count field");
 
     HeapWord*            _destination;
     size_t               _source_region;
@@ -229,13 +230,13 @@ public:
     Atomic<state_t>      _state;
 
     state_t state() const { return _state.load_relaxed(); }
-    static state_t make_state(state_t dcount, state_t status) {
-      return dcount | status;
+    static state_t make_state(state_t dest_count, state_t status) {
+      return dest_count | status;
     }
-    static state_t state_dcount(state_t state) { return state & dcount_mask; }
+    static state_t state_dest_count(state_t state) { return state & dest_count_mask; }
     static state_t state_status(state_t state) { return state & status_mask; }
-    static state_t with_dcount(state_t state, state_t dcount) {
-      return (state & ~dcount_mask) | dcount;
+    static state_t with_dest_count(state_t state, state_t dest_count) {
+      return (state & ~dest_count_mask) | dest_count;
     }
     static state_t with_status(state_t state, state_t status) {
       return (state & ~status_mask) | status;
@@ -301,14 +302,14 @@ ParallelCompactData::RegionData::set_destination_count(uint count)
 {
   assert(count <= max_destination_count, "count too large");
   const state_t old_state = state();
-  assert(state_status(old_state) == status_unused, "cannot reset processed region");
-  _state.store_relaxed(with_dcount(old_state, static_cast<state_t>(count)));
+  assert(state_status(old_state) == status_init, "cannot reset processed region");
+  _state.store_relaxed(with_dest_count(old_state, static_cast<state_t>(count)));
 }
 
 inline void ParallelCompactData::RegionData::decrement_destination_count()
 {
   state_t old_state = _state.fetch_then_sub(static_cast<state_t>(1));
-  assert(state_dcount(old_state) > 0, "count would go negative");
+  assert(state_dest_count(old_state) > 0, "count would go negative");
 }
 
 inline void ParallelCompactData::RegionData::set_completed()
@@ -321,8 +322,8 @@ inline void ParallelCompactData::RegionData::set_completed()
 inline bool ParallelCompactData::RegionData::available_to_normal()
 {
   const state_t old_state = state();
-  assert(state_status(old_state) == status_unused, "initial regions must be unprocessed");
-  if (state_dcount(old_state) == 0) {
+  assert(state_status(old_state) == status_init, "initial regions must be unprocessed");
+  if (state_dest_count(old_state) == 0) {
     _state.store_relaxed(make_state(0, status_normal));
     return true;
   }
@@ -332,7 +333,7 @@ inline bool ParallelCompactData::RegionData::available_to_normal()
 inline bool ParallelCompactData::RegionData::try_mark_normal()
 {
   assert(available(), "region must have no remaining destination dependencies");
-  return _state.compare_set(make_state(0, status_unused), make_state(0, status_normal));
+  return _state.compare_set(make_state(0, status_init), make_state(0, status_normal));
 }
 
 inline bool ParallelCompactData::RegionData::try_complete_filled_shadow()
@@ -344,8 +345,8 @@ inline bool ParallelCompactData::RegionData::try_complete_filled_shadow()
 inline bool ParallelCompactData::RegionData::try_mark_shadow() {
   state_t old_state = state();
   while (true) {
-    if (state_dcount(old_state) == 0 ||
-        state_status(old_state) != status_unused) {
+    if (state_dest_count(old_state) == 0 ||
+        state_status(old_state) != status_init) {
       return false;
     }
     const state_t new_state = with_status(old_state, status_shadow);
@@ -362,7 +363,7 @@ inline bool ParallelCompactData::RegionData::mark_shadow_filled() {
     state_t new_state;
     bool copy_now = false;
     assert(state_status(old_state) == status_shadow, "must be shadow");
-    if (state_dcount(old_state) == 0) {
+    if (state_dest_count(old_state) == 0) {
       new_state = with_status(old_state, status_completed);
       copy_now = true;
     } else {
