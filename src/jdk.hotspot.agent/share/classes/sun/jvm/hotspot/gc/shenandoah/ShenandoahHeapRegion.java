@@ -62,6 +62,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
 
     private static AddressField BottomField;
     private static AddressField TopField;
+    private static AddressField AtomicTopField;
     private static AddressField EndField;
 
     private ShenandoahHeap heap;
@@ -81,6 +82,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
         RegionIndexField = type.getCIntegerField("_index");
         BottomField = type.getAddressField("_bottom");
         TopField = type.getAddressField("_top");
+        AtomicTopField = type.getAddressField("_atomic_top");
         EndField = type.getAddressField("_end");
 
         RegionSizeBytesShiftField = type.getCIntegerField("RegionSizeBytesShift");
@@ -118,11 +120,33 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
     }
 
     public Address top() {
-        return TopField.getValue(addr);
+        // Mirrors the C++ ShenandoahHeapRegion::top(): _atomic_top is the
+        // authoritative top while the region is an active CAS alloc region,
+        // otherwise _top is authoritative.
+        Address atomicTop = AtomicTopField.getValue(addr);
+        return atomicTop != null ? atomicTop : TopField.getValue(addr);
     }
 
     public Address end() {
         return EndField.getValue(addr);
+    }
+
+    // True iff this region is an active CAS alloc region (its _atomic_top is set). Mirrors the C++
+    // ShenandoahHeapRegion::is_atomic_alloc_region().
+    public boolean isAtomicAllocRegion() {
+        return AtomicTopField.getValue(addr) != null;
+    }
+
+    // For an active CAS alloc region, the bytes pre-charged to the partition's used at reserve time
+    // that have not yet been consumed (end - _atomic_top). Zero for any other region. The in-process
+    // ShenandoahFreeSet subtracts the sum of this across regions from its raw stored used (see
+    // alloc_region_correction / corrected_used); the SA mirrors that so jhsdb reports the same used.
+    public long remnantBytes() {
+        Address atomicTop = AtomicTopField.getValue(addr);
+        if (atomicTop == null) {
+            return 0;
+        }
+        return EndField.getValue(addr).minus(atomicTop);
     }
 
     @Override
