@@ -1961,7 +1961,7 @@ public:
 
   void operator()(G1TaskQueueEntry task_entry) const {
     oop obj = task_entry.is_partial_array_state()
-            ? task_entry.to_partial_array_state()->source()
+            ? task_entry.to_partial_array_state()->array()
             : task_entry.to_oop();
     guarantee(oopDesc::is_oop(obj),
               "Non-oop " PTR_FORMAT ", location: %s, index: %d",
@@ -2451,26 +2451,24 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
-  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj, nullptr, array_length, ObjArrayMarkingStride);
+  PartialArraySplitter::Claim chunk = _partial_array_splitter.start(_task_queue, obj, array_length, ObjArrayMarkingStride);
 
-  process_array_chunk(obj, 0, initial_chunk_size);
+  process_array_chunk(chunk._array, chunk._start, chunk._end);
 
   // Include object header size
   if (obj->is_refArray()) {
-    return refArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+    return refArrayOopDesc::object_size(checked_cast<int>(chunk._end));
   } else {
     FlatArrayKlass* fak = FlatArrayKlass::cast(obj->klass());
-    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(initial_chunk_size));
+    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(chunk._end));
   }
 }
 
 size_t G1CMTask::process_partial_array(const G1TaskQueueEntry& task, bool stolen) {
   PartialArrayState* state = task.to_partial_array_state();
-  // Access state before release by claim().
-  objArrayOop obj = oop_cast<objArrayOop>(state->source());
-
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
+  objArrayOop obj = claim._array;
 
   process_array_chunk(obj, claim._start, claim._end);
 

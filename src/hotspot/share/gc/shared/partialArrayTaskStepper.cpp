@@ -28,12 +28,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-static uint compute_task_limit(uint n_workers) {
-  // Don't need more than n_workers tasks at a time.  But allowing up to
-  // that maximizes available parallelism.
-  return n_workers;
-}
-
 static uint compute_task_fanout(uint task_limit) {
   assert(task_limit > 0, "precondition");
   // There is a tradeoff between providing parallelism more quickly and
@@ -48,8 +42,8 @@ static uint compute_task_fanout(uint task_limit) {
   return result;
 }
 
-PartialArrayTaskStepper::PartialArrayTaskStepper(uint n_workers) :
-  _task_limit(compute_task_limit(n_workers)),
+PartialArrayTaskStepper::PartialArrayTaskStepper(uint num_workers) :
+  _task_limit(num_workers),
   _task_fanout(compute_task_fanout(_task_limit))
 {
   // Current stepper code only supports up to 2^31 elements in the array.

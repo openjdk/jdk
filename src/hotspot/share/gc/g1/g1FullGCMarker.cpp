@@ -53,11 +53,9 @@ G1FullGCMarker::~G1FullGCMarker() {
 }
 
 void G1FullGCMarker::process_partial_array(PartialArrayState* state, bool stolen) {
-  // Access state before release by claim().
-  objArrayOop obj_array = objArrayOop(state->source());
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, task_queue(), stolen);
-  process_array_chunk(obj_array, claim._start, claim._end);
+  process_array_chunk(claim._array, claim._start, claim._end);
 }
 
 static uintx calc_array_stride(uint array_len, uint num_threads) {
@@ -79,9 +77,9 @@ void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {
   }
 
   const uintx stride = calc_array_stride(array_length, _collector->workers());
-  const size_t initial_chunk_size = _partial_array_splitter.start(task_queue(), obj, nullptr, array_length, stride);
+  PartialArraySplitter::Claim chunk = _partial_array_splitter.start(task_queue(), obj, array_length, stride);
 
-  process_array_chunk(obj, 0, initial_chunk_size);
+  process_array_chunk(chunk._array, chunk._start, chunk._end);
 }
 
 void G1FullGCMarker::complete_marking(G1ScannerTasksQueueSet* task_queues,

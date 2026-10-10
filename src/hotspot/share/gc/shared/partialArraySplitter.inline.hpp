@@ -36,26 +36,28 @@
 #include "utilities/macros.hpp"
 
 template<typename Queue>
-size_t PartialArraySplitter::start(Queue* queue,
-                                   objArrayOop source,
-                                   objArrayOop destination,
-                                   size_t length,
-                                   size_t chunk_size) {
-  precond(chunk_size > 0);
-  PartialArrayTaskStepper::Step step = _stepper.start(length, chunk_size);
-  // Push initial partial scan tasks.
-  if (step._ncreate > 0) {
-    TASKQUEUE_STATS_ONLY(_stats.inc_split(););
-    TASKQUEUE_STATS_ONLY(_stats.inc_pushed(step._ncreate);)
-    PartialArrayState* state =
-      _allocator.allocate(source, destination, step._index, length, chunk_size, step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      queue->push(ScannerTask(state));
-    }
-  } else {
-    assert(step._index == length, "invariant");
+void PartialArraySplitter::enqueue(Queue* queue, PartialArrayState* state, uint count) {
+  TASKQUEUE_STATS_ONLY(_stats.inc_pushed(count);)
+  for (uint i = 0; i < count; ++i) {
+    queue->push(ScannerTask(state));
   }
-  return step._index;
+}
+
+template<typename Queue>
+PartialArraySplitter::Claim
+PartialArraySplitter::start(Queue* queue,
+                            objArrayOop array,
+                            size_t length,
+                            size_t chunk_size) {
+  precond(chunk_size > 0);
+  size_t end = length % chunk_size;
+  if (end < length) {
+    TASKQUEUE_STATS_ONLY(_stats.inc_split();)
+    PartialArrayState* state =
+      _allocator.allocate(array, end, length, chunk_size, 1);
+    enqueue(queue, state, 1);
+  }
+  return Claim{array, 0, end};
 }
 
 template<typename Queue>
@@ -66,21 +68,20 @@ PartialArraySplitter::claim(PartialArrayState* state, Queue* queue, bool stolen)
   _stats.inc_processed();
 #endif // TASKQUEUE_STATS
 
-  // Claim a chunk and get number of additional tasks to enqueue.
-  PartialArrayTaskStepper::Step step = _stepper.next(state);
-  // Push additional tasks.
-  if (step._ncreate > 0) {
-    TASKQUEUE_STATS_ONLY(_stats.inc_pushed(step._ncreate);)
-    // Adjust reference count for tasks being added to the queue.
-    state->add_references(step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      queue->push(ScannerTask(state));
-    }
+  size_t start = state->claim_next();
+  size_t chunk_size = state->_chunk_size;
+  uint count = _stepper.continuation_tasks(start, state->_length, chunk_size);
+  if (count > 0) {
+    // Increment the ref-count for all new tasks before publication.  A thief
+    // may immediately claim and release any task we push.
+    state->add_references(count);
+    enqueue(queue, state, count);
   }
-  size_t chunk_size = state->chunk_size();
-  // Release state, decrementing refcount, now that we're done with it.
+  Claim result{state->array(), start, start + chunk_size};
+  // Capture everything needed for scanning before decrementing the state's
+  // ref-count.
   _allocator.release(state);
-  return Claim{step._index, step._index + chunk_size};
+  return result;
 }
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYSPLITTER_INLINE_HPP
