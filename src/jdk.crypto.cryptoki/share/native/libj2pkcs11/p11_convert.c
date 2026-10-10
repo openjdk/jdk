@@ -1,8 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- */
-
-/* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
+ * Copyright (c) 2002 Graz University of Technology. All rights reserved.
  *
  * Redistribution and use in  source and binary forms, with or without
  * modification, are permitted  provided that the following conditions are met:
@@ -729,6 +728,79 @@ jTlsMacParamsToCKTlsMacParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
         *pLength = sizeof(CK_TLS_MAC_PARAMS);
     }
     return ckParamPtr;
+}
+
+/*
+ * converts the Java CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS object to a
+ * CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS pointer
+ *
+ * @param env - used to call JNI functions to get the Java classes and objects
+ * @param jParam - the Java CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS object
+ *        to convert
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS
+ *         structure
+ */
+CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS_PTR
+jTls12ExtendedMasterKeyDeriveParamToCKTls12ExtendedMasterKeyDeriveParamPtr(
+        JNIEnv *env, jobject jParam, CK_ULONG *pLength)
+{
+    CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS_PTR ckParamPtr;
+    jclass clazz;
+    jfieldID fieldID;
+
+    jlong prfHashMechanism;
+    jobject jVersion;
+    jobject jSessionHash;
+
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    clazz = (*env)->FindClass(env, CLASS_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS);
+    if (clazz == NULL) { return NULL; }
+
+    fieldID = (*env)->GetFieldID(env, clazz, "prfHashMechanism", "J");
+    if (fieldID == NULL) { return NULL;}
+    prfHashMechanism = (*env)->GetLongField(env, jParam, fieldID);
+
+    fieldID = (*env)->GetFieldID(env, clazz, "pSessionHash", "[B");
+    if (fieldID == NULL) { return NULL; }
+    jSessionHash = (*env)->GetObjectField(env, jParam, fieldID);
+
+    fieldID = (*env)->GetFieldID(env, clazz, "pVersion", "Lsun/security/pkcs11/wrapper/CK_VERSION;");
+    if (fieldID == NULL) { return NULL; }
+    jVersion = (*env)->GetObjectField(env, jParam, fieldID);
+
+    ckParamPtr = calloc(1, sizeof(CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS));
+    if (ckParamPtr == NULL) {
+        p11ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    ckParamPtr->prfHashMechanism = jLongToCKULong(prfHashMechanism);
+
+    jByteArrayToCKByteArray(env, jSessionHash, &(ckParamPtr->pSessionHash),
+            &(ckParamPtr->ulSessionHashLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    ckParamPtr->pVersion = jVersionToCKVersionPtr(env, jVersion);
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS);
+    }
+
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pSessionHash);
+    free(ckParamPtr->pVersion);
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
@@ -1630,6 +1702,12 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
         case CKM_TLS12_MASTER_KEY_DERIVE_DH:
             ckpParamPtr = jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParamPtr(env, jParam,
                     ckpLength);
+            break;
+        case CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE:
+        case CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH:
+            ckpParamPtr =
+                    jTls12ExtendedMasterKeyDeriveParamToCKTls12ExtendedMasterKeyDeriveParamPtr(
+                        env, jParam, ckpLength);
             break;
         case CKM_TLS_PRF:
         case CKM_NSS_TLS_PRF_GENERAL:
