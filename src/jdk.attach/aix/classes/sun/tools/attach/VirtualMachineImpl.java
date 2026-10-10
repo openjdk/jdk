@@ -39,7 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Aix implementation of HotSpotVirtualMachine
  */
 @SuppressWarnings("restricted")
-public class VirtualMachineImpl extends HotSpotVirtualMachine {
+public class VirtualMachineImpl extends HotSpotVirtualMachineLive {
     // "/tmp" is used as a global well-known location for the files
     // .java_pid<pid>. and .attach_pid<pid>. It is important that this
     // location is the same for all processes, otherwise the tools
