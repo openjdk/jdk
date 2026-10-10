@@ -44,6 +44,7 @@ public class Float16VectorOperationsBenchmark {
     short [] vector4;
     short [] vector5;
     boolean [] vectorPredicate;
+    VectorShuffle<Float16> rearrangeShuffle;
 
     static final short f16_one = Float.floatToFloat16(1.0f);
     static final short f16_two = Float.floatToFloat16(2.0f);
@@ -82,6 +83,12 @@ public class Float16VectorOperationsBenchmark {
                 }
             }
         );
+        int lanes = HSPECIES.length();
+        int[] indexes = new int[lanes];
+        for (int i = 0; i < lanes; i++) {
+            indexes[i] = lanes - 1 - i;
+        }
+        rearrangeShuffle = VectorShuffle.fromArray(HSPECIES, indexes, 0);
     }
 
     static final VectorSpecies<Float16> HSPECIES = Float16Vector.SPECIES_PREFERRED;
@@ -227,6 +234,22 @@ public class Float16VectorOperationsBenchmark {
             VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
             Float16Vector.fromArray(HSPECIES, vector1, i, mask)
                          .lanewise(VectorOperators.SQRT)
+                         .intoArray(vectorRes, i, mask);
+        }
+    }
+
+    @Benchmark
+    public void rearrangeBenchmark() {
+        int i = 0;
+        for (; i < HSPECIES.loopBound(vectorDim); i += HSPECIES.length()) {
+            Float16Vector.fromArray(HSPECIES, vector1, i)
+                         .rearrange(rearrangeShuffle)
+                         .intoArray(vectorRes, i);
+        }
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .rearrange(rearrangeShuffle, mask)
                          .intoArray(vectorRes, i, mask);
         }
     }

@@ -2012,10 +2012,6 @@ bool LibraryCallKit::inline_vector_rearrange() {
     return false;
   }
 
-  if (!is_supported_lane_type(vltype)) {
-    log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
-    return false;
-  }
   BasicType elem_bt = get_vector_primitive_lane_type(vltype);
   BasicType shuffle_bt = elem_bt;
   if (shuffle_bt == T_FLOAT) {
