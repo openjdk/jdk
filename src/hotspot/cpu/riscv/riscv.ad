@@ -1316,7 +1316,7 @@ bool unnecessary_acquire(const Node *barrier)
   if (mb->trailing_load_store()) {
     Node* load_store = mb->in(MemBarNode::Precedent);
     assert(load_store->is_LoadStore(), "unexpected graph shape");
-    return cas_membar_elidable(load_store->Opcode());
+    return cas_trailing_membar_elidable(load_store->Opcode());
   }
 
   return false;
