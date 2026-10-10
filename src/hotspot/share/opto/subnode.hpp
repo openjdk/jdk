@@ -322,7 +322,6 @@ public:
   };
   FlatArrayCheckNode(Compile* C, Node* mem, Node* array_or_klass) : CmpNode(mem, array_or_klass) {
     init_class_id(Class_FlatArrayCheck);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual int Opcode() const;

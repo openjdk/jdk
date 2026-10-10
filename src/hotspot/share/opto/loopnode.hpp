@@ -574,7 +574,6 @@ class LoopLimitNode : public Node {
  public:
   LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(nullptr,init,limit,stride) {
     // Put it on the Macro nodes list to optimize during macro nodes expansion.
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual int Opcode() const;
@@ -595,7 +594,6 @@ public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
     : LoopNode(entry, backedge) {
     init_class_id(Class_OuterStripMinedLoop);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 

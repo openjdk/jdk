@@ -3163,7 +3163,6 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
 
 void PhaseMacroExpand::expand_add_sub_i128t_node(Int128TBinaryNode* addsub) {
   if (Matcher::match_rule_supported(addsub->Opcode())) {
-    addsub->remove_flag(Node::Flag_is_macro);
     C->remove_macro_node(addsub);
     return;
   }
