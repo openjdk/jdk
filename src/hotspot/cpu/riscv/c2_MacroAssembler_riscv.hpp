@@ -262,6 +262,10 @@
                           bool is_double, bool is_min, uint vector_length,
                           VectorMask vm = Assembler::unmasked);
 
+  void reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
+                       VectorRegister vtmp1, VectorRegister vtmp2,
+                       bool is_double, uint vector_length);
+
   void reduce_integral_v(Register dst, Register src1,
                         VectorRegister src2, VectorRegister tmp,
                         int opc, BasicType bt, uint vector_length,
