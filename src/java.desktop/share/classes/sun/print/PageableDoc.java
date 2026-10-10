@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,22 +43,27 @@ public class PageableDoc implements Doc {
        this.pageable = pageable;
     }
 
+   @Override
    public DocFlavor getDocFlavor() {
        return DocFlavor.SERVICE_FORMATTED.PAGEABLE;
    }
 
+   @Override
    public DocAttributeSet getAttributes() {
        return new HashDocAttributeSet();
    }
 
+   @Override
    public Object getPrintData() throws IOException {
       return pageable;
    }
 
+   @Override
    public Reader getReaderForText() throws IOException {
       return null;
    }
 
+   @Override
    public InputStream getStreamForBytes() throws IOException {
       return null;
    }

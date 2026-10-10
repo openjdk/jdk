@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,7 @@ class CustomMediaSizeName extends MediaSizeName {
     /**
      * Returns the string table for class CustomMediaSizeName.
      */
+    @Override
     protected String[] getStringTable() {
       String[] nameTable = new String[customStringTable.size()];
       return customStringTable.toArray(nameTable);
@@ -191,6 +192,7 @@ class CustomMediaSizeName extends MediaSizeName {
     /**
      * Returns the enumeration value table for class CustomMediaSizeName.
      */
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
       MediaSizeName[] enumTable = new MediaSizeName[customEnumTable.size()];
       return customEnumTable.toArray(enumTable);
@@ -227,6 +229,7 @@ class CustomMediaSizeName extends MediaSizeName {
             this.length = length;
         }
 
+        @Override
         public boolean equals(Object object) {
             if (this == object) return true;
             if (object == null || getClass() != object.getClass()) return false;
@@ -237,6 +240,7 @@ class CustomMediaSizeName extends MediaSizeName {
                     Float.compare(this.length, that.length) == 0;
         }
 
+        @Override
         public int hashCode() {
             return Objects.hash(name, choice, width, length);
         }
