@@ -195,9 +195,6 @@ class DumpClassListCLDClosure : public CLDClosure {
     if (!created) {
       return;
     }
-    if (_dumped_classes.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _dumped_classes table to %d", _dumped_classes.table_size());
-    }
     if (ik->super()) {
       dump(ik->super());
     }

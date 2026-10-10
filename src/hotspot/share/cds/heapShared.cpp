@@ -636,7 +636,6 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
   OopHandle oh(Universe::vm_global(), obj);
   CachedOopInfo info = make_cached_oop_info(obj, referrer);
   archived_object_cache()->put_when_absent(oh, info);
-  archived_object_cache()->maybe_grow();
 
   Klass* k = obj->klass();
   if (k->is_instance_klass()) {
@@ -2212,7 +2211,6 @@ bool HeapShared::has_been_seen_during_subgraph_recording(oop obj) {
 void HeapShared::set_has_been_seen_during_subgraph_recording(oop obj) {
   assert(!has_been_seen_during_subgraph_recording(obj), "sanity");
   _seen_objects_table->put_when_absent(obj, true);
-  _seen_objects_table->maybe_grow();
   ++ _num_new_walked_objs;
 }
 

@@ -437,11 +437,6 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   SourceObjInfo src_info(ref, read_only, follow_mode);
   bool created;
   SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
-  if (created) {
-    if (_src_obj_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
-    }
-  }
 
 #ifdef ASSERT
   if (ref->type() == MetaspaceClosureType::MethodType) {
@@ -659,9 +654,6 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     bool created;
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);
     assert(created, "must be");
-    if (_buffered_to_src_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
-    }
   }
 
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->type(), (address)dest);

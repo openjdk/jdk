@@ -118,7 +118,9 @@ typedef
 ResizeableHashTable <JvmtiTagMapKey, jlong,
                               AnyObj::C_HEAP, mtServiceability,
                               JvmtiTagMapKey::get_hash,
-                              JvmtiTagMapKey::equals> ResizableHT;
+                              JvmtiTagMapKey::equals,
+                              5, /*load-factor*/
+                              true /*large table */> ResizableHT;
 
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapKeyClosure {
