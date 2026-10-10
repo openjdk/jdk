@@ -1742,6 +1742,7 @@
   /**********************/                                                \
   /* frame              */                                                \
   /**********************/                                                \
+  declare_constant(frame::metadata_words_at_bottom)                       \
   NOT_ZERO(PPC64_ONLY(declare_constant(frame::entry_frame_locals_size)))  \
                                                                           \
   /*************/                                                         \
