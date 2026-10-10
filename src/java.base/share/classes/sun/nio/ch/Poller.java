@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import jdk.internal.access.JavaLangAccess;
@@ -413,7 +414,11 @@ public abstract class Poller {
     }
 
     /**
-     * SYSTEM_THREADS poller group. The read and write pollers are system-wide platform threads.
+     * SYSTEM_THREADS poller group. The read and write pollers are system-wide platform
+     * threads. To avoid a file descriptor being registered with both a read and write
+     * poller at the same time, the poller group can be configured to run without a
+     * write poller, in which case polling for POLLOUT does timed-parked to force the
+     * caller to retry write ops until they succeed (or fail).
      */
     private static class SystemThreadsPollerGroup extends PollerGroup {
         // system-wide read and write pollers
@@ -459,16 +464,30 @@ public abstract class Poller {
         }
 
         private Poller writePoller(int fdVal) {
-            int index = provider().fdValToIndex(fdVal, writePollers.length);
-            return writePollers[index];
+            if (writePollers.length > 0) {
+                int index = provider().fdValToIndex(fdVal, writePollers.length);
+                return writePollers[index];
+            } else {
+                return null;
+            }
         }
 
         @Override
         void poll(int fdVal, int event, long nanos, BooleanSupplier isOpen) throws IOException {
-            Poller poller = (event == Net.POLLIN)
-                    ? readPoller(fdVal)
-                    : writePoller(fdVal);
-            poller.poll(fdVal, nanos, isOpen);
+            if (event == Net.POLLIN) {
+                readPoller(fdVal).poll(fdVal, nanos, isOpen);
+            } else {
+                Poller writePoller = writePoller(fdVal);
+                if (writePoller != null) {
+                    writePoller.poll(fdVal, nanos, isOpen);
+                } else {
+                    // random delay in [50ms, 120ms)
+                    int max = ThreadLocalRandom.current().nextInt(50_000_000, 120_000_000);
+                    long delay = (nanos > 0 )? Math.min(nanos, max) : max;
+                    System.err.println("parkNanos = " + delay);
+                    LockSupport.parkNanos(delay);
+                }
+            }
         }
 
         @Override

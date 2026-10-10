@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,33 @@
 
 /*
  * @test id=default
- * @bug 8284161 8372958
+ * @bug 8284161 8372958 8394217
  * @summary Test virtual threads doing blocking I/O on java.net Sockets
  * @library /test/lib
- * @run junit BlockingSocketOps
+ * @run junit ${test.main.class}
  */
 
 /*
  * @test id=poller-modes
  * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
- * @run junit/othervm -Djdk.pollerMode=1 BlockingSocketOps
- * @run junit/othervm -Djdk.pollerMode=2 BlockingSocketOps
- * @run junit/othervm -Djdk.pollerMode=3 BlockingSocketOps
+ * @run junit/othervm -Djdk.pollerMode=1 ${test.main.class}
+ * @run junit/othervm -Djdk.pollerMode=2 ${test.main.class}
+ * @run junit/othervm -Djdk.pollerMode=3 ${test.main.class}
+ */
+
+/*
+ * @test id=no-write-poller-thread
+ * @requires (os.family == "linux") | (os.family == "mac")
+ * @library /test/lib
+ * @run junit/othervm -Djdk.pollerMode=1 -Djdk.writePollers=0 ${test.main.class}
  */
 
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @library /test/lib
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ${test.main.class}
  */
 
 import java.io.Closeable;
