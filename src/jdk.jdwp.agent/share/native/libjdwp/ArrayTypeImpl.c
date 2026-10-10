@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ writeNewObjectArray(JNIEnv *env, PacketOutputStream *out,
                 outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
             } else {
                 (void)outStream_writeByte(out, specificTypeKey(env, array));
-                (void)outStream_writeObjectRef(env, out, array);
+                (void)outStream_writeObjectRefPin(env, out, array);
             }
 
         }
@@ -197,8 +197,8 @@ writeNewPrimitiveArray(JNIEnv *env, PacketOutputStream *out,
             outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
         } else {
             (void)outStream_writeByte(out, specificTypeKey(env, array));
-            (void)outStream_writeObjectRef(env, out, array);
-        }
+            (void)outStream_writeObjectRefPin(env, out, array);
+       }
 
     } END_WITH_LOCAL_REFS(env);
 }
