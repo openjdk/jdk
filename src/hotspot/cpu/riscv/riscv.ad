@@ -1148,14 +1148,33 @@ void reg_mask_init() {
 
 // Configuration follows the vector result, or the vector input for nodes with a non-vector result.
 static const Node* rvv_vsetvli_shape_node(const MachNode* node) {
-  if (node->rule() == storeV_rule) {
-    // storeV's source is operand 2; operand_index accounts for the address input edges.
-    assert(node->num_opnds() == 3 && node->operand_num_edges(2) == 1, "unexpected store operands");
-    const Node* src = node->in(node->operand_index(2u));
-    assert(src->bottom_type()->isa_vect() != nullptr, "expected vector source");
-    return src;
+  switch (node->rule()) {
+    case storeV_rule:
+    case vreduce_and_rule:
+    case vreduce_andL_rule:
+    case vreduce_or_rule:
+    case vreduce_orL_rule:
+    case vreduce_xor_rule:
+    case vreduce_xorL_rule:
+    case vreduce_add_rule:
+    case vreduce_addL_rule:
+    case vreduce_addF_ordered_rule:
+    case vreduce_addF_unordered_rule:
+    case vreduce_addD_ordered_rule:
+    case vreduce_addD_unordered_rule:
+    case vreduce_max_rule:
+    case vreduce_maxL_rule:
+    case vreduce_min_rule:
+    case vreduce_minL_rule: {
+      // operand_index accounts for additional input edges, such as storeV's address.
+      assert(node->num_opnds() >= 3 && node->operand_num_edges(2) == 1, "unexpected vector source operand");
+      const Node* src = node->in(node->operand_index(2u));
+      assert(src->bottom_type()->isa_vect() != nullptr, "expected vector source");
+      return src;
+    }
+    default:
+      return node;
   }
-  return node;
 }
 
 static bool rvv_is_vector_register(OptoReg::Name reg) {

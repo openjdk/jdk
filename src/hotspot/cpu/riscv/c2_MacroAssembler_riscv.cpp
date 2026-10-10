@@ -3081,38 +3081,6 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   return MacroAssembler::in_scratch_emit_size();
 }
 
-void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
-                                          VectorRegister src2, VectorRegister tmp,
-                                          int opc, BasicType bt, uint vector_length, VectorMask vm) {
-  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
-  vsetvli_helper(bt, vector_length);
-  vmv_s_x(tmp, src1);
-  switch (opc) {
-    case Op_AddReductionVI:
-    case Op_AddReductionVL:
-      vredsum_vs(tmp, src2, tmp, vm);
-      break;
-    case Op_AndReductionV:
-      vredand_vs(tmp, src2, tmp, vm);
-      break;
-    case Op_OrReductionV:
-      vredor_vs(tmp, src2, tmp, vm);
-      break;
-    case Op_XorReductionV:
-      vredxor_vs(tmp, src2, tmp, vm);
-      break;
-    case Op_MaxReductionV:
-      vredmax_vs(tmp, src2, tmp, vm);
-      break;
-    case Op_MinReductionV:
-      vredmin_vs(tmp, src2, tmp, vm);
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-  vmv_x_s(dst, tmp);
-}
-
 void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
                                               VectorRegister vtmp1, VectorRegister vtmp2,
                                               BasicType bt, uint vector_length, VectorMask vm) {
