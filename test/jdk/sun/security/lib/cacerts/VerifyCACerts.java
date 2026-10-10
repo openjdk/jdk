@@ -29,7 +29,7 @@
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
  *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759 8319187
  *      8321408 8316138 8341057 8303770 8350498 8359170 8361212 8372351 8387123
- *      8386371
+ *      8386371 8392771
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -48,12 +48,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 109;
+    private static final int COUNT = 111;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "BB:0F:A9:B7:21:8E:8E:66:95:2B:1A:85:2F:6A:EC:F0:81:69:09:A9:56:70:F3:E4:A8:B9:AD:0D:BE:43:69:11";
+            = "5C:83:D7:C3:1A:F2:FE:79:22:93:F3:CA:CB:01:B6:79:F0:A3:1C:EF:7D:F8:FC:54:61:FE:AE:3B:11:32:D8:CB";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -280,6 +280,10 @@ public class VerifyCACerts {
                     "6B:9C:08:E8:6E:B0:F7:67:CF:AD:65:CD:98:B6:21:49:E5:49:4A:67:F5:84:5E:7B:D1:ED:01:9F:27:B8:6B:D6");
             put("wisekeyglobalrootgcca [jdk]",
                     "85:60:F9:1C:36:24:DA:BA:95:70:B5:FE:A0:DB:E3:6F:F1:1A:83:23:BE:94:86:85:4F:B3:F3:4A:55:71:19:8D");
+            put("certumtrustedrootca [jdk]",
+                    "FE:76:96:57:38:55:77:3E:37:A9:5E:7A:D4:D9:CC:96:C3:01:57:C1:5D:31:76:5B:A9:B1:57:04:E1:AE:78:FD");
+            put("certumec384ca [jdk]",
+                    "6B:32:80:85:62:53:18:AA:50:D1:73:C9:8D:8B:DA:09:D5:7E:27:41:3D:11:4C:F7:87:A0:F5:D0:6C:03:0C:F6");
         }
     };
 
