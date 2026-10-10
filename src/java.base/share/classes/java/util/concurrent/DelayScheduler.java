@@ -223,7 +223,6 @@ final class DelayScheduler extends Thread {
                 restingSize = 0;
                 active = -1;
                 p.tryStopIfShutdown(this);
-                clearPending();
             }
         }
     }
@@ -438,15 +437,11 @@ final class DelayScheduler extends Thread {
         }
         if (n > 0)
             cancelAll(h, n);
-        clearPending();
-        return -1;
-    }
-
-    private void clearPending() {
         for (ScheduledForkJoinTask<?> a = (ScheduledForkJoinTask<?>)
                  U.getAndSetReference(this, PENDING, null);
              a != null; a = a.nextPending)
             a.trySetCancelled(); // clear pending requests
+        return -1;
     }
 
     private static void cancelAll(ScheduledForkJoinTask<?>[] h, int n) {
@@ -556,14 +551,12 @@ final class DelayScheduler extends Thread {
             if ((d = nextDelay) != 0L && // is periodic
                 status >= 0 &&           // not abnormally completed
                 (p = pool) != null && (ds = p.delayScheduler) != null) {
-                long w = when, nextw; // check overflow
-                if (d < 0L)
-                    nextw = DelayScheduler.now() - d;
-                else
-                    nextw = w + d;
-                when = (nextw > w) ? nextw : Long.MAX_VALUE - 1L;
                 if (p.shutdownStatus(ds) == 0) {
                     heapIndex = -1;
+                    if (d < 0L)
+                        when = DelayScheduler.now() - d;
+                    else
+                        when += d;
                     ds.pend(this);
                     return false;
                 }
