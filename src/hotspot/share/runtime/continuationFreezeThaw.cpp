@@ -3102,6 +3102,7 @@ void ThawBase::finish_thaw(frame& f) {
   // unpack_on_stack puts the arguments back. An interpreted caller was copied
   // without them, so put them back on its expression stack and resume at the
   // invoke, like vframeArrayElement::unpack_on_stack does.
+  bool popframe_reexecute = false;
   if (JvmtiExport::can_pop_frame() && _thread->popframe_forcing_deopt_reexecution()) {
     if (f.is_interpreted_frame()) {
       int words = in_words(_thread->popframe_preserved_args_size_in_words());
@@ -3113,7 +3114,7 @@ void ThawBase::finish_thaw(frame& f) {
         Copy::conjoint_jbytes(_thread->popframe_preserved_args(), base, words * wordSize);
         _thread->popframe_free_preserved_args();
       }
-      f = frame(f.sp(), f.unextended_sp(), f.fp(), Interpreter::deopt_entry(vtos, 0));
+      popframe_reexecute = true;
       _thread->clear_popframe_condition();
     } else {
       assert(f.is_deoptimized_frame(), "popframe reexecution into a frozen compiled caller that was not deoptimized");
@@ -3124,6 +3125,10 @@ void ThawBase::finish_thaw(frame& f) {
     f.set_sp(align_down(f.sp(), frame::frame_alignment));
   }
   push_return_frame(f);
+  if (popframe_reexecute) {
+    // reexecute the invoke instead of returning after it
+    ContinuationHelper::Frame::patch_pc(f, Interpreter::deopt_entry(vtos, 0));
+  }
    // can only fix caller after push_return_frame (due to callee saved regs)
   if (_process_args_at_top) {
     chunk->fix_thawed_frame(f, SmallRegisterMap::instance_with_args());
