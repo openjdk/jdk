@@ -990,6 +990,38 @@ bool VectorNode::is_vector_shift_count(int opc) {
   }
 }
 
+bool VectorNode::is_hf_vector_opcode(int opc) {
+  switch (opc) {
+  case Op_AddVHF: case Op_SubVHF: case Op_MulVHF: case Op_DivVHF:
+  case Op_MinVHF: case Op_MaxVHF: case Op_SqrtVHF: case Op_FmaVHF:
+  case Op_AddReductionVHF: case Op_MulReductionVHF:
+    return true;
+  default:
+    return false;
+  }
+}
+
+static BasicType vector_lane_basic_type(const Node* n) {
+  ReductionNode* rn = n->isa_Reduction();
+  const TypeVect* vt = (rn != nullptr) ? rn->vect_type() : n->bottom_type()->is_vect();
+  return vt->element_basic_type();
+}
+
+// Return true if the lanes of this vector node hold floating point values.
+bool VectorNode::is_floating_point_node(const Node* n) {
+  BasicType bt = vector_lane_basic_type(n);
+  if (is_floating_point_type(bt)) {
+    return true; // T_FLOAT / T_DOUBLE are unambiguous
+  }
+  // T_SHORT is also the float16 carrier; only the opcode separates the two.
+  return bt == T_SHORT && is_hf_vector_opcode(n->Opcode());
+}
+
+// Return true if the lanes of this vector node hold integral values.
+bool VectorNode::is_integral_node(const Node* n) {
+  return is_integral_type(vector_lane_basic_type(n)) && !is_floating_point_node(n);
+}
+
 static bool is_con(Node* n, long con) {
   if (n->is_Con()) {
     const Type* t = n->bottom_type();
@@ -1027,6 +1059,26 @@ bool VectorNode::is_all_zeros_vector(Node* n) {
   default:
     return false;
   }
+}
+
+// Return true if all the lanes of vector are zero (works for integral and floating point types).
+bool VectorNode::is_vector_zero(Node* n, PhaseGVN* phase) {
+  if (n->Opcode() != Op_Replicate) {
+    return false;
+  }
+  const Type* t = phase->type(n->in(1));
+  return t == TypeInt::ZERO || t == TypeLong::ZERO ||
+         t == TypeF::ZERO  || t == TypeD::ZERO || t == TypeH::ZERO;
+}
+
+// Return true if all the lanes of vector are one (works for integral and floating point types).
+bool VectorNode::is_vector_one(Node* n, PhaseGVN* phase) {
+  if (n->Opcode() != Op_Replicate) {
+    return false;
+  }
+  const Type* t = phase->type(n->in(1));
+  return t == TypeInt::ONE || t == TypeLong::ONE ||
+         t == TypeF::ONE  || t == TypeD::ONE || t == TypeH::ONE;
 }
 
 bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
@@ -1358,7 +1410,7 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
 //
 Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
   // Enable re-association for integral vector operations.
-  if (!is_integral_type(vect_type()->element_basic_type())) {
+  if (!is_integral_node(this)) {
     return nullptr;
   }
 
@@ -1476,6 +1528,82 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return this;
   }
   return nullptr;
+}
+
+//------------------------------AddVNode---------------------------------------
+Node* AddVNode::Identity(PhaseGVN* phase) {
+  // Float/double: X + 0.0 is NOT X when X is -0.0 (IEEE 754: -0.0 + 0.0 = +0.0).
+  if (!is_integral_node(this)) {
+    return this;
+  }
+
+  // AddV(X, Replicate(0)) => X (integral only)
+  // Also holds when predicated: inactive lanes pass through in(1), which is X.
+  if (VectorNode::is_vector_zero(in(2), phase)) {
+    return in(1);
+  }
+
+  // AddV(Replicate(0), X) => X (integral only)
+  // Not valid when predicated, inactive lanes must keep in(1) rather than X.
+  if (VectorNode::is_vector_zero(in(1), phase) && !is_predicated_vector()) {
+    return in(2);
+  }
+
+  return this;
+}
+
+//------------------------------SubVNode---------------------------------------
+Node* SubVNode::Identity(PhaseGVN* phase) {
+  // SubV(X, Replicate(0)) => X
+  // Valid for floating point too: X - (+0.0) is X for every X, including -0.0
+  // and NaN. Note that is_vector_zero() only matches positive zero.
+  if (VectorNode::is_vector_zero(in(2), phase)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* SubVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // SubV(X, X) => Replicate(0) for integral types, non-predicated only.
+  // Not valid for floating point, NaN - NaN is NaN and X - X is -0.0 under
+  // round-to-negative-infinity.
+  if (!is_predicated_vector() && in(1) == in(2)) {
+    if (is_integral_node(this)) {
+      BasicType bt = vect_type()->element_basic_type();
+      return new ReplicateNode(phase->zerocon(bt), vect_type());
+    }
+  }
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+//------------------------------MulVNode---------------------------------------
+Node* MulVNode::Identity(PhaseGVN* phase) {
+  // MulV(X, Replicate(1)) => X
+  // Also holds when predicated: inactive lanes pass through in(1), which is X.
+  if (VectorNode::is_vector_one(in(2), phase)) {
+    return in(1);
+  }
+
+  // MulV(Replicate(1), X) => X
+  // Not valid when predicated, inactive lanes must keep in(1) rather than X.
+  if (VectorNode::is_vector_one(in(1), phase) && !is_predicated_vector()) {
+    return in(2);
+  }
+
+  // MulV(Replicate(0), X) => Replicate(0) for integral types
+  // Also holds when predicated: in(1) is both the passthrough and the result
+  // (0 * X = 0), so all lanes produce zero.
+  // Not valid for floating point, 0.0 * NaN is NaN and 0.0 * -1.0 is -0.0.
+  if (is_integral_node(this) && VectorNode::is_vector_zero(in(1), phase)) {
+    return in(1);
+  }
+
+  // MulV(X, Replicate(0)) => Replicate(0) for integral types, non-predicated only
+  if (is_integral_node(this) && VectorNode::is_vector_zero(in(2), phase) &&
+      !is_predicated_vector())  {
+    return in(2);
+  }
+  return this;
 }
 
 // Traverses a chain of VectorMaskCast and returns the first non VectorMaskCast node.
