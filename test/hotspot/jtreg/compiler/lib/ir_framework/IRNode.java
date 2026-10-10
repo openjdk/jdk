@@ -3028,6 +3028,11 @@ public class IRNode {
         machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
+    public static final String X86_VSHIFT_B_GFNI = PREFIX + "X86_VSHIFT_B_GFNI" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VSHIFT_B_GFNI, "vshiftB_gfni");
+    }
+
     public static final String AARCH64_VMULL_UINT_SVE2 = PREFIX + "AARCH64_VMULL_UINT_SVE2" + POSTFIX;
     static {
         machOnlyNameRegex(AARCH64_VMULL_UINT_SVE2, "vmulL_uint_sve2");

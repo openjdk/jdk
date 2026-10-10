@@ -1369,6 +1369,73 @@ void C2_MacroAssembler::varshiftbw(int opcode, XMMRegister dst, XMMRegister src,
   vpackusdw(dst, dst, vtmp, 0);
 }
 
+// vgf2p8affineqb with immediate 0 sets each result bit to the parity of
+// the source byte ANDed with one matrix byte. Nothing is added afterwards.
+// The most significant matrix byte builds result bit 0, and each following
+// byte builds the next higher result bit. A matrix byte equal to 1<<j has
+// parity equal to source bit j: every other source bit is cleared, so the
+// XOR of the surviving bits is that one bit.
+//
+// I = 0x0102040810204080 has bytes 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
+// 0x80 from the MSB. Those are 1<<0 through 1<<7, so result bit k is source
+// bit k and I is the identity.
+//
+// A shift of I by a whole number of bytes only moves those one-hot masks and
+// shifts zeros into the vacated bytes. Moving the qword left by 8*n carries
+// the mask that built result bit k+n onto result bit k. The n bytes that
+// leave the MSB are replaced by zeros at the LSB, and the LSB builds the
+// highest result bits:
+//
+//   A_srl(n) = I << (8*n)
+//   result bit k = source bit (k+n)  if k+n < 8, else 0
+//
+// That is a logical right shift by n. Moving the qword right by 8*n carries
+// the mask for result bit k-n onto result bit k, and zeros enter at the MSB,
+// which builds the lowest result bits:
+//
+//   A_sll(n) = I >> (8*n)
+//   result bit k = source bit (k-n)  if k >= n, else 0
+//
+// That is a logical left shift by n. An arithmetic right shift is A_srl(n)
+// with source bit 7 copied into the n result bits the logical shift clears.
+// Those are result bits (8-n)..7, built by the n least significant matrix
+// bytes, and source bit 7 is the mask 0x80. OR that mask into those n bytes:
+//
+//   A_sra(n) = A_srl(n) | (low n bytes each equal to 0x80)
+//
+// The count is masked to 0..7. A count of 0 leaves I for all three. The stub
+// vector_byte_shift_gfni_matrix stores A_sll(0..7), then A_srl(0..7), then
+// A_sra(0..7).
+//
+// Check A_srl(2). I << 16 = 0x0408102040800000, bytes 0x04, 0x08, 0x10, 0x20,
+// 0x40, 0x80, 0x00, 0x00 from the MSB: source bits 2, 3, 4, 5, 6, 7 and then
+// two zeros. AND the source with 0x04 and take the parity to write source
+// bit 2 into result bit 0. 0x08 writes source bit 3 into result bit 1, and
+// so on through 0x80, which writes source bit 7 into result bit 5. The two
+// 0x00 bytes write 0 into result bits 6 and 7. For source 0b10110000 the
+// result is 0b00101100.
+void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift,
+                                     Register rtmp, Register rbase, int vlen_enc) {
+  assert(VM_Version::supports_gfni(), "required");
+  int kind = 0;
+  if (opcode == Op_URShiftVB) {
+    kind = 1;
+  } else if (opcode == Op_RShiftVB) {
+    kind = 2;
+  } else {
+    assert(opcode == Op_LShiftVB, "%s", NodeClassNames[opcode]);
+  }
+  movdl(rtmp, shift);
+  andl(rtmp, 7);
+  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix() + kind * 8 * 8));
+  if (vlen_enc == Assembler::AVX_128bit) {
+    movddup(dst, Address(rbase, rtmp, Address::times_8));
+  } else {
+    vpbroadcastq(dst, Address(rbase, rtmp, Address::times_8), vlen_enc);
+  }
+  vgf2p8affineqb(dst, src, dst, 0, vlen_enc);
+}
+
 // Variable shift src by shift using vtmp and scratch as TEMPs giving byte result in dst
 void C2_MacroAssembler::evarshiftb(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp) {
   assert(opcode == Op_LShiftVB ||
