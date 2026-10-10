@@ -500,7 +500,13 @@ class os: AllStatic {
   static size_t align_up_vm_allocation_granularity(size_t size) { return align_up(size, os::vm_allocation_granularity()); }
 
   // Returns the lowest address the process is allowed to map against.
-  static size_t vm_min_address();
+  static uintptr_t vm_min_address();
+
+  // Returns the end of the user-addressable address space.
+  // (eg. 0x100_0000_0000_0000 (64 Pebi) for LVA57).
+  // A return value of 0 means that the platform technically has no user address
+  // space limit (any address can be a user-addressable mapping).
+  static uintptr_t vm_max_address();
 
   // Some kernels (e.g. s390x) can dynamically expand the page table. This function returns
   // the lowest user space address that will expand the page table for the first time.
