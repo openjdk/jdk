@@ -341,8 +341,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
             buffer.append(vername);
             buffer.append(": ");
             buffer.append(version);
-            out.write(buffer.toString().getBytes(UTF_8.INSTANCE));
-            Manifest.println(out);
+            Manifest.println72(out, buffer.toString());
         }
 
         // write out all attributes except for the version
