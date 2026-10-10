@@ -74,6 +74,8 @@
     return VM_Version::has_LoadStoreConditional() ? 0 : ConditionalMoveLimit;
   }
 
+  static constexpr bool supports_conditional_zero_arithmetic() { return false; }
+
   // Set this as clone_shift_expressions.
   static bool narrow_oop_use_complex_address() {
     if (CompressedOops::base() == nullptr && CompressedOops::shift() == 0) return true;
