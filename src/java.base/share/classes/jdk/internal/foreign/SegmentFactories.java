@@ -91,6 +91,14 @@ public class SegmentFactories {
                 MemorySessionImpl.createHeap(arr));
     }
 
+    public static OfByte fromArrayReadOnly(byte[] arr) {
+        ensureInitialized();
+        Objects.requireNonNull(arr);
+        long byteSize = (long)arr.length * Utils.BaseAndScale.BYTE.scale();
+        return new OfByte(Utils.BaseAndScale.BYTE.base(), arr, byteSize, true,
+                MemorySessionImpl.createHeap(arr));
+    }
+
     public static OfShort fromArray(short[] arr) {
         ensureInitialized();
         Objects.requireNonNull(arr);
