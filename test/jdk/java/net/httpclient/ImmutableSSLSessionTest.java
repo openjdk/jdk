@@ -60,7 +60,6 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -242,6 +241,7 @@ public class ImmutableSSLSessionTest implements HttpServerAdapters {
             assertEquals(List.of("foo", "bar"),
                     Arrays.asList(ext.getLocalSupportedSignatureAlgorithms()));
             assertEquals(List.of(new SNIHostName("localhost")), ((ExtendedSSLSession) session).getRequestedServerNames());
+            assertEquals("MyNamedGroup", ((ExtendedSSLSession) session).getNamedGroup());
             List<byte[]> status = ext.getStatusResponses();
             assertEquals(1, status.size());
             assertEquals("42", new String(status.get(0), US_ASCII));
@@ -361,6 +361,11 @@ public class ImmutableSSLSessionTest implements HttpServerAdapters {
         @Override
         public String[] getPeerSupportedSignatureAlgorithms() {
             return new String[] {"bar", "foo"};
+        }
+
+        @Override
+        public String getNamedGroup() {
+            return "MyNamedGroup";
         }
 
         @Override
