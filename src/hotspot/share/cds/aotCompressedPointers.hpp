@@ -141,4 +141,6 @@ inline u4 cast_to_u4(AOTCompressedPointers::narrowPtr narrowp) {
   return checked_cast<u4>(narrowp);
 }
 
+using narrowPtr = AOTCompressedPointers::narrowPtr;
+
 #endif // SHARE_CDS_AOTCOMPRESSEDPOINTERS_HPP

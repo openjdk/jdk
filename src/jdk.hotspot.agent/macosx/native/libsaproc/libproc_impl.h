@@ -28,7 +28,7 @@
 
 #include <unistd.h>
 #include <limits.h>
-#include "libproc.h"
+#include "libsaproc.h"
 #include "symtab.h"
 
 #define UNSUPPORTED_ARCH "Unsupported architecture!"

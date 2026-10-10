@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,9 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_RISCV_VM_COPY_LINUX_RISCV_HPP
-#define OS_CPU_LINUX_RISCV_VM_COPY_LINUX_RISCV_HPP
+#ifndef OS_CPU_LINUX_RISCV_COPY_LINUX_RISCV_HPP
+#define OS_CPU_LINUX_RISCV_COPY_LINUX_RISCV_HPP
 
 // Empty for build system
 
-#endif // OS_CPU_LINUX_RISCV_VM_COPY_LINUX_RISCV_HPP
+#endif // OS_CPU_LINUX_RISCV_COPY_LINUX_RISCV_HPP

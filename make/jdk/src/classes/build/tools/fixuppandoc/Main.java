@@ -280,6 +280,15 @@ public class Main {
                     buffer.setLength(0);
                     break;
 
+                case "head":
+                    if (navbar != null) {
+                        out.write(buffer.toString());
+                        buffer.setLength(0);
+                        String pathToRoot = "../".repeat(navbar.subdirs + 1);
+                        out.write("\n  <script src=\"" + pathToRoot + "resources/jdk-default.js\"></script>");
+                    }
+                    break;
+
                 case "meta":
                     // update the meta-data for the generator
                     if (Objects.equals(attrs.get("name"), "generator")) {
@@ -459,7 +468,7 @@ public class Main {
         }
     }
 
-    class NavBar {
+    static class NavBar {
         private int subdirs = 0;
         private boolean linkGuides = false;
         private String rightSideInfo = "";
@@ -488,21 +497,19 @@ public class Main {
 
             StringBuilder sb = new StringBuilder();
             sb.append("\n");
-            sb.append("<div class=\"navbar\">"); // full enclosing banner
+            sb.append("<div class=\"navbar\"><div class=\"nav-content\">"); // full enclosing banner
+            sb.append("<nav><ul>"); // nav links
+            sb.append("<li>").append(link(api, "API")).append("</li>");
+            sb.append("<li>").append(link(specs, "OTHER SPECIFICATIONS")).append("</li>");
+            if (linkGuides) {
+                sb.append("<li>").append(link(guides, "TOOL GUIDES")).append("</li>");
+            }
+            sb.append("<script>initTheme();</script>");
+            sb.append("</ul></nav>");
             if (rightSideInfo != null) {
                 sb.append("<div>").append(rightSideInfo).append("</div>");
             }
-            sb.append("<nav>"); // nav links
-            var links = new ArrayList<>(List.of(
-                    link(api, "API"),
-                    link(specs, "OTHER SPECIFICATIONS")
-                ));
-            if (linkGuides) {
-                links.add(link(guides, "TOOL GUIDES"));
-            }
-            sb.append(list(links));
-            sb.append("</nav>");
-            sb.append("</div>");
+            sb.append("</div></div>");
             sb.append("\n");
             return sb.toString();
         }

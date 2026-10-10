@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CGROUP_SUBSYSTEM_LINUX_HPP
-#define CGROUP_SUBSYSTEM_LINUX_HPP
+#ifndef OS_LINUX_CGROUPSUBSYSTEM_LINUX_HPP
+#define OS_LINUX_CGROUPSUBSYSTEM_LINUX_HPP
 
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
@@ -382,4 +382,4 @@ class CgroupSubsystemFactory: AllStatic {
     static void cleanup(CgroupInfo* cg_infos);
 };
 
-#endif // CGROUP_SUBSYSTEM_LINUX_HPP
+#endif // OS_LINUX_CGROUPSUBSYSTEM_LINUX_HPP

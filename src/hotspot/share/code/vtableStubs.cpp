@@ -234,7 +234,6 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index, bool calle
       // all locks. Only post this event if a new state is not required. Creating a new state would
       // cause a safepoint and the caller of this code has a NoSafepointVerifier.
       if (JvmtiExport::should_post_dynamic_code_generated()) {
-        // FIXME: Is it needed to pass caller_is_c1? Tracked by JDK-8383384
         JvmtiExport::post_dynamic_code_generated_while_holding_locks(is_vtable_stub? "vtable stub": "itable stub",
                                                                      s->code_begin(), s->code_end());
       }
