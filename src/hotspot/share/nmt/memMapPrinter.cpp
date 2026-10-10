@@ -223,12 +223,15 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 
   if (Universe::heap() != nullptr) {
     GCThreadClosure gc_cl(from, to);
-    GCThreadClosure diag_cl(from, to);
     Universe::heap()->gc_threads_do(&gc_cl);
-    DiagnosticWorkers::diagnostic_threads_do(&diag_cl);
     if (gc_cl._found) {
       print_thread_details(gc_cl._tid, "GC Thread", st);
-    } else if (diag_cl._found) {
+      return;
+    }
+
+    GCThreadClosure diag_cl(from, to);
+    DiagnosticWorkers::diagnostic_threads_do(&diag_cl);
+    if (diag_cl._found) {
       print_thread_details(diag_cl._tid, "DiagWorker", st);
     }
   }

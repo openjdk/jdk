@@ -281,8 +281,6 @@ public:
 
   void gc_threads_do(ThreadClosure* tcl) const override;
 
-  bool supports_parallel_heap_iteration() const override { return true; }
-
 // ---------- Heap regions handling machinery
 //
 private:
@@ -680,6 +678,7 @@ public:
   void object_iterate(ObjectClosure* cl) override;
   // Parallel heap iteration support
   ParallelObjectIteratorImpl* parallel_object_iterator(uint workers) override;
+  bool supports_parallel_heap_iteration() const override { return true; }
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj) override;

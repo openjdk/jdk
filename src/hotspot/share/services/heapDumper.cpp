@@ -2255,7 +2255,7 @@ class DumperController : public CHeapObj<mtServiceability> {
 
  public:
    DumperController(uint number) :
-     // _lock and _global_writer_lock are used for synchronization between GC worker threads inside safepoint,
+     // _lock and _global_writer_lock are used for synchronization between diagnostic worker threads inside safepoint,
      // so we lock with _no_safepoint_check_flag.
      // signal_start() acquires _lock when global writer is locked,
      // its rank must be less than _global_writer_lock rank.

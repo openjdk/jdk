@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Thread;
@@ -37,25 +38,25 @@ class WorkerThreads;
 // needs them. Threads are reused and exist until the VM exits.
 class DiagnosticWorkers : public AllStatic {
 private:
-  static WorkerThreads* _workers;
-
-  // Calculates the maximum number of workers the pool can hold.
-  static uint calc_max_workers();
+  static Atomic<WorkerThreads*> _workers;
 
 public:
   // Returns the diagnostic worker pool, creating it on the first call. Returns
-  // nullptr if calc_max_workers() <= 1, since the pool could not run in parallel.
+  // nullptr if ParallelGCThreads <= 1, since the pool could not run in parallel.
+  // Can only be called by the VM thread at a safepoint.
   static WorkerThreads* workers();
 
   // Applies the closure to each diagnostic worker only if the worker pool is initialized.
   static void diagnostic_threads_do(ThreadClosure* tc);
 
   // Sets the number of active worker threads (capped at max_workers()) and returns the
-  // active thread count.
+  // active thread count. Returns 0 if worker pool isn't initialized or num_workers is 0.
+  // Can only be called by the VM thread at a safepoint.
   static uint try_and_set_active_workers(uint num_workers);
 
-  // Returns true if the thread passed in is a diagnostic worker thread.
-  static bool is_diagnostic_thread(const Thread* t);
+  // Returns true if the thread passed in is a diagnostic worker thread. Used only in
+  // debug builds.
+  DEBUG_ONLY(static bool is_diagnostic_thread(const Thread* t);)
 };
 
 #endif // SHARE_GC_SHARED_DIAGNOSTICWORKERS_HPP

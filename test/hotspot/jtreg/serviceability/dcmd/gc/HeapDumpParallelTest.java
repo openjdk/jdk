@@ -45,14 +45,16 @@ import jdk.test.lib.hprof.HprofParser;
  * @bug 8306441 8319053 8392050
  * @summary Verify the integrity of generated heap dump and capability of parallel dump
  * @library /test/lib
- * @run main/othervm -XX:ActiveProcessorCount=4 HeapDumpParallelTest
+ * @run main HeapDumpParallelTest
  */
 
 public class HeapDumpParallelTest {
 
     private static final String heapDumpFileName = "parallelHeapDump.bin";
+    private static final int ACTIVE_PROCESSOR_COUNT = 2;
+    private static final int PARALLEL_GC_THREADS = 4;
 
-    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, boolean expectSerial) throws Exception {
+    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, int expectedDiagWorkers) throws Exception {
         dcmdOut.shouldHaveExitValue(0);
         dcmdOut.shouldContain("Heap dump file created");
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
@@ -60,15 +62,17 @@ public class HeapDumpParallelTest {
         String opts = Arrays.asList(Utils.getTestJavaOpts()).toString();
         if (opts.contains("-XX:+UseSerialGC") || opts.contains("-XX:+UseEpsilonGC")) {
             System.out.println("UseSerialGC detected.");
-            expectSerial = true;
+            expectedDiagWorkers = 0;
         }
-        if (!expectSerial && Runtime.getRuntime().availableProcessors() > 1) {
-            appOut.shouldContain("Created diagnostic worker pool");
+        if (expectedDiagWorkers > 1) {
+            appOut.shouldContain("Created diagnostic worker pool (max " + PARALLEL_GC_THREADS + " workers)");
             appOut.shouldContain("Dump heap objects in parallel");
             appOut.shouldContain("Merge heap files complete");
+            appOut.shouldContain("active dump threads " + expectedDiagWorkers + ",");
         } else {
             appOut.shouldNotContain("Created diagnostic worker pool");
             appOut.shouldNotContain("Dump heap objects in parallel");
+            appOut.shouldContain("active dump threads 0");
         }
         HprofParser.parseAndVerify(heapDumpFile);
 
@@ -89,8 +93,8 @@ public class HeapDumpParallelTest {
     private static LingeredApp launchApp() throws IOException {
         LingeredApp theApp = new LingeredApp();
         LingeredApp.startApp(theApp, "-Xlog:heapdump,gc+task", "-Xmx512m",
-                             "-XX:ActiveProcessorCount=4",
-                             "-XX:ParallelGCThreads=4");
+                             "-XX:ActiveProcessorCount=" + ACTIVE_PROCESSOR_COUNT,
+                             "-XX:ParallelGCThreads=" + PARALLEL_GC_THREADS);
         return theApp;
     }
 
@@ -111,27 +115,30 @@ public class HeapDumpParallelTest {
             out.shouldContain("Invalid number of parallel dump threads.");
 
             // Expect serial dump because 0 implies to disable parallel dump
-            test(heapDumpFile, "-parallel=" + 0, true);
+            test(heapDumpFile, "-parallel=" + 0, 0);
 
             // Expect serial dump
-            test(heapDumpFile,  "-parallel=" + 1, true);
+            test(heapDumpFile,  "-parallel=" + 1, 0);
 
             // Expect parallel dump
-            test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, false);
+            test(heapDumpFile, "-parallel=" + 2, 2);
 
             // Expect parallel dump
-            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + Runtime.getRuntime().availableProcessors(), false);
+            test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, PARALLEL_GC_THREADS);
+
+            // Expect parallel dump
+            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + PARALLEL_GC_THREADS, PARALLEL_GC_THREADS);
         } finally {
             theApp.stopApp();
         }
     }
 
-    private static void test(File heapDumpFile, String arg, boolean expectSerial) throws Exception {
+    private static void test(File heapDumpFile, String arg, int expectedDiagWorkers) throws Exception {
         LingeredApp theApp = launchApp();
         try {
             OutputAnalyzer dcmdOut = attachJcmdHeapDump(heapDumpFile, theApp.getPid(), arg);
             theApp.stopApp();
-            checkAndVerify(dcmdOut, theApp, heapDumpFile, expectSerial);
+            checkAndVerify(dcmdOut, theApp, heapDumpFile, expectedDiagWorkers);
         } finally {
             theApp.stopApp();
         }

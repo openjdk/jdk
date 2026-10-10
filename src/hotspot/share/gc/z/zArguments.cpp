@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,7 @@ void ZArguments::initialize_heap_flags_and_sizes() {
 }
 
 void ZArguments::select_max_gc_threads() {
-  // Select number of parallel threads to set the size of the diagnostic worker pool
-  // used by heap dump and heap inspection.
+  // Select number of parallel threads
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
     FLAG_SET_DEFAULT(ParallelGCThreads, ZHeuristics::nparallel_workers());
   }

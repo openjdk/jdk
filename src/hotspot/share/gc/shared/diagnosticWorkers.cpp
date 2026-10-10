@@ -27,10 +27,41 @@
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 
+Atomic<WorkerThreads*> DiagnosticWorkers::_workers{};
+
+WorkerThreads* DiagnosticWorkers::workers() {
+  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
+  assert_at_safepoint();
+  if (_workers.load_relaxed() == nullptr && ParallelGCThreads > 1) {
+    WorkerThreads* pool = new WorkerThreads("DiagWorker", ParallelGCThreads);
+    _workers.release_store(pool);
+    log_info(gc, task)("Created diagnostic worker pool (max %u workers)", pool->max_workers());
+  }
+  return _workers.load_relaxed();
+}
+
+void DiagnosticWorkers::diagnostic_threads_do(ThreadClosure* tc) {
+  WorkerThreads* workers = _workers.load_acquire();
+  if (workers != nullptr) {
+    workers->threads_do(tc);
+  }
+}
+
+uint DiagnosticWorkers::try_and_set_active_workers(uint num_workers) {
+  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
+  assert_at_safepoint();
+  WorkerThreads* workers = _workers.load_relaxed();
+  if (workers == nullptr || num_workers == 0) {
+    return 0;
+  }
+
+  return workers->set_active_workers(MIN2(num_workers, workers->max_workers()));
+}
+
+#ifdef ASSERT
 class DiagnosticThreadClosure : public ThreadClosure {
 private:
   bool _found = false;
@@ -47,41 +78,14 @@ public:
   bool found() const { return _found; }
 };
 
-WorkerThreads* DiagnosticWorkers::_workers = nullptr;
-
-uint DiagnosticWorkers::calc_max_workers() {
-  return clamp(ParallelGCThreads, 1u, (uint)os::initial_active_processor_count());
-}
-
-WorkerThreads* DiagnosticWorkers::workers() {
-  if (_workers == nullptr && calc_max_workers() > 1) {
-    assert_at_safepoint();
-    _workers = new WorkerThreads("DiagWorker", calc_max_workers());
-    log_info(gc, task)("Created diagnostic worker pool (max %u workers)", _workers->max_workers());
-  }
-  return _workers;
-}
-
-void DiagnosticWorkers::diagnostic_threads_do(ThreadClosure* tc) {
-  if (_workers != nullptr) {
-    _workers->threads_do(tc);
-  }
-}
-
-uint DiagnosticWorkers::try_and_set_active_workers(uint num_workers) {
-  if (_workers == nullptr || num_workers == 0) {
-    return 0;
-  }
-
-  return _workers->set_active_workers(MIN2(num_workers, _workers->max_workers()));
-}
-
 bool DiagnosticWorkers::is_diagnostic_thread(const Thread* t) {
-  if (_workers == nullptr) {
+  WorkerThreads* workers = _workers.load_acquire();
+  if (workers == nullptr) {
     return false;
   }
 
   DiagnosticThreadClosure cl(t);
-  _workers->threads_do(&cl);
+  workers->threads_do(&cl);
   return cl.found();
 }
+#endif // ASSERT
