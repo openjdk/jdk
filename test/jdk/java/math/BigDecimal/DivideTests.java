@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 4851776 4907265 6177836 6876282 8066842
+ * @bug 4851776 4907265 6177836 6876282 8066842 8367603
  * @summary Some tests for the divide methods.
  */
 
 import java.math.*;
+
 import static java.math.BigDecimal.*;
 
 public class DivideTests {
@@ -408,6 +409,72 @@ public class DivideTests {
         return failures;
     }
 
+    private static int extremeScaleTests() {
+        int failures = 0;
+
+        int max = Integer.MAX_VALUE, min = Integer.MIN_VALUE;
+        BigDecimal[][] testCases = {
+                { BigDecimal.TEN, BigDecimal.valueOf(1L, min), BigDecimal.valueOf(1L, max) },
+                { BigDecimal.valueOf(1L, min), BigDecimal.valueOf(1L, 1), BigDecimal.valueOf(10L, min) }
+        };
+
+        for (BigDecimal[] tc : testCases) {
+            BigDecimal quotient = tc[0].divide(tc[1]);
+            if (!quotient.equals(tc[2])) {
+                failures++;
+                System.err.println("Unexpected quotient from " + tc[0] + " / " + tc[1] +
+                                   "; expected " + tc[2] + " got " + quotient);
+            }
+        }
+
+        BigDecimal[][] errorCases = {
+                { BigDecimal.valueOf(1L, 1), BigDecimal.valueOf(1L, min) },
+                { BigDecimal.valueOf(1L, max), BigDecimal.valueOf(1L, min) },
+                { BigDecimal.valueOf(1L, min), BigDecimal.valueOf(1L, max) }
+        };
+
+        try {
+            for (BigDecimal[] ec : errorCases) {
+                BigDecimal quotient = ec[0].divide(ec[1]);
+                failures++;
+                System.err.println("Unexpected quotient from " + ec[0] + " / " + ec[1] +
+                                   "; expected ArithmeticException got " + quotient);
+            }
+        } catch (ArithmeticException e) {
+            // Expected
+        }
+
+        return failures;
+    }
+
+    private static int terminatingTests() {
+        int failures = 0;
+
+        BigDecimal[][] testCases = {
+                {
+                    BigDecimal.valueOf(21L, -3),
+                    BigDecimal.valueOf(140L, -6),
+                    BigDecimal.valueOf(15L, 5)
+                },
+                {
+                    BigDecimal.valueOf(91L, -5),
+                    BigDecimal.valueOf(65L, -3),
+                    BigDecimal.valueOf(14L, -1)
+                },
+        };
+
+        for (BigDecimal[] tc : testCases) {
+            BigDecimal quotient = tc[0].divide(tc[1]);
+            if (!quotient.equals(tc[2])) {
+                failures++;
+                System.err.println("Unexpected quotient from " + tc[0] + " / " + tc[1] +
+                                   "; expected " + tc[2] + " got " + quotient);
+            }
+        }
+
+        return failures;
+    }
+
     public static void main(String argv[]) {
         int failures = 0;
 
@@ -417,6 +484,8 @@ public class DivideTests {
         failures += trailingZeroTests();
         failures += scaledRoundedDivideTests();
         failures += divideByOneTests();
+        failures += extremeScaleTests();
+        failures += terminatingTests();
 
         if (failures > 0) {
             throw new RuntimeException("Incurred " + failures +
