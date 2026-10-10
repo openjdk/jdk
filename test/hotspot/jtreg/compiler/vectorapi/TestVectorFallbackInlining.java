@@ -78,12 +78,17 @@ public class TestVectorFallbackInlining {
             "-XX:CompileCommand=inline,jdk.internal.vm.vector.VectorSupport::insert";
 
     public static void main(String[] args) {
+        // Note: Some platforms don't activate EnableVectorSupport by default. Required here.
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
                                    FORCE_INLINE_FALLBACK,
-                                   "-XX:+IncrementalInlineVector");
+                                   "-XX:+IncrementalInlineVector",
+                                   "-XX:+UnlockExperimentalVMOptions",
+                                   "-XX:+EnableVectorSupport");
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
                                    FORCE_INLINE_FALLBACK,
-                                   "-XX:-IncrementalInlineVector");
+                                   "-XX:-IncrementalInlineVector",
+                                   "-XX:+UnlockExperimentalVMOptions",
+                                   "-XX:+EnableVectorSupport");
     }
 
     @Test

@@ -29,6 +29,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmIntrinsics.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -525,22 +526,18 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     return NodeSentinel; // caller will return null
   }
 
+  // Weird access to null+offset, either is a dead unsafe access that cannot be proved to be so, or
+  // should be folded later
+  if (t_adr->base() == Type::AnyPtr) {
+    assert(t_adr->is_ptr()->ptr() == TypePtr::Null, "must be null");
+    return NodeSentinel; // caller will return null
+  }
+
   // Do NOT remove or optimize the next lines: ensure a new alias index
   // is allocated for an oop pointer type before Escape Analysis.
   // Note: C++ will not remove it since the call has side effect.
   if (t_adr->isa_oopptr()) {
     int alias_idx = phase->C->get_alias_index(t_adr->is_ptr());
-  }
-
-  Node* base = nullptr;
-  if (address->is_AddP()) {
-    base = address->in(AddPNode::Base);
-  }
-  if (base != nullptr && phase->type(base)->higher_equal(TypePtr::NULL_PTR) &&
-      !t_adr->isa_rawptr()) {
-    // Note: raw address has TOP base and top->higher_equal(TypePtr::NULL_PTR) is true.
-    // Skip this node optimization if its address has TOP base.
-    return NodeSentinel; // caller will return null
   }
 
   // Avoid independent memory operations
@@ -1552,6 +1549,20 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
   return nullptr;
 }
 
+BasicType MemNode::get_reinterpret_variant(BasicType bt) {
+  switch (bt) {
+    case T_INT: return T_FLOAT;
+    case T_FLOAT: return T_INT;
+    case T_LONG: return T_DOUBLE;
+    case T_DOUBLE: return T_LONG;
+    default: return T_ILLEGAL;
+  }
+}
+
+bool MemNode::has_reinterpret_variant(const Type* vt) const {
+  return get_reinterpret_variant(value_basic_type()) == vt->basic_type();
+}
+
 //----------------------is_instance_field_load_with_local_phi------------------
 bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
   if( in(Memory)->is_Phi() && in(Memory)->in(0) == ctrl &&
@@ -1680,18 +1691,6 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
                         false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
 }
 
-bool LoadNode::has_reinterpret_variant(const Type* rt) {
-  BasicType bt = rt->basic_type();
-  switch (Opcode()) {
-    case Op_LoadI: return (bt == T_FLOAT);
-    case Op_LoadL: return (bt == T_DOUBLE);
-    case Op_LoadF: return (bt == T_INT);
-    case Op_LoadD: return (bt == T_LONG);
-
-    default: return false;
-  }
-}
-
 Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   BasicType bt = rt->basic_type();
   assert(has_reinterpret_variant(rt), "no reinterpret variant: %s %s", Name(), type2name(bt));
@@ -1710,18 +1709,6 @@ Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
                         require_atomic_access, is_unaligned_access(), is_mismatched);
-}
-
-bool StoreNode::has_reinterpret_variant(const Type* vt) {
-  BasicType bt = vt->basic_type();
-  switch (Opcode()) {
-    case Op_StoreI: return (bt == T_FLOAT);
-    case Op_StoreL: return (bt == T_DOUBLE);
-    case Op_StoreF: return (bt == T_INT);
-    case Op_StoreD: return (bt == T_LONG);
-
-    default: return false;
-  }
 }
 
 Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt) {
@@ -2304,7 +2291,9 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
 const Type*
 LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
-  assert(!UseCompactObjectHeaders || tkls->offset() != in_bytes(Klass::prototype_header_offset()),
+  assert(!UseCompactObjectHeaders ||
+         AOTCodeCache::is_on_for_dump() ||
+         tkls->offset() != in_bytes(Klass::prototype_header_offset()),
          "must not happen");
 
   if (tkls->isa_instklassptr() && tkls->offset() == in_bytes(InstanceKlass::access_flags_offset())) {
@@ -2526,10 +2515,14 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         assert(Opcode() == Op_LoadI, "must load an int from _layout_kind");
         return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->layout_kind()));
       }
-      if (UseCompactObjectHeaders && tkls->offset() == in_bytes(Klass::prototype_header_offset())) {
-        // The field is Klass::_prototype_header. Return its (constant) value.
-        assert(this->Opcode() == Op_LoadX, "must load a proper type from _prototype_header");
-        return TypeX::make(klass->prototype_header());
+      // Class encoding and some class's values may change between runs.
+      // Force loading them when AOT code is generated.
+      if (!AOTCodeCache::is_on_for_dump()) {
+        if (UseCompactObjectHeaders && tkls->offset() == in_bytes(Klass::prototype_header_offset())) {
+          // The field is Klass::_prototype_header. Return its (constant) value.
+          assert(this->Opcode() == Op_LoadX, "must load a proper type from _prototype_header");
+          return TypeX::make(klass->prototype_header());
+        }
       }
       // Compute index into primary_supers array
       juint depth = (tkls->offset() - in_bytes(Klass::primary_supers_offset())) / sizeof(Klass*);

@@ -53,6 +53,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.util.calendar.CalendarUtils;
+import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.TimeZoneNameUtility;
@@ -1302,10 +1303,22 @@ public class SimpleDateFormat extends DateFormat {
                 int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
                 int dstOffset = calendar.get(Calendar.DST_OFFSET) + zoneOffset;
 
-                // Check if an explicit metazone DST offset exists
-                String explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
+                ZoneOffset explicitDstOffset = null;
+                // Check if an explicit metazone DST offset exists.
+                // Only check against instances of ZoneInfo, since the standard JDK timezones
+                // are guaranteed to extend this internal type.
+                if (tz instanceof ZoneInfo zi) {
+                    explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
+                    if (explicitDstOffset != null) {
+                        // The time zone ID has an explicit dst offset. Ensure that
+                        // our current TimeZone is canonical.
+                        if (!ZoneInfo.hasCanonicalRule(zi)) {
+                            explicitDstOffset = null;
+                        }
+                    }
+                }
                 boolean daylight = explicitDstOffset != null ?
-                    dstOffset == ZoneOffset.of(explicitDstOffset).getTotalSeconds() * 1_000 :
+                    dstOffset == explicitDstOffset.getTotalSeconds() * 1_000 :
                     dstOffset != zoneOffset;
                 if (formatData.locale == null || formatData.isZoneStringsSet) {
                     int zoneIndex = formatData.getZoneIndex(tzid);

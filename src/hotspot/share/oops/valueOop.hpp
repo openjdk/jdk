@@ -33,6 +33,6 @@ class valueOopDesc : public instanceOopDesc {
 };
 
 // See similar requirement for instanceOopDesc.
-static_assert(std::is_trivially_default_constructible<valueOopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<valueOopDesc>::value);
 
 #endif // SHARE_OOPS_VALUEOOP_HPP
