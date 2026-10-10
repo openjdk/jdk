@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.nio.ch;
 
 import java.nio.ByteBuffer;
 import jdk.internal.misc.TerminatingThreadLocal;
+import jdk.internal.vm.ContinuationSupport;
 
 /**
  * Manipulates a native array of iovec structs on Solaris:
@@ -96,27 +97,37 @@ class IOVecWrapper {
     }
 
     static IOVecWrapper get(int size) {
-        IOVecWrapper[] cache = IOV_CACHE.get();
-        IOVecWrapper wrapper = cache[0];
-        if (wrapper != null) {
-            cache[0] = null;
-            if (wrapper.size < size) {
-                // not big enough; eagerly release memory
-                wrapper.vecArray.free();
-                wrapper = null;
+        ContinuationSupport.pinIfSupported();
+        try {
+            IOVecWrapper[] cache = IOV_CACHE.get();
+            IOVecWrapper wrapper = cache[0];
+            if (wrapper != null) {
+                cache[0] = null;
+                if (wrapper.size < size) {
+                    // not big enough; eagerly release memory
+                    wrapper.vecArray.free();
+                    wrapper = null;
+                }
             }
+            return (wrapper != null) ? wrapper : new IOVecWrapper(size);
+        } finally {
+            ContinuationSupport.unpinIfSupported();
         }
-        return (wrapper != null) ? wrapper : new IOVecWrapper(size);
     }
 
     void release() {
-        IOVecWrapper[] cache = IOV_CACHE.get();
-        IOVecWrapper wrapper = cache[0];
-        if (wrapper == null) {
-            cache[0] = this;
-        } else {
-            // slot already used
-            vecArray.free();
+        ContinuationSupport.pinIfSupported();
+        try {
+            IOVecWrapper[] cache = IOV_CACHE.get();
+            IOVecWrapper wrapper = cache[0];
+            if (wrapper == null) {
+                cache[0] = this;
+            } else {
+                // slot already used
+                vecArray.free();
+            }
+        } finally {
+            ContinuationSupport.unpinIfSupported();
         }
     }
 
