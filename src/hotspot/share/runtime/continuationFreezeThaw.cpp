@@ -46,6 +46,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
@@ -70,6 +71,7 @@
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -3093,11 +3095,40 @@ void ThawBase::finish_thaw(frame& f) {
   }
   assert(chunk->is_empty() == (chunk->max_thawing_size() == 0), "");
 
+  // A frame popped by JVMTI PopFrame returned into the continuation return
+  // barrier, its caller here was still frozen. The interpreter's popframe entry
+  // preserved the arguments and set the deopt reexecution bit as for a
+  // deoptimized caller. A compiled caller was deoptimized by PopFrame and
+  // unpack_on_stack puts the arguments back. An interpreted caller was copied
+  // without them, so put them back on its expression stack and resume at the
+  // invoke, like vframeArrayElement::unpack_on_stack does.
+  bool popframe_reexecute = false;
+  if (JvmtiExport::can_pop_frame() && _thread->popframe_forcing_deopt_reexecution()) {
+    if (f.is_interpreted_frame()) {
+      int words = in_words(_thread->popframe_preserved_args_size_in_words());
+      if (words > 0) {
+        // the thawed frame's sp already covers the argument slots, last_sp was
+        // saved after the arguments were pushed
+        int top_element = f.interpreter_frame_expression_stack_size() - 1;
+        intptr_t* base = f.interpreter_frame_expression_stack_at(top_element);
+        Copy::conjoint_jbytes(_thread->popframe_preserved_args(), base, words * wordSize);
+        _thread->popframe_free_preserved_args();
+      }
+      popframe_reexecute = true;
+      _thread->clear_popframe_condition();
+    } else {
+      assert(f.is_deoptimized_frame(), "popframe reexecution into a frozen compiled caller that was not deoptimized");
+    }
+  }
   if (!is_aligned(f.sp(), frame::frame_alignment)) {
     assert(f.is_interpreted_frame(), "");
     f.set_sp(align_down(f.sp(), frame::frame_alignment));
   }
   push_return_frame(f);
+  if (popframe_reexecute) {
+    // reexecute the invoke instead of returning after it
+    ContinuationHelper::Frame::patch_pc(f, Interpreter::deopt_entry(vtos, 0));
+  }
    // can only fix caller after push_return_frame (due to callee saved regs)
   if (_process_args_at_top) {
     chunk->fix_thawed_frame(f, SmallRegisterMap::instance_with_args());
