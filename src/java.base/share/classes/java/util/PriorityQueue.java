@@ -306,6 +306,13 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     private void initFromCollection(Collection<? extends E> c) {
         initElementsFromCollection(c);
+        if (size == 1 && comparator == null) {
+            // heapify() performs no comparisons on a singleton, so explicitly
+            // validate that the lone element is Comparable, mirroring the
+            // self-comparison TreeMap performs (see JDK-5045147).
+            Comparable<? super E> e = (Comparable<? super E>) queue[0];
+            e.compareTo((E) queue[0]);
+        }
         heapify();
     }
 
