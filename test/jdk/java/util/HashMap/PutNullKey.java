@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
  * @bug 8046085
  * @summary Ensure that when trees are being used for collisions that null key
  * insertion still works.
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.AsValueClass;
 import java.util.*;
+import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 public class PutNullKey {
@@ -61,30 +64,63 @@ public class PutNullKey {
 
         @Override
         public boolean equals(Object o) {
-            if (null == o) {
-                return false;
-            }
-
-            if (o.getClass() != CollidingHash.class) {
-                return false;
-            }
-
-            return value == ((CollidingHash) o).value;
+            return o instanceof CollidingHash t && value == t.value;
         }
 
         @Override
         public int compareTo(CollidingHash o) {
-            return value - o.value;
+            return Integer.compare(value, o.value);
+        }
+    }
+
+    // Not Comparable, so colliding keys in a tree bin are ordered by
+    // HashMap.TreeNode.tieBreakOrder, which uses System.identityHashCode.
+    @AsValueClass
+    public static class CollidingHashValue {
+
+        private final int value;
+
+        public CollidingHashValue(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public int hashCode() {
+            // intentionally bad hashcode. Force into first bin.
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof CollidingHashValue t && value == t.value;
         }
     }
 
     public static void main(String[] args) throws Exception {
+        testCollidingHash(CollidingHash::new);
+        testCollidingHash(CollidingHashValue::new);
+    }
+
+    private static void testCollidingHash(IntFunction<?> function) {
         Map<Object,Object> m = new HashMap<>(INITIAL_CAPACITY, LOAD_FACTOR);
         IntStream.range(0, SIZE)
-                .mapToObj(CollidingHash::new)
+                .mapToObj(function)
                 .forEach(e -> { m.put(e, e); });
+
+        for (int i = 0; i < SIZE; i++) {
+            Object key = function.apply(i);
+            if (!key.equals(m.get(key)))
+                throw new RuntimeException("Missing key " + i);
+        }
 
         // kaboom?
         m.put(null, null);
+
+        for (int i = 0; i < SIZE; i++) {
+            if (m.remove(function.apply(i)) == null)
+                throw new RuntimeException("Failed to remove key " + i);
+        }
+        if (m.size() != 1 || !m.containsKey(null))
+            throw new RuntimeException("Unexpected map contents: " + m);
     }
 }
