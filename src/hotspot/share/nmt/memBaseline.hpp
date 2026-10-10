@@ -98,7 +98,9 @@ class MemBaseline {
     reset();
   }
 
-  void baseline(bool summaryOnly = true);
+  // Returns false if detail collection fails. In that case, the baseline
+  // contains valid summary information and no detail data.
+  bool baseline(bool summaryOnly = true);
 
   BaselineType baseline_type() const { return _baseline_type; }
 
@@ -198,19 +200,25 @@ class MemBaseline {
     _array_class_count = 0;
     _thread_count = 0;
 
+    reset_detail();
+  }
+
+ private:
+  void reset_detail() {
     os::free(_malloc_sites);
     _malloc_sites_length = 0;
     _malloc_sites = nullptr;
     _malloc_sites_order = invalid;
+
     os::free(_virtual_memory_sites);
     _virtual_memory_sites_length = 0;
     _virtual_memory_sites = nullptr;
     _virtual_memory_sites_order = invalid;
+
     delete _vma_allocations;
     _vma_allocations = nullptr;
   }
 
- private:
   // Baseline summary information
   void baseline_summary();
 
