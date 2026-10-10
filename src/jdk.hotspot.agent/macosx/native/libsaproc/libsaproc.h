@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef _LIBPROC_H_
-#define _LIBPROC_H_
+#ifndef _LIBSAPROC_H_
+#define _LIBSAPROC_H_
 
 #include <unistd.h>
 #include <stdint.h>
@@ -145,4 +145,4 @@ uintptr_t lookup_symbol(struct ps_prochandle* ph,  const char* object_name,
 // address->nearest symbol lookup. return NULL for no symbol
 const char* symbol_for_pc(struct ps_prochandle* ph, uintptr_t addr, uintptr_t* poffset);
 
-#endif //__LIBPROC_H_
+#endif //_LIBSAPROC_H_

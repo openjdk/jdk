@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +22,36 @@
  * questions.
  *
  */
+package sun.jvm.hotspot.oops;
 
-#ifndef SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP
-#define SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObject;
+import sun.jvm.hotspot.types.Type;
+import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.types.WrongTypeException;
 
-#include "memory/allocation.hpp"
-#include "oops/valueKlass.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-class BarrierSetRuntime: public AllStatic {
-public:
-  // Template interpreter...
-  static void value_copy(address src, address dst, ValueFieldLayoutInfo* li);
-  static void value_copy_is_dest_uninitialized(address src, address dst, ValueFieldLayoutInfo* li);
-};
+public class ValueFieldInfo extends VMObject {
 
-#endif // SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP
+    private static MetadataField klassField;
+
+    static {
+        VM.registerVMInitializedObserver((_, _) -> initialize(VM.getVM().getTypeDataBase()));
+    }
+
+    private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
+        Type type = db.lookupType("ValueFieldInfo");
+
+        klassField = new MetadataField(type.getAddressField("_klass"), 0);
+    }
+
+    public ValueFieldInfo(Address addr) {
+        super(addr);
+    }
+
+    public ValueKlass getKlass() {
+        return (ValueKlass)klassField.getValue(this);
+    }
+
+}

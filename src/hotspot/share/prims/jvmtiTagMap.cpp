@@ -592,9 +592,9 @@ class ClassFieldDescriptor: public CHeapObj<mtServiceability> {
     if (fld.is_flat()) {
       const fieldDescriptor& fd = fld.field_descriptor();
       InstanceKlass* holder_klass = fd.field_holder();
-      ValueFieldLayoutInfo* layout_info = holder_klass->value_field_layout_info_adr(fd.index());
-      _value_klass = layout_info->klass();
-      _layout_kind = layout_info->kind();
+      ValueFieldInfo* vfi = holder_klass->value_field_info_adr(fd.index());
+      _value_klass = vfi->klass();
+      _layout_kind = vfi->kind();
     } else {
       _value_klass = nullptr;
       _layout_kind = LayoutKind::REFERENCE;

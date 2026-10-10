@@ -30,54 +30,24 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.util;
+package jdk.internal.org.commonmark.parser.beta;
 
-import java.util.BitSet;
+/**
+ * Parser for a type of inline content. Registered via a {@link InlineContentParserFactory} and created by its
+ * {@link InlineContentParserFactory#create() create} method. The lifetime of this is tied to each inline content
+ * snippet that is parsed, as a new instance is created for each.
+ */
+public interface InlineContentParser {
 
-public class AsciiMatcher implements CharMatcher {
-    private final BitSet set;
-
-    private AsciiMatcher(Builder builder) {
-        this.set = builder.set;
-    }
-
-    @Override
-    public boolean matches(char c) {
-        return set.get(c);
-    }
-
-    public Builder newBuilder() {
-        return new Builder((BitSet) set.clone());
-    }
-
-    public static Builder builder() {
-        return new Builder(new BitSet());
-    }
-
-    public static class Builder {
-        private final BitSet set;
-
-        private Builder(BitSet set) {
-            this.set = set;
-        }
-
-        public Builder c(char c) {
-            if (c > 127) {
-                throw new IllegalArgumentException("Can only match ASCII characters");
-            }
-            set.set(c);
-            return this;
-        }
-
-        public Builder range(char from, char toInclusive) {
-            for (char c = from; c <= toInclusive; c++) {
-                c(c);
-            }
-            return this;
-        }
-
-        public AsciiMatcher build() {
-            return new AsciiMatcher(this);
-        }
-    }
+    /**
+     * Try to parse inline content starting from the current position. Note that the character at the current position
+     * is one of {@link InlineContentParserFactory#getTriggerCharacters()} of the factory that created this parser.
+     * <p>
+     * For a given inline content snippet that is being parsed, this method can be called multiple times: each time a
+     * trigger character is encountered.
+     *
+     * @param inlineParserState the current state of the inline parser
+     * @return the result of parsing; can indicate that this parser is not interested, or that parsing was successful
+     */
+    ParsedInline tryParse(InlineParserState inlineParserState);
 }

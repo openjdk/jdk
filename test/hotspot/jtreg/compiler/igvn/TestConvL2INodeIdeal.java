@@ -1,11 +1,10 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,27 +21,33 @@
  * questions.
  */
 
+package compiler.igvn;
+
 /*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, a notice that is now available elsewhere in this distribution
- * accompanied the original version of this file, and, per its terms,
- * should not be removed.
+ * @test
+ * @bug 8392942
+ * @summary Test that IGVN revisits ConvL2I when the mask input of an AndL becomes
+ *          0xFFFFFFFF in the ConvL2I(AndL(x, 0xFFFFFFFF)) pattern.
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -Xbatch
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   -XX:VerifyIterativeGVN=1110
+ *                   ${test.main.class}
+ * @run main ${test.main.class}
  */
+public class TestConvL2INodeIdeal {
+    static int iFld;
 
-package jdk.internal.org.commonmark.internal.inline;
+    public static void main(String[] args) {
+        for (int i = 0; i < 10000; i++) {
+            test();
+        }
+    }
 
-/**
- * Position within a {@link Scanner}. This is intentionally kept opaque so as not to expose the internal structure of
- * the Scanner.
- */
-public class Position {
-
-    final int lineIndex;
-    final int index;
-
-    Position(int lineIndex, int index) {
-        this.lineIndex = lineIndex;
-        this.index = index;
+    static void test() {
+        for (int i = 0; i < 2; i++) {
+            iFld = (int) (iFld & ((i - 5L) >>> 32));
+        }
     }
 }
