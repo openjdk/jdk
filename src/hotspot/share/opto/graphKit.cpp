@@ -1957,42 +1957,43 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
   return basic_plus_adr(ary, base, scale);
 }
 
-Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
+ciObjArrayKlass* GraphKit::get_flat_array_klass(ciValueKlass* elem_vk) {
   assert(elem_vk->maybe_flat_in_array(), "no flat array for %s", elem_vk->name()->as_utf8());
   if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_nullable_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, true, false);
+    return get_flat_array_klass_exact(elem_vk, true, false);
   } else if (!elem_vk->has_nullable_atomic_layout() && !elem_vk->has_null_free_non_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, true, true);
+    return get_flat_array_klass_exact(elem_vk, true, true);
   } else if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_null_free_non_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, false, true);
+    return get_flat_array_klass_exact(elem_vk, false, true);
   }
-
-  bool is_null_free = false;
-  if (!elem_vk->has_nullable_atomic_layout()) {
-    // Element does not have a nullable flat layout, cannot be nullable
-    is_null_free = true;
-  }
-
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, false);
-  if (!array_klass->is_loaded()) {
-    return top();
-  }
-  const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
-  return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+  return ciObjArrayKlass::make(elem_vk, false);
 }
 
-Node* GraphKit::cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
+ciObjArrayKlass* GraphKit::get_flat_array_klass_exact(ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
   assert(is_null_free || is_atomic, "nullable arrays must be atomic");
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+  return ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+}
+
+Node* GraphKit::cast_to_flat_array(Node* array, ciObjArrayKlass* array_klass, bool exact) {
   if (!array_klass->is_loaded()) {
     return top();
   }
+  assert(array_klass->element_klass()->is_value_klass(), "Must be");
+
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  assert(arytype->klass_is_exact(), "inconsistency");
-  assert(arytype->is_flat(), "inconsistency");
-  assert(arytype->is_null_free() == is_null_free, "inconsistency");
-  assert(arytype->is_not_null_free() == !is_null_free, "inconsistency");
+  if (exact) {
+    assert(arytype->klass_is_exact(), "inconsistency");
+    assert(arytype->is_flat(), "inconsistency");
+    assert(arytype->is_null_free() == array_klass->is_elem_null_free(), "inconsistency");
+    assert(arytype->is_not_null_free() == !array_klass->is_elem_null_free(), "inconsistency");
+  } else {
+    bool is_null_free = false;
+    if (!array_klass->element_klass()->as_value_klass()->has_nullable_atomic_layout()) {
+      // Element does not have a nullable flat layout, cannot be nullable
+      is_null_free = true;
+    }
+    arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
+  }
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
 }
 
