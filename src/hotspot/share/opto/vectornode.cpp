@@ -1130,18 +1130,18 @@ static Node* ideal_partial_operations(PhaseGVN* phase, Node* node, const TypeVec
   switch(vopc) {
   case Op_LoadVector:
     return new LoadVectorMaskedNode(node->in(0), node->in(1), node->in(2),
-                                    node->as_LoadVector()->adr_type(), vt, mask,
+                                    node->as_LoadVector()->in_adr_type(), vt, mask,
                                     node->as_LoadVector()->control_dependency());
   case Op_LoadVectorGather:
     return new LoadVectorGatherMaskedNode(node->in(0), node->in(1), node->in(2),
-                                          node->as_LoadVector()->adr_type(), vt,
+                                          node->as_LoadVector()->in_adr_type(), vt,
                                           node->in(3), mask);
   case Op_StoreVector:
     return new StoreVectorMaskedNode(node->in(0), node->in(1), node->in(2), node->in(3),
-                                     node->as_StoreVector()->adr_type(), mask);
+                                     node->as_StoreVector()->in_adr_type(), mask);
   case Op_StoreVectorScatter:
     return new StoreVectorScatterMaskedNode(node->in(0), node->in(1), node->in(2),
-                                            node->as_StoreVector()->adr_type(),
+                                            node->as_StoreVector()->in_adr_type(),
                                             node->in(3), node->in(4), mask);
   default:
     // Add the mask as an additional input to the original vector node by default.
@@ -1603,7 +1603,7 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
-        return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type()));
+        return phase->transform(new LoadVectorNode(ctr, mem, adr, in_adr_type(), vect_type()));
       }
     }
   }
@@ -1630,7 +1630,7 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
         Node* val = in(MemNode::ValueIn);
-        return phase->transform(new StoreVectorNode(ctr, mem, adr, adr_type(), val));
+        return phase->transform(new StoreVectorNode(ctr, mem, adr, in_adr_type(), val));
       }
     }
   }

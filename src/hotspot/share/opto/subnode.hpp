@@ -329,6 +329,9 @@ public:
   virtual const Type* sub(const Type*, const Type*) const { ShouldNotReachHere(); return nullptr; }
   const Type* Value(PhaseGVN* phase) const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+private:
+  const TypePtr* in_adr_type_impl() const final { return TypeRawPtr::BOTTOM; }
 };
 
 //------------------------------BoolTest---------------------------------------

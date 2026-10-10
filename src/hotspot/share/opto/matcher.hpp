@@ -169,6 +169,7 @@ private:
   MachNode* _mach_null;
 
   void handle_precedence_edges(Node* n, MachNode *mach);
+  void combine_adr_type(const Node* n, MachNode* mach) const;
 
 public:
   int LabelRootDepth;

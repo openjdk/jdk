@@ -728,8 +728,8 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
   }
   else if( inst.is_ideal_mem() ) {
     // Print out the field name if available to improve readability
-    fprintf(fp,  "  if (ra->C->alias_type(adr_type())->field() != nullptr) {\n");
-    fprintf(fp,  "    ciField* f = ra->C->alias_type(adr_type())->field();\n");
+    fprintf(fp,  "  if (ra->C->alias_type(in_adr_type())->field() != nullptr) {\n");
+    fprintf(fp,  "    ciField* f = ra->C->alias_type(in_adr_type())->field();\n");
     fprintf(fp,  "    st->print(\" %s Field: \");\n", commentSeperator);
     fprintf(fp,  "    if (f->is_volatile())\n");
     fprintf(fp,  "      st->print(\"volatile \");\n");
@@ -740,7 +740,7 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
     fprintf(fp,  "      st->print(\" (constant)\");\n");
     fprintf(fp,  "  } else {\n");
     // Make sure 'Volatile' gets printed out
-    fprintf(fp,  "    if (ra->C->alias_type(adr_type())->is_volatile())\n");
+    fprintf(fp,  "    if (ra->C->alias_type(in_adr_type())->is_volatile())\n");
     fprintf(fp,  "      st->print(\" volatile!\");\n");
     fprintf(fp,  "  }\n");
   }
@@ -1885,9 +1885,6 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Analyze machine instructions that either USE or DEF memory.
     int memory_operand = instr->memory_operand(_globalNames);
     if ( memory_operand != InstructForm::NO_MEMORY_OPERAND ) {
-      if( memory_operand == InstructForm::MANY_MEMORY_OPERANDS ) {
-        fprintf(fp,"  virtual const TypePtr *adr_type() const;\n");
-      }
       fprintf(fp,"  virtual const MachOper *memory_operand() const;\n");
     }
 

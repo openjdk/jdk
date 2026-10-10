@@ -2678,8 +2678,8 @@ const Type* VLoopTypes::container_type(Node* n) const {
 }
 
 bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
-  return _vloop.phase()->C->get_alias_index(m1->adr_type()) ==
-         _vloop.phase()->C->get_alias_index(m2->adr_type());
+  return _vloop.phase()->C->get_alias_index(m1->in_adr_type()) ==
+         _vloop.phase()->C->get_alias_index(m2->in_adr_type());
 }
 
 LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Node_List* pack) const {
