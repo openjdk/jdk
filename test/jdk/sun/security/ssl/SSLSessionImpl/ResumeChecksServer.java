@@ -27,7 +27,7 @@
  * @summary ensure that server only resumes a session if certain properties
  *    of the session are compatible with the new connection
  * @modules java.base/sun.security.x509
- * @library /javax/net/ssl/templates
+ * @library /javax/net/ssl/templates /test/lib
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksServer BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksServer BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true ResumeChecksServer BASIC
@@ -43,17 +43,34 @@
  *
  */
 
-import javax.net.*;
-import javax.net.ssl.*;
-import java.io.*;
-import java.security.*;
-import java.net.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.security.AlgorithmConstraints;
+import java.security.AlgorithmParameters;
+import java.security.CryptoPrimitive;
+import java.security.Key;
+import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import sun.security.x509.X509CertImpl;
+
+import jdk.test.lib.valueclass.AsValueClass;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 
 public class ResumeChecksServer extends SSLContextTemplate {
 
@@ -142,6 +159,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         }
     }
 
+    @AsValueClass
     private static class NoSig implements AlgorithmConstraints {
         private final String alg;
 
@@ -158,7 +176,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         }
 
         public boolean permits(Set<CryptoPrimitive> primitives,
-            String algorithm, AlgorithmParameters parameters) {
+                               String algorithm, AlgorithmParameters parameters) {
             return test(algorithm);
         }
 

@@ -175,7 +175,18 @@ jdk_util = \
 valhalla_adopted = \
     java/util/Collections/AddAll.java \
     java/util/Arrays \
-    java/util/Collections
+    java/util/Collections \
+    com/sun/crypto/provider/Cipher/PBE/PKCS12Cipher.java \
+    com/sun/crypto/provider/KeyAgreement/ECKeyCheck.java \
+    javax/crypto/EncryptedPrivateKeyInfo/GetKeySpecException2.java \
+    javax/crypto/KEM/RSA_KEM.java \
+    sun/security/ec/ed/EdDSANegativeTest.java \
+    sun/security/pkcs11/KeyStore/Basic.java \
+    sun/security/pkcs11/Secmod/JksSetPrivateKey.java \
+    sun/security/ssl/SSLSessionImpl/ResumeChecksClient.java \
+    sun/security/ssl/SSLSessionImpl/ResumeChecksServer.java \
+    sun/security/ssl/X509KeyManager/CertChecking.java \
+    sun/security/util/SliceableSecretKey/SoftSliceable.java
 
 # All util components not part of some other util category
 jdk_util_other = \
