@@ -256,24 +256,6 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
   ins_pipe(pipe_slow);
 %}
 
-instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp, rFlagsReg cr) %{
-  match(Set prev (GetAndSetP mem newv));
-  predicate(UseZGC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF prev, TEMP tmp, KILL cr);
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  format %{ "atomic_xchg  $prev, $newv, [$mem], #@zGetAndSetP" %}
-
-  ins_encode %{
-    z_store_barrier(masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, $tmp$$Register, true /* is_atomic */);
-    __ atomic_xchg($prev$$Register, $prev$$Register, $mem$$Register);
-    z_uncolor(masm, $prev$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
 instruct zGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
   predicate(UseZGC && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
