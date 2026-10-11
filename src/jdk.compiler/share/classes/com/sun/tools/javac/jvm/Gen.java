@@ -273,6 +273,16 @@ public class Gen extends JCTree.Visitor {
         return poolWriter.putClass(checkDimension(pos, type));
     }
 
+    /** Make an attributed tree representing a literal. This will be an
+     *  Ident node in the case of boolean literals, a Literal node in all
+     *  other cases.
+     *  @param type       The literal's type.
+     *  @param value      The literal's value.
+     */
+    JCExpression makeLit(Type type, Object value) {
+        return make.Literal(type.getTag(), value).setType(type.constType(value));
+    }
+
     /** Check if the given type is an array with too many dimensions.
      */
     private Type checkDimension(DiagnosticPosition pos, Type t) {
@@ -780,6 +790,45 @@ public class Gen extends JCTree.Visitor {
             //expression:
             code.undefineVariablesInChain(result.falseJumps, limit);
             code.undefineVariablesInChain(result.trueJumps, limit);
+            return result;
+        } else if (inner_tree instanceof JCTypeCast cast) {
+            Assert.check(types.unboxedTypeOrType(cast.type).hasTag(BOOLEAN));
+            CondItem res = genCond(cast.expr, markBranches);
+            setTypeAnnotationPositions(cast.pos);
+            return res;
+        } else if (inner_tree instanceof JCMethodInvocation mi &&
+                   mi.boxingKind == JCMethodInvocation.BoxingKind.UNBOX &&
+                   TreeInfo.skipParens(((JCFieldAccess) mi.meth).selected) instanceof JCTypeCast tc &&
+                   tc.type.tsym == types.boxedClass(syms.booleanType) &&
+                   tc.expr instanceof JCMethodInvocation boxing &&
+                   boxing.boxingKind == JCMethodInvocation.BoxingKind.BOX) {
+            //case like:
+            //(Boolean) (b && (result = 1) > 0)
+            //expanded to:
+            //((Boolean)Boolean.valueOf((b && (result = 1) > 0))).booleanValue()
+            //it is impossible to correctly track variable DA across the method calls,
+            //so call the boxing and unboxing (so that we can preserve the location of
+            //the annotations), but keep the true and false branches separate:
+            JCExpression boxedValue = boxing.args.head;
+            CondItem value = genCond(boxedValue, markBranches);
+
+            Chain secondJumps = value.jumpFalse();
+            code.resolve(value.trueJumps);
+            make.at(boxing.args.head);
+            boxing.args.head = makeLit(syms.booleanType, 1);
+            genExpr(mi, syms.booleanType).drop();
+            Chain trueJumps = code.branch(goto_);
+
+            code.resolve(secondJumps);
+            make.at(boxing.args.head);
+            boxing.args.head = makeLit(syms.booleanType, 0);
+            genExpr(mi, syms.booleanType).drop();
+            Chain falseJumps = code.branch(goto_);
+            CondItem result = items.makeCondItem(goto_,
+                                      trueJumps,
+                                      falseJumps);
+            if (markBranches) result.tree = _tree;
+
             return result;
         } else {
             CondItem result = genExpr(_tree, syms.booleanType).mkCond();
