@@ -72,7 +72,7 @@ public class PunycodeTest {
         char input[] = new char[unicode_max_length];
         int codept = 0;
         char uplus[] = new char[2];
-        StringBuffer output;
+        StringBuilder output;
         int c;
 
         /* Read the input code points: */
@@ -108,7 +108,7 @@ public class PunycodeTest {
 
         output_length[0] = ace_max_length;
         try {
-            output = Punycode.encode((new StringBuffer()).append(input, 0, input_length), case_flags);
+            output = Punycode.encode((new StringBuilder()).append(input, 0, input_length), case_flags);
         } catch (Exception e) {
             fail(invalid_input, inputS);
             // never reach here, just to make compiler happy
@@ -122,7 +122,7 @@ public class PunycodeTest {
     public String testDecoding(String inputS) {
         char input[] = new char[0];
         int pp;
-        StringBuffer output;
+        StringBuilder output;
 
         /* Read the Punycode input string and convert to ASCII: */
 
@@ -137,7 +137,7 @@ public class PunycodeTest {
 
         output_length[0] = unicode_max_length;
         try {
-            output = Punycode.decode((new StringBuffer()).append(input, 0, input_length), case_flags);
+            output = Punycode.decode((new StringBuilder()).append(input, 0, input_length), case_flags);
         } catch (Exception e) {
             fail(invalid_input, inputS);
             // never reach here, just to make compiler happy
