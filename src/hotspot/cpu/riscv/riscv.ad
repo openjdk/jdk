@@ -1202,12 +1202,16 @@ bool is_CAS(int opcode, bool maybe_volatile)
 // every preceding access before it. That subsumes both membars.
 //
 // An LR/SC based CAS has different ordering properties from a single AMO.
-// The aq annotation on LR orders its load before later accesses, while the
-// rl annotation on SC orders earlier accesses before its successful store.
-// These annotations must not be treated as .aqrl on a single instruction.
-// Without Zalasr, a subsequent volatile load uses a plain load followed by
-// fence r,rw, not an acquiring load carrying an RCsc annotation. PPO rule 7
-// therefore does not establish an SC-to-load edge for that plain load.
+// The aq annotation on LR orders its load before later accesses (PPO rule 5),
+// while the rl annotation on SC orders earlier accesses before its successful
+// store (PPO rule 6). These annotations must not be treated as .aqrl on a
+// single instruction: for an AMO the acquire annotation covers the store
+// event too, so PPO rule 5 also orders the AMO's store before subsequent
+// loads. An SC's store carries only a release annotation, so the only rule
+// that could order it before a subsequent load is PPO rule 7, which requires
+// both accesses to carry RCsc annotations. A subsequent volatile load never
+// qualifies: without Zalasr it is a plain load followed by fence r,rw, and
+// with Zalasr it is an RCpc acquire load, neither of which is RCsc.
 //
 // Keep the trailing MemBarAcquire for the existing LR/SC mapping rather than
 // extending the single-AMO elision to LR/SC.
