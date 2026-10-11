@@ -43,7 +43,7 @@
 
 extern LPCTSTR szAwtComponentClassName;
 
-static LPCTSTR DrawingStateProp = TEXT("SunAwtDrawingStateProp");
+// static LPCTSTR DrawingStateProp = TEXT("SunAwtDrawingStateProp");
 
 const UINT IGNORE_KEY = (UINT)-1;
 const UINT MAX_ACP_STR_LEN = 7; // ANSI CP identifiers are no longer than this
