@@ -1211,7 +1211,6 @@ static int lookupShortData(mlib_image* src, mlib_image* dst,
     LookupArrayInfo* lookup)
 {
     int x, y;
-    unsigned int mask = NLUT-1;
 
     unsigned short* srcLine = (unsigned short*)src->data;
     unsigned char* dstLine = (unsigned char*)dst->data;
@@ -2115,7 +2114,6 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
     unsigned char *cDataP;
     RasterS_t *rasterP = &imageP->raster;
     ColorModelS_t *cmP = &imageP->cmodel;
-    int dataType = BYTE_DATA_TYPE;
     int width;
     int height;
     HintS_t *hintP = &imageP->hints;
@@ -2134,7 +2132,6 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
     /* around pointers and incrementing the width/height              */
 
     if (cvtToDefault) {
-        int status = 0;
         *mlibImagePP = (*sMlibSysFns.createFP)(MLIB_BYTE, 4, width, height);
         if (*mlibImagePP == NULL) {
             return -1;
@@ -2262,7 +2259,6 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
                     mlib_image **mlibImagePP, void **dataPP, int isSrc) {
     void *dataP;
     unsigned char *cDataP;
-    int dataType = BYTE_DATA_TYPE;
     int width;
     int height;
     int dataSize;
