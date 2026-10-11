@@ -1062,7 +1062,15 @@ class HandlerImpl {
 class Node::PD {
 public:
   enum NodeFlags {
-    _last_flag = Node::_last_flag
+    // The instruct's encoding is exactly one vsetvli_helper setup of the
+    // required shape -- always m1/tu/mu, with vl taken from the shape's
+    // element count -- followed by plain RVV instructions that alter neither
+    // VL nor VTYPE and depend on no other vector configuration. Only instructs
+    // satisfying this contract may carry this flag.
+    Flag_rvv_simple = Node::_last_flag << 1,
+    // Set by late analysis; subsequent sizing and emission omit the redundant setup.
+    Flag_rvv_vsetvli_elided = Node::_last_flag << 2,
+    _last_flag = Flag_rvv_vsetvli_elided
   };
 };
 
@@ -1138,7 +1146,175 @@ void reg_mask_init() {
   _NO_SPECIAL_NO_FP_PTR_REG_mask.remove(OptoReg::as_OptoReg(x8->as_VMReg()));
 }
 
+// Configuration follows the vector result, or the vector input for nodes with a non-vector result.
+static const Node* rvv_vsetvli_shape_node(const MachNode* node) {
+  switch (node->rule()) {
+    case storeV_rule:
+    case vreduce_and_rule:
+    case vreduce_andL_rule:
+    case vreduce_or_rule:
+    case vreduce_orL_rule:
+    case vreduce_xor_rule:
+    case vreduce_xorL_rule:
+    case vreduce_add_rule:
+    case vreduce_addL_rule:
+    case vreduce_addF_ordered_rule:
+    case vreduce_addF_unordered_rule:
+    case vreduce_addD_ordered_rule:
+    case vreduce_addD_unordered_rule:
+    case vreduce_max_rule:
+    case vreduce_maxL_rule:
+    case vreduce_min_rule:
+    case vreduce_minL_rule: {
+      // Keep vector sources at Mach operand index 2; operand_index skips storeV's address edges.
+      assert(node->num_opnds() >= 3 && node->operand_num_edges(2) == 1, "unexpected vector source operand");
+      const Node* src = node->in(node->operand_index(2));
+      assert(src->bottom_type()->isa_vect() != nullptr, "expected vector source");
+      return src;
+    }
+    default:
+      return node;
+  }
+}
+
+static bool rvv_is_vector_register(OptoReg::Name reg) {
+  return OptoReg::is_reg(reg) && OptoReg::as_VMReg(reg)->is_VectorRegister();
+}
+
+static bool rvv_has_vector_register(const RegMask& mask) {
+  for (RegMaskIterator it(mask); it.has_next();) {
+    if (rvv_is_vector_register(it.next())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Types identify spilled vectors/masks; allocation checks catch vector registers even without a vector type.
+static bool rvv_is_scalar(const Node* node, const PhaseRegAlloc* ra) {
+  if (node->bottom_type()->isa_vect() != nullptr || node->_idx >= ra->node_regs_max_index()) {
+    return false;
+  }
+  return !rvv_is_vector_register(ra->get_reg_first(node)) &&
+         !rvv_is_vector_register(ra->get_reg_second(node));
+}
+
+// True only when the node's emission is guaranteed to leave VL and VTYPE
+// unchanged. Soundness rests on a port-wide invariant: any instruct whose
+// encoding programs VL/VTYPE (directly or through assembler helpers) must
+// leave mechanically visible vector evidence on its MachNode -- a vector
+// bottom_type, a vector-typed input, an allocated vector register, or a
+// vector register in a kill-projection mask. Conversely, a purely scalar
+// instruct -- scalar type, scalar registers, scalar inputs, no vector KILL
+// effect -- must never modify VL/VTYPE. Runtime and stub calls are covered
+// by has_call(), and vector spill copies select their RVV emission path on
+// the same bottom_type test used below, so both are classified correctly.
+// Preserve this invariant when adding instructs that inline RVV sequences
+// behind a scalar-only signature.
+static bool rvv_preserves_vsetvli(const Node* node, const PhaseRegAlloc* ra) {
+  // Projections emit no code, so rejecting vector-carrying ones is
+  // deliberately conservative rather than strictly necessary.
+  if (node->is_MachProj()) {
+    return node->bottom_type()->isa_vect() == nullptr &&
+           !rvv_has_vector_register(node->as_MachProj()->out_RegMask());
+  }
+  if (!node->is_Mach()) {
+    return false;
+  }
+  const MachNode* mach = node->as_Mach();
+  // VL/VTYPE are call-clobbered. Barrier data is assigned at match time and
+  // refined by late_barrier_analysis, both of which precede this analysis;
+  // barrier-carrying nodes may expand to code with unknown vector effects.
+  if (mach->is_MachSafePoint() || mach->has_call() || mach->barrier_data() != 0) {
+    return false;
+  }
+  // Non-generated nodes may hide VL/VTYPE effects; spill copies are checked below.
+  if (!mach->is_MachSpillCopy() && mach->rule() >= _last_Mach_Node) {
+    return false;
+  }
+  if (!rvv_is_scalar(node, ra)) {
+    return false;
+  }
+  // ADLC attaches TEMP operands as required MachTempNode inputs.
+  for (uint i = 0; i < node->req(); i++) {
+    if (node->in(i) != nullptr && !rvv_is_scalar(node->in(i), ra)) {
+      return false;
+    }
+  }
+  // Fixed-register KILL effects can exist only in outgoing projection masks.
+  for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+    const Node* use = node->fast_out(i);
+    if (use->is_MachProj() && use->in(0) == node &&
+        rvv_has_vector_register(use->as_MachProj()->out_RegMask())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Extended-basic-block elimination of redundant RVV vector configuration.
+//
+// Tracks the (sew, vl) most recently established by a Flag_rvv_simple node in
+// each block. Every simple setup uses m1/tu/mu with vl equal to the shape's
+// element count, so a matching tracked (sew, vl) means the hardware already
+// holds exactly the configuration the node would program, and its vsetvli can
+// be omitted. The tracked state is dropped at block boundaries and whenever
+// an intervening node might clobber VL/VTYPE (see rvv_preserves_vsetvli), so
+// the first simple node after either always re-establishes the configuration.
 void PhaseOutput::pd_perform_mach_node_analysis() {
+  if (!VSETVLIElimination || C->max_vector_size() == 0) {
+    return;
+  }
+  ResourceMark rm;
+  struct WorkItem {
+    Block* block;
+    Assembler::SEW sew;
+    uint vl;
+  };
+  GrowableArray<WorkItem> worklist;
+  VectorSet visited;
+  Block* entry = C->cfg()->get_block(1);
+  worklist.append({entry, Assembler::e8, 0});
+  visited.set(entry->_pre_order);
+  while (worklist.is_nonempty()) {
+    WorkItem item = worklist.pop();
+    Block* block = item.block;
+    Assembler::SEW previous_sew = item.sew;
+    uint previous_vl = item.vl;
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* node = block->get_node(j);
+      node->remove_flag(Node::PD::Flag_rvv_vsetvli_elided);
+      if (node->is_Region() || node->is_Phi() || node->is_MachMerge() || node->is_MachTemp()) {
+        // Structural nodes preserve VL/VTYPE even when their values are vectors.
+        continue;
+      }
+      if ((node->flags() & Node::PD::Flag_rvv_simple) == 0) {
+        if (previous_vl != 0 && !rvv_preserves_vsetvli(node, C->regalloc())) {
+          previous_vl = 0;
+        }
+        continue;
+      }
+      // Eligible nodes require m1/tu/mu, preserve their setup, and discard its scalar result.
+      const Node* shape = rvv_vsetvli_shape_node(node->as_Mach());
+      assert(shape->bottom_type()->isa_vect() != nullptr, "simple RVV nodes require a vector shape");
+      Assembler::SEW sew = Assembler::elemtype_to_sew(Matcher::vector_element_basic_type(shape));
+      uint vl = Matcher::vector_length(shape);
+      if (sew == previous_sew && vl == previous_vl) {
+        node->add_flag(Node::PD::Flag_rvv_vsetvli_elided);
+      }
+      previous_sew = sew;
+      previous_vl = vl;
+    }
+    for (uint i = 0; i < block->_num_succs; i++) {
+      Block* succ = block->_succs[i];
+      if (succ == C->cfg()->get_root_block() || visited.test_set(succ->_pre_order)) {
+        continue;
+      }
+      // Input zero is reserved; every join starts a new EBB with unknown state.
+      uint vl = succ->num_preds() == 2 ? previous_vl : 0;
+      worklist.append({succ, previous_sew, vl});
+    }
+  }
 }
 
 int MachNode::pd_alignment_required() const {
