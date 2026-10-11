@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,12 +33,14 @@ frame JavaThread::pd_last_frame() {
   intptr_t* sp = last_Java_sp();
   address pc = _anchor.last_Java_pc();
 
-  // Last_Java_pc is not set if we come here from compiled code.
-  // Assume spill slot for Z_R14 (return register) contains a suitable pc.
-  // Should have been filled by method entry code.
+#ifdef ASSERT
   if (pc == nullptr) {
-    pc = (address) *(sp + 14);
+    address return_pc = (address)((frame::z_common_abi*)sp)->return_pc;
+    CodeBlob* cb = CodeCache::find_blob(return_pc);
+    assert(cb != nullptr, "The return address must be a CodeBlob");
+    assert(cb->is_runtime_stub(), "The return address must be a runtime stub");
   }
+#endif
 
   return frame(sp, pc);
 }

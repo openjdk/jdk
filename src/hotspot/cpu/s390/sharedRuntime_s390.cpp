@@ -1126,9 +1126,11 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       // objects. Allocate the buffers here with a runtime call.
       OopMap* map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
 
+      Label frame_pc;
+      __ z_larl(Z_R1_scratch, frame_pc);
       frame_complete = __ offset();
 
-      __ set_last_Java_frame(/*sp=*/Z_SP, /*pc=*/noreg);
+      __ set_last_Java_frame(/*sp=*/Z_SP, /*pc=*/Z_R1_scratch);
 
       __ z_lgr(Z_ARG1, Z_thread);
       __ z_lgr(Z_ARG2, Z_method);
@@ -1138,6 +1140,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       // TODO: use blob-relative offset, matching the pattern in the rest of
       // sharedRuntime_s390.cpp ("offset() - start_off")
       oop_maps->add_gc_map((int)(__ offset() - (start - masm->code()->insts_begin())), map);
+      __ bind(frame_pc);
       __ reset_last_Java_frame();
 
       RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
@@ -3433,15 +3436,16 @@ void SharedRuntime::generate_deopt_blob() {
   // call `last_Java_frame()'.  however we can't block and no gc will
   // occur so we don't need an oopmap. the value of the pc in the
   // frame is not particularly important.  it just needs to identify the blob.
+  Label frame_pc;
+  __ z_larl(Z_R1_scratch, frame_pc);
+  __ set_last_Java_frame(/*sp*/Z_SP, Z_R1_scratch);
 
-  // Don't set last_Java_pc anymore here (is implicitly null then).
-  // the correct PC is retrieved in pd_last_frame() in that case.
-  __ set_last_Java_frame(/*sp*/Z_SP, noreg);
   // With EscapeAnalysis turned on, this call may safepoint
   // despite it's marked as "leaf call"!
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), Z_thread, exec_mode_reg);
-  // Set an oopmap for the call site this describes all our saved volatile registers
   int oop_map_offs = __ offset();
+  __ bind(frame_pc);
+  // Set an oopmap for the call site this describes all our saved volatile registers
   oop_maps->add_gc_map(oop_map_offs, map);
 
   __ reset_last_Java_frame();
@@ -3710,10 +3714,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
     __ z_lgr(Z_R6, Z_R14);
   }
 
+  Label frame_pc;
+  __ z_larl(Z_R1_scratch, frame_pc);
+
   // The following is basically a call_VM. However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
   // work ourselves.
-  __ set_last_Java_frame(Z_SP, noreg);
+  __ set_last_Java_frame(Z_SP, Z_R1_scratch);
 
   // call into the runtime to handle the safepoint poll
   __ call_VM_leaf(call_ptr, Z_thread);
@@ -3725,6 +3732,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
   // debug-info recordings, as well as let GC find all oops.
 
   oop_maps->add_gc_map((int)(__ offset()-start_off), map);
+  __ bind(frame_pc);
 
   Label noException;
 
@@ -4206,11 +4214,15 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   address start = __ pc();
   __ save_return_pc(); // save return_pc (Z_R14)
   __ push_frame_abi160(0);
+  Label frame_pc;
+ __ z_larl(Z_R1_scratch, frame_pc);
   int frame_complete = __ pc() - start;
-  __ set_last_Java_frame(Z_SP, noreg);
+  __ set_last_Java_frame(Z_SP, Z_R1_scratch);
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), Z_thread);
-  address calls_return_pc = __ last_calls_return_pc();
+  address calls_return_pc = __ pc();
+  assert(calls_return_pc == __ last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
+  __ bind(frame_pc);
   __ reset_last_Java_frame();
 
   // The handle is dereferenced through a load barrier.
@@ -4241,11 +4253,15 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
   address start = __ pc();
   __ save_return_pc(); // save return_pc (Z_R14)
   __ push_frame_abi160(0);
+  Label frame_pc;
+  __ z_larl(Z_R1_scratch, frame_pc);
   int frame_complete = __ pc() - start;
-  __ set_last_Java_frame(Z_SP, noreg);
+  __ set_last_Java_frame(Z_SP, Z_R1_scratch);
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), Z_thread);
-  address calls_return_pc = __ last_calls_return_pc();
+  address calls_return_pc = __ pc();
+  assert(calls_return_pc == __ last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
+  __ bind(frame_pc);
 
   __ reset_last_Java_frame();
 
