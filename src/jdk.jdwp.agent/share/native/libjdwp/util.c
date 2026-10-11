@@ -717,6 +717,10 @@ methodSignature(jmethodID method,
     error = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodName)
             (gdata->jvmti, method, &name, &signature, &generic_signature);
 
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "GetMethodName failed");
+    }
+
     if ( pname != NULL ) {
         *pname = name;
     } else if ( name != NULL )  {
