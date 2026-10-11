@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
   * @test
-  * @bug 8171279 8314323
+  * @bug 8171279 8314323 8371736
   * @library /javax/net/ssl/templates
   * @summary Test TLS connection with each individual supported group
   * @run main/othervm SupportedGroups x25519
@@ -39,6 +39,9 @@
   * @run main/othervm SupportedGroups X25519MLKEM768
   * @run main/othervm SupportedGroups SecP256r1MLKEM768
   * @run main/othervm SupportedGroups SecP384r1MLKEM1024
+  * @run main/othervm SupportedGroups MLKEM512
+  * @run main/othervm SupportedGroups MLKEM768
+  * @run main/othervm SupportedGroups MLKEM1024
  */
 import java.net.InetAddress;
 import java.util.Arrays;
@@ -55,7 +58,7 @@ public class SupportedGroups extends SSLSocketTemplate {
         {{"TLSv1.2"}, {"TLSv1.2"}}
     };
 
-    private static final String[][][] protocolsForHybrid = {
+    private static final String[][][] protocolsForPQC = {
             {{"TLSv1.3"}, {"TLSv1.3"}},
             {{"TLSv1.3", "TLSv1.2"}, {"TLSv1.3"}},
             {{"TLSv1.3"}, {"TLSv1.3", "TLSv1.2"}}
@@ -97,18 +100,16 @@ public class SupportedGroups extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
         System.setProperty("jdk.tls.namedGroups", args[0]);
 
-        boolean hybridGroup = hybridNamedGroup(args[0]);
-        String[][][] protocols = hybridGroup ?
-                protocolsForHybrid : protocolsForClassic;
+        boolean pqcGroup = pqcNamedGroup(args[0]);
+        String[][][] protocols = pqcGroup ?
+                protocolsForPQC : protocolsForClassic;
 
         for (index = 0; index < protocols.length; index++) {
             (new SupportedGroups(protocols)).run();
         }
     }
 
-    private static boolean hybridNamedGroup(String namedGroup) {
-        return namedGroup.equals("X25519MLKEM768") ||
-                namedGroup.equals("SecP256r1MLKEM768") ||
-                namedGroup.equals("SecP384r1MLKEM1024");
+    private static boolean pqcNamedGroup(String namedGroup) {
+        return namedGroup.contains("MLKEM");
     }
 }
