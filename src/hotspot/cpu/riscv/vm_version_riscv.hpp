@@ -563,6 +563,11 @@ private:
     return UseZfh || UseZfhmin;
   }
 
+  // The RVV vector register length in bytes, read from the vlenb CSR. Only
+  // meaningful when UseRVV. This is what MaxVectorSize is set to, but unlike
+  // MaxVectorSize (a C2 flag) it is also available in builds without C2.
+  static uint32_t vector_length_in_bytes() { return _initial_vector_length; }
+
   // Check intrinsic support
   static bool is_intrinsic_supported(vmIntrinsicID id);
 
