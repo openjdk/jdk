@@ -198,6 +198,7 @@ void Compilation::build_hir() {
 
   // compute block ordering for code generation
   // the control flow must not be changed from here on
+  // Exception: late control flow during LIR generation in conjuction with recompute_code().
   _hir->compute_code();
 
   if (UseGlobalValueNumbering) {
@@ -265,6 +266,12 @@ void Compilation::emit_lir() {
   }
 
   CHECK_BAILOUT();
+
+  if (has_late_control_flow()) {
+    hir()->verify_late_controlflow();
+
+    hir()->recompute_code();
+  }
 
   {
     PhaseTraceTime timeit(_t_linearScan);
@@ -573,6 +580,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_reserved_stack_access(method->has_reserved_stack_access())
 , _has_monitors(method->is_synchronized() || method->has_monitor_bytecodes())
 , _has_scoped_access(method->is_scoped())
+, _has_late_control_flow(false)
 , _install_code(install_code)
 , _bailout_msg(nullptr)
 , _first_failure_details(nullptr)

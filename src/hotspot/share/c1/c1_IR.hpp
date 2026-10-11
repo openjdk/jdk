@@ -333,6 +333,7 @@ class IR: public CompilationResourceObj {
   void compute_predecessors();
   void split_critical_edges();
   void compute_code();
+  void recompute_code();
   void compute_use_counts();
 
   // The linear-scan order and the code emission order are equal, but
@@ -351,6 +352,7 @@ class IR: public CompilationResourceObj {
   void expand_with_neighborhood(BlockList& blocks)                          NOT_DEBUG_RETURN;
   void verify_local(BlockList&)                                             NOT_DEBUG_RETURN;
   void verify()                                                             NOT_DEBUG_RETURN;
+  void verify_late_controlflow()                                            NOT_DEBUG_RETURN;
 };
 
 
