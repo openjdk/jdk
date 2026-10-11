@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ else
   OPENJDK_TARGET_OS_CANONICAL := $(OPENJDK_TARGET_OS)
 endif
 
-$(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
+$(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU), \
     SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/util/PlatformProps.java.template, \
     OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/PlatformProps.java, \
     REPLACEMENTS := \
@@ -82,7 +82,8 @@ $(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
         @@OPENJDK_TARGET_CPU_BITS@@ => $(OPENJDK_TARGET_CPU_BITS), \
 ))
 
-TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_PLATFORMPROPERTIES_JAVA)
+TARGETS += $(BUILD_VERSION_JAVA) \
+    $(BUILD_PLATFORMPROPERTIES_JAVA_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU))
 ################################################################################
 
 ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )

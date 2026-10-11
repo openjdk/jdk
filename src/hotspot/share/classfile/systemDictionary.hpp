@@ -331,7 +331,7 @@ protected:
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
-  static bool preload_from_required_inline_field(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS);
+  static bool preload_from_required_value_field(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS);
   static void try_preload_from_loadable_descriptors(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
@@ -344,10 +344,6 @@ protected:
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
-  JFR_ONLY(static void post_class_load_event(EventClassLoad* event,
-                                             const InstanceKlass* k,
-                                             const ClassLoaderData* init_cld);)
-
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
@@ -362,6 +358,10 @@ public:
 
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
+
+  JFR_ONLY(static void post_class_load_event(EventClassLoad* event,
+                                             const InstanceKlass* k,
+                                             const ClassLoaderData* init_cld);)
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

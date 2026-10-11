@@ -106,13 +106,15 @@ public:
 #define CDS_MUST_MATCH_FLAGS_DO(f) \
   f(UseArrayFlattening) \
   f(UseFieldFlattening) \
-  f(InlineTypePassFieldsAsArgs) \
-  f(InlineTypeReturnedAsFields) \
+  f(ValueTypePassFieldsAsArgs) \
+  f(ValueTypeReturnedAsFields) \
   f(UseNullFreeNonAtomicValueFlattening) \
   f(UseNullFreeAtomicValueFlattening) \
   f(UseNullableAtomicValueFlattening) \
   f(UseNullableNonAtomicValueFlattening) \
-  f(FlatteningBudget)
+  f(FlatteningBudget) \
+  f(RestrictReservedStack) \
+  f(DiagnoseSyncOnValueBasedClasses)
 
 
 class CDSMustMatchFlags {
@@ -125,6 +127,7 @@ private:
 
   inline static void do_print(outputStream* st, bool v);
   LP64_ONLY(inline static void do_print(outputStream* st, uint v);)
+  LP64_ONLY(inline static void do_print(outputStream* st, int v);)
   inline static void do_print(outputStream* st, intx v);
   inline static void do_print(outputStream* st, uintx v);
   inline static void do_print(outputStream* st, double v);
@@ -173,9 +176,6 @@ private:
   bool   _has_platform_or_app_classes;  // Archive contains app or platform classes
   char*  _requested_base_address;       // Archive relocation is not necessary if we map with this base address.
   char*  _mapped_base_address;          // Actual base address where archive is mapped.
-
-  bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
-                                        // some expensive operations.
   bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _aot_class_linking_value;      // The value of the AOTClassLinking variable when this archive was created
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
@@ -413,6 +413,7 @@ public:
   size_t remove_bitmap_zeros(CHeapBitMap* map);
   char* write_bitmap_region(CHeapBitMap* rw_ptrmap,
                             CHeapBitMap* ro_ptrmap,
+                            CHeapBitMap* ac_ptrmap,
                             AOTMappedHeapInfo* mapped_heap_info,
                             AOTStreamedHeapInfo* streamed_heap_info,
                             size_t &size_in_bytes);
@@ -433,6 +434,7 @@ public:
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   bool  map_aot_code_region(ReservedSpace rs);
+  void  unmap_aot_code_region();
   char* map_forwarding_region();
   void  unmap_region(int i);
   void  close();
@@ -496,6 +498,7 @@ public:
 
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
+  bool  relocate_pointers_in_aot_code_region();
   char* map_auxiliary_region(int region_index, bool read_only);
 
 public:

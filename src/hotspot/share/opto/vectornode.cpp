@@ -1281,6 +1281,10 @@ Node* VectorNode::make_scalar(Compile* c, int vopc, BasicType bt, Node* control,
       return new AndINode(in1, in2);
     case Op_AndL:
       return new AndLNode(in1, in2);
+    case Op_DivI:
+      return new DivINode(control, in1, in2);
+    case Op_DivL:
+      return new DivLNode(control, in1, in2);
     case Op_DivF:
       return new DivFNode(control, in1, in2);
     case Op_DivD:
@@ -1451,9 +1455,12 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return n;
   }
 
+  bool inputs_have_been_swapped = false;
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
   if (should_swap_inputs_to_help_global_value_numbering()) {
+    assert(in(1) != in(2), "it is useless to swap identical inputs");
     swap_edges(1, 2);
+    inputs_have_been_swapped = true;
   }
 
   n = push_through_replicate(phase);
@@ -1461,7 +1468,14 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return n;
   }
 
-  return reassociate_vector_operation(phase);
+  n = reassociate_vector_operation(phase);
+  if (n != nullptr) {
+    return n;
+  }
+  if (inputs_have_been_swapped) {
+    return this;
+  }
+  return nullptr;
 }
 
 // Traverses a chain of VectorMaskCast and returns the first non VectorMaskCast node.
@@ -2323,6 +2337,9 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
+        if (phase->type(value) == Type::TOP) {
+          return nullptr;
+        }
 
         bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         if (is_vector_mask) {
@@ -2418,8 +2435,13 @@ Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
   // If the types of the input and output nodes in a VectorMaskCast chain are
   // exactly the same, the intermediate VectorMaskCast nodes can be eliminated.
   Node* n = VectorNode::uncast_mask(this);
-  if (vect_type()->eq(n->bottom_type())) {
-      return n;
+  // A chain can also end up converting between different mask types, in which
+  // case it must be kept, so the types have to be compared below.
+  //
+  // Types are hash-consed, so a pointer comparison is enough. It also tolerates
+  // the chain ending at a `Top` node on a dead path.
+  if (vect_type() == n->bottom_type()) {
+    return n;
   }
   return this;
 }
@@ -2865,6 +2887,13 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
     return nullptr;
   }
 
+  // Dead code can leave TOP on the inputs. TOP is a unique node, so the
+  // identity checks above match it spuriously, and VectorBitwiseBlendNode
+  // requires all of its inputs to be vectors.
+  if (a->is_top() || b->is_top() || sel->is_top()) {
+    return nullptr;
+  }
+
   Node* blend = new VectorBitwiseBlendNode(a, b, sel, vt);
   if (!is_masked) {
     return blend;
@@ -3026,6 +3055,42 @@ Node* MinMaxVNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+Node* VectorSliceNode::Identity(PhaseGVN* phase) {
+  jint index = origin()->get_int();
+  uint vlen = vect_type()->length_in_bytes();
+  if (vlen == (uint) index) {
+    return vec2();
+  }
+  if (index == 0) {
+    return vec1();
+  }
+  return this;
+}
+
+Node* VectorSliceNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  BasicType elem_bt = vt->element_basic_type();
+  uint num_elem = vt->length();
+  jint byte_origin = origin()->get_int();
+
+  if (Matcher::vector_slice_prefers_select_from_two_vector(elem_bt, byte_origin)) {
+    int add_vopc = VectorNode::opcode(Op_AddI, elem_bt);
+    if (Matcher::match_rule_supported_vector(Op_SelectFromTwoVector, num_elem, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_VectorLoadConst, num_elem, elem_bt)     &&
+        Matcher::match_rule_supported_vector(Op_Replicate, num_elem, elem_bt)           &&
+        Matcher::match_rule_supported_vector(add_vopc, num_elem, elem_bt)) {
+      jint elem_origin = byte_origin / type2aelembytes(elem_bt);
+      Node* iota  = phase->transform(new VectorLoadConstNode(phase->makecon(TypeInt::ZERO), vt));
+      Node* shift = phase->transform(VectorNode::scalar2vector(phase->intcon(elem_origin), num_elem, elem_bt));
+      Node* index = phase->transform(VectorNode::make(add_vopc, iota, shift, vt));
+      return new SelectFromTwoVectorNode(index, vec1(), vec2(), vt);
+    }
+  }
+
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);

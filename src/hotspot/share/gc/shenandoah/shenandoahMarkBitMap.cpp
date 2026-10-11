@@ -131,7 +131,7 @@ bool ShenandoahMarkBitMap::is_small_range_of_words(idx_t beg_full_word, idx_t en
   // because beg_full_word > end_full_word can occur when beg and end are in
   // the same word.
   // The threshold should be at least one word.
-  STATIC_ASSERT(small_range_words >= 1);
+  static_assert(small_range_words >= 1);
   return beg_full_word + small_range_words >= end_full_word;
 }
 

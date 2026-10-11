@@ -91,16 +91,12 @@ class ConstantPoolCache: public MetaspaceObj {
     };
 
   // Constructor
-  ConstantPoolCache(const intStack& invokedynamic_references_map,
-                    Array<ResolvedIndyEntry>* indy_info,
+  ConstantPoolCache(Array<ResolvedIndyEntry>* indy_info,
                     Array<ResolvedFieldEntry>* field_entries,
                     Array<ResolvedMethodEntry>* mehtod_entries);
 
-  // Initialization
-  void initialize(const intArray& invokedynamic_references_map);
  public:
   static ConstantPoolCache* allocate(ClassLoaderData* loader_data,
-                                     const intStack& invokedynamic_references_map,
                                      const GrowableArray<ResolvedIndyEntry> indy_entries,
                                      const GrowableArray<ResolvedFieldEntry> field_entries,
                                      const GrowableArray<ResolvedMethodEntry> method_entries,
@@ -223,9 +219,20 @@ class ConstantPoolCache: public MetaspaceObj {
 #endif // INCLUDE_JVMTI
 
 #if INCLUDE_CDS
-  void remove_resolved_field_entries_if_non_deterministic();
-  void remove_resolved_indy_entries_if_non_deterministic();
-  void remove_resolved_method_entries_if_non_deterministic();
+ private:
+  template <typename FUNC> void iterate_resolved_field_entries_with_archivability_check(FUNC f);
+  template <typename FUNC> void iterate_resolved_indy_entries_with_archivability_check(FUNC f);
+  template <typename FUNC> void iterate_resolved_method_entries_with_archivability_check(FUNC f);
+
+  void record_classes_in_archivable_field_entries();
+  void record_classes_in_archivable_indy_entries();
+  void record_classes_in_archivable_method_entries();
+
+  void remove_resolved_field_entries_if_non_archivable();
+  void remove_resolved_indy_entries_if_non_archivable();
+  void remove_resolved_method_entries_if_non_archivable();
+ public:
+  void record_classes_in_archivable_entries();
   bool can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry, const char*& rejection_reason);
 #endif
 

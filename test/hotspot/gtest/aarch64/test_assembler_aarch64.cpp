@@ -568,7 +568,7 @@ struct GtestFriendToMacroAssembler {
                                       real_mode);
       masm.ret(lr);
 
-      masm.flush(); // icache invalidate
+      masm.invalidate_icache();
     }
 
     {
@@ -622,15 +622,20 @@ struct GtestFriendToMacroAssembler {
       build_and_run_encode_decode_klass((address)(right_n_bits(highest_xor_base_bit - lowest_xor_base_bit) << lowest_xor_base_bit),
           shift, MA::KlassDecodeXor);
 
-      // test movk-based
-      // Only bits in the third quadrant and not a valid immediate
-      build_and_run_encode_decode_klass((address)0x0000'A000'0000'0000ULL, 0, MA::KlassDecodeMovk);
-
       // test Fallback mode.
-      // base has low bits that intersect with nKlass, no other mode would work
-      build_and_run_encode_decode_klass((address)(0x5'0000'0000ULL + os::vm_page_size()),
+      // We take fallback mode if base has low bits that intersect with nKlass, and/or if it is not a
+      // valid logical immediate
+
+      // Not a logical immediate
+      build_and_run_encode_decode_klass((address)0x0000'A000'0000'0000ULL,
                                         shift, MA::KlassDecodeFallback);
-      build_and_run_encode_decode_klass((address)(0x5'0000'0000ULL - os::vm_page_size()),
+      build_and_run_encode_decode_klass((address)0x0000'0005'0000'0000ULL,
+                                        shift, MA::KlassDecodeFallback);
+
+      // Base spills into lower bits
+      build_and_run_encode_decode_klass((address)(0x2'0000'0000ULL + os::vm_page_size()),
+                                        shift, MA::KlassDecodeFallback);
+      build_and_run_encode_decode_klass((address)(0x2'0000'0000ULL - os::vm_page_size()),
                                         shift, MA::KlassDecodeFallback);
 
       // a base that has ones in all four quadrants to trigger the full movz+3*movk path

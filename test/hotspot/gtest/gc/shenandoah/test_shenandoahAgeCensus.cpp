@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.inline.hpp"
 #include "unittest.hpp"
 
 class ShenandoahAgeCensusTest : public ::testing::Test {
