@@ -59,7 +59,6 @@ import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.javac.Restricted;
 import jdk.internal.loader.NativeLibraries;
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
