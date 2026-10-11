@@ -470,6 +470,9 @@ public class PSPrinterJob extends RasterPrinterJob {
         if (outputBin != null) {
             mOptions += " output-bin=" + outputBin;
         }
+        if (isCollated()) {
+            mOptions += " collate=true";
+        }
     }
 
     /**
@@ -697,7 +700,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                 String fileName = spoolFile.getAbsolutePath();
                 String[] execCmd = printExecCmd(mDestination, mOptions,
                                mNoJobSheet, getJobNameInt(),
-                                                1, fileName);
+                                                getCopiesInt(), fileName);
 
                 Process process = Runtime.getRuntime().exec(execCmd);
                 process.waitFor();
@@ -1587,6 +1590,13 @@ public class PSPrinterJob extends RasterPrinterJob {
             }
         }
         execCmd[n++] = spoolFile;
+        if (IPPPrintService.debugPrint) {
+            System.out.println("PSPrinterJob>> execCmd");
+            for (int i=0; i<execCmd.length; i++) {
+                System.out.print(" "+execCmd[i]);
+            }
+            System.out.println();
+        }
         return execCmd;
     }
 
