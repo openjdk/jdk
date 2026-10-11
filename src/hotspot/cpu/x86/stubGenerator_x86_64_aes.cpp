@@ -209,7 +209,7 @@ public:
     assert(UseAVX > 0 || vector_len == Assembler::AVX_128bit, "Invalid");
     XMMRegister Carry = Tmp1;
     XMMRegister Zero = Tmp2;
-    if (vector_len == Assembler::AVX_512bit) {
+    if (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl()) {
       vpternlogq(Carry, 0xFF, Carry, Carry, vector_len);
       vpaddq(CtrLow, CtrLow, Increment, vector_len);
       evpcmpuq(tmp4, CtrLow, Increment, Assembler::lt, vector_len);
@@ -542,9 +542,9 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   XMMRegister KeyShuf = xmm0; // overlaps Increment
   XMMRegister Tmp = xmm1;
   XMMRegister CtrShuf = xmm2;
+  XMMRegister LastCtr = xmm3; // Last encrypted counter, to be stored to *used
   XMMRegister CtrLow = xmm3;
   XMMRegister CtrHigh = xmm4;
-  XMMRegister LastCtr = xmm5; // Last encrypted counter, to be stored to *used
   XMMRegister Ctr[6];
   XMMRegister Keys[15];
   XMMRegister _next = xmm5;
@@ -620,6 +620,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   /********************** INIT KEYS & FIRST AES ITERATION  **********************/
   // convert keys to little-endian (into registers and onto stack)
   BLOCK_COMMENT("INIT Keys");
+  // (KeyShuf overloaded with Increment)
   __ movdqu(KeyShuf, ExternalAddress(key_shuffle_mask_addr()), tmp /*rscratch*/);
   auto keysAndRounds = [&](bool init, int from, int to, int keyRounds, int parallel) {
     for (int round = from; round < to; round++) {
@@ -744,6 +745,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   __ movdqu(LastCtr, Address(ctr));
   __ movq(nextCtrHigh, Address(ctr));
   __ movq(nextCtrLow, Address(ctr, 8));
+  // (KeyShuf overloaded with Increment)
   __ movdqu(KeyShuf, ExternalAddress(key_shuffle_mask_addr()), tmp /*rscratch*/);
   // storing nextCtr{Low,High} delayed, get to AES faster
 
@@ -796,12 +798,14 @@ static address generate_counterModeAES(StubGenerator *stubgen,
 
   /********************** TAIL ENCRYPTION **********************/
   // Process LastSet of parallel registers
-  // - End of data somewhere "inside" the register set
-  // - Store partially-used encrypted counter
+  // - End of data somewhere "inside" the register set Ctr[]
+  // - Move partially used Ctr[i] to LastCtr
+  // - LastSet ladder is shared by Ctr[2] and Ctr[maxParallel]
+  //   (len check protects parallel=2 from accessing Ctr[2] and Ctr[3])
   __ BIND(LastSet);
   for (int i = 0; true; i++) {
     __ vmovdqu(LastCtr, Ctr[i], vector_len);
-    if (i==maxParallel-1) { break; } // last iteration is guaranteed to be partial
+    if (i==maxParallel-1) { break; } // last set is always partial
     __ cmpl(len, blocksPerReg*16);
     __ jcc(Assembler::below, LastReg);
 
@@ -836,8 +840,8 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   // Cleanup (here, so SingleBlock can goto LastBlock without this Scrub)
   __ BIND(Scrub);
   __ vpxor(Tmp, Tmp, Tmp, Assembler::AVX_128bit);
-  _next = xmm6; // Skip LastCtr until ExitLabel
-  for (int i = 0; i < keyRegs + maxParallel - 1; i++, _next = _next->successor()) {
+  _next = xmm4; // Skip LastCtr until ExitLabel
+  for (int i = 0; i < keyRegs + maxParallel + 1; i++, _next = _next->successor()) {
     __ vpxor(_next, _next, _next, Assembler::AVX_128bit); // EVEX clears upper for free
   }
   for (int slot = 0; slot < totalStackBytes/16; slot++) {
@@ -940,7 +944,7 @@ void StubGenerator::generate_aes_stubs() {
       assert(VM_Version::supports_vaes() || (VM_Version::supports_aes() && VM_Version::supports_sse4_1()), "AESNI intrinsic unsupported");
     }
 
-    int parallel = 4; // experimentally best. needs to be even, tested 2&4&6
+    int parallel = 4; // experimentally best. Needs to be even, tested 2&4&6
     AESAssembler S(_masm);
     StubRoutines::_counterMode_AESCrypt = generate_counterModeAES(this, vector_len, &S, parallel);
   }
