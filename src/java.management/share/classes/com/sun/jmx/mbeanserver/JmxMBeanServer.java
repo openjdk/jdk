@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1066,111 +1066,6 @@ public final class JmxMBeanServer
         throws InstanceNotFoundException {
 
         return mbsInterceptor.isInstanceOf(cloneObjectName(name), className);
-    }
-
-    /**
-     * De-serializes a byte array in the context of the class loader
-     * of an MBean.
-     *
-     * @param name The name of the MBean whose class loader should
-     *     be used for the de-serialization.
-     * @param data The byte array to be de-sererialized.
-     *
-     * @return  The de-serialized object stream.
-     *
-     * @exception InstanceNotFoundException The MBean specified is not
-     *     found.
-     * @exception OperationsException Any of the usual Input/Output
-     *     related exceptions.
-     *
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(ObjectName name, byte[] data)
-        throws InstanceNotFoundException, OperationsException {
-
-        final ClassLoader loader = getClassLoaderFor(name);
-
-        return instantiator.deserialize(loader, data);
-    }
-
-    /**
-     * De-serializes a byte array in the context of a given MBean class loader.
-     * The class loader is the one that loaded the class with name "className".
-     *
-     * @param className The name of the class whose class loader should be
-     *      used for the de-serialization.
-     * @param data The byte array to be de-sererialized.
-     *
-     * @return  The de-serialized object stream.
-     *
-     * @exception OperationsException Any of the usual Input/Output
-     *      related exceptions.
-     * @exception ReflectionException The specified class could not be
-     *      loaded by the default loader repository
-     *
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(String className, byte[] data)
-        throws OperationsException, ReflectionException {
-
-        if (className == null) {
-            throw new  RuntimeOperationsException(
-                                        new IllegalArgumentException(),
-                                        "Null className passed in parameter");
-        }
-
-        final ClassLoaderRepository clr = getClassLoaderRepository();
-
-        Class<?> theClass;
-        try {
-            if (clr == null) throw new ClassNotFoundException(className);
-            theClass = clr.loadClass(className);
-        } catch (ClassNotFoundException e) {
-            throw new ReflectionException(e,
-                                          "The given class could not be " +
-                                          "loaded by the default loader " +
-                                          "repository");
-        }
-
-        return instantiator.deserialize(theClass.getClassLoader(), data);
-    }
-
-    /**
-     * De-serializes a byte array in the context of a given MBean class loader.
-     * The class loader is the one that loaded the class with name "className".
-     * The name of the class loader to be used for loading the specified
-     * class is specified.
-     * If null, the MBean Server's class loader will be used.
-     *
-     * @param className The name of the class whose class loader should be
-     *     used for the de-serialization.
-     * @param data The byte array to be de-sererialized.
-     * @param loaderName The name of the class loader to be used for
-     *     loading the specified class.
-     *     If null, the MBean Server's class loader will be used.
-     *
-     * @return  The de-serialized object stream.
-     *
-     * @exception InstanceNotFoundException The specified class loader
-     *     MBean is not found.
-     * @exception OperationsException Any of the usual Input/Output
-     *     related exceptions.
-     * @exception ReflectionException The specified class could not
-     *     be loaded by the specified class loader.
-     *
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(String className,
-                                         ObjectName loaderName,
-                                         byte[] data) throws
-        InstanceNotFoundException, OperationsException, ReflectionException {
-
-        // Clone ObjectName
-        //
-        loaderName = cloneObjectName(loaderName);
-
-        ClassLoader myLoader = outerShell.getClass().getClassLoader();
-        return instantiator.deserialize(className, loaderName, data, myLoader);
     }
 
     /**
