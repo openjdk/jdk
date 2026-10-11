@@ -2203,7 +2203,7 @@ public:
     if (!is_aligned(_stripes, DEFAULT_CACHE_LINE_SIZE)) {
       _stripes = align_up(_stripes, DEFAULT_CACHE_LINE_SIZE);
     }
-    assert(is_aligned(_stripes, DEFAULT_CACHE_LINE_SIZE));
+    assert(is_aligned(_stripes, DEFAULT_CACHE_LINE_SIZE), "unaligned");
 
     // Use placement new to construct our Mutexes.
     for (size_t i = 0; i < _num_stripes; i++) {
