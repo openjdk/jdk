@@ -716,7 +716,10 @@ void Type::Initialize_shared(Compile* current) {
   TypeAryPtr::LONGS   = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeLong::LONG     ,TypeInt::POS, false, false, true, false, true, true), ciTypeArrayKlass::make(T_LONG),   true,  Offset::bottom);
   TypeAryPtr::FLOATS  = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::FLOAT        ,TypeInt::POS, false, false, true, false, true, true), ciTypeArrayKlass::make(T_FLOAT),  true,  Offset::bottom);
   TypeAryPtr::DOUBLES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::DOUBLE       ,TypeInt::POS, false, false, true, false, true, true), ciTypeArrayKlass::make(T_DOUBLE), true,  Offset::bottom);
-  TypeAryPtr::INLINES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,TypeInt::POS, /* stable= */ false, /* flat= */ true, false, false, false, false), nullptr, false, Offset::bottom);
+  TypeAryPtr::INLINES    = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,  TypeInt::POS, false, true, false, false, false, false), nullptr, false, Offset::bottom);
+  TypeAryPtr::REFERENCES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,  TypeInt::POS, false, false, true, false, false, true),  nullptr, false, Offset::bottom);
+  TypeAryPtr::NULL_FREES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::NOTNULL, TypeInt::POS, false, false, false, true, false, false), nullptr, false, Offset::bottom);
+  TypeAryPtr::NULLABLES  = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,  TypeInt::POS, false, false, false, false, true, true),  nullptr, false, Offset::bottom);
 
   // Nobody should ask _array_body_type[T_NARROWOOP]. Use null as assert.
   TypeAryPtr::_array_body_type[T_NARROWOOP] = nullptr;
@@ -4713,17 +4716,20 @@ const TypeKlassPtr* TypeInstPtr::as_klass_type(bool try_for_exact) const {
 //=============================================================================
 // Convenience common pre-built types.
 const TypeAryPtr* TypeAryPtr::BOTTOM;
-const TypeAryPtr *TypeAryPtr::RANGE;
-const TypeAryPtr *TypeAryPtr::OOPS;
-const TypeAryPtr *TypeAryPtr::NARROWOOPS;
-const TypeAryPtr *TypeAryPtr::BYTES;
-const TypeAryPtr *TypeAryPtr::SHORTS;
-const TypeAryPtr *TypeAryPtr::CHARS;
-const TypeAryPtr *TypeAryPtr::INTS;
-const TypeAryPtr *TypeAryPtr::LONGS;
-const TypeAryPtr *TypeAryPtr::FLOATS;
-const TypeAryPtr *TypeAryPtr::DOUBLES;
-const TypeAryPtr *TypeAryPtr::INLINES;
+const TypeAryPtr* TypeAryPtr::RANGE;
+const TypeAryPtr* TypeAryPtr::OOPS;
+const TypeAryPtr* TypeAryPtr::NARROWOOPS;
+const TypeAryPtr* TypeAryPtr::BYTES;
+const TypeAryPtr* TypeAryPtr::SHORTS;
+const TypeAryPtr* TypeAryPtr::CHARS;
+const TypeAryPtr* TypeAryPtr::INTS;
+const TypeAryPtr* TypeAryPtr::LONGS;
+const TypeAryPtr* TypeAryPtr::FLOATS;
+const TypeAryPtr* TypeAryPtr::DOUBLES;
+const TypeAryPtr* TypeAryPtr::INLINES;
+const TypeAryPtr* TypeAryPtr::REFERENCES;
+const TypeAryPtr* TypeAryPtr::NULL_FREES;
+const TypeAryPtr* TypeAryPtr::NULLABLES;
 
 //------------------------------make-------------------------------------------
 const TypeAryPtr* TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, Offset offset, Offset field_offset,
@@ -4841,80 +4847,41 @@ const TypeAryPtr* TypeAryPtr::cast_to_size(const TypeInt* new_size) const {
   return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
 }
 
-const TypeAryPtr* TypeAryPtr::cast_to_flat(bool flat) const {
-  if (flat == is_flat()) {
+const TypeAryPtr* TypeAryPtr::cast_to_flat() const {
+  if (is_flat()) {
     return this;
   }
-  assert(!flat || !is_not_flat(), "inconsistency");
-  const TypeAry* new_ary = TypeAry::make(elem(), size(), is_stable(), flat, is_not_flat(), is_null_free(), is_not_null_free(), is_atomic());
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
-  if (res->speculative() == res->remove_speculative()) {
-    return res->remove_speculative();
-  }
-  return res;
+
+  assert(!is_not_flat(), "inconsistency");
+  return join_speculative(TypeAryPtr::INLINES)->is_aryptr();
 }
 
-//-------------------------------cast_to_not_flat------------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_not_flat(bool not_flat) const {
-  if (not_flat == is_not_flat()) {
+const TypeAryPtr* TypeAryPtr::cast_to_not_flat() const {
+  if (is_not_flat()) {
     return this;
   }
-  assert(!not_flat || !is_flat(), "inconsistency");
-  const TypeAry* new_ary = TypeAry::make(elem(), size(), is_stable(), is_flat(), not_flat, is_null_free(), is_not_null_free(), is_atomic());
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
-  // We keep the speculative part if it contains information about flat-/nullability.
-  // Make sure it's removed if it's not better than the non-speculative type anymore.
-  if (res->speculative() == res->remove_speculative()) {
-    return res->remove_speculative();
-  }
-  return res;
+
+  assert(!is_flat(), "inconsistency");
+  return join_speculative(TypeAryPtr::REFERENCES)->is_aryptr();
 }
 
-const TypeAryPtr* TypeAryPtr::cast_to_null_free(bool null_free) const {
-  if (null_free == is_null_free()) {
+const TypeAryPtr* TypeAryPtr::cast_to_null_free() const {
+  if (is_null_free()) {
     return this;
   }
-  assert(!null_free || !is_not_null_free(), "inconsistency");
-  const Type* elem = this->elem();
-  const Type* new_elem = elem->make_ptr();
-  if (null_free) {
-    new_elem = new_elem->join_speculative(TypePtr::NOTNULL);
-  } else {
-    new_elem = new_elem->meet_speculative(TypePtr::NULL_PTR);
-  }
-  new_elem = elem->isa_narrowoop() ? new_elem->make_narrowoop() : new_elem;
-  const TypeAry* new_ary = TypeAry::make(new_elem, size(), is_stable(), is_flat(), is_not_flat(), null_free, is_not_null_free(), is_atomic());
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
-  if (res->speculative() == res->remove_speculative()) {
-    return res->remove_speculative();
-  }
-  assert(res->speculative() == nullptr || res->speculative()->with_inline_depth(res->inline_depth())->higher_equal(res->remove_speculative()),
-           "speculative type must not be narrower than non-speculative type");
-  return res;
+
+  assert(!is_not_null_free(), "inconsistency");
+  return join_speculative(TypeAryPtr::NULL_FREES)->is_aryptr();
 }
 
 //-------------------------------cast_to_not_null_free-------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_not_null_free(bool not_null_free) const {
-  if (not_null_free == is_not_null_free()) {
+const TypeAryPtr* TypeAryPtr::cast_to_not_null_free() const {
+  if (is_not_null_free()) {
     return this;
   }
-  assert(!not_null_free || !is_null_free(), "inconsistency");
-  const TypeAry* new_ary = TypeAry::make(elem(), size(), is_stable(), is_flat(), is_not_flat(), is_null_free(), not_null_free, is_atomic());
-  const TypePtr* new_spec = _speculative;
-  if (new_spec != nullptr) {
-    // Could be 'null free' from profiling, which would contradict the cast.
-    new_spec = new_spec->is_aryptr()->cast_to_null_free(false)->cast_to_not_null_free();
-  }
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset,
-                               _instance_id, new_spec, _inline_depth, _is_autobox_cache);
-  // We keep the speculative part if it contains information about flat-/nullability.
-  // Make sure it's removed if it's not better than the non-speculative type anymore.
-  if (res->speculative() == res->remove_speculative()) {
-    return res->remove_speculative();
-  }
-  assert(res->speculative() == nullptr || res->speculative()->with_inline_depth(res->inline_depth())->higher_equal(res->remove_speculative()),
-           "speculative type must not be narrower than non-speculative type");
-  return res;
+
+  assert(!is_null_free(), "inconsistency");
+  return join_speculative(TypeAryPtr::NULLABLES)->is_aryptr();
 }
 
 //---------------------------------update_properties---------------------------
