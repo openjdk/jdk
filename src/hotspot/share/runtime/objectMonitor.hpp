@@ -252,6 +252,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      clear_successor();
   int64_t   successor() const;
 
+  ObjectWaiter* find_successor(JavaThread* current);
+
   // Returns true if _owner field == owner_id of thread, false otherwise.
   bool has_owner(JavaThread* thread) const { return owner() == owner_id_from(thread); }
   // Set _owner field to owner_id of thread; current value must be NO_OWNER.
@@ -363,7 +365,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   bool      try_spin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
-  void      exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
+  bool      try_exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
 
  public:
   // Deflation support
