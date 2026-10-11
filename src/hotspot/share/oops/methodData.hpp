@@ -27,12 +27,12 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "memory/allocation.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/os.hpp"
-#include "memory/allocation.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/integerCast.hpp"
