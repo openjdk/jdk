@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,14 @@ inline bool ZNUMA::is_enabled() {
 
 inline bool ZNUMA::is_faked() {
   return ZFakeNUMA > 1;
+}
+
+inline uint32_t ZNUMA::bound_count() {
+  return _bound_node_count;
+}
+
+inline bool ZNUMA::is_bound() {
+  return _bound_node_count != _node_count;
 }
 
 inline uint32_t ZNUMA::count() {

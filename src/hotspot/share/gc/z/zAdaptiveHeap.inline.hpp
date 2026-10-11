@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,32 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZARGUMENTS_HPP
-#define SHARE_GC_Z_ZARGUMENTS_HPP
+#ifndef SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP
+#define SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP
 
-#include "gc/shared/gcArguments.hpp"
+#include "gc/z/zAdaptiveHeap.hpp"
 
-class CollectedHeap;
+#include "utilities/globalDefinitions.hpp"
 
-class ZArguments : public GCArguments {
-  friend class ZTest;
+inline physical_memory_size_type ZSystemMemoryPressureMetrics::available_memory() const {
+  return _max_memory - MIN2(_used_memory, _max_memory);
+}
 
-private:
-  static void select_max_gc_threads();
+inline double ZSystemMemoryPressureMetrics::fraction_of_max(physical_memory_size_type memory) const {
+  return percent_of(memory, _max_memory) / 100.0;
+}
 
-  static bool is_os_supported();
+inline double ZSystemMemoryPressureMetrics::used_fraction() const {
+  return fraction_of_max(_used_memory);
+}
 
-public:
-  virtual void set_heap_size();
-  virtual void initialize_alignments();
-  virtual void initialize_heap_flags_and_sizes();
-  virtual void initialize();
-  virtual size_t conservative_max_heap_alignment();
-  virtual size_t heap_virtual_to_physical_ratio();
-  virtual CollectedHeap* create_heap();
+inline double ZSystemMemoryPressureMetrics::available_fraction() const {
+  return fraction_of_max(available_memory());
+}
 
-  virtual bool is_supported() const;
-};
+inline bool ZAdaptiveHeap::explicit_max_capacity() {
+  precond(_initialized);
+  return _explicit_max_capacity;
+}
 
-#endif // SHARE_GC_Z_ZARGUMENTS_HPP
+#endif // SHARE_GC_Z_ZADAPTIVEHEAP_INLINE_HPP

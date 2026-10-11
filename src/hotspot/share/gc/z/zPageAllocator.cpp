@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,10 @@
  * questions.
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zArray.inline.hpp"
@@ -33,7 +35,8 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
-#include "gc/z/zMappedCache.hpp"
+#include "gc/z/zMappedCache.inline.hpp"
+#include "gc/z/zMemoryWorker.hpp"
 #include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAge.hpp"
@@ -82,6 +85,12 @@ static void check_numa_mismatch(const ZVirtualMemory& vmem, uint32_t desired_id)
   }
 }
 
+enum class ZPageAllocationAttempt {
+  initial,
+  retry,
+  stall,
+};
+
 class ZMemoryAllocation : public CHeapObj<mtGC> {
 private:
   const size_t           _size;
@@ -92,7 +101,7 @@ private:
   size_t                 _harvested;
   size_t                 _increased_capacity;
   size_t                 _committed_capacity;
-  bool                   _commit_failed;
+  bool                   _has_set_committed_capacity;
 
   explicit ZMemoryAllocation(const ZMemoryAllocation& other)
     : ZMemoryAllocation(other._size) {
@@ -124,7 +133,7 @@ private:
 
   void transfer_claimed_capacity(const ZMemoryAllocation& from) {
     assert(from._committed_capacity == 0, "Unexpected value %zu", from._committed_capacity);
-    assert(!from._commit_failed, "Unexpected value");
+    assert(!_has_set_committed_capacity, "Should not have set committed capacity yet");
 
     // Transfer increased capacity
     _increased_capacity += from._increased_capacity;
@@ -153,7 +162,7 @@ public:
       _harvested(0),
       _increased_capacity(0),
       _committed_capacity(0),
-      _commit_failed(false) {}
+      _has_set_committed_capacity(false) {}
 
   void reset_for_retry() {
     assert(_satisfied_from_cache_vmem.is_null(), "Incompatible with reset");
@@ -164,7 +173,7 @@ public:
     _harvested = 0;
     _increased_capacity = 0;
     _committed_capacity = 0;
-    _commit_failed = false;
+    _has_set_committed_capacity = false;
   }
 
   size_t size() const {
@@ -238,13 +247,14 @@ public:
   }
 
   void set_committed_capacity(size_t committed_capacity) {
-    assert(_committed_capacity == 0, "Should only commit once");
+    precond(!_has_set_committed_capacity);
     _committed_capacity = committed_capacity;
-    _commit_failed = committed_capacity != _increased_capacity;
+    _has_set_committed_capacity = true;
   }
 
   bool commit_failed() const {
-    return _commit_failed;
+    precond(_has_set_committed_capacity);
+    return _committed_capacity != _increased_capacity;
   }
 
   static void destroy(ZMemoryAllocation* allocation) {
@@ -586,6 +596,10 @@ ZPhysicalMemoryManager& ZPartition::physical_memory_manager() {
   return _page_allocator->_physical;
 }
 
+ZLock* ZPartition::lock() const {
+  return &_page_allocator->_lock;
+}
+
 #ifdef ASSERT
 
 void ZPartition::verify_virtual_memory_multi_partition_association(const ZVirtualMemory& vmem) const {
@@ -625,28 +639,125 @@ void ZPartition::verify_memory_allocation_association(const ZMemoryAllocation* a
 
 #endif // ASSERT
 
-ZPartition::ZPartition(uint32_t numa_id, ZPageAllocator* page_allocator)
+ZPartition::ZPartition(uint32_t numa_id,
+                       ZPageAllocator* page_allocator,
+                       size_t static_min_capacity,
+                       size_t static_max_capacity)
   : _page_allocator(page_allocator),
     _cache(),
     _uncommitter(numa_id, this),
-    _min_capacity(ZNUMA::calculate_share(numa_id, page_allocator->min_capacity())),
-    _max_capacity(ZNUMA::calculate_share(numa_id, page_allocator->max_capacity())),
-    _current_max_capacity(_max_capacity),
+    _mem_worker(numa_id, this),
+    _static_min_capacity(ZNUMA::calculate_share(numa_id, static_min_capacity)),
+    _static_max_capacity(ZNUMA::calculate_share(numa_id, static_max_capacity)),
     _capacity(0),
     _claimed(0),
     _used(0),
     _numa_id(numa_id) {}
 
+size_t ZPartition::dynamic_max_capacity() const {
+  return ZNUMA::calculate_share(_numa_id, _page_allocator->dynamic_max_capacity());
+}
+
+size_t ZPartition::current_max_capacity() const {
+  return ZNUMA::calculate_share(_numa_id, _page_allocator->current_max_capacity());
+}
+
+size_t ZPartition::static_max_capacity() const {
+  return _static_max_capacity;
+}
+
+size_t ZPartition::capacity() const {
+  return AtomicAccess::load(&_capacity);
+}
+
+const ZUncommitter& ZPartition::uncommitter() const {
+  return _uncommitter;
+}
+
+ZUncommitter& ZPartition::uncommitter() {
+  return _uncommitter;
+}
+
+const ZMemoryWorker& ZPartition::memory_worker() const {
+  return _mem_worker;
+}
+
+ZMemoryWorker& ZPartition::memory_worker() {
+  return _mem_worker;
+}
+
 uint32_t ZPartition::numa_id() const {
   return _numa_id;
 }
 
-size_t ZPartition::available() const {
-  return _current_max_capacity - _used - _claimed;
+size_t ZPartition::available(ZPageAllocationAttempt attempt, size_t capacity_limit) const {
+  assert(_capacity == _used + _claimed + _cache.size(), "Should be consistent"
+         " _capacity: %zx _used: %zx _claimed: %zx _cache.size(): %zx",
+         _capacity, _used, _claimed, _cache.size());
+
+  if (attempt == ZPageAllocationAttempt::initial) {
+    return available_from_any_capacity(capacity_limit);
+  }
+
+  if (attempt == ZPageAllocationAttempt::retry || attempt == ZPageAllocationAttempt::stall) {
+    return available_from_cache(capacity_limit);
+  }
+
+  ShouldNotReachHere();
 }
 
-size_t ZPartition::increase_capacity(size_t size) {
-  const size_t increased = MIN2(size, _current_max_capacity - _capacity);
+size_t ZPartition::available_from_any_capacity(size_t capacity_limit) const {
+  assert(_capacity == _used + _claimed + _cache.size(), "Should be consistent"
+         " _capacity: %zx _used: %zx _claimed: %zx _cache.size(): %zx",
+         _capacity, _used, _claimed, _cache.size());
+  assert(capacity_limit <= _static_max_capacity, "Invalid capacity limit for partition: %zx > %zx", capacity_limit, _static_max_capacity);
+  const size_t unavailable = _used + _claimed;
+
+  if (capacity_limit < unavailable) {
+    // The current max capacity may be below what is handed out
+    return 0;
+  }
+
+  return capacity_limit - unavailable;
+}
+
+size_t ZPartition::available_from_increase_capacity(size_t capacity_limit) const {
+  precond(capacity_limit >= _capacity);
+  const size_t available = ZPartition::available_from_any_capacity(capacity_limit);
+  const size_t cached = _cache.size();
+
+  return available - cached;
+}
+
+size_t ZPartition::available_from_cache(size_t capacity_limit) const {
+  const size_t available = ZPartition::available_from_any_capacity(capacity_limit);
+  const size_t cached = _cache.size();
+
+  // The current allowed available may be below what is in the cache
+  return MIN2(available, cached);
+}
+
+size_t ZPartition::try_increase_capacity(size_t size, ZPageAllocationAttempt attempt, size_t capacity_limit) {
+  if (attempt == ZPageAllocationAttempt::initial) {
+    // We should only increase the capacity if the capacity limit is greater
+    // than the already committed memory, i.e., the capacity.
+    return (capacity_limit > _capacity)
+        ? increase_capacity(size, capacity_limit)
+        : 0;
+  }
+
+  if (attempt == ZPageAllocationAttempt::retry || attempt == ZPageAllocationAttempt::stall) {
+    return 0;
+  }
+
+  ShouldNotReachHere();
+}
+
+size_t ZPartition::increase_capacity(size_t size, size_t capacity_limit) {
+  assert(capacity_limit > _capacity, "Cannot increase capacity. capacity limit: %zu, capacity: %zu", capacity_limit, _capacity);
+
+  const size_t available = available_from_increase_capacity(capacity_limit);
+  const size_t increased = MIN2(size, available);
 
   if (increased > 0) {
     // Update atomically since we have concurrent readers
@@ -658,21 +769,9 @@ size_t ZPartition::increase_capacity(size_t size) {
   return increased;
 }
 
-void ZPartition::decrease_capacity(size_t size, bool set_max_capacity) {
+void ZPartition::decrease_capacity(size_t size) {
   // Update capacity atomically since we have concurrent readers
   AtomicAccess::sub(&_capacity, size);
-
-  // Adjust current max capacity to avoid further attempts to increase capacity
-  if (set_max_capacity) {
-    const size_t current_max_capacity_before = _current_max_capacity;
-    AtomicAccess::store(&_current_max_capacity, _capacity);
-
-    log_debug_p(gc)("Forced to lower max partition (%u) capacity from "
-                    "%zuM(%.0f%%) to %zuM(%.0f%%)",
-                    _numa_id,
-                    current_max_capacity_before / M, percent_of(current_max_capacity_before, _max_capacity),
-                    _current_max_capacity / M, percent_of(_current_max_capacity, _max_capacity));
-  }
 }
 
 void ZPartition::increase_used(size_t size) {
@@ -689,7 +788,36 @@ void ZPartition::decrease_used(size_t size) {
   _used -= size;
 }
 
-void ZPartition::free_memory(const ZVirtualMemory& vmem) {
+void ZPartition::increase_claimed(size_t size) {
+  // Update claimed atomically since we have concurrent readers
+  AtomicAccess::add(&_claimed, size);
+}
+
+void ZPartition::decrease_claimed(size_t size) {
+  // Update claimed atomically since we have concurrent readers
+  AtomicAccess::sub(&_claimed, size);
+}
+
+static void pretouch_memory(zoffset start, size_t size) {
+  // At this point we know that we have a valid zoffset / zaddress.
+  const zaddress zaddr = ZOffset::address(start);
+  const uintptr_t addr = untype(zaddr);
+  const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
+  os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
+}
+
+void ZPartition::heat_memory(const ZVirtualMemory& vmem) const {
+  verify_virtual_memory_association(vmem, true /* check_multi_partition */);
+
+  const ZPhysicalMemoryManager& manager = physical_memory_manager();
+
+  pretouch_memory(vmem.start(), vmem.size());
+  if (ZLargePages::is_collapse()) {
+    manager.collapse(vmem);
+  }
+}
+
+void ZPartition::free_used_memory(const ZVirtualMemory& vmem) {
   const size_t size = vmem.size();
 
   // Cache the vmem
@@ -699,12 +827,22 @@ void ZPartition::free_memory(const ZVirtualMemory& vmem) {
   decrease_used(size);
 }
 
-void ZPartition::claim_from_cache_or_increase_capacity(ZMemoryAllocation* allocation) {
+void ZPartition::free_claimed_memory(const ZVirtualMemory& vmem) {
+  const size_t size = vmem.size();
+
+  // Cache the vmem
+  _cache.insert(vmem);
+
+  // Update accounting
+  decrease_claimed(size);
+}
+
+void ZPartition::claim_from_cache_or_increase_capacity(ZMemoryAllocation* allocation, ZPageAllocationAttempt attempt, size_t capacity_limit) {
   const size_t size = allocation->size();
   ZArray<ZVirtualMemory>* const out = allocation->partial_vmems();
 
   // We are guaranteed to succeed the claiming of capacity here
-  assert(available() >= size, "Must be");
+  assert(available(attempt, capacity_limit) >= size, "Must be");
 
   // Associate the allocation with this partition.
   allocation->set_partition(this);
@@ -720,7 +858,7 @@ void ZPartition::claim_from_cache_or_increase_capacity(ZMemoryAllocation* alloca
   }
 
   // Try increase capacity
-  const size_t increased_capacity = increase_capacity(size);
+  const size_t increased_capacity = try_increase_capacity(size, attempt, capacity_limit);
 
   allocation->set_increased_capacity(increased_capacity);
 
@@ -739,20 +877,20 @@ void ZPartition::claim_from_cache_or_increase_capacity(ZMemoryAllocation* alloca
 
   assert(harvested + increased_capacity == size,
          "Mismatch harvested: %zu increased_capacity: %zu size: %zu",
-         harvested, increased_capacity, size);
+         harvested / M, increased_capacity / M, size / M);
 
   return;
 }
 
-bool ZPartition::claim_capacity(ZMemoryAllocation* allocation) {
+bool ZPartition::claim_capacity(ZMemoryAllocation* allocation, ZPageAllocationAttempt attempt, size_t capacity_limit) {
   const size_t size = allocation->size();
 
-  if (available() < size) {
+  if (available(attempt, capacity_limit) < size) {
     // Out of memory
     return false;
   }
 
-  claim_from_cache_or_increase_capacity(allocation);
+  claim_from_cache_or_increase_capacity(allocation, attempt, capacity_limit);
 
   // Updated used statistics
   increase_used(size);
@@ -761,12 +899,22 @@ bool ZPartition::claim_capacity(ZMemoryAllocation* allocation) {
   return true;
 }
 
-bool ZPartition::claim_capacity_fast_medium(ZMemoryAllocation* allocation) {
+bool ZPartition::claim_capacity_fast_medium(ZMemoryAllocation* allocation, size_t capacity_limit) {
   precond(ZPageSizeMediumEnabled);
 
   // Try to allocate a medium page sized contiguous vmem
+  const size_t available_from_cache_limit = available_from_cache(capacity_limit);
+  const size_t power_of_2_limit = available_from_cache_limit == 0
+      ? 0
+      : round_down_power_of_2(available_from_cache_limit);
   const size_t min_size = ZPageSizeMediumMin;
-  const size_t max_size = ZStressFastMediumPageAllocation ? min_size : ZPageSizeMediumMax;
+
+  if (power_of_2_limit < min_size) {
+    // No medium allocation size available within the capacity limit
+    return false;
+  }
+
+  const size_t max_size = MIN2(ZStressFastMediumPageAllocation ? min_size : ZPageSizeMediumMax, power_of_2_limit);
   ZVirtualMemory vmem = _cache.remove_contiguous_power_of_2(min_size, max_size);
 
   if (vmem.is_null()) {
@@ -777,7 +925,7 @@ bool ZPartition::claim_capacity_fast_medium(ZMemoryAllocation* allocation) {
   // Found a satisfying vmem in the cache
   allocation->set_satisfied_from_cache_vmem_fast_medium(vmem);
 
-  // Associate the allocation with this partition.
+  // Associate the allocation with this partition
   allocation->set_partition(this);
 
   // Updated used statistics
@@ -785,6 +933,87 @@ bool ZPartition::claim_capacity_fast_medium(ZMemoryAllocation* allocation) {
 
   // Success
   return true;
+}
+
+size_t ZPartition::increase_and_commit_capacity(size_t size, size_t capacity_limit) {
+  assert(Thread::current()->is_ConcurrentGC_thread(), "Should only be called by concurrent GC threads");
+
+  size_t commit_size;
+  {
+    ZLocker<ZLock> locker(lock());
+
+    // We are not increasing capacity, so exit early
+    if (capacity_limit <= _capacity) {
+      return 0;
+    }
+
+    commit_size = increase_capacity(size, capacity_limit);
+
+    if (commit_size == 0) {
+      return 0;
+    }
+
+    // We account for memory that is about to be committed as claimed
+    increase_claimed(commit_size);
+  }
+
+  ZArray<ZVirtualMemory> vmems;
+
+  const size_t claimed_virtual = claim_virtual(commit_size, &vmems);
+
+  const bool depleted_virtual = claimed_virtual != commit_size;
+
+  size_t total_committed = 0;
+  bool commit_failed = depleted_virtual;
+  ZArray<ZVirtualMemory> to_free(vmems.length());
+  for (ZVirtualMemory vmem : vmems) {
+    if (commit_failed) {
+      // If a commit has failed free any remaining vmems
+      free_virtual(vmem);
+      continue;
+    }
+
+    // Claim physical
+    claim_physical(vmem);
+
+    // Commit memory
+    const size_t committed = commit_physical(vmem);
+
+    // Keep track of total committed
+    total_committed += committed;
+
+    if (committed != vmem.size()) {
+      commit_failed = true;
+      const ZVirtualMemory not_committed_vmem = vmem.shrink_from_back(vmem.size() - committed);
+      free_physical(not_committed_vmem);
+      free_virtual(not_committed_vmem);
+    }
+
+    if (vmem.size() != 0) {
+      // Map memory. Since this function is called from the ZMemoryWorker,
+      // we heat memory synchronously instead of sending a heating request.
+      map_virtual(vmem, false /* heat */);
+
+      heat_memory(vmem);
+
+      to_free.push(vmem);
+    }
+  }
+
+  if (commit_failed) {
+    // A commit has failed
+
+    ZLocker<ZLock> locker(lock());
+    const size_t not_committed = commit_size - total_committed;
+    decrease_capacity(not_committed);
+    decrease_claimed(not_committed);
+    _page_allocator->truncate_heuristic_max_after_capacity_decrease(ZPageAllocator::TruncationReason::CommitFailure);
+  }
+
+  // Free the memory, which puts it into the cache
+  _page_allocator->free_claimed_memory(&to_free);
+
+  return total_committed;
 }
 
 void ZPartition::sort_segments_physical(const ZVirtualMemory& vmem) {
@@ -820,7 +1049,9 @@ size_t ZPartition::commit_physical(const ZVirtualMemory& vmem) {
   ZPhysicalMemoryManager& manager = physical_memory_manager();
 
   // Commit physical memory
-  return manager.commit(vmem, _numa_id);
+  const size_t committed =  manager.commit(vmem, _numa_id);
+
+  return committed;
 }
 
 size_t ZPartition::uncommit_physical(const ZVirtualMemory& vmem) {
@@ -830,45 +1061,65 @@ size_t ZPartition::uncommit_physical(const ZVirtualMemory& vmem) {
   ZPhysicalMemoryManager& manager = physical_memory_manager();
 
   // Uncommit physical memory
-  return manager.uncommit(vmem);
+  const size_t uncommitted = manager.uncommit(vmem);
+
+  return uncommitted;
 }
 
-void ZPartition::map_virtual(const ZVirtualMemory& vmem) {
-  verify_virtual_memory_association(vmem);
-
-  ZPhysicalMemoryManager& manager = physical_memory_manager();
-
-  // Map virtual memory to physical memory
-  manager.map(vmem, _numa_id);
+void ZPartition::map_virtual(const ZVirtualMemory& vmem, bool heat_memory) {
+  map_virtual_inner(vmem, false /* multi_partition */, false /* sort_segments */, heat_memory);
 }
 
 void ZPartition::unmap_virtual(const ZVirtualMemory& vmem) {
-  verify_virtual_memory_association(vmem);
-
-  ZPhysicalMemoryManager& manager = physical_memory_manager();
-
-  // Unmap virtual memory from physical memory
-  manager.unmap(vmem);
+  unmap_virtual_inner(vmem, false /* multi_partition */);
 }
 
 void ZPartition::map_virtual_from_multi_partition(const ZVirtualMemory& vmem) {
-  verify_virtual_memory_multi_partition_association(vmem);
-
-  ZPhysicalMemoryManager& manager = physical_memory_manager();
-
-  // Sort physical segments
-  manager.sort_segments_physical(vmem);
-
-  // Map virtual memory to physical memory
-  manager.map(vmem, _numa_id);
+  map_virtual_inner(vmem, true /* multi_partition */, true /* sort_segments */, true /* register_heating */);
 }
 
 void ZPartition::unmap_virtual_from_multi_partition(const ZVirtualMemory& vmem) {
-  verify_virtual_memory_multi_partition_association(vmem);
+  unmap_virtual_inner(vmem, true /* multi_partition */);
+}
+
+void ZPartition::map_virtual_inner(const ZVirtualMemory& vmem, bool multi_partition, bool sort_segments, bool register_heating) {
+  if (multi_partition) {
+    verify_virtual_memory_multi_partition_association(vmem);
+  } else {
+    verify_virtual_memory_association(vmem);
+  }
 
   ZPhysicalMemoryManager& manager = physical_memory_manager();
 
-  // Unmap virtual memory from physical memory
+  if (sort_segments) {
+    // Sort physical segments before mapping multi-partition memory.
+    manager.sort_segments_physical(vmem);
+  }
+
+  // Map virtual memory to physical memory.
+  manager.map(vmem, _numa_id);
+
+  if (register_heating && ZMemoryHeating) {
+    // Register a heating request for this mapping.
+    _mem_worker.register_heating_request(vmem);
+  }
+}
+
+void ZPartition::unmap_virtual_inner(const ZVirtualMemory& vmem, bool multi_partition) {
+  if (multi_partition) {
+    verify_virtual_memory_multi_partition_association(vmem);
+  } else {
+    verify_virtual_memory_association(vmem);
+  }
+
+  if (ZMemoryHeating) {
+    // Remove any heating request before unmapping.
+    _mem_worker.remove_heating_request(vmem);
+  }
+
+  ZPhysicalMemoryManager& manager = physical_memory_manager();
+
+  // Unmap virtual memory from physical memory.
   manager.unmap(vmem);
 }
 
@@ -911,22 +1162,16 @@ ZVirtualMemory ZPartition::free_and_claim_virtual_from_low_exact_or_many(size_t 
   return manager.insert_and_remove_from_low_exact_or_many(size, _numa_id, vmems_in_out);
 }
 
-static void pretouch_memory(zoffset start, size_t size) {
-  // At this point we know that we have a valid zoffset / zaddress.
-  const zaddress zaddr = ZOffset::address(start);
-  const uintptr_t addr = untype(zaddr);
-  const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
-  os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
-}
-
-class ZPreTouchTask : public ZTask {
+class ZPreHeatTask : public ZTask {
 private:
+  ZPartition* const  _partition;
   volatile uintptr_t _current;
   const uintptr_t    _end;
 
 public:
-  ZPreTouchTask(zoffset start, zoffset_end end)
-    : ZTask("ZPreTouchTask"),
+  ZPreHeatTask(ZPartition* partition, zoffset start, zoffset_end end)
+    : ZTask("ZPreHeatTask", false /* account_vtime */),
+      _partition(partition),
       _current(untype(start)),
       _end(untype(end)) {}
 
@@ -944,13 +1189,13 @@ public:
       // At this point we know that we have a valid zoffset / zaddress.
       const zoffset offset = to_zoffset(claimed);
 
-      // Pre-touch the granule
-      pretouch_memory(offset, size);
+      // Pre-heat the granule
+      _partition->heat_memory(ZVirtualMemory(offset, size));
     }
   }
 };
 
-bool ZPartition::prime(ZWorkers* workers, size_t size) {
+bool ZPartition::prime(ZWorkers* workers, size_t size, size_t capacity_limit) {
   if (size == 0) {
     return true;
   }
@@ -964,7 +1209,7 @@ bool ZPartition::prime(ZWorkers* workers, size_t size) {
   assert(claimed_size == size, "must succeed %zx == %zx", claimed_size, size);
 
   // Increase capacity
-  increase_capacity(claimed_size);
+  increase_capacity(claimed_size, capacity_limit);
 
   for (ZVirtualMemory vmem : vmems) {
     // Claim the backing physical memory
@@ -978,13 +1223,17 @@ bool ZPartition::prime(ZWorkers* workers, size_t size) {
       return false;
     }
 
-    map_virtual(vmem);
+    // The primed memory should be "heated" asynchronously if it shouldn't be
+    // pre-touched up front during startup.
+    const bool async_heat = !AlwaysPreTouch;
+
+    map_virtual(vmem, async_heat);
 
     check_numa_mismatch(vmem, _numa_id);
 
-    if (AlwaysPreTouch) {
-      // Pre-touch memory
-      ZPreTouchTask task(vmem.start(), vmem.end());
+    if (!async_heat) {
+      // Pre-heat memory synchronously
+      ZPreHeatTask task(this, vmem.start(), vmem.end());
       workers->run_all(&task);
     }
 
@@ -1055,15 +1304,21 @@ void ZPartition::copy_physical_segments_from_partition(const ZVirtualMemory& at,
   manager.copy_physical_segments(to, at);
 }
 
-void ZPartition::commit_increased_capacity(ZMemoryAllocation* allocation, const ZVirtualMemory& vmem) {
+void ZPartition::commit_increased_capacity(ZMemoryAllocation* allocation, const ZVirtualMemory& vmem, size_t allowed_to_commit) {
   assert(allocation->increased_capacity() > 0, "Nothing to commit");
+  assert(allowed_to_commit > 0, "Not allowed to commit anything");
 
   const size_t already_committed = allocation->harvested();
-
   const ZVirtualMemory to_be_committed_vmem = vmem.last_part(already_committed);
+  assert(to_be_committed_vmem.size() == allocation->increased_capacity(), "must be the same size");
 
-  // Try to commit the uncommitted physical memory
-  const size_t committed = commit_physical(to_be_committed_vmem);
+  const size_t should_commit = MIN2(to_be_committed_vmem.size(), allowed_to_commit);
+  assert(should_commit > 0, "There must be something to commit");
+
+  const ZVirtualMemory should_commit_vmem = to_be_committed_vmem.first_part(should_commit);
+
+  // Try to commit the not-committed physical memory
+  const size_t committed = commit_physical(should_commit_vmem);
 
   // Keep track of the committed amount
   allocation->set_committed_capacity(committed);
@@ -1096,20 +1351,25 @@ void ZPartition::free_memory_alloc_failed(ZMemoryAllocation* allocation) {
   // Adjust capacity to reflect the failed capacity increase
   const size_t remaining = allocation->size() - freed;
   if (remaining > 0) {
-    const bool set_max_capacity = allocation->commit_failed();
-    decrease_capacity(remaining, set_max_capacity);
+    decrease_capacity(remaining);
   }
 }
 
 void ZPartition::threads_do(ThreadClosure* tc) const {
-  tc->do_thread(const_cast<ZUncommitter*>(&_uncommitter));
+  if (ZUncommitter::is_enabled()) {
+    tc->do_thread(const_cast<ZUncommitter*>(&_uncommitter));
+  }
+
+  if (ZMemoryWorker::is_enabled()) {
+    tc->do_thread(const_cast<ZMemoryWorker*>(&_mem_worker));
+  }
 }
 
 void ZPartition::print_on(outputStream* st) const {
   st->print("Partition %u ", _numa_id);
   st->fill_to(17);
   st->print_cr("used %zuM, capacity %zuM, max capacity %zuM",
-               _used / M, _capacity / M, _max_capacity / M);
+               _used / M, _capacity / M, dynamic_max_capacity() / M);
 
   StreamIndentor si(st, 1);
   print_cache_on(st);
@@ -1204,19 +1464,20 @@ public:
   }
 };
 
-ZPageAllocator::ZPageAllocator(size_t min_capacity,
+ZPageAllocator::ZPageAllocator(size_t static_min_capacity,
                                size_t initial_capacity,
                                size_t soft_max_capacity,
-                               size_t max_capacity)
+                               size_t static_max_capacity)
   : _lock(),
-    _virtual(max_capacity),
-    _physical(max_capacity),
-    _min_capacity(min_capacity),
-    _max_capacity(max_capacity),
+    _virtual(static_max_capacity),
+    _physical(static_min_capacity, static_max_capacity),
+    _static_min_capacity(static_min_capacity),
+    _static_max_capacity(static_max_capacity),
+    _heuristic_max_capacity(ZAdaptiveHeapSizing ? initial_capacity : static_max_capacity),
     _used(0),
     _used_generations{0,0},
     _collection_stats{{0, 0},{0, 0}},
-    _partitions(ZValueIdTagType{}, this),
+    _partitions(ZValueIdTagType{}, this, static_min_capacity, static_max_capacity),
     _stalled(),
     _safe_destroy(),
     _initialized(false) {
@@ -1225,10 +1486,12 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     return;
   }
 
-  log_info_p(gc, init)("Min Capacity: %zuM", min_capacity / M);
+  log_info_p(gc, init)("Min Capacity: %zuM", static_min_capacity / M);
   log_info_p(gc, init)("Initial Capacity: %zuM", initial_capacity / M);
-  log_info_p(gc, init)("Max Capacity: %zuM", max_capacity / M);
-  log_info_p(gc, init)("Soft Max Capacity: %zuM", soft_max_capacity / M);
+  log_info_p(gc, init)("Max Capacity: %zuM", static_max_capacity / M);
+  if (soft_max_capacity != 0) {
+    log_info_p(gc, init)("Soft Max Capacity: %zuM", soft_max_capacity / M);
+  }
   if (ZPageSizeMediumEnabled) {
     if (ZPageSizeMediumMin == ZPageSizeMediumMax) {
       log_info_p(gc, init)("Page Size Medium: %zuM", ZPageSizeMediumMax / M);
@@ -1239,12 +1502,15 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     log_info_p(gc, init)("Medium Page Size: N/A");
   }
   log_info_p(gc, init)("Pre-touch: %s", AlwaysPreTouch ? "Enabled" : "Disabled");
+  ZAdaptiveHeap::print();
+  log_info_p(gc, init)("Memory Heating: %s", ZMemoryHeating ? "Enabled" : "Disabled");
 
   // Warn if system limits could stop us from reaching max capacity
-  _physical.warn_commit_limits(max_capacity);
+  const size_t expected_capacity = ZAdaptiveHeap::explicit_max_capacity()
+      ? static_max_capacity
+      : initial_capacity;
 
-  // Check if uncommit should and can be enabled
-  _physical.try_enable_uncommit(min_capacity, max_capacity);
+  _physical.warn_commit_limits(expected_capacity, static_max_capacity);
 
   // Successfully initialized
   _initialized = true;
@@ -1259,8 +1525,9 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   for (ZPartition* partition; iter.next(&partition);) {
     const uint32_t numa_id = partition->numa_id();
     const size_t to_prime = ZNUMA::calculate_share(numa_id, size);
+    const size_t partition_limit = ZNUMA::calculate_share(numa_id, _static_max_capacity);
 
-    if (!partition->prime(workers, to_prime)) {
+    if (!partition->prime(workers, to_prime, partition_limit)) {
       return false;
     }
   }
@@ -1268,29 +1535,147 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   return true;
 }
 
-size_t ZPageAllocator::min_capacity() const {
-  return _min_capacity;
+size_t ZPageAllocator::static_min_capacity() const {
+  return _static_min_capacity;
 }
 
-size_t ZPageAllocator::max_capacity() const {
-  return _max_capacity;
+size_t ZPageAllocator::static_max_capacity() const {
+  return _static_max_capacity;
 }
 
-size_t ZPageAllocator::soft_max_capacity() const {
-  const size_t current_max_capacity = ZPageAllocator::current_max_capacity();
-  const size_t soft_max_heapsize = AtomicAccess::load(&SoftMaxHeapSize);
-  return MIN2(soft_max_heapsize, current_max_capacity);
+size_t ZPageAllocator::dynamic_max_capacity() const {
+  if (!ZAdaptiveHeapSizing) {
+    return _static_max_capacity;
+  }
+
+  physical_memory_size_type result = ZAdaptiveHeap::machine_physical_memory();
+
+  if (!os::is_containerized()) {
+    return clamp(align_down(size_t(result), ZGranuleSize), _static_min_capacity, _static_max_capacity);
+  }
+
+  physical_memory_size_type hard_container_limit;
+  if (os::Container::memory_limit(hard_container_limit)) {
+    result = MIN2(result, hard_container_limit);
+  }
+
+  physical_memory_size_type throttle_container_limit;
+  if (os::Container::memory_throttle_limit(throttle_container_limit)) {
+    result = MIN2(result, throttle_container_limit);
+  }
+
+  return clamp(align_down(size_t(result), ZGranuleSize), _static_min_capacity, _static_max_capacity);
+}
+
+static size_t calculate_system_max_capacity(size_t system_used,
+                                            size_t system_max,
+                                            size_t capacity,
+                                            size_t min_capacity,
+                                            size_t max_capacity) {
+  // It is a bit naive to assume all available memory can be directly turned
+  // into our own heap memory. We need auxiliary GC data structures, and other
+  // processes can also take the memory as we might not be alone. By scaling
+  // the available memory we stay on the pessimistic size, and let the estimated
+  // current max capacity grow gradually as we approach the limits instead.
+  const double near_avoid = (1.0 - ZMemoryCriticalThreshold);
+  const size_t scaled_system_max = size_t(double(system_max) * near_avoid);
+  size_t result;
+
+  // Calculate capacity limits based on availability
+  if (system_used > scaled_system_max) {
+    const size_t overcommitted = system_used - scaled_system_max;
+
+    if (overcommitted > capacity) {
+      return min_capacity;
+    }
+
+    result = capacity - overcommitted;
+  } else {
+    const double system_available = double(scaled_system_max - system_used);
+    const size_t scaled_system_available = size_t(system_available * near_avoid);
+
+    result = capacity + scaled_system_available;
+  }
+
+  // Clamp and align the max capacity by its legal memory bounds
+  return clamp(align_down(result, ZGranuleSize), min_capacity, max_capacity);
 }
 
 size_t ZPageAllocator::current_max_capacity() const {
-  size_t current_max_capacity = 0;
-
-  ZPartitionConstIterator iter = partition_iterator();
-  for (const ZPartition* partition; iter.next(&partition);) {
-    current_max_capacity += AtomicAccess::load(&partition->_current_max_capacity);
+  if (!ZAdaptiveHeapSizing) {
+    // When not adapting use supplied max capacity
+    return _static_max_capacity;
   }
 
-  return current_max_capacity;
+  ZMachineMemoryInfo machine_memory_info = ZAdaptiveHeap::machine_memory_info();
+  if (!machine_memory_info._is_valid) {
+    return dynamic_max_capacity();
+  }
+
+  const size_t machine_used_memory = size_t(machine_memory_info._physical_memory - machine_memory_info._available_memory);
+  const size_t machine_max_memory = size_t(machine_memory_info._physical_memory);
+
+  const size_t cap = capacity();
+
+  const size_t machine_max_capacity = calculate_system_max_capacity(machine_used_memory,
+                                                                    machine_max_memory,
+                                                                    cap,
+                                                                    _static_min_capacity,
+                                                                    _static_max_capacity);
+
+  if (!os::is_containerized()) {
+    return machine_max_capacity;
+  }
+
+  physical_memory_size_type container_max_memory;
+
+  // Keep below the hard memory limit or the OOM killer will get us
+  if (!os::Container::memory_limit(container_max_memory)) {
+    container_max_memory = machine_max_memory;
+  }
+
+  // Avoid allocating past the throttle limit; the app will become useless here
+  physical_memory_size_type container_high_memory;
+  if (os::Container::memory_throttle_limit(container_high_memory)) {
+    container_max_memory = MIN2(container_max_memory, container_high_memory);
+  }
+
+  physical_memory_size_type container_used_memory;
+
+  if (!os::Container::used_memory(container_used_memory)) {
+    // If we can't measure memory usage in the container, we also can not compare
+    // it to any container limits. Effectively, the JVM is not appropriately
+    // containerized, so use machine max capacity.
+    return machine_max_capacity;
+  }
+
+  const size_t container_max_capacity = calculate_system_max_capacity(size_t(container_used_memory),
+                                                                      container_max_memory,
+                                                                      cap,
+                                                                      _static_min_capacity,
+                                                                      _static_max_capacity);
+
+  return MIN2(machine_max_capacity, container_max_capacity);
+}
+
+static size_t clamp_to_soft_max_capacity(size_t value) {
+  assert(is_aligned(value, ZGranuleSize), "Must be granule aligned: 0x%08zx", value);
+  // Note that SoftMaxHeapSize is a manageable flag
+  const size_t soft_max_capacity = AtomicAccess::load(&SoftMaxHeapSize);
+
+  if (soft_max_capacity == 0) {
+    // SoftMaxHeapSize is disabled / unspecified
+    return value;
+  }
+
+  // Clamp to SoftMaxHeapSize, but should not be less than MinHeapSize
+  return clamp(value, MinHeapSize, MAX2(MinHeapSize, align_down(soft_max_capacity, ZGranuleSize)));
+}
+
+size_t ZPageAllocator::heuristic_max_capacity() const {
+  const size_t heuristic_max_capacity = _heuristic_max_capacity.load_relaxed();
+
+  return clamp_to_soft_max_capacity(heuristic_max_capacity);
 }
 
 size_t ZPageAllocator::capacity() const {
@@ -1327,6 +1712,164 @@ size_t ZPageAllocator::unused() const {
   return unused > 0 ? (size_t)unused : 0;
 }
 
+void ZPageAllocator::shrink_heuristic_max(size_t shrink_amount) {
+  for (;;) {
+    const size_t heuristic_max = _heuristic_max_capacity.load_relaxed();
+    const size_t capacity = MAX2(heuristic_max - MIN2(shrink_amount, heuristic_max), ZGranuleSize);
+    if (heuristic_max > capacity) {
+      if (_heuristic_max_capacity.compare_exchange(heuristic_max, capacity) == heuristic_max) {
+        break;
+      }
+    }
+    return;
+  }
+}
+
+void ZPageAllocator::truncate_heuristic_max_after_capacity_decrease(TruncationReason reason) {
+  // Adjust heuristic max capacity to ensure GC tries to keep below current capacity
+  const size_t capacity = ZPageAllocator::capacity();
+
+  for (;;) {
+    const size_t heuristic_max = _heuristic_max_capacity.load_relaxed();
+    if (heuristic_max <= capacity) {
+      return;
+    }
+    if (_heuristic_max_capacity.compare_exchange(heuristic_max, capacity) != heuristic_max) {
+      continue;
+    }
+    const size_t current_max = current_max_capacity();
+    if (reason == TruncationReason::CommitFailure) {
+      log_debug(gc)("Forced to lower heap size from "
+                    "%zuM(%.0f%%) to %zuM(%.0f%%)",
+                    heuristic_max / M, percent_of(heuristic_max, current_max),
+                    capacity / M, percent_of(capacity, current_max));
+    }
+
+    if (ZAdaptiveHeapSizing) {
+      heap_truncated(capacity, reason);
+    }
+    return;
+  }
+}
+
+void ZPageAllocator::adapt_heuristic_max_capacity(ZGenerationId generation) {
+  const size_t heuristic_max = heuristic_max_capacity();
+  const size_t static_min_capacity = _static_min_capacity;
+  const size_t used = ZPageAllocator::used();
+  const size_t capacity = MAX2(ZPageAllocator::capacity(), used);
+  const size_t curr_max_capacity = MAX2(capacity, current_max_capacity());
+  const size_t highest_soft_capacity = clamp_to_soft_max_capacity(curr_max_capacity);
+
+  const double alloc_rate = ZStatMutatorAllocRate::stats()._avg;
+
+  const ZHeapResizeMetrics metrics = {
+    highest_soft_capacity,
+    curr_max_capacity,
+    heuristic_max,
+    static_min_capacity,
+    capacity,
+    used,
+    alloc_rate
+  };
+
+  const size_t selected_capacity = ZAdaptiveHeap::compute_heap_size(metrics, generation);
+
+  // Update heuristic max capacity
+  _heuristic_max_capacity.store_relaxed(selected_capacity);
+
+  heap_resized(selected_capacity);
+}
+
+void ZPageAllocator::heap_resized(size_t selected_capacity) {
+  precond(ZAdaptiveHeapSizing);
+
+  // Update per partition heuristic max capacity
+  ZPerNUMAIterator<ZPartition> iter = partition_iterator();
+  for (ZPartition* partition; iter.next(&partition);) {
+    ZMemoryWorker& memory_worker = partition->memory_worker();
+    const uint32_t numa_id = partition->numa_id();
+
+    const size_t heuristic_max_capacity = ZNUMA::calculate_share(numa_id, selected_capacity);
+    const size_t capacity = partition->capacity();
+
+    if (capacity < heuristic_max_capacity) {
+      // Grow the heap
+      memory_worker.request_grow_capacity(heuristic_max_capacity);
+    } else {
+      // Consider shrinking the heap
+
+      // Set up direct uncommit to shrink the heap
+      const size_t surplus_capacity = capacity - heuristic_max_capacity;
+
+      // Uncommit 5% of the surplus at a time for a smooth capacity decline
+      const size_t uncommit_fraction = 20;
+      const size_t uncommit_request = align_up(surplus_capacity / uncommit_fraction, ZGranuleSize);
+
+      const size_t requested_capacity = capacity - uncommit_request;
+
+      // If the surplus capacity isn't over 5% of the capacity, the point of
+      // uncommitting heuristically seems questionable and might just cause
+      // pointless fluctuation.
+      if (surplus_capacity > capacity / uncommit_fraction) {
+        // Update memory worker target capacity
+        memory_worker.request_shrink_capacity(requested_capacity);
+      } else {
+        memory_worker.stop_heap_resizing();
+      }
+    }
+  }
+
+  // Complain about misconfigurations
+  _physical.warn_commit_limits(selected_capacity, dynamic_max_capacity());
+}
+
+void ZPageAllocator::heap_truncated(size_t selected_capacity, ZPageAllocator::TruncationReason reason) {
+  precond(ZAdaptiveHeapSizing);
+
+  if (reason == TruncationReason::Uncommit) {
+    // Uncommit heap truncation is part of heap resizing.
+    return;
+  }
+  assert(reason == TruncationReason::CommitFailure, "Unexpected: %d", (int)reason);
+
+  ZPerNUMAIterator<ZPartition> iter = partition_iterator();
+  for (ZPartition* partition; iter.next(&partition);) {
+    // Update memory worker target capacity
+    ZMemoryWorker& mem_worker = partition->memory_worker();
+    mem_worker.stop_heap_resizing();
+  }
+
+  // Complain about misconfigurations
+  _physical.warn_commit_limits(selected_capacity, dynamic_max_capacity());
+}
+
+void ZPageAllocator::adjust_capacity(size_t used_soon) {
+  const ZMemoryPressureMetrics mem_metrics = ZAdaptiveHeap::memory_pressure_metrics();
+  ZStatSystemMemoryUsage::record(mem_metrics);
+
+  ZPerNUMAIterator<ZPartition> iter = partition_iterator();
+
+  for (ZPartition* partition; iter.next(&partition);) {
+    ZMemoryWorker& mem_worker = partition->memory_worker();
+    const size_t partition_capacity = partition->capacity();
+
+    if (ZAdaptiveHeap::is_memory_pressure_high(mem_metrics)) {
+      // When memory usage is high, request uncommitting if possible
+      mem_worker.request_shrink_capacity_granule();
+    } else {
+      // When memory pressure is not high, stop targetless uncommit.
+      mem_worker.stop_shrink_capacity_granule();
+
+      // When memory pressure is not high, try to commit memory ahead of mutators.
+      const uint32_t numa_id = partition->numa_id();
+      const size_t used_soon_share = ZNUMA::calculate_share(numa_id, used_soon);
+      if (used_soon_share > partition_capacity) {
+        mem_worker.request_grow_capacity(used_soon_share);
+      }
+    }
+  }
+}
+
 void ZPageAllocator::update_collection_stats(ZGenerationId id) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
@@ -1346,9 +1889,7 @@ void ZPageAllocator::update_collection_stats(ZGenerationId id) {
 }
 
 ZPageAllocatorStats ZPageAllocator::stats_inner(ZGeneration* generation) const {
-  return ZPageAllocatorStats(_min_capacity,
-                             _max_capacity,
-                             soft_max_capacity(),
+  return ZPageAllocatorStats(heuristic_max_capacity(),
                              capacity(),
                              _used,
                              _collection_stats[(int)generation->id()]._used_high,
@@ -1404,8 +1945,9 @@ ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags 
   ZPageAllocation allocation(type, size, flags, age, preferred_partition);
 
   // Allocate the page
-  ZPage* const page = alloc_page_inner(&allocation);
+  ZPage* const page = alloc_page_inner(&allocation, ZPageAllocationAttempt::initial);
   if (page == nullptr) {
+    // Out of memory
     return nullptr;
   }
 
@@ -1464,9 +2006,7 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
   return result;
 }
 
-ZPage* ZPageAllocator::alloc_page_inner(ZPageAllocation* allocation) {
-retry:
-
+ZPage* ZPageAllocator::alloc_page_inner(ZPageAllocation* allocation, ZPageAllocationAttempt attempt) {
   // Claim the capacity needed for this allocation.
   //
   // The claimed capacity comes from memory already mapped in the cache, or
@@ -1475,7 +2015,7 @@ retry:
   //
   // Note that this call might block in a safepoint if the non-blocking flag is
   // not set.
-  if (!claim_capacity_or_stall(allocation)) {
+  if (!claim_capacity_or_stall(allocation, &attempt)) {
     // Out of memory
     return nullptr;
   }
@@ -1498,7 +2038,6 @@ retry:
 
     // Crash in debug builds for more information
     DEBUG_ONLY(fatal("Out of address space");)
-
     return nullptr;
   }
 
@@ -1509,18 +2048,19 @@ retry:
   // Commit memory for the increased capacity and map the entire vmem.
   if (!commit_and_map(allocation, vmem)) {
     free_after_alloc_page_failed(allocation);
-    goto retry;
+    assert(attempt != ZPageAllocationAttempt::retry, "Should be initial or stall");
+    return alloc_page_inner(allocation, ZPageAllocationAttempt::retry);
   }
 
   return create_page(allocation, vmem);
 }
 
-bool ZPageAllocator::claim_capacity_or_stall(ZPageAllocation* allocation) {
+bool ZPageAllocator::claim_capacity_or_stall(ZPageAllocation* allocation, ZPageAllocationAttempt* attempt) {
   {
     ZLocker<ZLock> locker(&_lock);
 
     // Try to claim memory
-    if (claim_capacity(allocation)) {
+    if (claim_capacity(allocation, *attempt)) {
       // Keep track of usage
       increase_used(allocation->size());
 
@@ -1537,31 +2077,57 @@ bool ZPageAllocator::claim_capacity_or_stall(ZPageAllocation* allocation) {
     _stalled.insert_last(allocation);
   }
 
+  // We are stalling on this allocation
+  *attempt = ZPageAllocationAttempt::stall;
+
   // Stall
   return alloc_page_stall(allocation);
 }
 
-bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
-  // Fast medium allocation
-  if (allocation->flags().fast_medium()) {
-    return claim_capacity_fast_medium(allocation);
-  }
-
-  // Round robin single-partition claiming
-  const uint32_t start_numa_id = allocation->preferred_partition();
-  const uint32_t start_partition = start_numa_id;
+bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation, ZPageAllocationAttempt attempt) {
+  ZSinglePartitionAllocation* const single_partition_allocation = allocation->single_partition_allocation();
+  const bool is_fast_medium = allocation->flags().fast_medium();
+  const uint32_t start_partition = allocation->preferred_partition();
   const uint32_t num_partitions = _partitions.count();
+
+  // Round robin soft single-partition claiming
+  const size_t soft_limit = heuristic_max_capacity();
+
+  uint32_t highest_available_id = start_partition;
+  size_t highest_availiable = 0;
 
   for (uint32_t i = 0; i < num_partitions; ++i) {
     const uint32_t partition_id = (start_partition + i) % num_partitions;
+    const size_t soft_partition_limit = ZNUMA::calculate_share(partition_id, soft_limit);
 
-    if (claim_capacity_single_partition(allocation->single_partition_allocation(), partition_id)) {
+    const bool claim_result = is_fast_medium
+        ? claim_capacity_single_partition_fast_medium(single_partition_allocation, partition_id, soft_partition_limit)
+        : claim_capacity_single_partition(single_partition_allocation, partition_id, attempt, soft_partition_limit);
+
+    if (claim_result) {
       return true;
+    }
+
+    const ZPartition& partition = _partitions.get(partition_id);
+    const size_t partition_availiable = partition.available(attempt, partition.static_max_capacity());
+    if (partition_availiable > highest_availiable) {
+      highest_available_id = partition_id;
+      highest_availiable = partition_availiable;
     }
   }
 
-  if (!is_multi_partition_allowed(allocation)) {
-    // Multi-partition claiming is not possible
+  // Hard single-partition claiming - only try from the highest availible partition
+  const size_t hard_partition_limit = _partitions.get(highest_available_id).static_max_capacity();
+  const bool claim_result = is_fast_medium
+      ? claim_capacity_single_partition_fast_medium(single_partition_allocation, highest_available_id, hard_partition_limit)
+      : claim_capacity_single_partition(single_partition_allocation, highest_available_id, attempt, hard_partition_limit);
+
+  if (claim_result) {
+    return true;
+  }
+
+  if (is_fast_medium || !is_multi_partition_allowed(allocation, attempt, _static_max_capacity)) {
+    // Multi-partition claiming is not allowed or not possible
     return false;
   }
 
@@ -1572,35 +2138,24 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
 
   ZMultiPartitionAllocation* const multi_partition_allocation = allocation->multi_partition_allocation();
 
-  claim_capacity_multi_partition(multi_partition_allocation, start_partition);
+  claim_capacity_multi_partition(multi_partition_allocation, highest_available_id, attempt);
 
   return true;
 }
 
-bool ZPageAllocator::claim_capacity_fast_medium(ZPageAllocation* allocation) {
-  const uint32_t start_node = allocation->preferred_partition();
-  const uint32_t numa_nodes = ZNUMA::count();
-
-  for (uint32_t i = 0; i < numa_nodes; ++i) {
-    const uint32_t numa_id = (start_node + i) % numa_nodes;
-    ZPartition& partition = _partitions.get(numa_id);
-    ZSinglePartitionAllocation* single_partition_allocation = allocation->single_partition_allocation();
-
-    if (partition.claim_capacity_fast_medium(single_partition_allocation->allocation())) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool ZPageAllocator::claim_capacity_single_partition(ZSinglePartitionAllocation* single_partition_allocation, uint32_t partition_id) {
+bool ZPageAllocator::claim_capacity_single_partition_fast_medium(ZSinglePartitionAllocation* single_partition_allocation, uint32_t partition_id, size_t capacity_limit) {
   ZPartition& partition = _partitions.get(partition_id);
 
-  return partition.claim_capacity(single_partition_allocation->allocation());
+  return partition.claim_capacity_fast_medium(single_partition_allocation->allocation(), capacity_limit);
 }
 
-void ZPageAllocator::claim_capacity_multi_partition(ZMultiPartitionAllocation* multi_partition_allocation, uint32_t start_partition) {
+bool ZPageAllocator::claim_capacity_single_partition(ZSinglePartitionAllocation* single_partition_allocation, uint32_t partition_id, ZPageAllocationAttempt attempt, size_t capacity_limit) {
+  ZPartition& partition = _partitions.get(partition_id);
+
+  return partition.claim_capacity(single_partition_allocation->allocation(), attempt, capacity_limit);
+}
+
+void ZPageAllocator::claim_capacity_multi_partition(ZMultiPartitionAllocation* multi_partition_allocation, uint32_t start_partition, ZPageAllocationAttempt attempt) {
   const size_t size = multi_partition_allocation->size();
   const uint32_t num_partitions = _partitions.count();
   const size_t split_size = align_up(size / num_partitions, ZGranuleSize);
@@ -1613,10 +2168,13 @@ void ZPageAllocator::claim_capacity_multi_partition(ZMultiPartitionAllocation* m
       return false;
     }
 
+    // Multi partition allocation, try to split evenly but at most static_max_capacity
+    const size_t capacity_limit = partition.static_max_capacity();
+
     const size_t max_alloc_size = claim_evenly ? MIN2(split_size, remaining) : remaining;
 
     // This guarantees that claim_physical below will succeed
-    const size_t alloc_size = MIN2(max_alloc_size, partition.available());
+    const size_t alloc_size = MIN2(max_alloc_size, partition.available(attempt, capacity_limit));
 
     // Skip over empty allocations
     if (alloc_size == 0) {
@@ -1627,7 +2185,7 @@ void ZPageAllocator::claim_capacity_multi_partition(ZMultiPartitionAllocation* m
     ZMemoryAllocation partial_allocation(alloc_size);
 
     // Claim capacity for this allocation - this should succeed
-    const bool result = partition.claim_capacity(&partial_allocation);
+    const bool result = partition.claim_capacity(&partial_allocation, attempt, capacity_limit);
     assert(result, "Should have succeeded");
 
     // Register allocation
@@ -1824,12 +2382,37 @@ bool ZPageAllocator::commit_and_map_multi_partition(ZMultiPartitionAllocation* m
   return false;
 }
 
+size_t ZPageAllocator::allowed_to_commit(size_t about_to_commit) {
+  // We only allow committing up to the current max capacity. Even if capacity
+  // may have been allowed to be increased on individual partitions, we may
+  // disallow that capacity to be committed if it turns out that it will put
+  // too much strain on the system.
+  const size_t current_max = current_max_capacity();
+  const size_t capacity = ZPageAllocator::capacity();
+
+  // Capacity already accounts for the increase as part of this allocation,
+  // subtract it to get the already committed capacity.
+  const size_t committed_capacity = capacity - about_to_commit;
+
+  if (committed_capacity >= current_max) {
+    return 0;
+  }
+
+  return current_max - committed_capacity;
+}
+
 void ZPageAllocator::commit(ZMemoryAllocation* allocation, const ZVirtualMemory& vmem) {
   ZPartition& partition = allocation->partition();
+  const size_t allowed_to_commit = ZPageAllocator::allowed_to_commit(allocation->increased_capacity());
 
-  if (allocation->increased_capacity() > 0) {
+  // If we both have something to commit and we're allowed to commit something,
+  // then try to commit.
+  if (allocation->increased_capacity() > 0 && allowed_to_commit > 0) {
     // Commit memory
-    partition.commit_increased_capacity(allocation, vmem);
+    partition.commit_increased_capacity(allocation, vmem, allowed_to_commit);
+  } else {
+    // Record nothing to commit
+    allocation->set_committed_capacity(0);
   }
 }
 
@@ -1878,10 +2461,10 @@ void ZPageAllocator::map_committed_single_partition(ZSinglePartitionAllocation* 
   ZPartition& partition = allocation->partition();
 
   const size_t total_committed = allocation->harvested() + allocation->committed_capacity();
-  const ZVirtualMemory total_committed_vmem = vmem.first_part(total_committed);
 
-  if (total_committed_vmem.size() > 0)  {
+  if (total_committed > 0) {
     // Map all the committed memory
+    const ZVirtualMemory total_committed_vmem = vmem.first_part(total_committed);
     partition.map_memory(allocation, total_committed_vmem);
   }
 }
@@ -2005,6 +2588,9 @@ void ZPageAllocator::free_after_alloc_page_failed(ZPageAllocation* allocation) {
   // Free memory
   free_memory_alloc_failed(allocation);
 
+  // Try not to commit too much again
+  truncate_heuristic_max_after_capacity_decrease(TruncationReason::CommitFailure);
+
   // Keep track of usage
   decrease_used(allocation->size());
 
@@ -2016,22 +2602,10 @@ void ZPageAllocator::free_after_alloc_page_failed(ZPageAllocation* allocation) {
 }
 
 void ZPageAllocator::free_memory_alloc_failed(ZPageAllocation* allocation) {
-  // The current max capacity may be decreased, store the value before freeing memory
-  const size_t current_max_capacity_before = current_max_capacity();
-
   if (allocation->is_multi_partition()) {
     free_memory_alloc_failed_multi_partition(allocation->multi_partition_allocation());
   } else {
     free_memory_alloc_failed_single_partition(allocation->single_partition_allocation());
-  }
-
-  const size_t current_max_capacity_after = current_max_capacity();
-
-  if (current_max_capacity_before != current_max_capacity_after) {
-    log_error_p(gc)("Forced to lower max Java heap size from "
-                    "%zuM(%.0f%%) to %zuM(%.0f%%)",
-                    current_max_capacity_before / M, percent_of(current_max_capacity_before, _max_capacity),
-                    current_max_capacity_after / M, percent_of(current_max_capacity_after, _max_capacity));
   }
 }
 
@@ -2146,18 +2720,33 @@ void ZPageAllocator::remap_and_defragment(const ZVirtualMemory& vmem, ZArray<ZVi
   }
 }
 
-void ZPageAllocator::free_memory(ZArray<ZVirtualMemory>* vmems) {
+void ZPageAllocator::free_used_memory(ZArray<ZVirtualMemory>* vmems) {
   ZLocker<ZLock> locker(&_lock);
 
   // Free the vmems
   for (const ZVirtualMemory vmem : *vmems) {
     ZPartition& partition = partition_from_vmem(vmem);
 
-    // Free the vmem
-    partition.free_memory(vmem);
+    // Free the used vmem
+    partition.free_used_memory(vmem);
 
     // Keep track of usage
     decrease_used(vmem.size());
+  }
+
+  // Try satisfy stalled allocations
+  satisfy_stalled();
+}
+
+void ZPageAllocator::free_claimed_memory(ZArray<ZVirtualMemory>* vmems) {
+  ZLocker<ZLock> locker(&_lock);
+
+  // Free the vmems
+  for (const ZVirtualMemory vmem : *vmems) {
+    ZPartition& partition = partition_from_vmem(vmem);
+
+    // Free the claimed vmem
+    partition.free_claimed_memory(vmem);
   }
 
   // Try satisfy stalled allocations
@@ -2172,7 +2761,7 @@ void ZPageAllocator::satisfy_stalled() {
       return;
     }
 
-    if (!claim_capacity(allocation)) {
+    if (!claim_capacity(allocation, ZPageAllocationAttempt::stall)) {
       // Allocation could not be satisfied, give up
       return;
     }
@@ -2192,10 +2781,10 @@ bool ZPageAllocator::is_multi_partition_enabled() const {
   return _virtual.is_multi_partition_enabled();
 }
 
-bool ZPageAllocator::is_multi_partition_allowed(const ZPageAllocation* allocation) const {
+bool ZPageAllocator::is_multi_partition_allowed(const ZPageAllocation* allocation, ZPageAllocationAttempt attempt, size_t total_capacity_limit) const {
   return is_multi_partition_enabled() &&
          allocation->type() == ZPageType::large &&
-         allocation->size() <= sum_available();
+         allocation->size() <= sum_available(attempt, total_capacity_limit);
 }
 
 const ZPartition& ZPageAllocator::partition_from_partition_id(uint32_t numa_id) const {
@@ -2210,12 +2799,18 @@ ZPartition& ZPageAllocator::partition_from_vmem(const ZVirtualMemory& vmem) {
   return partition_from_partition_id(_virtual.lookup_partition_id(vmem));
 }
 
-size_t ZPageAllocator::sum_available() const {
+size_t ZPageAllocator::sum_available(ZPageAllocationAttempt attempt, size_t total_capacity_limit) const {
   size_t total = 0;
 
   ZPartitionConstIterator iter = partition_iterator();
   for (const ZPartition* partition; iter.next(&partition);) {
-    total += partition->available();
+    if (total_capacity_limit <= total) {
+      // The limit smaller than the total, we will have
+      return total_capacity_limit;
+    }
+
+    const size_t partition_capacity_limit = MIN2(partition->static_max_capacity(), total_capacity_limit - total);
+    total += partition->available(attempt, partition_capacity_limit);
   }
 
   return total;
@@ -2263,7 +2858,7 @@ void ZPageAllocator::free_page(ZPage* page) {
   decrease_used_generation(id, size);
 
   // Free the extracted vmems
-  free_memory(&vmems);
+  free_used_memory(&vmems);
 }
 
 void ZPageAllocator::free_pages(ZGenerationId id, const ZArray<ZPage*>* pages) {
@@ -2281,7 +2876,7 @@ void ZPageAllocator::free_pages(ZGenerationId id, const ZArray<ZPage*>* pages) {
   }
 
   // Free the extracted vmems
-  free_memory(&vmems);
+  free_used_memory(&vmems);
 }
 
 void ZPageAllocator::enable_safe_destroy() const {
@@ -2411,7 +3006,7 @@ void ZPageAllocator::print_total_usage_on(outputStream* st) const {
   st->print("ZHeap ");
   st->fill_to(17);
   st->print_cr("used %zuM, capacity %zuM, max capacity %zuM",
-               used() / M, capacity() / M, max_capacity() / M);
+               used() / M, capacity() / M, dynamic_max_capacity() / M);
 }
 
 void ZPageAllocator::print_partition_usage_on(outputStream* st) const {

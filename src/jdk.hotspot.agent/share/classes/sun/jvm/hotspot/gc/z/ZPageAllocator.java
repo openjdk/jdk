@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,10 @@ public class ZPageAllocator extends VMObject {
     private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ZPageAllocator");
 
-        maxCapacityField = type.getCIntegerField("_max_capacity");
+        // This only represents the maximum possible capacity. Which may be different
+        // from what other servicability APIs (MXBeans, Runtime, etc.) report.
+        // See ZPageAllocator::static_max_capacity() vs ZPageAllocator::dynamic_max_capacity()
+        maxCapacityField = type.getCIntegerField("_static_max_capacity");
         partitionsOffset = type.getAddressField("_partitions").getOffset();
         numaCount = ZNUMA.count();
     }

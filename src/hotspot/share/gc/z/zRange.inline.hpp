@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,14 @@ inline bool ZRange<Start, End>::contains(const ZRange& other) const {
   precond(!other.is_null());
 
   return _start <= other._start && other.end() <= end();
+}
+
+template <typename Start, typename End>
+inline bool ZRange<Start, End>::overlaps(const ZRange& other) const {
+  precond(!is_null());
+  precond(!other.is_null());
+
+  return MAX2(_start, other._start) < MIN2(other.end(), end());
 }
 
 template <typename Start, typename End>

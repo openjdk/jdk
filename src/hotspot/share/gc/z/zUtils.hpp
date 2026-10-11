@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZUTILS_HPP
 
 #include "gc/z/zAddress.hpp"
+#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -59,5 +60,18 @@ public:
   template <typename T, typename Comparator>
   static void sort(T* array, int count, Comparator comparator);
 };
+
+template <typename CallableType>
+class ZOnScopeExit : StackObj {
+  CallableType _call_on_scope_exit;
+
+public:
+  NONCOPYABLE(ZOnScopeExit);
+  template <typename Callable>
+  ZOnScopeExit(Callable&& call_on_scope_exit);
+  ~ZOnScopeExit();
+};
+
+template <typename CallableType> ZOnScopeExit(CallableType) -> ZOnScopeExit<CallableType>;
 
 #endif // SHARE_GC_Z_ZUTILS_HPP

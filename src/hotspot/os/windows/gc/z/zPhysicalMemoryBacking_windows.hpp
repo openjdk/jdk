@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,15 @@ public:
 
   bool is_initialized() const;
 
-  void warn_commit_limits(size_t max_capacity) const;
+  void warn_commit_limits(size_t expected_capacity, size_t max_capacity) const;
 
   size_t commit(zbacking_offset offset, size_t length, uint32_t numa_id);
   size_t uncommit(zbacking_offset offset, size_t length);
 
   void map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const;
   void unmap(zaddress_unsafe addr, size_t size) const;
+
+  void collapse(zaddress_unsafe addr, size_t size) const;
 };
 
 #endif // OS_WINDOWS_GC_Z_ZPHYSICALMEMORYBACKING_WINDOWS_HPP
