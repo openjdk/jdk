@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Map;
 import jdk.internal.access.JavaxSecurityAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import sun.security.x509.X500Name;
 import sun.security.util.*;
 
@@ -94,7 +95,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      *
      * NOTE: this field is accessed using shared secrets from within X500Name.
      */
-    private transient X500Name thisX500Name;
+    private final transient X500Name thisX500Name;
 
     static {
         // Set up JavaxSecurityAccess in SharedSecrets
@@ -543,6 +544,11 @@ public final class X500Principal implements Principal, java.io.Serializable {
                ClassNotFoundException {
 
         // re-create thisX500Name
-        thisX500Name = new X500Name((byte[])s.readObject());
+        var x500Name = new X500Name((byte[])s.readObject());
+        UNSAFE.putReference(this, X500NAME_OFFSET, x500Name);
     }
+
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final long X500NAME_OFFSET =
+        UNSAFE.objectFieldOffset(X500Principal.class, "thisX500Name");
 }
