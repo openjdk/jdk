@@ -238,6 +238,11 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
+  const size_t humongous_allocatable_bytes = ShenandoahHeap::heap()->free_set()->calc_max_humongous_allocatable();
+  if (trigger_min_humongous_threshold(humongous_allocatable_bytes)) {
+    return true;
+  }
+
   if (trigger_learning(available, capacity)) {
     return true;
   }
@@ -245,19 +250,43 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
   const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
   ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
+  ShenandoahAllocationRate& humongous_alloc_rate = ShenandoahHeap::heap()->humongous_alloc_rate();
   const ShenandoahAnticipatedConsumption consumption = alloc_rate.snapshot(anticipated_gc_duration, _margin_of_error_sd);
+  const ShenandoahAnticipatedConsumption humongous_consumption = humongous_alloc_rate.snapshot(anticipated_gc_duration, _margin_of_error_sd);
   const size_t allocatable_bytes = allocatable(available);
-  maybe_log_rate_trigger_parameters(consumption, allocatable_bytes);
+  maybe_log_rate_trigger_parameters(consumption, allocatable_bytes, false /* is_humongous */);
+  maybe_log_rate_trigger_parameters(humongous_consumption, humongous_allocatable_bytes, true /* is_humongous */);
 
-  if (trigger_accelerating_allocation_rate(consumption, allocatable_bytes)) {
+  if (trigger_accelerating_allocation_rate(consumption, allocatable_bytes, false /* is_humongous */)) {
     return true;
   }
 
-  if (trigger_average_allocation_rate(consumption, allocatable_bytes)) {
+  if (trigger_accelerating_allocation_rate(humongous_consumption, humongous_allocatable_bytes, true /* is_humongous */)) {
+    return true;
+  }
+
+  if (trigger_average_allocation_rate(consumption, allocatable_bytes, false /* is_humongous */)) {
+    return true;
+  }
+
+  if (trigger_average_allocation_rate(humongous_consumption, humongous_allocatable_bytes, true /* is_humongous */)) {
     return true;
   }
 
   return ShenandoahHeuristics::should_start_gc();
+}
+
+
+bool ShenandoahAdaptiveHeuristics::trigger_min_humongous_threshold(size_t max_humongous_available) {
+  // by size, configurable via shen globals. default: ..5 region size ?
+  size_t threshold = ShenandoahMinHumongousRegionCount * ShenandoahHeapRegion::region_size_bytes();
+  if (max_humongous_available < threshold) {
+    log_trigger("Max humongous allocatable: " PROPERFMT ", below " PROPERFMT " threshold",
+                PROPERFMTARGS(max_humongous_available), PROPERFMTARGS(threshold));
+    accept_trigger_with_type(OTHER);
+    return true;
+  }
+  return false;
 }
 
 bool ShenandoahAdaptiveHeuristics::trigger_min_free_threshold(size_t available, size_t capacity) {
@@ -286,11 +315,13 @@ bool ShenandoahAdaptiveHeuristics::trigger_learning(size_t available, size_t cap
   return false;
 }
 
-bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const ShenandoahAnticipatedConsumption& rate, const size_t allocatable_bytes) {
+bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const ShenandoahAnticipatedConsumption& rate, const size_t allocatable_bytes, bool is_humongous) {
   if (rate.baseline_consumption() > allocatable_bytes) {
     const ShenandoahSignedSize baseline_rate = ShenandoahSignedSize::get(rate.baseline_rate());
-    log_trigger("Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+
+    log_trigger("%sAllocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
                 PROPERFMT_F "/s average allocation rate",
+                is_humongous ? "Humongous " : "",
                 rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
                 PROPERFMTARGS_SIGNED(baseline_rate));
     accept_trigger_with_type(RATE);
@@ -381,12 +412,13 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const Shenand
 // Though larger sample size may improve quality of predictor, it also delays trigger response.  Smaller sample sizes
 // are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 8 and
 // a sample period of roughly 15 ms, spanning approximately 120 ms of execution.
-bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const ShenandoahAnticipatedConsumption& rate, const size_t allocatable_bytes) {
+bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const ShenandoahAnticipatedConsumption& rate, const size_t allocatable_bytes, bool is_humongous) {
   if (rate.momentary_consumption() > allocatable_bytes) {
     const ShenandoahSignedSize momentary_rate = ShenandoahSignedSize::get(rate.momentary_rate());
     assert(rate.accelerated_consumption() == 0, "Momentary trigger is meant to exclude acceleration trigger");
-    log_trigger("Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+    log_trigger("%sAllocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
                 PROPERFMT_F "/s momentary allocation rate",
+                is_humongous ? "Humongous " : "",
                 rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
                 PROPERFMTARGS_SIGNED(momentary_rate));
     accept_trigger_with_type(RATE);
@@ -397,8 +429,9 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const Sh
     const ShenandoahSignedSize predicted_rate = ShenandoahSignedSize::get(rate.predicted_rate());
     const ShenandoahSignedSize acceleration = ShenandoahSignedSize::get(rate.acceleration());
     assert(rate.momentary_consumption() == 0, "Acceleration trigger is meant to exclude momentary trigger");
-    log_trigger("Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
+    log_trigger("%sAllocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
                 PROPERFMT_F "/s predicted allocation rate, " PROPERFMT_F "/s^2 acceleration",
+                is_humongous ? "Humongous " : "",
                 rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
                 PROPERFMTARGS_SIGNED(predicted_rate), PROPERFMTARGS_SIGNED(acceleration));
     accept_trigger_with_type(RATE);
@@ -409,19 +442,19 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const Sh
 }
 
 void ShenandoahAdaptiveHeuristics::maybe_log_rate_trigger_parameters(const ShenandoahAnticipatedConsumption &consumption,
-                                                                     size_t allocatable_bytes) const {
+                                                                     size_t allocatable_bytes, bool is_humongous) const {
   if (log_is_enabled(Debug, gc, sampling)) {
     const ShenandoahSignedSize momentary_rate = ShenandoahSignedSize::get(consumption.momentary_rate());
     const ShenandoahSignedSize predicted_rate = ShenandoahSignedSize::get(consumption.predicted_rate());
     const ShenandoahSignedSize baseline_rate = ShenandoahSignedSize::get(consumption.baseline_rate());
     const ShenandoahSignedSize acceleration = ShenandoahSignedSize::get(consumption.acceleration());
     log_debug(gc, sampling)(
-      "%s: Anticipated cycle duration: %.3fs, head room: " PROPERFMT ", margin of error: %.3f "
+      "%s: %sAnticipated cycle duration: %.3fs, head room: " PROPERFMT ", margin of error: %.3f "
         "Baseline consumption: " PROPERFMT ", Baseline rate: " PROPERFMT_F "/s, "
         "Momentary consumption: " PROPERFMT ", Momentary rate: " PROPERFMT_F "/s, "
         "Accelerated consumption: " PROPERFMT ", Predicted rate: " PROPERFMT_F "/s, "
         "Acceleration: " PROPERFMT_F "/s",
-        _space_info->name(), consumption.duration_seconds(), PROPERFMTARGS(allocatable_bytes), _margin_of_error_sd,
+        _space_info->name(), is_humongous ? "Humongous " : "", consumption.duration_seconds(), PROPERFMTARGS(allocatable_bytes), _margin_of_error_sd,
         PROPERFMTARGS(consumption.baseline_consumption()), PROPERFMTARGS_SIGNED(baseline_rate),
         PROPERFMTARGS(consumption.momentary_consumption()), PROPERFMTARGS_SIGNED(momentary_rate),
         PROPERFMTARGS(consumption.accelerated_consumption()), PROPERFMTARGS_SIGNED(predicted_rate),
