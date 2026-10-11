@@ -300,7 +300,7 @@ class ServerSocketChannelImpl
     }
 
     private SocketAddress unixBind(SocketAddress local, int backlog) throws IOException {
-        if (local == null) {
+        if (local == null || (local instanceof UnixDomainSocketAddress ulocal && ulocal.getPath().toString().equals(""))) {
             // Attempt up to 10 times to find an unused name in temp directory.
             // If local address supplied then bind called only once
             boolean bound = false;
