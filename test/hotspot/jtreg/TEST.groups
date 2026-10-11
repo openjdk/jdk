@@ -592,6 +592,7 @@ tier1_serviceability = \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethods.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java \
   -serviceability/jvmti/RedefineClasses/TestRedefineObject.java \
+  -serviceability/jvmti/SetBreakpoint/BreakpointMetaspaceOOM.java \
   -serviceability/sa/ClhsdbScanOops.java \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
