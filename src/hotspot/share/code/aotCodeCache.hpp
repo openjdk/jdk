@@ -470,7 +470,6 @@ public:
 #if INCLUDE_SHENANDOAHGC
 #define AOTCODECACHE_CONFIGS_SHENANDOAHGC_DO(do_var, do_fun) \
   do_var(bool,  ExplicitGCInvokesConcurrent) \
-  do_var(bool,  ShenandoahImplicitGCInvokesConcurrent) \
   do_var(bool,  ShenandoahLoadRefBarrier) \
   do_var(bool,  ShenandoahSATBBarrier) \
   do_var(bool,  ShenandoahCloneBarrier) \

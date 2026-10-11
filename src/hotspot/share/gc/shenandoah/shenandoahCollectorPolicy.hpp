@@ -117,7 +117,6 @@ public:
 
   static bool is_allocation_failure(GCCause::Cause cause);
   static bool is_shenandoah_gc(GCCause::Cause cause);
-  static bool is_requested_gc(GCCause::Cause cause);
   static bool is_explicit_gc(GCCause::Cause cause);
   static bool should_run_full_gc(GCCause::Cause cause);
   static bool should_handle_requested_gc(GCCause::Cause cause);
