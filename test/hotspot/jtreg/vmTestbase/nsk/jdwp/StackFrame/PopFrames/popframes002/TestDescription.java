@@ -43,8 +43,8 @@
  *     after current frame is popped the tested method is invoked
  *     second time.
  *     Test consists of two compoments:
- *         debugger: popframes002
- *         debuggee: popframes002a
+ *         debugger: popframes001
+ *         debuggee: popframes001a
  *     First, debugger uses nsk.share support classes to launch debuggee
  *     and obtain Transport object, that represents JDWP transport channel.
  *     Next, debugger waits for tested class loaded, requests methodID
@@ -65,14 +65,15 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.StackFrame.PopFrames.popframes002a
+ * @build nsk.jdwp.StackFrame.PopFrames.popframes001a
  * @run driver
- *      nsk.jdwp.StackFrame.PopFrames.popframes002
+ *      nsk.jdwp.StackFrame.PopFrames.popframes001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}
- *                       -XX:CompileCommand=exclude,*TestedThreadClass::run"
+ *                       -XX:CompileCommand=exclude,*TestedThreadClass::run
+ *                       -Dpopframes001.unmount=true"
  */

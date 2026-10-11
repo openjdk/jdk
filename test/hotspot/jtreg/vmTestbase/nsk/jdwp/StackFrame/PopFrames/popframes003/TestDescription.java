@@ -33,18 +33,18 @@
  *     This test performs checking for
  *         command set: StackFrame
  *         command: PopFrames
- *     Same check as popframes002, the tested method joins another virtual
- *     thread before the breakpoint so the caller frame stays frozen in the
- *     stack chunk. Here the debuggee runs with -Xcomp and testedMethod is
- *     not inlined, so that frozen caller is a compiled frame. The debuggee
+ *     Same as popframes002, the tested method joins another virtual thread
+ *     before the breakpoint so the caller frame stays frozen in the stack
+ *     chunk. Here the debuggee runs with -Xcomp and testedMethod is not
+ *     inlined, so that frozen caller is a compiled frame. The debuggee
  *     checks with WhiteBox that run is compiled.
  *     Test checks that debugee accept the command packet and
  *     replies with correct reply packet. Also test checks that
  *     after current frame is popped the tested method is invoked
  *     second time.
  *     Test consists of two compoments:
- *         debugger: popframes003
- *         debuggee: popframes003a
+ *         debugger: popframes001
+ *         debuggee: popframes001a
  *     First, debugger uses nsk.share support classes to launch debuggee
  *     and obtain Transport object, that represents JDWP transport channel.
  *     Next, debugger waits for tested class loaded, requests methodID
@@ -68,9 +68,9 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @build nsk.jdwp.StackFrame.PopFrames.popframes003a
+ * @build nsk.jdwp.StackFrame.PopFrames.popframes001a
  * @run driver
- *      nsk.jdwp.StackFrame.PopFrames.popframes003
+ *      nsk.jdwp.StackFrame.PopFrames.popframes001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
  *      -waittime=5
@@ -78,5 +78,7 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}
- *                       -Xcomp -XX:CompileCommand=dontinline,*::testedMethod"
+ *                       -Xcomp -XX:CompileCommand=dontinline,*::testedMethod
+ *                       -Dpopframes001.compiledCaller=true
+ *                       -Dpopframes001.unmount=true"
  */
