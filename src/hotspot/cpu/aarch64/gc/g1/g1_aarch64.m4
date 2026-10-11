@@ -299,7 +299,6 @@ instruct g1GetAndSetP$1(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tm
   %}
   ins_pipe(pipe_serial);
 %}')dnl
-XCHGP_INSN(,,atomic_xchg)
 XCHGP_INSN(Acq,_acq,atomic_xchgal)
 dnl
 define(`XCHGN_INSN',
@@ -331,7 +330,6 @@ instruct g1GetAndSetN$1(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tm
   %}
   ins_pipe(pipe_serial);
 %}')dnl
-XCHGN_INSN(,atomic_xchgw,atomic_xchgw)
 XCHGN_INSN(Acq,atomic_xchgw_acq,atomic_xchgalw)
 
 // This pattern is generated automatically from g1_aarch64.m4.
