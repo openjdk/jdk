@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ final class ParserFactory {
         boolean constantPool = PrivateAccess.getInstance().isConstantPool(v);
         if (v.isArray()) {
             Type valueType = PrivateAccess.getInstance().getType(v);
-            ValueDescriptor element = PrivateAccess.getInstance().newValueDescriptor(v.getName(), valueType, v.getAnnotationElements(), 0, constantPool, null);
+            ValueDescriptor element = PrivateAccess.getInstance().newValueDescriptor(v.getName(), valueType, v.getAnnotationElements(), 0, constantPool);
             return new ArrayParser(createParser(element, event));
         }
         long id = v.getTypeId();

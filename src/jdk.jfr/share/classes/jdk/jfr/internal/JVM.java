@@ -39,8 +39,6 @@ import jdk.jfr.internal.management.HiddenWait;
  *
  */
 public final class JVM {
-    private static final JVM jvm = new JVM();
-
     static final long RESERVED_CLASS_ID_LIMIT = 500;
 
     /*
@@ -164,13 +162,6 @@ public final class JVM {
      * @return a unique thread identifier
      */
     public static native long getThreadId(Thread t);
-
-    /**
-     * Frequency, ticks per second
-     *
-     * @return frequency
-     */
-    public static native long getTicksFrequency();
 
     /**
      * Returns the same clock that sets the start time of a chunk (in nanos).
@@ -325,16 +316,6 @@ public final class JVM {
      * @param force, true to force initialization, false otherwise
      */
     public static native void setForceInstrumentation(boolean force);
-
-    /**
-     * Turn on/off compressed integers.
-     *
-     * @param compressed true if compressed integers should be used, false
-     *        otherwise.
-     *
-     * @throws IllegalStateException if state can't be changed.
-     */
-    public static native void setCompressedIntegers(boolean compressed) throws IllegalStateException;
 
     /**
      * Set stack depth.
@@ -522,19 +503,6 @@ public final class JVM {
     public static native boolean addStringConstant(long id, String s);
 
     public static native void uncaughtException(Thread thread, Throwable t);
-
-    /**
-     * Sets cutoff for event.
-     *
-     * Determines how long the event should be allowed to run.
-     *
-     * Long.MAXIMUM_VALUE = no limit
-     *
-     * @param eventTypeId the id of the event type
-     * @param cutoffTicks cutoff in ticks,
-     * @return true, if it could be set
-     */
-    public static native boolean setCutoff(long eventTypeId, long cutoffTicks);
 
     /**
      * Sets the event emission rate in event sample size per time unit.
