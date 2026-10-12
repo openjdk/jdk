@@ -200,13 +200,11 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   const ShenandoahAffiliation target_gen = from_region->affiliation();
 
   if (target_gen == YOUNG_GENERATION) {
-    markWord mark = p->mark();
-    if (mark.is_marked()) {
-      // Already forwarded.
-      return ShenandoahForwarding::get_forwardee(p);
+    oop resolved = ShenandoahForwarding::forwardee_or_null(p);
+    if (resolved != nullptr) {
+      return resolved;
     }
-
-    if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+    if (age_census()->is_tenurable(from_region->age() + ShenandoahForwarding::age(p))) {
       // If the object is tenurable, try to promote it
       oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 
@@ -314,21 +312,14 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     control_thread()->handle_alloc_failure_evac(size);
 
     // Install the self-forwarded bit so other evacuators/LRBs see the
-    // object as "already handled, do not try to evacuate". The CAS may
-    // fail if another thread concurrently installed a real forwardee or
-    // self-forwarded first.
-    markWord old_mark = p->mark();
-    if (old_mark.is_forwarded()) {
-      return ShenandoahForwarding::get_forwardee(p);
-    }
-    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
-    if (winner == nullptr) {
-      // We own the self-forwarding. Flag the from-region so the degen/full
+    // object as "already handled, do not try to evacuate".
+    oop fwd = ShenandoahForwarding::try_forward_to(p, p);
+    if (fwd == p) {
+      // Now self-forwarded. Flag the from-region so the degen/full
       // GC entry drain knows to scan it for self_fwd bits to clear.
       heap_region_containing(p)->set_has_self_forwards();
-      return p;
     }
-    return winner;
+    return fwd;
   }
 
   if (ShenandoahEvacTracking) {
@@ -339,22 +330,22 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
   oop copy_val = cast_to_oop(copy);
 
-  // Update the age of the evacuated object
-  if (TO_GENERATION == YOUNG_GENERATION) {
-    increase_object_age(copy_val, from_region_age + 1);
-  }
-
-  // Relativize stack chunks before publishing the copy. After the forwarding CAS,
-  // mutators can see the copy and thaw it via the fast path if flags == 0. We must
-  // relativize derived pointers and set gc_mode before that happens. Skip if the
-  // copy's mark word is already a forwarding pointer (another thread won the race
-  // and overwrote the original's header before we copied it).
   if (!ShenandoahForwarding::is_forwarded(copy_val)) {
+    // Relativize stack chunks before publishing the copy. After the forwarding CAS,
+    // mutators can see the copy and thaw it via the fast path if flags == 0. We must
+    // relativize derived pointers and set gc_mode before that happens. Skip if the
+    // copy's mark word is already a forwarding pointer (another thread won the race
+    // and overwrote the original's header before we copied it).
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
+
+    // Update the age of the evacuated object
+    if (TO_GENERATION == YOUNG_GENERATION) {
+      ShenandoahForwarding::increase_age(copy_val, from_region_age + 1);
+    }
   }
 
   // Try to install the new forwarding pointer.
-  oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
+  oop result = ShenandoahForwarding::try_forward_to(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     if (ShenandoahEvacTracking) {

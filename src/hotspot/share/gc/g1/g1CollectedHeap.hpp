@@ -584,7 +584,7 @@ public:
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
   // Immediately uncommit uncommittable regions.
-  uint uncommit_regions(uint region_limit);
+  uint uncommit_regions(uint max_num_regions_to_uncommit);
   bool has_uncommittable_regions();
 
   G1NUMA* numa() const { return _numa; }
