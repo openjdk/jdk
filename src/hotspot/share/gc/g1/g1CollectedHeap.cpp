@@ -388,7 +388,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   G1HeapRegion* humongous_start = _hrm.allocate_humongous(obj_regions);
   if (humongous_start == nullptr) {
     // Policy: We could not find enough regions for the humongous object in the
-    // free list. Look through the heap to find a mix of free, inactive or uncommitted regions.
+    // free list. Look through the heap to find a mix of free, pending uncommit or uncommitted regions.
     // If so, expand the heap and allocate the humongous object.
     humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
     if (humongous_start != nullptr) {
@@ -2513,15 +2513,15 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 }
 
 uint G1CollectedHeap::uncommit_regions(uint max_num_regions_to_uncommit) {
-  return _hrm.uncommit_inactive_regions(max_num_regions_to_uncommit);
+  return _hrm.uncommit_pending_uncommit_regions(max_num_regions_to_uncommit);
 }
 
-bool G1CollectedHeap::has_uncommittable_regions() {
-  return _hrm.has_inactive_regions();
+bool G1CollectedHeap::has_pending_uncommit_regions() {
+  return _hrm.has_pending_uncommit_regions();
 }
 
 void G1CollectedHeap::uncommit_regions_if_necessary() {
-  if (has_uncommittable_regions()) {
+  if (has_pending_uncommit_regions()) {
     G1UncommitRegionTask::enqueue();
   }
 }

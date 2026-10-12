@@ -253,7 +253,7 @@ void G1HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
   for (uint i = start; i < end; i++) {
     G1HeapRegion* hr = at(i);
     hr->set_node_index(G1NUMA::UnknownNodeIndex);
-    G1HeapRegionPrinter::inactive(hr);
+    G1HeapRegionPrinter::pending_uncommit(hr);
   }
 
   _committed_map.deactivate(start, end);
@@ -286,20 +286,21 @@ MemoryUsage G1HeapRegionManager::get_auxiliary_data_memory_usage() const {
   return MemoryUsage(0, used_sz, committed_sz, committed_sz);
 }
 
-bool G1HeapRegionManager::has_inactive_regions() const {
-  return _committed_map.num_inactive_regions() > 0;
+bool G1HeapRegionManager::has_pending_uncommit_regions() const {
+  return _committed_map.num_pending_uncommit_regions() > 0;
 }
 
-uint G1HeapRegionManager::uncommit_inactive_regions(uint max_num_regions_to_uncommit) {
+uint G1HeapRegionManager::uncommit_pending_uncommit_regions(uint max_num_regions_to_uncommit) {
   assert(max_num_regions_to_uncommit > 0, "Need to specify at least one region to uncommit");
 
   uint num_uncommitted_regions = 0;
   uint offset = 0;
   do {
     MutexLocker uc(G1Uncommit_lock, Mutex::_no_safepoint_check_flag);
-    G1HeapRegionRange range = _committed_map.next_inactive_range(offset);
+    G1HeapRegionRange range = _committed_map.next_pending_uncommit_range(offset);
     // No more regions available for uncommit. Return the number of regions
-    // already uncommitted or 0 if there were no longer any inactive regions.
+    // already uncommitted or 0 if there were no longer any regions that were pending
+    // uncommit.
     if (range.num_regions() == 0) {
       return num_uncommitted_regions;
     }
@@ -314,14 +315,14 @@ uint G1HeapRegionManager::uncommit_inactive_regions(uint max_num_regions_to_unco
   return num_uncommitted_regions;
 }
 
-uint G1HeapRegionManager::expand_inactive(uint num_regions) {
+uint G1HeapRegionManager::expand_pending_uncommit(uint num_regions) {
   uint offset = 0;
   uint num_expanded_regions = 0;
 
   do {
-    G1HeapRegionRange regions = _committed_map.next_inactive_range(offset);
+    G1HeapRegionRange regions = _committed_map.next_pending_uncommit_range(offset);
     if (regions.num_regions() == 0) {
-      // No more inactive regions.
+      // No more pending uncommit regions.
       break;
     }
 
@@ -361,7 +362,7 @@ uint G1HeapRegionManager::expand_by(uint num_regions, WorkerThreads* pretouch_wo
 
   // First "undo" any requests to uncommit memory concurrently by
   // reverting such regions to being available.
-  uint num_expanded_regions = expand_inactive(num_regions);
+  uint num_expanded_regions = expand_pending_uncommit(num_regions);
 
   // Commit more regions if needed.
   if (num_expanded_regions < num_regions) {
@@ -377,18 +378,18 @@ void G1HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThrea
   uint end = start + num_regions;
 
   for (uint i = start; i < end; i++) {
-    // First check inactive. If the regions is inactive, try to reactivate it
-    // before it get uncommitted by the G1SeriveThread.
-    if (_committed_map.is_inactive(i)) {
+    // First check pending uncommit. If the regions are pending uncommit, try to reactivate them
+    // before they get uncommitted by the G1ServiceThread.
+    if (_committed_map.is_pending_uncommit(i)) {
       // Need to grab the lock since this can be called by a java thread
       // doing humongous allocations.
       MutexLocker uc(G1Uncommit_lock, Mutex::_no_safepoint_check_flag);
       // State might change while getting the lock.
-      if (_committed_map.is_inactive(i)) {
+      if (_committed_map.is_pending_uncommit(i)) {
         reactivate_regions(i, 1);
       }
     }
-    // Not else-if to catch the case where the inactive region was uncommitted
+    // Not else-if to catch the case where the pending uncommit region was uncommitted
     // while waiting to get the lock.
     if (!_committed_map.is_active(i)) {
       expand(i, 1, pretouch_workers);
@@ -532,7 +533,7 @@ bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* n
   uint last_index = (uint)_regions.get_index_by_address(range.last());
 
   // Ensure that each G1 region in the range is free, returning false if not.
-  // Activates inactive regions and commits others (making them Active) if necessary.
+  // Activates pending uncommit regions and commits others (making them Active) if necessary.
   for (uint curr_index = start_index; curr_index <= last_index; curr_index++) {
     if (!is_available(curr_index)) {
       num_activated_regions++;
@@ -616,7 +617,7 @@ void G1HeapRegionManager::shrink_at(uint index, size_t num_regions) {
     assert(at(i)->is_free(), "Expected free region at index %u", i);
   }
 #endif
-  // Mark regions as inactive making them ready for uncommit.
+  // Mark regions as pending uncommit.
   deactivate_regions(index, (uint) num_regions);
 }
 
