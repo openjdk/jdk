@@ -223,18 +223,15 @@ class ChannelInputStream extends InputStream {
     @Override
     public synchronized long skip(long n) throws IOException {
         // special case where the channel is to a file
-        if (ch instanceof SeekableByteChannel sbc &&
-            !(ch instanceof FileChannelImpl fci && isOther())) {
+        if (ch instanceof SeekableByteChannel sbc
+                && !(ch instanceof FileChannelImpl && isOther())) {
             long pos = sbc.position();
             long newPos;
             if (n > 0) {
-                newPos = pos + n;
-                long size = sbc.size();
-                if (newPos < 0 || newPos > size) {
-                    newPos = size;
-                }
+                long remaining = Long.max(sbc.size() - pos, 0L);
+                newPos = pos + Long.min(n, remaining);
             } else {
-                newPos = Long.max(pos + n, 0);
+                newPos = Long.max(pos + n, 0L);
             }
             sbc.position(newPos);
             return newPos - pos;
