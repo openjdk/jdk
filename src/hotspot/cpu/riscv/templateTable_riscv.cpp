@@ -1636,8 +1636,7 @@ void TemplateTable::convert() {
 void TemplateTable::lcmp() {
   transition(ltos, itos);
   __ pop_l(x11);
-  __ cmp_l2i(t0, x11, x10);
-  __ mv(x10, t0);
+  __ cmp_l2i(x10, x11, x10);
 }
 
 void TemplateTable::float_cmp(bool is_float, int unordered_result) {
@@ -2618,22 +2617,21 @@ void TemplateTable::pop_and_check_object(Register r) {
 
 // 8179954: We need to make sure that the code generated for volatile accesses
 // forms a sequentially-consistent set of operations when combined with the
-// Zalasr load-acquire and store-release instructions used by C2.
+// Zalasr load-acquire and store-release instructions used by C1 and C2.
 //
-// With UseZalasr, C2 compiles a volatile store to a bare s{b|h|w|d}.rl and
-// elides the trailing StoreLoad fence, relying on RVWMO preserved program
+// With UseZalasr, C1 and C2 compile a volatile store to a bare s{b|h|w|d}.rl and
+// elide the trailing StoreLoad fence, relying on RVWMO preserved program
 // order rule 7 ("a and b both have RCsc annotations") to order that store
 // before a later l{b|h|w|d}.aq. The interpreter reads volatile fields with a
 // plain load followed by a trailing fence, and a plain load carries no RCsc
 // annotation, so no preserved-program-order rule applies. Without a leading
 // fence it is possible for a simple Dekker test to fail if loads use
-// load;fence but stores use s.rl. This can happen if C2 compiles the stores
+// load;fence but stores use s.rl. This can happen if C1 or C2 compiles the stores
 // in one method and we interpret the loads in another.
 //
-// The fence is only needed when C2 may be used; flags must hold the resolved
-// field entry flags and t0 is clobbered.
+// flags must hold the resolved field entry flags and t0 is clobbered.
 static bool needs_volatile_load_leading_fence() {
-  return UseZalasr && !CompilerConfig::is_c1_or_interpreter_only();
+  return UseZalasr;
 }
 
 static void volatile_load_leading_fence(Register flags, InterpreterMacroAssembler* _masm) {

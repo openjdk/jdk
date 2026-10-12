@@ -3070,6 +3070,10 @@ static int patch_offset_in_conditional_branch(address branch, int64_t offset) {
 
 static int patch_offset_in_pc_relative(address branch, int64_t offset) {
   const int PC_RELATIVE_INSTRUCTION_NUM = 2;                                    // auipc, addi/jalr/load
+  // The auipc pair can only encode a 32-bit pc-relative offset. Check the same
+  // range the emitters check, otherwise the high bits would be silently dropped.
+  guarantee(MacroAssembler::is_valid_32bit_offset(offset),
+            "offset " INT64_FORMAT " out of range for auipc", offset);
   Assembler::patch(branch, 31, 12, ((offset + 0x800) >> 12) & 0xfffff);         // Auipc.          offset[31:12]  ==> branch[31:12]
   Assembler::patch(branch + 4, 31, 20, offset & 0xfff);                         // Addi/Jalr/Load. offset[11:0]   ==> branch[31:20]
   return PC_RELATIVE_INSTRUCTION_NUM * MacroAssembler::instruction_size;
@@ -3254,6 +3258,24 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   return -1;
 }
 
+int MacroAssembler::patch_metadata(address insn_addr, address metadata) {
+  // Metadata is either a narrow klass (32 bits, materialized by set_narrow_klass()
+  // with li32) or a full 48-bit pointer (materialized by mov_metadata() with movptr).
+  if (MacroAssembler::is_li32_at(insn_addr)) {
+    // Move narrow klass
+    Metadata* value = reinterpret_cast<Metadata*>(metadata);
+    assert(value != nullptr && value->is_klass(), "narrow metadata must be a klass");
+    narrowKlass nk = CompressedKlassPointers::encode(static_cast<Klass*>(value));
+    return patch_imm_in_li32(insn_addr, static_cast<int32_t>(nk));
+  } else if (MacroAssembler::is_movptr1_at(insn_addr) ||
+             MacroAssembler::is_movptr2_at(insn_addr)) {
+    // Move wide metadata
+    return pd_patch_instruction_size(insn_addr, metadata);
+  }
+  ShouldNotReachHere();
+  return -1;
+}
+
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
@@ -3280,7 +3302,10 @@ void MacroAssembler::movptr(Register Rd, address addr, Register temp) {
 void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register temp) {
   uint64_t uimm64 = (uint64_t)addr;
 #ifndef PRODUCT
-  {
+  // Skip the block comment when dumping the AOT code cache: the comment text is
+  // the build-time address, which is meaningless in a future JVM instance and
+  // would flood the AOT C string table with unique entries.
+  if (!AOTCodeCache::is_on_for_dump()) {
     char buffer[64];
     os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
     block_comment(buffer);
@@ -4599,11 +4624,13 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   if (UseZacas) {
     // This word load pre-checks the target byte/short. A mismatch branches
     // directly to fail, so the acquiring amocas below is never executed.
-    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
-    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
-    // the required RCsc ordering on this failure path.
-    if (UseZalasr && (acquire == Assembler::aq)) {
-      lw_aq(result, aligned_addr);
+    // Make the pre-check acquiring on the volatile path, as for a volatile
+    // load: lw.aq with Zalasr, plain lw + fence r,rw otherwise. The Zalasr
+    // form additionally pairs with a preceding volatile store whose trailing
+    // StoreLoad fence was elided, so s*.rl -> lw.aq still provides the
+    // required RCsc ordering on this failure path.
+    if (acquire == Assembler::aq) {
+      lw_acquire(result, aligned_addr);
     } else {
       lw(result, aligned_addr);
     }
@@ -4683,11 +4710,13 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   if (UseZacas) {
     // This word load pre-checks the target byte/short. A mismatch branches
     // directly to fail, so the acquiring amocas below is never executed.
-    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
-    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
-    // the required RCsc ordering on this failure path.
-    if (UseZalasr && (acquire == Assembler::aq)) {
-      lw_aq(result, aligned_addr);
+    // Make the pre-check acquiring on the volatile path, as for a volatile
+    // load: lw.aq with Zalasr, plain lw + fence r,rw otherwise. The Zalasr
+    // form additionally pairs with a preceding volatile store whose trailing
+    // StoreLoad fence was elided, so s*.rl -> lw.aq still provides the
+    // required RCsc ordering on this failure path.
+    if (acquire == Assembler::aq) {
+      lw_acquire(result, aligned_addr);
     } else {
       lw(result, aligned_addr);
     }
@@ -7035,34 +7064,20 @@ void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
     mv(dst, zr);
     return;
   }
-  Label done;
-  Register left = src1;
-  Register right = src2;
-  if (dst == src1) {
-    assert_different_registers(dst, src2, tmp);
-    mv(tmp, src1);
-    left = tmp;
-  } else if (dst == src2) {
-    assert_different_registers(dst, src1, tmp);
-    mv(tmp, src2);
-    right = tmp;
-  }
 
-  // installs 1 if gt else 0
+  // dst = (src1 > src2) - (src1 < src2)
+  assert_different_registers(tmp, dst);
+  assert_different_registers(tmp, src1);
+  assert_different_registers(tmp, src2);
+
   if (is_signed) {
-    slt(dst, right, left);
+    slt(tmp, src2, src1);
+    slt(dst, src1, src2);
   } else {
-    sltu(dst, right, left);
+    sltu(tmp, src2, src1);
+    sltu(dst, src1, src2);
   }
-  bnez(dst, done);
-  if (is_signed) {
-    slt(dst, left, right);
-  } else {
-    sltu(dst, left, right);
-  }
-  // dst = -1 if lt; else if eq , dst = 0
-  neg(dst, dst);
-  bind(done);
+  sub(dst, tmp, dst);
 }
 
 void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)

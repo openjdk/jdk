@@ -574,6 +574,8 @@ jdk/internal/platform/docker/TestLimitsUpdating.java 8390823 linux-all
 
 # jdk_foreign
 
+java/foreign/TestSharedCloseDeopts.java 8393853 generic-all
+
 ############################################################################
 # Client manual tests
 
