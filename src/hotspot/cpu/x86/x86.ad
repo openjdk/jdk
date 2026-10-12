@@ -170,11 +170,24 @@ reg_def R28_H(SOC, SOC, Op_RegI, 28, r28->as_VMReg()->next());
 reg_def R29  (SOC, SOC, Op_RegI, 29, r29->as_VMReg());
 reg_def R29_H(SOC, SOC, Op_RegI, 29, r29->as_VMReg()->next());
 
+#ifdef _WIN64
+
+// On Win64, R30 and R31 are nonvolatile (callee saved)
+reg_def R30  (SOC, SOE, Op_RegI, 30, r30->as_VMReg());
+reg_def R30_H(SOC, SOE, Op_RegI, 30, r30->as_VMReg()->next());
+
+reg_def R31  (SOC, SOE, Op_RegI, 31, r31->as_VMReg());
+reg_def R31_H(SOC, SOE, Op_RegI, 31, r31->as_VMReg()->next());
+
+#else
+
 reg_def R30  (SOC, SOC, Op_RegI, 30, r30->as_VMReg());
 reg_def R30_H(SOC, SOC, Op_RegI, 30, r30->as_VMReg()->next());
 
 reg_def R31  (SOC, SOC, Op_RegI, 31, r31->as_VMReg());
 reg_def R31_H(SOC, SOC, Op_RegI, 31, r31->as_VMReg()->next());
+
+#endif
 
 // Floating Point Registers
 
@@ -7823,7 +7836,15 @@ instruct loadConP(rRegP dst, immP con) %{
 
   format %{ "movq    $dst, $con\t# ptr" %}
   ins_encode %{
-    __ mov64($dst$$Register, $con$$constant, $con->constant_reloc(), RELOC_IMM64);
+    address con = (address)$con$$constant;
+    relocInfo::relocType rtype = $con->constant_reloc();
+    if (rtype == relocInfo::external_word_type &&
+        (con == (address)-1 ||
+         con < (address)(uintptr_t)os::vm_page_size())) {
+      // Don't use relocation for fake address
+      rtype = relocInfo::none;
+    }
+    __ mov64($dst$$Register, $con$$constant, rtype, RELOC_IMM64);
   %}
   ins_pipe(ialu_reg_fat); // XXX
 %}
