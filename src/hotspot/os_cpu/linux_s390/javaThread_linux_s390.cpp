@@ -35,10 +35,10 @@ frame JavaThread::pd_last_frame() {
 
 #ifdef ASSERT
   // pc == nullptr is a valid case for C2 runtime stubs
-  // as they do not store last_Java_pc.
-  // They stored it in frame::z_common_abi return_pc.
-  // frame reads it in frame::setup called from the frame
-  // constructor.
+  // as they do not set last_Java_pc.
+  // C2 stubs set their caller's SP as last_Java_sp and store their return pc
+  // in the caller's frame::z_common_abi::return_pc.
+  // where frame::setup() finds and reads it.
   if (pc == nullptr) {
     address return_pc = (address)((frame::z_common_abi*)sp)->return_pc;
     CodeBlob* cb = CodeCache::find_blob(return_pc);
