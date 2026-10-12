@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8393065
  * @enablePreview
  * @compile LocalProxyVariablesRuntime.java
  * @run main LocalProxyVariablesRuntime
@@ -37,6 +38,7 @@ public class LocalProxyVariablesRuntime {
         new Value3(0);
         new Value4();
         new Value4(0);
+        new ValueCopy(new ValueCopy(), false);
     }
 
     private static value class Value1 {
@@ -94,5 +96,18 @@ public class LocalProxyVariablesRuntime {
         public Value4() {}
 
         public Value4(int x) {}
+    }
+
+    private static value class ValueCopy {
+        private final int value;
+
+        public ValueCopy() {
+            this.value = 0;
+        }
+
+        public ValueCopy(ValueCopy original, boolean b) {
+            this.value = original.value;
+            System.out.println(value);
+        }
     }
 }

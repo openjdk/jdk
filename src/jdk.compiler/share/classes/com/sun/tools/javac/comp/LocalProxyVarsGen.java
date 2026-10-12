@@ -59,6 +59,8 @@ import static com.sun.tools.javac.code.TypeTag.BOT;
 
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
+import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
@@ -315,12 +317,21 @@ public class LocalProxyVarsGen {
         @Override
         public void visitSelect(JCTree.JCFieldAccess tree) {
             super.visitSelect(tree);
-            if (ctorPrologue && fieldToLocalMap.get(tree.sym) != null) {
+            if (ctorPrologue && fieldToLocalMap.get(tree.sym) != null &&
+                thisInstanceReference(tree.selected)) {
                 result = make.at(md).Ident(fieldToLocalMap.get(tree.sym));
                 rollback.put(result, tree);
             } else {
                 result = tree;
             }
+        }
+
+        private boolean thisInstanceReference(JCTree t) {
+            return switch (t) {
+                case JCIdent id -> names._this == id.name;
+                case JCFieldAccess acc -> names._this == acc.name;
+                default -> false;
+            };
         }
 
         @Override
