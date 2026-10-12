@@ -44,7 +44,7 @@ import jdk.test.lib.Utils;
  * @library /test/lib /
  * @requires (os.arch == "aarch64" & vm.cpu.features ~= ".*sve2.*" & vm.cpu.features ~= ".*svebitperm.*") |
  *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
- * @summary Test intrinsification of CompressBitsV/ExpandBitsV
+ * @summary [vectorapi]: Test intrinsification of CompressBitsV/ExpandBitsV
  * @modules jdk.incubator.vector
  * @run driver compiler.vectorapi.TestVectorCompressExpandBits
  */
