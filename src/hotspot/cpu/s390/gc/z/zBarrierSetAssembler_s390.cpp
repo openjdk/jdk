@@ -436,7 +436,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm, Register zpointer,
 }
 
 void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm, Register zpointer, Address dst,
-                   bool dest_uninitialized) {
+                                         bool dest_uninitialized) {
   if (!dest_uninitialized) {
     Label store, store_bad, dummy;
     __ z_lg(Z_R0_scratch, dst);
@@ -470,7 +470,7 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm, Register zpointer
 }
 
 void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm, VectorRegister Vdata, Register zpointer,
-                      Register src) {
+                                        Register src) {
   VectorRegister Vscratch = Z_V1;
   Label done;
 
@@ -491,7 +491,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm, VectorRegister Vda
 }
 
 void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm, VectorRegister Vdata, Register zpointer,
-                       Register dst, bool dest_uninitialized) {
+                                         Register dst, bool dest_uninitialized) {
   VectorRegister Vscratch = Z_V1;
   Label fallback, done;
 
