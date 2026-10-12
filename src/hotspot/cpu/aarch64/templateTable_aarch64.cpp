@@ -23,7 +23,6 @@
  *
  */
 
-#include "../../share/runtime/globals.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -46,6 +45,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -3298,21 +3298,25 @@ void TemplateTable::fast_storefield(TosState state)
   switch (bytecode()) {
   case Bytecodes::_fast_vputfield:
     {
-      Label is_flat, done;
-      if (UseFieldFlattening) {
-        __ test_field_is_flat(r5, noreg /* temp */, is_flat);
+      if (Arguments::is_valhalla_enabled()) {
+        Label is_flat, done;
+        if (UseFieldFlattening) {
+          __ test_field_is_flat(r5, noreg /* temp */, is_flat);
+        }
+        __ null_check(r0);
+        do_oop_store(_masm, field, r0, IN_HEAP);
+        __ b(done);
+        __ bind(is_flat);
+        if (UseFieldFlattening) {
+          __ load_field_entry(r4, r5);
+          // Re-shuffle registers because of VM calls calling convention
+          __ mov(r7, r2);
+          __ write_flat_field(r4, r6, r8, r7);
+        }
+        __ bind(done);
+      } else {
+        __ should_not_reach_here();
       }
-      __ null_check(r0);
-      do_oop_store(_masm, field, r0, IN_HEAP);
-      __ b(done);
-      __ bind(is_flat);
-      if (UseFieldFlattening) {
-        __ load_field_entry(r4, r5);
-        // Re-shuffle registers because of VM calls calling convention
-        __ mov(r7, r2);
-        __ write_flat_field(r4, r6, r8, r7);
-      }
-      __ bind(done);
     }
     break;
   case Bytecodes::_fast_aputfield:

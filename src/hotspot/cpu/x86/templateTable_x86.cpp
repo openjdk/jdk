@@ -3248,21 +3248,25 @@ void TemplateTable::fast_storefield_helper(Address field, Register rax, Register
   switch (bytecode()) {
   case Bytecodes::_fast_vputfield:
     {
-      // Field is either flat (nullable or not) or non-flat and null-free
-      Label is_flat, done;
-      if (UseFieldFlattening) {
-        __ test_field_is_flat(flags, rscratch1, is_flat);
+      if (Arguments::is_valhalla_enabled()) {
+        // Field is either flat (nullable or not) or non-flat and null-free
+        Label is_flat, done;
+        if (UseFieldFlattening) {
+          __ test_field_is_flat(flags, rscratch1, is_flat);
+        }
+        __ null_check(rax);  // FIXME JDK-8341120
+        do_oop_store(_masm, field, rax);
+        __ jmp(done);
+        __ bind(is_flat);
+        if (UseFieldFlattening) {
+          __ load_field_entry(r8, r9);
+          __ movptr(rscratch2, rcx);  // re-shuffle registers because of VM call calling convention
+          __ write_flat_field(r8, rscratch1, r9, rscratch2, rax);
+        }
+        __ bind(done);
+      } else {
+        __ should_not_reach_here();
       }
-      __ null_check(rax);  // FIXME JDK-8341120
-      do_oop_store(_masm, field, rax);
-      __ jmp(done);
-      __ bind(is_flat);
-      if (UseFieldFlattening) {
-        __ load_field_entry(r8, r9);
-        __ movptr(rscratch2, rcx);  // re-shuffle registers because of VM call calling convention
-        __ write_flat_field(r8, rscratch1, r9, rscratch2, rax);
-      }
-      __ bind(done);
     }
     break;
   case Bytecodes::_fast_aputfield:

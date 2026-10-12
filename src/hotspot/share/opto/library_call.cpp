@@ -5005,7 +5005,7 @@ bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
         return true;
       }
       break;
-  case IsNullRestricted:
+    case IsNullRestricted:
       bol = null_free_array_test(array);
       break;
     case IsAtomic: {
