@@ -675,6 +675,10 @@ public:
   Node* get_addp_base(Node* addp);
   DEBUG_ONLY(static bool is_load_array_klass_related(const Node* uncast_base));
 
+  // Whether n is a virtual AddP node introduced just to model the array
+  // initialization connection explicitly via a Field node in the CG.
+  bool is_virtual_array_init_field_node(Node* n);
+
   // Utility function for nodes that load an object
   void add_objload_to_connection_graph(Node* n, Unique_Node_List* delayed_worklist);
 
