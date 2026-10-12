@@ -880,6 +880,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   } else if (CDSConfig::is_dumping_final_static_archive()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
     AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
+  } else if (CDSConfig::is_redumping_aot_configuration()) {
+    tty->print_cr("Reading AOTCache %s and writing AOTConfiguration %s", AOTCache, AOTConfiguration);
   }
 
   if (log_is_enabled(Info, perf, class, link)) {
