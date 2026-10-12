@@ -27,13 +27,11 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/invocationCounter.hpp"
-#include "memory/allocation.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/integerCast.hpp"
@@ -2183,35 +2181,7 @@ public:
 };
 
 class ciMethodData;
-
-class StripedMutex : public CHeapObj<mtSynchronizer> {
-  const uint32_t _num_stripes;
-  const uint32_t _stripe_mask; // _num_stripes - 1
-  char*          _stripes_base;
-  PaddedMutex*   _stripes;
-
-  inline static uintptr_t hash(const uintptr_t key) {
-    return key ^ (key >> 20) ^ (key >> 9);
-  }
-
-public:
-  StripedMutex();
-
-  ~StripedMutex() {
-    for (size_t i = 0; i < _num_stripes; i++) {
-      _stripes[i].~PaddedMutex();
-    }
-    FreeHeap(_stripes_base);
-  }
-
-  template <typename T>
-  Mutex* get(T* key) {
-    const uintptr_t h = StripedMutex::hash((uintptr_t) key);
-    const uint32_t index = static_cast<uint32_t>(h) & _stripe_mask;
-    return &_stripes[index];
-  }
-};
-
+class StripedMutex;
 
 class MethodData : public Metadata {
   friend class VMStructs;
