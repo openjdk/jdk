@@ -189,8 +189,11 @@ public class referringObjects003 extends HeapwalkingDebugger {
         if (!isDebuggeeReady())
             return;
 
-        // The joined threads still hold the group in holder.group and the VM releases
-        // its handles to them a little later, so one collection may not be enough.
+        // The joined threads still hold the group in holder.group and the VM
+        // releases its handles to them a little later on another thread. The
+        // retry gives that release time to happen. Each forceGC has to stay a
+        // real full collection, a cheaper one here would not clear the group
+        // and the loop would just run out of retries.
         for (int i = 0; i < 5; i++) {
             forceGC();
             threadGroups = HeapwalkingDebugger.filterObjectReferrence(threadGroupsToFilter, HeapwalkingDebugger
