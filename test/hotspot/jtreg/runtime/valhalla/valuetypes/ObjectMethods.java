@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,12 @@ import java.lang.invoke.*;
 import test.java.lang.invoke.lib.InstructionHelper;
 
 /*
- * @test id=compressed-class-pointers
+ * @test id=default
  * @summary Check object methods implemented by the VM behave with value types
  * @library /test/lib /test/jdk/java/lang/invoke/common
  * @enablePreview
  * @compile ObjectMethods.java
- * @run main/othervm -XX:+UseCompressedClassPointers runtime.valhalla.valuetypes.ObjectMethods
- */
-
-/*
- * @test id=no-compressed-class-pointers
- * @summary Check object methods implemented by the VM behave with value types
- * @library /test/lib /test/jdk/java/lang/invoke/common
- * @enablePreview
- * @compile ObjectMethods.java
- * @run main/othervm -XX:-UseCompressedClassPointers runtime.valhalla.valuetypes.ObjectMethods
+ * @run main/othervm ${test.main.class}
  */
 
 /*
@@ -50,7 +41,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @library /test/lib /test/jdk/java/lang/invoke/common
  * @enablePreview
  * @compile ObjectMethods.java
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BytecodeVerificationLocal -XX:-BytecodeVerificationRemote runtime.valhalla.valuetypes.ObjectMethods noverify
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BytecodeVerificationLocal -XX:-BytecodeVerificationRemote ${test.main.class} noverify
  */
 
 public class ObjectMethods {

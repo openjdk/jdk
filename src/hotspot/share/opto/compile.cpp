@@ -589,6 +589,12 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without locks coarsening         **");
     tty->print_cr("*********************************************************");
   }
+  if ((do_stringopts() != OptimizeStringConcat) && PrintOpto) {
+    // Recompiling without string concatenation optimizations
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without StringOpts               **");
+    tty->print_cr("*********************************************************");
+  }
   if (env()->break_at_compile()) {
     // Open the debugger when compiling this method.
     tty->print("### Breaking when compiling: ");
@@ -599,10 +605,15 @@ void Compile::print_compile_messages() {
 
   if( PrintOpto ) {
     if (is_osr_compilation()) {
-      tty->print("[OSR]%3d", _compile_id);
-    } else {
-      tty->print("%3d", _compile_id);
+      tty->print("[OSR]");
+    } else if (env()->task()->is_aot_compile()) {
+      if (for_aot_preload()) {
+        tty->print("[PRE]");
+      } else {
+        tty->print("[AOT]");
+      }
     }
+    tty->print("%3d", _compile_id);
   }
 #endif
 }
@@ -638,9 +649,13 @@ void Compile::print_ideal_ir(const char* compile_phase_name) const {
   NoSafepointVerifier nsv;
   ttyLocker ttyl;
   if (xtty != nullptr) {
+    CompileTask* task = env()->task();
+    bool aot_comp = task->is_aot_load_or_compile();
+    bool aot_preload_comp = task->is_aot_preload_or_compile();
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
-               is_osr_compilation() ? " compile_kind='osr'" : "",
+               is_osr_compilation() ? " compile_kind='osr'" :
+               (aot_preload_comp ? " compile_kind='AP'" : (aot_comp ? " compile_kind='A'" : "")),
                compile_phase_name);
   }
 
@@ -687,6 +702,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
+      _has_clinit_barriers(false),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
@@ -770,9 +786,14 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if (ProfileTraps) {
+  if ((ProfileTraps && !ci_env->is_aot_compile()) ||
+      AOTCodeCache::is_using_code()) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
+    // Load recorded MDO from training run when AOT code
+    // is used - MDO may not be created yet in such case.
+    // No need for AOT compilation - it is not
+    // executed during assembly phase.
     method()->ensure_method_data();
   }
 
@@ -997,6 +1018,7 @@ Compile::Compile(ciEnv* ci_env,
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
+      _has_clinit_barriers(false),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
@@ -1175,8 +1197,12 @@ void Compile::Init(bool aliasing) {
 
   _max_node_limit = _directive->MaxNodeLimitOption;
 
-  if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() && method()->needs_clinit_barrier()) {
+  if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() &&
+      (method()->needs_clinit_barrier() || (do_clinit_barriers() && method()->is_static()))) {
     set_clinit_barrier_on_entry(true);
+    if (do_clinit_barriers()) {
+      set_has_clinit_barriers(true); // Entry clinit barrier is in prolog code.
+    }
   }
   if (debug_info()->recording_non_safepoints()) {
     set_node_note_array(new(comp_arena()) GrowableArray<Node_Notes*>
@@ -1550,9 +1576,13 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (xk && ik->equals(canonical_holder)) {
         assert(tj == TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, Type::Offset(offset), instance_id,
                                        TypePtr::MaybeFlat), "exact type should be canonical type");
+      } else if (is_known_inst) {
+        assert(xk, "Known instance should be exact type");
+        // Keep the type for known instances
+        tj = to = TypeInstPtr::make(to->ptr(), to->instance_klass(), true, nullptr, Type::Offset(offset), instance_id,
+                                    TypePtr::MaybeFlat);
       } else {
-        assert(xk || !is_known_inst, "Known instance should be exact type");
-        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, Type::Offset(offset), instance_id,
+        tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, false, nullptr, Type::Offset(offset), instance_id,
                                     TypePtr::MaybeFlat);
       }
     }
@@ -1736,13 +1766,15 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
            Type::str(adr_type), Type::str(flat), Type::str(flatten_alias_type(flat)));
     assert(flat != TypePtr::BOTTOM, "cannot alias-analyze an untyped ptr: adr_type = %s",
            Type::str(adr_type));
-    if (flat->isa_instptr()) {
-      const TypeOopPtr* foop = flat->is_oopptr();
-      // Scalarizable allocations have exact klass always.
-      bool exact = !foop->klass_is_exact() || foop->is_known_instance();
-      const TypePtr* xoop = foop->cast_to_exactness(exact)->is_ptr();
-      assert(foop == flatten_alias_type(xoop), "exactness must not affect alias type: foop = %s; xoop = %s",
-             Type::str(foop), Type::str(xoop));
+    if (const TypeInstPtr* finst = flat->isa_instptr(); finst != nullptr) {
+      bool check_exact = !finst->klass_is_exact();
+      // Try casting the type to the other exactness if possible
+      if ((check_exact && finst->instance_klass()->is_loaded() && !finst->instance_klass()->is_abstract()) ||
+          (!check_exact && !finst->is_known_instance())) {
+        const TypePtr* xinst = finst->cast_to_exactness(check_exact)->is_ptr();
+        assert(finst == flatten_alias_type(xinst), "exactness must not affect alias type: finst = %s; xinst = %s",
+               Type::str(finst), Type::str(xinst));
+      }
     }
   }
 #endif
@@ -2751,6 +2783,9 @@ void Compile::inline_string_calls(bool parse_time) {
     ResourceMark rm;
     print_method(PHASE_BEFORE_STRINGOPTS, 3);
     PhaseStringOpts pso(initial_gvn());
+    if (C->failing()) {
+      return;
+    }
     print_method(PHASE_AFTER_STRINGOPTS, 3);
   }
 
@@ -4507,7 +4542,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
 
   case Op_Proj: {
-    if (OptimizeStringConcat || IncrementalInline) {
+    if (C->do_stringopts() || IncrementalInline) {
       ProjNode* proj = n->as_Proj();
       if (proj->_is_io_use) {
         assert(proj->_con == TypeFunc::I_O || proj->_con == TypeFunc::Memory, "");
@@ -4985,6 +5020,10 @@ bool Compile::final_graph_reshaping() {
 bool Compile::too_many_traps(ciMethod* method,
                              int bci,
                              Deoptimization::DeoptReason reason) {
+  if (PreloadReduceTraps && for_aot_preload()) {
+    // Preload code should not have traps, if possible.
+    return true;
+  }
   assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
@@ -5011,6 +5050,10 @@ bool Compile::too_many_traps(ciMethod* method,
 // Less-accurate variant which does not require a method and bci.
 bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
                              ciMethodData* logmd) {
+  if (PreloadReduceTraps && for_aot_preload()) {
+    // Preload code should not have traps, if possible.
+    return true;
+  }
   assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   if (trap_count(reason) >= Deoptimization::per_method_trap_limit(reason)) {
     // Too many traps globally.
@@ -5102,10 +5145,10 @@ bool Compile::needs_clinit_barrier(ciField* field, ciMethod* accessing_method) {
 }
 
 bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_method) {
-  if (holder->is_initialized()) {
+  if (holder->is_initialized() && !do_clinit_barriers()) {
     return false;
   }
-  if (holder->is_being_initialized()) {
+  if (holder->is_being_initialized() || do_clinit_barriers()) {
     if (accessing_method->holder() == holder) {
       // Access inside a class. The barrier can be elided when access happens in <clinit>,
       // <init>, or a static method. In all those cases, there was an initialization

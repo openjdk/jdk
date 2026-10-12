@@ -32,11 +32,15 @@ import jdk.internal.misc.Unsafe;
  *
  * ValueObjectMethods::isSubstitutable and valueObjectHashCode are
  * private entry points called by VM.
+ *
+ * This class is initialized very early during VM initialization so that
+ * value objects can be used during the main bootstrap process. As a result
+ * the initialization of this class must have minimal dependencies on other
+ * core library classes.
  */
 final class ValueObjectMethods {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final boolean VERBOSE =
-            System.getProperty("value.bsm.debug") != null;
+    private static final boolean VERBOSE = false;
 
     private ValueObjectMethods() {
     }

@@ -26,9 +26,11 @@
 #include "ci/ciSignature.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "compiler/compileLog.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "oops/trainingData.hpp"
 #include "opto/addnode.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/castnode.hpp"
@@ -1226,9 +1228,11 @@ SafePointNode* Parse::create_entry_map() {
   _caller->map()->delete_replaced_nodes();
 
   // If this is an inlined method, we may have to do a receiver null check.
-  if (_caller->has_method() && is_normal_parse() && !method()->is_static()) {
+  if (_caller->has_method() && is_normal_parse()) {
     GraphKit kit(_caller);
-    kit.null_check_receiver_before_call(method());
+    if (!method()->is_static()) {
+      kit.null_check_receiver_before_call(method());
+    }
     _caller = kit.transfer_exceptions_into_jvms();
 
     if (kit.stopped()) {
@@ -1296,6 +1300,149 @@ static bool is_auto_boxed_primitive(Node* n) {
           n->in(0)->is_CallJava() &&
           n->in(0)->as_CallJava()->method()->is_boxing_method());
 }
+
+#if INCLUDE_CDS
+// Even the highest tier of AOT code (A4) incorporates an invocation
+// counter on entry to an AOT nmethod.  This is necessary because AOT
+// optimizations are performed on less accurate information than JIT
+// optimizations.  A long-running JVM is likely to eventually
+// recompile AOT code with the JIT compiler, so as to reoptimize with
+// the fullest possible information.  This helps AOT-assisted
+// workloads attain the same peak performance as pure JIT-based
+// workloads.
+//
+// One example of "less accurate" information for optimization is a
+// static final field value which the AOT compiler refuses to fold as
+// a constant, because many static finals cannot be predicted AOT.
+// Another is the exact configuration of block and type profiles; the
+// AOT compiler only sees profile information from the training run up
+// to the point at which the AOT cache was built, while a production
+// run may execute much longer, eventually adding very different
+// information to the profile.
+//
+// The counter helps decide when to reoptimize.  The counter limit
+// chosen depends on the invocation count observed during the training
+// run.  The limit is an approximately linear function of the observed
+// count, but at least about a hundred (see AOTCodeInvokeBase), and
+// saturating out to about a million (times AOTCodeInvokeScale).
+//
+// The diagnostic flag UseAOTCodeCounters can be used to determine
+// whether the counter overhead affected application performance.
+// Note that the counter is only on the root method of any given
+// nmethod.  Inlined method calls are not counted.  Counting overhead
+// is therefore expected to be small.
+//
+// After JDK-8380476 TODO: The interpreter also uses a backedge counter
+// to ensure eventual optimization of a method with a small invocation
+// count that sits in a long-running loop.  A4 methods could be given an
+// equivalent counter, if they contain loops which may turn out to be
+// long-running.  It is help to deoptimize a long-running loop to the
+// interpreter, without replacing the A4 method.  The interpreter
+// could be primed with a high backedge count, so that the loop will
+// be reoptimized quickly by an OSR compilation.  This whole concern
+// is a corner case of a corner case, since OSR assumes low invocation
+// count, while reoptimization to peak assumes a long-lived production
+// run.
+
+static int scale_limit(int64_t limit) {
+ // To scale invocation limit a hyperbolic saturation curve formula
+ // is used with upper limit 1M.
+ return (int)(AOTCodeInvokeBase + limit / (1.0 + limit / (1000000.0 * AOTCodeInvokeScale)));
+}
+
+void Parse::count_aot_code_calls() {
+  bool is_aot_compilation = C->env()->is_aot_compile();
+  if (UseAOTCodeCounters && (depth() == 1) && is_aot_compilation) {
+    // Clear out dead values from the debug info in following runtime call
+    kill_dead_locals();
+
+    // Use method invocations count during training run and compare
+    // to invocations of AOT code during production run to trigger JIT
+    // compilation and replace AOT code with normal JITed code.
+    ciMetadata* mcp = method()->ensure_method_counters();
+    assert(mcp != nullptr, "CompileBroker should create MethodCounters if it is missing");
+    const TypePtr* mc_type = TypeMetadataPtr::make(TypePtr::Constant, mcp, Type::Offset(0));
+    Node* mc = makecon(mc_type);
+
+    assert(MethodTrainingData::have_data(), "TrainingData should be present for AOT compilation");
+    methodHandle mh(Thread::current(), method()->get_Method());
+    MethodTrainingData* mtd = MethodTrainingData::find_fast(mh);
+    assert(mtd != nullptr, "AOT compiled method should have MethodTrainingData");
+    int64_t limit = mtd->invocation_count();
+    int step = InvocationCounter::count_increment;
+    int scaled_limit = step * scale_limit(limit);
+
+    // Count AOT compiled code invocations (use 32 bits because scaled limit fits into 32 bits)
+    intptr_t offset = in_bytes(MethodCounters::invocation_counter_offset());
+    Node* cnt_adr = off_heap_plus_addr(mc, offset);
+    Node* ctrl = control();
+    Node* cnt  = make_load(ctrl, cnt_adr, TypeInt::INT, T_INT, MemNode::unordered);
+    Node* incr = _gvn.transform(new AddINode(cnt, intcon(step)));
+    store_to_memory(ctrl, cnt_adr, incr, T_INT, MemNode::unordered);
+    // Preserve memory for Phi node below
+    Node* st_mem = MergeMemNode::make(map()->memory());
+    _gvn.set_type_bottom(st_mem);
+
+    Node* lim = intcon(scaled_limit);
+    Node* chk = _gvn.transform( new CmpINode(incr, lim) );
+    Node* tst = _gvn.transform( new BoolNode(chk, BoolTest::lt) );
+    IfNode* iff = create_and_map_if(control(), tst, PROB_ALWAYS, (float)limit);
+
+    RegionNode* result_rgn = new RegionNode(4);
+    record_for_igvn(result_rgn);
+
+    Node*  skip_call = _gvn.transform(new IfTrueNode(iff));
+    result_rgn->init_req(1, skip_call);
+
+    Node* in1_io  = i_o();
+    Node* in1_mem = st_mem;
+    // These two phis are pre-filled with copies of the fast IO and Memory
+    Node* io_phi   = PhiNode::make(result_rgn, in1_io,  Type::ABIO);
+    Node* mem_phi  = PhiNode::make(result_rgn, in1_mem, Type::MEMORY, TypePtr::BOTTOM);
+
+    Node* needs_call = _gvn.transform(new IfFalseNode(iff));
+    set_control(needs_call);
+
+    // InvocationCounter::carry_mask is private, calculate it from step
+    int carry_bits = step - 1;
+    Node* recomp_bit = intcon(carry_bits);
+    Node* rbit = _gvn.transform( new AndINode(incr, recomp_bit) );
+    Node* chk2 = _gvn.transform( new CmpINode(rbit, intcon(0)) );
+    Node* tst2 = _gvn.transform( new BoolNode(chk2, BoolTest::ne) );
+    IfNode* iff2 = create_and_map_if(control(), tst2, PROB_FAIR, COUNT_UNKNOWN);
+
+    Node*  skip_call2 = _gvn.transform(new IfTrueNode(iff2));
+    result_rgn->init_req(2, skip_call2);
+
+    Node* needs_call2 = _gvn.transform(new IfFalseNode(iff2));
+    set_control(needs_call2);
+
+    Node* new_val = _gvn.transform(new OrINode(incr, recomp_bit));
+    store_to_memory(control(), cnt_adr, new_val, T_INT, MemNode::unordered);
+
+    const TypePtr* m_type = TypeMetadataPtr::make(method());
+    Node* m = makecon(m_type);
+    make_runtime_call(RC_NO_LEAF | RC_UNCOMMON,
+                      OptoRuntime::compile_method_Type(),
+                      OptoRuntime::compile_method_Java(),
+                      "compile_method", TypePtr::BOTTOM, m);
+
+    // State before call
+    io_phi ->init_req(2, in1_io);
+    mem_phi->init_req(2, in1_mem);
+
+    // State after call
+    result_rgn->init_req(3, control());
+    io_phi ->init_req(3, i_o());
+    mem_phi->init_req(3, reset_memory());
+
+    set_all_memory( _gvn.transform(mem_phi) );
+    set_i_o(        _gvn.transform(io_phi) );
+    set_control(    _gvn.transform(result_rgn) );
+  }
+}
+
+#endif // INCLUDE_CDS
 
 //-----------------------------do_method_entry--------------------------------
 // Emit any code needed in the pseudo-block before BCI zero.
@@ -1455,6 +1602,8 @@ void Parse::do_method_entry() {
       }
     }
   }
+
+  CDS_ONLY( count_aot_code_calls(); )
 }
 
 //------------------------------init_blocks------------------------------------
@@ -1783,7 +1932,7 @@ void Parse::do_one_block() {
     if (failing()) return;
 
     assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,
-           "incorrect depth prediction: sp=%d, pre_bc_sp=%d, depth=%d", sp(), pre_bc_sp, depth);
+           "incorrect depth prediction: bc=%s bci=%d, sp=%d, pre_bc_sp=%d, depth=%d", Bytecodes::name(bc()), bci(), sp(), pre_bc_sp, depth);
 
     do_exceptions();
 
@@ -2489,6 +2638,9 @@ void Parse::call_register_finalizer() {
 
 // Add check to deoptimize once holder klass is fully initialized.
 void Parse::clinit_deopt() {
+  if (method()->holder()->is_initialized()) {
+    return; // in case do_clinit_barriers() is true
+  }
   assert(C->has_method(), "only for normal compilations");
   assert(depth() == 1, "only for main compiled method");
   assert(is_normal_parse(), "no barrier needed on osr entry");

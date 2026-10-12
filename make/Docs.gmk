@@ -705,22 +705,25 @@ endif
 
 SPEC_HEADER_BLOCK := \
 <header id="title-block-header"> \
-    <div class="navbar"> \
+    <div class="navbar"><div class="nav-content"> \
+        <nav><ul><li><a href="PATH_TO_SPECS/../api/index.html">API</a></li> \
+        <li><a href="PATH_TO_SPECS/index.html">OTHER SPECIFICATIONS</a></li> \
+        <li><a href="PATH_TO_SPECS/man/index.html">TOOL GUIDES</a></li> \
+        THEME_SUPPORT</ul></nav> \
         <div>$(HEADER_RIGHT_SIDE_INFO)</div> \
-        <nav><ul><li><a href="PATH_TO_SPECS/../api/index.html">API</a> \
-        <li><a href="PATH_TO_SPECS/index.html">OTHER SPECIFICATIONS</a> \
-        <li><a href="PATH_TO_SPECS/man/index.html">TOOL GUIDES</a></ul></nav> \
-    </div> \
+    </div></div> \
 </header>
 
 JDWP_PROTOCOL := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
 ifneq ($(call ApplySpecFilter, $(JDWP_PROTOCOL)), )
-  JDWP_HEADER_BLOCK := $(subst PATH_TO_SPECS,..,$(SPEC_HEADER_BLOCK))
+  JDWP_HEADER_BLOCK := $(subst THEME_SUPPORT,<script>initTheme();</script>, \
+      $(subst PATH_TO_SPECS,..,$(SPEC_HEADER_BLOCK)))
   $(eval $(call SetupTextFileProcessing, PROCESS_JDWP_PROTOCOL, \
       SOURCE_FILES := $(JDWP_PROTOCOL), \
       OUTPUT_DIR := $(DOCS_OUTPUTDIR)/specs/jdwp, \
       REPLACEMENTS := \
-          <style> => <link rel="stylesheet" href="../../resources/jdk-default.css"/><style> ; \
+          <style> => <script src="../../resources/jdk-default.js"></script> \
+                     <link rel="stylesheet" href="../../resources/jdk-default.css"/><style> ; \
           <body> => <body>$(SPECS_TOP)$(JDWP_HEADER_BLOCK) ; \
           </body> => $(SPECS_BOTTOM_1)</body>, \
   ))
@@ -730,7 +733,8 @@ endif
 # Get jvmti.html from the main jvm variant (all variants' jvmti.html are identical).
 JVMTI_HTML ?= $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/gensrc/jvmtifiles/jvmti.html
 ifneq ($(call ApplySpecFilter, $(JVMTI_HTML)), )
-  JVMTI_HEADER_BLOCK := $(subst PATH_TO_SPECS,.,$(SPEC_HEADER_BLOCK))
+  # Disable themes as inline styles in jvmti.html are incompatible with dark theme
+  JVMTI_HEADER_BLOCK := $(subst THEME_SUPPORT,,$(subst PATH_TO_SPECS,.,$(SPEC_HEADER_BLOCK)))
   $(eval $(call SetupTextFileProcessing, PROCESS_JVMTI_HTML, \
       SOURCE_FILES := $(JVMTI_HTML), \
       OUTPUT_DIR := $(DOCS_OUTPUTDIR)/specs/, \
