@@ -749,10 +749,10 @@ void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
 
 static jint array_description_value(const TypeAryPtr* ary_type) {
   ciArrayKlass* array_klass = ary_type->exact_klass()->as_array_klass();
-  const bool is_element_inline = array_klass->element_klass()->is_value_klass();
+  const bool is_element_value = array_klass->element_klass()->is_value_klass();
   ArrayProperties properties = ArrayProperties::Default()
-      .with_null_restricted(is_element_inline && array_klass->is_elem_null_free())
-      .with_non_atomic(is_element_inline && !array_klass->is_elem_atomic());
+      .with_null_restricted(is_element_value && array_klass->is_elem_null_free())
+      .with_non_atomic(is_element_value && !array_klass->is_elem_atomic());
 
   LayoutKind layout_kind = LayoutKind::REFERENCE;
   Klass::KlassKind kind = Klass::RefArrayKlassKind;
@@ -913,6 +913,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     } else if (t->base() == Type::VectorA || t->base() == Type::VectorS ||
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
+      C->debug_info()->set_has_vectors();
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
     } else if (C->regalloc()->is_oop(local)) {
       assert(t->base() == Type::OopPtr || t->base() == Type::InstPtr ||
@@ -1903,11 +1904,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   // Dump the assembly code, including basic-block numbers
   if (C->print_assembly()) {
-    ttyLocker ttyl;  // keep the following output all in one block
-    if (!VMThread::should_terminate()) {  // test this under the tty lock
-      // print_metadata and dump_asm may safepoint which makes us loose the ttylock.
-      // We call them first and write to a stringStream, then we retake the lock to
-      // make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
+    if (!VMThread::should_terminate()) {
       ResourceMark rm;
       stringStream method_metadata_str;
       if (C->method() != nullptr) {
@@ -1916,23 +1913,29 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       stringStream dump_asm_str;
       dump_asm_on(&dump_asm_str, node_offsets, node_offset_limit);
 
+      // Make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
       NoSafepointVerifier nsv;
-      ttyLocker ttyl2;
+      ttyLocker ttyl;
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
       if (xtty != nullptr) {
+        CompileTask* task = C->env()->task();
+        bool aot_comp = task->is_aot_load_or_compile();
+        bool aot_preload_comp = task->is_aot_preload_or_compile();
         xtty->head("opto_assembly compile_id='%d'%s", C->compile_id(),
-                   C->is_osr_compilation() ? " compile_kind='osr'" : "");
+                   C->is_osr_compilation() ? " compile_kind='osr'" :
+                   (aot_preload_comp ? " compile_kind='AP'" : (aot_comp ? " compile_kind='A'" : "")));
       }
+      const char* is_aot = C->env()->is_aot_compile() ? (C->for_aot_preload() ? "(AP) " : "(A) -") : "-----";
       if (C->method() != nullptr) {
-        tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
+        tty->print_cr("----------------------- MetaData before Compile_id = %d %s-------------------", C->compile_id(), is_aot);
         tty->print_raw(method_metadata_str.freeze());
       } else if (C->stub_name() != nullptr) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
-      tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
+      tty->print_cr("------------------------ OptoAssembly for Compile_id = %d %s------------------", C->compile_id(), is_aot);
       tty->print_raw(dump_asm_str.freeze());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != nullptr) {
@@ -3305,9 +3308,7 @@ uint PhaseOutput::scratch_emit_size(const Node* n) {
 }
 
 void PhaseOutput::install() {
-  if (!C->should_install_code()) {
-    return;
-  } else if (C->stub_function() != nullptr) {
+  if (C->should_install_code() && C->stub_function() != nullptr) {
     install_stub(C->stub_name());
   } else {
     install_code(C->method(),
@@ -3360,15 +3361,19 @@ void PhaseOutput::install_code(ciMethod*         target,
                               &_handler_table,
                               inc_table(),
                               compiler,
+                              C->has_clinit_barriers(),
+                              C->for_aot_preload(),
                               has_unsafe_access,
                               SharedRuntime::is_wide_vector(C->max_vector_size()),
                               C->has_monitors(),
                               C->has_scoped_access(),
-                              0);
+                              0,
+                              C->should_install_code());
 
     if (C->log() != nullptr) { // Print code cache state into compiler log
       C->log()->code_cache_state();
     }
+    assert(!C->has_clinit_barriers() || C->for_aot_preload(), "class init barriers should be only in preload code");
   }
 }
 void PhaseOutput::install_stub(const char* stub_name) {
@@ -3430,7 +3435,19 @@ int PhaseOutput::frame_size_in_words() const {
 // removes the need to bang the stack in the deoptimization blob which
 // in turn simplifies stack overflow handling.
 int PhaseOutput::bang_size_in_bytes() const {
-  return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes(), C->interpreter_frame_size());
+  int extra_arg_size = 0;
+  // Methods retrieved from AOT archive can have needs_stack_repair
+  // set to true, but now we could be using nonscalarized convention,
+  // i.e. C->method()->get_sig_cc() returns null. Guard check with
+  // has_scalarized_args() which is cleared when archiving.
+  if (C->has_scalarized_args() && C->needs_stack_repair()) {
+    // Account for required stack extension conservatively
+    assert(C->method()->get_sig_cc() != nullptr, "must have scalarized signature");
+    extra_arg_size = MIN2(CompiledEntrySignature::max_stack_slots_cc() * VMRegImpl::stack_slot_size,
+                          C->method()->get_sig_cc()->length() * wordSize);
+    assert(extra_arg_size < (int)os::vm_page_size(), "assumption is it adds at most one page");
+  }
+  return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes() + extra_arg_size, C->interpreter_frame_size());
 }
 
 //------------------------------dump_asm---------------------------------------

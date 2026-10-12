@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @requires vm.flavor != "zero"
+ * @requires vm.continuations
  * @modules java.base/jdk.internal.foreign:+open java.base/java.lang:+open java.base/jdk.internal.access
  * @library /test/lib
  * @build TestConfinedSegmentPoolUtils

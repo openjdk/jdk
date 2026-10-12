@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@ import compiler.lib.ir_framework.*;
  * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @library /test/lib /
  * @requires vm.opt.DeoptimizeALot != true
- * @run driver compiler.c2.irTests.TestPrunedExHandler
+ * @requires vm.opt.final.TieredCompilation
+ * @run driver ${test.main.class}
  */
 
 public class TestPrunedExHandler {
     public static void main(String[] args) {
         TestFramework.runWithFlags(
-            "-XX:+TieredCompilation", // we only profile in tier 3
             "-XX:CompileCommand=inline,compiler.c2.irTests.TestPrunedExHandler::inlinee",
             "-XX:CompileCommand=dontinline,compiler.c2.irTests.TestPrunedExHandler::outOfLine");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,6 +318,7 @@ class LambdaForm {
         // End fields
         TRY_FINALLY("tryFinally"),
         TABLE_SWITCH("tableSwitch"),
+        SYNCHRONIZE("synchronize"),
         COLLECTOR("collector"),
         LOOP("loop"),
         GUARD("guard"),
@@ -705,6 +706,32 @@ class LambdaForm {
                 lastUseIndex(collectArgs) == POS_TABLE_SWITCH &&  // t_{n} is local: used only in t_{n+1}
                 unboxResult.lastUseIndex(tableSwitch) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
                 lastUseIndex(tableSwitch) == POS_UNBOX_RESULT;    // t_{n+1} is local: used only in t_{n+2}
+    }
+
+    /**
+     * Check if i-th name is a start of the synchronize idiom.
+     */
+    boolean isSynchronize(int pos) {
+        // synchronize idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)     // args
+        //   t_{n+1}:L=MethodHandleImpl.synchronize(*, *, *, t_{n})
+        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+        if (pos + 2 >= names.length)  return false;
+
+        final int POS_COLLECT_ARGS = pos;
+        final int POS_SYNCHRONIZE = pos + 1;
+        final int POS_UNBOX_RESULT = pos + 2;
+
+        Name collectArgs = names[POS_COLLECT_ARGS];
+        Name synchronize = names[POS_SYNCHRONIZE];
+        Name unboxResult = names[POS_UNBOX_RESULT];
+        return synchronize.refersTo(MethodHandleImpl.class, "synchronize") &&
+                collectArgs.isInvokeBasic() &&
+                unboxResult.isInvokeBasic() &&
+                synchronize.lastUseIndex(collectArgs) == 2 &&     // t_{n+1}:L=MethodHandleImpl.<invoker>(*, *, *, t_{n});
+                lastUseIndex(collectArgs) == POS_SYNCHRONIZE &&  // t_{n} is local: used only in t_{n+1}
+                unboxResult.lastUseIndex(synchronize) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
+                lastUseIndex(synchronize) == POS_UNBOX_RESULT;    // t_{n+1} is local: used only in t_{n+2}
     }
 
     /**

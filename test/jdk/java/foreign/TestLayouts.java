@@ -237,6 +237,31 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
         assertThrows(IllegalArgumentException.class, // flip back to positive
                 () -> MemoryLayout.sequenceLayout(0, JAVA_LONG).withElementCount(Long.MAX_VALUE));
+        assertThrows(IllegalArgumentException.class, () -> {
+            SequenceLayout oneByte = MemoryLayout.sequenceLayout(1, ValueLayout.JAVA_BYTE);
+            // 2^32
+            long n = 1L << 32;
+            // n * n -> overflow -> zero
+            oneByte.reshape(-1, n, n);
+        });
+
+    }
+
+    @Test
+    public void testSequenceLayoutFlattenOverflowBeforeZero() {
+        SequenceLayout zero = MemoryLayout.sequenceLayout(0, JAVA_BYTE);
+        SequenceLayout innerLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE, zero);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(2, innerLayout);
+        assertEquals(layout.flatten(), zero);
+    }
+
+    @Test
+    public void testSequenceLayoutFlattenOverflow() {
+        MemoryLayout empty = MemoryLayout.structLayout(); // byteSize() == 0
+        long n = 1L << 32; // n * n overflows and wraps to zero which might be a corner case
+        SequenceLayout innerLayout = MemoryLayout.sequenceLayout(n, empty);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(n, innerLayout);
+        assertThrows(UnsupportedOperationException.class, layout::flatten);
     }
 
     @Test

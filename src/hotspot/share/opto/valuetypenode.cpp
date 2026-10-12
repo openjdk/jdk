@@ -270,6 +270,26 @@ ciField* ValueTypeNode::field(uint index) const {
   return value_klass()->declared_nonstatic_field_at(index);
 }
 
+static uint add_top_to_safepoint(ciValueKlass* vk, SafePointNode* sfpt) {
+  uint cnt = 0;
+  for (int i = 0; i < vk->nof_declared_nonstatic_fields(); ++i) {
+    ciField* field = vk->declared_nonstatic_field_at(i);
+    assert(!field->is_flat() || field->type()->is_value_klass(), "must be a value type");
+    if (field->is_flat()) {
+      cnt += add_top_to_safepoint(field->type()->as_value_klass(), sfpt);
+      if (field->is_null_free()) {
+        continue;
+      }
+      // The null marker of a flat field is added right after we scalarize that field, so the next
+      // add_req either stands for the null marker of `field`, or for the whole `field` itself if
+      // it isn't flat. It's top anyway.
+    }
+    sfpt->add_req(Compile::current()->top());
+    cnt++;
+  }
+  return cnt;
+}
+
 uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePointNode* sfpt) const {
   uint cnt = 0;
   for (uint i = 0; i < field_count(); ++i) {
@@ -277,12 +297,23 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
     ciField* field = this->field(i);
     assert(!field->is_flat() || field->type()->is_value_klass(), "must be a value type");
     if (field->is_flat()) {
-      ValueTypeNode* vt = value->as_ValueType();
-      cnt += vt->add_fields_to_safepoint(worklist, sfpt);
-      if (!field->is_null_free()) {
-        // The null marker of a flat field is added right after we scalarize that field
-        sfpt->add_req(vt->get_null_marker());
-        cnt++;
+      if (value->is_top()) {
+        // An input is top. We act like it was a value type whose fields are all top.
+        Node* top = value;
+        cnt += add_top_to_safepoint(field->type()->as_value_klass(), sfpt);
+        if (!field->is_null_free()) {
+          // The null marker of a flat field is added right after we scalarize that field
+          sfpt->add_req(top);
+          cnt++;
+        }
+      } else {
+        ValueTypeNode* vt = value->as_ValueType();
+        cnt += vt->add_fields_to_safepoint(worklist, sfpt);
+        if (!field->is_null_free()) {
+          // The null marker of a flat field is added right after we scalarize that field
+          sfpt->add_req(vt->get_null_marker());
+          cnt++;
+        }
       }
       continue;
     }
@@ -608,13 +639,13 @@ static bool check_cycle(ciValueKlass* vk) {
 
 // Check if 'lhs' and 'rhs' are the same oop, possibly wrapped in an ValueTypeNode.
 static bool same_oop(PhaseGVN* phase, Node* lhs, Node* rhs) {
-  ValueTypeNode* lhs_inline = lhs->isa_ValueType();
-  if (lhs_inline != nullptr && lhs_inline->is_allocated(phase)) {
-    lhs = lhs_inline->get_oop();
+  ValueTypeNode* lhs_value = lhs->isa_ValueType();
+  if (lhs_value != nullptr && lhs_value->is_allocated(phase)) {
+    lhs = lhs_value->get_oop();
   }
-  ValueTypeNode* rhs_inline = rhs->isa_ValueType();
-  if (rhs_inline != nullptr && rhs_inline->is_allocated(phase)) {
-    rhs = rhs_inline->get_oop();
+  ValueTypeNode* rhs_value = rhs->isa_ValueType();
+  if (rhs_value != nullptr && rhs_value->is_allocated(phase)) {
+    rhs = rhs_value->get_oop();
   }
   return lhs->eqv_uncast(rhs);
 }
@@ -648,25 +679,25 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
     swap(lhs, rhs);
   }
 
-  ValueTypeNode* lhs_inline = lhs->as_ValueType();
-  ValueTypeNode* rhs_inline = rhs != nullptr ? rhs->isa_ValueType() : nullptr;
-  if (rhs_inline != nullptr && lhs_inline->type()->value_klass() != rhs_inline->type()->value_klass()) {
+  ValueTypeNode* lhs_value = lhs->as_ValueType();
+  ValueTypeNode* rhs_value = rhs != nullptr ? rhs->isa_ValueType() : nullptr;
+  if (rhs_value != nullptr && lhs_value->type()->value_klass() != rhs_value->type()->value_klass()) {
     // Dead code, can skip the substitutability check
     return true;
   }
 
-  if (check_cycle(lhs_inline->value_klass())) {
+  if (check_cycle(lhs_value->value_klass())) {
     return false;
   }
 
-  for (uint i = 0; i < lhs_inline->field_count(); i++) {
-    ciType* ft = lhs_inline->field(i)->type();
+  for (uint i = 0; i < lhs_value->field_count(); i++) {
+    ciType* ft = lhs_value->field(i)->type();
     if (!ft->can_be_value_klass()) {
       continue;
     }
 
-    Node* lhs_fv = lhs_inline->field_value(i);
-    Node* rhs_fv = rhs_inline != nullptr ? rhs_inline->field_value(i) : nullptr;
+    Node* lhs_fv = lhs_value->field_value(i);
+    Node* rhs_fv = rhs_value != nullptr ? rhs_value->field_value(i) : nullptr;
     if (!can_emit_substitutability_check(phase, lhs_fv, rhs_fv)) {
       return false;
     }
@@ -892,8 +923,8 @@ Node* ValueTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node*
 
       Node* cur_lhs_field = cur_lhs->field_value(field_idx);
       Node* cur_rhs_field = cur_rhs->field_value(field_idx);
-      ValueTypeNode* cur_lhs_inline = cur_lhs_field->isa_ValueType();
-      ValueTypeNode* cur_rhs_inline = cur_rhs_field->isa_ValueType();
+      ValueTypeNode* cur_lhs_value = cur_lhs_field->isa_ValueType();
+      ValueTypeNode* cur_rhs_value = cur_rhs_field->isa_ValueType();
 
       Node* preprocess = emit_substitutability_check_pointer(kit, result, cur_lhs_field, cur_rhs_field);
       if (kit->stopped()) {
@@ -981,8 +1012,8 @@ Node* ValueTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node*
 
       // Both must be vk
       // ValueTypeNodes need no (new) field loads, so we can use the uncasted value below.
-      if (cur_lhs_inline != nullptr && cur_lhs_inline->value_klass() == vk) {
-        cur_lhs_field = cur_lhs_inline;
+      if (cur_lhs_value != nullptr && cur_lhs_value->value_klass() == vk) {
+        cur_lhs_field = cur_lhs_value;
       } else {
         Node* not_vk = kit->top();
         cur_lhs_field = kit->gen_checkcast(cur_lhs_field, vk_klass, &not_vk);
@@ -993,8 +1024,8 @@ Node* ValueTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node*
         cur_lhs_field = ValueTypeNode::make_from_oop(kit, cur_lhs_field, vk);
       }
 
-      if (cur_rhs_inline != nullptr && cur_rhs_inline->value_klass() == vk) {
-        cur_rhs_field = cur_rhs_inline;
+      if (cur_rhs_value != nullptr && cur_rhs_value->value_klass() == vk) {
+        cur_rhs_field = cur_rhs_value;
       } else {
         Node* not_vk = kit->top();
         cur_rhs_field = kit->gen_checkcast(cur_rhs_field, vk_klass, &not_vk);
@@ -1088,7 +1119,8 @@ Node* ValueTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t 
   };
 
   Node* const thirty_one = kit->intcon(31);
-  Node* result = kit->intcon(checked_cast<jint>(klass_hash));
+  Node* klass_hash_con = kit->intcon(checked_cast<jint>(klass_hash));
+  Node* result = klass_hash_con;
   for (int i = 0; i < number_of_nonoop_entries; i++) {
     AcmpMapSegment segment = vk->get_nonoop_segment_of_acmp_map(i);
     int offset = segment._offset;
@@ -1121,9 +1153,21 @@ Node* ValueTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t 
       offset++;
     }
   }
-  result = kit->AndI(result, kit->intcon(markWord::hash_mask));
+  Node* hash_mask_con = kit->intcon(markWord::hash_mask);
+  result = kit->AndI(result, hash_mask_con);
 
-  region->add_req(kit->control());
+  // Now, we have computed the hash. But we don't want it to be markWord::no_hash.
+  // If it is, let's just take the hash of the Class, and since this Class is an identity object,
+  // it must be different from markWord::no_hash. Let's do a little diamond since it's easy enough
+  // and cmove experimentally failed to be as efficient.
+  Node* no_hash_con = kit->intcon(checked_cast<int>(markWord::no_hash));
+  Node* bol_hash_would_be_no_hash = kit->BoolCmpI(result, BoolTest::eq, no_hash_con);
+  IfNode* iff_hash_would_be_no_hash = kit->create_and_map_if(kit->control(), bol_hash_would_be_no_hash, PROB_FAIR, COUNT_UNKNOWN);
+
+  region->add_req(kit->IfTrue(iff_hash_would_be_no_hash));
+  phi_result->add_req(klass_hash_con);
+
+  region->add_req(kit->IfFalse(iff_hash_would_be_no_hash));
   phi_result->add_req(result);
 
   kit->set_control(region);
@@ -1695,6 +1739,11 @@ Node* ValueTypeNode::is_loaded(PhaseGVN* phase, ciValueKlass* vk, Node* base, in
       assert(!field->is_flat() || field->type()->is_value_klass(), "must be a value type");
       ValueTypeNode* vt = value->as_ValueType();
       if (vt->type()->value_klass()->is_empty()) {
+        // Skip nullable empty fields because they have observable
+        // null state that is not represented by declared fields.
+        if (!field->is_null_free()) {
+          return nullptr;
+        }
         continue;
       } else if (field->is_flat() && vt->is_ValueType()) {
         // Check value type field load recursively
@@ -2201,8 +2250,13 @@ void LoadFlatNode::expand_projs_atomic(PhaseIterGVN& igvn, Node* ctrl, Node* pay
 Node* LoadFlatNode::get_payload_value(PhaseIterGVN& igvn, Node* ctrl, BasicType payload_bt, Node* payload, const Type* value_type, BasicType value_bt, int offset) {
   assert((offset + type2aelembytes(value_bt)) <= type2aelembytes(payload_bt), "Value does not fit into payload");
   Node* value = nullptr;
-  // Shift to the right position in the long value
-  Node* shift_val = igvn.intcon(offset << LogBitsPerByte);
+  // Shift the field to the low-order bits of the payload.
+#ifdef VM_LITTLE_ENDIAN
+  int shift = offset << LogBitsPerByte;
+#else
+  int shift = (type2aelembytes(payload_bt) - type2aelembytes(value_bt) - offset) << LogBitsPerByte;
+#endif
+  Node* shift_val = igvn.intcon(shift);
   if (payload_bt == T_LONG) {
     value = igvn.transform(new URShiftLNode(payload, shift_val));
     value = igvn.transform(new ConvL2INode(value));
@@ -2398,7 +2452,12 @@ Node* StoreFlatNode::set_payload_value(PhaseIterGVN& igvn, BasicType payload_bt,
     assert(val_bt == T_INT, "Unsupported type: %s", type2name(val_bt));
   }
 
-  Node* shift_val = igvn.intcon(offset << LogBitsPerByte);
+#ifdef VM_LITTLE_ENDIAN
+  int shift = offset << LogBitsPerByte;
+#else
+  int shift = (type2aelembytes(payload_bt) - type2aelembytes(val_bt) - offset) << LogBitsPerByte;
+#endif
+  Node* shift_val = igvn.intcon(shift);
   if (payload_bt == T_LONG) {
     // Convert to long and remove the sign bit (the backend will fold this and emit a zero extend i2l)
     value = igvn.transform(new ConvI2LNode(value));

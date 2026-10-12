@@ -3094,7 +3094,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_POPULATE_WRITE MADV_POPULATE_WRITE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
+  static_assert(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
 #endif
 
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
@@ -3104,7 +3104,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_FIXED_NOREPLACE MAP_FIXED_NOREPLACE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
+  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
 #endif
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,

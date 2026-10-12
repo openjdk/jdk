@@ -163,19 +163,21 @@ static void handle_dcmd_result(outputStream* output,
   assert(!HAS_PENDING_EXCEPTION, "invariant");
 
   if (startup) {
-    if (log_is_enabled(Warning, jfr, startup))  {
-      // if warning is set, assume user hasn't configured log level
-      // Log to Info and reset to Warning. This way user can disable
-      // default output by setting -Xlog:jfr+startup=error/off
+    // jfr+startup message requires info level to print to stdout,
+    // so updating log level of jfr+startup to Info temporally if needs,
+    // and would restore it to Warning.
+    // The user can disable default output by setting -Xlog:jfr+startup=error/off.
+    bool is_warn_level = log_is_enabled(Warning, jfr, startup) && !log_is_enabled(Info, jfr, startup);
+    if (is_warn_level) {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(jfr, startup));
-      log(result, THREAD);
+    }
+    log(result, THREAD);
+    if (is_warn_level) {
       LogConfiguration::configure_stdout(LogLevel::Warning, true, LOG_TAGS(jfr, startup));
-    } else {
-      log(result, THREAD);
     }
   } else {
-      // Print output for jcmd or MXBean
-      print_message(output, result, THREAD);
+    // Print output for jcmd or MXBean
+    print_message(output, result, THREAD);
   }
 }
 

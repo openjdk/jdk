@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CGROUP_V2_SUBSYSTEM_LINUX_HPP
-#define CGROUP_V2_SUBSYSTEM_LINUX_HPP
+#ifndef OS_LINUX_CGROUPV2SUBSYSTEM_LINUX_HPP
+#define OS_LINUX_CGROUPV2SUBSYSTEM_LINUX_HPP
 
 #include "cgroupSubsystem_linux.hpp"
 #include "cgroupUtil_linux.hpp"
@@ -180,4 +180,4 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     CgroupCpuacctController* cpuacct_controller() override { return _cpuacct; };
 };
 
-#endif // CGROUP_V2_SUBSYSTEM_LINUX_HPP
+#endif // OS_LINUX_CGROUPV2SUBSYSTEM_LINUX_HPP
