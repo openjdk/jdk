@@ -23,6 +23,7 @@
  * questions.
  */
 #include <malloc.h>
+#include <winternl.h>
 
 #include "net_util.h"
 
@@ -326,6 +327,7 @@ ping4(JNIEnv *env, HANDLE hIcmpFile, SOCKETADDRESS *sa,
                                           // to hold at least one ICMP_ECHO_REPLY
                                           // structure
                 + sizeof(SendData)        // plus RequestSize bytes of data.
+                + sizeof(IO_STATUS_BLOCK) // plus space for an IO_STATUS_BLOCK (for IcmpSendEcho2Ex).
                 + 8;                      // This buffer should also be large enough
                                           // to also hold 8 more bytes of data
                                           // (the size of an ICMP error message)
