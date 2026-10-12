@@ -4260,7 +4260,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), Z_thread);
   address calls_return_pc = __ pc();
-  assert(calls_return_pc == __ last_calls_return_pc(), "No instruction emitted after call_VM_leaf");
+  assert(calls_return_pc == __ last_calls_return_pc(), "frame_pc should be equal to the call's return pc");
   __ bind(frame_pc);
 
   __ reset_last_Java_frame();
