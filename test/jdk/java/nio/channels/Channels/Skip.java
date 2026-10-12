@@ -72,7 +72,7 @@ class Skip {
                             size,
                             size + 1L,
                             Integer.MAX_VALUE - 1,
-                            Integer.MAX_VALUE,
+                            Integer.MAX_VALUE
                     };
                     long[] skips = {
                             Long.MIN_VALUE,

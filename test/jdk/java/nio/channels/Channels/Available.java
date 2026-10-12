@@ -75,7 +75,7 @@ class Available {
                             Integer.MAX_VALUE - size + 1,
                             Integer.MAX_VALUE - 1,
                             Integer.MAX_VALUE,
-                            Integer.MAX_VALUE + 1
+                            Integer.MAX_VALUE + 1L
                     };
                     return Arrays.stream(positions)
                             .filter(pos -> pos >= 0)
