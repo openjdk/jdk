@@ -2063,14 +2063,21 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
       remove_dead_node(n, NodeOrigin::Graph);
     }
   }
-#ifdef ASSERT
-  if (!(dead_node->is_Proj() && dead_node->in(0) == C->top())) {
-    for (uint i = 0; i < wq.size(); i++) {
-      Node* n = wq.at(i);
-      assert(n->is_Region() || n->is_Phi() || n->is_CFG() || n->outcnt() == 0, "node should be dead now");
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    if (n->is_Phi() || n->is_CFG() || n->outcnt() == 0) {
+      continue;
     }
-  }
+    ShouldNotReachHere();
+#ifdef ASSERT
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      Node* u = n->fast_out(j);
+      assert(wq.member(u), "");
+    }
 #endif
+    replace_in_uses(n, C->top());
+    remove_dead_node(n, NodeOrigin::Graph);
+  }
 }
 
 Node *PhaseIterGVN::transform_old(Node* n) {
