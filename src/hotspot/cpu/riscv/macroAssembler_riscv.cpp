@@ -4604,8 +4604,8 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
 
 // Map a C++11-style memory order onto the RISC-V aq/rl bits applied to the
 // load-reserved (acquire) and store-conditional / amocas (release) halves of a CAS.
-static void cmpxchg_memory_order(enum atomic_memory_order order,
-                                 Assembler::Aqrl& acquire, Assembler::Aqrl& release) {
+static void cmpxchg_memory_order_to_aqrl(enum atomic_memory_order order,
+                                         Assembler::Aqrl& acquire, Assembler::Aqrl& release) {
   switch (order) {
     case memory_order_relaxed:
       acquire = Assembler::relaxed;
@@ -4646,7 +4646,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Assembler::Aqrl acquire, release;
-  cmpxchg_memory_order(order, acquire, release);
+  cmpxchg_memory_order_to_aqrl(order, acquire, release);
 
   Register scratch0 = t0, aligned_addr = t1;
   Register shift = tmp1, mask = tmp2, scratch1 = tmp3;
@@ -4735,7 +4735,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Assembler::Aqrl acquire, release;
-  cmpxchg_memory_order(order, acquire, release);
+  cmpxchg_memory_order_to_aqrl(order, acquire, release);
 
   Register scratch0 = t0, aligned_addr = t1;
   Register shift = tmp1, mask = tmp2, scratch1 = tmp3;
@@ -4808,7 +4808,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   assert_different_registers(new_val, t0);
 
   Assembler::Aqrl acquire, release;
-  cmpxchg_memory_order(order, acquire, release);
+  cmpxchg_memory_order_to_aqrl(order, acquire, release);
 
   // NOTE:
   // Register _result_ may be the same register as _new_val_ or _expected_.
@@ -4877,7 +4877,7 @@ void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
   }
 
   Assembler::Aqrl acquire, release;
-  cmpxchg_memory_order(order, acquire, release);
+  cmpxchg_memory_order_to_aqrl(order, acquire, release);
 
   Label fail, done;
   load_reserved(t0, addr, size, acquire);
