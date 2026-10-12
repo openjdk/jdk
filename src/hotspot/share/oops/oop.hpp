@@ -117,7 +117,7 @@ class oopDesc {
 
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()         const;
-  inline bool is_inline()           const;
+  inline bool is_value()            const;
   inline bool is_instanceRef()      const;
   inline bool is_stackChunk()       const;
   inline bool is_array()            const;
@@ -128,7 +128,7 @@ class oopDesc {
   inline bool is_refined_objArray() const;
   inline bool is_array_with_oops()  const;
 
-  inline bool is_inline_type()      const;
+  inline bool is_value_type()      const;
 
   // type test operations that don't require inclusion of oop.inline.hpp.
   bool is_instance_noinline()         const;
@@ -358,6 +358,6 @@ public:
 // to fill in certain parts of that memory.  The allocated memory is then
 // treated as referring to an oopDesc.  For that to be valid, the oopDesc
 // class must have a trivial default constructor (C++14 3.8/1).
-static_assert(std::is_trivially_default_constructible<oopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<oopDesc>::value);
 
 #endif // SHARE_OOPS_OOP_HPP

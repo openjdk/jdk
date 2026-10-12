@@ -59,7 +59,7 @@ public final class StringParser extends Parser {
 
     private static final class CharsetParser extends Parser {
         private final Charset charset;
-        private int lastSize;
+        private int lastSize = -1;
         private byte[] buffer = new byte[16];
         private String lastString;
 

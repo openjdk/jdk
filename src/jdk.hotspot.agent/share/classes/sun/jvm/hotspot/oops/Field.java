@@ -211,9 +211,9 @@ public class Field {
   private static boolean fieldIsGeneric(int flags)     { return ((flags >> InstanceKlass.FIELD_FLAG_IS_GENERIC    ) & 1 ) != 0; }
   private static boolean fieldIsStable(int flags)      { return ((flags >> InstanceKlass.FIELD_FLAG_IS_STABLE     ) & 1 ) != 0; }
   private static boolean fieldIsContended(int flags)   { return ((flags >> InstanceKlass.FIELD_FLAG_IS_CONTENDED  ) & 1 ) != 0; }
-  private static boolean fieldIsNullFreeInlineType(int flags) { return ((flags >> InstanceKlass.FIELD_FLAG_IS_NULL_FREE_INLINE) & 1 ) != 0; }
-  private static boolean fieldIsFlat(int flags)               { return ((flags >> InstanceKlass.FIELD_FLAG_IS_FLAT) & 1 ) != 0; }
-  private static boolean fieldHasNullMarker(int flags)         { return ((flags >> InstanceKlass.FIELD_FLAG_IS_NULL_MARKER) & 1 ) != 0; }
+  private static boolean fieldIsNullFreeValueType(int flags) { return ((flags >> InstanceKlass.FIELD_FLAG_IS_NULL_FREE_VALUE) & 1 ) != 0; }
+  private static boolean fieldIsFlat(int flags)              { return ((flags >> InstanceKlass.FIELD_FLAG_IS_FLAT) & 1 ) != 0; }
+  private static boolean fieldHasNullMarker(int flags)       { return ((flags >> InstanceKlass.FIELD_FLAG_IS_NULL_MARKER) & 1 ) != 0; }
 
   public boolean isInitialized()             { return fieldIsInitialized(values.fieldFlags); }
   public boolean isInjected()                { return fieldIsInjected(values.fieldFlags); }
@@ -221,6 +221,7 @@ public class Field {
   public boolean isStable()                  { return fieldIsStable(values.fieldFlags); }
   public boolean isContended()               { return fieldIsContended(values.fieldFlags); }
   public boolean isFlat()                    { return fieldIsFlat(values.fieldFlags); }
+  public boolean hasNullMarker()             { return fieldHasNullMarker(values.fieldFlags); }
 
   public boolean equals(Object obj) {
      if (obj == null) {

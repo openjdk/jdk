@@ -152,8 +152,8 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
       return CURRENT_THREAD_ENV->get_obj_array_klass(array);
     }
 
-    assert(!null_free || element_klass->is_inlinetype(), "Only value class arrays can be null free");
-    assert(atomic || element_klass->is_inlinetype(), "Only value class arrays can be non-atomic");
+    assert(!null_free || element_klass->is_value_klass(), "Only value class arrays can be null free");
+    assert(atomic || element_klass->is_value_klass(), "Only value class arrays can be non-atomic");
 
     const ArrayProperties props = ArrayProperties::Default()
       .with_null_restricted(null_free)

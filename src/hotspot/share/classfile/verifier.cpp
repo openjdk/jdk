@@ -68,7 +68,7 @@
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
 #define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION       52
-#define INLINE_TYPE_MAJOR_VERSION                      56
+#define VALUE_TYPE_MAJOR_VERSION                       56
 #define MAX_ARRAY_DIMENSIONS 255
 
 // Access to external entry for VerifyClassForMajorVersion - old byte code verifier
@@ -507,12 +507,12 @@ void ErrorContext::reason_details(outputStream* ss) const {
     case BAD_STACKMAP:
       ss->print("Invalid stackmap specification.");
       break;
-    case WRONG_INLINE_TYPE:
+    case WRONG_VALUE_TYPE:
       ss->print("Type ");
       _type.details(ss);
       ss->print(" and type ");
       _expected.details(ss);
-      ss->print(" must be identical inline types.");
+      ss->print(" must be identical value types.");
       break;
     case UNKNOWN:
     default:
@@ -734,7 +734,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   // Collect the initial strict instance fields if there are any
   AssertUnsetFieldTable* strict_fields = nullptr;
-  if (m->is_object_constructor()) {
+  if (m->is_object_constructor() && m->method_holder()->has_strict_instance_fields()) {
     for (AllFieldStream fs(m->method_holder()); !fs.done(); fs.next()) {
       if (fs.access_flags().is_strict() && !fs.access_flags().is_static()) {
         if (strict_fields == nullptr) {
@@ -2736,7 +2736,7 @@ void ClassVerifier::verify_invoke_instructions(
   // or any superclass (including Object).
   else if (opcode == Bytecodes::_invokespecial
            && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
-           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) { // super() can never be an inline_type.
+           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) {
 
     // We know it is not current class, direct superinterface or immediate superclass. That means it
     // could be:

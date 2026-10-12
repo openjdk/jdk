@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -42,7 +43,7 @@ void ResolvedFieldEntry::fill_in(const fieldDescriptor& info, u1 tos_state, u1 g
   set_flags(info.access_flags().is_volatile(),
             info.access_flags().is_final(),
             info.is_flat(),
-            info.is_null_free_inline_type(),
+            info.is_null_free_value_type(),
             info.has_null_marker());
   _field_holder = info.field_holder();
   _field_offset = info.offset();
@@ -70,7 +71,7 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr(" - Is Final: %d", is_final());
   st->print_cr(" - Is Volatile: %d", is_volatile());
   st->print_cr(" - Is Flat: %d", is_flat());
-  st->print_cr(" - Is Null Free Inline Type: %d", is_null_free_inline_type());
+  st->print_cr(" - Is Null Free Value type: %d", is_null_free_value_type());
   st->print_cr(" - Has null marker: %d", has_null_marker());
   st->print_cr(" - Get Bytecode: %s", Bytecodes::name((Bytecodes::Code)get_code()));
   st->print_cr(" - Put Bytecode: %s", Bytecodes::name((Bytecodes::Code)put_code()));
@@ -96,6 +97,11 @@ void ResolvedFieldEntry::assert_is_valid() const {
 #if INCLUDE_CDS
 void ResolvedFieldEntry::remove_unshareable_info() {
   *this = ResolvedFieldEntry(_cpool_index);
+}
+
+// Called from AOTArtifactFinder.
+void ResolvedFieldEntry::record_archivable_classes() {
+  AOTArtifactFinder::add_cached_class(_field_holder);
 }
 
 void ResolvedFieldEntry::mark_and_relocate() {
