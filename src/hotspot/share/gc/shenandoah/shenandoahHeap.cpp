@@ -1042,6 +1042,13 @@ HeapWord* ShenandoahHeap::allocate_memory_work(ShenandoahAllocRequest& req, bool
 
   HeapWord* result = _allocator->allocate(req, in_new_region);
 
+  if (req.is_mutator_alloc() && ShenandoahHeapRegion::requires_humongous(req.size())) {
+    const size_t curr_region_count = ShenandoahHeapRegion::required_regions(req.size() * HeapWordSize);
+    if (curr_region_count > _max_humongous_regions_since_gc.load_relaxed()) {
+      _max_humongous_regions_since_gc.store_relaxed(curr_region_count);
+    }
+  }
+
   if (result != nullptr) {
     if (req.is_mutator_alloc()) {
       size_t total_words = req.actual_size() + req.waste();
@@ -1767,6 +1774,7 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
     old_generation()->heuristics()->record_cycle_end();
   }
 
+  _max_humongous_regions_since_gc.store_relaxed(0);
   set_gc_cause(GCCause::_no_gc);
 }
 

@@ -278,10 +278,15 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
 
 bool ShenandoahAdaptiveHeuristics::trigger_min_humongous_threshold(size_t max_humongous_available) {
-  // by size, configurable via shen globals. default: ..5 region size ?
-  size_t threshold = ShenandoahMinHumongousRegionCount * ShenandoahHeapRegion::region_size_bytes();
+  const size_t max_requested_regions = ShenandoahHeap::heap()->max_humongous_regions_since_gc();
+  if (max_requested_regions == 0) {
+    // No humongous allocation requests
+    return false;
+  }
+
+  size_t threshold = max_requested_regions * ShenandoahHeapRegion::region_size_bytes();
   if (max_humongous_available < threshold) {
-    log_trigger("Max humongous allocatable: " PROPERFMT ", below " PROPERFMT " threshold",
+    log_trigger("Max humongous allocatable: " PROPERFMT ", below max requested humongous region size: " PROPERFMT,
                 PROPERFMTARGS(max_humongous_available), PROPERFMTARGS(threshold));
     accept_trigger_with_type(OTHER);
     return true;
