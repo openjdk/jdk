@@ -45,7 +45,8 @@ import javax.imageio.stream.ImageOutputStream;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class JpegQTableMetadataTest {
+public class JpegQTableTest {
+
     public static void main(String[] args) throws Exception {
         BufferedImage img = new BufferedImage(8, 1, BufferedImage.TYPE_3BYTE_BGR);
         ImageWriter w = ImageIO.getImageWritersByFormatName("JPEG").next();
