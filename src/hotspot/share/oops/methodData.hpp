@@ -32,6 +32,7 @@
 #include "oops/method.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -2194,23 +2195,7 @@ class StripedMutex : public CHeapObj<mtSynchronizer> {
   }
 
 public:
-  StripedMutex()
-    : _num_stripes(round_down_power_of_2((uint32_t) MAX2(os::processor_count(), 1)))
-    , _stripe_mask(_num_stripes - 1)
-    , _stripes_base(AllocateHeap((_num_stripes * sizeof(PaddedMutex)) + DEFAULT_CACHE_LINE_SIZE, mtSynchronizer))
-    ,  _stripes(reinterpret_cast<PaddedMutex*> (_stripes_base)) {
-    // To create an array of cache aligned PaddedMutexes, we allocate one more cache line than needed and align the base address.
-    if (!is_aligned(_stripes, DEFAULT_CACHE_LINE_SIZE)) {
-      _stripes = align_up(_stripes, DEFAULT_CACHE_LINE_SIZE);
-    }
-    assert(is_aligned(_stripes, DEFAULT_CACHE_LINE_SIZE), "unaligned");
-
-    // Use placement new to construct our Mutexes.
-    for (size_t i = 0; i < _num_stripes; i++) {
-      // These locks could be acquired while we are holding DumpTimeTable_lock/nosafepoint
-      ::new(&_stripes[i]) PaddedMutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
-    }
-  }
+  StripedMutex();
 
   ~StripedMutex() {
     for (size_t i = 0; i < _num_stripes; i++) {
