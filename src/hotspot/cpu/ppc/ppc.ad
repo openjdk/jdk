@@ -3694,15 +3694,6 @@ operand uimmI6_ge32() %{
   interface(CONST_INTER);
 %}
 
-// Unsigned Integer Immediate:  6-bit int, less than 32
-operand uimmI6_lt32() %{
-  predicate(Assembler::is_uimm(n->get_int(), 5));
-  match(ConI);
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Unsigned Integer Immediate: 15-bit
 operand uimmI15() %{
   predicate(Assembler::is_uimm(n->get_int(), 15));
@@ -8336,7 +8327,7 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIorL2I src1, uimmI6_ge32 src2) %
 // Clrlsldi clears the upper 32 bits and shifts.
 // Only valid for shift amounts < 32.
 // Shift amounts >= 32 are handled by lShiftL_regI_immGE32.
-instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI6_lt32 src2) %{
+instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI5 src2) %{
   match(Set dst (LShiftL (ConvI2L src1) src2));
   predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->is_long()->is_positive_int());
 
