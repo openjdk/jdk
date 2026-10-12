@@ -47,17 +47,19 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 import jdk.test.lib.RandomFactory;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StreamLinesTest {
 
@@ -200,15 +202,41 @@ public class StreamLinesTest {
         }
     }
 
-    @Test
-    public void testNullAction() throws IOException {
-        Path file = generateTempFileWithLines(i -> "L" + i, i -> LineSeparator.N, 5, StandardCharsets.UTF_8, false);
-        try (Stream<String> s = Files.lines(file, StandardCharsets.UTF_8)) {
-            Spliterator<String> sp = s.spliterator();
-            sp.forEachRemaining(line -> { });
+    @ParameterizedTest
+    @ValueSource(ints = {0, 2, 5})
+    void testTryAdvanceNullAction(int consumed) throws IOException {
+        testNullAction(consumed, sp -> sp.tryAdvance(null));
+    }
 
-            assertThrows(NullPointerException.class, () -> sp.tryAdvance(null));
-            assertThrows(NullPointerException.class, () -> sp.forEachRemaining(null));
+    @ParameterizedTest
+    @ValueSource(ints = {0, 2, 5})
+    void testForEachRemainingNullAction(int consumed) throws IOException {
+        testNullAction(consumed, sp -> sp.forEachRemaining(null));
+    }
+
+    private void testNullAction(
+            int consumed,
+            Consumer<Spliterator<String>> operation) throws IOException {
+
+        List<String> lines = List.of("L0", "L1", "L2", "L3", "L4");
+        Path file = generateTempFileWithLines(
+                i -> "L" + i, i -> LineSeparator.N, lines.size(),
+                StandardCharsets.UTF_8, false);
+
+        try (Stream<String> stream = Files.lines(file, StandardCharsets.UTF_8)) {
+            Spliterator<String> sp = stream.spliterator();
+
+            // Consume some lines first
+            for (int i = 0; i < consumed; i++) {
+                assertTrue(sp.tryAdvance(l -> { }));
+            }
+
+            assertThrows(NullPointerException.class, () -> operation.accept(sp));
+
+            // Verify that the remaining lines are still available
+            List<String> remaining = new ArrayList<>();
+            sp.forEachRemaining(remaining::add);
+            assertEquals(lines.subList(consumed, lines.size()), remaining);
         }
     }
 }
