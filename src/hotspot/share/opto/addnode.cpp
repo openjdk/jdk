@@ -295,8 +295,14 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
     if (op2 == Op_Sub(bt)) {
       // Check for dead cycle: d = (a-b)+(c-d)
-      assert( in1->in(2) != this && in2->in(2) != this,
-              "dead loop in AddINode::Ideal" );
+      assert(in1->in(2) != this && in2->in(2) != this, "dead loop in AddINode::Ideal");
+
+      // This transformation can create 3 nodes out of the current one. It also lays a good structure
+      // for the same rule to apply again. Even if termination is guaranteed, in some cases, we can
+      // create an exponential amount of nodes before simplifying them. To avoid that, let's leave this
+      // job to IGVN, where we delay the recursive transformations, hoping we can common the new nodes
+      // with existing ones, containing the explosion. This is likely if leaves of the expression tree
+      // is actually a quite narrow expression DAG.
       if (can_reshape == false) {
         phase->record_for_igvn(this);
         return nullptr;
@@ -304,10 +310,13 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       assert(igvn != nullptr, "should be IGVN now");
 
-      // This transformation can create 3 nodes out of the current one. It also lays a good structure
-      // for the same rule to apply again. Even if termination is guaranteed, in some cases, we can
-      // create an exponential amount of nodes before simplifying them. Let's try to avoid that by
-      // reusing existing nodes as much as possible.
+      Node* sub_in1 = AddNode::make(in1->in(1), in2->in(1), bt);
+      sub_in1 = igvn->register_and_hash_new_node_with_optimizer(sub_in1);
+      Node* sub_in2 = AddNode::make(in1->in(2), in2->in(2), bt);
+      sub_in2 = igvn->register_and_hash_new_node_with_optimizer(sub_in2);
+      return SubNode::make(sub_in1, sub_in2, bt);
+
+#if 0
       auto find_add_sub_or_make_it = [&](Node* lhs, Node* rhs, bool is_sub, bool& fresh) -> Node* {
         int desired_opcode = is_sub ? Op_Sub(bt) : Op_Add(bt);
         for (DUIterator_Fast imax, i = lhs->fast_outs(imax); i < imax; i++) {
@@ -353,6 +362,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
         tuple = igvn->register_new_node_with_optimizer(tuple);
         return new ProjNode(tuple, 0);
       }
+#endif
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
     if (op2 == Op_Add(bt) && in1->in(2) == in2->in(1)) {

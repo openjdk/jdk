@@ -475,7 +475,8 @@ private:
   DEBUG_ONLY(uint _num_processed;) // Running count for trace_PhaseIterGVN_verbose
 
   // Idealize old Node 'n' with respect to its inputs and its value
-  virtual Node *transform_old( Node *a_node );
+  virtual Node* transform_old(Node* a_node);
+  Node* common_node(Node* noden, bool try_insert);
 
   bool can_kill(Node* n) const;
 
@@ -574,6 +575,7 @@ public:
   // Optional 'orig' is an earlier version of this node.
   // It is significant only for debugging and profiling.
   Node* register_new_node_with_optimizer(Node* n, Node* orig = nullptr);
+  Node* register_and_hash_new_node_with_optimizer(Node* n, Node* orig = nullptr);
 
   // Origin of a dead node, describing why it is dying.
   // Speculative: a temporarily created node that was never part of the graph

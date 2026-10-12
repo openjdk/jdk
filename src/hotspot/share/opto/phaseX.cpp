@@ -2173,6 +2173,13 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   if (orig != nullptr)  C->copy_node_notes_to(n, orig);
   return n;
 }
+Node* PhaseIterGVN::register_and_hash_new_node_with_optimizer(Node* n, Node* orig) {
+  set_type_bottom(n);
+  _worklist.push(n);
+  if (orig != nullptr)  C->copy_node_notes_to(n, orig);
+  Node* i = hash_find_insert(n);
+  return i == nullptr ? n : i;
+}
 
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
@@ -2192,8 +2199,25 @@ Node *PhaseIterGVN::transform( Node *n ) {
   return transform_old(n);
 }
 
-Node *PhaseIterGVN::transform_old(Node* n) {
+Node* PhaseIterGVN::common_node(Node* n, bool try_insert) {
+  // Global Value Numbering
+  // We try to find an existing equivalent node.
+  Node* i = try_insert ? hash_find_insert(n) : hash_find(n);
+  if (i != nullptr && i != n) {
+    set_progress();
+    add_users_to_worklist(n);
+    subsume_node(n, i);
+    return i;
+  }
+  return nullptr;
+}
+
+Node* PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
+  if (Node* i = common_node(n, false); i != nullptr) {
+    return i;
+  }
+
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
 #ifdef ASSERT
@@ -2288,13 +2312,8 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     return i;
   }
 
-  // Global Value Numbering
-  i = hash_find_insert(k);      // Check for pre-existing node
-  if (i && (i != k)) {
-    // Return the pre-existing node if it isn't dead
-    set_progress();
-    add_users_to_worklist(k);
-    subsume_node(k, i);       // Everybody using k now uses i
+  i = common_node(k, true);
+  if (i != nullptr) {
     return i;
   }
 
