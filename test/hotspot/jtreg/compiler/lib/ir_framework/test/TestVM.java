@@ -492,7 +492,6 @@ public class TestVM {
                              "Cannot define compilation level SKIP or WAIT_FOR_COMPILATION in @ForceCompile at " + ex);
             compLevel = restrictCompLevel(forceCompileAnno.value());
             if (FLIP_C1_C2) {
-                compLevel = compLevel.flipCompLevel();
                 compLevel = restrictCompLevel(compLevel.flipCompLevel());
             }
             if (EXCLUDE_RANDOM) {
@@ -585,7 +584,6 @@ public class TestVM {
         }
         CompLevel compLevel = restrictCompLevel(testAnno.compLevel());
         if (FLIP_C1_C2) {
-            compLevel = compLevel.flipCompLevel();
             compLevel = restrictCompLevel(compLevel.flipCompLevel());
         }
         if (EXCLUDE_RANDOM) {
