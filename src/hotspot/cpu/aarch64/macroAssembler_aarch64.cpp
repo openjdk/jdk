@@ -4098,10 +4098,8 @@ bool MacroAssembler::ldst_can_merge(T rt,
   // Following case can not be merged:
   // ldr x2, [x2, #8]
   // ldr x3, [x2, #16]
-  if constexpr (!is_simd) {
-    if (dir == LOAD && adr.base() == prev_rt) {
-      return false;
-    }
+  if (dir == LOAD && same_register(adr.base(), prev_rt)) {
+    return false;
   }
 
   int64_t low_offset = prev_offset > cur_offset ? cur_offset : prev_offset;

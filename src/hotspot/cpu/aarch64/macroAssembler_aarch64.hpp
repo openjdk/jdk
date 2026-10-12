@@ -1754,6 +1754,11 @@ private:
     return size_in_bytes == 4 || size_in_bytes == 8 || (is_simd && size_in_bytes == 16);
   }
 
+  template <typename T1, typename T2>
+  static bool same_register(T1 reg1, T2 reg2) {
+    return std::is_same<T1, T2>::value && reg1->raw_encoding() == reg2->raw_encoding();
+  }
+
   // Check whether two loads/stores can be merged into ldp/stp.
   template <typename T>
   bool ldst_can_merge(T rx, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir) const;
