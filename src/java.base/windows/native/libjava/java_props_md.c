@@ -224,12 +224,6 @@ getHomeFromShell32()
 }
 
 static BOOL
-haveMMX(void)
-{
-    return IsProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE);
-}
-
-static BOOL
 SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant) {
     /* script */
