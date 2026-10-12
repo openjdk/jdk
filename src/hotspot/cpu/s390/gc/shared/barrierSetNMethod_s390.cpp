@@ -135,9 +135,9 @@ static void set_guard_value_impl(nmethod* nm, int value, int bit_mask) {
   if (!nm->is_osr_method() && nm->method()->has_scalarized_args()) {
     assert(false, "untested code");
     // nmethods with scalarized arguments have multiple entry points that each have an own nmethod entry barrier
-    assert(nm->verified_entry_point() != nm->verified_inline_entry_point(), "scalarized entry point not found");
-    address method_body = nm->is_compiled_by_c1() ? nm->verified_inline_entry_point() : nm->verified_entry_point();
-    address entry_point2 = nm->is_compiled_by_c1() ? nm->verified_entry_point() : nm->verified_inline_entry_point();
+    assert(nm->verified_entry_point() != nm->verified_value_entry_point(), "scalarized entry point not found");
+    address method_body = nm->is_compiled_by_c1() ? nm->verified_value_entry_point() : nm->verified_entry_point();
+    address entry_point2 = nm->is_compiled_by_c1() ? nm->verified_entry_point() : nm->verified_value_entry_point();
 
     int barrier_offset = reinterpret_cast<address>(barrier1) - method_body;
     NativeMethodBarrier* barrier2 = reinterpret_cast<NativeMethodBarrier*>(entry_point2 + barrier_offset);
@@ -145,8 +145,8 @@ static void set_guard_value_impl(nmethod* nm, int value, int bit_mask) {
     DEBUG_ONLY(barrier2->verify());
     barrier2->set_guard_value(value, bit_mask);
 
-    if (method_body != nm->verified_inline_ro_entry_point() && entry_point2 != nm->verified_inline_ro_entry_point()) {
-      NativeMethodBarrier* barrier3 = reinterpret_cast<NativeMethodBarrier*>(nm->verified_inline_ro_entry_point() + barrier_offset);
+    if (method_body != nm->verified_value_ro_entry_point() && entry_point2 != nm->verified_value_ro_entry_point()) {
+      NativeMethodBarrier* barrier3 = reinterpret_cast<NativeMethodBarrier*>(nm->verified_value_ro_entry_point() + barrier_offset);
       assert(barrier1 != barrier3 && barrier2 != barrier3, "sanity");
       DEBUG_ONLY(barrier3->verify());
       barrier3->set_guard_value(value, bit_mask);

@@ -25,8 +25,6 @@
 
 package java.security;
 
-import jdk.internal.javac.PreviewFeature;
-
 import jdk.internal.ref.CleanerFactory;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
@@ -147,9 +145,8 @@ import java.util.Objects;
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
- * @since 25
+ * @since 28
  */
-@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMDecoder {
     private final Provider factory;
     private final PBEKeySpec keySpec;
@@ -294,8 +291,6 @@ public final class PEMDecoder {
      * @throws IllegalArgumentException if decoding fails or no PEM data is found
      * @throws NullPointerException if {@code str} is {@code null}
      * @throws CryptoException if an error occurs during decryption
-     *
-     * @since 27
      */
     public BinaryEncodable decode(String str) {
         Objects.requireNonNull(str);
@@ -335,8 +330,6 @@ public final class PEMDecoder {
      * @throws IllegalArgumentException if decoding fails
      * @throws NullPointerException if {@code InputStream} is {@code null}
      * @throws CryptoException if an error occurs during decryption
-     *
-     * @since 27
      */
     public BinaryEncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
@@ -379,8 +372,6 @@ public final class PEMDecoder {
      * @throws ClassCastException if {@code tClass} does not represent the PEM type
      * @throws NullPointerException if any input values are {@code null}
      * @throws CryptoException if an error occurs during decryption
-     *
-     * @since 27
      */
     public <S extends BinaryEncodable> S decode(String str, Class<S> tClass) {
         Objects.requireNonNull(str);
@@ -428,8 +419,6 @@ public final class PEMDecoder {
      *
      * @see #decode(InputStream)
      * @see #decode(String, Class)
-     *
-     * @since 27
      */
     public <S extends BinaryEncodable> S decode(InputStream is, Class<S> tClass)
         throws IOException {
@@ -543,8 +532,6 @@ public final class PEMDecoder {
      * @param provider the factory {@code Provider}
      * @return a new {@code PEMDecoder} instance configured with the {@code Provider}
      * @throws NullPointerException if {@code provider} is {@code null}
-     *
-     * @since 27
      */
     public PEMDecoder withFactoriesOf(Provider provider) {
         Objects.requireNonNull(provider);

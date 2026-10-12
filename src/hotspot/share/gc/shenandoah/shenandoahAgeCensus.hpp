@@ -205,8 +205,8 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
 
   // Update the local age table for worker_id by size for
   // given obj_age, region_age, and region_youth
-  CENSUS_NOISE(void add(uint obj_age, uint region_age, uint region_youth, size_t size, uint worker_id);)
-  NO_CENSUS_NOISE(void add(uint obj_age, uint region_age, size_t size, uint worker_id);)
+  CENSUS_NOISE(inline void add(uint obj_age, uint region_age, uint region_youth, size_t size, uint worker_id);)
+  NO_CENSUS_NOISE(inline void add(uint obj_age, uint region_age, size_t size, uint worker_id);)
 
 #ifdef SHENANDOAH_CENSUS_NOISE
   // Update the local skip table for worker_id by size

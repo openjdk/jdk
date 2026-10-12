@@ -370,6 +370,10 @@ public:
     return _index;
   }
 
+  static bool is_in_same_region(const void* p, oop obj) {
+    return (((uintptr_t) p ^ cast_from_oop<uintptr_t>(obj)) >> region_size_bytes_shift()) == 0;
+  }
+
   inline void save_top_before_promote();
   inline HeapWord* get_top_before_promote() const { return _top_before_promoted; }
 
@@ -537,7 +541,7 @@ public:
   // installs a self-forward mark on an object in this region. Tested and cleared
   // at the drain phase (degen/full GC entry) and again on region recycle.
   bool has_self_forwards() const { return _has_self_forwards.is_set(); }
-  void set_has_self_forwards()   { _has_self_forwards.set(); }
+  void set_has_self_forwards()   { _has_self_forwards.try_set(); }
   void clear_has_self_forwards() { _has_self_forwards.unset(); }
 
 private:

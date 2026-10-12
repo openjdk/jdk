@@ -57,8 +57,6 @@ public class visibmethod002 {
     static ArgumentHandler      argsHandler;
     private static Log  logHandler;
 
-
-
     public static void main (String argv[]) {
         int result = run(argv,System.out);
         if (result != 0) {
@@ -103,11 +101,7 @@ public class visibmethod002 {
 
         Debugee debugee;
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         print_log_on_verbose("==> nsk/jdi/ReferenceType/visibleMethods/visibmethod002 test LOG:");
         print_log_on_verbose("==> test checks visibleMethods() method of ReferenceType interface ");

@@ -284,7 +284,7 @@ class JavaThread: public Thread {
  public:
   // These functions check conditions before possibly going to a safepoint.
   // including NoSafepointVerifier.
-  void check_for_valid_safepoint_state(bool allow_gcalot = true) NOT_DEBUG_RETURN;
+  void check_for_valid_safepoint_state()                         NOT_DEBUG_RETURN;
   void check_possible_safepoint()                                NOT_DEBUG_RETURN;
 
 #ifdef ASSERT
@@ -665,9 +665,6 @@ public:
   bool java_resume(bool register_vthread_SR);
   bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
   SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
-
-  // Check for async exception in addition to safepoint.
-  static void check_special_condition_for_native_trans(JavaThread *thread);
 
   // Synchronize with another thread that is deoptimizing objects of the
   // current thread, i.e. reverts optimizations based on escape analysis.

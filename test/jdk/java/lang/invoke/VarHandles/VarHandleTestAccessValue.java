@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@
  * @test
  * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.value
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessValue
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessValue
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessValue
@@ -54,17 +55,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestAccessValue extends VarHandleBaseTest {
     static final Value static_final_v = Value.getInstance(10);
 
-    static Value static_v;
+    static Value static_v = Value.getInstance(10);
 
-    final Value final_v = Value.getInstance(10);
+    final Value final_v;
 
     Value v;
 
     static final Value static_final_v2 = Value.getInstance(10);
 
-    static Value static_v2;
+    static Value static_v2 = Value.getInstance(10);
 
-    final Value final_v2 = Value.getInstance(10);
+    final Value final_v2;
 
     Value v2;
 
@@ -79,6 +80,14 @@ public class VarHandleTestAccessValue extends VarHandleBaseTest {
     VarHandle vhArray;
 
     VarHandle vhArrayObject;
+
+    public VarHandleTestAccessValue() {
+        final_v = Value.getInstance(10);
+        v = Value.getInstance(10);
+        final_v2 = Value.getInstance(10);
+        v2 = Value.getInstance(10);
+        super();
+    }
 
     VarHandle[] allocate(boolean same) {
         List<VarHandle> vhs = new ArrayList<>();
@@ -319,7 +328,7 @@ public class VarHandleTestAccessValue extends VarHandleBaseTest {
         // Lazy
         {
             Value x = (Value) vh.getAcquire(recv);
-            assertEquals(Value.getInstance(10), x, "getRelease Value value");
+            assertEquals(Value.getInstance(10), x, "getAcquire Value value");
         }
 
         // Opaque
@@ -414,7 +423,7 @@ public class VarHandleTestAccessValue extends VarHandleBaseTest {
         // Lazy
         {
             Value x = (Value) vh.getAcquire();
-            assertEquals(Value.getInstance(10), x, "getRelease Value value");
+            assertEquals(Value.getInstance(10), x, "getAcquire Value value");
         }
 
         // Opaque
@@ -1342,57 +1351,57 @@ public class VarHandleTestAccessValue extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.compareAndSet(array, 0, Value.getInstance(10), value);
         });
 
         // WeakCompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetPlain(array, 0, Value.getInstance(10), value);
         });
 
         // WeakCompareAndSetVolatile
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSet(array, 0, Value.getInstance(10), value);
         });
 
         // WeakCompareAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(array, 0, Value.getInstance(10), value);
         });
 
         // WeakCompareAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, 0, Value.getInstance(10), value);
         });
 
         // CompareAndExchange
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             Value x = (Value) vh.compareAndExchange(array, 0, Value.getInstance(10), value);
         });
 
         // CompareAndExchangeAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             Value x = (Value) vh.compareAndExchangeAcquire(array, 0, Value.getInstance(10), value);
         });
 
         // CompareAndExchangeRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             Value x = (Value) vh.compareAndExchangeRelease(array, 0, Value.getInstance(10), value);
         });
 
         // GetAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             Value x = (Value) vh.getAndSet(array, 0, value);
         });
 
         // GetAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             Value x = (Value) vh.getAndSetAcquire(array, 0, value);
         });
 
         // GetAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             Value x = (Value) vh.getAndSetRelease(array, 0, value);
         });
     }

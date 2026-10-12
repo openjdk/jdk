@@ -115,7 +115,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
       G1HeapRegionRemSet* hrrs = hr->rem_set();
       // Verify that the code root list for this region
       // contains the nmethod
-      if (!hrrs->code_roots_list_contains(_nm)) {
+      if (!hrrs->code_roots_contains(_nm)) {
         log_error(gc, verify)("Code root location " PTR_FORMAT " "
                               "from nmethod " PTR_FORMAT " not in strong "
                               "code roots for region [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -434,7 +434,7 @@ void G1HeapVerifier::verify_region_sets() {
   _g1h->heap_region_iterate(&cl);
   cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
 
-  _g1h->collection_set()->candidates()->verify();
+  _g1h->collection_set_candidates()->verify();
 }
 
 class G1VerifyRegionMarkingStateClosure : public G1HeapRegionClosure {

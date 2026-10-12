@@ -97,11 +97,13 @@ public class Scenario {
      * Add additional VM flags to this scenario.
      *
      * @param flags the additional scenario VM flags.
+     * @return the scenario object.
      */
-    public void addFlags(String... flags) {
+    public Scenario addFlags(String... flags) {
         if (flags != null) {
             this.flags.addAll(Arrays.asList(flags));
         }
+        return this;
     }
 
     /**

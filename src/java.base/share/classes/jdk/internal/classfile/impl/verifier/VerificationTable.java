@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,14 @@ class VerificationTable {
         return result;
     }
 
-    void check_jump_target(VerificationFrame frame, int target) {
+    void check_jump_target(VerificationFrame frame, int bci, int offset) {
+        // Jump targets must be within the method and the method size is limited. See JVMS 4.11
+        int min_offset = -1 * 0xFFFF;
+        if (offset < min_offset || offset > 0xFFFF) {
+            _verifier.verifyError("Illegal target of jump or branch (bci %d + offset %d)".formatted(bci, offset));
+            return;
+        }
+        int target = bci + offset;
         boolean match = match_stackmap(frame, target, true, false);
         if (!match || (target < 0 || target >= _code_length)) {
             _verifier.verifyError(String.format("Inconsistent stackmap frames at branch target %d", target));
@@ -155,6 +162,7 @@ class VerificationTable {
         final Set<NameAndTypeEntry> strictFields;
         Set<NameAndTypeEntry> _assert_unset_fields_buffer;
         boolean _first;
+        private boolean _uninit_in_prev_frame_locals;
 
         void check_verification_type_array_size(int size, int max_size) {
             if (size < 0 || size > max_size) {
@@ -223,6 +231,15 @@ class VerificationTable {
                 _cp = null;
                 _frame_count = 0;
             }
+
+            VerificationType[] locals = init_frame.locals();
+            _uninit_in_prev_frame_locals = false;
+            for (int i = 0; i < init_frame.locals_size(); i++) {
+                if (locals[i].is_uninitialized_this(_verifier)) {
+                    _uninit_in_prev_frame_locals = true;
+                    break;
+                }
+            }
         }
 
         void check_offset(VerificationFrame frame) {
@@ -252,7 +269,8 @@ class VerificationTable {
             return pos+1;
         }
 
-        VerificationType parse_verification_type(int[] flags) {
+        VerificationType parse_verification_type(int[] flags, boolean parsing_locals) {
+            assert flags != null;
             int tag = _stream.get_u1();
             if (tag < ITEM_UNINITIALIZED_THIS) {
                 return VerificationType.from_tag(tag, _verifier);
@@ -266,8 +284,12 @@ class VerificationTable {
                 return VerificationType.reference_type(_cp.classNameAt(class_index));
             }
             if (tag == ITEM_UNINITIALIZED_THIS) {
-                if (flags != null) {
-                    flags[0] |= VerificationFrame.FLAG_THIS_UNINIT;
+                flags[0] |= VerificationFrame.FLAG_THIS_UNINIT;
+                // An uninitializedThis in the locals array can sometimes be preserved
+                // between frames while uninitializedThis in the stack cannot as the stack
+                // is cleared. Chop and Full frames need special handling.
+                if (parsing_locals) {
+                    _uninit_in_prev_frame_locals = true;
                 }
                 return VerificationType.uninitialized_this_type;
             }
@@ -332,7 +354,10 @@ class VerificationTable {
                     offset = _prev_frame.offset() + frame_type + 1;
                     locals = _prev_frame.locals();
                 }
-                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), 0, _max_locals, _max_stack, locals, null, _assert_unset_fields_buffer, _verifier);
+
+                int flags = _uninit_in_prev_frame_locals ? 1 : 0;
+
+                frame = new VerificationFrame(offset, flags, _prev_frame.locals_size(), 0, _max_locals, _max_stack, locals, null, _assert_unset_fields_buffer, _verifier);
                 if (_first && locals != null) {
                     frame.copy_locals(_prev_frame);
                 }
@@ -351,13 +376,14 @@ class VerificationTable {
                 }
                 VerificationType[] stack = new VerificationType[2];
                 int stack_size = 1;
-                stack[0] = parse_verification_type(null);
+                int[] flags = {_uninit_in_prev_frame_locals ? 1 : 0};
+                stack[0] = parse_verification_type(flags, false /*parsing_locals*/);
                 if (stack[0].is_category2()) {
                     stack[1] = stack[0].to_category2_2nd(_verifier);
                     stack_size = 2;
                 }
                 check_verification_type_array_size(stack_size, _max_stack);
-                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _assert_unset_fields_buffer, _verifier);
+                frame = new VerificationFrame(offset, flags[0], _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _assert_unset_fields_buffer, _verifier);
                 if (_first && locals != null) {
                     frame.copy_locals(_prev_frame);
                 }
@@ -380,13 +406,14 @@ class VerificationTable {
                 }
                 VerificationType[] stack = new VerificationType[2];
                 int stack_size = 1;
-                stack[0] = parse_verification_type(null);
+                int[] flags = {_uninit_in_prev_frame_locals ? 1 : 0};
+                stack[0] = parse_verification_type(flags, false /*parsing_locals*/);
                 if (stack[0].is_category2()) {
                     stack[1] = stack[0].to_category2_2nd(_verifier);
                     stack_size = 2;
                 }
                 check_verification_type_array_size(stack_size, _max_stack);
-                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _assert_unset_fields_buffer, _verifier);
+                frame = new VerificationFrame(offset, flags[0], _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _assert_unset_fields_buffer, _verifier);
                 if (_first && locals != null) {
                     frame.copy_locals(_prev_frame);
                 }
@@ -398,14 +425,16 @@ class VerificationTable {
                 int length = _prev_frame.locals_size();
                 int chops = SAME_FRAME_EXTENDED - frame_type;
                 int new_length = length;
-                int flags = _prev_frame.flags();
+                int flags = _uninit_in_prev_frame_locals ? 1 : 0;
                 if (chops != 0) {
                     new_length = chop(locals, length, chops);
                     check_verification_type_array_size(new_length, _max_locals);
                     flags = 0;
+                    _uninit_in_prev_frame_locals = false;
                     for (int i=0; i<new_length; i++) {
                         if (locals[i].is_uninitialized_this(_verifier)) {
                             flags |= VerificationFrame.FLAG_THIS_UNINIT;
+                            _uninit_in_prev_frame_locals = true;
                             break;
                         }
                     }
@@ -436,9 +465,9 @@ class VerificationTable {
                 for (i=0; i< _prev_frame.locals_size(); i++) {
                     locals[i] = pre_locals[i];
                 }
-                int[] flags = new int[]{_prev_frame.flags()};
+                int[] flags = new int[]{_uninit_in_prev_frame_locals ? 1 : 0};
                 for (i=0; i<appends; i++) {
-                    locals[real_length] = parse_verification_type(flags);
+                    locals[real_length] = parse_verification_type(flags, true /*parsing_locals*/);
                     if (locals[real_length].is_category2()) {
                         locals[real_length + 1] = locals[real_length].to_category2_2nd(_verifier);
                         ++real_length;
@@ -456,7 +485,8 @@ class VerificationTable {
                 return frame;
             }
             if (frame_type == FULL_FRAME) {
-                int flags[] = new int[]{0};
+                int[] flags = new int[]{0};
+                _uninit_in_prev_frame_locals = false;
                 int locals_size = _stream.get_u2();
                 int real_locals_size = 0;
                 if (locals_size > 0) {
@@ -464,7 +494,7 @@ class VerificationTable {
                 }
                 int i;
                 for (i=0; i<locals_size; i++) {
-                    locals[real_locals_size] = parse_verification_type(flags);
+                    locals[real_locals_size] = parse_verification_type(flags, true /*parsing_locals*/);
                     if (locals[real_locals_size].is_category2()) {
                         locals[real_locals_size + 1] =
                                 locals[real_locals_size].to_category2_2nd(_verifier);
@@ -480,7 +510,7 @@ class VerificationTable {
                     stack = new VerificationType[stack_size*2];
                 }
                 for (i=0; i<stack_size; i++) {
-                    stack[real_stack_size] = parse_verification_type(null);
+                    stack[real_stack_size] = parse_verification_type(flags, false /*parsing_locals*/);
                     if (stack[real_stack_size].is_category2()) {
                         stack[real_stack_size + 1] = stack[real_stack_size].to_category2_2nd(_verifier);
                         ++real_stack_size;

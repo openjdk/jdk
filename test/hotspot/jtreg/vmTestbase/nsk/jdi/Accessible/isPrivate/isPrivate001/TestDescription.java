@@ -50,7 +50,6 @@
  *        nsk.jdi.Accessible.isPrivate.isPrivate001a
  * @run driver
  *      nsk.jdi.Accessible.isPrivate.isPrivate001
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

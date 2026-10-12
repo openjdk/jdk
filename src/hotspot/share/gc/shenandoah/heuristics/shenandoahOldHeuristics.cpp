@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -413,11 +414,11 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t live_data = 0;
   RegionData* candidates = _region_data;
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
-    if (!region->is_old()) {
+    if (!heap->is_region_old(i)) {
       continue;
     }
 
+    ShenandoahHeapRegion* region = heap->get_region(i);
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
     if (!region->was_promoted_in_place()) {
@@ -724,13 +725,13 @@ bool ShenandoahOldHeuristics::should_resume_old_cycle() {
   // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
   if (_old_generation->is_concurrent_mark_in_progress()) {
     assert(_old_generation->state() == ShenandoahOldGeneration::MARKING, "Unexpected old gen state: %s", _old_generation->state_name());
-    log_trigger("Resume marking old");
+    log_trigger("Resume Marking");
     return true;
   }
 
   if (_old_generation->is_preparing_for_mark()) {
     assert(_old_generation->state() == ShenandoahOldGeneration::FILLING, "Unexpected old gen state: %s", _old_generation->state_name());
-    log_trigger("Resume preparing to mark old");
+    log_trigger("Resume Prepare Marking");
     return true;
   }
 
@@ -750,7 +751,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const size_t old_gen_capacity = _old_generation->max_capacity();
     const size_t heap_capacity = heap->capacity();
     const double percent = percent_of(old_gen_capacity, heap_capacity);
-    log_trigger("Expansion failure, current size: %zu%s which is %.1f%% of total heap size",
+    log_trigger("Handle Expansion Failure. %zu%s (%.1f%%) old generation",
                  byte_size_in_proper_unit(old_gen_capacity), proper_unit_for_byte_size(old_gen_capacity), percent);
     adjust_old_garbage_threshold();
     return true;
@@ -770,9 +771,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const size_t span_of_old_regions = (last_old_region >= first_old_region)? last_old_region + 1 - first_old_region: 0;
     const size_t fragmented_free = used_regions_size - used;
 
-    log_trigger("Old has become fragmented: "
-                "%zu%s available bytes spread between range spanned from "
-                "%zu to %zu (%zu), density: %.1f%%",
+    log_trigger("Fragmentation. %zu%s available in old, [%zu, %zu] (%zu) regions, density: %.1f%%",
                 byte_size_in_proper_unit(fragmented_free), proper_unit_for_byte_size(fragmented_free),
                 first_old_region, last_old_region, span_of_old_regions, density * 100);
     adjust_old_garbage_threshold();
@@ -800,8 +799,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     } else if (current_usage > trigger_threshold) {
       const size_t live_at_previous_old = _old_generation->get_live_bytes_at_last_mark();
       const double percent_growth = percent_of(current_usage - live_at_previous_old, live_at_previous_old);
-      log_trigger("Old has overgrown, live at end of previous OLD marking: "
-                  "%zu%s, current usage: %zu%s, percent growth: %.1f%%",
+      log_trigger("Occupancy. %zu%s live at old mark end, %zu%s used, %.1f%% growth",
                   byte_size_in_proper_unit(live_at_previous_old), proper_unit_for_byte_size(live_at_previous_old),
                   byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage), percent_growth);
       adjust_old_garbage_threshold();
