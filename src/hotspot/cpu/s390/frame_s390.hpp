@@ -77,8 +77,9 @@
   } frame_constants;
 
   // Common ABI. On top of all frames, C and Java.
-  // Note: return_pc is stored in R14 for C frames
-  // and is null here.
+  // Note: return_pc is only valid for Java calls.
+  // Calls following the native convention would use
+  // z_abi_160_base::gpr14 to save their return pc.
   struct z_common_abi {
     uint64_t callers_sp;
     uint64_t return_pc;
