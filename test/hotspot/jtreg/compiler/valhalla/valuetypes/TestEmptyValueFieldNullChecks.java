@@ -29,7 +29,10 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 ${test.main.class}
+ * @run main/othervm -XX:TieredStopAtLevel=1 ${test.main.class}
+ * @run main/othervm -XX:TieredStopAtLevel=1
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-EliminateNullChecks
+ *                   ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;
@@ -38,7 +41,26 @@ import jdk.internal.vm.annotation.NullRestricted;
 import jdk.test.lib.Asserts;
 
 public class TestEmptyValueFieldNullChecks {
+    static boolean initialized = false;
+
     static value class Empty { }
+
+    static value class UninitializedEmpty {
+        static {
+            initialized = true;
+        }
+    }
+
+    static class UninitializedHolder {
+        @NullRestricted
+        UninitializedEmpty empty;
+        int value;
+
+        UninitializedHolder() {
+            empty = new UninitializedEmpty();
+            super();
+        }
+    }
 
     // Recursively empty value class (only contains null marker)
     static value class Holder1 {
@@ -86,58 +108,69 @@ public class TestEmptyValueFieldNullChecks {
         super();
     }
 
-    // An empty store emits no payload store but must null-check its holder
+    // A null holder must throw before buffering initializes its empty field class.
+    static Object testUninitializedEmptyLoad(UninitializedHolder outerHolder) {
+        Object empty = outerHolder.empty;
+        // This later access must not absorb the explicit null check across the buffer allocation.
+        return outerHolder.value == 0 ? empty : null;
+    }
+
+    // An empty nullable store only updates its null marker with Unsafe and must null-check its holder.
     static void testEmptyStore(TestEmptyValueFieldNullChecks outerHolder, Empty value) {
         outerHolder.empty = value;
     }
 
-    // An empty null-free store emits no payload store but must null-check both operands
+    // An empty null-free store emits no access but must null-check both operands.
     static void testEmptyNullFreeStore(TestEmptyValueFieldNullChecks outerHolder, Empty value) {
         outerHolder.emptyNullFree = value;
     }
 
-    // A recursively empty store emits no payload access but must null-check its holder
+    // A marker-only atomic store must null-check its holder.
     static void testRecursivelyEmptyStore(TestEmptyValueFieldNullChecks outerHolder, Holder1 value) {
         outerHolder.holder1 = value;
     }
 
+    // A recursively empty nullable store only updates its null marker with Unsafe and must null-check its holder.
     static void testRecursivelyEmptyStore2(TestEmptyValueFieldNullChecks outerHolder, Holder2 value) {
         outerHolder.holder2 = value;
     }
 
-    // A recursively null-free empty store emits no payload access but must null-check both operands
+    // A marker-only null-free store only emits Unsafe accesses and must null-check both operands.
     static void testRecursivelyEmptyNullFreeStore(TestEmptyValueFieldNullChecks outerHolder, Holder1 value) {
         outerHolder.holder1NullFree = value;
     }
 
+    // A recursively empty null-free store emits no access but must null-check both operands.
     static void testRecursivelyEmptyNullFreeStore2(TestEmptyValueFieldNullChecks outerHolder, Holder2 value) {
         outerHolder.holder2NullFree = value;
     }
 
-    // An empty load emits no payload access but must null-check its holder
+    // An empty nullable load only reads its null marker with Unsafe and must null-check its holder.
     static Empty testEmptyLoad(TestEmptyValueFieldNullChecks outerHolder) {
         return outerHolder.empty;
     }
 
-    // An empty null-free load emits no payload access but must null-check its holder
+    // An empty null-free load emits no access but must null-check its holder.
     static Empty testEmptyNullFreeLoad(TestEmptyValueFieldNullChecks outerHolder) {
         return outerHolder.emptyNullFree;
     }
 
-    // A recursively empty load emits no payload access but must null-check its holder
+    // A marker-only atomic load must null-check its holder.
     static Holder1 testRecursivelyEmptyLoad(TestEmptyValueFieldNullChecks outerHolder) {
         return outerHolder.holder1;
     }
 
+    // A recursively empty nullable load only reads its null marker with Unsafe and must null-check its holder.
     static Holder2 testRecursivelyEmptyLoad2(TestEmptyValueFieldNullChecks outerHolder) {
         return outerHolder.holder2;
     }
 
-    // A recursively empty null-free load emits no payload access but must null-check its holder
+    // A marker-only null-free load only emits Unsafe accesses and must null-check its holder.
     static Holder1 testRecursivelyEmptyNullFreeLoad(TestEmptyValueFieldNullChecks outerHolder) {
         return outerHolder.holder1NullFree;
     }
 
+    // A recursively empty null-free load emits no access but must null-check its holder.
     static Holder2 testRecursivelyEmptyNullFreeLoad2(TestEmptyValueFieldNullChecks outerHolder) {
         return outerHolder.holder2NullFree;
     }
@@ -148,6 +181,7 @@ public class TestEmptyValueFieldNullChecks {
         Holder1 innerHolder = new Holder1();
         Holder2 innerHolder2 = new Holder2();
         for (int i = 0; i < 20_000; i++) {
+            Asserts.assertThrows(NullPointerException.class, () -> testUninitializedEmptyLoad(null));
             testEmptyStore(outerHolder, null);
             testEmptyNullFreeStore(outerHolder, empty);
             testRecursivelyEmptyStore(outerHolder, innerHolder);
@@ -161,6 +195,7 @@ public class TestEmptyValueFieldNullChecks {
             Asserts.assertEquals(testRecursivelyEmptyNullFreeLoad(outerHolder), outerHolder.holder1NullFree);
             Asserts.assertEquals(testRecursivelyEmptyNullFreeLoad2(outerHolder), outerHolder.holder2NullFree);
         }
+        Asserts.assertFalse(initialized, "Should not have been initialized!");
 
         Asserts.assertThrows(NullPointerException.class, () -> testEmptyStore(null, null));
         Asserts.assertThrows(NullPointerException.class, () -> testEmptyStore(null, empty));
