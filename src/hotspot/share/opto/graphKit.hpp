@@ -65,9 +65,6 @@ class GraphKit : public Phase {
   int               _bci;       // JVM Bytecode Pointer
   ciMethod*         _method;    // JVM Current Method
   BarrierSetC2*     _barrier_set;
-#ifdef ASSERT
-  uint              _worklist_size;
-#endif
 
  private:
   int               _sp;        // JVM Expression Stack Pointer; don't modify directly!

@@ -557,22 +557,16 @@ void Type::Initialize_shared(Compile* current) {
   BOTTOM  = make(Bottom);       // Everything
   HALF    = make(Half);         // Placeholder half of doublewide type
 
-  TypeF::MAX = TypeF::make(max_jfloat); // Float MAX
-  TypeF::MIN = TypeF::make(min_jfloat); // Float MIN
   TypeF::ZERO = TypeF::make(0.0); // Float 0 (positive zero)
   TypeF::ONE  = TypeF::make(1.0); // Float 1
   TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
   TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
 
-  TypeH::MAX = TypeH::make(max_jfloat16); // HalfFloat MAX
-  TypeH::MIN = TypeH::make(min_jfloat16); // HalfFloat MIN
   TypeH::ZERO = TypeH::make((jshort)0); // HalfFloat 0 (positive zero)
   TypeH::ONE  = TypeH::make(one_jfloat16); // HalfFloat 1
   TypeH::POS_INF = TypeH::make(pos_inf_jfloat16);
   TypeH::NEG_INF = TypeH::make(neg_inf_jfloat16);
 
-  TypeD::MAX = TypeD::make(max_jdouble); // Double MAX
-  TypeD::MIN = TypeD::make(min_jdouble); // Double MIN
   TypeD::ZERO = TypeD::make(0.0); // Double 0 (positive zero)
   TypeD::ONE  = TypeD::make(1.0); // Double 1
   TypeD::POS_INF = TypeD::make(jdouble_cast(POSITIVE_INFINITE_D));
@@ -595,7 +589,6 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::UBYTE    = TypeInt::make(0, 255,        WidenMin); // Unsigned Bytes
   TypeInt::CHAR     = TypeInt::make(0, 65535,      WidenMin); // Java chars
   TypeInt::SHORT    = TypeInt::make(-32768, 32767, WidenMin); // Java shorts
-  TypeInt::NON_ZERO = TypeInt::make_or_top(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {1, max_juint}, {0, 0}}, WidenMin)->is_int();
   TypeInt::POS      = TypeInt::make(0, max_jint,   WidenMin); // Non-neg values
   TypeInt::POS1     = TypeInt::make(1, max_jint,   WidenMin); // Positive values
   TypeInt::INT      = TypeInt::make(min_jint, max_jint, WidenMax); // 32-bit integers
@@ -614,12 +607,9 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::MINUS_1  = TypeLong::make(-1);   // -1
   TypeLong::ZERO     = TypeLong::make( 0);   //  0
   TypeLong::ONE      = TypeLong::make( 1);   //  1
-  TypeLong::NON_ZERO = TypeLong::make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {1, max_julong}, {0, 0}}, WidenMin)->is_long();
   TypeLong::POS      = TypeLong::make(0, max_jlong, WidenMin); // Non-neg values
-  TypeLong::NEG      = TypeLong::make(min_jlong, -1, WidenMin);
   TypeLong::LONG     = TypeLong::make(min_jlong, max_jlong, WidenMax); // 64-bit integers
   TypeLong::INT      = TypeLong::make((jlong)min_jint, (jlong)max_jint,WidenMin);
-  TypeLong::UINT     = TypeLong::make(0, (jlong)max_juint, WidenMin);
   TypeLong::TYPE_DOMAIN = TypeLong::LONG;
 
   const Type **fboth =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
@@ -1612,12 +1602,10 @@ void Type::verify_meet_join() {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeF *TypeF::MAX;        // Floating point max
-const TypeF *TypeF::MIN;        // Floating point min
-const TypeF *TypeF::ZERO;       // Floating point zero
-const TypeF *TypeF::ONE;        // Floating point one
-const TypeF *TypeF::POS_INF;    // Floating point positive infinity
-const TypeF *TypeF::NEG_INF;    // Floating point negative infinity
+const TypeF* TypeF::ZERO;       // Floating point zero
+const TypeF* TypeF::ONE;        // Floating point one
+const TypeF* TypeF::POS_INF;    // Floating point positive infinity
+const TypeF* TypeF::NEG_INF;    // Floating point negative infinity
 
 //------------------------------make-------------------------------------------
 // Create a float constant
@@ -1704,8 +1692,6 @@ bool TypeF::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeH* TypeH::MAX;        // Half float max
-const TypeH* TypeH::MIN;        // Half float min
 const TypeH* TypeH::ZERO;       // Half float zero
 const TypeH* TypeH::ONE;        // Half float one
 const TypeH* TypeH::POS_INF;    // Half float positive infinity
@@ -1811,12 +1797,10 @@ bool TypeH::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeD *TypeD::MAX;        // Floating point max
-const TypeD *TypeD::MIN;        // Floating point min
-const TypeD *TypeD::ZERO;       // Floating point zero
-const TypeD *TypeD::ONE;        // Floating point one
-const TypeD *TypeD::POS_INF;    // Floating point positive infinity
-const TypeD *TypeD::NEG_INF;    // Floating point negative infinity
+const TypeD* TypeD::ZERO;       // Floating point zero
+const TypeD* TypeD::ONE;        // Floating point one
+const TypeD* TypeD::POS_INF;    // Floating point positive infinity
+const TypeD* TypeD::NEG_INF;    // Floating point negative infinity
 
 //------------------------------make-------------------------------------------
 const TypeD *TypeD::make(double d) {
@@ -1971,7 +1955,6 @@ const TypeInt* TypeInt::BYTE;   // Bytes, -128 to 127
 const TypeInt* TypeInt::UBYTE;  // Unsigned Bytes, 0 to 255
 const TypeInt* TypeInt::CHAR;   // Java chars, 0-65535
 const TypeInt* TypeInt::SHORT;  // Java shorts, -32768-32767
-const TypeInt* TypeInt::NON_ZERO;
 const TypeInt* TypeInt::POS;    // Positive 32-bit integers or zero
 const TypeInt* TypeInt::POS1;   // Positive 32-bit integers
 const TypeInt* TypeInt::INT;    // 32-bit integers
@@ -2105,12 +2088,9 @@ const TypeLong* TypeLong::MIN;
 const TypeLong* TypeLong::MINUS_1;// -1
 const TypeLong* TypeLong::ZERO; // 0
 const TypeLong* TypeLong::ONE;  // 1
-const TypeLong* TypeLong::NON_ZERO;
 const TypeLong* TypeLong::POS;  // >=0
-const TypeLong* TypeLong::NEG;
 const TypeLong* TypeLong::LONG; // 64-bit integers
 const TypeLong* TypeLong::INT;  // 32-bit subrange
-const TypeLong* TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong* TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 TypeLong::TypeLong(const TypeIntPrototype<jlong, julong>& t, int widen)
