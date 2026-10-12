@@ -1209,6 +1209,15 @@ INSN(lwu_acquire, lwu, lw_aq, 32);
 
 #undef INSN
 
+  void lw_acquire(Register Rd, Register Rs1) {
+    if (UseZalasr) {
+      Assembler::lw_aq(Rd, Rs1);
+    } else {
+      Assembler::lw(Rd, Rs1, 0);
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    }
+  }
+
   void ld_acquire(Register Rd, Register Rs1) {
     if (UseZalasr) {
       Assembler::ld_aq(Rd, Rs1);
